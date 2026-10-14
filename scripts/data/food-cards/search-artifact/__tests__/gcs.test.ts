@@ -68,6 +68,26 @@ describe('createImmutable', () => {
     );
   });
 
+  it('treats a 403 on an existing object like a 412 (create-only role)', async () => {
+    fetchMock
+      .mockResolvedValueOnce(respond(403))
+      .mockResolvedValueOnce(
+        respond(200, JSON.stringify({ generation: '7', md5Hash: md5 }))
+      );
+    await expect(createImmutable('b', 'f1/x/texts.f16', body)).resolves.toBe(
+      undefined
+    );
+  });
+
+  it('reports a 403 for an absent object as a permission problem', async () => {
+    fetchMock
+      .mockResolvedValueOnce(respond(403))
+      .mockResolvedValueOnce(respond(404));
+    await expect(createImmutable('b', 'f1/x/texts.f16', body)).rejects.toThrow(
+      /403.*bucket roles/
+    );
+  });
+
   it('refuses to accept an existing object with other bytes', async () => {
     fetchMock
       .mockResolvedValueOnce(respond(412))
@@ -75,7 +95,7 @@ describe('createImmutable', () => {
         respond(200, JSON.stringify({ generation: '7', md5Hash: 'other' }))
       );
     await expect(createImmutable('b', 'f1/x/texts.f16', body)).rejects.toThrow(
-      /other contents/
+      /absent or holds other contents/
     );
   });
 });
@@ -92,5 +112,12 @@ describe('download', () => {
     expect(found?.generation).toBe('42');
     expect(found?.body.toString()).toBe('{"buildId":"b1"}');
     expect(await download('b', 'missing')).toBeNull();
+  });
+
+  it('refuses a download without a generation header', async () => {
+    fetchMock.mockResolvedValueOnce(respond(200, '{}'));
+    await expect(download('b', 'f1/by-key/k.json')).rejects.toThrow(
+      /no generation header/
+    );
   });
 });

@@ -1,13 +1,15 @@
 /**
- * The publish gate. Nothing is uploaded unless, on fixed sample queries:
+ * The publish gate. Nothing is uploaded unless, on fixed sample queries (up to
+ * 20 stored ingredient query vectors, plus 10 sums of adjacent stored strings,
+ * so a database without the query table still gets samples):
  *
  *   recall     the index's top 30 rows match an exact (every-string) search's
  *              top 30: ≥ 0.9 for every sample, ≥ 0.97 on average
- *   agreement  every row today's `match_food_card_texts` returns has a
- *              string naming it whose similarity, computed by this code,
- *              equals the database's (within 1e-4); and today's top 10 rows
- *              mostly appear in our top 30 (≥ 0.8 on average, so the check
- *              cannot pass vacuously)
+ *   agreement  today's `match_food_card_texts` answers every sample, and every
+ *              row it returns has a string naming it whose similarity,
+ *              computed by this code, equals the database's (within 1e-4);
+ *              and today's top 10 rows mostly appear in our top 30 (≥ 0.8 on
+ *              average)
  *
  * Recall is measured against exact search, not the database's HNSW, which is
  * itself approximate. The agreement check compares per string, not per row: a
@@ -27,6 +29,9 @@ import {
   stringSimilarity,
 } from '@/lib/ai/matching/cards/search-index/search-core.mjs';
 import type { ReadOnlySql } from './connect';
+
+/** A connection or a transaction: the gate only issues SELECTs. */
+type Queryable = Pick<ReadOnlySql, 'unsafe'>;
 
 type Hit = { id: string; similarity: number };
 
@@ -50,16 +55,18 @@ const top = (hits: Hit[], n: number) => hits.slice(0, n).map((h) => h.id);
 
 /** Real stored query vectors when the table has them, plus pairs of strings. */
 export async function sampleQueries(
-  sql: ReadOnlySql,
+  sql: Queryable,
   texts: Uint16Array
 ): Promise<number[][]> {
-  const [table] = await sql<{ present: boolean }[]>`
-    SELECT to_regclass('public.ingredient_query_embeddings') IS NOT NULL AS present`;
+  const [table] = await sql.unsafe<{ present: boolean }[]>(
+    "SELECT to_regclass('public.ingredient_query_embeddings') IS NOT NULL AS present"
+  );
   const real = table?.present
     ? (
-        await sql<{ e: string }[]>`
-          SELECT embedding::text AS e FROM ingredient_query_embeddings
-          WHERE embedding IS NOT NULL ORDER BY md5(name_vi) LIMIT 20`
+        await sql.unsafe<{ e: string }[]>(
+          `SELECT embedding::text AS e FROM ingredient_query_embeddings
+           WHERE embedding IS NOT NULL ORDER BY md5(name_vi) LIMIT 20`
+        )
       ).map((r) => JSON.parse(r.e) as number[])
     : [];
   const count = texts.length / DIMS;
@@ -79,10 +86,20 @@ export async function sampleQueries(
 }
 
 export async function checkParity(
-  sql: ReadOnlySql,
+  sql: Queryable,
   input: ParityInput,
   queries: number[][]
 ): Promise<ParityReport> {
+  if (queries.length === 0) {
+    return {
+      samples: 0,
+      minRecall: 0,
+      meanRecall: 0,
+      meanDbTop10Found: 0,
+      maxSimilarityGap: 1,
+      passed: false,
+    };
+  }
   const viaIndex = searchTexts(
     input.store,
     queries,
@@ -102,10 +119,19 @@ export async function checkParity(
   );
   const db: Hit[][] = queries.map(() => []);
   for (const r of dbRows) {
-    db[Number(r.query_index) - 1]?.push({
-      id: r.food_composition_id,
-      similarity: Number(r.similarity),
-    });
+    const q = Number(r.query_index) - 1;
+    const similarity = Number(r.similarity);
+    if (!Number.isInteger(q) || q < 0 || q >= queries.length) {
+      throw new Error(
+        `match_food_card_texts returned query_index ${r.query_index}`
+      );
+    }
+    if (!Number.isFinite(similarity)) {
+      throw new Error(
+        `match_food_card_texts returned similarity ${r.similarity}`
+      );
+    }
+    db[q].push({ id: r.food_composition_id, similarity });
   }
   for (const list of db) list.sort((a, b) => b.similarity - a.similarity);
 
@@ -123,9 +149,10 @@ export async function checkParity(
   queries.forEach((_, q) => {
     const truth = new Set(top(exact[q], 30));
     const ours = top(viaIndex[q], 30);
+    // An empty answer is a failure, never a pass.
     recalls.push(
       truth.size === 0
-        ? 1
+        ? 0
         : ours.filter((id) => truth.has(id)).length / truth.size
     );
     const prepared = prepareQuery(queries[q]);
@@ -143,7 +170,7 @@ export async function checkParity(
     const ourTop = new Set(ours);
     dbFound.push(
       dbTop.length === 0
-        ? 1
+        ? 0
         : dbTop.filter((id) => ourTop.has(id)).length / dbTop.length
     );
   });
@@ -159,6 +186,7 @@ export async function checkParity(
     ...report,
     passed:
       queries.length > 0 &&
+      db.every((hits) => hits.length > 0) &&
       report.minRecall >= 0.9 &&
       report.meanRecall >= 0.97 &&
       report.meanDbTop10Found >= 0.8 &&

@@ -24,7 +24,11 @@ export function encodePassword(raw: string): string {
 
 export type ReadOnlySql = ReturnType<typeof postgres>;
 
-/** One connection; every session is read-only, whatever the queries say. */
+/**
+ * One connection that asks for read-only sessions. That startup setting is a
+ * backstop only (Supabase's pooler may not forward it): the builder runs every
+ * query inside an explicit READ ONLY transaction (`publish.ts`).
+ */
 export function connect(databaseUrl: string): ReadOnlySql {
   return postgres(encodePassword(databaseUrl), {
     max: 1,

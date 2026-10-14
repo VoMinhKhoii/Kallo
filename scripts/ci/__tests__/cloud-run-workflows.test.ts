@@ -102,7 +102,7 @@ describe('Cloud Run prod workflow', () => {
     // A redeploy checks out an older DEPLOY_SHA that may not have the builder.
     expect(body).toContain('if [ ! -f "$builder" ]; then');
     expect(body).toContain('bun "$builder" --bucket "$CARD_INDEX_BUCKET"');
-    expect(body).toContain('DATABASE_URL: ${{ env.PROD_DATABASE_URL }}');
+    expect(body).toContain(`DATABASE_URL: \${{ env.PROD_DATABASE_URL }}`);
     expect(workflow).toContain('CARD_INDEX_BUCKET: kallo-prod-card-search');
     // bun must be set up on every deploy now, not only when a backfill runs.
     expect(workflow).toMatch(
@@ -115,7 +115,7 @@ describe('Cloud Run prod workflow', () => {
     ).toBe(true);
     // The deploy record names the artifact each revision was deployed with.
     expect(workflow).toContain(
-      '\\"card_index_uri\\":\\"${CARD_INDEX_URI:-}\\"'
+      `\\"card_index_uri\\":\\"\${CARD_INDEX_URI:-}\\"`
     );
   });
 

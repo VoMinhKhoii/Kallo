@@ -179,8 +179,13 @@ every card string's vector, and an HNSW index over them, so matching can search
 in the container instead of in Supabase. The builder fingerprints the card data
 in Postgres (one small row back) and reuses the published build when the data,
 the format, the search parameters and the builder's own code are unchanged;
-otherwise it reads a consistent snapshot (~90 MB), builds, and runs a parity
-gate against `match_food_card_texts` before uploading anything.
+otherwise it reads a consistent snapshot (~90 MB), builds the index on one
+thread (the same data always gives the same bytes), and runs a parity gate
+before uploading anything: on ~30 fixed sample queries the index must match an
+exact search (recall@30 ≥ 0.9 each, ≥ 0.97 on average), and every row
+`match_food_card_texts` returns must have a string whose similarity, computed
+by the artifact's search code, equals the database's within 1e-4. Every query
+runs in an explicit READ ONLY transaction.
 
 Layout, all immutable (created with `ifGenerationMatch=0`):
 
@@ -190,8 +195,10 @@ Layout, all immutable (created with `ifGenerationMatch=0`):
   only by `--force`
 
 The step prints `CARD_INDEX_URI=gs://kallo-prod-card-search/f1/<buildId>`,
-exports it to the job, and records it in the deploy record. Builds are never
-deleted, so an older revision can always load the build it was deployed with.
+exports it to the job, and records it in the deploy record. The app does not
+read the artifact yet; the follow-up that does passes this URI to each new
+revision, pinning the revision to that build. Builds are never deleted, so an
+older revision can always load the build it was deployed with.
 
 One-time setup (uniform bucket-level access is required for the IAM
 condition):

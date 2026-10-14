@@ -63,10 +63,30 @@ export async function download(
   const res = await request(`${objectUrl(bucket, name)}?alt=media`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GCS download ${name}: ${res.status}`);
-  return {
-    body: Buffer.from(await res.arrayBuffer()),
-    generation: res.headers.get('x-goog-generation') ?? '0',
-  };
+  // The generation decides what a forced pointer write replaces; never guess
+  // it ('0' would mean "absent").
+  const generation = res.headers.get('x-goog-generation');
+  if (!generation || !/^[1-9]\d*$/.test(generation)) {
+    throw new Error(`GCS download ${name}: no generation header`);
+  }
+  return { body: Buffer.from(await res.arrayBuffer()), generation };
+}
+
+async function post(
+  bucket: string,
+  name: string,
+  body: Uint8Array,
+  ifGenerationMatch: string,
+  contentType: string
+): Promise<number> {
+  const url = `${API}/upload/storage/v1/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(name)}&ifGenerationMatch=${ifGenerationMatch}`;
+  const res = await request(url, {
+    method: 'POST',
+    headers: { 'Content-Type': contentType },
+    // A copy backed by a plain ArrayBuffer, which fetch's body type requires.
+    body: new Uint8Array(body),
+  });
+  return res.status;
 }
 
 /** `true` when written; `false` when the precondition failed (412). */
@@ -77,15 +97,11 @@ export async function upload(
   ifGenerationMatch: string,
   contentType = 'application/octet-stream'
 ): Promise<boolean> {
-  const url = `${API}/upload/storage/v1/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(name)}&ifGenerationMatch=${ifGenerationMatch}`;
-  const res = await request(url, {
-    method: 'POST',
-    headers: { 'Content-Type': contentType },
-    // A copy backed by a plain ArrayBuffer, which fetch's body type requires.
-    body: new Uint8Array(body),
-  });
-  if (res.status === 412) return false;
-  if (!res.ok) throw new Error(`GCS upload ${name}: ${res.status}`);
+  const status = await post(bucket, name, body, ifGenerationMatch, contentType);
+  if (status === 412) return false;
+  if (status < 200 || status >= 300) {
+    throw new Error(`GCS upload ${name}: ${status}`);
+  }
   return true;
 }
 
@@ -97,12 +113,21 @@ export async function createImmutable(
   bucket: string,
   name: string,
   body: Uint8Array,
-  contentType?: string
+  contentType = 'application/octet-stream'
 ): Promise<void> {
-  if (await upload(bucket, name, body, '0', contentType)) return;
+  const status = await post(bucket, name, body, '0', contentType);
+  if (status >= 200 && status < 300) return;
+  // 412: the object exists. 403: also possible for an existing object, since
+  // the deployer may create but not overwrite. Either way, accept it only if
+  // its bytes are ours (a retried upload whose first attempt landed).
+  if (status !== 412 && status !== 403) {
+    throw new Error(`GCS upload ${name}: ${status}`);
+  }
   const meta = await getMeta(bucket, name);
   const ours = createHash('md5').update(body).digest('base64');
   if (meta?.md5Hash !== ours) {
-    throw new Error(`GCS object ${name} already exists with other contents`);
+    throw new Error(
+      `GCS upload ${name}: ${status}, and the object is absent or holds other contents (check the deployer's bucket roles)`
+    );
   }
 }

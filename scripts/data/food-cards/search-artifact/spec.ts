@@ -39,6 +39,7 @@ export const SPEC_FILES = [
   'scripts/data/food-cards/search-artifact/fingerprint.ts',
   'scripts/data/food-cards/search-artifact/gcs.ts',
   'scripts/data/food-cards/search-artifact/parity.ts',
+  'scripts/data/food-cards/search-artifact/publish.ts',
   'scripts/data/food-cards/search-artifact/snapshot.ts',
   'scripts/data/food-cards/search-artifact/spec.ts',
 ] as const;

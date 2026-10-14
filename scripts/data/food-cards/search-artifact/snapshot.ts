@@ -35,7 +35,10 @@ export async function readSnapshot(sql: ReadOnlySql): Promise<Snapshot> {
         `card strings not ready: ${fingerprint.unembedded} unembedded, ${fingerprint.linkRows} links`
       );
     }
-    const catalogRows = await tx.unsafe<CatalogQueryRow[]>(CATALOG_ROWS_SQL);
+    // Ordered, so the same data always writes the same catalog.json bytes.
+    const catalogRows = await tx.unsafe<CatalogQueryRow[]>(
+      `${CATALOG_ROWS_SQL}\nORDER BY v.id`
+    );
     // Only strings that name a row: an orphan could never be returned, and
     // the runtime self-test picks strings that must map to rows.
     const vectorRows = await tx.unsafe<{ id: number; b: Uint8Array }[]>(
