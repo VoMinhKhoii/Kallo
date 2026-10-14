@@ -54,6 +54,11 @@ class _SegmentedGesturesState extends State<SegmentedGestures> {
   /// rebuilt with the last slide, and would then choose the segment before.
   int _dragged = -1;
 
+  /// The system took the touch away (a call, Control Center). Flutter ends an
+  /// accepted drag on that as if the finger had lifted, which would choose
+  /// the segment the thumb was dragged to; iOS chooses nothing.
+  bool _systemCancelled = false;
+
   int _segmentAt(Offset p) {
     final width = context.size!.width;
     return (p.dx / width * widget.count).floor().clamp(0, widget.count - 1);
@@ -75,6 +80,7 @@ class _SegmentedGesturesState extends State<SegmentedGestures> {
     final i = _segmentAt(d.localPosition);
     _onThumb = i == widget.thumb;
     _dragged = i;
+    _systemCancelled = false;
     _press(i);
     if (_onThumb) widget.onHold(true);
   }
@@ -91,6 +97,7 @@ class _SegmentedGesturesState extends State<SegmentedGestures> {
   }
 
   void _end(DragEndDetails _) {
+    if (_systemCancelled) return _cancel();
     if (_onThumb) {
       widget.onHold(false);
       widget.onSelect(_dragged);
@@ -118,7 +125,13 @@ class _SegmentedGesturesState extends State<SegmentedGestures> {
   }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) => Listener(
+    // A Listener sees the cancel before the recognizers turn it into an end.
+    onPointerCancel: (_) => _systemCancelled = true,
+    child: _detector(),
+  );
+
+  Widget _detector() => GestureDetector(
     behavior: HitTestBehavior.opaque,
     // The strip gives each segment its own labelled tap; this detector's
     // would be one more, choosing from a made-up point.

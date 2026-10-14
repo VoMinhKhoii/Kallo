@@ -274,6 +274,22 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('a thumb drag the system cancels goes back, choosing nothing', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const _Host());
+    _picks.clear();
+    final start = _thumb(tester).center.dx;
+
+    final finger = await tester.startGesture(_segment(tester, 0));
+    await _drag(finger, _segment(tester, 2) - _segment(tester, 0));
+    await tester.pump();
+    await finger.cancel();
+    await tester.pumpAndSettle();
+    expect(_picks, isEmpty);
+    expect(_thumb(tester).center.dx, closeTo(start, 0.5));
+  });
+
   testWidgets('a pick the caller refuses sends a dragged thumb back', (
     tester,
   ) async {

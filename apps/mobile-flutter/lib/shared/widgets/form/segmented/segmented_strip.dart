@@ -94,17 +94,20 @@ class _SegmentedStripState extends State<SegmentedStrip> {
   }
 
   void _select(int index) {
-    if (index != widget.activeIndex) {
-      HapticFeedback.selectionClick();
-      widget.onChange(widget.options[index].value);
-    }
-    // A caller may refuse the pick (the scan camera's gated segment opens the
-    // paywall instead), leaving a dragged thumb on a segment that is not
-    // chosen. After the caller has rebuilt, the thumb goes back to the truth.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_held) setState(() => _thumb = widget.activeIndex);
-    });
+    if (index == widget.activeIndex) return;
+    HapticFeedback.selectionClick();
+    widget.onChange(widget.options[index].value);
   }
+
+  /// Letting go of a dragged thumb sends it back to the chosen segment; the
+  /// pick that follows (if any, and if the caller takes it — the scan
+  /// camera's gated segment opens the paywall instead) moves it on before the
+  /// frame is drawn. A cancelled or refused drag never shows a thumb parked
+  /// on a segment that is not chosen.
+  void _hold(bool held) => setState(() {
+    _held = held;
+    if (!held) _thumb = widget.activeIndex;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +117,7 @@ class _SegmentedStripState extends State<SegmentedStrip> {
         count: widget.options.length,
         thumb: _thumb,
         onPressed: (i) => setState(() => _pressed = i),
-        onHold: (held) => setState(() => _held = held),
+        onHold: _hold,
         onSlide: (i) => setState(() => _thumb = i),
         onSelect: _select,
         // The touch layer spans the full 44 above the track, so a thumb
