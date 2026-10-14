@@ -146,7 +146,7 @@ describe('loadMealDates', () => {
     // The feed hides a pending card past the 7-day reaping horizon
     // (isStillStaged, load-meals.ts). This query has to draw the SAME line: an
     // abandoned row that only still exists because a best-effort sweep has not
-    // run would otherwise mask a real saved total for a card nobody can see.
+    // run would otherwise list a day for a card nobody can see.
     const pendingWheres: unknown[] = [];
     const capture = (returns: unknown) =>
       vi.fn().mockImplementation((predicate: unknown) => {
@@ -199,10 +199,8 @@ describe('loadMealDates', () => {
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
       { date: '2026-04-07', kcal: null },
-      // Apr 6 has a saved meal AND a pending card, so its total is unknown —
-      // 1842 is only the part that has been confirmed. See the overlap case
-      // below; this expectation used to say 1842 and was wrong.
-      { date: '2026-04-06', kcal: null },
+      // Apr 6 has a saved meal AND a pending card: it shows what is saved.
+      { date: '2026-04-06', kcal: 1842 },
       { date: '2026-04-05', kcal: 2014 },
     ]);
   });
@@ -257,18 +255,17 @@ describe('loadMealDates', () => {
     ]);
   });
 
-  it('gives up the total on a day that also holds a pending card', async () => {
-    // Same trap as the SUM guard, one layer up: a staged card's calories are
-    // deliberately not counted, so a day with a saved 500 kcal meal AND a
-    // pending card knows only part of what was eaten. Keeping the 500 would
-    // show a subtotal wearing the face of a complete total.
+  it('keeps the saved total on a day that also holds a pending card', async () => {
+    // A staged card's calories are not counted until it is confirmed, but the
+    // day's saved meals still are. Blanking the 500 made a day with one
+    // unsaved card read as holding nothing countable.
     mockDateQueries(
       [{ date: '2026-04-06', kcal: 500 }],
       [stagedRow('2026-04-06')]
     );
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
-      { date: '2026-04-06', kcal: null },
+      { date: '2026-04-06', kcal: 500 },
     ]);
   });
 
@@ -303,10 +300,8 @@ describe('loadMealDates', () => {
     ]);
   });
 
-  it('masks a total when only the payload scan saw the staged card', async () => {
-    // Same skew, on a day that also holds a saved meal. Keeping the 500 would
-    // show a subtotal wearing the face of a complete total, which is the
-    // failure direction that matters.
+  it('keeps the saved total when only the payload scan saw the staged card', async () => {
+    // Same skew, on a day that also holds a saved meal.
     mockDateQueries(
       [{ date: '2026-04-06', kcal: 500 }],
       [stagedRow('2026-04-06')],
@@ -314,7 +309,7 @@ describe('loadMealDates', () => {
     );
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
-      { date: '2026-04-06', kcal: null },
+      { date: '2026-04-06', kcal: 500 },
     ]);
   });
 
@@ -337,13 +332,10 @@ describe('loadMealDates', () => {
     expect(limitSpy).toHaveBeenCalledWith(PENDING_SCAN_LIMIT + 1);
   });
 
-  it('gives up totals on the days its capped scan could not reach', async () => {
-    // DATE(logged_at + offset) is monotonic in logged_at, so a scan ordered by
-    // logged_at DESC reads whole days newest-first. Past the cap the unread
-    // rows are all on the oldest day it touched or older — and any of them may
-    // be a renderable card. Guessing "no card" there would show a subtotal
-    // wearing the face of a complete total, the bug this file already fixes
-    // twice, so an unreachable day reports an unknown total instead.
+  it('keeps saved totals on the days its capped scan could not reach', async () => {
+    // Past the cap the unread rows may hold renderable cards, but a saved
+    // total stands either way — the cap only decides whether a pending-only
+    // day is listed.
     const overflow = Array.from({ length: PENDING_SCAN_LIMIT + 1 }, () =>
       stagedRow('2026-04-07')
     );
@@ -359,11 +351,8 @@ describe('loadMealDates', () => {
     );
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
-      { date: '2026-04-07', kcal: null },
-      // Below the boundary and never scanned, yet the grouped date scan says
-      // it holds a staged row: unknown, not 2014.
-      { date: '2026-04-05', kcal: null },
-      // No staged row at all, so the cap never touches it.
+      { date: '2026-04-07', kcal: 700 },
+      { date: '2026-04-05', kcal: 2014 },
       { date: '2026-04-03', kcal: 1500 },
     ]);
   });
@@ -371,34 +360,26 @@ describe('loadMealDates', () => {
   it('still judges days above the truncation boundary from their payloads', async () => {
     // Conservatism is for what the scan could not see. A day it read in full —
     // anything strictly newer than the oldest day it reached — is decided the
-    // normal way, so an unrenderable-only day up there keeps its real total.
+    // normal way, so an unrenderable-only pending day up there is not listed.
     const overflow = [
       { ...stagedRow('2026-04-07'), pipelineResult: { junk: true } },
       ...Array.from({ length: PENDING_SCAN_LIMIT }, () =>
         stagedRow('2026-04-06')
       ),
     ];
-    mockDateQueries(
-      [
-        { date: '2026-04-07', kcal: 700 },
-        { date: '2026-04-06', kcal: 900 },
-      ],
-      overflow,
-      ['2026-04-07', '2026-04-06']
-    );
+    mockDateQueries([], overflow, ['2026-04-07', '2026-04-06']);
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
-      { date: '2026-04-07', kcal: 700 },
       { date: '2026-04-06', kcal: null },
     ]);
   });
 
-  it('keeps the total on the boundary day when the probe row proves it complete', async () => {
+  it('decides the boundary day from its payloads when the probe row proves it complete', async () => {
     // The probe row is the first one the scan did NOT inspect, so it — not the
     // last row the scan DID inspect — is where the blind spot starts. When the
     // probe lands on an older day, every row on the day above it was seen, and
-    // that day is fully decided: masking it would give up a real total for a
-    // day nothing was actually unknown about.
+    // that day is fully decided: listing it would be a guess about a day
+    // nothing was actually unknown about.
     const overflow = [
       ...Array.from({ length: PENDING_SCAN_LIMIT }, () => ({
         ...stagedRow('2026-04-07'),
@@ -406,19 +387,12 @@ describe('loadMealDates', () => {
       })),
       stagedRow('2026-04-05'),
     ];
-    mockDateQueries(
-      [
-        { date: '2026-04-07', kcal: 700 },
-        { date: '2026-04-05', kcal: 500 },
-      ],
-      overflow,
-      ['2026-04-07', '2026-04-05']
-    );
+    mockDateQueries([], overflow, ['2026-04-07', '2026-04-05']);
 
     expect(await loadMealDates({ timezoneOffset: 0 })).toEqual([
-      // Every staged row on it was scanned and none was renderable.
-      { date: '2026-04-07', kcal: 700 },
-      // The probe's own day: at least one row on it went uninspected.
+      // Apr 7 is absent: every staged row on it was scanned and none was
+      // renderable. Apr 5 is the probe's own day: at least one row on it went
+      // uninspected, so it is listed.
       { date: '2026-04-05', kcal: null },
     ]);
   });

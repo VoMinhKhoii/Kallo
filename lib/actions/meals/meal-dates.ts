@@ -123,8 +123,8 @@ export async function loadMealDates(input: {
 
   // A staged card carries its nutrition inside pipeline_result's JSONB, not in
   // a column. Reaching into that per row would cost far more than the total is
-  // worth, so a pending day contributes its DATE and leaves the calories
-  // unknown until it is confirmed.
+  // worth, so a staged card contributes its DATE and its calories join the
+  // day's total once it is confirmed.
   const kcalByDate = new Map<string, number | null>();
   for (const row of mealRows) {
     kcalByDate.set(row.date, toKcal(row.kcal));
@@ -132,7 +132,7 @@ export async function loadMealDates(input: {
 
   // `toStagedCard` is the feed's own renderability test, shared rather than
   // restated. A row it rejects is a card nobody can see or confirm, so it must
-  // not mask a total either.
+  // not list a day either.
   const scanned = scannedRows.slice(0, PENDING_SCAN_LIMIT);
   const renderableDates = new Set<string>();
   for (const row of scanned) {
@@ -145,8 +145,8 @@ export async function loadMealDates(input: {
   // the first one anything is unknown about — not the last day the scan
   // touched. Those differ exactly when the probe falls on an older day, which
   // means the day above it ended inside the scan and every row on it was
-  // seen. Reading the boundary off `scanned.at(-1)` instead would give up that
-  // day's real total for nothing. Absent a probe row, the scan read everything
+  // seen. Reading the boundary off `scanned.at(-1)` instead would list that
+  // day on a guess. Absent a probe row, the scan read everything
   // and nothing is undecided.
   const undecidedFrom = scannedRows[PENDING_SCAN_LIMIT]?.date ?? null;
 
@@ -157,22 +157,19 @@ export async function loadMealDates(input: {
   // difference between a merge that is correct on its own terms and one that
   // silently depends on an isolation level set thirty lines away. If a pooler
   // or a future refactor ever weakens that, the failure this prevents is a
-  // renderable card being dropped on the floor: a pending-only day vanishing,
-  // or a day that holds a card keeping a complete-looking total.
+  // renderable card being dropped on the floor: a pending-only day vanishing.
   const pendingDates = new Set(pendingDateRows.map((row) => row.date));
   for (const date of renderableDates) pendingDates.add(date);
 
   for (const date of pendingDates) {
-    // Masking overwrites any saved-meal sum: a day holding BOTH a saved meal
-    // and a staged card knows only part of what was eaten, and a partial total
-    // is the one thing worse than none — it looks complete. Same rule as the
-    // CASE guard above, one layer up.
-    //
-    // An undecided day masks too. Guessing "no renderable card down there"
-    // would be guessing in the direction that invents a complete-looking
-    // total; unknown is the honest answer and the safe one. A day the scan
-    // DID cover keeps its total when nothing on it was renderable, so the cap
-    // costs precision only where it actually ran out.
+    // A day with saved meals keeps their total even while it also holds a
+    // staged card: the sidebar shows what has been saved so far. Blanking it
+    // made a day with one unsaved card look like it held nothing countable.
+    if (kcalByDate.has(date)) continue;
+
+    // A pending-only day is listed when the feed would draw its card — or
+    // when the capped scan could not tell, since dropping a day the feed
+    // renders is worse than listing one it does not.
     const undecided = undecidedFrom !== null && date <= undecidedFrom;
     if (undecided || renderableDates.has(date)) kcalByDate.set(date, null);
   }
