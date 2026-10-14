@@ -148,8 +148,9 @@ class PlanToggle extends StatelessWidget {
   /// [dashBody] and a [FittedBox], exactly as [SegmentedStrip] sets its own
   /// labels — the scale rather than a bespoke size, and the longest label
   /// shrinks at the top of the Dynamic Type range instead of clipping.
-  /// Colour marks the selection; the semibold is this control's one addition,
-  /// because a gold half needs more than a colour shift to read as chosen.
+  /// Colour marks the selection here, and the strip's selected label is 500;
+  /// this one goes to semibold because a gold half needs more than that to
+  /// read as chosen.
   Widget _label(String text, bool selected) => Center(
     child: FittedBox(
       fit: BoxFit.scaleDown,

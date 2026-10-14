@@ -10,9 +10,9 @@ enum SegmentedStripTone {
   standard(
     track: KalloColors.track,
     thumb: kCardSurface,
+    rim: Color(0x0F141413), // ink @ 6%
     thumbShadow: true,
-    on: kInk,
-    off: kInkMuted,
+    label: kInk,
     labelInset: 0,
   ),
 
@@ -22,22 +22,28 @@ enum SegmentedStripTone {
   overPhoto(
     track: kGlass,
     thumb: Color(0x38FFFFFF),
+    rim: Color(0x33FFFFFF), // white @ 20%, the glass edge catching light
     thumbShadow: false,
-    on: Color(0xFFFFFFFF),
-    off: Color(0xB8FFFFFF),
+    label: Color(0xFFFFFFFF),
     labelInset: KalloSpacing.sp3 + 2,
   );
 
   const SegmentedStripTone({
     required this.track,
     required this.thumb,
+    required this.rim,
     required this.thumbShadow,
-    required this.on,
-    required this.off,
+    required this.label,
     required this.labelInset,
   });
 
-  final Color track, thumb, on, off;
+  /// [rim] is the thumb's hairline edge — what makes it read as a raised
+  /// piece of glass rather than a flat fill (iOS 26's segmented control).
+  final Color track, thumb, rim;
+
+  /// Every label's colour. The selection is the thumb plus a heavier label,
+  /// as on iOS — not a muted colour for the segments beside it.
+  final Color label;
   final bool thumbShadow;
 
   /// Room either side of a label, for a strip sized to its words.
