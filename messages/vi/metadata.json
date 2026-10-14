@@ -1,7 +1,7 @@
 {
   "root": {
-    "title": "Trình theo dõi dinh dưỡng món Việt / Kallo",
-    "description": "Theo dõi bữa ăn Việt với phân tích dinh dưỡng bằng AI"
+    "title": "App đếm calo bằng AI cho món Việt / Kallo",
+    "description": "Kể bữa ăn như kể với bạn bè, Kallo tính calo, đạm, tinh bột và chất béo từ Bảng thành phần thực phẩm Việt Nam, FAO và USDA. Dùng miễn phí."
   },
   "pricing": {
     "title": "Bảng giá",

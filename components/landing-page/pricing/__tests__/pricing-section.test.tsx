@@ -18,13 +18,18 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('motion/react', () => {
   const plain =
-    (Tag: 'div' | 'h2' | 'p') =>
+    (Tag: 'div' | 'h1' | 'h2' | 'p') =>
     ({ children, ...props }: React.PropsWithChildren<object>) => (
       <Tag {...props}>{children}</Tag>
     );
   return {
     useReducedMotion: () => true,
-    motion: { div: plain('div'), h2: plain('h2'), p: plain('p') },
+    motion: {
+      div: plain('div'),
+      h1: plain('h1'),
+      h2: plain('h2'),
+      p: plain('p'),
+    },
   };
 });
 vi.mock('@/components/auth/auth-provider', () => ({
@@ -282,5 +287,37 @@ describe('PricingSection', () => {
     expect(premiumCta()).toBeDisabled();
     expect(screen.queryByText('discount')).toBeNull();
     expect(freeCta()).toBeDisabled();
+  });
+});
+
+describe('PricingSection title', () => {
+  beforeEach(() => {
+    mocks.useWebPrices.mockReturnValue({ data: undefined });
+    mocks.useEntitlements.mockReturnValue({ data: undefined, isError: false });
+    mocks.offerings.mockReturnValue({
+      packages: [ANNUAL, MONTHLY],
+      isPending: false,
+      isError: false,
+    });
+    mocks.purchase.mockReturnValue(purchaseState());
+  });
+
+  it('is a section heading on the landing band', () => {
+    renderPricing();
+    expect(screen.getByRole('heading', { level: 2, name: 'title' })).toBe(
+      document.getElementById('landing-pricing')
+    );
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
+  });
+
+  it('is the page heading on /pricing', () => {
+    render(
+      <PricingCheckoutProvider>
+        <PricingSection titleAs="h1" />
+      </PricingCheckoutProvider>
+    );
+    expect(screen.getByRole('heading', { level: 1, name: 'title' })).toBe(
+      document.getElementById('landing-pricing')
+    );
   });
 });

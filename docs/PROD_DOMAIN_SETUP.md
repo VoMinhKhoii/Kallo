@@ -405,6 +405,8 @@ curl -sI https://www.kallo.fit  | grep -i location
 # SEO
 curl -s https://kallo.fit/robots.txt
 curl -s https://kallo.fit/sitemap.xml | head
+# After a deploy that adds or changes public pages: push them to Bing & co.
+bun scripts/seo/indexnow.ts
 ```
 Then sign in with Google/email on `https://kallo.fit`, confirm `/auth/callback` lands
 on `/dashboard`, and send a test email to `support@kallo.fit`.

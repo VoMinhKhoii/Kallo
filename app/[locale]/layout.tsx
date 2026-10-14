@@ -103,10 +103,11 @@ export async function generateMetadata(): Promise<Metadata> {
       description: t('description'),
       locale,
     },
+    // No title or description: Next fills both from each page's resolved
+    // openGraph, so a docs link on X previews as that doc. Setting them here
+    // pinned every page's X card to the landing pitch.
     twitter: {
       card: 'summary_large_image',
-      title: t('title'),
-      description: t('description'),
       images: ['/og-image.png'],
     },
     appleWebApp: {

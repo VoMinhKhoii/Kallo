@@ -96,8 +96,17 @@ export async function DocsFooter({
           <p className="text-caption text-kallo-stone">
             {tFooter('copyright', { year: '2026' })}
           </p>
-          <a
+          {/* The one crawlable link to /pricing: the header's "Pricing" is an
+              in-page scroll on the landing page, so without this the sitemap
+              listed a page nothing on the site pointed at. */}
+          <Link
             className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent sm:ml-auto"
+            href="/pricing"
+          >
+            {tFooter('pricing')}
+          </Link>
+          <a
+            className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
             href={LINKEDIN_URL}
             rel="noopener noreferrer"
             target="_blank"

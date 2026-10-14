@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import { ConnectPanel } from '@/components/groups/invite/connect-panel';
@@ -52,6 +53,16 @@ function Shell({
 interface InvitePageProps {
   params: Promise<{ locale: string; slug: string }>;
 }
+
+/**
+ * Out of search, though crawlable: an invite link gets pasted into public
+ * posts, and each one would otherwise be an indexable page carrying a member's
+ * display name. A robots.txt block would not do it — Google can still list a
+ * blocked URL it finds linked, it just cannot read the noindex that says not to.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 /**
  * Every state of this page depends on the slug and on who is signed in, so it
