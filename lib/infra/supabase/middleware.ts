@@ -18,6 +18,10 @@ export async function updateSession(
   response?: NextResponse
 ) {
   let supabaseResponse = response ?? NextResponse.next({ request });
+  // No-store headers @supabase/ssr hands over with the first cookie write: a
+  // CDN that cached a response setting auth cookies would serve one user's
+  // session to the next visitor.
+  const cacheHeaders: Record<string, string> = {};
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +32,8 @@ export async function updateSession(
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headers) {
+          Object.assign(cacheHeaders, headers);
           for (const { name, value } of cookiesToSet) {
             request.cookies.set(name, value);
           }
@@ -40,6 +45,7 @@ export async function updateSession(
               sessionCookieWriteOptions(options)
             );
           }
+          setHeaders(supabaseResponse, cacheHeaders);
         },
       },
     }
@@ -67,6 +73,7 @@ export async function updateSession(
     for (const cookie of supabaseResponse.cookies.getAll()) {
       redirect.cookies.set(cookie);
     }
+    setHeaders(redirect, cacheHeaders);
     return redirect;
   };
 
@@ -102,6 +109,12 @@ export async function updateSession(
   }
 
   return supabaseResponse;
+}
+
+function setHeaders(response: NextResponse, headers: Record<string, string>) {
+  for (const [key, value] of Object.entries(headers)) {
+    response.headers.set(key, value);
+  }
 }
 
 /**
