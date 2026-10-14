@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/rendering.dart';
 
 import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_strip.dart';
 import 'package:kallo_mobile/shared/widgets/form/segmented/segmented_label.dart';
@@ -241,6 +242,38 @@ void main() {
     expect(_picks, isEmpty);
   });
 
+  testWidgets('a drag released before the next frame chooses where the '
+      'finger is', (tester) async {
+    await tester.pumpWidget(const _Host());
+    _picks.clear();
+
+    final finger = await tester.startGesture(_segment(tester, 0));
+    await _drag(finger, _segment(tester, 2) - _segment(tester, 0));
+    // No pump: the release lands before the strip has rebuilt.
+    await finger.up();
+    await tester.pumpAndSettle();
+    expect(_picks, ['c']);
+  });
+
+  testWidgets('a screen reader sees one tap action per segment and no other', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(const _Host());
+    var taps = 0;
+    void count(SemanticsNode node) {
+      if (node.getSemanticsData().hasAction(SemanticsAction.tap)) taps++;
+      node.visitChildren((child) {
+        count(child);
+        return true;
+      });
+    }
+
+    count(tester.getSemantics(find.byType(SegmentedStrip)));
+    expect(taps, _options.length);
+    handle.dispose();
+  });
+
   testWidgets('a pick the caller refuses sends a dragged thumb back', (
     tester,
   ) async {
@@ -249,8 +282,10 @@ void main() {
 
     final finger = await tester.startGesture(_segment(tester, 0));
     await _drag(finger, _segment(tester, 2) - _segment(tester, 0));
+    _picks.clear();
     await finger.up();
     await tester.pumpAndSettle();
+    expect(_picks, ['c'], reason: 'the pick was offered to the caller');
     expect(_thumb(tester).center.dx, closeTo(start, 0.5));
   });
 

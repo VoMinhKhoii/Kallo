@@ -49,6 +49,11 @@ class _SegmentedGesturesState extends State<SegmentedGestures> {
   bool _onThumb = false;
   int? _pressed;
 
+  /// Where a dragged thumb is, kept here rather than read back from
+  /// [SegmentedGestures.thumb]: a release can land before the strip has
+  /// rebuilt with the last slide, and would then choose the segment before.
+  int _dragged = -1;
+
   int _segmentAt(Offset p) {
     final width = context.size!.width;
     return (p.dx / width * widget.count).floor().clamp(0, widget.count - 1);
@@ -69,6 +74,7 @@ class _SegmentedGesturesState extends State<SegmentedGestures> {
   void _down(DragDownDetails d) {
     final i = _segmentAt(d.localPosition);
     _onThumb = i == widget.thumb;
+    _dragged = i;
     _press(i);
     if (_onThumb) widget.onHold(true);
   }
@@ -77,6 +83,7 @@ class _SegmentedGesturesState extends State<SegmentedGestures> {
     final i = _segmentAt(d.localPosition);
     if (_onThumb) {
       _press(i);
+      _dragged = i;
       widget.onSlide(i);
     } else {
       _press(_strayed(d.localPosition) ? null : i);
@@ -86,7 +93,7 @@ class _SegmentedGesturesState extends State<SegmentedGestures> {
   void _end(DragEndDetails _) {
     if (_onThumb) {
       widget.onHold(false);
-      widget.onSelect(widget.thumb);
+      widget.onSelect(_dragged);
     } else if (_pressed != null) {
       widget.onSelect(_pressed!);
     }
@@ -113,6 +120,9 @@ class _SegmentedGesturesState extends State<SegmentedGestures> {
   @override
   Widget build(BuildContext context) => GestureDetector(
     behavior: HitTestBehavior.opaque,
+    // The strip gives each segment its own labelled tap; this detector's
+    // would be one more, choosing from a made-up point.
+    excludeFromSemantics: true,
     onTapUp: _tapUp,
     onHorizontalDragDown: _down,
     onHorizontalDragUpdate: _update,
