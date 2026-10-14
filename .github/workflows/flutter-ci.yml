@@ -60,3 +60,10 @@ jobs:
 
       - name: Test
         run: flutter test
+
+      - name: Upload golden failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-failures
+          path: apps/mobile-flutter/test/**/failures/
