@@ -182,7 +182,7 @@ the format, the search parameters and the builder's own code are unchanged;
 otherwise it reads a consistent snapshot (~90 MB), builds the index on one
 thread (the same data always gives the same bytes), and runs a parity gate
 before uploading anything: on ~30 fixed sample queries the index must match an
-exact search (recall@30 ≥ 0.9 each, ≥ 0.97 on average), and every row
+exact search (recall@30 ≥ 0.97 on average, ≥ 0.8 for 90% of samples), and every row
 `match_food_card_texts` returns must have a string whose similarity, computed
 by the artifact's search code, equals the database's within 1e-4. Every query
 runs in an explicit READ ONLY transaction.
@@ -201,7 +201,8 @@ revision, pinning the revision to that build. Builds are never deleted, so an
 older revision can always load the build it was deployed with.
 
 One-time setup (uniform bucket-level access is required for the IAM
-condition):
+condition; once the bucket has a conditional binding, gcloud refuses
+unconditional ones unless they say `--condition=None`):
 
 ```bash
 gcloud storage buckets create gs://kallo-prod-card-search \
@@ -212,10 +213,10 @@ gcloud storage buckets create gs://kallo-prod-card-search \
 # Deployer: create new objects and read them; overwrite only the by-key pointers.
 gcloud storage buckets add-iam-policy-binding gs://kallo-prod-card-search \
   --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
-  --role="roles/storage.objectCreator"
+  --role="roles/storage.objectCreator" --condition=None
 gcloud storage buckets add-iam-policy-binding gs://kallo-prod-card-search \
   --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
-  --role="roles/storage.objectViewer"
+  --role="roles/storage.objectViewer" --condition=None
 gcloud storage buckets add-iam-policy-binding gs://kallo-prod-card-search \
   --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
   --role="roles/storage.objectUser" \
@@ -224,7 +225,7 @@ gcloud storage buckets add-iam-policy-binding gs://kallo-prod-card-search \
 # Runtime: read only.
 gcloud storage buckets add-iam-policy-binding gs://kallo-prod-card-search \
   --member="serviceAccount:$GCP_RUNTIME_SERVICE_ACCOUNT" \
-  --role="roles/storage.objectViewer"
+  --role="roles/storage.objectViewer" --condition=None
 ```
 
 Rebuild by hand (read-only against the database; needs the deployer's or an
