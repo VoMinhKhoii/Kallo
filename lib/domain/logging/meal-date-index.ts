@@ -11,9 +11,8 @@ import type { MealDateSummary } from './types';
  *
  * The distinction that matters is between the last two. `kcal()` answers "what
  * did this day come to", and `null` is a real answer: we do not know. It is
- * returned for a day whose meals carry no calorie data, for a day that also
- * holds a staged card, for a day the server's scan could not reach — and for a
- * day with nothing on it at all. `has()` is the only way to tell that last case
+ * returned for a day whose meals carry no calorie data, for a day holding only
+ * staged cards — and for a day with nothing on it at all. `has()` is the only way to tell that last case
  * from the others, which is why it is a separate question rather than a
  * `.get(date) !== undefined` a caller has to remember to write.
  */

@@ -22,7 +22,7 @@ interface TimelineSidebarProps {
    * carry no number.
    *
    * `has(date)` and `kcal(date)` are deliberately separate questions: a day
-   * can hold a staged card and still have no total worth showing, and a bare
+   * can hold only a staged card and so have no total to show, and a bare
    * map conflated that with holding nothing at all.
    */
   mealDates: MealDateIndex;
