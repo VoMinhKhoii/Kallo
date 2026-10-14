@@ -37,7 +37,8 @@ function session(
             refreshed.map(({ maxAge, ...c }) => ({
               ...c,
               options: { path: '/', maxAge },
-            }))
+            })),
+            { 'Cache-Control': 'private, no-store', Expires: '0' }
           );
         }
         return { data: { user }, error };
@@ -118,6 +119,16 @@ describe('signed-out visitor', () => {
     expect(header).toContain('Max-Age=0');
   });
 
+  it('keeps a CDN from caching the cookie-clearing redirect', async () => {
+    session(null, null, [
+      { name: 'sb-project-auth-token', value: '', maxAge: 0 },
+    ]);
+    const response = await run('/en/dashboard');
+
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('expires')).toBe('0');
+  });
+
   it('leaves /admin to its 404 rather than naming it', async () => {
     expect(await location('/en/admin/prompts')).toBeNull();
   });
@@ -188,5 +199,15 @@ describe('signed-in visitor', () => {
 
   it('leaves the bare root to next-intl so the locale is negotiated', async () => {
     expect(await location('/')).toBeNull();
+  });
+
+  it('keeps a CDN from caching a page that rotated the session', async () => {
+    session({ id: 'user-1' }, null, [
+      { name: 'sb-project-auth-token', value: 'rotated' },
+    ]);
+    const response = await run('/en/dashboard');
+
+    expect(response.headers.get('set-cookie')).toContain('rotated');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
 });
