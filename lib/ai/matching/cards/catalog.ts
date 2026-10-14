@@ -56,16 +56,35 @@ type CatalogQueryRow = {
 
 const NOT_READY_RETRY_MS = 60_000;
 const READY_REFRESH_MS = 30 * 60_000;
-let cache: {
-  at: number;
-  ready: boolean;
-  catalog: Promise<CardCatalog | null>;
-} | null = null;
-let refreshing = false;
+
+interface CatalogState {
+  cache: {
+    at: number;
+    ready: boolean;
+    catalog: Promise<CardCatalog | null>;
+  } | null;
+  refreshing: boolean;
+}
+
+/**
+ * Process-wide, not module-level: Next bundles this module separately into the
+ * boot hook (`instrumentation.ts`) and into each route that matches meals, as
+ * separate instances (seen in the prod image, 2026-10-14). With module-level
+ * state the boot warm would load a catalog no route reads; on `globalThis`
+ * every copy shares one load. It also outlives hot reloads in `next dev`:
+ * after editing this file or the index builders, restart the dev server (or
+ * wait for the 30-minute refresh) to see the change.
+ */
+const STATE_KEY = Symbol.for('kallo.cardCatalog');
+const globals = globalThis as { [STATE_KEY]?: CatalogState };
+globals[STATE_KEY] ??= { cache: null, refreshing: false };
+const state = globals[STATE_KEY];
 
 export function getCardCatalog(db: AppDb): Promise<CardCatalog | null> {
+  const cache = state.cache;
   if (cache?.ready) {
-    if (Date.now() - cache.at >= READY_REFRESH_MS && !refreshing) refresh(db);
+    if (Date.now() - cache.at >= READY_REFRESH_MS && !state.refreshing)
+      refresh(db);
     return cache.catalog;
   }
   if (cache && Date.now() - cache.at < NOT_READY_RETRY_MS) return cache.catalog;
@@ -83,7 +102,7 @@ export function getCardCatalog(db: AppDb): Promise<CardCatalog | null> {
   entry.catalog.then((c) => {
     entry.ready = c !== null;
   });
-  cache = entry;
+  state.cache = entry;
   return entry.catalog;
 }
 
@@ -93,11 +112,11 @@ export function getCardCatalog(db: AppDb): Promise<CardCatalog | null> {
  * legacy matcher (not ready) instead of mixing two card generations.
  */
 function refresh(db: AppDb): void {
-  refreshing = true;
+  state.refreshing = true;
   const at = Date.now();
   loadCatalog(db)
     .then((catalog) => {
-      cache = {
+      state.cache = {
         at,
         ready: catalog !== null,
         catalog: Promise.resolve(catalog),
@@ -109,22 +128,23 @@ function refresh(db: AppDb): void {
         err
       );
       // Retry after the not-ready interval, not a full refresh interval.
-      if (cache) cache.at = Date.now() - READY_REFRESH_MS + NOT_READY_RETRY_MS;
+      if (state.cache)
+        state.cache.at = Date.now() - READY_REFRESH_MS + NOT_READY_RETRY_MS;
     })
     .finally(() => {
-      refreshing = false;
+      state.refreshing = false;
     });
 }
 
 /** True once the catalog has loaded in this process (sync, no I/O). */
 export function isCardCatalogReady(): boolean {
-  return cache?.ready ?? false;
+  return state.cache?.ready ?? false;
 }
 
 /** Visible for testing. */
 export function __resetCardCatalogForTests() {
-  cache = null;
-  refreshing = false;
+  state.cache = null;
+  state.refreshing = false;
 }
 
 const present = (s: string | null | undefined): s is string =>

@@ -378,6 +378,19 @@ describe('matchCardCandidates', () => {
     expect(texts[0]).toContain('to_regclass');
   });
 
+  it('shares one catalog load between separately bundled copies of the module', async () => {
+    // Next bundles catalog.ts into the boot hook and into each route as
+    // separate module instances; the boot warm must reach the route's copy.
+    const db = mockDb(true, []);
+    const first = await getCardCatalog(db);
+    vi.resetModules();
+    const copy = await import('../catalog');
+
+    expect(await copy.getCardCatalog(db)).toBe(first);
+    expect(copy.isCardCatalogReady()).toBe(true);
+    expect(db.transaction).toHaveBeenCalledTimes(1);
+  });
+
   it('re-reads a ready catalog after 30 minutes and hands back to legacy mid-backfill', async () => {
     vi.useFakeTimers();
     let ready = true;
