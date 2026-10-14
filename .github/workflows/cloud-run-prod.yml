@@ -65,6 +65,8 @@ jobs:
       KALLO_PROD_PROJECT_ID: ${{ secrets.KALLO_PROD_PROJECT_ID }}
       BILLING_ENFORCEMENT_ENABLED: ${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}
       BILLING_PURCHASES_ENABLED: ${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}
+      # Where the card search artifact builder publishes (one bucket per env).
+      CARD_INDEX_BUCKET: kallo-prod-card-search
     steps:
       - uses: actions/checkout@v4
         with:
@@ -211,8 +213,8 @@ jobs:
       # it the script fails on the first embedContent call. On Vertex the batch
       # pacing drops from 35s to 2s (the 35s existed only for the AI Studio free
       # tier's 100 req/min), so the step is no longer rate-limit bound.
+      # Every deploy: the card search artifact step below runs bun scripts too.
       - uses: ./.github/actions/setup-bun
-        if: steps.embed_check.outputs.pending != '0' || steps.card_embed_check.outputs.pending != '0'
       - name: Backfill food embeddings
         if: steps.embed_check.outputs.pending != '0'
         timeout-minutes: 15
@@ -234,6 +236,25 @@ jobs:
           GOOGLE_CLOUD_LOCATION: global
           GOOGLE_CLOUD_EMBEDDING_LOCATION: asia-southeast1
         run: bun scripts/db/backfill_card_embeddings.ts
+      # The card search artifact (catalog + vector index) the containers load,
+      # built from the card data the steps above just migrated and embedded.
+      # The builder fingerprints that data in Postgres and reuses a published
+      # build when nothing changed, so most deploys read one small row; a
+      # rebuild reads ~90 MB. Nothing is published unless its parity gate
+      # passes, and a failure fails the deploy like the backfill above.
+      # Deploying a commit from before the builder existed skips the step.
+      # Bucket and IAM: docs/GOOGLE_CLOUD_RUN.md ("Card search artifact").
+      - name: Build card search artifact
+        timeout-minutes: 15
+        env:
+          DATABASE_URL: ${{ env.PROD_DATABASE_URL }}
+        run: |
+          builder=scripts/data/food-cards/search-artifact/build-search-artifact.ts
+          if [ ! -f "$builder" ]; then
+            echo "This commit predates the card search artifact; skipping."
+            exit 0
+          fi
+          bun "$builder" --bucket "$CARD_INDEX_BUCKET"
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
@@ -429,7 +450,7 @@ jobs:
         run: |
           revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ env.PROD_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
           url="$(gcloud run services describe "$SERVICE_NAME" --region="${{ env.PROD_REGION }}" --format='value(status.url)' 2>/dev/null || true)"
-          echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"$IMAGE_URI\",\"revision\":\"$revision\",\"url\":\"$url\",\"commit_sha\":\"${{ env.DEPLOY_SHA }}\",\"smoke\":\"${{ steps.smoke.outcome }}\"}" > deployment-record.json
+          echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"$IMAGE_URI\",\"revision\":\"$revision\",\"url\":\"$url\",\"commit_sha\":\"${{ env.DEPLOY_SHA }}\",\"card_index_uri\":\"${CARD_INDEX_URI:-}\",\"smoke\":\"${{ steps.smoke.outcome }}\"}" > deployment-record.json
       - uses: actions/upload-artifact@v7
         if: always()
         with:

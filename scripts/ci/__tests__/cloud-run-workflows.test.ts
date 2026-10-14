@@ -90,6 +90,35 @@ describe('Cloud Run prod workflow', () => {
     expect(workflow).toContain('bun scripts/db/backfill_card_embeddings.ts');
   });
 
+  it('builds the card search artifact after the card backfill, skipping older commits', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+    const step = workflow.indexOf('- name: Build card search artifact');
+    const backfill = workflow.indexOf('- name: Backfill food-card embeddings');
+    const digest = workflow.indexOf('- name: Resolve image digest');
+
+    expect(step).toBeGreaterThan(backfill);
+    expect(step).toBeLessThan(digest);
+    const body = workflow.slice(step, digest);
+    // A redeploy checks out an older DEPLOY_SHA that may not have the builder.
+    expect(body).toContain('if [ ! -f "$builder" ]; then');
+    expect(body).toContain('bun "$builder" --bucket "$CARD_INDEX_BUCKET"');
+    expect(body).toContain('DATABASE_URL: ${{ env.PROD_DATABASE_URL }}');
+    expect(workflow).toContain('CARD_INDEX_BUCKET: kallo-prod-card-search');
+    // bun must be set up on every deploy now, not only when a backfill runs.
+    expect(workflow).toMatch(
+      /- uses: \.\/\.github\/actions\/setup-bun\n\s+- name: Backfill food embeddings/
+    );
+    expect(
+      existsSync(
+        'scripts/data/food-cards/search-artifact/build-search-artifact.ts'
+      )
+    ).toBe(true);
+    // The deploy record names the artifact each revision was deployed with.
+    expect(workflow).toContain(
+      '\\"card_index_uri\\":\\"${CARD_INDEX_URI:-}\\"'
+    );
+  });
+
   it('wires billing secrets and dark-launch controls into prod', () => {
     const workflow = readWorkflow('cloud-run-prod.yml');
 
