@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { landingStructuredData } from '@/lib/seo/structured-data';
 
 const graph = landingStructuredData({
-  locale: 'en',
-  name: 'Kallo',
+  locale: 'vi',
   description: 'Describe what you ate.',
 })['@graph'] as Array<Record<string, unknown>>;
 
@@ -77,5 +76,17 @@ describe('the Organization node', () => {
     const json = JSON.stringify(graph);
     expect(json).not.toContain('aggregateRating');
     expect(json).not.toContain('"review"');
+  });
+});
+
+describe('the WebSite node', () => {
+  const website = graph.find((node) => node['@type'] === 'WebSite');
+
+  it('names the brand at the domain root on every locale', () => {
+    // Google takes the site name from WebSite markup at the domain root only;
+    // a locale URL or the localized page title would not count as one.
+    expect(website?.name).toBe('Kallo');
+    expect(website?.url).toBe('https://kallo.fit/');
+    expect(website?.alternateName).toBe('kallo.fit');
   });
 });

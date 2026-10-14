@@ -15,6 +15,7 @@ One concern per folder. Nothing lives at this top level except this file.
 | `enrich/` | NIN food enrichment ingestion |
 | `eval/` | the AI pipeline eval harness; `eval/local/` holds throwaway probes |
 | `ops/` | scheduled/manual production operations (deletions, webhook upkeep) |
+| `seo/` | search-engine notifications — `indexnow.ts` pushes public pages to Bing & co. after they change |
 
 Tests sit in a `__tests__/` folder next to the code they cover.
 

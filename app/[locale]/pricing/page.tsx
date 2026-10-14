@@ -92,7 +92,7 @@ export default function PricingPage({
         {/* pt-20 clears the fixed header; the cards then centre in what is left. */}
         <main className="flex min-h-dvh flex-col justify-center bg-kallo-hover pt-20">
           <PricingBackLink />
-          <PricingSection />
+          <PricingSection titleAs="h1" />
         </main>
         <AuthDialog />
         {/* The runtime Google client ID; the rest of the page is prerendered. */}

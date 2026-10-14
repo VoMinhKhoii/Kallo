@@ -23,12 +23,9 @@ export const LINKEDIN_URL = 'https://www.linkedin.com/company/kallo-fit/';
  */
 export function landingStructuredData({
   locale,
-  name,
   description,
 }: {
   locale: string;
-  /** Localized product name — `metadata.root.title`. */
-  name: string;
   /** Localized one-liner — `metadata.root.description`. */
   description: string;
 }) {
@@ -87,11 +84,17 @@ export function landingStructuredData({
           },
         ],
       },
+      // Google reads this node for the site name it prints above a result, and
+      // only accepts it for the domain root: `url` is the bare origin even on
+      // /en and /vi (`/` redirects to them), and `name` is the brand alone. The
+      // localized page title (`metadata.root.title`) is a search pitch, not a
+      // name, and is what Google would otherwise show as the site name.
       {
         '@type': 'WebSite',
         '@id': `${SITE_URL}/#website`,
-        url,
-        name,
+        url: `${SITE_URL}/`,
+        name: 'Kallo',
+        alternateName: 'kallo.fit',
         description,
         inLanguage: locale,
         publisher: { '@id': `${SITE_URL}/#organization` },
