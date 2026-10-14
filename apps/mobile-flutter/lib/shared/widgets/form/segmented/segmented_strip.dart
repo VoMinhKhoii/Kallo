@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
-import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
 import 'segmented_thumb.dart';
 import 'segmented_tone.dart';
@@ -48,8 +47,11 @@ class OptionStripItem {
 /// **A pill on a pill** (onboarding canvas, 2026-09-05): the [KalloColors.track]
 /// track, fully rounded, under a white fully-rounded thumb — the stadium the
 /// 52pt fields and full-width buttons already use, so the three primitives
-/// share one shape. 36pt visual inside a 44pt tap target, two layers,
-/// because a 44pt track makes a three-way picker button-tall.
+/// share one shape. Sized and drawn like iOS 26's own control (owner,
+/// 2026-10-14, after the Claude iOS app's switch): a 42pt track, the thumb
+/// 2pt inside it with a hairline rim, every label ink and the chosen one 500
+/// (Be Vietnam Pro's 600 reads heavier than SF's). The 36pt track with muted
+/// labels it replaced read as a web toggle. Taps still span the full 44pt.
 ///
 /// **The thumb pops, then travels** — [SegmentedThumb] owns that motion and
 /// the reasoning behind it.
@@ -70,7 +72,7 @@ class SegmentedStrip extends StatefulWidget {
   final int activeIndex;
   final ValueChanged<String> onChange;
 
-  static const double height = 36, target = 44, inset = 3;
+  static const double height = 42, target = 44, inset = 2;
 
   @override
   State<SegmentedStrip> createState() => _SegmentedStripState();
@@ -135,6 +137,7 @@ class _SegmentedStripState extends State<SegmentedStrip> {
             activeIndex: widget.activeIndex,
             count: widget.options.length,
             color: widget.tone.thumb,
+            rim: widget.tone.rim,
             raised: widget.tone.thumbShadow,
           ),
         Row(
@@ -150,50 +153,47 @@ class _SegmentedStripState extends State<SegmentedStrip> {
   /// A glyph inside a segment's text run (`OptionStripItem.icon`).
   static const double _inlineGlyph = 16;
 
-  /// Ink on the active segment, muted beside it — colour marks the selection,
-  /// never weight. Only the colour animates, so the paragraph repaints rather
-  /// than re-measuring; [FittedBox] shrinks the longest label at the top of
-  /// the Dynamic Type range instead of clipping it.
+  /// One colour for every label; the active one is medium, as iOS sets its
+  /// selected segment a weight up. The
+  /// weight changes on the tap, while the thumb is still on its way — the
+  /// system control does the same. [FittedBox] shrinks the longest label at
+  /// the top of the Dynamic Type range (or a heavier one in a tight segment)
+  /// instead of clipping it.
   Widget _label(int i) => Padding(
     padding: EdgeInsets.symmetric(horizontal: widget.tone.labelInset),
     child: Center(child: _labelText(i)),
   );
 
   Widget _labelText(int i) {
-    final tone = widget.tone;
-    return TweenAnimationBuilder<Color?>(
-      duration: KalloMotion.quick,
-      curve: KalloEase.standard,
-      tween: ColorTween(end: i == widget.activeIndex ? tone.on : tone.off),
-      builder:
-          (context, color, child) => FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // An item's glyph rides inside the text run, so it takes the
-                // label's colour and the inline 16 — not a 24pt tier glyph.
-                if (widget.options[i].icon != null) ...[
-                  Icon(
-                    widget.options[i].icon,
-                    size: _inlineGlyph,
-                    color: color ?? tone.off,
-                  ),
-                  const SizedBox(width: KalloSpacing.sp1 + 2),
-                ],
-                Text(
-                  widget.options[i].label,
-                  maxLines: 1,
-                  softWrap: false,
-                  style: dashBody(color: color ?? tone.off),
-                ),
-                if (widget.options[i].badge != null) ...[
-                  const SizedBox(width: KalloSpacing.sp2),
-                  widget.options[i].badge!,
-                ],
-              ],
+    final color = widget.tone.label;
+    final option = widget.options[i];
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // An item's glyph rides inside the text run, so it takes the
+          // label's colour and the inline 16 — not a 24pt tier glyph.
+          if (option.icon != null) ...[
+            Icon(option.icon, size: _inlineGlyph, color: color),
+            const SizedBox(width: KalloSpacing.sp1 + 2),
+          ],
+          Text(
+            option.label,
+            maxLines: 1,
+            softWrap: false,
+            style: dashBody(
+              color: color,
+              weight:
+                  i == widget.activeIndex ? FontWeight.w500 : FontWeight.w400,
             ),
           ),
+          if (option.badge != null) ...[
+            const SizedBox(width: KalloSpacing.sp2),
+            option.badge!,
+          ],
+        ],
+      ),
     );
   }
 }

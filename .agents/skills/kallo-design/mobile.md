@@ -98,9 +98,10 @@ swatch, and the weight had been re-decided per widget, so "Gửi góp ý" and
 "Lưu tên" two screens apart wore different weights; 2026-09-28 it stepped down
 to 500 because every button in the app read too bold — the confirm dialog's
 affirmative and the sign-in buttons followed). This is the ONE sanctioned 500:
-a button label, never a data, label or figure role. A
-selected segment, today's day number, the total row: all regular, told apart
-by ink versus muted. Serif is never bold. If something needs to stand out and colour is not enough, the
+a button label, never a data, label or figure role — plus one more, the
+selected label of a segmented control (2026-10-14, matching iOS 26's own
+control: every segment ink, the chosen one 500 on a rimmed thumb). Today's day
+number, the total row: all regular, told apart by ink versus muted. Serif is never bold. If something needs to stand out and colour is not enough, the
 answer is size or position, not weight.
 
 **Body 16 vs Name 15.** Two 16s stacked — a w600 name over a w400 body — read as
@@ -474,7 +475,7 @@ so there is nothing to prefer over it.
 | `AlertDialog` / `showDialog` | `showKalloConfirm` (a Cupertino alert route) | ✅ done |
 | `Switch` / `Switch.adaptive` | `CupertinoSwitch` | **migrating 2026-09-19.** Retires the `trackColor` workaround `Switch.adaptive` needed, since `_SwitchThemeAdaptation.adapt()` discards the ambient theme on iOS |
 | `TextField` | `CupertinoTextField` (`CupertinoSearchTextField` for a search row) | **18 sites.** The decoration currently comes from `inputDecorationTheme`; it is a flat map and re-expresses as one `BoxDecoration` |
-| a segmented control | `CupertinoSlidingSegmentedControl` | `SegmentedStrip` — **exception**: a **pill** track and thumb, which is the iOS 26 shape; Flutter's Cupertino control still draws the iOS 13–18 rounded rectangle (private `_kCornerRadius` 9 / `_kThumbRadius` 7, no shape parameter — cited in `segmented_strip.dart`; retire when the SDK draws the capsule). An `OptionStripItem.icon` draws inline before its label (feedback's bug / sprout / lightbulb). The `.onboarding`/`.settings` hint skins retired 2026-09-24 with their last callers: a choice that needs a hint is an `OptionRow` with a subline |
+| a segmented control | `CupertinoSlidingSegmentedControl` | `SegmentedStrip` — **exception**: a **pill** track and thumb, which is the iOS 26 shape (42pt track, thumb 2pt inside it with a 0.5pt rim, every label ink, the selected one 500 — measured off the Claude iOS app's switch, 2026-10-14); Flutter's Cupertino control still draws the iOS 13–18 rounded rectangle (private `_kCornerRadius` 9 / `_kThumbRadius` 7, no shape parameter — cited in `segmented_strip.dart`; retire when the SDK draws the capsule). An `OptionStripItem.icon` draws inline before its label (feedback's bug / sprout / lightbulb). The `.onboarding`/`.settings` hint skins retired 2026-09-24 with their last callers: a choice that needs a hint is an `OptionRow` with a subline |
 | `Slider` | `CupertinoSlider` | **1 site** (`cheat_slider_card.dart`; Settings' `AggressionSlider` retired 2026-09-24 — the goal page uses onboarding's pace ruler). No `SliderTheme` — the 4pt track and 9pt thumb are not expressible |
 | `Scaffold` | `CupertinoPageScaffold` | 8 sites. `tab_scaffold.dart` stays on `Scaffold`: `extendBody` + the `MediaQuery.padding.bottom` rewrite that lets the pill nav overlap content has no Cupertino analogue |
 | long-press menu | `showKalloAnchoredMenu` | **exception** — cites `_kOpenScale = 1.15` and `_previewLongPressTimeout = 800ms`, boundary 3 |

@@ -26,6 +26,7 @@ class SegmentedThumb extends StatefulWidget {
     required this.activeIndex,
     required this.count,
     this.color = kCardSurface,
+    this.rim,
     this.raised = true,
     super.key,
   });
@@ -39,6 +40,17 @@ class SegmentedThumb extends StatefulWidget {
   /// thumb off a warm track (a glass thumb over a photo has nothing to lift).
   final Color color;
   final bool raised;
+
+  /// A hairline edge around the pill, so it reads as a raised piece rather
+  /// than a flat fill; none when null.
+  final Color? rim;
+
+  /// The lift under a raised thumb: a soft spread plus a tight contact line,
+  /// the two layers iOS draws under its segmented thumb.
+  static const List<BoxShadow> lift = [
+    BoxShadow(color: Color(0x12141413), blurRadius: 6, offset: Offset(0, 2)),
+    BoxShadow(color: Color(0x0A141413), blurRadius: 1, offset: Offset(0, 0.5)),
+  ];
 
   static const double peakScale = 1.04;
 
@@ -117,7 +129,11 @@ class _SegmentedThumbState extends State<SegmentedThumb>
             borderRadius: const BorderRadius.all(
               Radius.circular(KalloRadii.pill),
             ),
-            boxShadow: widget.raised ? const [KalloShadows.sm] : null,
+            border:
+                widget.rim == null
+                    ? null
+                    : Border.all(color: widget.rim!, width: 0.5),
+            boxShadow: widget.raised ? SegmentedThumb.lift : null,
           ),
         ),
       ),
