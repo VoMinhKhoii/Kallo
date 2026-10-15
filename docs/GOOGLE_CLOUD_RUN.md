@@ -245,10 +245,11 @@ not set; otherwise it smokes as before.
 - **A hung worker.** A search gets at most 2 s; the worker is replaced after
   three searches in a row that had the full 2 s and still got no answer, spread
   over at least 2 s (one stall that times out several searches at once is not
-  a hang). Any answer starts the count over, a late one included: a worker
-  that answers every search after 2 s (overloaded, not hung) is never replaced,
-  since a new one would be no faster, and its meals wait the 2 s, then match
-  on the word arms. A search cut short by its meal's deadline never counts, so
+  a hang). A successful answer, a late one included, starts the count over if
+  it lands before the worker is replaced (an error answer does not): a worker
+  that is overloaded but still answering is mostly left in place, since a new
+  one would be no faster, and its meals wait the 2 s, then match on the word
+  arms. A search cut short by its meal's deadline never counts, so
   if every meal reaching a hung worker already has under 2 s left, the worker
   is not replaced: those meals keep matching on the word arms until a meal with
   time left trips it, or the container recycles.
