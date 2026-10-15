@@ -429,6 +429,15 @@ describe('Card index refresh workflow', () => {
     );
   });
 
+  // The lease runs from the checked-out commit (an older one on a redeploy),
+  // so serialization must not depend on it.
+  it('runs one prod deploy at a time, enforced by GitHub', () => {
+    const prod = readWorkflow('cloud-run-prod.yml');
+    expect(prod).toMatch(
+      /\nconcurrency:\n {2}group: cloud-run-prod\n {2}cancel-in-progress: false\n/
+    );
+  });
+
   it('has the prod deploy re-check the serving commit after approval, under the lease', () => {
     const prod = readWorkflow('cloud-run-prod.yml');
     expect(prod).toMatch(/\n {6}expected_serving_sha:\n/);

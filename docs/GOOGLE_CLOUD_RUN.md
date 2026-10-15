@@ -255,7 +255,11 @@ build that does not load, not a flake to retry around.
   approval like any other. That deploy carries `expected_serving_sha`: after
   approval, under the lease, it stops before changing anything unless that
   commit still serves, so approving a stale refresh never rolls back a newer
-  release. The refresh skips while a prod deploy is open, while traffic is
+  release. That check holds because prod deploys run one at a time: the
+  workflow's `concurrency: cloud-run-prod` group serializes them (a run waiting
+  for approval holds the slot, so reject a stale one to let a newer deploy
+  start), independently of the lease script, which runs from the checked-out
+  commit and, before 2026-10-15, reported a held lease as acquired. The refresh skips while a prod deploy is open, while traffic is
   split, and when the kill switch is on. Run it by hand after a data edit:
   `gh workflow run card-index-refresh.yml --ref main`.
 - **Kill switch.** `CARD_INDEX_ENABLED=false` sends every search back to the

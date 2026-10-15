@@ -34,6 +34,16 @@ permissions:
   contents: read
   id-token: write
 
+# One prod deploy at a time, enforced by GitHub. The lease below serializes
+# deploys against translations too, but it runs from the checked-out commit,
+# an older one on a redeploy, and before 2026-10-15 its acquire reported a
+# held lease as acquired. This group does not depend on the checkout. A run
+# waiting for approval holds the slot (approve or reject it to let the next
+# one start); a newer dispatch replaces one still pending.
+concurrency:
+  group: cloud-run-prod
+  cancel-in-progress: false
+
 jobs:
   deploy-prod:
     # Manual-only, and only from main — dispatching the workflow on a feature
