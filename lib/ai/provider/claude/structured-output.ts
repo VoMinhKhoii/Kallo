@@ -62,11 +62,12 @@ export function systemBlocks(systemPrompt: string): Anthropic.TextBlockParam[] {
 /** Claude usage, reported in the counters the trace and budget code read. */
 function toUsageMetadata(usage: Anthropic.Usage): StreamUsageMetadata {
   const cached = usage.cache_read_input_tokens ?? 0;
+  const written = usage.cache_creation_input_tokens ?? 0;
   return {
-    promptTokenCount:
-      usage.input_tokens + cached + (usage.cache_creation_input_tokens ?? 0),
+    promptTokenCount: usage.input_tokens + cached + written,
     candidatesTokenCount: usage.output_tokens,
     cachedContentTokenCount: cached,
+    cacheWriteTokenCount: written,
     thoughtsTokenCount: 0,
   };
 }

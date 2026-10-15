@@ -638,6 +638,13 @@
       "when": 1792029600000,
       "tag": "20261015020000_drop_supabase_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1792074968580,
+      "tag": "20261015143608_budget_events_cost_latency",
+      "breakpoints": true
     }
   ]
 }

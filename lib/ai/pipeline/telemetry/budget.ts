@@ -1,3 +1,4 @@
+import { attemptCostUsd } from '@/lib/ai/cost/pricing';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import { isClaudeModel, type StreamOptions } from '@/lib/ai/provider/provider';
 import type { AppDb } from '@/lib/infra/db/client';
@@ -57,32 +58,52 @@ export function createBudgetAttemptRecorder(args: {
     model,
     outputTokens,
     cachedTokens,
+    cacheWriteTokens,
     thoughtTokens,
+    latencyMs,
+    fallbackFrom,
   }) => {
-    const errorCategory = error == null ? null : classifyProviderError(error);
+    // Every finished attempt is a row, so call counts, error rates and
+    // latency see all of them. A failure no provider category fits (a schema
+    // slip, a refusal) is `unknown`; the provider-pressure guard skips those.
+    const errorCategory =
+      error == null ? null : (classifyProviderError(error) ?? 'unknown');
 
-    if (inputTokens == null && outputTokens == null && errorCategory == null) {
-      return;
-    }
-
-    if (errorCategory) {
+    if (errorCategory && errorCategory !== 'unknown') {
       if (args.providerErrorState) {
         args.providerErrorState.recorded = true;
       }
     }
+
+    const ranModel = model || args.model;
+    // No usage reported → cost unknown (null), not free.
+    const costUsd =
+      inputTokens == null && outputTokens == null
+        ? null
+        : attemptCostUsd(ranModel, {
+            inputTokens: inputTokens ?? 0,
+            cachedTokens: cachedTokens ?? 0,
+            cacheWriteTokens: cacheWriteTokens ?? 0,
+            outputTokens: outputTokens ?? 0,
+            thoughtTokens: thoughtTokens ?? 0,
+          });
 
     recordAnalysisModelBudgetEventBestEffort({
       db: args.db,
       requestId: args.requestId,
       route: args.route ?? ANALYSIS_MODEL_BUDGET_ROUTE,
       workKind: args.workKind,
-      provider: providerOf(model || args.model),
-      model: model || args.model,
+      provider: providerOf(ranModel),
+      model: ranModel,
       requestCount: 0,
       inputTokens,
       outputTokens,
       cachedTokens,
+      cacheWriteTokens,
       thoughtTokens,
+      costUsd,
+      latencyMs,
+      fallbackFrom: fallbackFrom ?? null,
       errorCategory,
     });
   };

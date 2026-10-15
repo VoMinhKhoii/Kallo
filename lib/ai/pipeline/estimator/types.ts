@@ -72,6 +72,10 @@ export interface EstimatorAttemptUsage extends AttemptTokens {
   attempt: number;
   model: string;
   error: unknown;
+  /** Wall time of this one attempt. */
+  latencyMs: number;
+  /** On a Gemini attempt re-running a failed Claude call: the Claude model. */
+  fallbackFrom?: string;
 }
 
 /**

@@ -58,7 +58,10 @@ export function withClaudeRouting(
         console.warn(
           `[llm] ${params.model} failed (${describe(err)}); re-running on ${options.fallbackModel}`
         );
-        return viaGemini(fallback, shiftAttempts(opts, counted.attempts()));
+        return viaGemini(
+          fallback,
+          fallbackHooks(opts, counted.attempts(), params.model)
+        );
       }
     };
   }
@@ -100,12 +103,16 @@ function countAttempts<O extends AttemptHooks>(opts: O | undefined) {
   };
 }
 
-/** Number the hooks' attempts from `offset + 1`. */
-function shiftAttempts<O extends AttemptHooks>(
+/**
+ * Hooks for the Gemini re-run of a failed Claude call: attempts are numbered
+ * from `offset + 1`, and each one reports the Claude model it stands in for.
+ */
+function fallbackHooks<O extends AttemptHooks>(
   opts: O | undefined,
-  offset: number
+  offset: number,
+  fallbackFrom: string
 ): O | undefined {
-  if (!opts || offset === 0) return opts;
+  if (!opts) return opts;
   return {
     ...opts,
     onAttemptStart: opts.onAttemptStart
@@ -113,7 +120,11 @@ function shiftAttempts<O extends AttemptHooks>(
       : undefined,
     onAttemptComplete: opts.onAttemptComplete
       ? (m: GeminiAttemptMetadata) =>
-          opts.onAttemptComplete?.({ ...m, attempt: offset + m.attempt })
+          opts.onAttemptComplete?.({
+            ...m,
+            attempt: offset + m.attempt,
+            fallbackFrom,
+          })
       : undefined,
   };
 }

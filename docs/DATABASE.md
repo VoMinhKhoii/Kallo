@@ -174,6 +174,8 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261013093000_drop_match_food_cards_function.sql` | B (Manual) | Drops `match_food_cards` (contract step after #444 deployed; plpgsql bodies are not dependencies, so the table's CASCADE would not) |
 | `20261013093015_drop_food_card_vectors.sql` | A (Drizzle) | `DROP TABLE food_card_vectors CASCADE` (its indexes and RLS policy go with it); `food_card_texts` + `food_card_text_rows` replaced it |
 | `20261015020000_drop_supabase_storage_policies.sql` | B (Manual, journaled) | Drops every remaining `storage.objects` policy of the retired Supabase buckets (`feedback_screenshots_*`, `nutrition_labels_*`, `avatars_*`, all `IF EXISTS`) after #416 moved uploads to R2; the buckets are emptied and deleted afterwards through the Storage API by `scripts/ops/delete-supabase-storage-buckets.ts` (`docs/STORAGE.md`) |
+| `20261015143608_budget_events_cost_latency.sql` | A (Drizzle) | `analysis_model_budget_events` gains `cache_write_tokens` (default 0), `cost_usd numeric(12,8)`, `latency_ms` and `fallback_from`, with non-negative CHECKs; the app writes them per attempt (`docs/AI_COST.md`) |
+| `20261015143620_budget_events_cost_backfill_and_view.sql` | B (Manual) | Prices pre-existing attempt rows' `cost_usd` from a 2026-10-15 snapshot of the rate card (reservation rows, unpriced models and zero-token attempts stay NULL); appends the cost inputs and new columns to `analytics.v_budget_events` for the admin dashboard |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

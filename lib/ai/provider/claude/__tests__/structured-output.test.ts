@@ -24,6 +24,8 @@ interface Reply {
   error?: Error;
   /** The SDK's message snapshot when the stream fails (after message_start). */
   current?: { usage: typeof USAGE };
+  /** The final message's usage; defaults to `USAGE`. */
+  usage?: typeof USAGE;
 }
 
 const USAGE = {
@@ -50,7 +52,10 @@ function fakeClaude(replies: Reply[]) {
         const third = Math.ceil(reply.text.length / 3);
         for (let i = 0; i < reply.text.length; i += third)
           onText(reply.text.slice(i, i + third));
-        return { stop_reason: reply.stop ?? 'end_turn', usage: USAGE };
+        return {
+          stop_reason: reply.stop ?? 'end_turn',
+          usage: reply.usage ?? USAGE,
+        };
       },
     };
   });
@@ -221,7 +226,32 @@ describe('createClaudeStructuredOutput', () => {
       inputTokens: 3100,
       outputTokens: 40,
       cachedTokens: 3000,
+      cacheWriteTokens: 0,
       thoughtTokens: 0,
+      latencyMs: expect.any(Number),
+    });
+  });
+
+  it('reports cache writes on their own, still counted in the prompt', async () => {
+    const { client } = fakeClaude([
+      {
+        text: '{"dish":"Phở bò","grams":450}',
+        usage: {
+          ...USAGE,
+          cache_read_input_tokens: 0,
+          cache_creation_input_tokens: 2900,
+        },
+      },
+    ]);
+    const onAttemptComplete = vi.fn();
+    await createClaudeStructuredOutput(client).generateStructuredOutput(
+      params(),
+      { onAttemptComplete }
+    );
+    expect(onAttemptComplete.mock.calls[0][0]).toMatchObject({
+      inputTokens: 3000,
+      cachedTokens: 0,
+      cacheWriteTokens: 2900,
     });
   });
 

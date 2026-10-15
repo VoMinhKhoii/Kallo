@@ -1,6 +1,6 @@
 # AI cost: where spend is recorded and how to read it
 
-Every Gemini attempt we pay for writes one row to `analysis_model_budget_events`.
+Every model attempt (Gemini or Claude) writes one row to `analysis_model_budget_events`.
 The table is always on in prod (`ANALYSIS_BUDGET_EVENTS_ENABLED=false` silences
 it) and is the source of truth for spend. `pipeline_llm_calls` and
 `pipeline_llm_call_metadata` carry the same counts plus the prompt text, but only
@@ -14,15 +14,25 @@ when `PIPELINE_TRACE_ENABLED=true`.
 | `request_id` | the analysis request; `null` for label OCR |
 | `request_count` | `1` on the one reservation row per analysis (no tokens), `0` on every attempt row |
 | `input_tokens` | prompt tokens, cached ones included |
-| `cached_tokens` | the part of `input_tokens` served from Gemini's cache (billed ~10%) |
+| `cached_tokens` | the part of `input_tokens` served from the provider cache (billed ~10%) |
+| `cache_write_tokens` | the part of `input_tokens` written to Claude's cache (billed 1.25x input); 0 for Gemini, and 0 on rows before 2026-10-15 |
 | `output_tokens` | visible response tokens |
 | `thought_tokens` | thinking tokens — billed as output, **not** included in `output_tokens` |
-| `error_category` | set on failed attempts (retries are separate rows) |
+| `cost_usd` | what the attempt cost, priced from `lib/ai/cost/pricing.ts` when the row is written. `NULL` (unknown, never zero) on the reservation row, an attempt that reported no usage, or a model not on the rate card. Rows before 2026-10-15 were backfilled from their tokens at that day's rates |
+| `latency_ms` | wall time of that one attempt; `NULL` on reservation rows and rows before 2026-10-15 |
+| `fallback_from` | on a Gemini attempt that re-ran a failed Claude call, the Claude model it stood in for. A Claude model run on Gemini because there is no `ANTHROPIC_API_KEY`, or because the call carries an image, is not a fallback and leaves it `NULL` |
+| `error_category` | set on failed attempts (retries are separate rows). A failure no provider category fits (a schema slip, a refusal) is `unknown`; the provider-pressure guard ignores those |
+
+Count model calls with `request_count = 0`: the reservation row is not a call.
+Every finished attempt is a row, including one whose provider sent no usage.
 
 Embeddings are not recorded: under 1% of spend (Vertex monitoring, 2026-09).
 
 ## Reading it
 
+- The admin dashboard (`admin.kallo.fit`, repo `kallo-aws-analytics`) reads
+  these rows through the allowlisted `analytics.v_budget_events` view, which
+  Kallo's migrations own.
 - `scripts/bench/ai-cost.sql` — daily spend by route/model, cost per analysis,
   cache hit rate and thinking share. Read-only; run it with `psql` against the
   target project.
@@ -37,9 +47,12 @@ Embeddings are not recorded: under 1% of spend (Vertex monitoring, 2026-09).
 ## Rates
 
 `lib/ai/cost/pricing.ts` holds the per-model rate card (input, cached input,
-output) with the date it was read. `scripts/bench/ai-cost.sql` repeats the rates
+output) with the date it was read, and `attemptCostUsd()`, which prices one
+attempt for `cost_usd`. `scripts/bench/ai-cost.sql` repeats the rates
 inline — update both together (`pricing.test.ts` fails when they drift). A model
-missing from the SQL card prices as `null`, never as zero.
+missing from the SQL card prices as `null`, never as zero. A rate change only
+affects rows written after it deploys; `cost_usd` on older rows keeps the old
+price.
 
 ## Costing an eval run
 

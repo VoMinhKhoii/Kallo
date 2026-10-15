@@ -101,6 +101,14 @@ export interface RecordAnalysisModelBudgetEventInput {
   cachedTokens?: number | null;
   /** Thinking tokens — billed as output, not included in `outputTokens`. */
   thoughtTokens?: number | null;
+  /** Subset of `inputTokens` written to Claude's cache (billed 1.25x input). */
+  cacheWriteTokens?: number | null;
+  /** USD the attempt cost; null when unknown (no usage, unpriced model). */
+  costUsd?: number | null;
+  /** Wall time of the attempt; null on rows that are not an attempt. */
+  latencyMs?: number | null;
+  /** The Claude model a Gemini attempt stood in for after it failed. */
+  fallbackFrom?: string | null;
   errorCategory?: AnalysisModelProviderErrorCategory | null;
 }
 

@@ -256,7 +256,9 @@ describe('generateStructuredOutput attempt usage', () => {
       inputTokens: 900,
       outputTokens: 40,
       cachedTokens: 600,
+      cacheWriteTokens: null,
       thoughtTokens: 250,
+      latencyMs: expect.any(Number),
       error: null,
     });
   });

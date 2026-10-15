@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { GeminiAttemptMetadata } from '@/lib/ai/provider/types';
 
 const { mockRecord } = vi.hoisted(() => ({
   mockRecord: vi.fn(() => Promise.resolve()),
@@ -17,6 +18,24 @@ import {
 
 const db = {} as never;
 
+/** One finished attempt; tests override what they look at. */
+function attemptOf(
+  overrides: Partial<GeminiAttemptMetadata> = {}
+): GeminiAttemptMetadata {
+  return {
+    attempt: 1,
+    model: 'm',
+    inputTokens: 1,
+    outputTokens: 1,
+    cachedTokens: null,
+    cacheWriteTokens: null,
+    thoughtTokens: null,
+    latencyMs: 1200,
+    error: null,
+    ...overrides,
+  };
+}
+
 describe('createBudgetAttemptRecorder', () => {
   beforeEach(() => mockRecord.mockClear());
 
@@ -27,15 +46,15 @@ describe('createBudgetAttemptRecorder', () => {
       workKind: 'primary',
       model: 'fallback-model',
     });
-    record({
-      attempt: 1,
-      model: 'gemini-3.1-flash-lite',
-      inputTokens: 6500,
-      outputTokens: 700,
-      cachedTokens: 6000,
-      thoughtTokens: 120,
-      error: null,
-    });
+    record(
+      attemptOf({
+        model: 'gemini-3.1-flash-lite',
+        inputTokens: 6500,
+        outputTokens: 700,
+        cachedTokens: 6000,
+        thoughtTokens: 120,
+      })
+    );
 
     expect(mockRecord).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -51,31 +70,72 @@ describe('createBudgetAttemptRecorder', () => {
     );
   });
 
-  it('files each attempt under the provider that ran it', () => {
+  it('prices the attempt from the rate card and keeps its latency', () => {
+    createBudgetAttemptRecorder({
+      db,
+      requestId: 'r1',
+      workKind: 'primary',
+      model: 'claude-haiku-5-5',
+    })(
+      attemptOf({
+        model: 'claude-haiku-5-5',
+        inputTokens: 5_000,
+        cachedTokens: 1_000,
+        cacheWriteTokens: 3_000,
+        outputTokens: 400,
+        latencyMs: 2_345,
+      })
+    );
+
+    const row = (mockRecord.mock.calls as unknown as unknown[][])[0]?.[0] as {
+      costUsd: number;
+      latencyMs: number;
+      cacheWriteTokens: number;
+      fallbackFrom: string | null;
+    };
+    // 1000 fresh × 0.10 + 1000 cached × 0.01 + 3000 written × 0.125 + 400 × 0.50.
+    expect(row.costUsd).toBeCloseTo(0.000685, 10);
+    expect(row.latencyMs).toBe(2_345);
+    expect(row.cacheWriteTokens).toBe(3_000);
+    expect(row.fallbackFrom).toBeNull();
+  });
+
+  it('files each attempt under the provider that ran it, marking the fallback', () => {
     const record = createBudgetAttemptRecorder({
       db,
       requestId: 'r1',
       workKind: 'primary',
       model: 'claude-haiku-5-5',
     });
-    const attempt = {
+    const failed = attemptOf({
       inputTokens: 100,
       outputTokens: 10,
-      cachedTokens: 0,
-      thoughtTokens: 0,
       error: new Error('429 rate limited'),
-    };
-    record({ ...attempt, attempt: 1, model: 'claude-haiku-5-5' });
+    });
+    record({ ...failed, attempt: 1, model: 'claude-haiku-5-5' });
     // The Gemini fallback of the same call.
-    record({ ...attempt, attempt: 2, model: 'gemini-3.1-flash-lite' });
+    record(
+      attemptOf({
+        attempt: 2,
+        model: 'gemini-3.1-flash-lite',
+        fallbackFrom: 'claude-haiku-5-5',
+      })
+    );
 
     expect(mockRecord).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ provider: 'anthropic' })
+      expect.objectContaining({
+        provider: 'anthropic',
+        errorCategory: 'rate_limit',
+        fallbackFrom: null,
+      })
     );
     expect(mockRecord).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ provider: 'gemini' })
+      expect.objectContaining({
+        provider: 'gemini',
+        fallbackFrom: 'claude-haiku-5-5',
+      })
     );
   });
 
@@ -86,38 +146,61 @@ describe('createBudgetAttemptRecorder', () => {
       workKind: 'primary',
       model: 'm',
       route: CHEAT_BUDGET_ROUTE,
-    })({
-      attempt: 1,
-      model: 'm',
-      inputTokens: 1,
-      outputTokens: 1,
-      cachedTokens: null,
-      thoughtTokens: null,
-      error: null,
-    });
+    })(attemptOf());
 
     expect(mockRecord).toHaveBeenCalledWith(
       expect.objectContaining({ route: CHEAT_BUDGET_ROUTE })
     );
   });
 
-  it('writes nothing for an attempt with no tokens and no classified error', () => {
+  it('records an attempt with no usage, its cost unknown rather than zero', () => {
+    createBudgetAttemptRecorder({
+      db,
+      requestId: null,
+      workKind: 'primary',
+      model: 'gemini-3.1-flash-lite',
+    })(
+      attemptOf({
+        model: 'gemini-3.1-flash-lite',
+        inputTokens: null,
+        outputTokens: null,
+      })
+    );
+
+    expect(mockRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ requestCount: 0, costUsd: null })
+    );
+  });
+
+  it('prices an unpriced model as null', () => {
     createBudgetAttemptRecorder({
       db,
       requestId: null,
       workKind: 'primary',
       model: 'm',
-    })({
-      attempt: 1,
-      model: 'm',
-      inputTokens: null,
-      outputTokens: null,
-      cachedTokens: null,
-      thoughtTokens: null,
-      error: null,
-    });
+    })(attemptOf({ model: 'some-new-model', inputTokens: 900 }));
 
-    expect(mockRecord).not.toHaveBeenCalled();
+    expect(mockRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ costUsd: null })
+    );
+  });
+
+  it('files a failure no provider category fits as unknown, without marking provider pressure', () => {
+    const providerErrorState = { recorded: false };
+    const slip = new Error('fewer meal items than the plan numbers');
+    slip.name = 'ZodError';
+    createBudgetAttemptRecorder({
+      db,
+      requestId: null,
+      workKind: 'primary',
+      model: 'm',
+      providerErrorState,
+    })(attemptOf({ error: slip }));
+
+    expect(mockRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ errorCategory: 'unknown' })
+    );
+    expect(providerErrorState.recorded).toBe(false);
   });
 
   it('reserves one request for a cheat analysis and records its attempts under the cheat route', () => {
@@ -137,15 +220,14 @@ describe('createBudgetAttemptRecorder', () => {
       })
     );
 
-    record({
-      attempt: 1,
-      model: 'gemini-3.1-flash-lite',
-      inputTokens: 900,
-      outputTokens: 200,
-      cachedTokens: null,
-      thoughtTokens: 1500,
-      error: null,
-    });
+    record(
+      attemptOf({
+        model: 'gemini-3.1-flash-lite',
+        inputTokens: 900,
+        outputTokens: 200,
+        thoughtTokens: 1500,
+      })
+    );
 
     expect(mockRecord).toHaveBeenCalledTimes(2);
     expect(mockRecord).toHaveBeenLastCalledWith(
