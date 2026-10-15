@@ -34,16 +34,6 @@ permissions:
   contents: read
   id-token: write
 
-# One prod deploy at a time, enforced by GitHub. The lease below serializes
-# deploys against translations too, but it runs from the checked-out commit,
-# an older one on a redeploy, and before 2026-10-15 its acquire reported a
-# held lease as acquired. This group does not depend on the checkout. A run
-# waiting for approval holds the slot (approve or reject it to let the next
-# one start); a newer dispatch replaces one still pending.
-concurrency:
-  group: cloud-run-prod
-  cancel-in-progress: false
-
 jobs:
   deploy-prod:
     # Manual-only, and only from main — dispatching the workflow on a feature
@@ -88,6 +78,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.DEPLOY_SHA }}
+      # The lease script comes from this workflow's own commit, never from
+      # DEPLOY_SHA's checkout: a redeploy checks out an older commit, and
+      # before 2026-10-15 the script reported a held lease as acquired, so two
+      # deploys could run at once. The lease is what serializes prod deploys
+      # (a second one fails at once rather than queueing) and what the card
+      # index refresh's serving-commit check relies on.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: .deploy-tools
+          sparse-checkout: scripts/cloud-run/staging-lease.sh
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
@@ -116,7 +119,7 @@ jobs:
           STAGING_REASON: Manual prod deploy (commit ${{ env.DEPLOY_SHA }})
           STAGING_FORCE_TAKEOVER: 'false'
           STAGING_TARGET_SHA: ${{ env.DEPLOY_SHA }}
-        run: ./scripts/cloud-run/staging-lease.sh acquire
+        run: ./.deploy-tools/scripts/cloud-run/staging-lease.sh acquire
       # A card index refresh redeploys the commit that was serving when it
       # looked. Approval can come hours later, after a newer release: under the
       # lease nothing else is deploying, so check that commit still serves
@@ -539,4 +542,4 @@ jobs:
       # traffic, so a failed smoke leaves the current revision serving unchanged.
       - name: Release prod lease
         if: always()
-        run: ./scripts/cloud-run/staging-lease.sh release
+        run: ./.deploy-tools/scripts/cloud-run/staging-lease.sh release

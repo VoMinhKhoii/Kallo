@@ -429,13 +429,20 @@ describe('Card index refresh workflow', () => {
     );
   });
 
-  // The lease runs from the checked-out commit (an older one on a redeploy),
-  // so serialization must not depend on it.
-  it('runs one prod deploy at a time, enforced by GitHub', () => {
+  // A redeploy checks out an older commit, whose lease script may predate
+  // the 2026-10-15 fix; the lease must come from the workflow's own commit.
+  // No concurrency group: a newer run would cancel a user's pending deploy.
+  it("runs the lease from the workflow's own commit, never the deployed one", () => {
     const prod = readWorkflow('cloud-run-prod.yml');
-    expect(prod).toMatch(
-      /\nconcurrency:\n {2}group: cloud-run-prod\n {2}cancel-in-progress: false\n/
+    expect(prod).toContain(
+      `ref: \${{ github.sha }}\n          path: .deploy-tools\n          sparse-checkout: scripts/cloud-run/staging-lease.sh`
     );
+    const calls = prod.match(/\S*staging-lease\.sh (acquire|release)/g);
+    expect(calls).toEqual([
+      './.deploy-tools/scripts/cloud-run/staging-lease.sh acquire',
+      './.deploy-tools/scripts/cloud-run/staging-lease.sh release',
+    ]);
+    expect(prod).not.toMatch(/^concurrency:/m);
   });
 
   it('has the prod deploy re-check the serving commit after approval, under the lease', () => {
