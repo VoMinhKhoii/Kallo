@@ -35,7 +35,8 @@ export async function emitPartialFailure(args: {
     Date.now() - args.startTime,
     args.db,
     isCarveOut ? 'no_macro_data' : 'chunk_failure',
-    args.promptVersionsUsed
+    args.promptVersionsUsed,
+    { errorCode: isCarveOut ? 'no_macro_data' : 'chunk_failure' }
   );
 
   if (isCarveOut) {

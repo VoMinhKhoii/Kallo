@@ -257,6 +257,30 @@ describe('error swallowing', () => {
 // ── 5. logLlmCall metadata placeholders ──────────────────────────────────────
 
 describe('logLlmCall metadata', () => {
+  it('omits duplicate template text but preserves a distinct rendered prompt', async () => {
+    const mock = makeInsertResolvingMock();
+    const call = {
+      db: mock,
+      requestId: 'synthetic',
+      stageLogId: 'stage',
+      promptVersionId: 'version',
+      model: 'synthetic',
+      promptRendered: 'synthetic template',
+      responseRaw: null,
+      inputTokens: null,
+      outputTokens: null,
+      latencyMs: 1,
+      attempt: 1,
+    };
+    logLlmCall({ ...call, promptIsTemplate: true });
+    await vi.waitFor(() => expect(mock.insert).toHaveBeenCalledTimes(2));
+    expect(mock.values.mock.calls[0][0].promptRendered).toBeNull();
+    logLlmCall({ ...call, promptRendered: 'synthetic rendered prompt' });
+    await vi.waitFor(() => expect(mock.insert).toHaveBeenCalledTimes(4));
+    expect(mock.values.mock.calls[2][0].promptRendered).toBe(
+      'synthetic rendered prompt'
+    );
+  });
   it('writes nullable metadata placeholders keyed by the LLM call id', async () => {
     const mock = makeInsertResolvingMock();
 

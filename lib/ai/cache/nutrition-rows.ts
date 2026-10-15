@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { NutritionPer100g } from '@/lib/ai/types/matching';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
+import type { AppDb } from '@/lib/infra/db/client';
 
 /** Maps NutritionPer100g keys (camelCase) to DB column names (snake_case) */
 export const DB_NUTRITION_COLUMNS: Record<keyof NutritionPer100g, string> = {
@@ -99,21 +99,13 @@ export function parseNutritionRow(
   return result;
 }
 
+/** Admin step-debugger reader; project nutrients without transferring vectors. */
 export async function fetchNutritionPer100g(
   foodCompositionId: string,
-  db: PostgresJsDatabase<any>
+  db: AppDb
 ): Promise<NutritionPer100g | null> {
-  // Deliberately left at `execute`'s default row type. This is the one
-  // nutrition query that is a `SELECT *` over the whole table rather than an
-  // explicit column list, so no honest row type can be written for it — the
-  // shape is "every column of vietnamese_food_composition as of today",
-  // including the ones nothing here reads. `parseNutritionRow` picks the 28 it
-  // needs out of the resulting `Record<string, unknown>` by name and coerces
-  // each one, which is exactly the guarantee the default type already gives.
   const rows = await db.execute(
-    sql`SELECT * FROM vietnamese_food_composition WHERE id = ${foodCompositionId} LIMIT 1`
+    sql`SELECT ${sql.raw(NUTRITION_SELECT_COLUMNS.join(', '))} FROM vietnamese_food_composition WHERE id = ${foodCompositionId} LIMIT 1`
   );
-
-  if (rows.length === 0) return null;
-  return parseNutritionRow(rows[0]);
+  return rows[0] ? parseNutritionRow(rows[0]) : null;
 }

@@ -1,9 +1,68 @@
-import { describe, expect, it } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildRequestsWhere,
+  getRequestDetail,
   REPLAY_EXCLUSION,
   requestFiltersSchema,
 } from '@/lib/admin/queries/requests';
+import type { AppDb } from '@/lib/infra/db/client';
+import {
+  pipelineLlmCalls,
+  pipelineRequests,
+  pipelineStageLogs,
+} from '@/lib/infra/db/schema';
+
+it('request detail falls back to the prompt version template while preserving distinct rendered prompts', async () => {
+  let callProjection: Record<string, unknown> = {};
+  const select = vi.fn((projection?: Record<string, unknown>) => ({
+    from(table: unknown) {
+      if (table === pipelineLlmCalls) callProjection = projection ?? {};
+      const rows =
+        table === pipelineRequests
+          ? [{ id: 'synthetic' }]
+          : table === pipelineStageLogs
+            ? []
+            : [
+                {
+                  call: { id: 'template', promptRendered: null },
+                  promptRendered: 'Synthetic template',
+                  metadata: null,
+                },
+                {
+                  call: {
+                    id: 'rendered',
+                    promptRendered: 'Synthetic rendered',
+                  },
+                  promptRendered: 'Synthetic rendered',
+                  metadata: null,
+                },
+              ];
+      const chain = {
+        leftJoin: vi.fn(() => chain),
+        where: vi.fn(() => chain),
+        limit: vi.fn(async () => rows),
+        orderBy: vi.fn(async () => rows),
+      };
+      return chain;
+    },
+  }));
+  const detail = await getRequestDetail(
+    { select } as unknown as AppDb,
+    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+  );
+  expect(
+    new PgDialect().sqlToQuery(
+      callProjection.promptRendered as import('drizzle-orm').SQL
+    ).sql
+  ).toMatch(
+    /coalesce\("pipeline_llm_calls"\."prompt_rendered", "prompt_versions"\."template_sample"\)/
+  );
+  expect(detail?.llmCalls.map((call) => call.promptRendered)).toEqual([
+    'Synthetic template',
+    'Synthetic rendered',
+  ]);
+});
 
 // ─── Zod schema tests ─────────────────────────────────────────────────────────
 

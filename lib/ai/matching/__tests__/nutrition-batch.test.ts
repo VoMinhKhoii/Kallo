@@ -24,9 +24,46 @@ const ROW_CHICKEN = {
 const ROW_RICE = { ...ROW_CHICKEN, id: 'fc-002', calories_kcal: 130 };
 
 beforeEach(() => clearNutritionCache());
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
 
 describe('batchFetchNutrition', () => {
+  it('query-delay model: cold/new IDs cost one 20ms read, repeat IDs cost zero', async () => {
+    vi.useFakeTimers();
+    let queryNumber = 0;
+    const execute = vi.fn(
+      (query: unknown) =>
+        new Promise((resolve) => {
+          queryNumber++;
+          expect(sqlText(query)).toContain('WHERE id IN');
+          setTimeout(
+            () => resolve(queryNumber === 1 ? [ROW_CHICKEN] : [ROW_RICE]),
+            20
+          );
+        })
+    );
+    const db = { execute } as unknown as AppDb;
+    const start = Date.now();
+    const cold = batchFetchNutrition(['fc-001'], db);
+    await vi.advanceTimersByTimeAsync(20);
+    await cold;
+    expect(Date.now() - start).toBe(20);
+    const beforeRepeat = Date.now();
+    await batchFetchNutrition(['fc-001'], db);
+    expect(Date.now() - beforeRepeat).toBe(0);
+    expect(execute).toHaveBeenCalledTimes(1);
+    // No 126KB catalog query is queued after the meal query returns.
+    await vi.runAllTimersAsync();
+    expect(execute).toHaveBeenCalledTimes(1);
+    const beforeNew = Date.now();
+    const newId = batchFetchNutrition(['fc-002'], db);
+    await vi.advanceTimersByTimeAsync(20);
+    expect((await newId).get('fc-002')?.caloriesKcal).toBe(130);
+    expect(Date.now() - beforeNew).toBe(20);
+    expect(execute).toHaveBeenCalledTimes(2);
+  });
   it('returns empty for an empty id list', async () => {
     const db = { execute: vi.fn() } as unknown as AppDb;
     const map = await batchFetchNutrition([], db);
@@ -36,7 +73,7 @@ describe('batchFetchNutrition', () => {
     ).not.toHaveBeenCalled();
   });
 
-  it('cold path: finishes the meal-ID query before starting the background warm', async () => {
+  it('cold path: one scoped query, no bulk warm, then zero queries for repeat IDs', async () => {
     let resolveMealIds: ((rows: unknown[]) => void) | undefined;
     // Routing mock: id-scoped fetch → the meal rows; full-table warm → both.
     const execute = vi.fn().mockImplementation((query: unknown) => {
@@ -63,11 +100,13 @@ describe('batchFetchNutrition', () => {
     expect(map.get('fc-001')?.caloriesKcal).toBe(165);
     expect(map.get('fc-001')?.foodGroupEn).toBe('Poultry Products');
 
-    // Let the background warm settle, then confirm it ran.
-    await vi.waitFor(() => expect(isNutritionCacheInitialized()).toBe(true));
-    // Warm-up loaded both rows into the singleton.
-    const warm = await getNutritionCache(db);
-    expect(warm.size).toBe(2);
+    expect(isNutritionCacheInitialized()).toBe(false);
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(sqlText(execute.mock.calls[0][0])).toContain('WHERE id IN');
+    expect(sqlText(execute.mock.calls[0][0])).not.toContain('source_id = 1');
+    const repeated = await batchFetchNutrition(['fc-001'], db);
+    expect(repeated.get('fc-001')).toEqual(map.get('fc-001'));
+    expect(execute).toHaveBeenCalledTimes(1);
   });
 
   it('warm path: reads from the in-memory cache, no per-id query', async () => {

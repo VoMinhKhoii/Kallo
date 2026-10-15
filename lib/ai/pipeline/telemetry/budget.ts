@@ -1,5 +1,6 @@
 import { attemptCostUsd } from '@/lib/ai/cost/pricing';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
+import { cloudTrace } from '@/lib/ai/pipeline/telemetry/cloud-trace/cloud-trace';
 import { isClaudeModel, type StreamOptions } from '@/lib/ai/provider/provider';
 import type { AppDb } from '@/lib/infra/db/client';
 import type {
@@ -51,6 +52,7 @@ export function createBudgetAttemptRecorder(args: {
   providerErrorState?: { recorded: boolean };
   /** Defaults to the meal-analysis route; cheat and label OCR pass their own. */
   route?: BudgetRoute;
+  stage?: string;
 }): NonNullable<StreamOptions['onAttemptComplete']> {
   return ({
     error,
@@ -62,6 +64,11 @@ export function createBudgetAttemptRecorder(args: {
     thoughtTokens,
     latencyMs,
     fallbackFrom,
+    attempt,
+    response,
+    stage,
+    promptHash,
+    promptVersionId,
   }) => {
     // Every finished attempt is a row, so call counts, error rates and
     // latency see all of them. A failure no provider category fits (a schema
@@ -88,6 +95,30 @@ export function createBudgetAttemptRecorder(args: {
             thoughtTokens: thoughtTokens ?? 0,
           });
 
+    cloudTrace.emit(args.requestId, 'llm', {
+      stage: args.stage ?? stage ?? args.workKind,
+      attempt,
+      provider: providerOf(ranModel),
+      model: ranModel,
+      promptVersionId: promptVersionId ?? null,
+      promptHash: promptHash ?? null,
+      inputTokens,
+      cachedTokens,
+      cacheWriteTokens,
+      outputTokens,
+      thoughtTokens,
+      latencyMs,
+      costUsd,
+      error:
+        error == null
+          ? null
+          : error instanceof Error
+            ? error.message
+            : String(error),
+      errorCategory,
+      fallbackFrom: fallbackFrom ?? null,
+      response: response ?? null,
+    });
     recordAnalysisModelBudgetEventBestEffort({
       db: args.db,
       requestId: args.requestId,
@@ -234,6 +265,7 @@ export function initV2BudgetAccounting(args: {
       workKind: 'primary',
       model: args.decompositionModel,
       providerErrorState,
+      stage: 'decomposition',
     }),
     nutritionRecorder: createBudgetAttemptRecorder({
       db: args.db,
@@ -241,6 +273,7 @@ export function initV2BudgetAccounting(args: {
       workKind: 'primary',
       model: args.nutritionModel,
       providerErrorState,
+      stage: 'nutrition',
     }),
     recordCatchError: (error: unknown) => {
       const category = classifyProviderError(error);

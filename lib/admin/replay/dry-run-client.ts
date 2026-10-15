@@ -66,6 +66,7 @@ export async function buildDryRunGeminiClient(
           promptVersionId: trace.promptVersionId,
           model: params.model,
           promptRendered: trace.promptRendered,
+          promptIsTemplate: trace.promptIsTemplate,
           responseRaw,
           inputTokens: null,
           outputTokens: null,

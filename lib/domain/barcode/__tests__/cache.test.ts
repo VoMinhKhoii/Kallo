@@ -74,6 +74,14 @@ describe('findCachedRow', () => {
     await findCachedRow('8934563138162');
 
     expect(mockDbSelect).toHaveBeenCalledTimes(1);
+    const projection = mockDbSelect.mock.calls[0][0];
+    expect(projection).toMatchObject({
+      id: vietnameseFoodComposition.id,
+      caloriesKcal: vietnameseFoodComposition.caloriesKcal,
+      imageUrl: vietnameseFoodComposition.imageUrl,
+    });
+    expect(projection).not.toHaveProperty('embedding');
+    expect(projection).not.toHaveProperty('nameAlt');
     expect(from).toHaveBeenCalledTimes(1);
     expect(where).toHaveBeenCalledTimes(1);
     expect(limit).toHaveBeenCalledWith(2);

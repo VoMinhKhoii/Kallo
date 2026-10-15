@@ -113,17 +113,6 @@ export function primeNutritionEntry(
 }
 
 /**
- * Kick off the bulk warm without awaiting it. Safe to call on every request:
- * `ensureInitialized` dedupes to a single in-flight load. Errors are swallowed
- * by `ensureInitialized`; the returned promise never rejects.
- */
-export function warmNutritionCacheInBackground(
-  db: PostgresJsDatabase<typeof schema>
-): void {
-  void ensureInitialized(db);
-}
-
-/**
  * Cold-path direct fetch: query nutrition for a specific set of candidate IDs
  * (the ones this meal actually needs) instead of awaiting the full-table warm.
  * Rows are also promoted into the singleton so repeat hits stay warm.

@@ -919,6 +919,52 @@ Run these after setup:
    - `Cloud Run Preview Cleanup` deletes `nham-pr-<number>` and the matching Supabase branch
    - the old preview URL no longer serves the app
 
+## Structured pipeline trace capture
+
+`TRACE_LOG_ENABLED` defaults to **on**. It controls additional stdout capture,
+independently of `PIPELINE_TRACE_ENABLED` (the existing Postgres payload writer).
+Dual capture preserves admin detail, replay and ingredient views. Set
+`TRACE_LOG_ENABLED=false` to stop stdout details while keeping Postgres writes
+and request summary updates. No Cloud Logging API call or credential is needed
+by the writer; Cloud Run collects its single-line structured stdout JSON.
+
+Entries have `severity=INFO`, `message=kallo_trace_v1` and
+`jsonPayload.kind=kallo_trace_v1`. Event types are `request`, `stage`, `llm` and
+`final`, correlated only by `requestId`. The attempt hook shared with budget
+accounting emits one LLM event per completed attempt, including Claude schema
+retries and Gemini fallbacks, with all usage counters and raw answer text.
+No additional prompt/version DB read is introduced. A prompt-version ID can
+be NULL when its registration has not resolved before the model answers.
+
+For an event fitting 200,000 bytes including its envelope/newline, fields are
+inline. Larger events put the serialized payload in ordered `payload` string
+parts: group by `eventId`, order by the one-based `part`, require all `parts`,
+concatenate, then JSON-parse. All parts share `seq` and `type`. Boundaries
+preserve Unicode surrogate pairs. Total serialized output is capped at
+2,000,000 bytes per request; `truncated=true` marks bounded traversal or a
+missing payload after that cap. Serialization and writes are synchronous and
+bounded, never awaited. Synchronous failures and stdout backpressure drop
+capture; there is no drain wait, remote retry or delivery guarantee. Downstream
+readers must accept incomplete traces and fall back to retained Postgres data.
+
+Payload filtering drops user IDs, user-context objects, email/image/credential
+fields, email-like text, URLs and data URLs. Images and signed URLs never belong
+in trace logs. Raw meal text and model answers remain sensitive operator data.
+The deployment operator must provision a **dedicated seven-day Logging bucket**,
+a sink filtered on `jsonPayload.kind="kallo_trace_v1"`, an exclusion with that
+same filter on `_Default`, and restricted sink-writer/reader IAM. Verify both
+routing and retention before relying on the seven-day policy. This code does
+not create or verify those resources and emits even when they are absent.
+Account deletion cascades the Postgres request row; Logging entries have no
+user ID and expire under the bucket policy, without per-entry deletion.
+
+Nutrition reads no longer start a full-table warm automatically. A cold
+candidate-ID batch performs one scoped nutrition query and primes those rows;
+repeat IDs need no nutrition query. New candidate sets still cost a scoped
+query. Inedible and fresh-candidate reads keep their existing behavior. Validate
+production query counts/bytes and cold-start latency after rollout; synthetic
+query-delay tests do not estimate cross-region latency.
+
 ## 12. Known boundaries of the current setup
 
 - Automatic PR previews are disabled; shared staging is the only supported

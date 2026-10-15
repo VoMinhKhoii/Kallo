@@ -59,7 +59,8 @@ export async function runPreciseBranch({
       Date.now() - startTime,
       db,
       result.error.message,
-      pvu
+      pvu,
+      { errorCode: result.error.type }
     );
     emit({
       type: 'error',
@@ -127,7 +128,8 @@ export async function runPreciseBranch({
       Date.now() - startTime,
       db,
       'empty_nutrition',
-      pvu
+      pvu,
+      { errorCode: 'empty_nutrition', result: result.data }
     );
     emit({
       type: 'error',
@@ -172,7 +174,8 @@ export async function runPreciseBranch({
     Date.now() - startTime,
     db,
     undefined,
-    pvu
+    pvu,
+    { result: result.data }
   );
   if (result.data.unmatchedIngredients.length > 0) {
     logUnmatchedIngredients(result.data.unmatchedIngredients, null, db).catch(

@@ -34,6 +34,7 @@ export function readAttemptUsage(
  */
 export interface StreamAttemptState {
   accumulated: string | null;
+  rawResponse?: string;
   usage: StreamUsageMetadata | null;
 }
 
@@ -53,6 +54,7 @@ export function createAttemptObserver({
   state,
   trace,
   onAttemptComplete,
+  promptHash,
 }: {
   model: string;
   maxRetries: number;
@@ -60,6 +62,7 @@ export function createAttemptObserver({
   state: StreamAttemptState;
   trace?: GeminiCallTrace;
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
+  promptHash?: string;
 }) {
   return (attempt: number, t0: number, _result: unknown, err: unknown) => {
     const latencyMs = Date.now() - t0;
@@ -84,6 +87,7 @@ export function createAttemptObserver({
         promptVersionId: trace.promptVersionId,
         model,
         promptRendered: trace.promptRendered,
+        promptIsTemplate: trace.promptIsTemplate,
         responseRaw: state.accumulated,
         inputTokens,
         outputTokens,
@@ -106,6 +110,19 @@ export function createAttemptObserver({
       });
     }
 
-    onAttemptComplete?.({ attempt, model, ...usage, latencyMs, error: err });
+    onAttemptComplete?.({
+      attempt,
+      model,
+      ...usage,
+      latencyMs,
+      error: err,
+      response: state.rawResponse ?? state.accumulated,
+      promptHash,
+      stage: trace?.stageLogId,
+      promptVersionId:
+        typeof trace?.promptVersionId === 'string'
+          ? trace.promptVersionId
+          : null,
+    });
   };
 }

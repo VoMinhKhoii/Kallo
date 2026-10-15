@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { GoogleGenAI } from '@google/genai';
 import { readAttemptUsage, type StreamUsageMetadata } from './attempt-trace';
 import { buildContents, prepareRequest } from './request';
@@ -21,10 +22,12 @@ export function createStructuredOutput({
     const { jsonSchema } = prepareRequest(params, 'structured output');
     // Survives a parse throw so the attempt's tokens are still reported.
     let usage: StreamUsageMetadata | null = null;
+    let responseText: string | null = null;
 
     return withRetry(
       async (attempt) => {
         usage = null;
+        responseText = null;
         const callStart = Date.now();
         const contents = buildContents(params);
 
@@ -56,6 +59,7 @@ export function createStructuredOutput({
         );
 
         const text = response.text;
+        responseText = text ?? null;
         if (!text) throw new Error('Gemini returned empty response');
 
         return params.schema.parse(JSON.parse(text));
@@ -70,6 +74,10 @@ export function createStructuredOutput({
             ...readAttemptUsage(usage),
             latencyMs: Date.now() - t0,
             error: err,
+            response: responseText,
+            promptHash: createHash('sha256')
+              .update(params.systemPrompt)
+              .digest('hex'),
           }),
       }
     );

@@ -103,6 +103,7 @@ async function startAnalysis(
     rawInput: message,
     userContext,
     db,
+    entryMode: mode,
   });
 
   // From here the stream owns the guard and releases it when it closes.

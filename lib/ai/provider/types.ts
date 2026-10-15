@@ -21,6 +21,7 @@ export interface GeminiCallTrace {
   stageLogId: string;
   promptVersionId: string | Promise<string | null>;
   promptRendered: string;
+  promptIsTemplate?: boolean;
 }
 
 /** Billable token counts one attempt reported; null where none were sent. */
@@ -37,6 +38,10 @@ export interface AttemptTokens {
 }
 
 export interface GeminiAttemptMetadata extends AttemptTokens {
+  response?: string | null;
+  stage?: string;
+  promptHash?: string;
+  promptVersionId?: string | null;
   attempt: number;
   model: string;
   error: unknown;

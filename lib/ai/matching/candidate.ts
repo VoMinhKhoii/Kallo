@@ -70,8 +70,7 @@ export async function attachCandidateNutrition(
   const ids = Array.from(uniqueIds);
   // Inedible pct: on a warm cache read the full in-memory map; on cold DON'T
   // block on the full-table load (`getInedibleCache` would) — query only this
-  // meal's candidate IDs directly. `batchFetchNutrition` already kicked the
-  // background warm, so subsequent requests read the warm map.
+  // meal's candidate IDs directly. Nutrition entries are primed on demand.
   const inediblePromise = isNutritionCacheInitialized()
     ? getInedibleCache(db)
     : fetchInediblePctForIds(ids, db);

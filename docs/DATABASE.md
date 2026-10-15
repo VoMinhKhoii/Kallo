@@ -470,6 +470,49 @@ be invoked from a daily worker.
 `pipeline_runs` (this spec, §0.4) is the analytics source — it stores
 `user_id_hash` only, never raw input.
 
+### Telemetry retention and request summaries
+
+`20261015183833_trace_summaries_and_retention_indexes.sql` expands
+`pipeline_requests` with nullable meal name (writer caps it at 160 characters),
+profile, attempted models, displayed kcal/macros, item count, error code and
+`trace_logged`. The final status/duration update writes these once, best-effort
+on the production path. Older rows remain NULL. `trace_logged` means the local
+stdout capture completed without a known drop/truncation; it is not a Cloud
+Logging delivery acknowledgement. The `(created_at DESC, id DESC)` index
+supports keyset readers. Kallo admin reads the table directly;
+`public.analytics_requests_page` also exposes a `summaries` object keyed by
+request UUID, preserving its existing positional `rows` contract.
+Account export includes meal name, displayed kcal/macros and item count; model
+configuration, attempted model versions, internal error code and capture status
+remain documented operational exclusions.
+
+`pipeline_llm_calls.prompt_rendered` is nullable: a registered template sample
+is stored only in `prompt_versions.template_sample`. Kallo's detail reader
+joins that template as the fallback; distinct rendered prompts remain stored.
+Existing stage/LLM payload writes continue during dual capture.
+
+`20261015183834_trace_retention_and_request_summaries.sql` installs these daily
+service-role-only reapers (UTC schedules, following the existing pg_cron jobs):
+
+| Table | Days | Function | UTC |
+| --- | ---: | --- | --- |
+| `analysis_model_budget_events` | 181 | `reap_analysis_model_budget_events()` | 04:01 |
+| `pipeline_runs` | 181 | `reap_pipeline_runs()` | 04:04 |
+| `analysis_guard_events` | 30 | `reap_analysis_guard_events()` | 04:07 |
+| `unmatched_ingredients` | 90 | `reap_unmatched_ingredients()` | 04:10 |
+| `synonym_candidates` | 90 | `reap_synonym_candidates()` | 04:13 |
+| `pipeline_request_replay_audit_logs` | 181 | `reap_pipeline_request_replay_audit_logs()` | 04:16 |
+
+Each invocation deletes strictly older rows in up to twenty 5,000-row batches,
+using a created_at-leading index and skipping locked rows. It returns the
+deleted count. Batches share one transaction; a large initial backlog may need
+repeated manual calls. Scheduling fails loudly if pg_cron/grants are absent;
+the migration must not silently claim an active policy. Budget rows retain
+individual attempt granularity. Reviewed synonym suggestions also expire;
+promote useful knowledge to curated data before 90 days. The duplicate
+`pipeline_requests_user_id_created_at_idx` is removed, retaining the
+schema-owned `pipeline_requests_user_created_idx`.
+
 ## Rate limiter tables
 
 Full design and ops runbook: `docs/RATE_LIMITING.md`. What matters at the

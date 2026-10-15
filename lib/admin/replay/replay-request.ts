@@ -176,6 +176,8 @@ export async function replayRequest(
   const promptVersionsUsed = new Map<string, string>();
   let finalStatus: 'success' | 'error' = 'success';
   let errorMessage: string | undefined;
+  let finalResult: import('@/lib/ai/types/result').PipelineResult | undefined;
+  let errorCode: string | undefined;
   try {
     const result = await analyzeMeal(
       orig.rawInput,
@@ -188,6 +190,9 @@ export async function replayRequest(
     if (!result.success) {
       finalStatus = 'error';
       errorMessage = result.error.message;
+      errorCode = result.error.type;
+    } else {
+      finalResult = result.data;
     }
   } catch (e) {
     finalStatus = 'error';
@@ -202,6 +207,8 @@ export async function replayRequest(
     status: finalStatus,
     durationMs: Date.now() - t0,
     errorMessage,
+    errorCode,
+    result: finalResult,
     promptVersionsUsed:
       promptVersionsUsed.size > 0
         ? Object.fromEntries(promptVersionsUsed)

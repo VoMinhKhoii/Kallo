@@ -7,6 +7,7 @@
  * failure (rate limit, overload, network) is thrown on the first attempt so
  * the router can fall back to Gemini without waiting out retries.
  */
+import { createHash } from 'node:crypto';
 import type Anthropic from '@anthropic-ai/sdk';
 import {
   createAttemptObserver,
@@ -94,12 +95,16 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
       state,
       trace: opts?.trace,
       onAttemptComplete: opts?.onAttemptComplete,
+      promptHash: createHash('sha256')
+        .update(params.systemPrompt)
+        .digest('hex'),
     });
 
     for (let attempt = 1; ; attempt++) {
       const t0 = Date.now();
       opts?.onAttemptStart?.(attempt);
       state.accumulated = null;
+      state.rawResponse = undefined;
       state.usage = null;
       let stream: ReturnType<typeof anthropic.messages.stream> | undefined;
       try {
@@ -154,6 +159,7 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
         if (!parsed.success) throw parsed.error;
         // Trace the answer the pipeline used, so a dry-run replay of it
         // (which skips repair and validation) matches the live run.
+        state.rawResponse = state.accumulated ?? undefined;
         state.accumulated = JSON.stringify(answer);
         onAttempt(attempt, t0, parsed.data, undefined);
         return parsed.data;

@@ -290,7 +290,17 @@ export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
           object({
             ...columns(pipelineRequests, ['id', 'rawInput']),
             userContext: anyJson,
-            ...columns(pipelineRequests, ['status', 'durationMs', 'createdAt']),
+            ...columns(pipelineRequests, [
+              'status',
+              'durationMs',
+              'createdAt',
+              'mealName',
+              'caloriesKcal',
+              'proteinG',
+              'carbohydrateG',
+              'fatG',
+              'itemCount',
+            ]),
           }),
           'Meal-analysis requests still held (they are kept for a short window).'
         ),
