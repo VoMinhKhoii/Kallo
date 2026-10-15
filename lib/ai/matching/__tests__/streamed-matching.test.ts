@@ -8,6 +8,7 @@ const { cardsMock, matchMock } = vi.hoisted(() => ({
   matchMock: vi.fn(),
 }));
 vi.mock('@/lib/ai/matching/cards/retrieval', () => ({
+  MATCH_EXPIRED: 'expired',
   matchCardCandidates: cardsMock,
 }));
 vi.mock('@/lib/ai/matching/match-ingredients', () => ({
@@ -65,6 +66,33 @@ describe('createStreamedMatching', () => {
     ).toEqual(['early:Cơm', 'late:Cá kho']);
     expect(out.map((r) => r.ingredientIndex)).toEqual([0, 1]);
     expect(matchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('streamed matching deadlines', () => {
+  it('re-matches an expired early batch late, passing the stage deadline on', async () => {
+    cardsMock.mockReset();
+    cardsMock.mockResolvedValue('expired');
+    matchMock.mockReset();
+    matchMock.mockImplementation(async (ings: { rawName: string }[]) =>
+      ings.map((i) => result(`late:${i.rawName}`))
+    );
+    const streamed = createStreamedMatching({} as AppDb, {} as GeminiClient);
+    streamed.onChunk(
+      '{"mealItems":[{"name":"Cơm","ingredients":[{"rawName":"cơm","canonicalName":"Cơm"}]},'
+    );
+
+    const out = await streamed.match(
+      [{ rawName: 'Cơm', canonicalName: 'Cơm' }],
+      [null],
+      { k: 8, concurrency: 4 },
+      { deadlineAt: 12_345 }
+    );
+
+    expect(
+      out.map((r) => (r.candidates[0] as never as { label: string }).label)
+    ).toEqual(['late:Cơm']);
+    expect(matchMock.mock.calls[0][5]).toEqual({ deadlineAt: 12_345 });
   });
 });
 

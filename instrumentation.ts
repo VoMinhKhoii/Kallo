@@ -15,10 +15,12 @@ export const onRequestError = Sentry.captureRequestError;
  * `@/lib/db` pulls in `postgres`, which can't initialize on Edge. The
  * `NEXT_RUNTIME` guard short-circuits before any import runs.
  *
- * The card catalog (`getCardCatalog`, ~3 s on prod's database) starts loading
- * here but is not awaited: `register` must finish before the server takes
- * requests, and a page load should not wait on it. A meal that arrives while
- * it loads joins the same load instead of starting its own.
+ * Card search starts loading here, never awaited: `register` must finish
+ * before the server takes requests, and a page load should not wait on it. A
+ * meal that arrives mid-load joins the same load. With a search artifact
+ * pinned to this revision (`CARD_INDEX_URI`), that is the artifact (catalog
+ * plus vector index, `lib/ai/matching/cards/search-index/`); without one,
+ * the card catalog from the database (`getCardCatalog`, ~3 s on prod).
  *
  * Nothing else is warmed. Card matching fetches nutrition for a meal's own
  * candidates by id (`attachCandidateNutrition`, ~3 ms of database time on
@@ -40,11 +42,14 @@ export async function register() {
   }
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
-  const [{ db }, { getCardCatalog }] = await Promise.all([
-    import('@/lib/infra/db/client'),
-    import('@/lib/ai/matching/cards/catalog'),
-  ]);
+  const [{ db }, { getCardCatalog }, { cardIndexConfigured }] =
+    await Promise.all([
+      import('@/lib/infra/db/client'),
+      import('@/lib/ai/matching/cards/catalog'),
+      import('@/lib/ai/matching/cards/search-index/search-index'),
+    ]);
 
-  // Failures are caught and logged inside getCardCatalog.
-  void getCardCatalog(db);
+  // Starts the artifact load when one is pinned; failures are caught and
+  // logged inside both loaders.
+  if (!cardIndexConfigured()) void getCardCatalog(db);
 }

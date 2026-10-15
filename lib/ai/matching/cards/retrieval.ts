@@ -16,6 +16,7 @@
  */
 import {
   attachCandidateNutrition,
+  type CardRetrieval,
   type IngredientV2MatchResult,
   type V2MatchCandidate,
 } from '@/lib/ai/matching/candidate';
@@ -34,10 +35,11 @@ import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { withDeadline } from '@/lib/core/async/with-deadline';
 import type { AppDb } from '@/lib/infra/db/client';
-import { type CardCatalog, type CatalogRow, getCardCatalog } from './catalog';
+import type { CardCatalog, CatalogRow } from './catalog';
 import { saltVariant } from './concept-key';
 import { cardLabel } from './label';
 import { cardQueryStrings, QUERY_FIELDS } from './query-strings';
+import { resolveCardBackend } from './search-index/search-index';
 import { searchCardVectors, type VectorHit } from './vector-arm';
 
 /** Candidates per ingredient Call 2 sees from card retrieval. */
@@ -52,32 +54,52 @@ const ARM_DEPTH = 30;
  * lexical-only matching.
  */
 const VECTOR_ARM_TIMEOUT_MS = 8_000;
+/**
+ * Kept free for the nutrition fetch after the vector arm (by id: ~3 ms of
+ * database time on prod, 55 ms at worst). A call's whole budget is the arm's
+ * plus this reserve.
+ */
+const NUTRITION_RESERVE_MS = 1_000;
+const CALL_BUDGET_MS = VECTOR_ARM_TIMEOUT_MS + NUTRITION_RESERVE_MS;
 
 /**
  * Vector hits per query string (one list per query field); empty when the arm
  * fails. A string repeated across fields or ingredients (a field falling back
  * to another, the same food logged twice) is searched once and its hits are
- * shared, since `match_food_card_texts` runs one index search per vector.
+ * shared, since a search runs once per vector. `ok` is false when the arm
+ * failed and the call fell back to the lexical arms.
  */
 async function vectorArms(
   queries: string[],
-  db: AppDb,
-  gemini: GeminiClient
-): Promise<VectorHit[][]> {
+  gemini: GeminiClient,
+  search: (embeddings: number[][], timeoutMs: number) => Promise<VectorHit[][]>,
+  budgetMs: number
+): Promise<{ hits: VectorHit[][]; ok: boolean }> {
   const distinct = [...new Set(queries)];
+  // No budget left (the nutrition reserve takes it all): start no embedding.
+  if (budgetMs <= 0) return { hits: queries.map(() => []), ok: false };
+  const t0 = Date.now();
+  const left = () => budgetMs - (Date.now() - t0);
   // Set once the deadline passes: an embedding that lands later must not still
-  // start a vector query nobody will read (it would hold a pool connection).
+  // start a search nobody will read (it would hold a pool connection or a
+  // worker slot).
   let expired = false;
+  let searched = false;
   try {
     const hits = await withDeadline(
-      gemini
-        .generateEmbeddingBatch(distinct)
-        .then((embeddings) =>
-          expired ? distinct.map(() => []) : searchCardVectors(embeddings, db)
-        ),
-      VECTOR_ARM_TIMEOUT_MS
+      gemini.generateEmbeddingBatch(distinct).then((embeddings) => {
+        if (expired || left() <= 0) return distinct.map((): VectorHit[] => []);
+        searched = true;
+        return search(embeddings, left());
+      }),
+      budgetMs
     );
-    return queries.map((q) => hits[distinct.indexOf(q)]);
+    // An embedding that used up the budget skipped the search: the lexical
+    // arms alone ranked this call, and its trace must say so.
+    return {
+      hits: queries.map((q) => hits[distinct.indexOf(q)]),
+      ok: searched,
+    };
   } catch (err) {
     expired = true;
     // Matching never blanks out because one arm is down.
@@ -85,7 +107,7 @@ async function vectorArms(
       '[card-matching] vector arm failed; using lexical arms only:',
       err
     );
-    return queries.map(() => []);
+    return { hits: queries.map(() => []), ok: false };
   }
 }
 
@@ -156,20 +178,53 @@ function toMatchInfo(
   };
 }
 
+/** The call's deadline passed before it had a catalog: start no new work. */
+export const MATCH_EXPIRED = 'expired' as const;
+
+/**
+ * Candidates per ingredient; `null` when card retrieval is not ready (the
+ * caller's legacy matcher runs, with time left); MATCH_EXPIRED when the
+ * deadline passed (the caller leaves the ingredients unmatched).
+ *
+ * The whole call is bounded by `deadlineAt` and by CALL_BUDGET_MS from its
+ * start: the catalog wait, the vector arm and the nutrition fetch each get
+ * only what is left (the arm leaves NUTRITION_RESERVE_MS), so a cold start
+ * cannot push matching past the stage deadline (`grounded/grounding.ts`),
+ * which fails the meal.
+ */
 export async function matchCardCandidates(
   ingredients: DecomposedIngredientV2[],
   db: AppDb,
-  gemini: GeminiClient
-): Promise<IngredientV2MatchResult[] | null> {
-  const catalog = await getCardCatalog(db);
-  if (!catalog) return null;
-  if (ingredients.length === 0) return [];
-
-  const hits = await vectorArms(
-    ingredients.flatMap(cardQueryStrings),
-    db,
-    gemini
+  gemini: GeminiClient,
+  opts: { deadlineAt?: number } = {}
+): Promise<IngredientV2MatchResult[] | null | typeof MATCH_EXPIRED> {
+  const deadlineAt = Math.min(
+    opts.deadlineAt ?? Number.POSITIVE_INFINITY,
+    Date.now() + CALL_BUDGET_MS
   );
+  const remaining = () => deadlineAt - Date.now();
+  const backend = await resolveCardBackend(db, deadlineAt);
+  if (backend === 'expired') return MATCH_EXPIRED;
+  if (!backend) return null;
+  const { catalog } = backend;
+  if (ingredients.length === 0) return [];
+  // A catalog that was already loaded comes back however late it is.
+  if (remaining() <= 0) return MATCH_EXPIRED;
+
+  const { hits, ok } = await vectorArms(
+    ingredients.flatMap(cardQueryStrings),
+    gemini,
+    backend.kind === 'index'
+      ? backend.search
+      : (embeddings) => searchCardVectors(embeddings, db),
+    Math.min(VECTOR_ARM_TIMEOUT_MS, remaining() - NUTRITION_RESERVE_MS)
+  );
+  const retrieval: CardRetrieval = {
+    vectorSource: ok ? backend.kind : 'none',
+    ...(backend.kind === 'index' && backend.build
+      ? { build: backend.build }
+      : {}),
+  };
   const perIngredient = QUERY_FIELDS.length;
 
   const results = ingredients.map((ing, i): IngredientV2MatchResult => {
@@ -214,8 +269,24 @@ export async function matchCardCandidates(
           },
         })
       );
-    return { ingredientIndex: i, candidates };
+    return { ingredientIndex: i, candidates, retrieval };
   });
-  await attachCandidateNutrition(results, db);
-  return results;
+  if (remaining() <= 0) return MATCH_EXPIRED;
+  // On the artifact path, nutrition comes fresh from Postgres and a candidate
+  // Postgres no longer has is dropped: the build may predate a row's deletion,
+  // and a meal item naming a deleted row would fail its insert.
+  const attached = await withDeadline(
+    attachCandidateNutrition(results, db, { fresh: backend.kind === 'index' }),
+    remaining(),
+    () => new NutritionDeadlineError()
+  ).then(
+    () => true,
+    (err) => {
+      if (err instanceof NutritionDeadlineError) return false;
+      throw err;
+    }
+  );
+  return attached ? results : MATCH_EXPIRED;
 }
+
+class NutritionDeadlineError extends Error {}

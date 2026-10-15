@@ -27,6 +27,8 @@ on:
 permissions:
   contents: read
   id-token: write
+  # Dispatches the prod deploy at the end (see the last step).
+  actions: write
 
 concurrency:
   group: translate-usda-production
@@ -143,3 +145,14 @@ jobs:
       - name: Release prod DB lease
         if: always()
         run: ./scripts/cloud-run/staging-lease.sh release
+
+      # Translation renames card rows, which the card search artifact pinned to
+      # the running revision does not see until a deploy rebuilds it. Dispatch
+      # the prod deploy for main's tip now that the lease is free (the deploy
+      # acquires it and fails at once if it is held). If the production
+      # environment has required reviewers, the deploy waits for approval.
+      - name: Deploy to rebuild the card search artifact
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run cloud-run-prod.yml --repo "$GITHUB_REPOSITORY" --ref main

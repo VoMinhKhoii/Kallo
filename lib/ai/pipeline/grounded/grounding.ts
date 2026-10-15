@@ -58,8 +58,13 @@ export async function prepareGrounding(args: {
       const ingredients = flatIngredients.map((f) => f.ingredient);
       const methods = flatIngredients.map((f) => f.dishCookingMethod);
       const legacy = { k: args.topK, concurrency: args.matchConcurrency };
+      // Work still to start must finish inside the stage deadline, with a
+      // margin for assembling the results; past it, matching leaves an
+      // ingredient unmatched rather than fail the meal.
       return withDeadline(
-        args.streamedMatching.match(ingredients, methods, legacy),
+        args.streamedMatching.match(ingredients, methods, legacy, {
+          deadlineAt: Date.now() + MATCHING_TIMEOUT_MS - 750,
+        }),
         MATCHING_TIMEOUT_MS
       );
     }

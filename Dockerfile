@@ -65,6 +65,23 @@ RUN groupadd --system --gid 1001 nodejs && \
 # Copy consolidated standalone tree (includes public/ and .next/static/)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 
+# The card search worker runs outside the Next bundle (spawned by path from
+# lib/ai/matching/cards/search-index/search-index.ts), so standalone output
+# does not carry it: copy its files, and usearch (JS + the linux-x64 binary)
+# with the packages it loads at runtime. CI loads the worker inside the built
+# image (scripts/ci/card-index/check-runtime.mjs) before pushing it.
+COPY --from=builder --chown=nextjs:nodejs \
+  /app/lib/ai/matching/cards/search-index/worker.mjs \
+  /app/lib/ai/matching/cards/search-index/search-core.mjs \
+  /app/lib/ai/matching/cards/search-index/artifact-fetch.mjs \
+  ./lib/ai/matching/cards/search-index/
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/usearch/package.json ./node_modules/usearch/package.json
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/usearch/javascript/dist ./node_modules/usearch/javascript/dist
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/usearch/prebuilds/linux-x64 ./node_modules/usearch/prebuilds/linux-x64
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/node-gyp-build ./node_modules/node-gyp-build
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bindings ./node_modules/bindings
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
+
 USER nextjs
 
 EXPOSE 3000

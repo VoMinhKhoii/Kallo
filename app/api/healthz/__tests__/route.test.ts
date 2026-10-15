@@ -57,13 +57,17 @@ describe('GET /api/healthz', () => {
     resetSharedDatabaseHealthForTests();
   });
 
-  it('returns exactly { ok, service } when the invariants hold', async () => {
+  it('returns exactly { ok, service, cardIndex } when the invariants hold', async () => {
     execute.mockResolvedValue([HEALTHY]);
 
     const res = await GET(makeRequest());
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, service: 'kallo' });
+    expect(await res.json()).toEqual({
+      ok: true,
+      service: 'kallo',
+      cardIndex: 'disabled',
+    });
     // The details an operator needs are logged, not published.
     expect(consoleInfo).toHaveBeenCalledWith(
       expect.stringContaining('[healthz]'),
@@ -83,7 +87,11 @@ describe('GET /api/healthz', () => {
     const res = await GET(makeRequest());
 
     expect(res.status).toBe(503);
-    expect(await res.json()).toEqual({ ok: false, service: 'kallo' });
+    expect(await res.json()).toEqual({
+      ok: false,
+      service: 'kallo',
+      cardIndex: 'disabled',
+    });
     expect(consoleError).toHaveBeenCalledWith(
       expect.stringContaining('FAILED'),
       expect.objectContaining({
@@ -102,6 +110,7 @@ describe('GET /api/healthz', () => {
     expect(await res.json()).toEqual({
       ok: false,
       service: 'kallo',
+      cardIndex: 'disabled',
       error: 'Shared database health check failed.',
     });
     expect(consoleError).toHaveBeenCalled();
@@ -195,7 +204,11 @@ describe('GET /api/healthz', () => {
     const res = await GET(makeRequest());
 
     expect(res.status).toBe(503);
-    expect(await res.json()).toEqual({ ok: false, service: 'kallo' });
+    expect(await res.json()).toEqual({
+      ok: false,
+      service: 'kallo',
+      cardIndex: 'disabled',
+    });
     // Only the structural query ran — the seeded-row query was never reached.
     expect(execute).toHaveBeenCalledTimes(1);
     expect(consoleError).toHaveBeenCalledWith(

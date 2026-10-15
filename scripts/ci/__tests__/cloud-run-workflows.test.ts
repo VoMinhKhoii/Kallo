@@ -119,6 +119,63 @@ describe('Cloud Run prod workflow', () => {
     );
   });
 
+  it('pins each revision to its card search artifact and holds smoke until it loads', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+    // Always passed, empty when the builder was skipped, so an older commit
+    // never inherits a newer revision's build through --update-env-vars.
+    expect(workflow).toContain(`|CARD_INDEX_URI=\${{ env.CARD_INDEX_URI }}`);
+    const smoke = workflow.slice(
+      workflow.indexOf('- id: smoke'),
+      workflow.indexOf('- name: Promote candidate after smoke pass')
+    );
+    expect(smoke).toContain(
+      `if [ -f lib/ai/matching/cards/search-index/search-index.ts ] && [ -n "\${CARD_INDEX_URI:-}" ]; then`
+    );
+    expect(smoke).toContain('select(.name == "CARD_INDEX_ENABLED")');
+    expect(smoke).toContain('false|0|off|no|disabled|disable)');
+    expect(smoke).toContain('smoke_args+=(--expect-card-index)');
+    expect(smoke).toContain(
+      `./scripts/cloud-run/smoke-check.sh "$SMOKE_URL" "\${smoke_args[@]}"`
+    );
+  });
+
+  it('loads the card search worker inside the built image before pushing it', () => {
+    const ci = readWorkflow('ci.yml');
+    const build = ci.indexOf('- name: Build container image');
+    const check = ci.indexOf('- name: Card search worker runs in the image');
+    const push = ci.indexOf('- name: Push container image');
+    expect(build).toBeLessThan(check);
+    expect(check).toBeLessThan(push);
+    expect(ci.slice(check, push)).toContain('node /check/check-runtime.mjs');
+    expect(existsSync('scripts/ci/card-index/check-runtime.mjs')).toBe(true);
+    const dockerfile = readFileSync('Dockerfile', 'utf8');
+    for (const path of [
+      '/app/lib/ai/matching/cards/search-index/worker.mjs',
+      '/app/lib/ai/matching/cards/search-index/search-core.mjs',
+      '/app/lib/ai/matching/cards/search-index/artifact-fetch.mjs',
+      '/app/node_modules/usearch/prebuilds/linux-x64',
+      '/app/node_modules/node-gyp-build',
+      '/app/node_modules/bindings',
+      '/app/node_modules/file-uri-to-path',
+    ]) {
+      expect(dockerfile).toContain(path);
+    }
+  });
+
+  it('redeploys after a USDA translation, once its lease is released', () => {
+    const workflow = readWorkflow('translate-usda.yml');
+    expect(workflow).toContain('actions: write');
+    const release = workflow.indexOf('- name: Release prod DB lease');
+    const dispatch = workflow.indexOf(
+      '- name: Deploy to rebuild the card search artifact'
+    );
+    expect(dispatch).toBeGreaterThan(release);
+    expect(workflow.slice(dispatch)).toContain('if: success()');
+    expect(workflow.slice(dispatch)).toContain(
+      'gh workflow run cloud-run-prod.yml --repo "$GITHUB_REPOSITORY" --ref main'
+    );
+  });
+
   it('wires billing secrets and dark-launch controls into prod', () => {
     const workflow = readWorkflow('cloud-run-prod.yml');
 

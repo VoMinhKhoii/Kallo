@@ -224,6 +224,16 @@ jobs:
           --secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN
           -t "$IMAGE_URI"
           .
+      # The card search worker runs outside the Next bundle and the Dockerfile
+      # copies it (and usearch) in by hand: load it inside the built image and
+      # search a small index, so a missing file or native binary fails here,
+      # before anything is pushed.
+      - name: Card search worker runs in the image
+        run: >
+          docker run --rm
+          -v "$PWD/scripts/ci/card-index:/check:ro"
+          "$IMAGE_URI"
+          node /check/check-runtime.mjs
       - name: Push container image
         if: env.PUBLISH == 'true'
         run: docker push "$IMAGE_URI"

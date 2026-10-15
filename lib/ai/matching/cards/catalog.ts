@@ -132,31 +132,14 @@ export function __resetCardCatalogForTests() {
 const present = (s: string | null | undefined): s is string =>
   typeof s === 'string' && s.trim().length > 0;
 
-async function loadCatalog(db: AppDb): Promise<CardCatalog | null> {
-  const t0 = Date.now();
-  // Readiness and rows from one snapshot: a card migration committing between
-  // two separate reads could load cards whose vectors are still NULL and mark
-  // the catalog ready anyway.
-  const result = await db.transaction(
-    async (tx) => {
-      // Its own statement: Postgres resolves table names when it parses a
-      // statement, so on a database without the card tables a combined query
-      // would fail instead of answering "not ready".
-      const [table] = await tx.execute<{ present: boolean }>(sql`
-        SELECT to_regclass('public.food_card_texts') IS NOT NULL AS present
-      `);
-      if (!table?.present) return null;
-      const [state] = await tx.execute<{ ready: boolean }>(sql`
-        SELECT EXISTS (SELECT 1 FROM food_card_text_rows)
-          AND NOT EXISTS (SELECT 1 FROM food_card_texts WHERE embedding IS NULL) AS ready
-      `);
-      if (!state?.ready) return null;
-      return tx.execute<CatalogQueryRow>(sql.raw(CATALOG_ROWS_SQL));
-    },
-    { isolationLevel: 'repeatable read', accessMode: 'read only' }
-  );
-  if (!result) return null;
-
+/**
+ * The catalog from the catalog query's rows: shared by the database path
+ * below and the search artifact (`search-index/`), whose catalog.json holds
+ * the same rows, so both build identical indexes.
+ */
+export function buildCardCatalog(
+  result: readonly CatalogQueryRow[]
+): CardCatalog {
   const rows = new Map<string, CatalogRow>();
   const names = new Map<string, Set<string>>();
   for (const r of result) {
@@ -199,15 +182,43 @@ async function loadCatalog(db: AppDb): Promise<CardCatalog | null> {
       )
     );
   }
-  const catalog: CardCatalog = {
+  return {
     rows,
     lexical: buildLexicalIndex(names),
     bm25En: buildBm25Index(
       [...rows.values()].map((r) => ({ id: r.id, text: r.nameEn }))
     ),
   };
+}
+
+async function loadCatalog(db: AppDb): Promise<CardCatalog | null> {
+  const t0 = Date.now();
+  // Readiness and rows from one snapshot: a card migration committing between
+  // two separate reads could load cards whose vectors are still NULL and mark
+  // the catalog ready anyway.
+  const result = await db.transaction(
+    async (tx) => {
+      // Its own statement: Postgres resolves table names when it parses a
+      // statement, so on a database without the card tables a combined query
+      // would fail instead of answering "not ready".
+      const [table] = await tx.execute<{ present: boolean }>(sql`
+        SELECT to_regclass('public.food_card_texts') IS NOT NULL AS present
+      `);
+      if (!table?.present) return null;
+      const [state] = await tx.execute<{ ready: boolean }>(sql`
+        SELECT EXISTS (SELECT 1 FROM food_card_text_rows)
+          AND NOT EXISTS (SELECT 1 FROM food_card_texts WHERE embedding IS NULL) AS ready
+      `);
+      if (!state?.ready) return null;
+      return tx.execute<CatalogQueryRow>(sql.raw(CATALOG_ROWS_SQL));
+    },
+    { isolationLevel: 'repeatable read', accessMode: 'read only' }
+  );
+  if (!result) return null;
+
+  const catalog = buildCardCatalog(result);
   console.info(
-    `[card-matching] catalog loaded: ${rows.size} rows in ${Date.now() - t0}ms`
+    `[card-matching] catalog loaded: ${catalog.rows.size} rows in ${Date.now() - t0}ms`
   );
   return catalog;
 }
