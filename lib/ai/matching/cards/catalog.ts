@@ -12,13 +12,11 @@
  * without a restart.
  */
 import { sql } from 'drizzle-orm';
-import {
-  MATCHABLE_SOURCE_CODES,
-  sourceBucket,
-} from '@/lib/ai/matching/match-constants';
+import { sourceBucket } from '@/lib/ai/matching/match-constants';
 import type { MatchSource } from '@/lib/ai/types/matching';
 import type { AppDb } from '@/lib/infra/db/client';
 import { type Bm25Index, buildBm25Index } from './bm25-index';
+import { CATALOG_ROWS_SQL, type CatalogQueryRow } from './catalog-sql';
 import { conceptKey } from './concept-key';
 import { buildLexicalIndex, type LexicalIndex } from './lexical-index';
 
@@ -37,22 +35,6 @@ export interface CardCatalog {
   lexical: LexicalIndex;
   bm25En: Bm25Index;
 }
-
-type CatalogQueryRow = {
-  id: string;
-  source_code: string;
-  state: string;
-  name_en: string | null;
-  name_primary: string;
-  food: string | null;
-  aliases_en: string[] | null;
-  names_vi: string[] | null;
-  part_cut: string | null;
-  form_processing: string | null;
-  cooking_method: string | null;
-  fat_level: string | null;
-  brand: string | null;
-};
 
 const NOT_READY_RETRY_MS = 60_000;
 const READY_REFRESH_MS = 30 * 60_000;
@@ -169,18 +151,7 @@ async function loadCatalog(db: AppDb): Promise<CardCatalog | null> {
           AND NOT EXISTS (SELECT 1 FROM food_card_texts WHERE embedding IS NULL) AS ready
       `);
       if (!state?.ready) return null;
-      return tx.execute<CatalogQueryRow>(sql`
-        SELECT v.id, s.code AS source_code, v.state, v.name_en, v.name_primary,
-               c.food, c.aliases_en, c.names_vi, c.part_cut, c.form_processing,
-               c.cooking_method, c.fat_level, c.brand
-        FROM vietnamese_food_composition v
-        JOIN ingredient_sources s ON s.id = v.source_id
-        JOIN food_cards c ON c.food_composition_id = v.id
-        WHERE s.code IN (${sql.join(
-          MATCHABLE_SOURCE_CODES.map((c) => sql`${c}`),
-          sql`, `
-        )})
-      `);
+      return tx.execute<CatalogQueryRow>(sql.raw(CATALOG_ROWS_SQL));
     },
     { isolationLevel: 'repeatable read', accessMode: 'read only' }
   );

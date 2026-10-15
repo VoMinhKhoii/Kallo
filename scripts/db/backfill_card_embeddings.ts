@@ -105,10 +105,13 @@ async function store(rows: { id: number }[], vecs: number[][]) {
   const values = rows.map(
     (r, i) => `(${r.id}, '[${vecs[i].join(',')}]'::halfvec(768))`
   );
+  // Only rows still unembedded: an overlapping run must not rewrite a vector
+  // another run already stored (the search artifact's fingerprint assumes a
+  // stored vector never changes under the same id).
   await sql.unsafe(`
     UPDATE food_card_texts AS v SET embedding = d.vec
     FROM (VALUES ${values.join(',')}) AS d(id, vec)
-    WHERE v.id = d.id`);
+    WHERE v.id = d.id AND v.embedding IS NULL`);
 }
 
 async function main() {

@@ -48,6 +48,12 @@ jobs:
           node-version: 22
       - uses: ./.github/actions/setup-bun
       - run: bun run test -- --exclude '**/lib/infra/db/__tests__/**'
+      # The prod deploy runs the card search artifact builder under Bun on
+      # Linux; the tests above run under Node. Build and search an index with
+      # the builder's own code under Bun, so a native-binary or runtime
+      # mismatch fails here, not in a deploy.
+      - name: Card artifact builder runs under Bun
+        run: bun scripts/ci/check-card-artifact-runtime.ts
 
   build:
     name: Build

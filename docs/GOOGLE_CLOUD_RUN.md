@@ -144,6 +144,8 @@ Create or confirm these resources:
 - Deployer service account for GitHub Actions
 - Runtime service account for Cloud Run revisions
 - GCS bucket for staging lease state
+- GCS bucket `kallo-prod-card-search` for the card search artifact (see "Card
+  search artifact")
 - Secret Manager secrets:
   - `kallo-prod-database-url` — session-mode pooler URL (port 5432), used
     only for migrations and the deploy's own DB steps
@@ -168,6 +170,75 @@ Create or confirm these resources:
 The prod workflow creates `kallo-prod` on first deploy, so the service itself
 does not need to be pre-created. All required secrets must exist before merge;
 otherwise the automatic prod deploy stops during pre-deploy validation.
+
+## Card search artifact
+
+Each prod deploy builds the card search artifact after the card-embedding
+backfill (`scripts/data/food-cards/search-artifact/`): the card catalog rows,
+every card string's vector, and an HNSW index over them, so matching can search
+in the container instead of in Supabase. The builder fingerprints the card data
+in Postgres (one small row back) and reuses the published build when the data,
+the format, the search parameters and the builder's own code are unchanged;
+otherwise it reads a consistent snapshot (~90 MB), builds the index on one
+thread (the same data always gives the same bytes), and runs a parity gate
+before uploading anything: on ~30 fixed sample queries the index must match an
+exact search (recall@30 ≥ 0.97 on average, ≥ 0.8 for 90% of samples), and every row
+`match_food_card_texts` returns must have a string whose similarity, computed
+by the artifact's search code, equals the database's within 1e-4. Every query
+runs in an explicit READ ONLY transaction.
+
+Layout, all immutable (created with `ifGenerationMatch=0`):
+
+- `gs://kallo-prod-card-search/f1/<buildId>/{catalog.json,texts.f16,text-rows.json,index.usearch,manifest.json}`
+- `gs://kallo-prod-card-search/f1/by-key/<key>.json` — which build serves a
+  given (data fingerprint, spec) key; the only objects ever overwritten, and
+  only by `--force`
+
+The step prints `CARD_INDEX_URI=gs://kallo-prod-card-search/f1/<buildId>`,
+exports it to the job, and records it in the deploy record. The app does not
+read the artifact yet; the follow-up that does passes this URI to each new
+revision, pinning the revision to that build. Builds are never deleted, so an
+older revision can always load the build it was deployed with.
+
+One-time setup (uniform bucket-level access is required for the IAM
+condition; once the bucket has a conditional binding, gcloud refuses
+unconditional ones unless they say `--condition=None`):
+
+```bash
+gcloud storage buckets create gs://kallo-prod-card-search \
+  --project="$GCP_PROJECT_ID" \
+  --location=asia-southeast1 \
+  --uniform-bucket-level-access
+
+# Deployer: create new objects and read them; overwrite only the by-key pointers.
+gcloud storage buckets add-iam-policy-binding gs://kallo-prod-card-search \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/storage.objectCreator" --condition=None
+gcloud storage buckets add-iam-policy-binding gs://kallo-prod-card-search \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/storage.objectViewer" --condition=None
+gcloud storage buckets add-iam-policy-binding gs://kallo-prod-card-search \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/storage.objectUser" \
+  --condition='title=card-search-pointers,expression=resource.name.startsWith("projects/_/buckets/kallo-prod-card-search/objects/f1/by-key/")'
+
+# Runtime: read only.
+gcloud storage buckets add-iam-policy-binding gs://kallo-prod-card-search \
+  --member="serviceAccount:$GCP_RUNTIME_SERVICE_ACCOUNT" \
+  --role="roles/storage.objectViewer" --condition=None
+```
+
+Rebuild by hand (read-only against the database; needs the deployer's or an
+owner's gcloud login):
+
+```bash
+# Build and gate without uploading:
+DATABASE_URL=... bun scripts/data/food-cards/search-artifact/build-search-artifact.ts --dry-run --out /tmp/card-artifact
+# Publish, replacing the build for the current key. Required after
+# re-embedding card strings under unchanged ids, which the fingerprint only
+# samples:
+DATABASE_URL=... bun scripts/data/food-cards/search-artifact/build-search-artifact.ts --bucket kallo-prod-card-search --force
+```
 
 ## Meal pipeline model
 
