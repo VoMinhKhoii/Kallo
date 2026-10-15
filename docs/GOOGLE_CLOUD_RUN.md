@@ -245,12 +245,20 @@ not set; otherwise it smokes as before.
 - **A hung worker.** A search gets at most 2 s; the worker is replaced after
   three searches in a row that had the full 2 s and still got no answer, spread
   over at least 2 s (one stall that times out several searches at once is not
-  a hang). A search cut short by its meal's deadline never counts, so if every
-  meal reaching a hung worker already has under 2 s left, the worker is not
-  replaced: those meals keep matching on the word arms until a meal with time
-  left trips it, or the container recycles.
-- **Replacing a worker** terminates its thread; one stuck in native index code
-  can keep using CPU for a moment after that, while the new worker loads.
+  a hang). Any answer starts the count over, a late one included: a worker
+  that answers every search after 2 s (overloaded, not hung) is never replaced,
+  since a new one would be no faster, and its meals wait the 2 s, then match
+  on the word arms. A search cut short by its meal's deadline never counts, so
+  if every meal reaching a hung worker already has under 2 s left, the worker
+  is not replaced: those meals keep matching on the word arms until a meal with
+  time left trips it, or the container recycles.
+- **Replacing a worker** terminates its thread, but a thread stuck inside
+  native index code cannot be interrupted: it keeps its CPU and its copy of the
+  index in memory until that call returns, or until the container recycles,
+  while the new worker loads beside it. Repeated replacements can leave several
+  such threads. If `[card-index] search worker failed` keeps appearing in the
+  logs, set the kill switch (above) rather than wait it out: the revision it
+  creates starts on fresh containers.
 
 One-time setup (uniform bucket-level access is required for the IAM
 condition; once the bucket has a conditional binding, gcloud refuses
