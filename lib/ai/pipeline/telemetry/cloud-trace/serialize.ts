@@ -48,8 +48,10 @@ export function serializeTrace(payload: unknown): {
         .replace(/[^\s<>"\\]+/g, (word) =>
           word.includes('@') ? '[email]' : word
         )
-        .replace(/https?:\/\/[^\s<>"\\]+/g, '[url]')
-        .replace(/data:[^\s"]+/g, '[data]');
+        // Any scheme, any case, and JSON-escaped slashes (`https:\/\/`); bare www. too.
+        .replace(/\b[a-z][a-z0-9+.-]*:(?:\/|\\\/){2}[^\s<>"]+/gi, '[url]')
+        .replace(/\bwww\.[^\s<>"\\]+/gi, '[url]')
+        .replace(/data:[^\s"]+/gi, '[data]');
     }
     if (
       value == null ||

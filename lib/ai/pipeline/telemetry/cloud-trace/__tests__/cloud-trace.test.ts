@@ -74,6 +74,22 @@ describe('bounded Cloud Logging capture', () => {
     expect(lines.join('')).not.toContain('private-value');
   });
 
+  it('redacts non-canonical URL forms in raw input, errors and responses', () => {
+    const { capture, events, lines } = fixture();
+    const urls =
+      'HTTPS://upper.example.test ftp://files.example.test www.bare.example.test https:\\/\\/escaped.example.test DATA:image/png;base64,secret';
+    capture.emit('synthetic-request', 'llm', {
+      error: urls,
+      response: `not json ${urls}`,
+    });
+    expect(events()[1].error).toBe('[url] [url] [url] [url] [data]');
+    expect(events()[1].response).toBe('not json [url] [url] [url] [url] [data]');
+    expect(lines.join('')).not.toContain('example.test');
+    // Times and ratios are not URLs.
+    capture.emit('synthetic-request', 'llm', { error: 'at 13:05 ratio 1:2' });
+    expect(events()[2].error).toBe('at 13:05 ratio 1:2');
+  });
+
   it('redacts plain text responses and bounds JSON response traversal', () => {
     const { capture, events } = fixture();
     capture.emit('synthetic-request', 'llm', {
