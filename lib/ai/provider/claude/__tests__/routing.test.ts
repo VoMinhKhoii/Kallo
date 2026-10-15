@@ -75,7 +75,7 @@ describe('withClaudeRouting', () => {
     ).toEqual({ by: 'gemini-stream', model: FALLBACK });
   });
 
-  it("numbers the fallback attempts after Claude's, so callers reset their parsers", async () => {
+  it("numbers the fallback attempts after Claude's and marks them as standing in for it", async () => {
     const claudeTwice = {
       generateStructuredOutputStream: vi.fn(
         async (_p: unknown, o?: StreamOptions) => {
@@ -96,21 +96,26 @@ describe('withClaudeRouting', () => {
           inputTokens: 1,
           outputTokens: 1,
           cachedTokens: 0,
+          cacheWriteTokens: 0,
           thoughtTokens: 0,
+          latencyMs: 10,
         });
         return {} as never;
       }
     );
     const starts: number[] = [];
-    const completes: number[] = [];
+    const completes: { attempt: number; fallbackFrom?: string }[] = [];
     const llm = withClaudeRouting(g, claudeTwice, { fallbackModel: FALLBACK });
     await llm.generateStructuredOutputStream(params('claude-haiku-5-5'), {
       onAttemptStart: (n) => starts.push(n),
-      onAttemptComplete: (m) => completes.push(m.attempt),
+      onAttemptComplete: ({ attempt, fallbackFrom }) =>
+        completes.push({ attempt, fallbackFrom }),
     });
 
     expect(starts).toEqual([1, 2, 3]);
-    expect(completes).toEqual([3]);
+    expect(completes).toEqual([
+      { attempt: 3, fallbackFrom: 'claude-haiku-5-5' },
+    ]);
   });
 
   it('does not re-run a call its caller aborted', async () => {

@@ -790,6 +790,16 @@ export const analysisModelBudgetEvents = pgTable(
     // billed at the cached rate; thought is billed as output on top of it.
     cachedTokens: integer('cached_tokens').notNull().default(0),
     thoughtTokens: integer('thought_tokens').notNull().default(0),
+    // Subset of input written to Claude's cache, billed 1.25x input. Rows
+    // before 2026-10-15 carry 0: the count was not kept then.
+    cacheWriteTokens: integer('cache_write_tokens').notNull().default(0),
+    // USD for an attempt row, priced at write time from pricing.ts. NULL for
+    // the reservation row, an attempt with no usage, or an unpriced model.
+    costUsd: numeric('cost_usd', { precision: 12, scale: 8, mode: 'number' }),
+    // Wall time of one attempt. NULL on reservation rows and before 2026-10-15.
+    latencyMs: integer('latency_ms'),
+    // On a Gemini attempt re-running a failed Claude call: the Claude model.
+    fallbackFrom: text('fallback_from'),
     errorCategory: text('error_category'),
   },
   (table) => [
@@ -818,6 +828,18 @@ export const analysisModelBudgetEvents = pgTable(
     check(
       'analysis_model_budget_events_output_tokens_check',
       sql`${table.outputTokens} >= 0`
+    ),
+    check(
+      'analysis_model_budget_events_cache_write_tokens_check',
+      sql`${table.cacheWriteTokens} >= 0`
+    ),
+    check(
+      'analysis_model_budget_events_cost_usd_check',
+      sql`${table.costUsd} IS NULL OR ${table.costUsd} >= 0`
+    ),
+    check(
+      'analysis_model_budget_events_latency_ms_check',
+      sql`${table.latencyMs} IS NULL OR ${table.latencyMs} >= 0`
     ),
     check(
       'analysis_model_budget_events_error_category_check',

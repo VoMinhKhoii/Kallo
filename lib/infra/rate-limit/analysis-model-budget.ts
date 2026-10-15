@@ -42,7 +42,9 @@ export const drizzleAnalysisModelBudgetSource: AnalysisModelBudgetSource = {
       })
       .from(analysisModelBudgetEvents)
       .where(
-        sql`${analysisModelBudgetEvents.createdAt} >= ${input.windowStart} AND ${analysisModelBudgetEvents.createdAt} <= ${input.now} AND ${analysisModelBudgetEvents.provider} = ${input.provider} AND ${analysisModelBudgetEvents.errorCategory} IS NOT NULL`
+        // `unknown` is our own failure (a schema slip, a refusal), not the
+        // provider struggling, so it never trips provider pressure.
+        sql`${analysisModelBudgetEvents.createdAt} >= ${input.windowStart} AND ${analysisModelBudgetEvents.createdAt} <= ${input.now} AND ${analysisModelBudgetEvents.provider} = ${input.provider} AND ${analysisModelBudgetEvents.errorCategory} IS NOT NULL AND ${analysisModelBudgetEvents.errorCategory} <> 'unknown'`
       );
 
     return toInteger(row?.providerErrors);
@@ -66,7 +68,14 @@ export async function recordAnalysisModelBudgetEvent(
     inputTokens: readNonNegativeInteger(input.inputTokens, 0),
     outputTokens: readNonNegativeInteger(input.outputTokens, 0),
     cachedTokens: readNonNegativeInteger(input.cachedTokens, 0),
+    cacheWriteTokens: readNonNegativeInteger(input.cacheWriteTokens, 0),
     thoughtTokens: readNonNegativeInteger(input.thoughtTokens, 0),
+    costUsd: input.costUsd != null && input.costUsd >= 0 ? input.costUsd : null,
+    latencyMs:
+      input.latencyMs == null
+        ? null
+        : readNonNegativeInteger(input.latencyMs, 0),
+    fallbackFrom: input.fallbackFrom ?? null,
     errorCategory: input.errorCategory ?? null,
   });
 

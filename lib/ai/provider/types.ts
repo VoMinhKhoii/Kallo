@@ -30,6 +30,8 @@ export interface AttemptTokens {
   outputTokens: number | null;
   /** Subset of `inputTokens` served from the provider cache (cached rate). */
   cachedTokens: number | null;
+  /** Subset of `inputTokens` written to the cache (Claude only; 1.25x input). */
+  cacheWriteTokens: number | null;
   /** Thinking tokens (`thoughtsTokenCount`), billed at the output rate. */
   thoughtTokens: number | null;
 }
@@ -38,6 +40,10 @@ export interface GeminiAttemptMetadata extends AttemptTokens {
   attempt: number;
   model: string;
   error: unknown;
+  /** Wall time of this one attempt, start to answer or failure. */
+  latencyMs: number;
+  /** Set on a Gemini attempt that re-ran a failed Claude call: the Claude model. */
+  fallbackFrom?: string;
 }
 
 /** Per-attempt hooks for a non-streamed structured-output call. */

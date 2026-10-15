@@ -8,6 +8,8 @@ export interface StreamUsageMetadata {
   candidatesTokenCount?: number;
   cachedContentTokenCount?: number;
   thoughtsTokenCount?: number;
+  /** Not a Gemini field: Claude's cache-write count, set by its adapter. */
+  cacheWriteTokenCount?: number;
 }
 
 /** Billable token counts for one attempt, null where Gemini sent none. */
@@ -18,6 +20,7 @@ export function readAttemptUsage(
     inputTokens: usage?.promptTokenCount ?? null,
     outputTokens: usage?.candidatesTokenCount ?? null,
     cachedTokens: usage?.cachedContentTokenCount ?? null,
+    cacheWriteTokens: usage?.cacheWriteTokenCount ?? null,
     thoughtTokens: usage?.thoughtsTokenCount ?? null,
   };
 }
@@ -59,6 +62,7 @@ export function createAttemptObserver({
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
 }) {
   return (attempt: number, t0: number, _result: unknown, err: unknown) => {
+    const latencyMs = Date.now() - t0;
     const usage = readAttemptUsage(state.usage);
     const { inputTokens, outputTokens, cachedTokens } = usage;
 
@@ -83,7 +87,7 @@ export function createAttemptObserver({
         responseRaw: state.accumulated,
         inputTokens,
         outputTokens,
-        latencyMs: Date.now() - t0,
+        latencyMs,
         attempt,
         error:
           err instanceof Error
@@ -102,6 +106,6 @@ export function createAttemptObserver({
       });
     }
 
-    onAttemptComplete?.({ attempt, model, ...usage, error: err });
+    onAttemptComplete?.({ attempt, model, ...usage, latencyMs, error: err });
   };
 }

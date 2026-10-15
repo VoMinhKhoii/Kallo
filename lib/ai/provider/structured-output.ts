@@ -63,11 +63,12 @@ export function createStructuredOutput({
       {
         label: params.model,
         abortSignal: params.abortSignal,
-        onAttempt: (attempt, _t0, _result, err) =>
+        onAttempt: (attempt, t0, _result, err) =>
           opts?.onAttemptComplete?.({
             attempt,
             model: params.model,
             ...readAttemptUsage(usage),
+            latencyMs: Date.now() - t0,
             error: err,
           }),
       }

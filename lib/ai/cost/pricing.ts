@@ -5,7 +5,7 @@
  * input), read 2026-09-25 — Vertex bills the same list rates for these
  * models; https://platform.claude.com/docs/en/about-claude/pricing, read
  * 2026-10-10 (Claude: prompts up to 100k tokens; a 5-minute cache write bills
- * 1.25x input, which these three fields do not carry).
+ * 1.25x input — `CACHE_WRITE_INPUT_MULTIPLIER`, not a field here).
  * Re-check the page when a model is added or a cost number looks wrong — a
  * stale rate silently skews every cost report built on this file.
  */
@@ -55,3 +55,40 @@ export const MODEL_RATES: Record<string, ModelRate> = {
     outputPerMTokUsd: 0.5,
   },
 };
+
+/**
+ * Claude bills prompt tokens written to its 5-minute cache at 1.25x input.
+ * Gemini's implicit cache has no write charge, so its attempts report 0.
+ */
+export const CACHE_WRITE_INPUT_MULTIPLIER = 1.25;
+
+/** The token counts one attempt was billed for, as the budget row stores them. */
+export interface BilledTokens {
+  /** Every prompt token, cached reads and cache writes included. */
+  inputTokens: number;
+  /** Part of `inputTokens` read from the cache. */
+  cachedTokens: number;
+  /** Part of `inputTokens` written to the cache. */
+  cacheWriteTokens: number;
+  outputTokens: number;
+  /** Billed at the output rate, on top of `outputTokens`. */
+  thoughtTokens: number;
+}
+
+/** USD for one attempt, or null for a model missing from the rate card. */
+export function attemptCostUsd(
+  model: string,
+  tokens: BilledTokens
+): number | null {
+  const rate = MODEL_RATES[model];
+  if (!rate) return null;
+  const { inputTokens, cachedTokens, cacheWriteTokens } = tokens;
+  const freshInput = Math.max(0, inputTokens - cachedTokens - cacheWriteTokens);
+  return (
+    (freshInput * rate.inputPerMTokUsd +
+      cachedTokens * rate.cachedInputPerMTokUsd +
+      cacheWriteTokens * rate.inputPerMTokUsd * CACHE_WRITE_INPUT_MULTIPLIER +
+      (tokens.outputTokens + tokens.thoughtTokens) * rate.outputPerMTokUsd) /
+    1e6
+  );
+}

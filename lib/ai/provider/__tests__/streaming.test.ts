@@ -205,6 +205,7 @@ describe('generateStructuredOutputStream with trace', () => {
       inputTokens: 10,
       outputTokens: 20,
       cachedTokens: null,
+      cacheWriteTokens: null,
       thoughtTokens: null,
     });
   });
@@ -324,7 +325,9 @@ describe('generateStructuredOutputStream with trace', () => {
       inputTokens: 12,
       outputTokens: 34,
       cachedTokens: 8,
+      cacheWriteTokens: null,
       thoughtTokens: 5,
+      latencyMs: expect.any(Number),
       error: null,
     });
   });
@@ -372,7 +375,9 @@ describe('generateStructuredOutputStream with trace', () => {
       inputTokens: null,
       outputTokens: null,
       cachedTokens: null,
+      cacheWriteTokens: null,
       thoughtTokens: null,
+      latencyMs: expect.any(Number),
       error: retryableError,
     });
     expect(onAttemptComplete).toHaveBeenNthCalledWith(2, {
@@ -381,7 +386,9 @@ describe('generateStructuredOutputStream with trace', () => {
       inputTokens: 7,
       outputTokens: 11,
       cachedTokens: null,
+      cacheWriteTokens: null,
       thoughtTokens: null,
+      latencyMs: expect.any(Number),
       error: null,
     });
   });
