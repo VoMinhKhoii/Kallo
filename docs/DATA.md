@@ -16,9 +16,10 @@ one-line sentence. Nutrients are never edited on a card.
   no longer has, and strings no row uses. The prod deploy
   embeds any new strings (`scripts/db/backfill_card_embeddings.ts`) and rebuilds the card
   search index the containers load; locally run that script against `.env.local`. Card data
-  changed in prod outside a deploy reaches the search at the nightly `card-index-refresh.yml`
-  run, or at once with `gh workflow run card-index-refresh.yml --ref main`
-  (`docs/GOOGLE_CLOUD_RUN.md`, "Card search artifact").
+  changed in prod outside a deploy reaches the search through `card-index-refresh.yml`: nightly,
+  or on demand with `gh workflow run card-index-refresh.yml --ref main`; either way it
+  dispatches a redeploy that waits for approval (`docs/GOOGLE_CLOUD_RUN.md`, "Card search
+  artifact").
 - After a `supabase db reset` (the base rows arrive from `seed.sql`, after migrations),
   `scripts/data/food-cards/sync-cards.ts` re-applies the cards; `bun dbr:reset` runs it and the
   card backfill.

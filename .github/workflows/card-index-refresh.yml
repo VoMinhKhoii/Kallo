@@ -48,8 +48,13 @@ jobs:
       - name: Skip while a prod deploy is open
         id: busy
         run: |
-          open="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow cloud-run-prod.yml \
-            --limit 20 --json status --jq '[.[] | select(.status != "completed")] | length')"
+          set -euo pipefail
+          open=0
+          for status in requested queued pending waiting in_progress; do
+            n="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow cloud-run-prod.yml \
+              --status "$status" --limit 100 --json databaseId --jq 'length')"
+            open=$((open + n))
+          done
           echo "Open prod deploys: $open"
           echo "open=$open" >> "$GITHUB_OUTPUT"
       - uses: google-github-actions/auth@v3
@@ -158,5 +163,8 @@ jobs:
           REASON: ${{ steps.compare.outputs.reason }}
         run: |
           echo "Redeploying $SERVING_SHA: $REASON."
-          gh workflow run cloud-run-prod.yml --repo "$GITHUB_REPOSITORY" --ref main -f sha="$SERVING_SHA"
+          # expected_serving_sha: the deploy re-checks, after approval, that
+          # this commit still serves, so it never rolls back a newer release.
+          gh workflow run cloud-run-prod.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            -f sha="$SERVING_SHA" -f expected_serving_sha="$SERVING_SHA"
           echo "Dispatched the prod deploy of \`$SERVING_SHA\` ($REASON); it waits for approval." >> "$GITHUB_STEP_SUMMARY"

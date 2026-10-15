@@ -252,8 +252,11 @@ build that does not load, not a flake to retry around.
   builder against today's data and, when the build differs from the one the
   serving revision is pinned to (or card strings await embeddings), dispatches
   the prod deploy of that same commit, never main's tip; the deploy waits for
-  approval like any other. It skips while a prod deploy is open, while traffic
-  is split, and when the kill switch is on. Run it by hand after a data edit:
+  approval like any other. That deploy carries `expected_serving_sha`: after
+  approval, under the lease, it stops before changing anything unless that
+  commit still serves, so approving a stale refresh never rolls back a newer
+  release. The refresh skips while a prod deploy is open, while traffic is
+  split, and when the kill switch is on. Run it by hand after a data edit:
   `gh workflow run card-index-refresh.yml --ref main`.
 - **Kill switch.** `CARD_INDEX_ENABLED=false` sends every search back to the
   database. `--update-env-vars` merges, so it stays set across deploys until

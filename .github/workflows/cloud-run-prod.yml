@@ -22,6 +22,13 @@ on:
           exists). Leave empty to deploy the tip of the dispatched ref.
         required: false
         default: ''
+      expected_serving_sha:
+        description: >-
+          Set by card-index-refresh.yml: deploy only while this commit still
+          serves prod, checked after approval and under the lease, so a
+          refresh never rolls back a release that landed after it looked.
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -100,6 +107,33 @@ jobs:
           STAGING_FORCE_TAKEOVER: 'false'
           STAGING_TARGET_SHA: ${{ env.DEPLOY_SHA }}
         run: ./scripts/cloud-run/staging-lease.sh acquire
+      # A card index refresh redeploys the commit that was serving when it
+      # looked. Approval can come hours later, after a newer release: under the
+      # lease nothing else is deploying, so check that commit still serves
+      # before changing anything. Inline, not a script: DEPLOY_SHA's checkout
+      # may predate any script added for this.
+      - name: Confirm the refresh's commit still serves
+        if: inputs.expected_serving_sha != ''
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_serving_sha }}
+        run: |
+          set -euo pipefail
+          if [ "$DEPLOY_SHA" != "$EXPECTED_SHA" ]; then
+            echo "::error::A refresh redeploys the serving commit: sha ($DEPLOY_SHA) and expected_serving_sha ($EXPECTED_SHA) differ."
+            exit 1
+          fi
+          revision="$(gcloud run services describe "$SERVICE_NAME" --region="$PROD_REGION" --format=json \
+            | jq -r '[.status.traffic[]? | select(.percent == 100) | .revisionName][0] // ""')"
+          serving=""
+          if [ -n "$revision" ]; then
+            serving="$(gcloud run revisions describe "$revision" --region="$PROD_REGION" --format=json \
+              | jq -r '.metadata.labels["commit-sha"] // ""')"
+          fi
+          if [ "$serving" != "$EXPECTED_SHA" ]; then
+            echo "::error::Not deploying: the card index refresh asked to redeploy $EXPECTED_SHA, but ${serving:-no single commit} serves prod now. Nothing was changed."
+            exit 1
+          fi
+          echo "$EXPECTED_SHA still serves prod ($revision); redeploying it to refresh the card index."
       - name: Pre-deploy validation
         run: |
           [ -n "$LEASE_BUCKET" ]

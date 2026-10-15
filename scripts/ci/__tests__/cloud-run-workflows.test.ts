@@ -334,6 +334,51 @@ describe('Cloud Run prod workflow', () => {
   });
 });
 
+describe('workflow shell steps', () => {
+  /** Every `run: |` block of a workflow, de-indented. */
+  function runBlocks(text: string): string[] {
+    const blocks: string[] = [];
+    let current: string[] | null = null;
+    let indent = 0;
+    for (const line of text.split('\n')) {
+      if (current) {
+        if (!line.trim() || line.startsWith(' '.repeat(indent))) {
+          current.push(line.slice(indent));
+          continue;
+        }
+        blocks.push(current.join('\n'));
+        current = null;
+      }
+      const run = /^( *)run: \|\s*$/.exec(line);
+      if (run) {
+        current = [];
+        indent = run[1].length + 2;
+      }
+    }
+    if (current) blocks.push(current.join('\n'));
+    return blocks;
+  }
+
+  // A quote bash pairs differently than intended (an apostrophe inside
+  // "${x:-...}") fails the whole step, and only when it runs in Actions.
+  it.each([
+    'cloud-run-prod.yml',
+    'card-index-refresh.yml',
+    'translate-usda.yml',
+  ])('%s: every run block parses as bash', (name) => {
+    const blocks = runBlocks(readWorkflow(name));
+    expect(blocks.length).toBeGreaterThan(0);
+    for (const block of blocks) {
+      const result = spawnSync('bash', ['-n'], {
+        input: block,
+        encoding: 'utf8',
+      });
+      expect(result.stderr).toBe('');
+      expect(result.status).toBe(0);
+    }
+  });
+});
+
 describe('Card index refresh workflow', () => {
   const workflow = readWorkflow('card-index-refresh.yml');
   const step = (name: string) => {
@@ -354,9 +399,6 @@ describe('Card index refresh workflow', () => {
   });
 
   it('stays out of the way of an open prod deploy', () => {
-    expect(step('Skip while a prod deploy is open')).toContain(
-      'select(.status != "completed")'
-    );
     expect(workflow).toContain("if: steps.busy.outputs.open == '0'");
   });
 
@@ -383,10 +425,22 @@ describe('Card index refresh workflow', () => {
     const redeploy = step('Redeploy the serving commit');
     expect(redeploy).toContain("if: steps.compare.outputs.stale == 'true'");
     expect(redeploy).toContain(
-      'gh workflow run cloud-run-prod.yml --repo "$GITHUB_REPOSITORY" --ref main -f sha="$SERVING_SHA"'
-    );
-    expect(redeploy).toContain(
       `SERVING_SHA: \${{ steps.serving.outputs.sha }}`
+    );
+  });
+
+  it('has the prod deploy re-check the serving commit after approval, under the lease', () => {
+    const prod = readWorkflow('cloud-run-prod.yml');
+    expect(prod).toMatch(/\n {6}expected_serving_sha:\n/);
+    const lease = prod.indexOf('- name: Acquire prod lease');
+    const guard = prod.indexOf(
+      "- name: Confirm the refresh's commit still serves"
+    );
+    const firstChange = prod.indexOf('- name: Pre-deploy validation');
+    expect(guard).toBeGreaterThan(lease);
+    expect(firstChange).toBeGreaterThan(guard);
+    expect(prod.slice(guard, firstChange)).toContain(
+      "if: inputs.expected_serving_sha != ''"
     );
   });
 
@@ -400,8 +454,8 @@ describe('Card index refresh workflow', () => {
     });
 
     /** The `run: |` script of a named step, de-indented. */
-    function stepScript(name: string): string {
-      const lines = workflow.split('\n');
+    function stepScript(text: string, name: string): string {
+      const lines = text.split('\n');
       const at = lines.findIndex((l) => l.trim() === `- name: ${name}`);
       const run = lines.findIndex((l, i) => i > at && l.trim() === 'run: |');
       expect(at).toBeGreaterThan(-1);
@@ -421,7 +475,8 @@ describe('Card index refresh workflow', () => {
     function runStep(
       name: string,
       fakes: Record<string, string>,
-      env: Record<string, string> = {}
+      env: Record<string, string> = {},
+      text = workflow
     ) {
       const dir = mkdtempSync(join(tmpdir(), 'card-refresh-step-'));
       dirs.push(dir);
@@ -440,7 +495,7 @@ describe('Card index refresh workflow', () => {
       );
       const output = join(dir, 'output');
       writeFileSync(output, '');
-      writeFileSync(join(dir, 'step.sh'), stepScript(name));
+      writeFileSync(join(dir, 'step.sh'), stepScript(text, name));
       const result = spawnSync(
         'bash',
         ['--noprofile', '--norc', '-eo', 'pipefail', join(dir, 'step.sh')],
@@ -592,6 +647,129 @@ echo "[card-artifact] key abc"
         const run = compare('0', '');
         expect(run.status).not.toBe(0);
         expect(run.outputs.stale).toBeUndefined();
+      });
+
+      it('fails when the builder fails after printing a URI', () => {
+        const run = runStep(
+          'Compare the card data with the serving build',
+          {
+            psql: 'echo 0',
+            bun: 'echo "CARD_INDEX_URI=gs://b/f1/new"; exit 3',
+          },
+          { SERVING_URI: URI }
+        );
+        expect(run.status).not.toBe(0);
+        expect(run.outputs.stale).toBeUndefined();
+      });
+    });
+
+    describe('Skip while a prod deploy is open', () => {
+      // `gh run list --status <s> ... --jq length`: FAKE_WAITING runs wait
+      // for approval, none in any other state.
+      const gh = [
+        'for a in "$@"; do [ "$prev" = "--status" ] && s="$a"; prev="$a"; done',
+        'if [ "$s" = waiting ]; then echo "$FAKE_WAITING"; else echo 0; fi',
+      ].join('\n');
+      const open = (waiting: string) =>
+        runStep(
+          'Skip while a prod deploy is open',
+          { gh },
+          { FAKE_WAITING: waiting, GITHUB_REPOSITORY: 'VoMinhKhoii/Kallo' }
+        ).outputs;
+
+      it('counts a deploy waiting for approval as open', () => {
+        expect(open('1')).toEqual({ open: '1' });
+        expect(open('0')).toEqual({ open: '0' });
+      });
+    });
+
+    describe('Redeploy the serving commit', () => {
+      it('dispatches the serving commit, guarded by expected_serving_sha', () => {
+        const run = runStep(
+          'Redeploy the serving commit',
+          { gh: 'printf "%s\\n" "$@" > "$RUNNER_TEMP/gh-args"' },
+          {
+            SERVING_SHA: SHA,
+            REASON: 'the card data changed',
+            GITHUB_REPOSITORY: 'VoMinhKhoii/Kallo',
+            GITHUB_STEP_SUMMARY: '/dev/null',
+          }
+        );
+        expect(run.status).toBe(0);
+        expect(
+          readFileSync(join(run.dir, 'gh-args'), 'utf8').trim().split('\n')
+        ).toEqual([
+          'workflow',
+          'run',
+          'cloud-run-prod.yml',
+          '--repo',
+          'VoMinhKhoii/Kallo',
+          '--ref',
+          'main',
+          '-f',
+          `sha=${SHA}`,
+          '-f',
+          `expected_serving_sha=${SHA}`,
+        ]);
+      });
+    });
+
+    describe("Confirm the refresh's commit still serves (prod deploy)", () => {
+      const prod = readWorkflow('cloud-run-prod.yml');
+      const NEWER = 'b'.repeat(40);
+      const guard = (
+        traffic: unknown[],
+        servingSha: string,
+        deploySha = SHA
+      ) => {
+        const dir = mkdtempSync(join(tmpdir(), 'card-refresh-guard-'));
+        dirs.push(dir);
+        writeFileSync(
+          join(dir, 'service.json'),
+          JSON.stringify({ status: { traffic } })
+        );
+        writeFileSync(
+          join(dir, 'revision.json'),
+          JSON.stringify({ metadata: { labels: { 'commit-sha': servingSha } } })
+        );
+        return runStep(
+          "Confirm the refresh's commit still serves",
+          {
+            gcloud:
+              'case "$2" in services) cat "$FAKE_SERVICE" ;; revisions) cat "$FAKE_REVISION" ;; esac',
+          },
+          {
+            FAKE_SERVICE: join(dir, 'service.json'),
+            FAKE_REVISION: join(dir, 'revision.json'),
+            DEPLOY_SHA: deploySha,
+            EXPECTED_SHA: SHA,
+          },
+          prod
+        );
+      };
+      const all = [{ percent: 100, revisionName: 'rev-2' }];
+
+      it('lets the redeploy run while the commit still serves', () => {
+        expect(guard(all, SHA).status).toBe(0);
+      });
+
+      it('stops before any change once a newer release serves', () => {
+        const run = guard(all, NEWER);
+        expect(run.status).not.toBe(0);
+        expect(run.stdout).toContain('Not deploying');
+      });
+
+      it('stops while traffic is split, or when asked for another commit', () => {
+        expect(
+          guard(
+            [
+              { percent: 50, revisionName: 'rev-1' },
+              { percent: 50, revisionName: 'rev-2' },
+            ],
+            SHA
+          ).status
+        ).not.toBe(0);
+        expect(guard(all, SHA, NEWER).status).not.toBe(0);
       });
     });
   });
