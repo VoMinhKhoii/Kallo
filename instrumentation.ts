@@ -10,26 +10,20 @@ export const onRequestError = Sentry.captureRequestError;
 /**
  * Next.js server-runtime init hook.
  *
- * Runs once per server boot in `next dev` and `next start` to eagerly warm
- * the in-process caches the v2 matching path otherwise lazy-loads on the
- * first request, which adds ~1-2s of cold latency to whoever hits
- * `/api/analyze-meal` first.
+ * Runs once per server boot in `next dev` and `next start`. Imports are
+ * dynamic because Next.js loads this file in BOTH the Node and Edge runtimes;
+ * `@/lib/db` pulls in `postgres`, which can't initialize on Edge. The
+ * `NEXT_RUNTIME` guard short-circuits before any import runs.
  *
- * Imports are dynamic because Next.js loads this file in BOTH the Node and
- * Edge runtimes; `@/lib/db` pulls in `postgres`, which can't initialize on
- * Edge. The `NEXT_RUNTIME` guard short-circuits before any import runs.
+ * The card catalog (`getCardCatalog`, ~3 s on prod's database) starts loading
+ * here but is not awaited: `register` must finish before the server takes
+ * requests, and a page load should not wait on it. A meal that arrives while
+ * it loads joins the same load instead of starting its own.
  *
- * Only `getNutritionCache` is invoked: its `loadAll` already does
- * `SELECT * FROM vietnamese_food_composition WHERE source_id = 1`, which
- * includes the embedding column, so it now also primes the embedding L1
- * cache via `primeEmbeddingCacheFromRows`. One SELECT, two caches warmed.
- * Errors are swallowed by `ensureInitialized` — the lazy-init paths remain
- * the source of truth on failure.
- *
- * The card catalog (`getCardCatalog`, ~3.3 s on prod's database) starts
- * loading here too but is not awaited: `register` must finish before the
- * server takes requests, and a page load should not wait on it. A meal that
- * arrives while it loads joins the same load instead of starting its own.
+ * Nothing else is warmed. Card matching fetches nutrition for a meal's own
+ * candidates by id (`attachCandidateNutrition`, ~3 ms of database time on
+ * prod), so an awaited nutrition preload would only delay every container
+ * start (0.15–1.1 s measured on prod) for rows most meals never use.
  *
  * Sentry is initialised first, in BOTH runtimes (middleware runs on Edge), so
  * a failure while warming caches is itself reported. `onRequestError` hands
@@ -46,19 +40,11 @@ export async function register() {
   }
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
-  const [{ db }, { getNutritionCache }, { getCardCatalog }] = await Promise.all(
-    [
-      import('@/lib/infra/db/client'),
-      import('@/lib/ai/cache/nutrition-cache'),
-      import('@/lib/ai/matching/cards/catalog'),
-    ]
-  );
+  const [{ db }, { getCardCatalog }] = await Promise.all([
+    import('@/lib/infra/db/client'),
+    import('@/lib/ai/matching/cards/catalog'),
+  ]);
 
   // Failures are caught and logged inside getCardCatalog.
   void getCardCatalog(db);
-  const t0 = Date.now();
-  await getNutritionCache(db);
-  console.info(
-    `[instrumentation] matching caches warm in ${Date.now() - t0}ms`
-  );
 }

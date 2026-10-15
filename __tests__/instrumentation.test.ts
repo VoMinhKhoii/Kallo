@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 /**
  * `register` must finish before the server takes requests, so it warms the
  * card catalog without waiting for it: a cold container's first page load
- * should not sit behind a ~3 s catalog read.
+ * should not sit behind a ~3 s catalog read. It loads no nutrition: card
+ * matching fetches a meal's candidates by id.
  */
 
 const db = { tag: 'db' };
@@ -36,7 +37,15 @@ describe('register', () => {
     await register();
 
     expect(getCardCatalog).toHaveBeenCalledWith(db);
-    expect(getNutritionCache).toHaveBeenCalledWith(db);
+  });
+
+  it('does not load the nutrition cache', async () => {
+    vi.stubEnv('NEXT_RUNTIME', 'nodejs');
+    const { register } = await import('@/instrumentation');
+
+    await register();
+
+    expect(getNutritionCache).not.toHaveBeenCalled();
   });
 
   it('warms nothing on the Edge runtime', async () => {
