@@ -1051,7 +1051,19 @@ describe('POST /api/analyze-meal', () => {
   });
 
   it('stages the cheat spec BEFORE surfacing it, then terminates', async () => {
-    const spec = { sliders: [{ id: 'beer' }] };
+    const spec = {
+      sliders: [
+        {
+          key: 'protein',
+          label: 'Synthetic protein',
+          defaultLevel: 5,
+          anchors: [
+            { level: 0, label: 'Synthetic low', proteinG: 0 },
+            { level: 10, label: 'Synthetic high', proteinG: 20 },
+          ],
+        },
+      ],
+    };
     mockEstimateCheatMeal.mockResolvedValue(spec);
     mockInsert.mockResolvedValue([{ id: 'cheat-analysis-1' }]);
 
@@ -1162,7 +1174,8 @@ describe('POST /api/analyze-meal', () => {
       expect.any(Number),
       expect.anything(),
       'chunk_failure',
-      null
+      null,
+      { errorCode: 'chunk_failure' }
     );
     // A chunk failure is an infra signal, never a coverage signal.
     expect(mockLogUnmatchedIngredients).not.toHaveBeenCalled();
@@ -1197,7 +1210,8 @@ describe('POST /api/analyze-meal', () => {
       expect.any(Number),
       expect.anything(),
       'no_macro_data',
-      null
+      null,
+      { errorCode: 'no_macro_data' }
     );
     expect(mockLogUnmatchedIngredients).toHaveBeenCalledWith(
       [{ ingredientName: 'Mì gói', mealContext: 'no_macro_data carve-out' }],
@@ -1303,7 +1317,8 @@ describe('POST /api/analyze-meal', () => {
       expect.any(Number),
       expect.anything(),
       undefined,
-      { decomposition: 'v2' }
+      { decomposition: 'v2' },
+      { result: mockPipelineData }
     );
   });
 

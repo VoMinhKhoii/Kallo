@@ -260,6 +260,8 @@ describe('generateStructuredOutput attempt usage', () => {
       thoughtTokens: 250,
       latencyMs: expect.any(Number),
       error: null,
+      response: JSON.stringify({ name: 'ok' }),
+      promptHash: expect.stringMatching(/^[a-f0-9]{64}$/),
     });
   });
 

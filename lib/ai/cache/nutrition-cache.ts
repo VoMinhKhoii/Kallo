@@ -18,9 +18,8 @@ import type * as schema from '@/lib/infra/db/schema';
  * additionally accumulate USDA (source_id=2) rows when `batchFetchNutrition`
  * backfills on a miss.
  *
- * `inedibleCache` is strictly VN-FCT — populated only from the same `loadAll`
- * pass, never widened on miss. Absence in the map means "no inedible data" by
- * design (USDA imports leave `inedible_portion_pct` NULL).
+ * Inedible values are also primed by scoped nutrition reads. A separate set
+ * remembers known NULLs/missing rows without changing the numeric-map API.
  *
  * `loadAll` selects only the nutrition + inedible columns (see
  * `NUTRITION_CACHE_SELECT_COLUMNS`) — NOT the 768-dim embedding vector — so the
@@ -29,6 +28,7 @@ import type * as schema from '@/lib/infra/db/schema';
  */
 const cache = new Map<string, NutritionPer100g>();
 const inedibleCache = new Map<string, number>();
+const knownInedibleIds = new Set<string>();
 const foodGroupCache = new Map<string, string>();
 
 /** True only after loadAll() finishes successfully */
@@ -41,6 +41,7 @@ let initPromise: Promise<void> | null = null;
 export function clearNutritionCache(): void {
   cache.clear();
   inedibleCache.clear();
+  knownInedibleIds.clear();
   foodGroupCache.clear();
   initialized = false;
   initPromise = null;
@@ -113,17 +114,6 @@ export function primeNutritionEntry(
 }
 
 /**
- * Kick off the bulk warm without awaiting it. Safe to call on every request:
- * `ensureInitialized` dedupes to a single in-flight load. Errors are swallowed
- * by `ensureInitialized`; the returned promise never rejects.
- */
-export function warmNutritionCacheInBackground(
-  db: PostgresJsDatabase<typeof schema>
-): void {
-  void ensureInitialized(db);
-}
-
-/**
  * Cold-path direct fetch: query nutrition for a specific set of candidate IDs
  * (the ones this meal actually needs) instead of awaiting the full-table warm.
  * Rows are also promoted into the singleton so repeat hits stay warm.
@@ -157,14 +147,13 @@ export async function fetchNutritionForIds(
       if (Number.isFinite(parsed)) inedibleCache.set(id, parsed);
     }
   }
+  for (const id of ids) knownInedibleIds.add(id);
   return map;
 }
 
 /**
- * Cold-path inedible-pct fetch for a specific set of candidate IDs. Mirrors
- * `fetchNutritionForIds` but returns only the inedible map (VN-FCT rows only —
- * USDA rows leave the column NULL and are absent by design). Rows are promoted
- * into the inedible singleton so later hits are warm.
+ * Read cached percentages, querying only unknown IDs. NULLs and missing rows
+ * are remembered too; nutrition reads usually prime these before this call.
  */
 export async function fetchInediblePctForIds(
   ids: string[],
@@ -172,22 +161,31 @@ export async function fetchInediblePctForIds(
 ): Promise<Map<string, number>> {
   const map = new Map<string, number>();
   if (ids.length === 0) return map;
+  const unknownIds = [...new Set(ids)].filter(
+    (id) => !knownInedibleIds.has(id)
+  );
 
-  const idList = sql.join(
-    ids.map((id) => sql`${id}`),
-    sql`, `
-  );
-  const rows = await db.execute<InediblePctRow>(
-    sql`SELECT id, inedible_portion_pct FROM vietnamese_food_composition WHERE id IN (${idList})`
-  );
-  for (const row of rows) {
-    const id = row.id;
-    const inedible = row.inedible_portion_pct;
-    if (inedible == null) continue;
-    const parsed = Number(inedible);
-    if (!Number.isFinite(parsed)) continue;
-    map.set(id, parsed);
-    inedibleCache.set(id, parsed);
+  if (unknownIds.length > 0) {
+    const idList = sql.join(
+      unknownIds.map((id) => sql`${id}`),
+      sql`, `
+    );
+    const rows = await db.execute<InediblePctRow>(
+      sql`SELECT id, inedible_portion_pct FROM vietnamese_food_composition WHERE id IN (${idList})`
+    );
+    for (const row of rows) {
+      const id = row.id;
+      const inedible = row.inedible_portion_pct;
+      if (inedible == null) continue;
+      const parsed = Number(inedible);
+      if (!Number.isFinite(parsed)) continue;
+      inedibleCache.set(id, parsed);
+    }
+    for (const id of unknownIds) knownInedibleIds.add(id);
+  }
+  for (const id of ids) {
+    const value = inedibleCache.get(id);
+    if (value !== undefined) map.set(id, value);
   }
   return map;
 }
@@ -214,6 +212,7 @@ async function loadAll(db: PostgresJsDatabase<typeof schema>): Promise<void> {
 
   for (const row of rows) {
     const id = row.id;
+    knownInedibleIds.add(id);
     cache.set(id, parseNutritionRow(row));
     const foodGroupEn = row.type_en;
     if (typeof foodGroupEn === 'string' && foodGroupEn.length > 0) {

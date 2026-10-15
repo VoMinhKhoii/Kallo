@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, isNull, lt } from 'drizzle-orm';
+import { and, count, desc, eq, gte, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { uuidSchema } from '@/lib/core/validation/primitives';
 import type { AppDb } from '@/lib/infra/db/client';
@@ -7,6 +7,7 @@ import {
   pipelineLlmCalls,
   pipelineRequests,
   pipelineStageLogs,
+  promptVersions,
 } from '@/lib/infra/db/schema';
 
 // ─── Filters schema ───────────────────────────────────────────────────────────
@@ -164,6 +165,7 @@ export async function getRequestDetail(db: AppDb, id: string) {
     db
       .select({
         call: pipelineLlmCalls,
+        promptRendered: sql<string>`coalesce(${pipelineLlmCalls.promptRendered}, ${promptVersions.templateSample})`,
         metadata: {
           llmCallId: pipelineLlmCallMetadata.llmCallId,
           provider: pipelineLlmCallMetadata.provider,
@@ -179,6 +181,10 @@ export async function getRequestDetail(db: AppDb, id: string) {
       })
       .from(pipelineLlmCalls)
       .leftJoin(
+        promptVersions,
+        eq(promptVersions.id, pipelineLlmCalls.promptVersionId)
+      )
+      .leftJoin(
         pipelineLlmCallMetadata,
         eq(pipelineLlmCallMetadata.llmCallId, pipelineLlmCalls.id)
       )
@@ -187,8 +193,9 @@ export async function getRequestDetail(db: AppDb, id: string) {
   ]);
 
   const llmCalls: RequestDetailLlmCall[] = llmCallRows.map(
-    ({ call, metadata }) => ({
+    ({ call, metadata, promptRendered }) => ({
       ...call,
+      promptRendered: promptRendered ?? call.promptRendered,
       metadata: metadata?.llmCallId
         ? {
             provider: metadata.provider,

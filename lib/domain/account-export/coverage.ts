@@ -83,6 +83,13 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
     exported: 'analysis.requests',
     excludedColumns: {
       user_id: OWN_ID,
+      model_profile:
+        'Internal model-profile configuration used for the analysis.',
+      models:
+        'Internal provider/model versions attempted; the analysis result is exported.',
+      error_code:
+        'Internal failure category; the outcome is exported as status.',
+      trace_logged: 'Internal trace-delivery diagnostic, not user activity.',
       error:
         'Internal failure diagnostics (exception text from the model pipeline), not information about the user; the outcome is exported as status.',
       prompt_versions_used:

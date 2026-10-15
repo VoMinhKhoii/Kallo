@@ -25,7 +25,10 @@ const {
     | { success: false; error: { message: string; kind: string } };
   const analyzeMealSpy = vi.fn<() => Promise<AnalyzeMealResult>>(async () => {
     startCallOrder.push('analyzeMeal');
-    return { success: true, data: {} as unknown };
+    return {
+      success: true,
+      data: { mealItems: [], boundedNutrition: {}, displayedNutrition: {} },
+    };
   });
   const createGeminiClientSpy = vi.fn(() => ({}));
   const checkAdminReplayGuardSpy = vi.fn(
@@ -142,7 +145,10 @@ describe('replayRequest', () => {
     llmCallsSelectSpy.mockResolvedValue([]);
     analyzeMealSpy.mockImplementation(async () => {
       startCallOrder.push('analyzeMeal');
-      return { success: true, data: {} as unknown };
+      return {
+        success: true,
+        data: { mealItems: [], boundedNutrition: {}, displayedNutrition: {} },
+      };
     });
   });
 

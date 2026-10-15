@@ -37,6 +37,10 @@ export interface AttemptTokens {
 }
 
 export interface GeminiAttemptMetadata extends AttemptTokens {
+  response?: string | null;
+  stage?: string;
+  promptHash?: string;
+  promptVersionId?: string | null;
   attempt: number;
   model: string;
   error: unknown;

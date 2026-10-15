@@ -1,8 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cloudTrace } from '@/lib/ai/pipeline/telemetry/cloud-trace/cloud-trace';
 import type { GeminiAttemptMetadata } from '@/lib/ai/provider/types';
+import type { RecordAnalysisModelBudgetEventInput } from '@/lib/infra/rate-limit/analysis-guard-types';
 
 const { mockRecord } = vi.hoisted(() => ({
-  mockRecord: vi.fn(() => Promise.resolve()),
+  mockRecord: vi.fn((_input: RecordAnalysisModelBudgetEventInput) =>
+    Promise.resolve()
+  ),
 }));
 
 vi.mock('@/lib/infra/rate-limit/analysis-model-budget', () => ({
@@ -17,6 +21,7 @@ import {
 } from '../budget';
 
 const db = {} as never;
+afterEach(() => vi.restoreAllMocks());
 
 /** One finished attempt; tests override what they look at. */
 function attemptOf(
@@ -38,6 +43,61 @@ function attemptOf(
 
 describe('createBudgetAttemptRecorder', () => {
   beforeEach(() => mockRecord.mockClear());
+
+  it('emits exactly one LLM event for each billed Claude/retry/Gemini fallback attempt', () => {
+    const emit = vi.spyOn(cloudTrace, 'emit');
+    const record = createBudgetAttemptRecorder({
+      db,
+      requestId: 'synthetic',
+      workKind: 'primary',
+      model: 'claude-haiku-5-5',
+      stage: 'decomposition',
+    });
+    const attempts = [
+      attemptOf({
+        model: 'claude-haiku-5-5',
+        attempt: 1,
+        error: new Error('schema'),
+        response: '{"synthetic":1}',
+      }),
+      attemptOf({
+        model: 'claude-haiku-5-5',
+        attempt: 2,
+        error: new Error('503'),
+        cachedTokens: 4,
+      }),
+      attemptOf({
+        model: 'gemini-3.1-flash-lite',
+        attempt: 3,
+        fallbackFrom: 'claude-haiku-5-5',
+        response: '{"synthetic":3}',
+      }),
+    ];
+    for (const attempt of attempts) expect(record(attempt)).toBeUndefined();
+    expect(mockRecord).toHaveBeenCalledTimes(3);
+    expect(emit).toHaveBeenCalledTimes(3);
+    attempts.forEach((attempt, index) => {
+      const billed = mockRecord.mock.calls[index][0];
+      expect(emit).toHaveBeenNthCalledWith(
+        index + 1,
+        'synthetic',
+        'llm',
+        expect.objectContaining({
+          stage: 'decomposition',
+          attempt: attempt.attempt,
+          model: billed.model,
+          provider: billed.provider,
+          inputTokens: billed.inputTokens,
+          outputTokens: billed.outputTokens,
+          costUsd: billed.costUsd,
+          cachedTokens: billed.cachedTokens,
+          latencyMs: billed.latencyMs,
+          response: attempt.response ?? null,
+          fallbackFrom: attempt.fallbackFrom ?? null,
+        })
+      );
+    });
+  });
 
   it('forwards cached and thinking tokens with the attempt', () => {
     const record = createBudgetAttemptRecorder({

@@ -329,6 +329,10 @@ describe('generateStructuredOutputStream with trace', () => {
       thoughtTokens: 5,
       latencyMs: expect.any(Number),
       error: null,
+      response: '{"items":["d"]}',
+      promptHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      promptVersionId: null,
+      stage: undefined,
     });
   });
 
@@ -379,6 +383,10 @@ describe('generateStructuredOutputStream with trace', () => {
       thoughtTokens: null,
       latencyMs: expect.any(Number),
       error: retryableError,
+      response: null,
+      promptHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      promptVersionId: null,
+      stage: undefined,
     });
     expect(onAttemptComplete).toHaveBeenNthCalledWith(2, {
       attempt: 2,
@@ -390,6 +398,10 @@ describe('generateStructuredOutputStream with trace', () => {
       thoughtTokens: null,
       latencyMs: expect.any(Number),
       error: null,
+      response: '{"items":["e"]}',
+      promptHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      promptVersionId: null,
+      stage: undefined,
     });
   });
 });

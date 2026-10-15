@@ -3,7 +3,7 @@ import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { AppDb } from '@/lib/infra/db/client';
 
 vi.mock('@/lib/ai/cache/nutrition-cache', () => ({
-  fetchInediblePctForIds: vi.fn(),
+  fetchInediblePctForIds: vi.fn(async () => new Map()),
   getInedibleCache: vi.fn(async () => new Map()),
   isNutritionCacheInitialized: vi.fn(() => true),
 }));

@@ -213,6 +213,7 @@ export async function runDecompositionStage(args: {
               requestId: budget.requestId ?? null,
               workKind: budget.workKind,
               model: DECOMPOSITION_MODEL,
+              stage: 'decomposition',
               providerErrorState: budget.providerErrorState,
             }),
             onChunk: decompositionStream.handleChunk,

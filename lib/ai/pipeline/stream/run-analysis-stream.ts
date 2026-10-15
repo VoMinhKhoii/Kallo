@@ -71,7 +71,8 @@ export async function runAnalysisStream({
       Date.now() - startTime,
       ctx.db,
       error instanceof Error ? error.message : 'unknown',
-      pvu
+      pvu,
+      { errorCode: toStreamErrorEvent(error).code }
     );
 
     emit(toStreamErrorEvent(error));

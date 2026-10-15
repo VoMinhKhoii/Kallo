@@ -3,6 +3,7 @@ import { initCheatBudgetAccounting } from '@/lib/ai/pipeline/telemetry/budget';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import { withDeadline } from '@/lib/core/async/with-deadline';
 import { estimateCheatMeal } from '@/lib/domain/cheat/estimate';
+import { resolveSliderNutrition } from '@/lib/domain/cheat/slider-nutrition';
 import { PERSIST_DEADLINE_MS, upsertPendingAnalysis } from './persist-analysis';
 import type { StreamRun } from './types';
 
@@ -80,6 +81,7 @@ export async function runCheatBranch({
     Date.now() - startTime,
     db,
     undefined,
-    null
+    null,
+    { estimate: resolveSliderNutrition(spec, {}) }
   );
 }

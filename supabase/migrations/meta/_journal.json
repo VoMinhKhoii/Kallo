@@ -645,6 +645,13 @@
       "when": 1792074968580,
       "tag": "20261015143608_budget_events_cost_latency",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1792089513884,
+      "tag": "20261015183833_trace_summaries_and_retention_indexes",
+      "breakpoints": true
     }
   ]
 }

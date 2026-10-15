@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { GoogleGenAI } from '@google/genai';
 import {
   createAttemptObserver,
@@ -38,6 +39,9 @@ export function createStructuredOutputStream({
       state,
       trace,
       onAttemptComplete,
+      promptHash: createHash('sha256')
+        .update(params.systemPrompt)
+        .digest('hex'),
     });
 
     return withRetry(

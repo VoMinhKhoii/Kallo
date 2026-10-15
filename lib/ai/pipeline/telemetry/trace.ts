@@ -2,6 +2,7 @@ import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
+import { cloudTrace } from '@/lib/ai/pipeline/telemetry/cloud-trace/cloud-trace';
 import type { AppDb } from '@/lib/infra/db/client';
 import {
   pipelineLlmCallMetadata,
@@ -12,6 +13,9 @@ import {
 
 const enabled = () => readBooleanEnv('PIPELINE_TRACE_ENABLED', false);
 const cache = new Map<string, string>(); // `${name}:${hash}` -> id
+const templateHashes = new Map<string, string>(); // persisted version id -> content hash
+const hashText = (text: string) =>
+  createHash('sha256').update(text).digest('hex');
 
 export function hashPromptBuilder(
   builder: (...a: unknown[]) => string
@@ -49,9 +53,15 @@ export async function recordPromptVersion(args: {
       })
       .returning({ id: promptVersions.id });
     let id = inserted[0]?.id;
+    let templateSample: string | undefined = id
+      ? args.templateSample
+      : undefined;
     if (!id) {
       const found = await args.db
-        .select({ id: promptVersions.id })
+        .select({
+          id: promptVersions.id,
+          templateSample: promptVersions.templateSample,
+        })
         .from(promptVersions)
         .where(
           and(
@@ -61,8 +71,13 @@ export async function recordPromptVersion(args: {
         )
         .limit(1);
       id = found[0]?.id;
+      templateSample = found[0]?.templateSample;
     }
-    if (id) cache.set(key, id);
+    if (id) {
+      cache.set(key, id);
+      if (typeof templateSample === 'string')
+        templateHashes.set(id, hashText(templateSample));
+    }
     return id ?? null;
   } catch (e) {
     console.error('[trace] recordPromptVersion failed', e);
@@ -84,6 +99,16 @@ export interface StageLogArgs {
 }
 
 export function logStage(a: StageLogArgs): void {
+  cloudTrace.emit(a.requestId, 'stage', {
+    stage: a.stage,
+    index: a.stageIndex,
+    startedAt: new Date(Date.now() - a.durationMs).toISOString(),
+    durationMs: a.durationMs,
+    status: a.status,
+    error: a.error ?? null,
+    input: a.inputJson,
+    output: a.outputJson,
+  });
   if (!enabled()) return;
   void a.db
     .insert(pipelineStageLogs)
@@ -149,7 +174,10 @@ export function logLlmCall(a: LlmCallArgs): void {
         stageLogId: a.stageLogId,
         promptVersionId: resolvedId,
         model: a.model,
-        promptRendered: a.promptRendered,
+        promptRendered:
+          templateHashes.get(resolvedId) === hashText(a.promptRendered)
+            ? null
+            : a.promptRendered,
         responseRaw: a.responseRaw,
         inputTokens: a.inputTokens,
         outputTokens: a.outputTokens,
@@ -176,6 +204,7 @@ export function logLlmCall(a: LlmCallArgs): void {
 // Test-only escape hatch.
 export function _resetPromptVersionCacheForTests() {
   cache.clear();
+  templateHashes.clear();
 }
 
 /**
@@ -227,12 +256,13 @@ export function buildLlmStageTrace(args: {
       db: AppDb;
       requestId: string;
       stageLogId: string;
-      promptVersionId: Promise<string | null>;
+      promptVersionId: string | Promise<string | null>;
       promptRendered: string;
     }
   | undefined {
   if (!args.trace || !enabled()) return undefined;
   const traceCtx = args.trace;
+  let resolvedPromptVersionId: string | null = null;
   const pvIdPromise = recordPromptVersion({
     db: traceCtx.db,
     name: args.name,
@@ -241,6 +271,7 @@ export function buildLlmStageTrace(args: {
     model: args.model,
   }).then((pvId) => {
     if (pvId) {
+      resolvedPromptVersionId = pvId;
       traceCtx.promptVersionsUsed.set(args.name, pvId);
     }
     return pvId;
@@ -249,7 +280,9 @@ export function buildLlmStageTrace(args: {
     db: traceCtx.db,
     requestId: traceCtx.requestId,
     stageLogId: args.stageLogId,
-    promptVersionId: pvIdPromise,
+    get promptVersionId() {
+      return resolvedPromptVersionId ?? pvIdPromise;
+    },
     promptRendered: args.templateSample,
   };
 }

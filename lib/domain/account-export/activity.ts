@@ -27,6 +27,12 @@ export async function loadActivityExport(db: AppDb, userId: string) {
           userContext: pipelineRequests.userContextJson,
           status: pipelineRequests.status,
           durationMs: pipelineRequests.durationMs,
+          mealName: pipelineRequests.mealName,
+          caloriesKcal: pipelineRequests.caloriesKcal,
+          proteinG: pipelineRequests.proteinG,
+          carbohydrateG: pipelineRequests.carbohydrateG,
+          fatG: pipelineRequests.fatG,
+          itemCount: pipelineRequests.itemCount,
           createdAt: pipelineRequests.createdAt,
         })
         .from(pipelineRequests)

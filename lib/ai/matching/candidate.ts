@@ -1,9 +1,5 @@
 import { sql } from 'drizzle-orm';
-import {
-  fetchInediblePctForIds,
-  getInedibleCache,
-  isNutritionCacheInitialized,
-} from '@/lib/ai/cache/nutrition-cache';
+import { fetchInediblePctForIds } from '@/lib/ai/cache/nutrition-cache';
 import {
   NUTRITION_CACHE_SELECT_COLUMNS,
   type NutritionCacheRow,
@@ -68,17 +64,10 @@ export async function attachCandidateNutrition(
   if (opts.fresh) return attachFresh(results, [...uniqueIds], db);
 
   const ids = Array.from(uniqueIds);
-  // Inedible pct: on a warm cache read the full in-memory map; on cold DON'T
-  // block on the full-table load (`getInedibleCache` would) — query only this
-  // meal's candidate IDs directly. `batchFetchNutrition` already kicked the
-  // background warm, so subsequent requests read the warm map.
-  const inediblePromise = isNutritionCacheInitialized()
-    ? getInedibleCache(db)
-    : fetchInediblePctForIds(ids, db);
-  const [nutritionMap, inedibleMap] = await Promise.all([
-    batchFetchNutrition(ids, db),
-    inediblePromise,
-  ]);
+  // Nutrition reads prime inedible values (including NULLs), so consult that
+  // cache afterwards rather than racing a redundant second query.
+  const nutritionMap = await batchFetchNutrition(ids, db);
+  const inedibleMap = await fetchInediblePctForIds(ids, db);
   for (const r of results) {
     for (const c of r.candidates) {
       const id = c.info.foodCompositionId;

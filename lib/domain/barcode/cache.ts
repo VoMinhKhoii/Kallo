@@ -20,6 +20,7 @@ import { getTableColumns, inArray, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { extractNutritionValues } from '@/lib/actions/logging/persisted-meal';
 import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
+import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import { trustedProductImageUrl } from '@/lib/domain/barcode/image/image';
 import { parseSizeGrams } from '@/lib/domain/barcode/providers/normalize';
 import {
@@ -71,7 +72,33 @@ export function barcodeCacheId(
 }
 
 /** One cached product row. Exported because the meal-item builder maps it. */
-export type BarcodeCacheRow = typeof vietnameseFoodComposition.$inferSelect;
+type BarcodeReadKey =
+  | keyof NutritionValues
+  | 'id'
+  | 'namePrimary'
+  | 'barcodeDataVersion'
+  | 'servingSizeG'
+  | 'packageSizeG'
+  | 'amountUnit'
+  | 'imageUrl';
+export type BarcodeCacheRow = Pick<
+  typeof vietnameseFoodComposition.$inferSelect,
+  BarcodeReadKey
+>;
+const BARCODE_READ_COLUMNS = Object.fromEntries(
+  (
+    [
+      ...NUTRITION_KEYS,
+      'id',
+      'namePrimary',
+      'barcodeDataVersion',
+      'servingSizeG',
+      'packageSizeG',
+      'amountUnit',
+      'imageUrl',
+    ] as const
+  ).map((key) => [key, vietnameseFoodComposition[key]])
+) as Pick<typeof vietnameseFoodComposition, BarcodeReadKey>;
 
 /** Which provider wrote a cached row, read off its id prefix. */
 export function providerIdOfRow(
@@ -114,7 +141,7 @@ export async function findCachedRows(
   );
 
   const rows = await db
-    .select()
+    .select(BARCODE_READ_COLUMNS)
     .from(vietnameseFoodComposition)
     .where(inArray(vietnameseFoodComposition.id, ids))
     .limit(ids.length);

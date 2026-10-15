@@ -587,7 +587,10 @@ export const unmatchedIngredients = pgTable(
       .defaultNow(),
   },
   // The account export reads every row by owner; Postgres does not index FKs.
-  (table) => [index('unmatched_ingredients_user_idx').on(table.userId)]
+  (table) => [
+    index('unmatched_ingredients_user_idx').on(table.userId),
+    index('unmatched_ingredients_created_idx').on(table.createdAt),
+  ]
 );
 
 // ---------------------------------------------------------------------------
@@ -610,16 +613,20 @@ export const ingredientQueryEmbeddings = pgTable(
 // Synonym candidates (written by background jobs + async cache-miss logging)
 // ---------------------------------------------------------------------------
 
-export const synonymCandidates = pgTable('synonym_candidates', {
-  id: serial('id').primaryKey(),
-  queriedVi: text('queried_vi').notNull(),
-  matchedEn: text('matched_en').notNull(),
-  matchedVi: text('matched_vi').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  reviewed: boolean('reviewed').notNull().default(false),
-});
+export const synonymCandidates = pgTable(
+  'synonym_candidates',
+  {
+    id: serial('id').primaryKey(),
+    queriedVi: text('queried_vi').notNull(),
+    matchedEn: text('matched_en').notNull(),
+    matchedVi: text('matched_vi').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    reviewed: boolean('reviewed').notNull().default(false),
+  },
+  (table) => [index('synonym_candidates_created_idx').on(table.createdAt)]
+);
 
 // ---------------------------------------------------------------------------
 // Pipeline requests — observability table for AI pipeline runs
@@ -634,6 +641,16 @@ export const pipelineRequests = pgTable(
       .references(() => authUsers.id, { onDelete: 'cascade' }),
     rawInput: text('raw_input').notNull(),
     userContextJson: jsonb('user_context_json'),
+    mealName: text('meal_name'),
+    modelProfile: text('model_profile'),
+    models: text('models').array(),
+    caloriesKcal: numeric('calories_kcal', { mode: 'number' }),
+    proteinG: numeric('protein_g', { mode: 'number' }),
+    carbohydrateG: numeric('carbohydrate_g', { mode: 'number' }),
+    fatG: numeric('fat_g', { mode: 'number' }),
+    itemCount: integer('item_count'),
+    errorCode: text('error_code'),
+    traceLogged: boolean('trace_logged'),
     status: text('status').notNull().default('pending'),
     durationMs: integer('duration_ms'),
     error: text('error'),
@@ -652,6 +669,10 @@ export const pipelineRequests = pgTable(
     index('pipeline_requests_user_created_idx').on(
       table.userId,
       table.createdAt
+    ),
+    index('pipeline_requests_created_id_idx').on(
+      table.createdAt.desc(),
+      table.id.desc()
     ),
     foreignKey({
       columns: [table.replayOfRequestId],
@@ -676,6 +697,7 @@ export const pipelineRequestReplayAuditLogs = pgTable(
   (table) => [
     index('pipeline_replay_audit_original_idx').on(table.originalRequestId),
     index('pipeline_replay_audit_replay_idx').on(table.replayRequestId),
+    index('pipeline_replay_audit_created_idx').on(table.createdAt),
     index('pipeline_replay_audit_admin_created_idx').on(
       table.adminUserIdHash,
       table.createdAt
@@ -701,6 +723,7 @@ export const analysisGuardEvents = pgTable(
       table.reason,
       table.createdAt
     ),
+    index('analysis_guard_events_created_idx').on(table.createdAt),
     index('analysis_guard_events_user_created_idx').on(
       table.userIdHash,
       table.createdAt
@@ -1057,7 +1080,7 @@ export const pipelineLlmCalls = pgTable(
       .notNull()
       .references(() => promptVersions.id),
     model: text('model').notNull(),
-    promptRendered: text('prompt_rendered').notNull(),
+    promptRendered: text('prompt_rendered'),
     responseRaw: text('response_raw'),
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
