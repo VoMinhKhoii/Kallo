@@ -215,8 +215,8 @@ A new container loads the build **before it takes traffic**. Cloud Run gives a
 starting container full CPU (plus the startup boost) and a serving one CPU only
 while a request is in flight; measured 2026-10-15 on a throwaway service, a
 load at that throttled CPU timed out every attempt and gave up, while the same
-load at startup took ~7.5 s (a new container's first metadata-server token
-alone takes ~3 s, then the catalog and the vectors load one after the other).
+load at startup took ~7.5 s (inferred from the timings: a new container's first
+metadata-server token takes ~3 s; then the catalog and the vectors load one after the other).
 So the deploy sets an HTTP startup probe on
 `/api/startupz` (when the checked-out commit has the route; an older commit
 gets Cloud Run's default TCP probe, set explicitly), which answers 503 until
@@ -231,8 +231,9 @@ What this costs: a request that arrives when no container is running waits for
 the boot and the load (9.6–11.2 s measured on three cold starts, instead of
 ~1.5 s). The mobile app's launch warm-up ping (`ApiClient.warmup`) usually
 starts that container while the user is still on the first screen. Warm
-containers are unaffected, and so are scale-outs, whose requests keep going to the running
-container until the new one is ready. Holding containers in startup a few
+containers are unaffected, and a scale-out mostly is too: requests keep going
+to the running container (80 at a time) until the new one is ready, so only
+a container already at its limit makes them wait for the new one. Holding containers in startup a few
 seconds longer bills that startup CPU. If a deploy's candidate hits the 15 s
 hold without loading, it then loads at throttled CPU while the smoke check
 polls, and the smoke check can fail the deploy: that is the intended hold on a
