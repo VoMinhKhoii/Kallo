@@ -244,9 +244,17 @@ build that does not load, not a flake to retry around.
   if that commit has the builder; a commit without it gets `CARD_INDEX_URI=`
   (empty: the database path).
 - **Card data changed outside a deploy** (`translate-usda`, `sync-cards.ts`,
-  NIN scripts, SQL by hand): running containers keep their pinned build until
-  the next deploy, which rebuilds it. `translate-usda.yml` dispatches that
-  deploy itself when it finishes.
+  NIN scripts, SQL by hand): running containers keep their pinned build, so a
+  new or renamed food is not searchable until a deploy rebuilds it (nutrition
+  numbers and deletions apply at once: nutrition is read from Postgres per
+  meal). `card-index-refresh.yml` closes the gap: nightly at 02:00 Vietnam
+  time, and when `translate-usda.yml` finishes, it runs the serving commit's
+  builder against today's data and, when the build differs from the one the
+  serving revision is pinned to (or card strings await embeddings), dispatches
+  the prod deploy of that same commit, never main's tip; the deploy waits for
+  approval like any other. It skips while a prod deploy is open, while traffic
+  is split, and when the kill switch is on. Run it by hand after a data edit:
+  `gh workflow run card-index-refresh.yml --ref main`.
 - **Kill switch.** `CARD_INDEX_ENABLED=false` sends every search back to the
   database. `--update-env-vars` merges, so it stays set across deploys until
   removed. A service update creates a revision from the service template,

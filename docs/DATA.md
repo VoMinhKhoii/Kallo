@@ -14,8 +14,11 @@ one-line sentence. Nutrients are never edited on a card.
   (`food_card_texts`), linked to every row it names (`food_card_text_rows`), so a name shared by
   sibling rows costs one vector. The SQL also deletes cards removed from the file, pairs a card
   no longer has, and strings no row uses. The prod deploy
-  embeds any new strings (`scripts/db/backfill_card_embeddings.ts`); locally run that script
-  against `.env.local`.
+  embeds any new strings (`scripts/db/backfill_card_embeddings.ts`) and rebuilds the card
+  search index the containers load; locally run that script against `.env.local`. Card data
+  changed in prod outside a deploy reaches the search at the nightly `card-index-refresh.yml`
+  run, or at once with `gh workflow run card-index-refresh.yml --ref main`
+  (`docs/GOOGLE_CLOUD_RUN.md`, "Card search artifact").
 - After a `supabase db reset` (the base rows arrive from `seed.sql`, after migrations),
   `scripts/data/food-cards/sync-cards.ts` re-applies the cards; `bun dbr:reset` runs it and the
   card backfill.
