@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -9,7 +10,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 function readWorkflow(name: string): string {
   return readFileSync(resolve('.github/workflows', name), 'utf8');
@@ -236,18 +237,18 @@ describe('Cloud Run prod workflow', () => {
     }
   });
 
-  it('redeploys after a USDA translation, once its lease is released', () => {
+  it('refreshes the card index after a USDA translation, once its lease is released', () => {
     const workflow = readWorkflow('translate-usda.yml');
     expect(workflow).toContain('actions: write');
     const release = workflow.indexOf('- name: Release prod DB lease');
-    const dispatch = workflow.indexOf(
-      '- name: Deploy to rebuild the card search artifact'
-    );
+    const dispatch = workflow.indexOf('- name: Refresh the card search index');
     expect(dispatch).toBeGreaterThan(release);
     expect(workflow.slice(dispatch)).toContain('if: success()');
     expect(workflow.slice(dispatch)).toContain(
-      'gh workflow run cloud-run-prod.yml --repo "$GITHUB_REPOSITORY" --ref main'
+      'gh workflow run card-index-refresh.yml --repo "$GITHUB_REPOSITORY" --ref main'
     );
+    // Never a deploy of main's tip, which could ship unreleased code.
+    expect(workflow).not.toContain('gh workflow run cloud-run-prod.yml');
   });
 
   it('wires billing secrets and dark-launch controls into prod', () => {
@@ -330,6 +331,463 @@ describe('Cloud Run prod workflow', () => {
     ]) {
       expect(existsSync(resolve('.github/workflows', name))).toBe(false);
     }
+  });
+});
+
+describe('workflow shell steps', () => {
+  /** Every `run: |` block of a workflow, de-indented. */
+  function runBlocks(text: string): string[] {
+    const blocks: string[] = [];
+    let current: string[] | null = null;
+    let indent = 0;
+    for (const line of text.split('\n')) {
+      if (current) {
+        if (!line.trim() || line.startsWith(' '.repeat(indent))) {
+          current.push(line.slice(indent));
+          continue;
+        }
+        blocks.push(current.join('\n'));
+        current = null;
+      }
+      const run = /^( *)run: \|\s*$/.exec(line);
+      if (run) {
+        current = [];
+        indent = run[1].length + 2;
+      }
+    }
+    if (current) blocks.push(current.join('\n'));
+    return blocks;
+  }
+
+  // A quote bash pairs differently than intended (an apostrophe inside
+  // "${x:-...}") fails the whole step, and only when it runs in Actions.
+  it.each([
+    'cloud-run-prod.yml',
+    'card-index-refresh.yml',
+    'translate-usda.yml',
+  ])('%s: every run block parses as bash', (name) => {
+    const blocks = runBlocks(readWorkflow(name));
+    expect(blocks.length).toBeGreaterThan(0);
+    for (const block of blocks) {
+      const result = spawnSync('bash', ['-n'], {
+        input: block,
+        encoding: 'utf8',
+      });
+      expect(result.stderr).toBe('');
+      expect(result.status).toBe(0);
+    }
+  });
+});
+
+describe('Card index refresh workflow', () => {
+  const workflow = readWorkflow('card-index-refresh.yml');
+  const step = (name: string) => {
+    const start = workflow.indexOf(`- name: ${name}`);
+    expect(start).toBeGreaterThan(-1);
+    const next = workflow.indexOf('\n      - ', start + 1);
+    return workflow.slice(start, next === -1 ? undefined : next);
+  };
+
+  it('runs nightly and on demand, from main only, without an environment', () => {
+    expect(workflow).toMatch(/schedule:\n\s+- cron: '0 19 \* \* \*'/);
+    expect(workflow).toContain('workflow_dispatch:');
+    expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
+    expect(workflow).toContain('actions: write');
+    // An environment with required reviewers would hold the check itself
+    // for approval every night; only the deploy it dispatches waits.
+    expect(workflow).not.toMatch(/^\s+environment:/m);
+  });
+
+  it('stays out of the way of an open prod deploy', () => {
+    expect(workflow).toContain("if: steps.busy.outputs.open == '0'");
+  });
+
+  it('compares with the build the serving revision is pinned to, using that commit', () => {
+    const serving = step('Read the serving revision');
+    expect(serving).toContain(
+      'node scripts/cloud-run/card-index-refresh.mjs revision'
+    );
+    expect(serving).toContain(
+      'node scripts/cloud-run/card-index-refresh.mjs pin'
+    );
+    expect(workflow).toContain(`ref: \${{ steps.serving.outputs.sha }}`);
+    expect(workflow).toContain('path: serving');
+    const compare = step('Compare the card data with the serving build');
+    expect(compare).toContain('cd serving');
+    expect(compare).toContain(
+      'bun scripts/data/food-cards/search-artifact/build-search-artifact.ts'
+    );
+    // The builder must not leak the new URI into this job's environment.
+    expect(compare).toContain('GITHUB_ENV= DATABASE_URL=');
+  });
+
+  it("redeploys the serving commit, never main's tip", () => {
+    const redeploy = step('Redeploy the serving commit');
+    expect(redeploy).toContain("if: steps.compare.outputs.stale == 'true'");
+    expect(redeploy).toContain(
+      `SERVING_SHA: \${{ steps.serving.outputs.sha }}`
+    );
+  });
+
+  // A redeploy checks out an older commit, whose lease script may predate
+  // the 2026-10-15 fix; the lease must come from the workflow's own commit.
+  // No concurrency group: a newer run would cancel a user's pending deploy.
+  it("runs the lease from the workflow's own commit, never the deployed one", () => {
+    const prod = readWorkflow('cloud-run-prod.yml');
+    expect(prod).toContain(
+      `ref: \${{ github.sha }}\n          path: .deploy-tools\n          sparse-checkout: scripts/cloud-run/staging-lease.sh`
+    );
+    const calls = prod.match(/\S*staging-lease\.sh (acquire|release)/g);
+    expect(calls).toEqual([
+      './.deploy-tools/scripts/cloud-run/staging-lease.sh acquire',
+      './.deploy-tools/scripts/cloud-run/staging-lease.sh release',
+    ]);
+    expect(prod).not.toMatch(/^concurrency:/m);
+  });
+
+  it('has the prod deploy re-check the serving commit after approval, under the lease', () => {
+    const prod = readWorkflow('cloud-run-prod.yml');
+    expect(prod).toMatch(/\n {6}expected_serving_sha:\n/);
+    const lease = prod.indexOf('- name: Acquire prod lease');
+    const guard = prod.indexOf(
+      "- name: Confirm the refresh's commit still serves"
+    );
+    const firstChange = prod.indexOf('- name: Pre-deploy validation');
+    expect(guard).toBeGreaterThan(lease);
+    expect(firstChange).toBeGreaterThan(guard);
+    expect(prod.slice(guard, firstChange)).toContain(
+      "if: inputs.expected_serving_sha != ''"
+    );
+  });
+
+  describe('steps, run as Actions runs them', () => {
+    const SHA = '5ccae9e6b6827e67bbff9739674694f7050d9b55';
+    const URI = 'gs://kallo-prod-card-search/f1/df0f52192c79-20261015T032505Z';
+    const dirs: string[] = [];
+    afterEach(() => {
+      for (const d of dirs.splice(0))
+        rmSync(d, { recursive: true, force: true });
+    });
+
+    /** The `run: |` script of a named step, de-indented. */
+    function stepScript(text: string, name: string): string {
+      const lines = text.split('\n');
+      const at = lines.findIndex((l) => l.trim() === `- name: ${name}`);
+      const run = lines.findIndex((l, i) => i > at && l.trim() === 'run: |');
+      expect(at).toBeGreaterThan(-1);
+      const body: string[] = [];
+      for (const line of lines.slice(run + 1)) {
+        if (line.trim() && !line.startsWith(' '.repeat(10))) break;
+        body.push(line.slice(10));
+      }
+      return body.join('\n');
+    }
+
+    /**
+     * Runs a step in a scratch workspace (with the refresh module and an empty
+     * serving/ checkout), the given commands faked on PATH; returns its exit
+     * status, stdout and $GITHUB_OUTPUT entries.
+     */
+    function runStep(
+      name: string,
+      fakes: Record<string, string>,
+      env: Record<string, string> = {},
+      text = workflow
+    ) {
+      const dir = mkdtempSync(join(tmpdir(), 'card-refresh-step-'));
+      dirs.push(dir);
+      const bin = join(dir, 'bin');
+      mkdirSync(bin);
+      for (const [command, body] of Object.entries(fakes)) {
+        writeFileSync(join(bin, command), `#!/usr/bin/env bash\n${body}\n`, {
+          mode: 0o755,
+        });
+      }
+      mkdirSync(join(dir, 'serving'));
+      mkdirSync(join(dir, 'scripts/cloud-run'), { recursive: true });
+      copyFileSync(
+        resolve('scripts/cloud-run/card-index-refresh.mjs'),
+        join(dir, 'scripts/cloud-run/card-index-refresh.mjs')
+      );
+      const output = join(dir, 'output');
+      writeFileSync(output, '');
+      writeFileSync(join(dir, 'step.sh'), stepScript(text, name));
+      const result = spawnSync(
+        'bash',
+        ['--noprofile', '--norc', '-eo', 'pipefail', join(dir, 'step.sh')],
+        {
+          cwd: dir,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            PATH: `${bin}:${process.env.PATH}`,
+            GITHUB_OUTPUT: output,
+            RUNNER_TEMP: dir,
+            // The job's env block, and what "Read prod database URL" exports.
+            SERVICE_NAME: 'kallo-prod',
+            PROD_REGION: 'asia-southeast1',
+            CARD_INDEX_BUCKET: 'kallo-prod-card-search',
+            PROD_DATABASE_URL: 'postgresql://fake',
+            PROD_DATABASE_URL_ENCODED: 'postgresql://fake',
+            ...env,
+          },
+        }
+      );
+      const outputs = Object.fromEntries(
+        readFileSync(output, 'utf8')
+          .split('\n')
+          .filter(Boolean)
+          .map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)])
+      );
+      return { status: result.status, stdout: result.stdout, outputs, dir };
+    }
+
+    describe('Read the serving revision', () => {
+      const gcloud = `case "$2" in services) cat "$FAKE_SERVICE" ;; revisions) cat "$FAKE_REVISION" ;; esac`;
+      const serving = (
+        traffic: unknown[],
+        env: { name: string; value: string }[]
+      ) => {
+        const dir = mkdtempSync(join(tmpdir(), 'card-refresh-json-'));
+        dirs.push(dir);
+        writeFileSync(
+          join(dir, 'service.json'),
+          JSON.stringify({ status: { traffic } })
+        );
+        writeFileSync(
+          join(dir, 'revision.json'),
+          JSON.stringify({
+            metadata: { name: 'rev-2', labels: { 'commit-sha': SHA } },
+            spec: { containers: [{ env }] },
+          })
+        );
+        return runStep(
+          'Read the serving revision',
+          { gcloud },
+          {
+            FAKE_SERVICE: join(dir, 'service.json'),
+            FAKE_REVISION: join(dir, 'revision.json'),
+          }
+        );
+      };
+      const all = [{ percent: 100, revisionName: 'rev-2' }];
+
+      it('checks the commit and build serving all traffic', () => {
+        const run = serving(all, [{ name: 'CARD_INDEX_URI', value: URI }]);
+        expect(run.status).toBe(0);
+        expect(run.outputs).toMatchObject({
+          sha: SHA,
+          uri: URI,
+          revision: 'rev-2',
+          check: 'true',
+        });
+      });
+
+      it('skips while traffic is split', () => {
+        const run = serving(
+          [
+            { percent: 50, revisionName: 'rev-1' },
+            { percent: 50, revisionName: 'rev-2' },
+          ],
+          [{ name: 'CARD_INDEX_URI', value: URI }]
+        );
+        expect(run.status).toBe(0);
+        expect(run.outputs.check).toBe('false');
+      });
+
+      it('skips a revision with no build pinned, or with the kill switch on', () => {
+        expect(serving(all, []).outputs.check).toBe('false');
+        expect(
+          serving(all, [
+            { name: 'CARD_INDEX_URI', value: URI },
+            { name: 'CARD_INDEX_ENABLED', value: 'false' },
+          ]).outputs.check
+        ).toBe('false');
+      });
+    });
+
+    describe('Compare the card data with the serving build', () => {
+      // The builder fake records that it ran, and refuses to run with
+      // GITHUB_ENV set (the URI would leak into the job's environment).
+      const bun = `[ -z "$GITHUB_ENV" ] || exit 9
+touch "$RUNNER_TEMP/bun-ran"
+echo "[card-artifact] key abc"
+[ -z "$FAKE_BUILT" ] || echo "CARD_INDEX_URI=$FAKE_BUILT"`;
+      const compare = (pending: string, built: string) =>
+        runStep(
+          'Compare the card data with the serving build',
+          { psql: `printf '%s\\n' "$FAKE_PENDING"`, bun },
+          {
+            FAKE_PENDING: pending,
+            FAKE_BUILT: built,
+            SERVING_URI: URI,
+            GITHUB_ENV: '/dev/null',
+          }
+        );
+
+      it('leaves an up-to-date build alone', () => {
+        const run = compare('0', URI);
+        expect(run.status).toBe(0);
+        expect(run.outputs).toEqual({ stale: 'false' });
+      });
+
+      it('redeploys when the data built into a different build', () => {
+        const run = compare(
+          '0',
+          'gs://kallo-prod-card-search/f1/aaaa-20261016T190000Z'
+        );
+        expect(run.status).toBe(0);
+        expect(run.outputs.stale).toBe('true');
+        expect(run.outputs.reason).toContain('the card data changed since');
+      });
+
+      it('redeploys without building while strings await embeddings', () => {
+        const run = compare('3', URI);
+        expect(run.status).toBe(0);
+        expect(run.outputs).toEqual({
+          stale: 'true',
+          reason: '3 card strings need embeddings',
+        });
+        expect(existsSync(join(run.dir, 'bun-ran'))).toBe(false);
+      });
+
+      it('fails, never redeploys, when the count is not a number', () => {
+        for (const pending of ['', 'BEGIN', 'COMMIT']) {
+          const run = compare(pending, URI);
+          expect(run.status).not.toBe(0);
+          expect(run.outputs.stale).toBeUndefined();
+        }
+      });
+
+      it('fails when the builder prints no URI', () => {
+        const run = compare('0', '');
+        expect(run.status).not.toBe(0);
+        expect(run.outputs.stale).toBeUndefined();
+      });
+
+      it('fails when the builder fails after printing a URI', () => {
+        const run = runStep(
+          'Compare the card data with the serving build',
+          {
+            psql: 'echo 0',
+            bun: 'echo "CARD_INDEX_URI=gs://b/f1/new"; exit 3',
+          },
+          { SERVING_URI: URI }
+        );
+        expect(run.status).not.toBe(0);
+        expect(run.outputs.stale).toBeUndefined();
+      });
+    });
+
+    describe('Skip while a prod deploy is open', () => {
+      // `gh run list --status <s> ... --jq length`: FAKE_WAITING runs wait
+      // for approval, none in any other state.
+      const gh = [
+        'for a in "$@"; do [ "$prev" = "--status" ] && s="$a"; prev="$a"; done',
+        'if [ "$s" = waiting ]; then echo "$FAKE_WAITING"; else echo 0; fi',
+      ].join('\n');
+      const open = (waiting: string) =>
+        runStep(
+          'Skip while a prod deploy is open',
+          { gh },
+          { FAKE_WAITING: waiting, GITHUB_REPOSITORY: 'VoMinhKhoii/Kallo' }
+        ).outputs;
+
+      it('counts a deploy waiting for approval as open', () => {
+        expect(open('1')).toEqual({ open: '1' });
+        expect(open('0')).toEqual({ open: '0' });
+      });
+    });
+
+    describe('Redeploy the serving commit', () => {
+      it('dispatches the serving commit, guarded by expected_serving_sha', () => {
+        const run = runStep(
+          'Redeploy the serving commit',
+          { gh: 'printf "%s\\n" "$@" > "$RUNNER_TEMP/gh-args"' },
+          {
+            SERVING_SHA: SHA,
+            REASON: 'the card data changed',
+            GITHUB_REPOSITORY: 'VoMinhKhoii/Kallo',
+            GITHUB_STEP_SUMMARY: '/dev/null',
+          }
+        );
+        expect(run.status).toBe(0);
+        expect(
+          readFileSync(join(run.dir, 'gh-args'), 'utf8').trim().split('\n')
+        ).toEqual([
+          'workflow',
+          'run',
+          'cloud-run-prod.yml',
+          '--repo',
+          'VoMinhKhoii/Kallo',
+          '--ref',
+          'main',
+          '-f',
+          `sha=${SHA}`,
+          '-f',
+          `expected_serving_sha=${SHA}`,
+        ]);
+      });
+    });
+
+    describe("Confirm the refresh's commit still serves (prod deploy)", () => {
+      const prod = readWorkflow('cloud-run-prod.yml');
+      const NEWER = 'b'.repeat(40);
+      const guard = (
+        traffic: unknown[],
+        servingSha: string,
+        deploySha = SHA
+      ) => {
+        const dir = mkdtempSync(join(tmpdir(), 'card-refresh-guard-'));
+        dirs.push(dir);
+        writeFileSync(
+          join(dir, 'service.json'),
+          JSON.stringify({ status: { traffic } })
+        );
+        writeFileSync(
+          join(dir, 'revision.json'),
+          JSON.stringify({ metadata: { labels: { 'commit-sha': servingSha } } })
+        );
+        return runStep(
+          "Confirm the refresh's commit still serves",
+          {
+            gcloud:
+              'case "$2" in services) cat "$FAKE_SERVICE" ;; revisions) cat "$FAKE_REVISION" ;; esac',
+          },
+          {
+            FAKE_SERVICE: join(dir, 'service.json'),
+            FAKE_REVISION: join(dir, 'revision.json'),
+            DEPLOY_SHA: deploySha,
+            EXPECTED_SHA: SHA,
+          },
+          prod
+        );
+      };
+      const all = [{ percent: 100, revisionName: 'rev-2' }];
+
+      it('lets the redeploy run while the commit still serves', () => {
+        expect(guard(all, SHA).status).toBe(0);
+      });
+
+      it('stops before any change once a newer release serves', () => {
+        const run = guard(all, NEWER);
+        expect(run.status).not.toBe(0);
+        expect(run.stdout).toContain('Not deploying');
+      });
+
+      it('stops while traffic is split, or when asked for another commit', () => {
+        expect(
+          guard(
+            [
+              { percent: 50, revisionName: 'rev-1' },
+              { percent: 50, revisionName: 'rev-2' },
+            ],
+            SHA
+          ).status
+        ).not.toBe(0);
+        expect(guard(all, SHA, NEWER).status).not.toBe(0);
+      });
+    });
   });
 });
 

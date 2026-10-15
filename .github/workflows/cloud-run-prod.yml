@@ -22,6 +22,13 @@ on:
           exists). Leave empty to deploy the tip of the dispatched ref.
         required: false
         default: ''
+      expected_serving_sha:
+        description: >-
+          Set by card-index-refresh.yml: deploy only while this commit still
+          serves prod, checked after approval and under the lease, so a
+          refresh never rolls back a release that landed after it looked.
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -71,6 +78,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.DEPLOY_SHA }}
+      # The lease script comes from this workflow's own commit, never from
+      # DEPLOY_SHA's checkout: a redeploy checks out an older commit, and
+      # before 2026-10-15 the script reported a held lease as acquired, so two
+      # deploys could run at once. The lease is what serializes prod deploys
+      # (a second one fails at once rather than queueing) and what the card
+      # index refresh's serving-commit check relies on.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: .deploy-tools
+          sparse-checkout: scripts/cloud-run/staging-lease.sh
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
@@ -99,7 +119,34 @@ jobs:
           STAGING_REASON: Manual prod deploy (commit ${{ env.DEPLOY_SHA }})
           STAGING_FORCE_TAKEOVER: 'false'
           STAGING_TARGET_SHA: ${{ env.DEPLOY_SHA }}
-        run: ./scripts/cloud-run/staging-lease.sh acquire
+        run: ./.deploy-tools/scripts/cloud-run/staging-lease.sh acquire
+      # A card index refresh redeploys the commit that was serving when it
+      # looked. Approval can come hours later, after a newer release: under the
+      # lease nothing else is deploying, so check that commit still serves
+      # before changing anything. Inline, not a script: DEPLOY_SHA's checkout
+      # may predate any script added for this.
+      - name: Confirm the refresh's commit still serves
+        if: inputs.expected_serving_sha != ''
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_serving_sha }}
+        run: |
+          set -euo pipefail
+          if [ "$DEPLOY_SHA" != "$EXPECTED_SHA" ]; then
+            echo "::error::A refresh redeploys the serving commit: sha ($DEPLOY_SHA) and expected_serving_sha ($EXPECTED_SHA) differ."
+            exit 1
+          fi
+          revision="$(gcloud run services describe "$SERVICE_NAME" --region="$PROD_REGION" --format=json \
+            | jq -r '[.status.traffic[]? | select(.percent == 100) | .revisionName][0] // ""')"
+          serving=""
+          if [ -n "$revision" ]; then
+            serving="$(gcloud run revisions describe "$revision" --region="$PROD_REGION" --format=json \
+              | jq -r '.metadata.labels["commit-sha"] // ""')"
+          fi
+          if [ "$serving" != "$EXPECTED_SHA" ]; then
+            echo "::error::Not deploying: the card index refresh asked to redeploy $EXPECTED_SHA, but ${serving:-no single commit} serves prod now. Nothing was changed."
+            exit 1
+          fi
+          echo "$EXPECTED_SHA still serves prod ($revision); redeploying it to refresh the card index."
       - name: Pre-deploy validation
         run: |
           [ -n "$LEASE_BUCKET" ]
@@ -495,4 +542,4 @@ jobs:
       # traffic, so a failed smoke leaves the current revision serving unchanged.
       - name: Release prod lease
         if: always()
-        run: ./scripts/cloud-run/staging-lease.sh release
+        run: ./.deploy-tools/scripts/cloud-run/staging-lease.sh release

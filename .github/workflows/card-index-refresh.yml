@@ -1,0 +1,170 @@
+name: Card Index Refresh
+
+# Keeps prod's card search index in step with the card data. Each prod deploy
+# builds the index and pins it to the revision (docs/GOOGLE_CLOUD_RUN.md, "Card
+# search artifact"), so a card added or renamed since then is not searchable
+# until the next deploy. Nightly, and after a USDA translation run, this checks
+# the card data against the build the serving revision is pinned to; when they
+# differ it dispatches the prod deploy for the SAME commit that is serving,
+# never main's tip, so only the index changes. That deploy waits for the
+# production environment's reviewers like any other; this job itself declares
+# no environment, so it never waits.
+#
+# The check is the serving commit's own builder (checked out under serving/):
+# it reuses the build its data and code already have, or builds and publishes
+# one, and prints the build's URI. A build published here is only pinned by
+# the deploy, which then finds it and reuses it.
+on:
+  schedule:
+    - cron: '0 19 * * *' # 02:00 in Vietnam
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  # Dispatches cloud-run-prod.yml.
+  actions: write
+
+concurrency:
+  group: card-index-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SERVICE_NAME: kallo-prod
+      PROD_REGION: asia-southeast1
+      CARD_INDEX_BUCKET: kallo-prod-card-search
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      # A prod deploy already running, or waiting for approval, rebuilds the
+      # index itself; dispatching another would only queue a duplicate.
+      - name: Skip while a prod deploy is open
+        id: busy
+        run: |
+          set -euo pipefail
+          open=0
+          for status in requested queued pending waiting in_progress; do
+            n="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow cloud-run-prod.yml \
+              --status "$status" --limit 100 --json databaseId --jq 'length')"
+            open=$((open + n))
+          done
+          echo "Open prod deploys: $open"
+          echo "open=$open" >> "$GITHUB_OUTPUT"
+      - uses: google-github-actions/auth@v3
+        if: steps.busy.outputs.open == '0'
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+        if: steps.busy.outputs.open == '0'
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - name: Read the serving revision
+        id: serving
+        if: steps.busy.outputs.open == '0'
+        run: |
+          set -euo pipefail
+          gcloud run services describe "$SERVICE_NAME" --region="$PROD_REGION" --format=json > "$RUNNER_TEMP/service.json"
+          revision="$(node scripts/cloud-run/card-index-refresh.mjs revision "$RUNNER_TEMP/service.json")"
+          if [ -z "$revision" ]; then
+            echo "Traffic is split between revisions; checking again tomorrow."
+            echo "check=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gcloud run revisions describe "$revision" --region="$PROD_REGION" --format=json > "$RUNNER_TEMP/revision.json"
+          pin="$(node scripts/cloud-run/card-index-refresh.mjs pin "$RUNNER_TEMP/revision.json")"
+          echo "$pin"
+          echo "$pin" >> "$GITHUB_OUTPUT"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          if [ -z "$(sed -n 's/^uri=//p' <<<"$pin")" ]; then
+            echo "$revision has no card search build pinned; nothing to refresh."
+            echo "check=false" >> "$GITHUB_OUTPUT"
+          elif [ "$(sed -n 's/^enabled=//p' <<<"$pin")" != "true" ]; then
+            echo "The card index kill switch is on; nothing to refresh."
+            echo "check=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "check=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.serving.outputs.check == 'true'
+        with:
+          ref: ${{ steps.serving.outputs.sha }}
+          path: serving
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        if: steps.serving.outputs.check == 'true'
+      - name: Install the serving commit's dependencies
+        if: steps.serving.outputs.check == 'true'
+        working-directory: serving
+        run: bun install --frozen-lockfile
+      - name: Read prod database URL
+        if: steps.serving.outputs.check == 'true'
+        run: |
+          db_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url)"
+          encoded_db_url="$(node ./scripts/cloud-run/shared-db.mjs encode-url --db-url "$db_url")"
+          echo "::add-mask::$db_url"
+          echo "::add-mask::$encoded_db_url"
+          { echo 'PROD_DATABASE_URL<<EOF'; echo "$db_url"; echo 'EOF'; } >> "$GITHUB_ENV"
+          { echo 'PROD_DATABASE_URL_ENCODED<<EOF'; echo "$encoded_db_url"; echo 'EOF'; } >> "$GITHUB_ENV"
+      # Strings added without vectors need the deploy's embedding backfill
+      # before any build can include them, so they go straight to a deploy.
+      # Otherwise the serving commit's builder answers with the build for
+      # today's data: the pinned one when nothing changed.
+      - name: Compare the card data with the serving build
+        id: compare
+        if: steps.serving.outputs.check == 'true'
+        env:
+          SERVING_URI: ${{ steps.serving.outputs.uri }}
+        run: |
+          set -euo pipefail
+          pending="$(psql "$PROD_DATABASE_URL_ENCODED" -X -v ON_ERROR_STOP=1 -A -t \
+            -c 'SELECT count(*) FROM food_card_texts WHERE embedding IS NULL' \
+            | tr -d '[:space:]')"
+          # Anything but a count fails the run: read as "not 0", it would
+          # dispatch a deploy every night.
+          if ! [[ "$pending" =~ ^[0-9]+$ ]]; then
+            echo "::error::Could not count card strings needing embeddings (got '$pending')."
+            exit 1
+          fi
+          echo "Card strings needing embeddings: $pending"
+          if [ "$pending" != "0" ]; then
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            echo "reason=$pending card strings need embeddings" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          cd serving
+          GITHUB_ENV= DATABASE_URL="$PROD_DATABASE_URL" \
+            bun scripts/data/food-cards/search-artifact/build-search-artifact.ts \
+            --bucket "$CARD_INDEX_BUCKET" | tee "$RUNNER_TEMP/build.log"
+          built="$(sed -n 's/^CARD_INDEX_URI=//p' "$RUNNER_TEMP/build.log")"
+          if [ -z "$built" ]; then
+            echo "::error::The builder printed no CARD_INDEX_URI."
+            exit 1
+          fi
+          echo "Serving build: $SERVING_URI"
+          echo "Today's build: $built"
+          if [ "$built" = "$SERVING_URI" ]; then
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            echo "reason=the card data changed since $SERVING_URI" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Redeploy the serving commit
+        if: steps.compare.outputs.stale == 'true'
+        env:
+          SERVING_SHA: ${{ steps.serving.outputs.sha }}
+          REASON: ${{ steps.compare.outputs.reason }}
+        run: |
+          echo "Redeploying $SERVING_SHA: $REASON."
+          # expected_serving_sha: the deploy re-checks, after approval, that
+          # this commit still serves, so it never rolls back a newer release.
+          gh workflow run cloud-run-prod.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            -f sha="$SERVING_SHA" -f expected_serving_sha="$SERVING_SHA"
+          echo "Dispatched the prod deploy of \`$SERVING_SHA\` ($REASON); it waits for approval." >> "$GITHUB_STEP_SUMMARY"

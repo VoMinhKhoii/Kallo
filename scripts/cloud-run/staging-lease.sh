@@ -136,8 +136,12 @@ describe_generation() {
   gcloud storage objects describe "$lease_uri" --format='value(generation)'
 }
 
+# Each conditional create returns on failure explicitly: `acquire` calls
+# acquire_fresh_lease as an `if` condition, where errexit is off, and without
+# the return a 412 (someone else holds the lease) fell through to recording
+# the holder's generation and reporting the lease as acquired.
 acquire_fresh_lease() {
-  gcloud storage cp "$desired_lease_file" "$lease_uri" --if-generation-match=0 >/dev/null
+  gcloud storage cp "$desired_lease_file" "$lease_uri" --if-generation-match=0 >/dev/null || return 1
   local generation
   generation="$(describe_generation)"
   append_env LEASE_GENERATION "$generation"
@@ -147,7 +151,7 @@ acquire_fresh_lease() {
 
 replace_existing_lease() {
   local expected_generation="${1:?generation required}"
-  gcloud storage cp "$desired_lease_file" "$lease_uri" --if-generation-match="$expected_generation" >/dev/null
+  gcloud storage cp "$desired_lease_file" "$lease_uri" --if-generation-match="$expected_generation" >/dev/null || return 1
   local generation
   generation="$(describe_generation)"
   append_env LEASE_GENERATION "$generation"
