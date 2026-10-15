@@ -83,11 +83,26 @@ describe('bounded Cloud Logging capture', () => {
       response: `not json ${urls}`,
     });
     expect(events()[1].error).toBe('[url] [url] [url] [url] [data]');
-    expect(events()[1].response).toBe('not json [url] [url] [url] [url] [data]');
+    expect(events()[1].response).toBe(
+      'not json [url] [url] [url] [url] [data]'
+    );
     expect(lines.join('')).not.toContain('example.test');
     // Times and ratios are not URLs.
     capture.emit('synthetic-request', 'llm', { error: 'at 13:05 ratio 1:2' });
     expect(events()[2].error).toBe('at 13:05 ratio 1:2');
+  });
+
+  it('redacts URLs in linear time on adversarial dotted text', () => {
+    const { capture, lines } = fixture();
+    const started = performance.now();
+    capture.emit('synthetic-request', 'llm', {
+      response: JSON.stringify({ name: 'a.'.repeat(96_000) }),
+      error: `${'a.'.repeat(60_000)}://x.example.test ${'b-'.repeat(20_000)}`,
+    });
+    expect(performance.now() - started).toBeLessThan(500);
+    const out = lines.join('');
+    expect(out).toContain('[url]');
+    expect(out).not.toContain('x.example.test');
   });
 
   it('redacts plain text responses and bounds JSON response traversal', () => {

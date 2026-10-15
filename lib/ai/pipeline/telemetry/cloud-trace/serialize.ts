@@ -3,6 +3,39 @@ const PRIVATE_KEY =
   /user.?id|user.?context|email|image|base64|url|authorization|access.?token|refresh.?token|password/i;
 const TEXT_KEY = /["']([^"'\r\n]*)["']\s*:/g;
 
+const SCHEME_CHAR = /[a-z0-9+.-]/i;
+const LETTER = /[a-z]/i;
+const URL_END = /[\s<>"]/;
+
+/**
+ * Replace `scheme://…` URLs (any scheme or case, including JSON-escaped
+ * `:\/\/`) with `[url]` in linear time: anchor on each `://`, walk back over at
+ * most 32 scheme characters, then forward to the next delimiter. A regex with a
+ * leading `[a-z0-9+.-]*` backtracks quadratically on text like `a.a.a.…`.
+ */
+function redactUrls(text: string): string {
+  const separator = /:(?:\/|\\\/){2}/g;
+  let out = '';
+  let last = 0;
+  for (let m = separator.exec(text); m; m = separator.exec(text)) {
+    let start = m.index;
+    while (
+      start > last &&
+      m.index - start < 32 &&
+      SCHEME_CHAR.test(text[start - 1])
+    )
+      start--;
+    while (start < m.index && !LETTER.test(text[start])) start++;
+    if (start === m.index) continue;
+    let end = m.index + m[0].length;
+    while (end < text.length && !URL_END.test(text[end])) end++;
+    out += `${text.slice(last, start)}[url]`;
+    last = end;
+    separator.lastIndex = end;
+  }
+  return out + text.slice(last);
+}
+
 /** Bounded traversal; never invoke toJSON or retain identity/image fields. */
 export function serializeTrace(payload: unknown): {
   json: string;
@@ -44,12 +77,10 @@ export function serializeTrace(payload: unknown): {
       const bounded = value.slice(0, remaining);
       truncated ||= bounded.length < value.length;
       remaining -= bounded.length;
-      return bounded
+      return redactUrls(bounded)
         .replace(/[^\s<>"\\]+/g, (word) =>
           word.includes('@') ? '[email]' : word
         )
-        // Any scheme, any case, and JSON-escaped slashes (`https:\/\/`); bare www. too.
-        .replace(/\b[a-z][a-z0-9+.-]*:(?:\/|\\\/){2}[^\s<>"]+/gi, '[url]')
         .replace(/\bwww\.[^\s<>"\\]+/gi, '[url]')
         .replace(/data:[^\s"]+/gi, '[data]');
     }
