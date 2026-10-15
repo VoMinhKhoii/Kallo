@@ -950,6 +950,9 @@ readers must accept incomplete traces and fall back to retained Postgres data.
 Payload filtering drops user IDs, user-context objects, email/image/credential
 fields, email-like text, URLs and data URLs. Images and signed URLs never belong
 in trace logs. Raw meal text and model answers remain sensitive operator data.
+JSON response strings receive the same bounded recursive key filtering as
+structured payloads. Malformed responses containing sensitive key-value text
+are redacted in full; oversized response strings are omitted before parsing.
 The deployment operator must provision a **dedicated seven-day Logging bucket**,
 a sink filtered on `jsonPayload.kind="kallo_trace_v1"`, an exclusion with that
 same filter on `_Default`, and restricted sink-writer/reader IAM. Verify both

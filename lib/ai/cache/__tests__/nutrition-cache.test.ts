@@ -200,6 +200,36 @@ describe('getInedibleCache', () => {
 // ---------------------------------------------------------------------------
 
 describe('cold-path helpers', () => {
+  it('direct percentage reads query only unknown IDs and remember absent rows', async () => {
+    const db = createMockDb([]);
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        { id: 'numeric', inedible_portion_pct: '10' },
+        { id: 'null', inedible_portion_pct: null },
+      ] as never)
+      .mockResolvedValueOnce([
+        { id: 'new', inedible_portion_pct: '5' },
+      ] as never);
+    const ids = ['numeric', 'null', 'absent'];
+    expect(await fetchInediblePctForIds(ids, db)).toEqual(
+      new Map([['numeric', 10]])
+    );
+    expect(await fetchInediblePctForIds(ids, db)).toEqual(
+      new Map([['numeric', 10]])
+    );
+    expect(db.execute).toHaveBeenCalledTimes(1);
+    expect(await fetchInediblePctForIds([...ids, 'new'], db)).toEqual(
+      new Map([
+        ['numeric', 10],
+        ['new', 5],
+      ])
+    );
+    expect(db.execute).toHaveBeenCalledTimes(2);
+    expect(
+      JSON.stringify(vi.mocked(db.execute).mock.calls[1][0])
+    ).not.toContain('numeric');
+  });
+
   it('isNutritionCacheInitialized reflects warm state', async () => {
     expect(isNutritionCacheInitialized()).toBe(false);
     await getNutritionCache(createMockDb([ROW_CHICKEN]));

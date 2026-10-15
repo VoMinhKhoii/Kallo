@@ -21,7 +21,6 @@ export interface GeminiCallTrace {
   stageLogId: string;
   promptVersionId: string | Promise<string | null>;
   promptRendered: string;
-  promptIsTemplate?: boolean;
 }
 
 /** Billable token counts one attempt reported; null where none were sent. */

@@ -257,8 +257,38 @@ describe('error swallowing', () => {
 // ── 5. logLlmCall metadata placeholders ──────────────────────────────────────
 
 describe('logLlmCall metadata', () => {
-  it('omits duplicate template text but preserves a distinct rendered prompt', async () => {
+  it.each([
+    'insert',
+    'conflict',
+  ])('deduplicates persisted content through buildLlmStageTrace (%s)', async (mode) => {
+    const { buildLlmStageTrace } = await import(
+      '@/lib/ai/pipeline/telemetry/trace'
+    );
     const mock = makeInsertResolvingMock();
+    const registration = makeReturningMock(
+      mode === 'insert' ? [{ id: 'version' }] : []
+    );
+    mock.insert.mockReturnValueOnce({ values: registration.values });
+    const db = Object.assign(mock, {
+      select: vi.fn(() => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [
+              { id: 'version', templateSample: 'synthetic template' },
+            ],
+          }),
+        }),
+      })),
+    });
+    const build = (templateSample: string) =>
+      buildLlmStageTrace({
+        trace: { db, requestId: 'synthetic', promptVersionsUsed: new Map() },
+        stageLogId: 'stage',
+        name: 'grounded-estimation',
+        builder: () => 'same builder',
+        templateSample,
+        model: 'synthetic',
+      });
     const call = {
       db: mock,
       requestId: 'synthetic',
@@ -272,14 +302,27 @@ describe('logLlmCall metadata', () => {
       latencyMs: 1,
       attempt: 1,
     };
-    logLlmCall({ ...call, promptIsTemplate: true });
-    await vi.waitFor(() => expect(mock.insert).toHaveBeenCalledTimes(2));
-    expect(mock.values.mock.calls[0][0].promptRendered).toBeNull();
-    logLlmCall({ ...call, promptRendered: 'synthetic rendered prompt' });
-    await vi.waitFor(() => expect(mock.insert).toHaveBeenCalledTimes(4));
-    expect(mock.values.mock.calls[2][0].promptRendered).toBe(
-      'synthetic rendered prompt'
+    // On conflict even the FIRST rendering may differ from the stored sample.
+    const first = build(
+      mode === 'insert' ? 'synthetic template' : 'synthetic first meal'
     );
+    expect(first).toBeDefined();
+    logLlmCall({ ...call, ...first });
+    await vi.waitFor(() => expect(mock.values).toHaveBeenCalledTimes(2));
+    expect(mock.values.mock.calls[0][0].promptRendered).toBe(
+      mode === 'insert' ? null : 'synthetic first meal'
+    );
+    const second = build('synthetic second meal');
+    logLlmCall({ ...call, ...second });
+    await vi.waitFor(() => expect(mock.values).toHaveBeenCalledTimes(4));
+    expect(mock.values.mock.calls[2][0]).toMatchObject({
+      promptVersionId: 'version',
+      promptRendered: 'synthetic second meal',
+    });
+    const identical = build('synthetic template');
+    logLlmCall({ ...call, ...identical });
+    await vi.waitFor(() => expect(mock.values).toHaveBeenCalledTimes(6));
+    expect(mock.values.mock.calls[4][0].promptRendered).toBeNull();
   });
   it('writes nullable metadata placeholders keyed by the LLM call id', async () => {
     const mock = makeInsertResolvingMock();

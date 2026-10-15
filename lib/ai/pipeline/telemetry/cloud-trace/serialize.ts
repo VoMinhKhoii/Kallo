@@ -1,6 +1,7 @@
 const MAX_CHARS = 2_000_000;
 const PRIVATE_KEY =
-  /user.?id|user.?context|email|image|base64|signed.?url|authorization|access.?token|refresh.?token|password/i;
+  /user.?id|user.?context|email|image|base64|url|authorization|access.?token|refresh.?token|password/i;
+const TEXT_KEY = /["']([^"'\r\n]*)["']\s*:/g;
 
 /** Bounded traversal; never invoke toJSON or retain identity/image fields. */
 export function serializeTrace(payload: unknown): {
@@ -11,12 +12,35 @@ export function serializeTrace(payload: unknown): {
   let nodes = 20_000;
   let truncated = false;
   const seen = new WeakSet<object>();
-  function clean(value: unknown, depth: number): unknown {
+  function clean(value: unknown, depth: number, response = false): unknown {
     if (--nodes < 0 || remaining <= 0 || depth > 24) {
       truncated = true;
       return null;
     }
     if (typeof value === 'string') {
+      if (response) {
+        // Never parse or retain an oversized/partial response: truncation can
+        // cut through a private structure before the fallback can recognize it.
+        if (value.length > remaining) {
+          truncated = true;
+          return '[response omitted]';
+        }
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(value);
+        } catch {
+          // Malformed nested values cannot be delimited safely with a regex.
+          // Fail closed for the entire response when a private key is present.
+          const decoded = value.replace(/\\u([0-9a-f]{4})/gi, (_, hex) =>
+            String.fromCharCode(Number.parseInt(hex, 16))
+          );
+          for (const match of decoded.matchAll(TEXT_KEY)) {
+            if (PRIVATE_KEY.test(match[1])) return '[response redacted]';
+          }
+        }
+        if (parsed !== undefined)
+          return JSON.stringify(clean(parsed, depth + 1));
+      }
       const bounded = value.slice(0, remaining);
       truncated ||= bounded.length < value.length;
       remaining -= bounded.length;
@@ -63,7 +87,11 @@ export function serializeTrace(payload: unknown): {
       }
       if (PRIVATE_KEY.test(key)) continue;
       remaining -= key.length;
-      result[key] = clean((value as Record<string, unknown>)[key], depth + 1);
+      result[key] = clean(
+        (value as Record<string, unknown>)[key],
+        depth + 1,
+        key === 'response'
+      );
     }
     seen.delete(value);
     return result;

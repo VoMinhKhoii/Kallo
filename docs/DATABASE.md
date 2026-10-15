@@ -489,6 +489,9 @@ remain documented operational exclusions.
 `pipeline_llm_calls.prompt_rendered` is nullable: a registered template sample
 is stored only in `prompt_versions.template_sample`. Kallo's detail reader
 joins that template as the fallback; distinct rendered prompts remain stored.
+Omission requires matching SHA-256 content hashes of the rendered text and
+the persisted sample. Builder/version identity alone does not imply equality;
+an existing version is read with its stored sample during registration.
 Existing stage/LLM payload writes continue during dual capture.
 
 `20261015183834_trace_retention_and_request_summaries.sql` installs these daily

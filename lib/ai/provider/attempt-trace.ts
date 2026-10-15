@@ -87,7 +87,6 @@ export function createAttemptObserver({
         promptVersionId: trace.promptVersionId,
         model,
         promptRendered: trace.promptRendered,
-        promptIsTemplate: trace.promptIsTemplate,
         responseRaw: state.accumulated,
         inputTokens,
         outputTokens,

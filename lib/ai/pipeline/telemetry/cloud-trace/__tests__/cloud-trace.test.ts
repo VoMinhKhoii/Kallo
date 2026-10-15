@@ -27,6 +27,70 @@ function fixture() {
 }
 
 describe('bounded Cloud Logging capture', () => {
+  it('sanitizes nested JSON through the response string path', () => {
+    const { capture, events, lines } = fixture();
+    capture.emit('synthetic-request', 'llm', {
+      response: JSON.stringify({
+        items: [
+          {
+            name: 'rice',
+            user_context: { age: 'private-age' },
+            user_id: 'private-id',
+            userId: 'private-camel',
+            image: 'private-image',
+            email: 'private-email',
+            url: 'private-url',
+            signed_url: 'private-signed',
+            nested: { authorization: 'private-auth' },
+          },
+        ],
+        tokens: 42,
+        note: 'hello@example.test https://example.test data:image/png;base64,secret',
+      }),
+    });
+    expect(JSON.parse(events()[1].response)).toEqual({
+      items: [{ name: 'rice', nested: {} }],
+      tokens: 42,
+      note: '[email] [url] [data]',
+    });
+    expect(lines.join('')).not.toContain('private-');
+    expect(lines.join('')).not.toContain('example.test');
+  });
+
+  it.each([
+    'user_context',
+    'user_id',
+    'userId',
+    'image',
+    'signed_url',
+    'email',
+    'url',
+  ])('fails closed for malformed response strings containing %s', (key) => {
+    const { capture, events, lines } = fixture();
+    capture.emit('synthetic-request', 'llm', {
+      response: `prefix {"safe":1,"${key}":{"nested":"private-value"`,
+    });
+    expect(events()[1].response).toBe('[response redacted]');
+    expect(lines.join('')).not.toContain('private-value');
+  });
+
+  it('redacts plain text responses and bounds JSON response traversal', () => {
+    const { capture, events } = fixture();
+    capture.emit('synthetic-request', 'llm', {
+      response:
+        'plain hello@example.test https://example.test data:image/png;base64,secret',
+    });
+    expect(events()[1].response).toBe('plain [email] [url] [data]');
+    const deep = `${'{"nested":'.repeat(30)}{"user_id":"private-id"}${'}'.repeat(30)}`;
+    capture.emit('synthetic-request', 'llm', { response: deep });
+    expect(events()[2].truncated).toBe(true);
+    expect(events()[2].response).not.toContain('private-id');
+    capture.emit('synthetic-request', 'llm', {
+      response: `{"safe":"${'x'.repeat(2_000_001)}"}`,
+    });
+    expect(events()[3].response).toBe('[response omitted]');
+  });
+
   it('emits synchronous single-line structured events with monotonic sequence', () => {
     const { capture, events } = fixture();
     expect(

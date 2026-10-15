@@ -13,6 +13,9 @@ import {
 
 const enabled = () => readBooleanEnv('PIPELINE_TRACE_ENABLED', false);
 const cache = new Map<string, string>(); // `${name}:${hash}` -> id
+const templateHashes = new Map<string, string>(); // persisted version id -> content hash
+const hashText = (text: string) =>
+  createHash('sha256').update(text).digest('hex');
 
 export function hashPromptBuilder(
   builder: (...a: unknown[]) => string
@@ -50,9 +53,15 @@ export async function recordPromptVersion(args: {
       })
       .returning({ id: promptVersions.id });
     let id = inserted[0]?.id;
+    let templateSample: string | undefined = id
+      ? args.templateSample
+      : undefined;
     if (!id) {
       const found = await args.db
-        .select({ id: promptVersions.id })
+        .select({
+          id: promptVersions.id,
+          templateSample: promptVersions.templateSample,
+        })
         .from(promptVersions)
         .where(
           and(
@@ -62,8 +71,13 @@ export async function recordPromptVersion(args: {
         )
         .limit(1);
       id = found[0]?.id;
+      templateSample = found[0]?.templateSample;
     }
-    if (id) cache.set(key, id);
+    if (id) {
+      cache.set(key, id);
+      if (typeof templateSample === 'string')
+        templateHashes.set(id, hashText(templateSample));
+    }
     return id ?? null;
   } catch (e) {
     console.error('[trace] recordPromptVersion failed', e);
@@ -123,8 +137,6 @@ export interface LlmCallArgs {
   promptVersionId: string | Promise<string | null>;
   model: string;
   promptRendered: string;
-  /** Present when promptRendered is the registered template sample. */
-  promptIsTemplate?: boolean;
   responseRaw: string | null;
   inputTokens: number | null;
   outputTokens: number | null;
@@ -162,7 +174,10 @@ export function logLlmCall(a: LlmCallArgs): void {
         stageLogId: a.stageLogId,
         promptVersionId: resolvedId,
         model: a.model,
-        promptRendered: a.promptIsTemplate ? null : a.promptRendered,
+        promptRendered:
+          templateHashes.get(resolvedId) === hashText(a.promptRendered)
+            ? null
+            : a.promptRendered,
         responseRaw: a.responseRaw,
         inputTokens: a.inputTokens,
         outputTokens: a.outputTokens,
@@ -189,6 +204,7 @@ export function logLlmCall(a: LlmCallArgs): void {
 // Test-only escape hatch.
 export function _resetPromptVersionCacheForTests() {
   cache.clear();
+  templateHashes.clear();
 }
 
 /**
@@ -242,7 +258,6 @@ export function buildLlmStageTrace(args: {
       stageLogId: string;
       promptVersionId: string | Promise<string | null>;
       promptRendered: string;
-      promptIsTemplate: boolean;
     }
   | undefined {
   if (!args.trace || !enabled()) return undefined;
@@ -269,6 +284,5 @@ export function buildLlmStageTrace(args: {
       return resolvedPromptVersionId ?? pvIdPromise;
     },
     promptRendered: args.templateSample,
-    promptIsTemplate: true,
   };
 }
