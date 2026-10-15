@@ -173,6 +173,7 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261013070700_seed_food_cards.sql` | Data (generated) | Re-seeds the 7,729 cards after duplicate-name pruning (case/punctuation copies, unaccented VI copies, word-order paraphrases): 71,342 row strings → 66,803 pairs over 57,843 distinct strings |
 | `20261013093000_drop_match_food_cards_function.sql` | B (Manual) | Drops `match_food_cards` (contract step after #444 deployed; plpgsql bodies are not dependencies, so the table's CASCADE would not) |
 | `20261013093015_drop_food_card_vectors.sql` | A (Drizzle) | `DROP TABLE food_card_vectors CASCADE` (its indexes and RLS policy go with it); `food_card_texts` + `food_card_text_rows` replaced it |
+| `20261015020000_drop_supabase_storage_policies.sql` | B (Manual, journaled) | Drops every remaining `storage.objects` policy of the retired Supabase buckets (`feedback_screenshots_*`, `nutrition_labels_*`, `avatars_*`, all `IF EXISTS`) after #416 moved uploads to R2; the buckets are emptied and deleted afterwards through the Storage API by `scripts/ops/delete-supabase-storage-buckets.ts` (`docs/STORAGE.md`) |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

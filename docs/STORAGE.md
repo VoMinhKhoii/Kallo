@@ -2,7 +2,7 @@
 
 Uploaded files live in Cloudflare R2, reached over its S3 API from the server
 only. Code: `lib/infra/storage/` (public entry `object-storage.ts`). Supabase
-still runs Auth and Postgres; its Storage buckets are no longer read or written.
+still runs Auth and Postgres; its Storage buckets are retired (see below).
 
 ## Buckets
 
@@ -33,9 +33,8 @@ Rows store the **key**, never a URL, so moving storage needs no data migration.
   `feedback-screenshots` JPEG/PNG/WebP ≤ 5 MB. Checked on every `putObject`.
 - **Private objects** are only reachable through presigned GETs (path-style, on
   `https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com`) with short lifetimes.
-- **Account deletion** purges `{userId}/` in all three buckets — R2 and,
-  during the transition, the legacy Supabase copy — before the Auth user is
-  deleted, and fails closed if a purge cannot be confirmed. Feedback
+- **Account deletion** purges `{userId}/` in all three R2 buckets before the
+  Auth user is deleted, and fails closed if a purge cannot be confirmed. Feedback
   screenshots are new here: on Supabase they were never purged, and their
   `user_feedback` rows cascade with Auth, which left the images orphaned. `removePrefix` refuses an empty or unterminated prefix, so a bad id
   can never widen a purge.
@@ -116,46 +115,24 @@ Then create an R2 API token (Dashboard → R2 → Manage API tokens → *Object 
 & Write*, limited to the three buckets) and store its Access Key ID and Secret
 Access Key as the two secrets above.
 
-## Moving existing objects
+## The Supabase Storage migration (finished)
 
-`scripts/ops/copy-supabase-storage-to-r2.ts` copies every Supabase Storage
-object to R2 under the same key, skips keys that are already there, and checks
-afterwards that R2 has every key. Run it once before the deploy and again after,
-to pick up files uploaded in between:
+Uploads moved from Supabase Storage to R2 in #416 on 2026-10-08: every object
+was copied under the same key, and for one week the Supabase buckets stayed as
+the rollback path, with every R2 delete mirrored to them. That week is over and
+the leftovers are retired:
+
+- `20261015020000_drop_supabase_storage_policies.sql` drops the buckets'
+  remaining `storage.objects` policies (applied by the owner, like every
+  migration).
+- Supabase forbids SQL deletes on its storage tables, so the buckets
+  themselves are emptied and deleted through the Storage API by an owner-run
+  script — a dry run by default, which prints each bucket's object count:
 
 ```bash
-# pass 1, before the deploy
-bun --conditions=react-server --env-file=<env> \
-  scripts/ops/copy-supabase-storage-to-r2.ts [--dry-run]
-# pass 2, after it — T is when the new revision took traffic
-bun --conditions=react-server --env-file=<env> \
-  scripts/ops/copy-supabase-storage-to-r2.ts --prune-deleted-before=T
+bun --env-file=<env> scripts/ops/delete-supabase-storage-buckets.ts            # dry run
+bun --env-file=<env> scripts/ops/delete-supabase-storage-buckets.ts --confirm  # empty + delete
 ```
-
-Copies get the copy time as their R2 `LastModified`, so for an hour after a
-pass the feedback upload quota (20/hour, counted from `LastModified`) sees a
-user's copied screenshots as fresh uploads. Harmless at Kallo's volume (4 prod
-screenshots at cutover); re-check before a bulk copy of a large bucket.
-
-Between the passes the old revision deletes only from Supabase, so pass 2 also
-removes R2 keys that are gone from Supabase and were written before `T` (pass-1
-copies of avatars removed or accounts deleted in the gap). Keys written after
-`T` are the new revision's own uploads and are never pruned.
-
-### The legacy Supabase copies (transitional)
-
-The Supabase buckets and their `storage.objects` policies stay in place until a
-follow-up migration drops them once R2 has been stable. Until then:
-
-- **Deletes are mirrored.** `removeObjects` and `removePrefix` also delete the
-  same keys / prefix from the Supabase bucket (`lib/infra/storage/legacy-supabase.ts`),
-  so a removed avatar stops being served at its old public URL and account
-  deletion still erases everything — failing closed if the legacy purge fails.
-  The follow-up deletes that file and its two calls.
-- **Rollback covers objects uploaded before the cutover only.** Redeploying the
-  previous revision serves everything the copy moved; files uploaded after the
-  cutover exist only in R2 and show as missing on the old revision. Accepted
-  for the beta rather than dual-writing every upload.
 
 ## Tests
 

@@ -631,6 +631,13 @@
       "when": 1791883815423,
       "tag": "20261013093015_drop_food_card_vectors",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1792029600000,
+      "tag": "20261015020000_drop_supabase_storage_policies",
+      "breakpoints": true
     }
   ]
 }
