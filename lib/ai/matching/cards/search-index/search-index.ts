@@ -160,6 +160,8 @@ function loadBuild() {
         )
       ).toString('utf8')
     ) as CatalogQueryRow[];
+    // A load that outlived its state (reset in tests) must not touch the new one.
+    if (state() !== s) return null;
     const catalog = buildCardCatalog(rows);
     s.manifest = manifest;
     s.catalog = catalog;
@@ -169,7 +171,7 @@ function loadBuild() {
     spawnWorker();
     return catalog;
   })().catch((err) => {
-    fail('artifact load', err);
+    if (state() === s) fail('artifact load', err);
     return null;
   });
 }

@@ -136,6 +136,19 @@ describe('card search index recovery', () => {
     expect(spawned).toHaveLength(1);
   });
 
+  it('ignores a load that finishes after the state was reset', async () => {
+    vi.stubEnv('CARD_INDEX_URI', 'file:///no/such/card-build');
+    expect(cardIndexStatus()).toBe('loading');
+    __resetCardIndexForTests();
+    vi.stubEnv('CARD_INDEX_URI', '');
+    expect(cardIndexStatus()).toBe('disabled');
+
+    // The old load fails after the reset: the new state must not see it.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(cardIndexStatus()).toBe('disabled');
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
   it('skips the worker when too little time is left, without a strike', async () => {
     expect(await until('ready')).toBe('ready');
     await expect(searchCardIndex([[1]], 100)).rejects.toThrow(/skipped/);

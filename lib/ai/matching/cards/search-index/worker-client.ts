@@ -71,6 +71,8 @@ export function spawnSearchWorker(
   const pending = new Map<number, Pending>();
   let nextId = 1;
   let dead: Error | null = null;
+  let timeoutsInARow = 0;
+  let firstStrikeAt = 0;
   let markReady: (ms: number) => void = () => {};
   let markFailed: (err: Error) => void = () => {};
   const ready = new Promise<number>((resolve, reject) => {
@@ -99,7 +101,12 @@ export function spawnSearchWorker(
       return;
     }
     const p = pending.get(reply.id);
-    if (!p) return; // timed out already
+    if (!p) {
+      // An answer to a search that already timed out: too late for its
+      // caller, but the worker is alive, so its earlier misses were a stall.
+      if (!('error' in reply)) timeoutsInARow = 0;
+      return;
+    }
     pending.delete(reply.id);
     clearTimeout(p.timer);
     if ('error' in reply) p.reject(new Error(reply.error));
@@ -119,8 +126,6 @@ export function spawnSearchWorker(
     fail(new Error(reason));
     void worker.terminate();
   };
-  let timeoutsInARow = 0;
-  let firstStrikeAt = 0;
   const strike = () => {
     if (timeoutsInARow++ === 0) firstStrikeAt = Date.now();
     // A worker that keeps missing full-length searches, over a span longer

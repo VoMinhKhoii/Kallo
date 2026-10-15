@@ -110,6 +110,29 @@ port.on('message', ({ id, queries }) => {
     w.terminate();
   });
 
+  it('takes a late answer to a timed-out search as a sign of life', async () => {
+    const onFailure = vi.fn();
+    // Answers every search, 10 ms after its 20 ms timeout.
+    const w = spawnSearchWorker(
+      'file:///x',
+      manifest,
+      onFailure,
+      fakeWorker(`port.postMessage({ type: 'ready', ms: 1 });
+port.on('message', ({ id }) =>
+  setTimeout(() => port.postMessage({ id, hits: [[]] }), 30));`),
+      rule
+    );
+    await w.ready;
+    // Four full-length misses over > 30 ms would replace the worker, were
+    // the late answers between them ignored.
+    for (let i = 0; i < 4; i++) {
+      await expect(w.search([[1]], 20)).rejects.toThrow(/timed out/);
+      await new Promise((r) => setTimeout(r, 25)); // the late answer lands
+    }
+    expect(onFailure).not.toHaveBeenCalled();
+    w.terminate();
+  });
+
   it('settles pending searches and reports the failure when the worker dies', async () => {
     const onFailure = vi.fn();
     const w = spawnSearchWorker(
