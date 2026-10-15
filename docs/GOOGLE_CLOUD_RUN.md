@@ -195,10 +195,62 @@ Layout, all immutable (created with `ifGenerationMatch=0`):
   only by `--force`
 
 The step prints `CARD_INDEX_URI=gs://kallo-prod-card-search/f1/<buildId>`,
-exports it to the job, and records it in the deploy record. The app does not
-read the artifact yet; the follow-up that does passes this URI to each new
-revision, pinning the revision to that build. Builds are never deleted, so an
-older revision can always load the build it was deployed with.
+exports it to the job, records it in the deploy record, and passes it to the
+new revision, pinning that revision to that build. Builds are never deleted, so
+an older revision can always load the build it was deployed with.
+
+At runtime (`lib/ai/matching/cards/search-index/`) each container loads its
+pinned build once, at boot: the catalog on the main thread, the vectors and
+HNSW index in a worker thread, which self-tests the build before serving.
+Matching then searches in the container; while the build loads, after a
+failure, or with no build pinned, it uses the database path
+(`match_food_card_texts`). `/api/healthz` reports one word for it,
+`"cardIndex":"disabled|loading|ready|failed"`, without changing its status
+code. The deploy's smoke check requires a healthy `ready` answer within 60 s
+(polling through `failed`, which the app retries 2, 4 and 8 s later) when the
+checked-out commit has the runtime, a build was pinned, and the kill switch is
+not set; otherwise it smokes as before.
+
+- **Rollback.** Moving traffic back to an older revision keeps that
+  revision's build. Redeploying an older commit rebuilds from today's database
+  if that commit has the builder; a commit without it gets `CARD_INDEX_URI=`
+  (empty: the database path).
+- **Card data changed outside a deploy** (`translate-usda`, `sync-cards.ts`,
+  NIN scripts, SQL by hand): running containers keep their pinned build until
+  the next deploy, which rebuilds it. `translate-usda.yml` dispatches that
+  deploy itself when it finishes.
+- **Kill switch.** `CARD_INDEX_ENABLED=false` sends every search back to the
+  database. `--update-env-vars` merges, so it stays set across deploys until
+  removed. A service update creates a revision from the service template,
+  which after a failed smoke is the unpromoted candidate, so check where
+  traffic is first:
+
+  ```bash
+  gcloud run services describe kallo-prod --region=asia-southeast1 \
+    --format='table(status.traffic.revisionName,status.traffic.percent,status.latestCreatedRevisionName)'
+  # Traffic on the latest created revision: update it in place.
+  gcloud run services update kallo-prod --region=asia-southeast1 \
+    --update-env-vars=CARD_INDEX_ENABLED=false
+  # Traffic pinned to an older revision (last smoke failed): redeploy the
+  # serving commit with the kill switch set instead, through the prod workflow.
+  ```
+
+  To turn it back on: `--remove-env-vars=CARD_INDEX_ENABLED`.
+
+  On the database path, each matching call has 9 s in all (the vector search
+  8 s, nutrition a 1 s reserve) and a cold container's catalog load now counts
+  inside it, so with the kill switch on a cold container matches more meals on
+  the word arms alone than before; before, the same wait could run past the
+  10 s stage deadline and fail the meal instead.
+- **A hung worker.** A search gets at most 2 s; the worker is replaced after
+  three searches in a row that had the full 2 s and still got no answer, spread
+  over at least 2 s (one stall that times out several searches at once is not
+  a hang). A search cut short by its meal's deadline never counts, so if every
+  meal reaching a hung worker already has under 2 s left, the worker is not
+  replaced: those meals keep matching on the word arms until a meal with time
+  left trips it, or the container recycles.
+- **Replacing a worker** terminates its thread; one stuck in native index code
+  can keep using CPU for a moment after that, while the new worker loads.
 
 One-time setup (uniform bucket-level access is required for the IAM
 condition; once the bucket has a conditional binding, gcloud refuses

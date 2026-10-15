@@ -12,7 +12,7 @@ import { __resetCardCatalogForTests, getCardCatalog } from '../catalog';
 import { cardLabel } from '../label';
 import { createCardEmbeddingPrewarm } from '../prewarm';
 import { cardQueryStrings } from '../query-strings';
-import { matchCardCandidates } from '../retrieval';
+import { MATCH_EXPIRED, matchCardCandidates } from '../retrieval';
 
 const ROWS = [
   {
@@ -144,6 +144,13 @@ const ing: DecomposedIngredientV2 = {
   tableName: 'Beef, brisket, flat half, raw',
 };
 
+/** The candidate lists of a call that must neither expire nor go legacy. */
+async function cards(...args: Parameters<typeof matchCardCandidates>) {
+  const outcome = await matchCardCandidates(...args);
+  if (outcome === MATCH_EXPIRED) throw new Error('matching expired');
+  return outcome ?? [];
+}
+
 beforeEach(() => {
   __resetCardCatalogForTests();
   vi.clearAllMocks();
@@ -170,8 +177,7 @@ describe('matchCardCandidates', () => {
       },
       { query_index: q + 1, food_composition_id: 'fao_beef', similarity: 0.8 },
     ]);
-    const [result] =
-      (await matchCardCandidates([ing], mockDb(true, hits), gemini)) ?? [];
+    const [result] = await cards([ing], mockDb(true, hits), gemini);
     const ids = result.candidates.map((c) => c.info.foodCompositionId);
     expect(ids).toContain('usda_brisket_choice');
     expect(ids).not.toContain('usda_brisket_select'); // same concept as choice
@@ -221,8 +227,7 @@ describe('matchCardCandidates', () => {
       { query_index: 2, food_composition_id: 'fao_beef', similarity: 0.85 },
     ];
     const db = mockDb(true, hits);
-    const results =
-      (await matchCardCandidates([sparse, sparse], db, gemini)) ?? [];
+    const results = await cards([sparse, sparse], db, gemini);
     expect(gemini.generateEmbeddingBatch).toHaveBeenCalledWith([
       'Ức bò',
       'Beef',
@@ -249,8 +254,7 @@ describe('matchCardCandidates', () => {
       }),
     } as unknown as GeminiClient;
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const [result] =
-      (await matchCardCandidates([ing], mockDb(true, []), failing)) ?? [];
+    const [result] = await cards([ing], mockDb(true, []), failing);
     expect(result.candidates.length).toBeGreaterThan(0);
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
@@ -273,8 +277,7 @@ describe('matchCardCandidates', () => {
         similarity: 0.9,
       },
     ];
-    const [result] =
-      (await matchCardCandidates([chicken], mockDb(true, hits), gemini)) ?? [];
+    const [result] = await cards([chicken], mockDb(true, hits), gemini);
     const ids = result.candidates.map((c) => c.info.foodCompositionId);
     expect(ids).toContain('usda_chicken_breast');
     expect(ids).not.toContain('usda_chicken_skin');
@@ -286,9 +289,9 @@ describe('matchCardCandidates', () => {
       generateEmbeddingBatch: vi.fn(() => new Promise<number[][]>(() => {})),
     } as unknown as GeminiClient;
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const pending = matchCardCandidates([ing], mockDb(true, []), stalled);
+    const pending = cards([ing], mockDb(true, []), stalled);
     await vi.advanceTimersByTimeAsync(8_000);
-    const [result] = (await pending) ?? [];
+    const [result] = await pending;
     expect(result.candidates.length).toBeGreaterThan(0);
     errorSpy.mockRestore();
     vi.useRealTimers();
@@ -357,12 +360,7 @@ describe('matchCardCandidates', () => {
       nameVi: 'đậu phộng rang không muối',
       tableName: 'Peanuts, dry-roasted, without salt',
     };
-    const [result] =
-      (await matchCardCandidates(
-        [unsalted],
-        mockDb(true, hits, rows),
-        gemini
-      )) ?? [];
+    const [result] = await cards([unsalted], mockDb(true, hits, rows), gemini);
     const ids = result.candidates.map((c) => c.info.foodCompositionId);
     expect(ids).toContain('usda_peanut_nosalt');
     expect(ids).not.toContain('usda_peanut_salt');
@@ -465,12 +463,11 @@ describe('matchCardCandidates', () => {
         similarity: 0.9,
       },
     ];
-    const [result] =
-      (await matchCardCandidates(
-        [{ ...ing, stateHint: 'raw_weight' }],
-        mockDb(true, hits),
-        gemini
-      )) ?? [];
+    const [result] = await cards(
+      [{ ...ing, stateHint: 'raw_weight' }],
+      mockDb(true, hits),
+      gemini
+    );
     expect(result.candidates.map((c) => c.info.state)).not.toContain('cooked');
   });
 
@@ -492,12 +489,11 @@ describe('matchCardCandidates', () => {
       canonicalName: 'Zzq',
       stateHint: 'raw_weight',
     };
-    const [result] =
-      (await matchCardCandidates(
-        [vectorOnly],
-        mockDb(true, hits, rows),
-        gemini
-      )) ?? [];
+    const [result] = await cards(
+      [vectorOnly],
+      mockDb(true, hits, rows),
+      gemini
+    );
     expect(result.candidates.map((c) => c.info.foodCompositionId)).toEqual([
       'usda_brisket_choice',
     ]);

@@ -1,12 +1,18 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { probeSharedDatabaseHealth } from '@/app/api/healthz/_lib/shared-db-health';
+import { cardIndexStatus } from '@/lib/ai/matching/cards/search-index/search-index';
 import { handleRouteError } from '@/lib/api/respond';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
 
 /**
- * Liveness probe. `{ ok, service }` and nothing else.
+ * Liveness probe. `{ ok, service, cardIndex }` and nothing else. `cardIndex`
+ * is one status word for the in-container card search (`disabled`,
+ * `loading`, `ready`, `failed`) — no build id, no counts — so the deploy's
+ * smoke check can hold a revision whose search artifact did not load. It
+ * never changes the status code: matching falls back to the database when the
+ * artifact fails.
  *
  * The invariants behind `ok` are named in the server log, not in the body: the
  * old response told anonymous callers which tables exist, whether a trigger is
@@ -41,7 +47,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { ok, service: 'kallo' },
+      { ok, service: 'kallo', cardIndex: cardIndexStatus() },
       { status: ok ? 200 : 503 }
     );
   } catch (error) {
@@ -51,6 +57,7 @@ export async function GET(request: NextRequest) {
       {
         ok: false,
         service: 'kallo',
+        cardIndex: cardIndexStatus(),
         error: 'Shared database health check failed.',
       },
       { status: 503 }

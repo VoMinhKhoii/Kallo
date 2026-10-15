@@ -11,7 +11,7 @@ import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import type { AppDb } from '@/lib/infra/db/client';
 import type { IngredientV2MatchResult } from './candidate';
-import { matchCardCandidates } from './cards/retrieval';
+import { MATCH_EXPIRED, matchCardCandidates } from './cards/retrieval';
 import { matchIngredients } from './match-ingredients';
 
 type Ingredient =
@@ -75,11 +75,16 @@ export function completedMealItems(
 export interface StreamedMatching {
   /** Feed Call 1's accumulated stream text. */
   onChunk: (accumulated: string) => void;
-  /** Match the final ingredients, reusing what the stream already fetched. */
+  /**
+   * Match the final ingredients, reusing what the stream already fetched.
+   * `deadlineAt` bounds the matching it still has to start (the stage
+   * deadline): past it, an ingredient is left unmatched instead.
+   */
   match: (
     ingredients: Ingredient[],
     dishCookingMethods: Array<string | null>,
-    legacy: { k: number; concurrency: number }
+    legacy: { k: number; concurrency: number },
+    opts?: { deadlineAt?: number }
   ) => Promise<IngredientV2MatchResult[]>;
   /**
    * The caller will never call `match` (not food, or a discarded rescue
@@ -118,6 +123,9 @@ export function createStreamedMatching(
       db,
       gemini
     )
+      // An expired batch counts as missing: `match` covers it in time or
+      // leaves it unmatched.
+      .then((results) => (results === MATCH_EXPIRED ? null : results))
       .catch(() => null)
       .then((results) => {
         batch.forEach((p, i) => {
@@ -157,7 +165,7 @@ export function createStreamedMatching(
       seen = items.length;
       flush();
     },
-    async match(ingredients, dishCookingMethods, legacy) {
+    async match(ingredients, dishCookingMethods, legacy, opts = {}) {
       flush(true);
       const early = await Promise.all(
         ingredients.map((ing) => started.get(matchKey(ing)) ?? null)
@@ -169,7 +177,8 @@ export function createStreamedMatching(
             missing.map((i) => dishCookingMethods[i]),
             db,
             gemini,
-            legacy
+            legacy,
+            opts
           )
         : [];
       let next = 0;

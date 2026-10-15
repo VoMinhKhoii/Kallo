@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const db = { tag: 'db' };
 const getNutritionCache = vi.fn(async () => ({}));
 const getCardCatalog = vi.fn(() => new Promise(() => {}));
+const cardIndexConfigured = vi.fn(() => false);
 
 vi.mock('@sentry/nextjs', () => ({
   init: vi.fn(),
@@ -18,6 +19,9 @@ vi.mock('@sentry/nextjs', () => ({
 vi.mock('@/lib/infra/db/client', () => ({ db }));
 vi.mock('@/lib/ai/cache/nutrition-cache', () => ({ getNutritionCache }));
 vi.mock('@/lib/ai/matching/cards/catalog', () => ({ getCardCatalog }));
+vi.mock('@/lib/ai/matching/cards/search-index/search-index', () => ({
+  cardIndexConfigured,
+}));
 
 beforeEach(() => {
   vi.spyOn(console, 'info').mockImplementation(() => {});
@@ -37,6 +41,17 @@ describe('register', () => {
     await register();
 
     expect(getCardCatalog).toHaveBeenCalledWith(db);
+  });
+
+  it('loads the search artifact instead of the database catalog when one is pinned', async () => {
+    vi.stubEnv('NEXT_RUNTIME', 'nodejs');
+    cardIndexConfigured.mockReturnValueOnce(true);
+    const { register } = await import('@/instrumentation');
+
+    await register();
+
+    expect(cardIndexConfigured).toHaveBeenCalled();
+    expect(getCardCatalog).not.toHaveBeenCalled();
   });
 
   it('does not load the nutrition cache', async () => {

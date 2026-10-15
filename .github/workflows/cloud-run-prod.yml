@@ -402,7 +402,7 @@ jobs:
             --min-instances=0
             --max-instances=20
             --set-secrets=DATABASE_URL=kallo-prod-database-url-tx:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-prod-supabase-service-role-key:latest,REVENUECAT_CUSTOMER_DELETE_API_KEY=kallo-prod-revenuecat-customer-delete-api-key:latest,REVENUECAT_REST_API_KEY=kallo-prod-revenuecat-rest-api-key:latest,REVENUECAT_WEBHOOK_SECRET=kallo-prod-revenuecat-webhook-secret:latest,RESEND_API_KEY=kallo-prod-resend-api-key:latest,SEND_EMAIL_HOOK_SECRET=kallo-prod-send-email-hook-secret:latest,USDA_API_KEY=kallo-prod-usda-api-key:latest,R2_ACCESS_KEY_ID=kallo-prod-r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=kallo-prod-r2-secret-access-key:latest,CLOUDFLARE_ANALYTICS_TOKEN=kallo-prod-cloudflare-analytics-token:latest,APNS_KEY_P8=kallo-prod-apns-key-p8:latest${{ steps.apple.outputs.secrets }}${{ steps.llm.outputs.secrets }}
-            --update-env-vars=^|^AI_PROVIDER=vertex|DB_POOL_MAX=8|SENTRY_ENVIRONMENT=production|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1|PIPELINE_V2_ENABLED=true|PIPELINE_MODEL_PROFILE=${{ vars.PIPELINE_MODEL_PROFILE || 'stable' }}|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_WEB_API_KEY_SANDBOX=${{ vars.REVENUECAT_WEB_API_KEY_SANDBOX }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false|GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}|APNS_KEY_ID=${{ vars.APNS_KEY_ID }}|APNS_TEAM_ID=ZNG57U88R5|APNS_BUNDLE_ID=com.khoivo.nham|APNS_PRODUCTION=true|APPLE_TEAM_ID=ZNG57U88R5|APPLE_SIGNIN_CLIENT_ID=com.khoivo.nham|APPLE_SIGNIN_KEY_ID=${{ vars.APPLE_SIGNIN_KEY_ID }}|R2_ACCOUNT_ID=${{ vars.R2_ACCOUNT_ID }}|R2_BUCKET_PREFIX=kallo-prod
+            --update-env-vars=^|^AI_PROVIDER=vertex|DB_POOL_MAX=8|SENTRY_ENVIRONMENT=production|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1|PIPELINE_V2_ENABLED=true|PIPELINE_MODEL_PROFILE=${{ vars.PIPELINE_MODEL_PROFILE || 'stable' }}|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_WEB_API_KEY_SANDBOX=${{ vars.REVENUECAT_WEB_API_KEY_SANDBOX }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false|GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}|APNS_KEY_ID=${{ vars.APNS_KEY_ID }}|APNS_TEAM_ID=ZNG57U88R5|APNS_BUNDLE_ID=com.khoivo.nham|APNS_PRODUCTION=true|APPLE_TEAM_ID=ZNG57U88R5|APPLE_SIGNIN_CLIENT_ID=com.khoivo.nham|APPLE_SIGNIN_KEY_ID=${{ vars.APPLE_SIGNIN_KEY_ID }}|R2_ACCOUNT_ID=${{ vars.R2_ACCOUNT_ID }}|R2_BUCKET_PREFIX=kallo-prod|CARD_INDEX_URI=${{ env.CARD_INDEX_URI }}
       - name: Resolve smoke URL
         # Existing service → the candidate was deployed with --no-traffic, so smoke
         # its tagged URL (the live service URL still serves the old revision).
@@ -432,7 +432,22 @@ jobs:
           ORIGIN_SHARED_SECRET="$(gcloud secrets versions access latest --secret=kallo-prod-origin-shared-secret)"
           echo "::add-mask::$ORIGIN_SHARED_SECRET"
           export ORIGIN_SHARED_SECRET
-          ./scripts/cloud-run/smoke-check.sh "$SMOKE_URL"
+          # Hold the candidate until its card search index is ready — only when
+          # this commit has the runtime, a build was pinned, and the kill switch
+          # (CARD_INDEX_ENABLED, any value the app reads as off) is not set on
+          # the service; otherwise smoke exactly as before.
+          smoke_args=()
+          if [ -f lib/ai/matching/cards/search-index/search-index.ts ] && [ -n "${CARD_INDEX_URI:-}" ]; then
+            card_index_enabled="$(gcloud run services describe "$SERVICE_NAME" \
+              --region="${{ env.PROD_REGION }}" --format=json \
+              | jq -r '[.spec.template.spec.containers[0].env[]? | select(.name == "CARD_INDEX_ENABLED") | .value][0] // ""' \
+              | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+            case "$card_index_enabled" in
+              false|0|off|no|disabled|disable) echo "Card search index is switched off; not waiting for it." ;;
+              *) smoke_args+=(--expect-card-index) ;;
+            esac
+          fi
+          ./scripts/cloud-run/smoke-check.sh "$SMOKE_URL" "${smoke_args[@]}"
       - name: Promote candidate after smoke pass
         # Only for an existing service: shift 100% traffic to the validated
         # (latest) revision, then drop the candidate tag. On a first deploy the
