@@ -323,6 +323,7 @@ re-export another folder's module, which is what `card_skeletons.dart` and
 | `scripts/enrich/` | NIN food enrichment ingestion | ok |
 | `scripts/eval/` | pipeline eval harness; `eval/local/` holds throwaway probes and the gitignored `*.local.ts` experiments | ok |
 | `scripts/ops/` | scheduled and manual production operations | ok |
+| `scripts/seo/` | search-engine notifications: the IndexNow submitter (its key file is in `public/`) | ok |
 | `supabase/migrations/` | append-only SQL ledger — flat by CLI contract (§7) | exempt |
 | `i18n/` + `messages/` | next-intl config and message catalogues | ok |
 | `content/docs/{en,vi}/` | user-facing MDX documentation | ok |

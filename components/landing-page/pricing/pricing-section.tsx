@@ -19,9 +19,19 @@ import { PLAN_IDS } from './plans';
  * turns the buttons into the purchase flow for a signed-in visitor, and once
  * a checkout completes the cards give way to its status (activated, or still
  * waiting on the store).
+ *
+ * `titleAs` is the one thing the two surfaces disagree on: the band is a
+ * section of the landing page, so its title is an h2 under the hero's h1; on
+ * /pricing it is the whole page, and a page with no h1 gives search engines
+ * nothing to read as its subject.
  */
-export function PricingSection() {
+export function PricingSection({
+  titleAs = 'h2',
+}: {
+  titleAs?: 'h1' | 'h2';
+} = {}) {
   const t = useTranslations('landing.pricing');
+  const Title = titleAs === 'h1' ? motion.h1 : motion.h2;
   const { openDialog } = useAuthDialog();
   const { status } = usePricingCheckout();
   const reduced = useReducedMotion() ?? false;
@@ -48,13 +58,13 @@ export function PricingSection() {
       className="relative scroll-mt-20 border-kallo-border/40 border-t bg-kallo-hover pt-8 pb-8 md:pt-10 md:pb-10"
     >
       <div className="mx-auto max-w-[92rem] px-6 sm:px-12 lg:px-20">
-        <motion.h2
+        <Title
           {...reveal}
           className="text-center font-normal font-serif text-4xl text-kallo-text tracking-[-0.02em] sm:text-5xl md:text-6xl"
           id="landing-pricing"
         >
           {t('title')}
-        </motion.h2>
+        </Title>
 
         {/* Four named rows the cards hang their blocks on — heading, price,
             button, features — so each row is as tall as the tallest card and

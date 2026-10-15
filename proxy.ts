@@ -171,7 +171,9 @@ export const config = {
     // rewriting. `robots.txt`, `sitemap.xml` and `llms.txt` are omitted so
     // next-intl does not rewrite the generated SEO routes to /{locale}/… —
     // each is a single fixed path that crawlers request at the origin root and
-    // that has no locale-prefixed counterpart to redirect to.
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|geojson)$).*)',
+    // that has no locale-prefixed counterpart to redirect to. `.txt` covers the
+    // IndexNow key file in `public/` (scripts/seo/indexnow.ts): the engines
+    // reject a key file that answers with a redirect to /{locale}/….
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|geojson|txt)$).*)',
   ],
 };

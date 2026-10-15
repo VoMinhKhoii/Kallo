@@ -79,7 +79,6 @@ export default async function Home({
   const t = await getTranslations({ locale, namespace: 'metadata.root' });
   const structuredData = landingStructuredData({
     locale,
-    name: t('title'),
     description: t('description'),
   });
 
