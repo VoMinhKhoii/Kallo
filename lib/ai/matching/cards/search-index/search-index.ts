@@ -52,6 +52,8 @@ interface State {
   worker: SearchWorker | null;
   workerReady: Promise<boolean> | null;
   retries: number;
+  /** The retries ran out: this process serves from the database for good. */
+  gaveUp: boolean;
   readySince: number | null;
 }
 
@@ -67,6 +69,7 @@ const fresh = (): State => ({
   worker: null,
   workerReady: null,
   retries: 0,
+  gaveUp: false,
   readySince: null,
 });
 globals[STATE_KEY] ??= fresh();
@@ -94,7 +97,10 @@ function fail(scope: string, err: unknown) {
   s.status = 'failed';
   console.error(`[card-index] ${scope} failed; using the database path:`, err);
   reportError(err, 'card-index');
-  if (s.retries >= MAX_RETRIES) return;
+  if (s.retries >= MAX_RETRIES) {
+    s.gaveUp = true;
+    return;
+  }
   const delay = 2_000 * 2 ** s.retries;
   s.retries++;
   // Unref'd: a pending retry never keeps the process alive. A retry that
@@ -197,6 +203,29 @@ export function startCardIndex(): void {
 export function cardIndexStatus(): CardIndexStatus {
   startCardIndex();
   return state().status;
+}
+
+/**
+ * The longest the startup probe holds a new container back while its build
+ * loads. Past it the container takes traffic anyway (searching the database
+ * until the build arrives), so a build that cannot load never stops
+ * containers from starting.
+ */
+export const STARTUP_HOLD_MS = 15_000;
+
+/**
+ * For the startup probe (`app/api/startupz`): whether a new container may take
+ * traffic. Cloud Run gives a starting container full CPU and none between
+ * requests once it serves, and loading the build at throttled CPU timed out
+ * every attempt (measured 2026-10-15), so the load happens before traffic:
+ * true once the build is ready, the index is disabled, the retries ran out, or
+ * STARTUP_HOLD_MS passed since the process started.
+ */
+export function cardIndexSettled(uptimeMs = process.uptime() * 1000): boolean {
+  startCardIndex();
+  const s = state();
+  if (s.status === 'ready' || s.status === 'disabled' || s.gaveUp) return true;
+  return uptimeMs >= STARTUP_HOLD_MS;
 }
 
 /** Whether a build is configured (loading, ready or failed), not disabled. */

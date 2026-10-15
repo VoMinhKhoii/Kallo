@@ -76,6 +76,29 @@ describe('origin lock', () => {
     );
   });
 
+  // Cloud Run's startup probe cannot send the secret; only its exact path
+  // passes without it, and only ahead of the lock.
+  it('lets the startup probe through without the secret, and nothing beside it', async () => {
+    vi.stubEnv('ORIGIN_SHARED_SECRET', 'topsecret');
+    expect((await proxy(request('/api/startupz'))).status).toBe(200);
+    for (const path of [
+      '/api/startupz/',
+      '/api/startupz/x',
+      '/api/startupzz',
+      '/api/STARTUPZ',
+      '/en/api/startupz',
+    ]) {
+      expect((await proxy(request(path))).status).toBe(403);
+    }
+
+    // On a revision whose secret binding is missing, the probe still starts
+    // the container; every other request still gets the 503.
+    vi.stubEnv('ORIGIN_SHARED_SECRET', '');
+    vi.stubEnv('K_SERVICE', 'kallo-prod');
+    expect((await proxy(request('/api/startupz'))).status).toBe(200);
+    expect((await proxy(request('/api/healthz'))).status).toBe(503);
+  });
+
   it('skips the lock entirely off Cloud Run, so local dev still works', async () => {
     vi.stubEnv('ORIGIN_SHARED_SECRET', '');
     vi.stubEnv('K_SERVICE', '');

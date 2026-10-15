@@ -48,7 +48,21 @@ function timingSafeEqual(a: string, b: string) {
   return diff === 0;
 }
 
+/**
+ * Cloud Run's startup probe reaches the container directly and cannot send the
+ * origin secret (it would have to sit in plaintext in the revision spec). This
+ * one path answers 200/503 from in-memory state with no body
+ * (`app/api/startupz/route.ts`), so it is let through ahead of the lock, and
+ * ahead of the "misconfigured" 503 below, which would otherwise fail every
+ * probe. Exact match only.
+ */
+const STARTUP_PROBE_PATH = '/api/startupz';
+
 export async function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === STARTUP_PROBE_PATH) {
+    return NextResponse.next();
+  }
+
   // Origin-lock. In production the service sits behind Cloudflare, which injects
   // a shared secret header (X-Origin-Verify) on every proxied request via a
   // Transform Rule. Reject anything that did not arrive through Cloudflare so
