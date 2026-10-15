@@ -211,6 +211,33 @@ code. The deploy's smoke check requires a healthy `ready` answer within 60 s
 checked-out commit has the runtime, a build was pinned, and the kill switch is
 not set; otherwise it smokes as before.
 
+A new container loads the build **before it takes traffic**. Cloud Run gives a
+starting container full CPU (plus the startup boost) and a serving one CPU only
+while a request is in flight; measured 2026-10-15 on a throwaway service, a
+load at that throttled CPU timed out every attempt and gave up, while the same
+load at startup took ~7.5 s (a new container's first metadata-server token
+alone takes ~3 s, then the catalog and the vectors load one after the other).
+So the deploy sets an HTTP startup probe on
+`/api/startupz` (when the checked-out commit has the route; an older commit
+gets Cloud Run's default TCP probe, set explicitly), which answers 503 until
+the build is ready, the index is disabled, the retries ran out, or 15 s passed
+since the process started (`STARTUP_HOLD_MS`): a build that cannot load never
+stops containers from starting, it only makes them start on the database
+path. The probe gives up after 40 s, comfortably past that. `proxy.ts` lets
+exactly that path through the origin lock (the probe cannot send the
+Cloudflare secret); it answers with no body and reads only in-memory state.
+
+What this costs: a request that arrives when no container is running waits for
+the boot and the load (9.6–11.2 s measured on three cold starts, instead of
+~1.5 s). The mobile app's launch warm-up ping (`ApiClient.warmup`) usually
+starts that container while the user is still on the first screen. Warm
+containers are unaffected, and so are scale-outs, whose requests keep going to the running
+container until the new one is ready. Holding containers in startup a few
+seconds longer bills that startup CPU. If a deploy's candidate hits the 15 s
+hold without loading, it then loads at throttled CPU while the smoke check
+polls, and the smoke check can fail the deploy: that is the intended hold on a
+build that does not load, not a flake to retry around.
+
 - **Rollback.** Moving traffic back to an older revision keeps that
   revision's build. Redeploying an older commit rebuilds from today's database
   if that commit has the builder; a commit without it gets `CARD_INDEX_URI=`

@@ -30,6 +30,10 @@ const EXCLUDED = new Map([
   ],
   ['/api/supabase-proxy/{path}', 'internal auth plumbing'],
   [
+    '/api/startupz',
+    "Cloud Run's startup probe — infrastructure-invoked only, no body",
+  ],
+  [
     '/api/analyze-meal/debug',
     'admin-only, and answers 404 rather than 403 to everyone else — documenting it would undo that',
   ],

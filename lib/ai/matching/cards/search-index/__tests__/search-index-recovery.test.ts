@@ -47,8 +47,10 @@ vi.mock('@/lib/infra/telemetry/monitoring/report-error', () => ({
 
 const {
   __resetCardIndexForTests,
+  cardIndexSettled,
   cardIndexStatus,
   resolveCardBackend,
+  STARTUP_HOLD_MS,
   searchCardIndex,
 } = await import('../search-index');
 const { writeFixture } = await import('./artifact-fixture');
@@ -147,6 +149,62 @@ describe('card search index recovery', () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(cardIndexStatus()).toBe('disabled');
     expect(console.error).not.toHaveBeenCalled();
+  });
+
+  describe('startup probe (cardIndexSettled)', () => {
+    it('holds a new container until its build is ready', async () => {
+      expect(cardIndexSettled(0)).toBe(false); // loading
+      expect(await until('ready')).toBe('ready');
+      expect(cardIndexSettled(0)).toBe(true);
+    });
+
+    it('never holds a container past STARTUP_HOLD_MS', () => {
+      expect(cardIndexStatus()).toBe('loading');
+      expect(cardIndexSettled(STARTUP_HOLD_MS - 1)).toBe(false);
+      expect(cardIndexSettled(STARTUP_HOLD_MS)).toBe(true);
+    });
+
+    it('lets a container start at once when the index is disabled', () => {
+      __resetCardIndexForTests();
+      vi.stubEnv('CARD_INDEX_ENABLED', 'false');
+      expect(cardIndexSettled(0)).toBe(true);
+    });
+
+    it('lets go once a build that cannot be read has used up its retries', async () => {
+      __resetCardIndexForTests();
+      vi.stubEnv('CARD_INDEX_URI', 'file:///no/such/card-build');
+      vi.useFakeTimers({ toFake: ['setTimeout'] });
+      expect(cardIndexSettled(0)).toBe(false); // the first read is under way
+      // Retry backoffs on the fake clock; the failing reads themselves are
+      // real file I/O, given a few event-loop turns to settle.
+      for (let i = 0; i < 40 && !cardIndexSettled(0); i++) {
+        for (let turn = 0; turn < 20; turn++) {
+          await new Promise((r) => setImmediate(r));
+        }
+        await vi.advanceTimersByTimeAsync(2_000);
+      }
+      // Four reads (the first + three retries 2, 4 and 8 s apart) fail, all
+      // inside the hold: the container may take traffic on the database path.
+      expect(cardIndexSettled(0)).toBe(true);
+      expect(cardIndexStatus()).toBe('failed');
+      expect(spawned).toHaveLength(0);
+    }, 20_000);
+
+    it('holds while a retry is pending, and lets go once the retries ran out', async () => {
+      expect(await until('ready')).toBe('ready');
+      vi.useFakeTimers({ toFake: ['setTimeout'] });
+      // Three failures schedule the three retries: each time a retry is
+      // still to come, so the container keeps waiting for it.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        spawned.at(-1)?.onFailure(new Error('crash'));
+        expect(cardIndexStatus()).toBe('failed');
+        expect(cardIndexSettled(0)).toBe(false);
+        await vi.advanceTimersByTimeAsync(20_000);
+      }
+      // The last retry fails too: nothing more will come.
+      spawned.at(-1)?.onFailure(new Error('crash'));
+      expect(cardIndexSettled(0)).toBe(true);
+    });
   });
 
   it('skips the worker when too little time is left, without a strike', async () => {

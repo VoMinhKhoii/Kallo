@@ -62,6 +62,7 @@ export const routeInventory = {
   'api/csp-report/route.ts': ['none', true, 'cspReportIp'],
   'api/healthz/route.ts': ['none', false, 'healthzIp'],
   'api/og/macro-card/[shareId]/route.tsx': ['session', false, 'analysis-guard'],
+  'api/startupz/route.ts': ['none', false, 'none-cheap'],
   'api/supabase-proxy/[...path]/route.ts': ['none', true, 'auth-proxy'],
   'api/v1/account/billing-config/route.ts': ['session', false, 'none-cheap'],
   'api/v1/account/entitlements/reconcile/route.ts': [

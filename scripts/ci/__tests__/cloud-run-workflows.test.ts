@@ -1,5 +1,14 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 function readWorkflow(name: string): string {
@@ -137,6 +146,71 @@ describe('Cloud Run prod workflow', () => {
     expect(smoke).toContain(
       `./scripts/cloud-run/smoke-check.sh "$SMOKE_URL" "\${smoke_args[@]}"`
     );
+  });
+
+  describe('the startup probe', () => {
+    const workflow = readWorkflow('cloud-run-prod.yml');
+    const start = workflow.indexOf('- name: Choose the startup probe');
+    const script = workflow
+      .slice(workflow.indexOf('run: |', start) + 'run: |'.length)
+      .split('\n')
+      .slice(1)
+      .filter(
+        (_, i, all) =>
+          i < all.findIndex((l) => l.trim() && !l.startsWith(' '.repeat(10)))
+      )
+      .map((l) => l.slice(10))
+      .join('\n');
+
+    /** The flag the step chooses in a checkout with or without the route. */
+    function chosenFlag(withRoute: boolean): string {
+      const dir = mkdtempSync(join(tmpdir(), 'probe-step-'));
+      try {
+        if (withRoute) {
+          mkdirSync(join(dir, 'app/api/startupz'), { recursive: true });
+          writeFileSync(join(dir, 'app/api/startupz/route.ts'), '');
+        }
+        const output = join(dir, 'output');
+        writeFileSync(output, '');
+        const run = spawnSync(
+          'bash',
+          ['--noprofile', '--norc', '-eo', 'pipefail', '-c', script],
+          { cwd: dir, env: { ...process.env, GITHUB_OUTPUT: output } }
+        );
+        expect(run.status).toBe(0);
+        return readFileSync(output, 'utf8').trim();
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    }
+
+    it('holds a container on /api/startupz when the commit has the route', () => {
+      expect(chosenFlag(true)).toBe(
+        'flag=--startup-probe=httpGet.path=/api/startupz,periodSeconds=1,timeoutSeconds=1,failureThreshold=40'
+      );
+    });
+
+    it("gives an older commit Cloud Run's default probe, never the inherited one", () => {
+      expect(chosenFlag(false)).toBe(
+        'flag=--startup-probe=tcpSocket.port=8080,periodSeconds=240,timeoutSeconds=240,failureThreshold=1'
+      );
+    });
+
+    it('passes the chosen probe to the deploy, which follows the choice', () => {
+      const deploy = workflow.slice(workflow.indexOf('- id: deploy'));
+      expect(workflow.indexOf('- id: deploy')).toBeGreaterThan(start);
+      expect(deploy).toContain(`\${{ steps.probe.outputs.flag }}`);
+    });
+
+    // The route answers 200 by STARTUP_HOLD_MS whatever the build does; the
+    // probe must outlast that, or a broken build would kill containers.
+    it('gives the probe longer than the hold', async () => {
+      const { STARTUP_HOLD_MS } = await import(
+        '@/lib/ai/matching/cards/search-index/search-index'
+      );
+      const budgetSeconds = 40 * 1; // failureThreshold × periodSeconds
+      expect(budgetSeconds * 1000).toBeGreaterThan(STARTUP_HOLD_MS + 10_000);
+    });
   });
 
   it('loads the card search worker inside the built image before pushing it', () => {

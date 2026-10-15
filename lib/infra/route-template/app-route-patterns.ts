@@ -50,6 +50,7 @@ export const APP_ROUTE_PATTERNS = [
   '/api/csp-report',
   '/api/healthz',
   '/api/og/macro-card/[shareId]',
+  '/api/startupz',
   '/api/supabase-proxy/[...path]',
   '/api/v1/account',
   '/api/v1/account/billing-config',

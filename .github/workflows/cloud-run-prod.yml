@@ -324,6 +324,25 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
             echo "First deploy of $SERVICE_NAME — the first revision will serve traffic directly."
           fi
+      # A new container loads its card search build before it takes traffic:
+      # Cloud Run gives a starting container full CPU and a serving one none
+      # between requests, and loads at that throttled CPU timed out every
+      # attempt (docs/GOOGLE_CLOUD_RUN.md, "Card search artifact"). The probe
+      # follows the CHECKED-OUT commit: one without /api/startupz (a redeploy
+      # of an older commit) gets Cloud Run's default TCP probe, set explicitly
+      # because a deploy that omits the flag inherits the service's current
+      # probe and an older image would 404 it and never start. The HTTP probe
+      # names no port, so it follows the container's. The route answers 200 by
+      # STARTUP_HOLD_MS (15 s) whatever the build does, well inside the
+      # probe's 40 s.
+      - name: Choose the startup probe
+        id: probe
+        run: |
+          if [ -f app/api/startupz/route.ts ]; then
+            echo "flag=--startup-probe=httpGet.path=/api/startupz,periodSeconds=1,timeoutSeconds=1,failureThreshold=40" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=--startup-probe=tcpSocket.port=8080,periodSeconds=240,timeoutSeconds=240,failureThreshold=1" >> "$GITHUB_OUTPUT"
+          fi
       - id: deploy
         uses: google-github-actions/deploy-cloudrun@v3
         with:
@@ -401,6 +420,7 @@ jobs:
             --timeout=60
             --min-instances=0
             --max-instances=20
+            ${{ steps.probe.outputs.flag }}
             --set-secrets=DATABASE_URL=kallo-prod-database-url-tx:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-prod-supabase-service-role-key:latest,REVENUECAT_CUSTOMER_DELETE_API_KEY=kallo-prod-revenuecat-customer-delete-api-key:latest,REVENUECAT_REST_API_KEY=kallo-prod-revenuecat-rest-api-key:latest,REVENUECAT_WEBHOOK_SECRET=kallo-prod-revenuecat-webhook-secret:latest,RESEND_API_KEY=kallo-prod-resend-api-key:latest,SEND_EMAIL_HOOK_SECRET=kallo-prod-send-email-hook-secret:latest,USDA_API_KEY=kallo-prod-usda-api-key:latest,R2_ACCESS_KEY_ID=kallo-prod-r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=kallo-prod-r2-secret-access-key:latest,CLOUDFLARE_ANALYTICS_TOKEN=kallo-prod-cloudflare-analytics-token:latest,APNS_KEY_P8=kallo-prod-apns-key-p8:latest${{ steps.apple.outputs.secrets }}${{ steps.llm.outputs.secrets }}
             --update-env-vars=^|^AI_PROVIDER=vertex|DB_POOL_MAX=8|SENTRY_ENVIRONMENT=production|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1|PIPELINE_V2_ENABLED=true|PIPELINE_MODEL_PROFILE=${{ vars.PIPELINE_MODEL_PROFILE || 'stable' }}|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_WEB_API_KEY_SANDBOX=${{ vars.REVENUECAT_WEB_API_KEY_SANDBOX }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false|GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}|APNS_KEY_ID=${{ vars.APNS_KEY_ID }}|APNS_TEAM_ID=ZNG57U88R5|APNS_BUNDLE_ID=com.khoivo.nham|APNS_PRODUCTION=true|APPLE_TEAM_ID=ZNG57U88R5|APPLE_SIGNIN_CLIENT_ID=com.khoivo.nham|APPLE_SIGNIN_KEY_ID=${{ vars.APPLE_SIGNIN_KEY_ID }}|R2_ACCOUNT_ID=${{ vars.R2_ACCOUNT_ID }}|R2_BUCKET_PREFIX=kallo-prod|CARD_INDEX_URI=${{ env.CARD_INDEX_URI }}
       - name: Resolve smoke URL
