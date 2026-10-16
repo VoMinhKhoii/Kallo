@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.21.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.20.0...v1.21.0) (2026-10-16)
+
+
+### Features
+
+* **ai:** build and publish the card search artifact on each prod deploy ([#455](https://github.com/VoMinhKhoii/Kallo/issues/455)) ([53693fc](https://github.com/VoMinhKhoii/Kallo/commit/53693fc02add1b49a8546bb7546eac90ec20e57b))
+* **ai:** record cost, latency and fallback on every model call ([#460](https://github.com/VoMinhKhoii/Kallo/issues/460)) ([1c2db0c](https://github.com/VoMinhKhoii/Kallo/commit/1c2db0caaae70c04cd38ad773015d713ac9ac1c0))
+* **ai:** search food cards in the container from the deploy's artifact ([#456](https://github.com/VoMinhKhoii/Kallo/issues/456)) ([5ccae9e](https://github.com/VoMinhKhoii/Kallo/commit/5ccae9e6b6827e67bbff9739674694f7050d9b55))
+* **ci:** refresh prod's card search index nightly when the card data changes ([#459](https://github.com/VoMinhKhoii/Kallo/issues/459)) ([4e57544](https://github.com/VoMinhKhoii/Kallo/commit/4e57544efde18ceb8c2b602d40645e1bb6bbf65d))
+* **logging:** discard unsaved meals on web and iOS ([#447](https://github.com/VoMinhKhoii/Kallo/issues/447)) ([507bbeb](https://github.com/VoMinhKhoii/Kallo/commit/507bbeba356c158e12ef19917391ea5ce52c7ae2))
+* **mobile:** draw and move segmented controls like iOS 26's own ([#449](https://github.com/VoMinhKhoii/Kallo/issues/449)) ([932577e](https://github.com/VoMinhKhoii/Kallo/commit/932577eef9658b46d413a3acd7374e79f37e3ba2))
+
+
+### Bug Fixes
+
+* **ai:** load the card search index before a container takes traffic ([#458](https://github.com/VoMinhKhoii/Kallo/issues/458)) ([42f1874](https://github.com/VoMinhKhoii/Kallo/commit/42f1874ab93e486f7cea27e0e9999e92f3bda979))
+* **ai:** size weighed and shared dishes to the weight the user typed ([#441](https://github.com/VoMinhKhoii/Kallo/issues/441)) ([38b45b4](https://github.com/VoMinhKhoii/Kallo/commit/38b45b450f779fb15a046473f1e6f82ded03c685))
+* **ai:** stop cold-start matching timeouts and Haiku's dropped dishes ([#443](https://github.com/VoMinhKhoii/Kallo/issues/443)) ([d4cc66b](https://github.com/VoMinhKhoii/Kallo/commit/d4cc66bd740b7adbf6b746dd7536cde1c90d111b))
+* **deps:** patch security advisories and land the worthwhile dependency upgrades ([#450](https://github.com/VoMinhKhoii/Kallo/issues/450)) ([a00a123](https://github.com/VoMinhKhoii/Kallo/commit/a00a1239e17ee9e08ee080352ef0c914434f5dd2))
+* **groups:** add the missing share/unshare toast copy on web ([#453](https://github.com/VoMinhKhoii/Kallo/issues/453)) ([6eec178](https://github.com/VoMinhKhoii/Kallo/commit/6eec1780555f28f5d547cbf7a7ccf0964eef6c64))
+* **logging:** show the saved total on a day that holds an unsaved card ([#451](https://github.com/VoMinhKhoii/Kallo/issues/451)) ([4cb12db](https://github.com/VoMinhKhoii/Kallo/commit/4cb12dbfe9b78b93a32a6e307f0244ea25ea6300))
+* **mobile:** hold a launch notification tap until the first screen ([#448](https://github.com/VoMinhKhoii/Kallo/issues/448)) ([978c21d](https://github.com/VoMinhKhoii/Kallo/commit/978c21d91951aec0998bacb08a9d5e40f91c4ae2))
+* **pipeline:** keep alcohol calories from matched drink rows ([#440](https://github.com/VoMinhKhoii/Kallo/issues/440)) ([830dc79](https://github.com/VoMinhKhoii/Kallo/commit/830dc793a7f6f33d466b6a82c78e3d4a3161d363))
+
+
+### Performance
+
+* **ai:** log meal traces to Cloud Logging, add request summaries and retention ([#461](https://github.com/VoMinhKhoii/Kallo/issues/461)) ([d9a31c4](https://github.com/VoMinhKhoii/Kallo/commit/d9a31c4ea0f3a1a88c1e794c00668dcc25558712))
+* **ai:** make the boot catalog warm reach the meal route; drop the nutrition preload ([#454](https://github.com/VoMinhKhoii/Kallo/issues/454)) ([fdde485](https://github.com/VoMinhKhoii/Kallo/commit/fdde4850d1581b8ea6100e2f85b58f01587a51f7))
+* **ai:** start loading the card catalog when a container boots ([#445](https://github.com/VoMinhKhoii/Kallo/issues/445)) ([d462ffe](https://github.com/VoMinhKhoii/Kallo/commit/d462ffe512d3260e406c507defd5671b13920574))
+* **db:** keep ingredient decisions view to 30 days and add exact request time ([#463](https://github.com/VoMinhKhoii/Kallo/issues/463)) ([1c9bb38](https://github.com/VoMinhKhoii/Kallo/commit/1c9bb3889e85c7e7c45de5620e9308b467bd3504))
+* **db:** keep telemetry 61 days instead of 181/90 ([#462](https://github.com/VoMinhKhoii/Kallo/issues/462)) ([40c2e7c](https://github.com/VoMinhKhoii/Kallo/commit/40c2e7cd66a00adf7c917f8b3f519bbd0fb35e73))
+* **matching:** store each food-card string once and prune duplicate names ([#444](https://github.com/VoMinhKhoii/Kallo/issues/444)) ([76519f8](https://github.com/VoMinhKhoii/Kallo/commit/76519f85268b2ffebc91de7007acb67f32559847))
+
 ## [1.20.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.19.0...v1.20.0) (2026-10-12)
 
 
