@@ -88,6 +88,29 @@ describe('trace storage expand contract (no database connection)', () => {
     expect(migration).not.toContain('WHEN insufficient_privilege');
   });
 
+  it('shortens the five long retention windows to 61 days without rescheduling', () => {
+    const shorter = readFileSync(
+      'supabase/migrations/20261016034535_shorter_telemetry_retention.sql',
+      'utf8'
+    );
+    for (const table of [
+      'analysis_model_budget_events',
+      'pipeline_runs',
+      'unmatched_ingredients',
+      'synonym_candidates',
+      'pipeline_request_replay_audit_logs',
+    ]) {
+      expect(shorter).toContain(`('${table}', 61)`);
+    }
+    expect(shorter).not.toContain('analysis_guard_events');
+    expect(shorter).not.toContain('cron.schedule');
+    expect(shorter).toContain('FOR batch IN 1..20 LOOP');
+    expect(shorter).toContain('FOR UPDATE SKIP LOCKED');
+    expect(shorter).toContain('SET search_path = pg_catalog, pg_temp');
+    expect(shorter).toContain('FROM PUBLIC, anon, authenticated');
+    expect(shorter).toContain('AND c.active');
+  });
+
   it('preserves positional RPC rows and exposes summaries without actor/context data', () => {
     expect(migration).toContain("jsonb_build_object('summaries'");
     expect(migration).toContain(

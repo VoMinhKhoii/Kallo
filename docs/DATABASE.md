@@ -495,16 +495,19 @@ an existing version is read with its stored sample during registration.
 Existing stage/LLM payload writes continue during dual capture.
 
 `20261015183834_trace_retention_and_request_summaries.sql` installs these daily
-service-role-only reapers (UTC schedules, following the existing pg_cron jobs):
+service-role-only reapers (UTC schedules, following the existing pg_cron jobs);
+`20261016034535_shorter_telemetry_retention.sql` shortened five of them to 61 days
+(the admin dashboard's longest window is 30 days, plus the prior 30 days its change
+badges compare against, plus 1; the spend cap reads only today's budget rows):
 
 | Table | Days | Function | UTC |
 | --- | ---: | --- | --- |
-| `analysis_model_budget_events` | 181 | `reap_analysis_model_budget_events()` | 04:01 |
-| `pipeline_runs` | 181 | `reap_pipeline_runs()` | 04:04 |
+| `analysis_model_budget_events` | 61 | `reap_analysis_model_budget_events()` | 04:01 |
+| `pipeline_runs` | 61 | `reap_pipeline_runs()` | 04:04 |
 | `analysis_guard_events` | 30 | `reap_analysis_guard_events()` | 04:07 |
-| `unmatched_ingredients` | 90 | `reap_unmatched_ingredients()` | 04:10 |
-| `synonym_candidates` | 90 | `reap_synonym_candidates()` | 04:13 |
-| `pipeline_request_replay_audit_logs` | 181 | `reap_pipeline_request_replay_audit_logs()` | 04:16 |
+| `unmatched_ingredients` | 61 | `reap_unmatched_ingredients()` | 04:10 |
+| `synonym_candidates` | 61 | `reap_synonym_candidates()` | 04:13 |
+| `pipeline_request_replay_audit_logs` | 61 | `reap_pipeline_request_replay_audit_logs()` | 04:16 |
 
 Each invocation deletes strictly older rows in up to twenty 5,000-row batches,
 using a created_at-leading index and skipping locked rows. It returns the
@@ -512,7 +515,7 @@ deleted count. Batches share one transaction; a large initial backlog may need
 repeated manual calls. Scheduling fails loudly if pg_cron/grants are absent;
 the migration must not silently claim an active policy. Budget rows retain
 individual attempt granularity. Reviewed synonym suggestions also expire;
-promote useful knowledge to curated data before 90 days. The duplicate
+promote useful knowledge to curated data before 61 days. The duplicate
 `pipeline_requests_user_id_created_at_idx` is removed, retaining the
 schema-owned `pipeline_requests_user_created_idx`.
 
