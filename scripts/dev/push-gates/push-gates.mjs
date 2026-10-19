@@ -2,10 +2,16 @@
 // Claude Code PreToolUse hook (Bash): before an agent's `git push` from a Kallo
 // checkout, run the fast gates CI would fail it on, and block the push (exit 2,
 // reason on stderr) when one fails. Wired in `.claude/settings.json`.
+//
+// The gates run on the working tree, the same files the agent just edited, not
+// on a clean checkout of the pushed commit: an uncommitted fix can let a push
+// through that CI then fails. Checking out the commit would need a stash or a
+// second worktree per push, which this shared checkout rules out.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { gatesFor, pushDirectory } from './plan.mjs';
+import { gatesFor } from './plan.mjs';
+import { pushDirectory } from './push-command.mjs';
 
 // A GUI-launched session can hand hooks a bare PATH; the gates need node, bun
 // and flutter.
@@ -51,16 +57,22 @@ if (
 )
   process.exit(0);
 
+// Committed, staged, unstaged and untracked changes since main: a command like
+// `git commit -m … && git push` is checked before its commit exists.
 const base = git(root, 'merge-base', 'HEAD', 'origin/main');
-const diff = base ? git(root, 'diff', '--name-only', `${base}...HEAD`) : null;
-const changed = diff === null ? null : diff.split('\n').filter(Boolean);
+const diff = base ? git(root, 'diff', '--name-only', base) : null;
+const untracked = git(root, 'ls-files', '--others', '--exclude-standard');
+const changed =
+  diff === null
+    ? null
+    : [...new Set(`${diff}\n${untracked ?? ''}`.split('\n').filter(Boolean))];
 if (changed?.length === 0) process.exit(0);
 
 const failures = [];
 for (const gate of gatesFor(changed)) {
   const run = spawnSync(gate.cmd, gate.args, {
     cwd: path.join(root, gate.cwd ?? ''),
-    env,
+    env: { ...env, ...gate.env },
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   });
