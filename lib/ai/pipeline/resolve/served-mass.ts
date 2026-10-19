@@ -67,9 +67,13 @@ function isLiquidPart(ingredient: DecomposedIngredientV2): boolean {
   );
 }
 
-/** Names that join a liquid to a solid ("chicken with gravy", "sườn trong nước dùng"). */
+/**
+ * Names that join a liquid to a solid ("chicken with gravy", "sườn trong nước
+ * dùng"). Not a comma: a food-table name qualifies a liquid with one
+ * ("Chicken broth, ready-to-serve").
+ */
 const LIQUID_JOIN =
-  /(?<!\p{L})(?:with|in|and|on|trong|với|và|kèm|chan)(?!\p{L})|[,+&]/iu;
+  /(?<!\p{L})(?:with|in|and|on|trong|với|và|kèm|chan)(?!\p{L})|[+&]/iu;
 const WHOLE_LIQUID_VI = new RegExp(`^(?:${LIQUID_NAMES_VI})(?!\\p{L})`, 'iu');
 
 /**

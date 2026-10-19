@@ -137,6 +137,25 @@ describe('clearLiquidRefuse', () => {
   const refuse = (g: GroundedEstimation) =>
     g.mealItems[0].ingredients.map((i) => [i.refuseKind, i.refusePct]);
 
+  it('clears a broth whose canonical name carries a food-table qualifier', () => {
+    const state = stateOf([
+      {
+        name: 'Soup',
+        cookingMethod: 'nấu',
+        parts: [
+          { name: 'chicken broth', g: 250, kcal: 40, row: ['Broth', 16] },
+        ],
+      },
+    ]);
+    state.decomposition.mealItems[0].ingredients[0].canonicalName =
+      'Chicken broth, ready-to-serve';
+    Object.assign(state.grounded.mealItems[0].ingredients[0], {
+      refuseKind: 'bone',
+      refusePct: 60,
+    });
+    expect(clearLiquidRefuse(state).cleared).toBe(1);
+  });
+
   it('ships a liquid part at 0% refuse and leaves a bone-in solid alone', () => {
     const state = soup();
     const out = clearLiquidRefuse(state);
