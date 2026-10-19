@@ -4,14 +4,23 @@
 # 1. Turn on the repo's git hooks (.githooks/), so an agent's push runs CI's
 #    fast gates first. The pre-push hook only acts when CLAUDECODE=1, so a
 #    person pushing from a terminal is unaffected. The setting lives in the
-#    shared .git/config and so covers every worktree.
+#    shared .git/config and so covers every worktree. A hooks setup someone
+#    already has (another core.hooksPath, or active hooks in .git/hooks) is
+#    left alone, with a note, rather than silently replaced.
 # 2. A session launched from a desktop app can start with a bare PATH
 #    (/usr/bin:/bin:/usr/sbin:/sbin), so node, gh, codex, bun and flutter are
 #    missing from every Bash call. Append the usual install dirs that exist and
 #    are missing; a configured PATH keeps its precedence.
-if [ -d "${CLAUDE_PROJECT_DIR:-.}/.githooks" ] &&
-  [ "$(git -C "${CLAUDE_PROJECT_DIR:-.}" config --get core.hooksPath)" != ".githooks" ]; then
-  git -C "${CLAUDE_PROJECT_DIR:-.}" config core.hooksPath .githooks
+repo="${CLAUDE_PROJECT_DIR:-.}"
+if [ -d "$repo/.githooks" ]; then
+  current="$(git -C "$repo" config --get core.hooksPath)"
+  hooks_dir="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)/hooks"
+  active="$(find "$hooks_dir" -maxdepth 1 -type f ! -name '*.sample' 2>/dev/null | head -1)"
+  if [ -z "$current" ] && [ -z "$active" ]; then
+    git -C "$repo" config core.hooksPath .githooks
+  elif [ "$current" != ".githooks" ]; then
+    echo "Note: the agent pre-push gate (.githooks/) is off because this repo already has git hooks set up. Chain .githooks/pre-push from them to turn it on." >&2
+  fi
 fi
 
 [ -n "${CLAUDE_ENV_FILE:-}" ] || exit 0

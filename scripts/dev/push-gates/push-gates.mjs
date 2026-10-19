@@ -27,17 +27,21 @@ const env = {
   NO_COLOR: '1',
 };
 
-const git = (...args) => {
+const gitRaw = (...args) => {
   try {
     return execFileSync('git', args, {
       env,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
+    });
   } catch {
     return null;
   }
 };
+const git = (...args) => gitRaw(...args)?.trim() ?? null;
+// File names NUL-separated (`-z`): git otherwise quotes and escapes non-ASCII
+// names ("apps/mobile-flutter/lib/m\303\263n.dart"), hiding their folder.
+const gitFiles = (...args) => gitRaw(...args, '-z')?.split('\0') ?? null;
 
 // Git passes one line per ref being pushed; deleting refs publishes no code.
 if (!pushesCode(readFileSync(0, 'utf8'))) process.exit(0);
@@ -45,12 +49,12 @@ if (!pushesCode(readFileSync(0, 'utf8'))) process.exit(0);
 const root = git('rev-parse', '--show-toplevel') ?? process.cwd();
 // Committed, staged, unstaged and untracked changes since main.
 const base = git('merge-base', 'HEAD', 'origin/main');
-const diff = base ? git('diff', '--name-only', base) : null;
-const untracked = git('ls-files', '--others', '--exclude-standard');
+const diff = base ? gitFiles('diff', '--name-only', base) : null;
+const untracked = gitFiles('ls-files', '--others', '--exclude-standard');
 const changed =
   diff === null
     ? null
-    : [...new Set(`${diff}\n${untracked ?? ''}`.split('\n').filter(Boolean))];
+    : [...new Set([...diff, ...(untracked ?? [])].filter(Boolean))];
 if (changed?.length === 0) process.exit(0);
 
 const failures = [];
