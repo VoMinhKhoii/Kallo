@@ -40,7 +40,7 @@ jobs:
       CARD_INDEX_BUCKET: kallo-prod-card-search
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       # A prod deploy already running, or waiting for approval, rebuilds the
@@ -92,7 +92,7 @@ jobs:
           else
             echo "check=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.serving.outputs.check == 'true'
         with:
           ref: ${{ steps.serving.outputs.sha }}
