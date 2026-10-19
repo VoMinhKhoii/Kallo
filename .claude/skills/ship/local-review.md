@@ -6,7 +6,10 @@ called by.
 
 What counts as a finding, how to grade it, what not to report, and how to treat AI
 pipeline findings are set by the "Code Review Rules" section of AGENTS.md. Follow it;
-this prompt only sets the scope and the method.
+this prompt only sets the scope and the method. If AGENTS.md has no such section,
+grade P0 (breaks prod or loses data), P1 (wrong on a common path) or P2 (wrong on an
+edge path), skip style and "consider" items with no failing input, and mark a finding
+"pre-existing" when its faulty lines are not changed by this diff.
 
 Hunt for defects that make the product behave wrongly: logic and math, data dropped
 or written to the wrong user, races and ordering, error paths that report success,

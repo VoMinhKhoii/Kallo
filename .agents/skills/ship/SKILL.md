@@ -17,6 +17,13 @@ Read it and follow it exactly; this copy exists so agents that load skills from
 `.agents/skills/` find it.
 
 The pre-push gate (`.githooks/pre-push`) runs only for agent shells. Claude Code
-marks its shells with `CLAUDECODE=1`; any other agent pushes with
-`KALLO_AGENT=1 git push …` so the same gates run. Never bypass it with
-`--no-verify`.
+turns it on at session start and marks its shells with `CLAUDECODE=1`. Any other
+agent does both itself:
+
+1. Once per checkout, if `git config --get core.hooksPath` prints nothing and
+   `.git/hooks` holds no active hooks: `git config core.hooksPath .githooks`. If
+   the repo already has hooks set up, run the gates directly instead:
+   `git rev-parse HEAD | awk '{print "x", $1, "x", 0}' | KALLO_AGENT=1 .githooks/pre-push`.
+2. Push with `KALLO_AGENT=1 git push …`.
+
+Never bypass the gate with `--no-verify`.
