@@ -200,26 +200,42 @@ git diff main..HEAD --stat
 **Title:** Conventional format mirroring the primary commit.
 Example: `feat(auth): add JWT-based user authentication`
 
-**Body template:**
-```markdown
-## Summary
-<2-4 sentences describing what this PR does and why>
+**Tier first.** `node scripts/dev/risk-tier/risk-tier.mjs` prints the review tier
+of the branch (low / medium / high) and why. The tier sets what the owner reads and
+what evidence the PR carries (`docs/REVIEW_TIERS.md`); every tier loops to
+approval. A fix-forward PR is reviewed as low when its "Regression of" PR merged in
+the last 14 days, its product code stays within files that PR touched (new tests
+and docs are fine), and its own tier is not high; the Risk tier section then says
+both, e.g. "medium by path, reviewed as low: fix-forward of #N".
 
-## Changes
-<bullet list of key changes derived from diff --stat and commit log>
+**Body:** fill every section of `.github/PULL_REQUEST_TEMPLATE.md`:
+- **Summary**, **Changes**: what the PR does and why; key changes from the diff.
+- **How to review** (medium and high): the owner reads this instead of the whole
+  diff. What behaves differently for a user; the 2-3 places the risk sits, as
+  `file:line`, and what could go wrong there; what the evidence covers and what it
+  cannot see. Write it for someone who has not read the code since last week. High
+  tier adds the decisions only the owner can make and the few diff excerpts
+  (`file:line` ranges) worth their reading; the full diff stays one click away. Low
+  tier: "Low tier, merge on green."
+- **Evidence**: each claim points at output you ran (gates, tests, screenshots of
+  the screen on a device or browser, the eval result, a migration on a scratch
+  database). Say what did not run as plainly as what did; a high tier PR names what
+  was not exercised in a real environment (device, browser, prod-like service).
+- **Risk tier**: the script's tier and reasons.
+- **Regression of**: the PR whose defect this fixes, or "none". It is how fix-forward
+  breakage gets counted, so never leave it blank.
+- **How to revert**: revert, or the flag / kill switch; name any migration or data
+  change a revert does not undo.
 
-## Testing
-<what was tested or how to verify — infer from test files changed if any>
-```
-
-Create as **draft** PR:
+Create as **draft** PR, labelled with its tier:
 
 ```bash
 gh pr create \
   --title "<title>" \
-  --body "<body>" \
+  --body-file <scratchpad>/pr-body.md \
   --draft \
-  --base main
+  --base main \
+  --label "risk:<tier>"
 ```
 
 Print the PR URL. Save the PR number for polling later.
@@ -332,7 +348,6 @@ $(cat <<'BODY'
 **Out of scope:** <what was deliberately left alone>
 BODY
 )")
-REQUEST_ID=${REQUEST_URL##*issuecomment-}   # needed to read Codex's 👍 reaction
 ```
 
 On every later round, the comment names what changed since the last round:
@@ -352,15 +367,18 @@ Please re-check <the area the fix touched>.
 
 Codex reacts 👀 while it runs (usually 2-10 minutes) and keeps a
 `## Codex Review Summary` status table comment up to date. That table is status,
-not a verdict. **Do not push while a round is running**: a 👍 carries no commit,
-so it only counts if `HEAD` is still the commit the round was requested on.
-Never use foreground `sleep`; run a background poll or a Monitor until a verdict
-on the current head appears. The verdict is one of:
+not a verdict. **Do not push while a round is running**: the verdict is tied to
+the commit the round was requested on, and a push mid-round leaves it judging a
+head that no longer exists. Never use foreground `sleep`; run a background poll or
+a Monitor until a verdict on the current head appears. The verdict is one of:
 
-- **Approved**: either an issue comment from `chatgpt-codex-connector[bot]`
-  starting `Codex Review: Didn't find any major issues` whose `**Reviewed commit:**`
-  matches `git rev-parse --short=10 HEAD`, or a `+1` reaction from the bot on
-  `REQUEST_ID` while `REQUEST_SHA` still equals `HEAD`.
+- **Approved**: an issue comment from `chatgpt-codex-connector[bot]` containing
+  `Codex Review: Didn't find any major issues` whose `**Reviewed commit:**`
+  matches `git rev-parse --short=10 HEAD`. The comment opens with an HTML marker
+  (`<!-- codex-review-receipt:v1 -->`), so match with `contains`, not
+  `startswith`. The bot's `+1` lands on the PR itself, not on our request, and
+  carries no commit: treat it as a hint to look for the comment, never as the
+  approval.
 - **Findings**: a bot review whose `**Reviewed commit:**` is `HEAD`. Its findings
   are the bot's inline comments with `original_commit_id == HEAD` (tagged
   P0/P1/P2/P3). Never match inline comments on `commit_id`: GitHub moves it
@@ -369,12 +387,9 @@ on the current head appears. The verdict is one of:
 ```bash
 HEAD_SHA=$(git rev-parse HEAD)
 BOT='chatgpt-codex-connector[bot]'
-# Approval comment (ignores the status table)
+# Approval comment for this head (ignores the status table)
 gh api repos/{owner}/{repo}/issues/<pr-number>/comments --paginate \
-  --jq ".[] | select(.user.login==\"$BOT\" and (.body | startswith(\"Codex Review:\"))) | {created_at, body: .body[0:200]}"
-# Approval reaction on our request
-gh api repos/{owner}/{repo}/issues/comments/$REQUEST_ID/reactions \
-  --jq ".[] | select(.user.login==\"$BOT\") | .content"
+  --jq ".[] | select(.user.login==\"$BOT\" and (.body | contains(\"Didn't find any major issues\")) and (.body | contains(\"${HEAD_SHA:0:10}\"))) | {created_at, body: .body[0:200]}"
 # Findings raised on this head. Filter on original_commit_id: GitHub moves
 # commit_id forward on older comments that still apply, which would resurface
 # findings from earlier rounds as if they were new.
@@ -400,13 +415,66 @@ Codex findings are claims to verify, not orders. For each one:
    - Wrong (misread the code, flags intended behavior) → reply with the evidence
      (file:line, test name) and resolve.
    - Architectural or ambiguous → escalate to the user.
-3. **Also ask what Codex missed.** A finding often points at a class of bug:
-   look for the same mistake elsewhere in the diff and fix those too. If our own
-   brief named a risk Codex did not comment on, check it again ourselves before
-   treating silence as clearance.
+   - **Pipeline PRs** (any file under `lib/ai/prompts/`, `lib/ai/pipeline/`,
+     `lib/ai/matching/`): sort the finding before touching code (AGENTS.md "Code
+     Review Rules").
+     - *Code bug*: a term matched without a word boundary (the #247 `miến`/`miếng`
+       class), NFC/NFD, two prompt rules that contradict, wrong arithmetic or
+       units in a rule, a deadline / cancellation / dropped-field / mass-conversion /
+       provider-routing path. Fix it in this PR with a unit test or a
+       frozen-capture replay.
+     - *Food judgment*: the claim is "input X should yield Y" and only the model's
+       output on a meal can confirm it (a keyword-list entry such as "súp", sugar
+       implied in iced tea, how a dish count splits, which row state to pick). Do
+       not patch it on the reviewer's word. Write the meal as an arena case in the train
+       format of `~/Developer/kallo-meal-arena/climb/arena-train/meals.json`
+       (`{lang, text, components: [{name, role, grams, required}]}`) under
+       `arena-train/review-cases/pr<n>.json` with the comment id (never into
+       test30), and reply `Eval case: pr<n>/<id>, judged on the arena before any
+       change.` Run it the way `arena-train/CLIMB.md` records: a server-side change
+       uses the frozen-capture replay (no DB, no LLM); a prompt change needs a
+       Call 1/2 run, and any paid run needs the owner's go-ahead first. Judge it on
+       the measure the finding is about (the case's components, grams or kcal),
+       case by case, plus the aggregate to catch a regression elsewhere; the ±1.5
+       first-pick noise rule applies to retrieval comparisons only. Three outcomes,
+       stated in the PR's Evidence before un-drafting:
+       - the case fails today and a change fixes it without an aggregate
+         regression → make the change, with the numbers;
+       - the case already passes, or the change does not help → resolve the
+         thread with the result;
+       - the eval cannot run or is inconclusive → leave the case filed and ask the
+         owner whether to merge without it.
+       Review cases join `meals.json` only after a gold-curation batch.
+     - Codex re-raising an eval-routed finding gets the case id again, not a patch.
+3. **Sweep the class.** A finding usually names one site of a class of bug (a
+   missing deadline check, a substring match, an unhandled null). Name the class,
+   search the whole diff and its callers for it (`grep`, not memory), and fix every
+   site in this round. Say in the reply which sites were swept. #430 spent five
+   rounds finding one deadline site at a time. If our own brief named a risk Codex
+   did not comment on, check it again ourselves before treating silence as
+   clearance.
 
-Every Codex thread gets a reply (`Fixed in <sha>.` or `Not changing: <reason>.`)
-before the next round is requested.
+Every Codex thread gets a reply (`Fixed in <sha>.`, `Not changing: <reason>.`,
+`Eval case: <id>.`, or `Pre-existing: <ttr task>.`) and is then **resolved**
+before the next round is requested. `main` requires conversation resolution, and an
+open thread at merge is how #419's finding shipped and came back as #420.
+
+```bash
+# Unresolved threads, with the first comment's id to match against our replies.
+# --paginate follows $endCursor, so a PR with over 100 threads is read whole.
+gh api graphql --paginate -F n=<pr-number> -f query='
+  query($n: Int!, $endCursor: String) {
+    repository(owner: "VoMinhKhoii", name: "Kallo") { pullRequest(number: $n) {
+      reviewThreads(first: 100, after: $endCursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes { id isResolved
+          comments(first: 1) { nodes { databaseId author { login } } } }
+  } } } }' \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)'
+# Resolve one after replying
+gh api graphql -f id=<thread-node-id> -f query='
+  mutation($id: ID!) { resolveReviewThread(input: {threadId: $id}) { thread { isResolved } } }'
+```
 
 Codex sometimes answers a thread reply by running its own cloud task and posting
 a `### Summary` comment with a commit and "PR metadata" on another branch. That
@@ -419,14 +487,32 @@ Commit fixes with explicit paths (`fix: address Codex review round <n>`), push,
 wait for CI (6a), then request the next round. Repeat until the bot approves the
 **current** head.
 
-Do not loop forever and do not cave to win the approval:
-- If Codex re-raises a finding we rejected with evidence, do not change the code
-  just to quiet it. Stop and put both positions to the user; they decide.
-- **Cap: 5 Codex requests per ship, total.** Every `@codex review` counts,
-  including rounds that approved and were then invalidated by a CodeRabbit or CI
-  fix, so the 6a → 6c → 6d cycle cannot run forever. At the cap, stop and
-  summarize for the user: open findings, what was fixed, what was disputed, and
-  why.
+**Every tier loops until approval.** The tier changes what the owner reads and
+what evidence the PR carries, never when review stops.
+
+**From round 3 on, change the round, not just the code.** Before the third and
+every later `@codex review`:
+1. List every finding so far by class. Sweep each class across the whole diff and
+   its callers (step 3 above), so this round fixes classes, not sites.
+2. Run the local Codex pass (Phase 3b) and handle its findings before asking
+   GitHub again. At round 3 it reviews the whole branch. In later rounds the brief
+   scopes it to `git diff <last-reviewed-sha>..HEAD` and the callers of what that
+   changed, and a whole-branch pass runs again only when the approach changed. On
+   a low or medium tier PR, skip it when the fixes since the last round are a few
+   lines (the pass costs several minutes of model usage).
+3. Ask for a narrower review: the request names the last reviewed commit, asks
+   Codex to review `git diff <last-reviewed-sha>..HEAD` and the callers of what it
+   changed, and lists the findings already answered so they are not raised again.
+
+Keep looping while rounds find real bugs; the round count alone is never a reason
+to stop. When two rounds in a row find only new sites of classes already swept,
+change the approach instead of adding cases: a different mechanism, not a longer
+list (on #466 the gate stopped parsing Bash commands and used git's own pre-push
+hook, and the findings ended). Say so in the next request. Do not cave to win the
+approval either. Stop and put the positions to the user only when:
+- Codex re-raises a finding we rejected with evidence (do not change the code just
+  to quiet it);
+- a finding, or a change of approach, needs a product or design decision.
 
 ### 6d. Triage CodeRabbit Comments
 
@@ -503,13 +589,17 @@ gh api repos/{owner}/{repo}/pulls/<pr-number>/comments/<comment-id>/replies \
   -f body="Not acting on this: <brief technical reason>."
 ```
 
+Then resolve each answered thread (the GraphQL commands in 6c).
+
 ### 6e. Loop Exit Condition
 
 Exit the loop when **all** are true:
 1. `gh pr checks <pr-number>` shows all checks as `pass`
 2. Codex has approved the current `HEAD` (6c), or the user explicitly accepted
    an open dispute
-3. Every Codex and CodeRabbit thread has a fix or a reasoned reply
+3. Every Codex and CodeRabbit thread has a reply and is resolved (the 6c query
+   returns nothing); an open dispute the user is deciding stays open and is named
+   in the summary
 4. No unresolved actionable CodeRabbit comments remain
 
 Then print a final summary (see Phase 7).
@@ -526,6 +616,8 @@ Print a clean summary:
 Branch:  <branch>
 PR:      <url>
 Status:  Draft — ready to mark as ready-for-review when you're happy
+Tier:    <low|medium|high> — <low: merge on green | medium: read "How to review"
+         and the evidence | high: also the decisions and excerpts it names>
 
 CI:      All checks green
 Codex:   Approved on <sha> after <n> rounds
