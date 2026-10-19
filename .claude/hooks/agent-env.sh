@@ -15,7 +15,8 @@ repo="${CLAUDE_PROJECT_DIR:-.}"
 if [ -d "$repo/.githooks" ]; then
   current="$(git -C "$repo" config --get core.hooksPath)"
   hooks_dir="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)/hooks"
-  active="$(find "$hooks_dir" -maxdepth 1 -type f ! -name '*.sample' 2>/dev/null | head -1)"
+  # Regular files and symlinks alike: hook managers often install symlinks.
+  active="$(find "$hooks_dir" -maxdepth 1 \( -type f -o -type l \) ! -name '*.sample' 2>/dev/null | head -1)"
   if [ -z "$current" ] && [ -z "$active" ]; then
     git -C "$repo" config core.hooksPath .githooks
   elif [ "$current" != ".githooks" ]; then
