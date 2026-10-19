@@ -34,6 +34,12 @@ const env = {
   // The output goes back to the agent as text, not to a terminal.
   NO_COLOR: '1',
 };
+// The gates get none of the GIT_* variables git sets for a hook: Flutter reads
+// its own version through git, and with GIT_DIR pointing here it reports
+// "0.0.0-unknown" and refuses every package.
+const gateEnv = Object.fromEntries(
+  Object.entries(env).filter(([name]) => !name.startsWith('GIT_'))
+);
 
 const gitRaw = (...args) => {
   try {
@@ -91,7 +97,7 @@ function failingGates(root, sha) {
     for (const gate of gatesFor(changed)) {
       const run = spawnSync(gate.cmd, gate.args, {
         cwd: path.join(checkout.dir, gate.cwd ?? ''),
-        env: { ...env, ...gate.env },
+        env: { ...gateEnv, ...gate.env },
         encoding: 'utf8',
         maxBuffer: 64 * 1024 * 1024,
       });
