@@ -4,6 +4,8 @@
 // rules are in docs/REVIEW_TIERS.md. CLI: prints the tier of the branch's diff
 // against origin/main as JSON.
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 // Paths where a bug has cost data, money, sign-ins, a deploy or a meal's
@@ -91,7 +93,6 @@ const HIGH = [
       'Dockerfile',
       'next.config',
       'release-please-config.json',
-      '.release-please-manifest.json',
       `${FLUTTER}ios/`,
       `${FLUTTER}fastlane/`,
     ],
@@ -109,25 +110,47 @@ const HIGH = [
   ],
 ];
 
+// App code that enforces a paid feature is billing risk wherever it lives: a
+// bug there gives paid features away or locks subscribers out.
+const APP_CODE =
+  /^(?:app|lib|components|hooks|apps\/mobile-flutter\/lib)\/.*\.(?:tsx?|dart)$/;
+const HIGH_CONTENT = [
+  [
+    'billing or entitlements (enforces a paid feature)',
+    /\b(?:checkFeatureGate|assertFeatureAccess)\b/,
+  ],
+];
+
+// Tests and their fixtures cannot break anything in prod.
+const TEST_ONLY = /\/__(?:tests|fixtures)__\//;
+
 // Paths that cannot change what the app does. A change made only of these is
 // low.
 const LOW = [
   /\.md$/,
   /^(?:docs|content\/docs|\.agents)\//,
   /^\.claude\/(?:skills|agents|commands)\//,
-  /\/__tests__\//,
+  TEST_ONLY,
   /^(?:e2e|apps\/mobile-flutter\/test)\//,
   /^scripts\/(?:eval|bench)\//,
 ];
 
-/** `{ tier: 'low' | 'medium' | 'high', reasons: string[] }` for changed paths. */
-export function tierFor(files) {
-  // A test beside high-risk code cannot break it in prod.
-  const shipped = files.filter((f) => !/\/__tests__\//.test(f));
+/**
+ * `{ tier: 'low' | 'medium' | 'high', reasons: string[] }` for changed paths.
+ * @param {string[]} files changed paths, relative to the repo root
+ * @param {(path: string) => string} [read] a changed file's current text ('' when it is gone)
+ */
+export function tierFor(files, read = () => '') {
+  const shipped = files.filter((f) => !TEST_ONLY.test(f));
   const reasons = [];
   for (const [label, prefixes] of HIGH) {
     const hit = shipped.find((f) => prefixes.some((p) => f.startsWith(p)));
     if (hit) reasons.push(`${label}: ${hit}`);
+  }
+  for (const [label, pattern] of HIGH_CONTENT) {
+    const hit = shipped.find((f) => APP_CODE.test(f) && pattern.test(read(f)));
+    if (hit && !reasons.some((r) => r.endsWith(`: ${hit}`)))
+      reasons.push(`${label}: ${hit}`);
   }
   if (reasons.length > 0) return { tier: 'high', reasons };
   if (files.every((f) => LOW.some((pattern) => pattern.test(f)))) {
@@ -146,5 +169,15 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   })
     .split('\n')
     .filter(Boolean);
-  process.stdout.write(`${JSON.stringify(tierFor(files), null, 2)}\n`);
+  const root = execFileSync('git', ['rev-parse', '--show-toplevel'], {
+    encoding: 'utf8',
+  }).trim();
+  const read = (f) => {
+    try {
+      return readFileSync(path.join(root, f), 'utf8');
+    } catch {
+      return '';
+    }
+  };
+  process.stdout.write(`${JSON.stringify(tierFor(files, read), null, 2)}\n`);
 }

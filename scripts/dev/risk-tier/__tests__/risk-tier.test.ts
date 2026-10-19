@@ -73,3 +73,28 @@ describe('tierFor', () => {
     expect(tier(files)).toBe('medium');
   });
 });
+
+describe('tierFor with file contents', () => {
+  const read = (f: string) =>
+    f === 'lib/actions/logging/nutrition-ocr.ts'
+      ? "await assertFeatureAccess(userId, 'label_scan');"
+      : 'export const x = 1;';
+
+  it('treats any file that enforces a paid feature as high', () => {
+    expect(tierFor(['lib/actions/logging/nutrition-ocr.ts'], read)).toEqual({
+      tier: 'high',
+      reasons: [
+        'billing or entitlements (enforces a paid feature): lib/actions/logging/nutrition-ocr.ts',
+      ],
+    });
+    expect(tierFor(['lib/actions/meals/other.ts'], read).tier).toBe('medium');
+  });
+
+  it('treats fixtures beside high-risk code as test-only', () => {
+    expect(tier(['lib/infra/db/__fixtures__/fake-db.ts'])).toBe('low');
+  });
+
+  it('leaves the generated release manifest out of high', () => {
+    expect(tier(['.release-please-manifest.json'])).toBe('medium');
+  });
+});
