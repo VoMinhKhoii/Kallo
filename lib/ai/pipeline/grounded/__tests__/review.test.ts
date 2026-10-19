@@ -202,6 +202,7 @@ describe('clearLiquidRefuse', () => {
   it.each([
     ['bone-in chicken with gravy', 'Chicken gravy'],
     ['sườn nước dùng', 'pork rib broth'],
+    ['roast chicken, gravy', 'Chicken gravy'],
   ])('keeps the bone share when either name joins a solid: %s / %s', (rawName, canonicalName) => {
     const state = stateOf([
       {
