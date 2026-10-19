@@ -138,7 +138,7 @@ const LOW = [
 /**
  * `{ tier: 'low' | 'medium' | 'high', reasons: string[] }` for changed paths.
  * @param {string[]} files changed paths, relative to the repo root
- * @param {(path: string) => string} [read] a changed file's current text ('' when it is gone)
+ * @param {(path: string) => string} [read] a changed file's text before and after the change
  */
 export function tierFor(files, read = () => '') {
   const shipped = files.filter((f) => !TEST_ONLY.test(f));
@@ -172,12 +172,23 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const root = execFileSync('git', ['rev-parse', '--show-toplevel'], {
     encoding: 'utf8',
   }).trim();
+  const mergeBase = execFileSync('git', ['merge-base', base, 'HEAD'], {
+    encoding: 'utf8',
+  }).trim();
+  // The text before and after the change, so removing an enforcement call
+  // (or deleting its file) still counts.
   const read = (f) => {
+    let text = '';
     try {
-      return readFileSync(path.join(root, f), 'utf8');
-    } catch {
-      return '';
-    }
+      text += readFileSync(path.join(root, f), 'utf8');
+    } catch {}
+    try {
+      text += execFileSync('git', ['show', `${mergeBase}:${f}`], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      });
+    } catch {}
+    return text;
   };
   process.stdout.write(`${JSON.stringify(tierFor(files, read), null, 2)}\n`);
 }
