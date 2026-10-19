@@ -14,6 +14,7 @@ import {
   mkdtempSync,
   readFileSync,
   realpathSync,
+  rmSync,
   symlinkSync,
 } from 'node:fs';
 import os from 'node:os';
@@ -57,29 +58,51 @@ const git = (...args) => gitRaw(...args)?.trim() ?? null;
 // names ("apps/mobile-flutter/lib/m\303\263n.dart"), hiding their folder.
 const gitFiles = (...args) => gitRaw(...args, '-z')?.split('\0') ?? null;
 
-// Untracked build state the gates need, shared into a throwaway checkout. The
-// Flutter gates fetch their own packages (`flutter pub get`).
-const SHARED = ['node_modules'];
-
-// A checkout of `sha` to run the gates in, and how to clean it up.
+// A checkout of `sha` to run the gates in, and how to clean it up. A
+// throwaway checkout borrows this checkout's node_modules when both pin the
+// same bun.lock, and installs its own otherwise. The Flutter gates fetch their
+// own packages (`flutter pub get`).
 function checkoutOf(root, sha) {
   const status = git('status', '--porcelain');
   if (git('rev-parse', 'HEAD') === sha && status === '') {
     return { dir: root, cleanup: () => {} };
   }
   const dir = mkdtempSync(path.join(os.tmpdir(), 'kallo-push-gates-'));
-  if (git('worktree', 'add', '--detach', dir, sha) === null) {
-    throw new Error(`could not check out ${sha} to run the gates`);
-  }
-  for (const shared of SHARED) {
-    const from = path.join(root, shared);
-    if (existsSync(from))
-      symlinkSync(realpathSync(from), path.join(dir, shared));
-  }
-  return {
-    dir,
-    cleanup: () => git('worktree', 'remove', '--force', dir),
+  const cleanup = () => {
+    if (git('worktree', 'remove', '--force', dir) === null) {
+      rmSync(dir, { recursive: true, force: true });
+      git('worktree', 'prune');
+    }
   };
+  try {
+    if (git('worktree', 'add', '--detach', dir, sha) === null) {
+      throw new Error(`could not check out ${sha} to run the gates`);
+    }
+    const modules = path.join(root, 'node_modules');
+    const lock = (file) =>
+      existsSync(file) ? readFileSync(file, 'utf8') : null;
+    if (
+      existsSync(modules) &&
+      lock(path.join(root, 'bun.lock')) === lock(path.join(dir, 'bun.lock'))
+    ) {
+      symlinkSync(realpathSync(modules), path.join(dir, 'node_modules'));
+    } else {
+      const install = spawnSync('bun', ['install', '--frozen-lockfile'], {
+        cwd: dir,
+        env: gateEnv,
+        encoding: 'utf8',
+      });
+      if (install.status !== 0) {
+        throw new Error(
+          `could not install ${sha.slice(0, 10)}'s dependencies:\n${install.stderr ?? ''}`
+        );
+      }
+    }
+    return { dir, cleanup };
+  } catch (error) {
+    cleanup();
+    throw error;
+  }
 }
 
 function failingGates(root, sha) {
@@ -91,7 +114,12 @@ function failingGates(root, sha) {
   const changed = diff === null ? null : diff.filter(Boolean);
   if (changed?.length === 0) return [];
 
-  const checkout = checkoutOf(root, sha);
+  let checkout;
+  try {
+    checkout = checkoutOf(root, sha);
+  } catch (error) {
+    return [`--- setup on ${sha.slice(0, 10)} ---\n${error.message}`];
+  }
   try {
     const failures = [];
     for (const gate of gatesFor(changed)) {
