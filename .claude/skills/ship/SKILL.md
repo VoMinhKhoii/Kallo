@@ -4,7 +4,8 @@ description: |
   MANUAL TRIGGER ONLY: invoke only when user types /ship.
   Full Git shipping workflow — from unstaged changes to a clean, merged-ready PR.
   Handles: git add, branch creation (with meaningful name), conventional commit,
-  push, draft PR creation, CI monitoring and fixing, an always-on Codex review
+  a local adversarial Codex review before the first push, push (behind a
+  pre-push gate hook), draft PR creation, CI monitoring and fixing, an always-on Codex review
   loop (`@codex review` with a change brief, iterated until Codex approves the
   current head, every finding judged on its merits, not blindly applied),
   CodeRabbit comment triage (auto-fix reasonable ones, dismiss false positives
@@ -132,11 +133,55 @@ git commit -m "<message>"
 
 ---
 
+## Phase 3b: Local Codex Review (default, before the first push)
+
+A local adversarial Codex pass runs before GitHub ever sees the branch, so the
+GitHub rounds start from a cleaner head. On record, one local pass found 8 defects
+the GitHub Codex loop had missed.
+
+1. **Write the brief now**, the three parts listed under Phase 5 (what changed and
+   why, where it could break, out of scope), to `<scratchpad>/codex-brief.md`. If
+   writing "where it could break" surfaces a bug, fix it first.
+2. **Run the review** from the branch's checkout, in the background (it takes
+   3-15 minutes; wait for the task notification, never a foreground `sleep`):
+
+   ```bash
+   # The prompt names the diff range: `codex review` rejects --base together
+   # with custom instructions.
+   cat .claude/skills/ship/local-review.md <scratchpad>/codex-brief.md \
+     | codex review -c 'model="gpt-6.1-sol"' -c 'sandbox_mode="read-only"' - \
+     > <scratchpad>/local-review-<n>.md 2>&1
+   ```
+   Check the output file is a review, not a CLI error, before reading silence as
+   a clean pass.
+3. **Judge every finding** exactly as in 6c ("Judge every finding ourselves"):
+   reproduce, then fix with a test, or reject with the reason. Commit fixes with
+   explicit paths.
+4. If the pass found a P0 or P1, run one more pass on the fixed head. Two local
+   passes at most; then push. Whatever the local passes leave, the GitHub loop
+   (6c) still runs to approval.
+
+A local Codex review that already ran on this exact commit with the same brief
+(for example during `grill-your-own-work`), with its findings handled, counts as
+this phase; do not run another.
+
+If the pass cannot run (`codex` not installed, out of quota, or a CLI error),
+write "Local Codex review did not run: <reason>" under Evidence in the PR body and
+continue. A pass that did not run is never a clean pass.
+
+---
+
 ## Phase 4: Push
 
 ```bash
 git push -u origin <branch-name>
 ```
+
+A git pre-push hook (`.githooks/pre-push` → `scripts/dev/push-gates/`) runs CI's
+fast gates (structure, Biome, tsc, migration timestamps, `dart format`, `flutter
+analyze`, each only when the diff needs it) before any agent push, and makes git
+refuse the push with the failing output. Fix the failures and push again; never
+bypass it with `--no-verify`.
 
 If push is rejected due to diverged history (non-fast-forward), see
 **[Appendix: Handling Diverged Branch]** before proceeding.
@@ -179,8 +224,9 @@ gh pr create \
 
 Print the PR URL. Save the PR number for polling later.
 
-**Before leaving this phase, write the Codex brief** (used in 6c) while the diff is
-fresh. It is also our own review of the change, so do it honestly:
+**Before leaving this phase, refresh the Codex brief** written in Phase 3b (used in
+6c) so it matches the head being pushed. It is also our own review of the change, so
+do it honestly:
 
 1. **What changed and why** — 2-4 sentences in plain words: the behavior before,
    the behavior after, and the reason.

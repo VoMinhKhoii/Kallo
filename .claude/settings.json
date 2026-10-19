@@ -16,6 +16,14 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/flutter-setup.sh"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/agent-env.sh\""
+          }
+        ]
       }
     ]
   }

@@ -1,0 +1,14 @@
+#!/bin/sh
+# Git pre-push hook: before an agent's push, run the fast gates CI would fail
+# it on (scripts/dev/push-gates/). Git runs this for every push, however the
+# command was written, from the root of the checkout being pushed, and passes
+# the refs on stdin. Pushes from a person's terminal skip it; Claude Code sets
+# CLAUDECODE=1 in its shells, and any other agent pushes with KALLO_AGENT=1.
+# Enabled by `git config core.hooksPath .githooks`, which
+# .claude/hooks/agent-env.sh sets at session start.
+[ "${CLAUDECODE:-}" = "1" ] || [ "${KALLO_AGENT:-}" = "1" ] || exit 0
+
+# A session launched from a desktop app can start with a bare PATH.
+PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$HOME/.bun/bin"
+export PATH
+exec node "$(git rev-parse --show-toplevel)/scripts/dev/push-gates/push-gates.mjs"
