@@ -5,8 +5,15 @@ const names = (changed: string[] | null) =>
   gatesFor(changed).map((g: { name: string }) => g.name);
 
 describe('gatesFor', () => {
-  it('runs every web gate when the diff is unknown', () => {
-    expect(names(null)).toEqual(['structure', 'biome', 'tsc']);
+  it('runs every gate when the diff is unknown', () => {
+    expect(names(null)).toEqual([
+      'structure',
+      'biome',
+      'tsc',
+      'migrations',
+      'dart format',
+      'flutter analyze',
+    ]);
   });
 
   it('skips tsc for a prose-only change', () => {
@@ -22,9 +29,10 @@ describe('gatesFor', () => {
     expect(names(['messages/en/errors.json'])).toContain('tsc');
   });
 
-  it('runs only structure and flutter analyze for a mobile-only change', () => {
+  it('runs only structure and the Flutter gates for a mobile-only change', () => {
     expect(names(['apps/mobile-flutter/lib/main.dart'])).toEqual([
       'structure',
+      'dart format',
       'flutter analyze',
     ]);
   });

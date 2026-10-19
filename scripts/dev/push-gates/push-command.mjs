@@ -1,6 +1,8 @@
-// Reads a Bash command the way the shell will run it: does it `git push`, and
-// from which directory. Quoted strings and heredoc bodies are data, not
-// commands, so a commit message that mentions "git push" is never a push.
+// Reads a Bash command the way the shell will run it: which `git push`es it
+// runs, and from which directories. Quoted strings and heredoc bodies are data,
+// not commands, so a commit message that mentions "git push" is never a push;
+// the script of `bash -c '…'` is read as commands. A push inside a quoted
+// `"$(…)"` is not seen.
 import path from 'node:path';
 
 // A path argument: double-quoted, single-quoted, or bare.
@@ -15,6 +17,11 @@ const PUSH = new RegExp(
 );
 const CD = new RegExp(String.raw`${START}cd\s+${ARG}\s*(?=&&|;|\n|$)`, 'gd');
 const GIT_C = new RegExp(String.raw`-C\s+${ARG}`, 'gd');
+// `bash -c 'script'`, `sh -lc "script"`, `zsh -c script`.
+const SHELL_C = new RegExp(
+  String.raw`${START}(?:bash|sh|zsh)\s+(?:-[A-Za-z]+\s+)*?-[A-Za-z]*c[A-Za-z]*\s+${ARG}`,
+  'gd'
+);
 const HEREDOC = /<<-?\s*(['"]?)([A-Za-z_]\w*)\1[^\n]*\n/g;
 
 const blank = (chars, from, to) => {
@@ -53,12 +60,20 @@ export function maskData(command) {
   return chars.join('');
 }
 
-const unquote = (arg) => arg.replace(/^(["'])(.*)\1$/, '$2');
-const resolve = (from, arg) =>
-  path.resolve(
-    from,
-    unquote(arg).replace(/^~(?=\/|$)/, process.env.HOME ?? '~')
-  );
+const unquote = (arg) => arg.replace(/^(["'])([\s\S]*)\1$/, '$2');
+// What the shell makes of a path word: `~` and `$VAR` / `${VAR}` expand unless
+// single-quoted. An unknown variable stays literal, so the path will not exist
+// and the hook falls back to the starting directory.
+const expand = (arg) =>
+  arg.startsWith("'")
+    ? unquote(arg)
+    : unquote(arg)
+        .replace(/^~(?=\/|$)/, process.env.HOME ?? '~')
+        .replace(
+          /\$(?:\{(\w+)\}|(\w+))/g,
+          (m, a, b) => process.env[a ?? b] ?? m
+        );
+const resolve = (from, arg) => path.resolve(from, expand(arg));
 // The original text of capture group `n`, located on the masked string.
 const group = (command, match, n) =>
   match.indices[n] ? command.slice(...match.indices[n]) : undefined;
@@ -93,11 +108,12 @@ function directoryAt(command, masked, cwd) {
 }
 
 /**
- * The directory the first code-publishing `git push` in `command` runs in, or
- * null when the command publishes nothing.
+ * The directories every code-publishing `git push` in `command` runs in,
+ * including pushes inside `bash -c` scripts; empty when it publishes nothing.
  */
-export function pushDirectory(command, cwd) {
+export function pushDirectories(command, cwd) {
   const masked = maskData(command);
+  const dirs = [];
   for (const push of masked.matchAll(PUSH)) {
     if (publishesNothing(group(command, push, 3) ?? '')) continue;
     let dir = directoryAt(command, masked.slice(0, push.index), cwd);
@@ -105,7 +121,11 @@ export function pushDirectory(command, cwd) {
     for (const gitC of options.matchAll(GIT_C)) {
       dir = resolve(dir, gitC[1]);
     }
-    return dir;
+    dirs.push(dir);
   }
-  return null;
+  for (const shell of masked.matchAll(SHELL_C)) {
+    const at = directoryAt(command, masked.slice(0, shell.index), cwd);
+    dirs.push(...pushDirectories(unquote(group(command, shell, 1) ?? ''), at));
+  }
+  return [...new Set(dirs)];
 }

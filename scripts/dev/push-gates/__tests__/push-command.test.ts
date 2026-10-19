@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
-import { maskData, pushDirectory } from '../push-command.mjs';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { maskData, pushDirectories } from '../push-command.mjs';
 
 const CWD = '/repo';
 
-describe('pushDirectory', () => {
+describe('pushDirectories', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it.each([
     ['git push', CWD],
     ['git push -u origin feat/x', CWD],
@@ -24,12 +28,33 @@ describe('pushDirectory', () => {
     ['cd /outer && (cd inner && git push)', '/outer/inner'],
     ['cd /outer && (make) && git push', '/outer'],
     ['echo $(cd /tmp && pwd) && git push', CWD],
+    ["bash -c 'git push origin HEAD'", CWD],
+    ['cd /work && sh -lc "git push"', '/work'],
     [
       "git commit -q -F - <<'EOF'\nfix: x\n\ngit push origin main\nEOF\ngit push",
       CWD,
     ],
   ])('gates %j from %s', (command, dir) => {
-    expect(pushDirectory(command, CWD)).toBe(dir);
+    expect(pushDirectories(command, CWD)).toEqual([dir]);
+  });
+
+  it('gates every push in a compound command', () => {
+    expect(
+      pushDirectories('git -C /tmp/other push; git -C /work/kallo push', CWD)
+    ).toEqual(['/tmp/other', '/work/kallo']);
+  });
+
+  it('expands environment variables in paths, except single-quoted ones', () => {
+    vi.stubEnv('CLAUDE_PROJECT_DIR', '/projects/kallo');
+    expect(
+      pushDirectories('cd "$CLAUDE_PROJECT_DIR" && git push', CWD)
+    ).toEqual(['/projects/kallo']);
+    expect(
+      pushDirectories('cd ${CLAUDE_PROJECT_DIR}/x && git push', CWD)
+    ).toEqual(['/projects/kallo/x']);
+    expect(
+      pushDirectories("cd '$CLAUDE_PROJECT_DIR' && git push", CWD)
+    ).toEqual(['/repo/$CLAUDE_PROJECT_DIR']);
   });
 
   it.each([
@@ -45,8 +70,9 @@ describe('pushDirectory', () => {
     ['git push -d origin old'],
     ['git push origin :old'],
     ['gh pr create --title "push it"'],
+    ["bash -c 'echo pushed'"],
   ])('ignores %j', (command) => {
-    expect(pushDirectory(command, CWD)).toBeNull();
+    expect(pushDirectories(command, CWD)).toEqual([]);
   });
 });
 

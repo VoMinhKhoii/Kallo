@@ -13,10 +13,14 @@ const PROSE = /\.(?:md|mdx|txt)$/;
 /**
  * The gates the changed files need, mirroring the fast blocking jobs in
  * `.github/workflows/ci.yml` and `flutter-ci.yml`. `changed` is null when the
- * diff against main is unknown, which runs every web gate.
+ * diff against main is unknown, which runs every gate.
  */
 export function gatesFor(changed) {
-  const files = changed ?? ['unknown.ts'];
+  const files = changed ?? [
+    'unknown.ts',
+    'supabase/migrations/unknown.sql',
+    `${MOBILE}unknown.dart`,
+  ];
   const web = files.filter((f) => !f.startsWith(MOBILE));
   /** @type {Gate[]} */
   const gates = [
@@ -54,6 +58,12 @@ export function gatesFor(changed) {
     });
   }
   if (files.some((f) => f.startsWith(MOBILE))) {
+    gates.push({
+      name: 'dart format',
+      cmd: 'dart',
+      args: ['format', '--output=none', '--set-exit-if-changed', '.'],
+      cwd: MOBILE,
+    });
     gates.push({
       name: 'flutter analyze',
       cmd: 'flutter',
