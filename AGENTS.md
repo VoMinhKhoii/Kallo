@@ -111,6 +111,31 @@ The full module map — one line per folder stating its single concern — is `d
 | 768-dim `gemini-embedding-001` vectors | Better multilingual quality |
 | Locket-style link invites instead of `@handle` search | No discovery surface; forwarded-link risk mitigated by remove-friend |
 
+## Code Review Rules
+
+Read by the Codex GitHub reviewer and by `/ship`'s local Codex pass (the heading is the one Codex looks for). Drawn from 130 Codex threads on PRs #414–#463 and the 38 fix PRs that repaired an earlier PR between 2026-07-15 and 2026-10-19. Humans judge every finding.
+
+**Report shape.** Start with a count ("3 findings, 1 P1") or say plainly that there is nothing to fix. Every finding names `file:line`, the input or caller that reaches it, and what the user sees. When a bug is a pattern (a missing deadline check, a substring match, an unhandled null), list every site in the diff in that one finding: we fix the class in one round, never one site per round (#430 took five rounds for one deadline class).
+
+**Severity.** P1 only when a user sees a wrong number, data is lost or leaks, a trust boundary breaks, a request crashes or prod goes down. Docs, module placement and naming are never P1. Tag `Pre-existing` when the faulty path is on main unchanged; name it, do not block the PR on it.
+
+**Do not report.** Style and formatting (Biome and `bun check:structure` own them). That a test "will fail" unless you ran it. Changes to what a telemetry counter means. Intermediate streaming state when the final value is authoritative. Dual-write or rollback machinery for this beta app. Claims about data the code does not read (the pipeline reads the migrated `food_*` rows, not `data/*.csv`). Generated files: `CHANGELOG.md`, `.release-please-manifest.json`, `bun.lock`, `file-size-baseline.json`, `supabase/migrations/meta/*_snapshot.json`, `lib/brand/illustrations/`.
+
+**What failure looks like here (hunt these first).**
+- Prod is not dev: DB pool 2 (8 in prod), the free 500 MB database, Cloud Run CPU throttled outside requests, rate limits on a workflow's first prod run, the Supabase email hook's response contract. A PR touching infra, migrations, boot or workflows must say what differs in prod and whether the path ran there (#264, #302, #431, #443, #458).
+- Null is not zero: a missing macro, micronutrient or unsaved card must not read as 0 (#306, #419/#420, #451).
+- Identity and order: items keyed by name or index break on reorder, duplicates and same-name dishes (#218, #265, #426).
+- Auth-state transitions: sign-out, token refresh and the signed-out shell must not fetch, 401 or leak across accounts (#232, #235, #434/#435).
+- Text matching: every keyword test uses word boundaries (`miến` matched `miếng` and shipped null macros, #247); compare NFC/NFD-normalized strings (#424, #426); never unaccent Vietnamese (§7).
+- Parity: a user-facing string or behavior added on web exists on Flutter and in both `messages/` locales, and the other way round (#447, #453). Layout on a device cannot be judged from source: ask for the screenshot.
+- Migrations: pgvector/pg_trgm need `SET search_path TO public, extensions;` (§7); a new table or vector column states rows × bytes against the 500 MB plan (#431).
+
+**AI pipeline (`lib/ai/prompts/`, `lib/ai/pipeline/`, `lib/ai/matching/`).** Two kinds of finding:
+- Code bugs, fixed in the PR with a test: a keyword matched without a word boundary, two prompt rules that contradict, wrong arithmetic in a rule ("half of 400 g" must be 200 g, #441), deadlines, cancellation, dropped fields, raw/cooked mass conversion, provider routing.
+- Food judgment, not patched in the PR: which term belongs in a liquid-dish list, whether "iced tea" implies sugar, how a count splits across parts, which row state a food should pick. State it as a meal text plus the expected outcome; the author files it as a Meal Arena case and the PR is judged on the arena result (`/ship` 6c). The one such patch that was measured made results worse and was reverted (#428).
+
+**Our replies.** `Fixed in <sha>.` · `Not changing: <traced reason>.` · `Eval case: <case id>.` · `Pre-existing: <ttr task>.` Every thread is answered and resolved before merge; GitHub requires conversation resolution on `main`.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

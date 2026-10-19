@@ -1,0 +1,51 @@
+import { describe, expect, it } from 'vitest';
+import { tierFor } from '../risk-tier.mjs';
+
+const tier = (files: string[]) => tierFor(files).tier;
+
+describe('tierFor', () => {
+  it.each([
+    ['supabase/migrations/20261019000000_x.sql'],
+    ['lib/infra/db/schema.ts'],
+    ['proxy.ts'],
+    ['app/api/auth/send-email/route.ts'],
+    ['lib/domain/billing/entitlement/grant.ts'],
+    ['apps/mobile-flutter/lib/features/paywall/paywall_screen.dart'],
+    ['lib/domain/account-deletion/delete.ts'],
+    ['.github/workflows/ci.yml'],
+    ['scripts/cloud-run/deploy.sh'],
+    ['lib/ai/pipeline/grounded/orchestrator.ts'],
+    ['lib/ai/matching/streamed-matching.ts'],
+  ])('%s is high', (file) => {
+    expect(tier([file])).toBe('high');
+  });
+
+  it('names every high reason with its first file', () => {
+    expect(
+      tierFor(['docs/X.md', 'proxy.ts', 'lib/domain/billing/a.ts']).reasons
+    ).toEqual([
+      'auth or session: proxy.ts',
+      'billing or entitlements: lib/domain/billing/a.ts',
+    ]);
+  });
+
+  it.each([
+    [['docs/DATABASE.md', 'README.md']],
+    [['.claude/skills/ship/SKILL.md']],
+    [['components/logging/__tests__/feed.test.tsx']],
+    [['apps/mobile-flutter/test/features/home_test.dart']],
+    [['scripts/eval/run.ts', 'content/docs/en/account/delete.mdx']],
+  ])('%j is low', (files) => {
+    expect(tier(files)).toBe('low');
+  });
+
+  it.each([
+    [['components/logging/feed/feed.tsx']],
+    [['messages/en/groups.json']],
+    [['public/portions/bowl.webp']],
+    [['.claude/settings.json']],
+    [['docs/X.md', 'lib/ai/cost/cost.ts']],
+  ])('%j is medium', (files) => {
+    expect(tier(files)).toBe('medium');
+  });
+});
