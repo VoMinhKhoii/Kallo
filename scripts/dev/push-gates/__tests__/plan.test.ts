@@ -11,6 +11,7 @@ describe('gatesFor', () => {
       'biome',
       'tsc',
       'migrations',
+      'flutter pub get',
       'dart format',
       'flutter analyze',
     ]);
@@ -32,6 +33,7 @@ describe('gatesFor', () => {
   it('runs only structure and the Flutter gates for a mobile-only change', () => {
     expect(names(['apps/mobile-flutter/lib/main.dart'])).toEqual([
       'structure',
+      'flutter pub get',
       'dart format',
       'flutter analyze',
     ]);

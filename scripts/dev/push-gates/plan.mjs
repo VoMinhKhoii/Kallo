@@ -72,6 +72,14 @@ export function gatesFor(changed) {
     });
   }
   if (files.some((f) => f.startsWith(MOBILE))) {
+    // As in flutter-ci.yml: dependencies first. Without them `dart format`
+    // misreads the language version and reports files as changed.
+    gates.push({
+      name: 'flutter pub get',
+      cmd: 'flutter',
+      args: ['pub', 'get', '--enforce-lockfile'],
+      cwd: MOBILE,
+    });
     gates.push({
       name: 'dart format',
       cmd: 'dart',

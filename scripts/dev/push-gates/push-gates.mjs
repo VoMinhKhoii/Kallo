@@ -5,7 +5,7 @@
 //
 // When the checkout is that commit with nothing uncommitted or untracked, the
 // gates run in place. Otherwise they run in a throwaway checkout of the pushed
-// commit (sharing node_modules and the Flutter build cache), so an uncommitted
+// commit (sharing node_modules), so an uncommitted
 // fix cannot let a broken commit through and unrelated work in progress cannot
 // block a good one.
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -51,12 +51,9 @@ const git = (...args) => gitRaw(...args)?.trim() ?? null;
 // names ("apps/mobile-flutter/lib/m\303\263n.dart"), hiding their folder.
 const gitFiles = (...args) => gitRaw(...args, '-z')?.split('\0') ?? null;
 
-// Untracked build state the gates need, shared into a throwaway checkout.
-const SHARED = [
-  'node_modules',
-  'apps/mobile-flutter/.dart_tool',
-  'apps/mobile-flutter/.flutter-plugins-dependencies',
-];
+// Untracked build state the gates need, shared into a throwaway checkout. The
+// Flutter gates fetch their own packages (`flutter pub get`).
+const SHARED = ['node_modules'];
 
 // A checkout of `sha` to run the gates in, and how to clean it up.
 function checkoutOf(root, sha) {
