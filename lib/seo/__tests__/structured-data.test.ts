@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { landingStructuredData } from '@/lib/seo/structured-data';
+import {
+  docsBreadcrumbStructuredData,
+  landingStructuredData,
+} from '@/lib/seo/structured-data';
 
 const graph = landingStructuredData({
   locale: 'vi',
   description: 'Describe what you ate.',
+  organizationDescription: 'Kallo là ứng dụng theo dõi calo.',
 })['@graph'] as Array<Record<string, unknown>>;
 
 const organization = graph.find((node) => node['@type'] === 'Organization');
@@ -33,6 +37,18 @@ describe('the Organization node', () => {
     const support = points.find((p) => p.contactType === 'customer support');
     expect(support?.email).toBe('support@kallo.fit');
     expect(support?.availableLanguage).toEqual(['en', 'vi']);
+  });
+
+  it('points the support contact at the contact page in the same locale', () => {
+    // The graph above is built for `vi`; an English URL there would send a
+    // Vietnamese reader (or an agent quoting the markup) to the wrong page.
+    const points = organization?.contactPoint as Array<Record<string, string>>;
+    const support = points.find((p) => p.contactType === 'customer support');
+    expect(support?.url).toBe('https://kallo.fit/vi/docs/company/contact');
+  });
+
+  it('says in one sentence what the company is, in the page locale', () => {
+    expect(organization?.description).toBe('Kallo là ứng dụng theo dõi calo.');
   });
 
   it('publishes only company-domain contact addresses', () => {
@@ -88,5 +104,78 @@ describe('the WebSite node', () => {
     expect(website?.name).toBe('Kallo');
     expect(website?.url).toBe('https://kallo.fit/');
     expect(website?.alternateName).toBe('kallo.fit');
+  });
+});
+
+describe('docsBreadcrumbStructuredData', () => {
+  const crumbs = (data: ReturnType<typeof docsBreadcrumbStructuredData>) =>
+    data.itemListElement as Array<Record<string, unknown>>;
+
+  it('is a BreadcrumbList that runs Kallo, Docs, then the page', () => {
+    const data = docsBreadcrumbStructuredData({
+      locale: 'en',
+      slug: 'quickstart',
+      docsLabel: 'Docs',
+      title: 'Log your first meal',
+    });
+
+    expect(data['@context']).toBe('https://schema.org');
+    expect(data['@type']).toBe('BreadcrumbList');
+    expect(crumbs(data)).toEqual([
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Kallo',
+        item: 'https://kallo.fit/en',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Docs',
+        item: 'https://kallo.fit/en/docs/overview',
+      },
+      { '@type': 'ListItem', position: 3, name: 'Log your first meal' },
+    ]);
+  });
+
+  it('localizes the labels and every URL', () => {
+    const data = docsBreadcrumbStructuredData({
+      locale: 'vi',
+      slug: 'logging/barcode',
+      docsLabel: 'Tài liệu',
+      title: 'Quét mã vạch',
+    });
+    const [home, docs, page] = crumbs(data);
+
+    expect(home?.item).toBe('https://kallo.fit/vi');
+    expect(docs).toMatchObject({
+      name: 'Tài liệu',
+      item: 'https://kallo.fit/vi/docs/overview',
+    });
+    // The last crumb is the page being read, so it has no URL of its own.
+    expect(page).toEqual({
+      '@type': 'ListItem',
+      position: 3,
+      name: 'Quét mã vạch',
+    });
+  });
+
+  it('ends on Docs for the overview page rather than listing it twice', () => {
+    const data = docsBreadcrumbStructuredData({
+      locale: 'en',
+      slug: 'overview',
+      docsLabel: 'Docs',
+      title: 'Overview',
+    });
+
+    expect(crumbs(data)).toEqual([
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Kallo',
+        item: 'https://kallo.fit/en',
+      },
+      { '@type': 'ListItem', position: 2, name: 'Docs' },
+    ]);
   });
 });

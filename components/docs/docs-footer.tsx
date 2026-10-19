@@ -65,12 +65,21 @@ export async function DocsFooter({
           aria-label={t('menu.label')}
           className="grid grid-cols-1 gap-x-8 gap-y-12 text-left sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
         >
+          {/* The group labels are `p`, not headings: a page's outline starts
+              at its `h1`, and nine `h2`s in the footer sat ahead of it in the
+              streamed HTML. The list stays named through `aria-labelledby`. */}
           {sections.map((section) => (
             <div key={section.id}>
-              <h2 className="font-sans-display font-semibold text-base text-kallo-surface">
+              <p
+                className="font-sans-display font-semibold text-base text-kallo-surface"
+                id={`docs-footer-${section.id}`}
+              >
                 {tSections(section.id)}
-              </h2>
-              <ul className="mt-5 space-y-3.5">
+              </p>
+              <ul
+                aria-labelledby={`docs-footer-${section.id}`}
+                className="mt-5 space-y-3.5"
+              >
                 {section.links.map((link) => (
                   <li key={link.slug}>
                     <Link

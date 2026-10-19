@@ -46,3 +46,11 @@ describe('next.config headers()', () => {
     expect(headers['x-content-type-options']).toBe('nosniff');
   });
 });
+
+describe('next.config', () => {
+  it('does not announce the framework in X-Powered-By', async () => {
+    const { default: config } = await import('@/next.config');
+
+    expect(config.poweredByHeader).toBe(false);
+  });
+});

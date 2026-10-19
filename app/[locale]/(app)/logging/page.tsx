@@ -1,5 +1,7 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import {
   TIMEZONE_COOKIE,
   TimezoneCookie,
@@ -21,6 +23,13 @@ const DEFAULT_PROFILE: LoggingProfile = {
   carbsTargetG: 250,
   fatTargetG: 65,
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  // The sidebar's own label for this screen, so the tab and the nav agree.
+  const t = await getTranslations('nav');
+
+  return { title: t('logging') };
+}
 
 export default async function LoggingPage({
   searchParams,

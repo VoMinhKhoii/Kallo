@@ -1,9 +1,22 @@
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { CircleAddMenu } from '@/components/groups/circle-add-menu';
 import { CircleMealBar } from '@/components/groups/circle-meal-bar';
 import { MealInvites } from '@/components/groups/meal-invites/meal-invites';
 import { ViewSwitcher } from '@/components/groups/view-switcher';
+
+/**
+ * One tab name for the whole Circle surface. The group feed and the share
+ * thread are Client Component pages (they read their id with `useParams`), so
+ * they cannot export metadata themselves; this layout covers them, and the
+ * feed page repeats the same title.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('metadata.groups');
+
+  return { title: t('title') };
+}
 
 /**
  * The Circle surface as one centered Threads-style column: a compact header,

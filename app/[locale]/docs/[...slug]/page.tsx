@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { DocsBreadcrumbs } from '@/components/docs/docs-breadcrumbs';
 import { DocsPager } from '@/components/docs/docs-pager';
@@ -16,8 +17,9 @@ import {
 import { getToc } from '@/lib/domain/docs/toc';
 import { getDocsLinks } from '@/lib/domain/docs/tree';
 import { alternateLanguages } from '@/lib/seo/alternates';
-import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
+import { openGraphLocale, SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
+import { docsBreadcrumbStructuredData } from '@/lib/seo/structured-data';
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
@@ -64,7 +66,7 @@ export async function generateMetadata({
       url,
       title: doc.frontmatter.title,
       description: doc.frontmatter.description,
-      locale,
+      locale: openGraphLocale(locale),
     },
   };
 }
@@ -79,6 +81,11 @@ interface DocPageProps {
  * It exists for client navigations: docs links share one prefetched App Shell
  * per route (Partial Prefetching), which cannot know the slug, so the
  * skeleton shows the instant a link is clicked and the page streams in.
+ *
+ * An unknown slug never gets this far with a 404 status: a slug that
+ * `generateStaticParams` did not list is served from a shell whose Suspense
+ * fallback has already committed a 200, so the `notFound()` in `DocContent`
+ * only injects a `noindex` meta. `proxy.ts` rejects those URLs first.
  */
 export default function DocPage({ params }: DocPageProps) {
   return (
@@ -126,6 +133,16 @@ async function DocContent({ params }: DocPageProps) {
 
   const { default: Content, frontmatter } = doc;
   const toc = await getToc(locale, path);
+  const breadcrumb = await getTranslations({
+    locale,
+    namespace: 'docs.breadcrumb',
+  });
+  const structuredData = docsBreadcrumbStructuredData({
+    locale,
+    slug: path,
+    docsLabel: breadcrumb('home'),
+    title: frontmatter.title,
+  });
 
   const links = await getDocsLinks(locale);
   const { previous, next } = getNeighbours(path);
@@ -145,6 +162,17 @@ async function DocContent({ params }: DocPageProps) {
     // moves right-to-left. `DocsToc` renders a labelled `nav` landmark, so
     // skipping past it to the article is one keystroke either way.
     <div className="xl:grid xl:grid-cols-[14rem_minmax(0,40rem)_14rem] xl:justify-center xl:gap-10">
+      {/* JSON-LD must be raw script text and Next has no metadata API for it,
+          so a script tag is the documented route. The value is built locally
+          from the nav and the page's own frontmatter; `<` is escaped so a title
+          can never close the tag. `display: none`, so it is not a grid item. */}
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is raw script text built locally from our own frontmatter, with `<` escaped — see comment above.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
+        }}
+      />
       <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] overflow-y-auto py-10 xl:block">
         <DocsToc entries={toc} />
       </aside>

@@ -33,6 +33,10 @@ async function buildIndex(): Promise<string> {
     locale: defaultLocale,
     namespace: 'metadata.root',
   });
+  const pricing = await getTranslations({
+    locale: defaultLocale,
+    namespace: 'metadata.pricing',
+  });
   const sectionTitles = await getTranslations({
     locale: defaultLocale,
     namespace: 'docs.sections',
@@ -48,6 +52,13 @@ async function buildIndex(): Promise<string> {
     ...WHEN_TO_USE,
     '',
     ...FOR_AGENTS,
+    '',
+    // The two marketing pages, from the same messages their own <title> and
+    // description read, so this list cannot drift from what the pages say.
+    '## Product',
+    '',
+    `- [${t('title')}](${SITE_URL}/${defaultLocale}): ${t('description')}`,
+    `- [${pricing('title')}](${SITE_URL}/${defaultLocale}/pricing): ${pricing('description')}`,
     '',
   ];
 

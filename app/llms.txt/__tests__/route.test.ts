@@ -50,6 +50,12 @@ describe('/llms.txt', () => {
     }
   });
 
+  it('links the landing and pricing pages, not only the docs', () => {
+    expect(body).toContain('## Product');
+    expect(body).toContain('](https://kallo.fit/en):');
+    expect(body).toContain('](https://kallo.fit/en/pricing):');
+  });
+
   it('tells an agent when Kallo is the right tool', () => {
     // Generic marketing copy does not read as guidance. These are the specific
     // jobs, and the named non-goals.

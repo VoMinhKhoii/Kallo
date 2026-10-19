@@ -66,6 +66,12 @@ export function DocsSearch({ entries }: DocsSearchProps) {
   const tSections = useTranslations('docs.sections');
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  // `CommandDialog` renders its sr-only title (an `h2`) beside the dialog, not
+  // inside it, so it is in the page whether or not the palette is open, ahead of
+  // the article's `h1`. Mounting the palette on first use keeps it out of the
+  // server HTML; after that it stays mounted so the close animation still runs.
+  const [used, setUsed] = useState(false);
+  if (open && !used) setUsed(true);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -101,45 +107,47 @@ export function DocsSearch({ entries }: DocsSearchProps) {
         <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
       </button>
 
-      <CommandDialog
-        description={t('label')}
-        onOpenChange={setOpen}
-        open={open}
-        title={t('label')}
-      >
-        <CommandInput placeholder={t('placeholder')} />
-        <CommandList>
-          <CommandEmpty>{t('empty')}</CommandEmpty>
-          {DOCS_SECTIONS.map((section) => {
-            const rows = entries.filter(
-              (entry) => entry.sectionId === section.id
-            );
-            if (rows.length === 0) return null;
+      {used && (
+        <CommandDialog
+          description={t('label')}
+          onOpenChange={setOpen}
+          open={open}
+          title={t('label')}
+        >
+          <CommandInput placeholder={t('placeholder')} />
+          <CommandList>
+            <CommandEmpty>{t('empty')}</CommandEmpty>
+            {DOCS_SECTIONS.map((section) => {
+              const rows = entries.filter(
+                (entry) => entry.sectionId === section.id
+              );
+              if (rows.length === 0) return null;
 
-            return (
-              <CommandGroup heading={tSections(section.id)} key={section.id}>
-                {rows.map((entry) => (
-                  <CommandItem
-                    key={entry.slug}
-                    keywords={searchKeywords(entry)}
-                    onSelect={() => go(entry.slug)}
-                    value={`${entry.title} ${entry.description}`}
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium text-base text-kallo-text">
-                        {entry.title}
-                      </p>
-                      <p className="truncate text-caption text-kallo-text-muted">
-                        {entry.description}
-                      </p>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            );
-          })}
-        </CommandList>
-      </CommandDialog>
+              return (
+                <CommandGroup heading={tSections(section.id)} key={section.id}>
+                  {rows.map((entry) => (
+                    <CommandItem
+                      key={entry.slug}
+                      keywords={searchKeywords(entry)}
+                      onSelect={() => go(entry.slug)}
+                      value={`${entry.title} ${entry.description}`}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-base text-kallo-text">
+                          {entry.title}
+                        </p>
+                        <p className="truncate text-caption text-kallo-text-muted">
+                          {entry.description}
+                        </p>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              );
+            })}
+          </CommandList>
+        </CommandDialog>
+      )}
     </>
   );
 }

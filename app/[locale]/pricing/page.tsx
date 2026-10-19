@@ -15,7 +15,7 @@ import {
 import { PricingSection } from '@/components/landing-page/pricing/pricing-section';
 import { routing } from '@/i18n/routing';
 import { alternateLanguages } from '@/lib/seo/alternates';
-import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
+import { openGraphLocale, SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**
@@ -75,7 +75,7 @@ export async function generateMetadata({
       url,
       title: t('title'),
       description: t('description'),
-      locale,
+      locale: openGraphLocale(locale),
     },
   };
 }
