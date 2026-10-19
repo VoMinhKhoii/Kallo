@@ -2,6 +2,7 @@
 // Pure: capture-web.mjs gathers the observations, this judges them.
 
 /**
+ * `finalPath` is where the page ended up, path and query.
  * @typedef {{
  *   route: string, viewport: string, status: number | null, finalPath: string,
  *   signedIn: boolean, consoleErrors: string[], pageErrors: string[],
@@ -10,8 +11,13 @@
  * }} Observation
  */
 
-// A signed-in capture that lands here lost its session.
-const SIGN_IN_PATH = /\/(?:sign-in|sign-up|auth)(?:\/|$)/;
+// A signed-in capture that lands here lost its session: the app sends a
+// signed-out visit to `/<locale>?auth=sign-in&next=…`, which opens the sign-in
+// dialog over the landing page.
+const SIGN_IN =
+  /[?&]auth=sign-(?:in|up)\b|\/(?:sign-in|sign-up|auth)(?:[/?]|$)/;
+// A run cannot pass without a real screenshot of the page, whatever --allow says.
+const NOT_CAPTURED = ['capture failed:', 'landed on '];
 const MAX_ISSUE_CHARS = 240;
 
 /** The problems one page shows, each a line a person can act on. */
@@ -20,7 +26,7 @@ export function issuesFor(observation) {
   const issues = [];
   if (o.captureError) issues.push(`capture failed: ${o.captureError}`);
   if (o.status !== null && o.status >= 400) issues.push(`HTTP ${o.status}`);
-  if (o.signedIn && SIGN_IN_PATH.test(o.finalPath)) {
+  if (o.signedIn && SIGN_IN.test(o.finalPath)) {
     issues.push(`landed on ${o.finalPath}: the session did not hold`);
   }
   for (const e of unique(o.pageErrors)) issues.push(`uncaught error: ${e}`);
@@ -39,11 +45,14 @@ export function issuesFor(observation) {
 
 /**
  * Splits a page's problems into those that fail the run and those `allow`
- * excuses: issues already shown to happen on main, matched by substring.
+ * excuses: issues already shown to happen on main, matched by substring. A page
+ * that was never captured, or captured signed out, is never excused.
  */
 export function judge(observation, allow = []) {
   const all = issuesFor(observation);
-  const isAllowed = (issue) => allow.some((pattern) => issue.includes(pattern));
+  const isAllowed = (issue) =>
+    !NOT_CAPTURED.some((prefix) => issue.startsWith(prefix)) &&
+    allow.some((pattern) => issue.includes(pattern));
   return {
     issues: all.filter((i) => !isAllowed(i)),
     allowed: all.filter(isAllowed),

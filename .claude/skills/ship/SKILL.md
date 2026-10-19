@@ -192,11 +192,12 @@ earlier PR broke came within a day, from exactly this kind of run (#307, #353,
   lost session. An issue that also happens on main goes in `--allow '<text>'` and
   under Evidence as pre-existing. A state the route alone does not reach (an open
   sheet, an error toast): sign Playwright MCP in with `sign-in.mjs` and screenshot it.
-- **iOS** (`apps/mobile-flutter/lib/`): run the dev app on the simulator with
-  `tool/run_dev.sh`, its log kept in a file; open each screen the change reaches
-  and capture it with
-  `node scripts/dev/evidence/capture-ios.mjs --out <scratchpad>/evidence --log <run log> <screen>`,
-  which fails when the log shows a Flutter exception or layout overflow.
+- **iOS** (`apps/mobile-flutter/lib/`): mark the dev server's log, run the dev
+  app on the simulator with `tool/run_dev.sh` (its log kept in a file), drive it
+  by label with `drive-ios.mjs` (never by coordinates), and capture each screen
+  the change reaches with `capture-ios.mjs --log <run log> --server-log <dev
+  server log> <screen>`. It fails on a Flutter exception or layout overflow, or
+  an `/api/v1` call that got an error status.
 - **Look at every screenshot** (downscaled, AGENTS.md §8). A clean report means
   nothing crashed, not that the screen is right. Fix what is wrong, re-capture.
 - **Publish**: `node scripts/dev/evidence/publish.mjs <scratchpad>/evidence`

@@ -176,7 +176,8 @@ async function observe(context, route, width) {
       fullPage: values['full-page'],
     });
     observation.screenshot = name;
-    observation.finalPath = new URL(page.url()).pathname;
+    const landed = new URL(page.url());
+    observation.finalPath = `${landed.pathname}${landed.search}`;
   } catch (error) {
     observation.captureError =
       error instanceof Error ? error.message : String(error);

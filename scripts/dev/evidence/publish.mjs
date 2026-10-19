@@ -25,7 +25,12 @@ export function imageMarkdown(repo, commit, path) {
   return `![${basename(path)}](https://github.com/${repo}/blob/${commit}/${path}?raw=true)`;
 }
 
-/** The images among the arguments, expanding directories one level deep. */
+/**
+ * The images among the arguments, expanding directories one level deep.
+ * @param {string[]} args
+ * @param {(dir: string) => string[]} [list]
+ * @param {(path: string) => boolean} [isDir]
+ */
 export function imagesIn(
   args,
   list = readdirSync,

@@ -25,17 +25,18 @@ The web capture needs no password: it signs in with an admin magic link, which
 sends no email. Give the account a password once, on the dev project only, with
 the Supabase admin API (`auth.admin.updateUserById`) or the dev dashboard.
 
-The iOS steps need Xcode with an iPhone simulator, and `idb` (`pip install
-fb-idb` plus `brew install facebook/fb/idb-companion`) to tap.
+The iOS steps need Xcode with an iPhone simulator, and `idb` plus
+`idb_companion` on PATH (`pip install fb-idb`, `brew install
+facebook/fb/idb-companion`) to tap and type.
 
 ## Web
 
-1. Start the dev server from the branch's checkout. A worktree needs its own
-   `bun install --frozen-lockfile`; a symlinked `node_modules` makes Turbopack
-   panic.
+1. Start the dev server from the branch's checkout, in the background, its log
+   in a file (the iOS steps read it). A worktree needs its own `bun install
+   --frozen-lockfile`; a symlinked `node_modules` makes Turbopack panic.
 
    ```bash
-   bun run dev    # http://localhost:3000
+   bun run dev > <scratchpad>/dev-server.log 2>&1    # http://localhost:3000
    ```
 
 2. Capture every route the change reaches:
@@ -69,8 +70,15 @@ fb-idb` plus `brew install facebook/fb/idb-companion`) to tap.
 
 ## iOS
 
-1. With the web dev server up, run the dev app on the simulator. Its `flutter
-   run` log is the evidence for errors, so keep it:
+1. With the dev server from Web step 1 running (the app's API calls land in its
+   log), mark where this run starts in the log:
+
+   ```bash
+   node scripts/dev/evidence/capture-ios.mjs --out <scratchpad>/evidence \
+     --server-log <scratchpad>/dev-server.log --mark
+   ```
+
+2. Run the dev app on the simulator, its `flutter run` log kept too:
 
    ```bash
    cd apps/mobile-flutter
@@ -79,23 +87,42 @@ fb-idb` plus `brew install facebook/fb/idb-companion`) to tap.
    ```
 
    `run_dev.sh` mirrors the app to `$WORK` (out of iCloud) and points it at
-   `http://localhost:3000`. The first build takes several minutes. Run one
-   heavy toolchain job at a time (AGENTS.md §8).
+   `http://localhost:3000`. The first build takes a few minutes. Run one heavy
+   toolchain job at a time (AGENTS.md §8).
 
-2. Sign in as the evidence account (the simulator keeps the session across
-   launches, so this is once per simulator). SIGN-IN STEPS: filled in below.
+3. Drive the app by what is on screen, never by coordinates:
+   `drive-ios.mjs labels` lists what can be tapped, `tap '<label>'` taps it,
+   `scroll down|up` scrolls, and `type '<field>' --env VAR` types a value from
+   `.env.local` and reads the field back (Flutter drops the last keys of text
+   typed just before the next tap). A full-screen page such as Log hides the tab
+   bar, so a remembered coordinate would tap something else. Sign in once per
+   simulator; the session survives relaunches:
 
-3. Open each screen the change reaches and capture it:
+   ```bash
+   D() { node --env-file=.env.local scripts/dev/evidence/drive-ios.mjs "$@"; }
+   D tap 'I already have an account'; D tap 'Continue with email'
+   D type 'you@example.com' --env EVIDENCE_ACCOUNT_EMAIL
+   D type 'Enter your password' --env EVIDENCE_ACCOUNT_PASSWORD
+   D tap 'Sign In'
+   ```
+
+   Already signed in as someone else, or seeing "This didn't load" with 401s
+   in the server log (a reset password ends the old session): Settings →
+   `scroll down` → Sign out → Sign out, then the steps above.
+
+4. Open each screen the change reaches and capture it:
 
    ```bash
    node scripts/dev/evidence/capture-ios.mjs --out <scratchpad>/evidence \
-     --log <scratchpad>/flutter-run.log <screen-name>
+     --log <scratchpad>/flutter-run.log \
+     --server-log <scratchpad>/dev-server.log <screen-name>
    ```
 
-   It saves `<screen-name>-ios.png` (downscaled to 1200 px) and fails when the
-   run log shows a Flutter exception, a layout overflow or an unhandled async
-   error: the yellow-and-black overflow stripe can sit off-screen, and a
-   failed request can hide behind an empty state.
+   It saves `<screen-name>-ios.png` (downscaled to 1200 px) and fails when:
+   - the run log shows a Flutter exception, layout overflow or unhandled async
+     error (the overflow stripe can sit off-screen);
+   - an `/api/v1` call since the mark got an error status. A failed request
+     often shows as an empty or "didn't load" state and logs nothing in Flutter.
 
 ## Look, then publish
 

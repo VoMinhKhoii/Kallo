@@ -42,6 +42,23 @@ describe('issuesFor', () => {
     ]);
   });
 
+  it('flags a signed-in capture sent to the sign-in dialog', () => {
+    expect(
+      issuesFor({
+        ...clean,
+        finalPath: '/en?auth=sign-in&next=%2Fen%2Flogging',
+      })
+    ).toEqual([
+      'landed on /en?auth=sign-in&next=%2Fen%2Flogging: the session did not hold',
+    ]);
+  });
+
+  it('accepts a page whose query merely mentions auth', () => {
+    expect(
+      issuesFor({ ...clean, finalPath: '/en/settings?tab=author' })
+    ).toEqual([]);
+  });
+
   it('accepts a signed-out capture of the sign-in page', () => {
     expect(
       issuesFor({
@@ -107,6 +124,18 @@ describe('issuesFor', () => {
 });
 
 describe('judge', () => {
+  it('never excuses a page that was not captured or lost its session', () => {
+    const failed = {
+      ...clean,
+      captureError: 'page.goto: Timeout 120000ms exceeded.',
+    };
+    expect(judge(failed, ['Timeout']).issues).toEqual([
+      'capture failed: page.goto: Timeout 120000ms exceeded.',
+    ]);
+    const signedOut = { ...clean, finalPath: '/en?auth=sign-in' };
+    expect(judge(signedOut, ['sign-in', 'landed']).issues).toHaveLength(1);
+  });
+
   it('excuses issues matching an allow pattern and keeps the rest', () => {
     const observation = {
       ...clean,
