@@ -72,6 +72,26 @@ function publishesNothing(args) {
   return refspecs.length > 0 && refspecs.every((r) => r.startsWith(':'));
 }
 
+// The shell's directory where `masked` ends. A `cd` inside `( … )` or `$( … )`
+// lasts only until its subshell closes.
+function directoryAt(command, masked, cwd) {
+  const events = [
+    ...[...masked.matchAll(/[()]/g)].map((m) => ({ at: m.index, paren: m[0] })),
+    ...[...masked.matchAll(CD)].map((cd) => ({
+      at: cd.indices[1][0],
+      arg: group(command, cd, 1),
+    })),
+  ].sort((a, b) => a.at - b.at);
+  const outer = [];
+  let dir = cwd;
+  for (const event of events) {
+    if (event.paren === '(') outer.push(dir);
+    else if (event.paren === ')') dir = outer.pop() ?? dir;
+    else dir = resolve(dir, event.arg);
+  }
+  return dir;
+}
+
 /**
  * The directory the first code-publishing `git push` in `command` runs in, or
  * null when the command publishes nothing.
@@ -80,10 +100,7 @@ export function pushDirectory(command, cwd) {
   const masked = maskData(command);
   for (const push of masked.matchAll(PUSH)) {
     if (publishesNothing(group(command, push, 3) ?? '')) continue;
-    let dir = cwd;
-    for (const cd of masked.slice(0, push.index).matchAll(CD)) {
-      dir = resolve(dir, group(command, cd, 1));
-    }
+    let dir = directoryAt(command, masked.slice(0, push.index), cwd);
     const options = group(command, push, 1) ?? '';
     for (const gitC of options.matchAll(GIT_C)) {
       dir = resolve(dir, gitC[1]);

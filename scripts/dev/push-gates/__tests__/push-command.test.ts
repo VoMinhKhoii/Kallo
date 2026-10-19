@@ -19,6 +19,11 @@ describe('pushDirectory', () => {
     ['git push 2>&1 | tail -5', CWD],
     ['git push --dry-run && git push', CWD],
     ['git push origin :old HEAD:new', CWD],
+    ['(cd /other && make); git push', CWD],
+    ['(cd /a) && (cd /b); git push', CWD],
+    ['cd /outer && (cd inner && git push)', '/outer/inner'],
+    ['cd /outer && (make) && git push', '/outer'],
+    ['echo $(cd /tmp && pwd) && git push', CWD],
     [
       "git commit -q -F - <<'EOF'\nfix: x\n\ngit push origin main\nEOF\ngit push",
       CWD,
