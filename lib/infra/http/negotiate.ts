@@ -90,7 +90,16 @@ export function unknownDocsTarget(pathname: string): string | null {
   // A trailing slash names the same page; Next normally redirects it away
   // before the proxy runs, but the check must not depend on that.
   const rest = split.rest.endsWith('/') ? split.rest.slice(0, -1) : split.rest;
-  return docSlug(rest) ? null : `/${split.locale}/not-found`;
+  // The pathname arrives percent-encoded, and Next decodes it before it reaches
+  // the page, so `/docs/%6fverview` is a real page. A malformed escape is left
+  // for Next to answer.
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(rest);
+  } catch {
+    return null;
+  }
+  return docSlug(decoded) ? null : `/${split.locale}/not-found`;
 }
 
 export interface NegotiationInput {

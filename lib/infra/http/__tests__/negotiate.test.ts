@@ -160,6 +160,19 @@ describe('unknownDocsTarget', () => {
     expect(unknownDocsTarget('/en/docs/overview/')).toBeNull();
   });
 
+  it('reads the slug the way Next does, percent-escapes decoded', () => {
+    // These reach the page as `overview` and `logging/describe-a-meal`.
+    expect(unknownDocsTarget('/en/docs/%6fverview')).toBeNull();
+    expect(
+      unknownDocsTarget('/en/docs/logging/describe%2Da%2Dmeal')
+    ).toBeNull();
+    expect(unknownDocsTarget('/en/docs/logging%2Fbarcode')).toBeNull();
+    // Decoding does not make an unknown slug real, and a malformed escape is
+    // Next's to answer rather than ours.
+    expect(unknownDocsTarget('/en/docs/%4Fverview')).toBe('/en/not-found');
+    expect(unknownDocsTarget('/en/docs/%E0%A4%A')).toBeNull();
+  });
+
   it('is null for everything that is not under /{locale}/docs/', () => {
     for (const pathname of [
       '/',
