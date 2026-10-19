@@ -316,10 +316,10 @@ Please re-check <the area the fix touched>.
 
 Codex reacts 👀 while it runs (usually 2-10 minutes) and keeps a
 `## Codex Review Summary` status table comment up to date. That table is status,
-not a verdict. **Do not push while a round is running**: a 👍 carries no commit,
-so it only counts if `HEAD` is still the commit the round was requested on.
-Never use foreground `sleep`; run a background poll or a Monitor until a verdict
-on the current head appears. The verdict is one of:
+not a verdict. **Do not push while a round is running**: the verdict is tied to
+the commit the round was requested on, and a push mid-round leaves it judging a
+head that no longer exists. Never use foreground `sleep`; run a background poll or
+a Monitor until a verdict on the current head appears. The verdict is one of:
 
 - **Approved**: an issue comment from `chatgpt-codex-connector[bot]` containing
   `Codex Review: Didn't find any major issues` whose `**Reviewed commit:**`
