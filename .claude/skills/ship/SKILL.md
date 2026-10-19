@@ -158,10 +158,16 @@ the GitHub Codex loop had missed.
    reproduce, then fix with a test, or reject with the reason. Commit fixes with
    explicit paths.
 4. If the pass found a P0 or P1, run one more pass on the fixed head. Two local
-   passes at most; then push.
+   passes at most; then push. Whatever the local passes leave, the GitHub loop
+   (6c) still runs to approval.
 
-Skip this phase only when `codex` is not installed, and say so under Testing in the
-PR body.
+A local Codex review that already ran on this exact commit with the same brief
+(for example during `grill-your-own-work`), with its findings handled, counts as
+this phase; do not run another.
+
+If the pass cannot run (`codex` not installed, out of quota, or a CLI error),
+write "Local Codex review did not run: <reason>" under Evidence in the PR body and
+continue. A pass that did not run is never a clean pass.
 
 ---
 
