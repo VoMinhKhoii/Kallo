@@ -20,12 +20,14 @@ The pre-push gate (`.githooks/pre-push`) runs only for agent shells. Claude Code
 turns it on at session start and marks its shells with `CLAUDECODE=1`. Any other
 agent does both itself:
 
-1. Check `git config --get core.hooksPath`:
-   - `.githooks`: the gate is on; nothing to do.
-   - nothing, and `.git/hooks` holds no active hooks: run
-     `git config core.hooksPath .githooks` once for this checkout.
-   - anything else (the repo has its own hooks): the gate will not run on push,
-     so run it yourself before pushing:
+1. From the repo root, ask git which pre-push hook it would run:
+   `[ "$(git rev-parse --git-path hooks/pre-push)" -ef .githooks/pre-push ] && echo on`.
+   - `on`: the gate is on (however `core.hooksPath` is spelled); nothing to do.
+   - otherwise, if `git config --get core.hooksPath` prints nothing and
+     `.git/hooks` holds no active hooks: run `git config core.hooksPath .githooks`
+     once for this checkout.
+   - otherwise (the repo has its own hooks): the gate will not run on push, so
+     run it yourself before pushing:
      `git rev-parse HEAD | awk '{print "x", $1, "x", 0}' | KALLO_AGENT=1 .githooks/pre-push`.
 2. Push with `KALLO_AGENT=1 git push …`.
 

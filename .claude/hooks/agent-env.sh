@@ -12,14 +12,19 @@
 #    missing from every Bash call. Append the usual install dirs that exist and
 #    are missing; a configured PATH keeps its precedence.
 repo="${CLAUDE_PROJECT_DIR:-.}"
-if [ -d "$repo/.githooks" ]; then
+# Whether git would run .githooks/pre-push right now, however core.hooksPath is
+# spelled (".githooks", "./.githooks", an absolute path): ask git, compare files.
+gate_on() {
+  (cd "$repo" && [ "$(git rev-parse --git-path hooks/pre-push)" -ef .githooks/pre-push ])
+}
+if [ -d "$repo/.githooks" ] && ! gate_on; then
   current="$(git -C "$repo" config --get core.hooksPath)"
   hooks_dir="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)/hooks"
   # Regular files and symlinks alike: hook managers often install symlinks.
   active="$(find "$hooks_dir" -maxdepth 1 \( -type f -o -type l \) ! -name '*.sample' 2>/dev/null | head -1)"
   if [ -z "$current" ] && [ -z "$active" ]; then
     git -C "$repo" config core.hooksPath .githooks
-  elif [ "$current" != ".githooks" ]; then
+  else
     echo "Note: the agent pre-push gate (.githooks/) is off because this repo already has git hooks set up. Chain .githooks/pre-push from them to turn it on." >&2
   fi
 fi
