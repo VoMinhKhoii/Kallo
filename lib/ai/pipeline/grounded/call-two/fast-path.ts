@@ -182,6 +182,7 @@ export function buildFastPathEstimation(args: {
           selectedCandidateId: 'c1',
           // The resolver anchor is edible mass; a synthetic refusePct of 0
           // keeps edibleG = grossG through the shared refuse math.
+          refuseKind: 'none',
           grossG: grams,
           refusePct: 0,
           // Echo the DB-anchored base as flat triples. Fat: guardMacro passes

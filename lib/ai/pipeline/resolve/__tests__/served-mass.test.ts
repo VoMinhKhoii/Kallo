@@ -64,6 +64,7 @@ function stateOf(
           ingredientName: p.name,
           selectedCandidateId: p.rejected ? 'none' : 'c1',
           grossG: p.g,
+          refuseKind: p.refusePct ? ('mixed' as const) : ('none' as const),
           refusePct: p.refusePct ?? 0,
           ...(p.raw?.servedG ? { servedG: p.raw.servedG } : {}),
           proteinG: triple(0),

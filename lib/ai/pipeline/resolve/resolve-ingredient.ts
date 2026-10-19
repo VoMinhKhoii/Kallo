@@ -134,9 +134,6 @@ export function resolveIngredient(args: {
   const mass = resolveGroundedMass({
     ground,
     candidateInediblePct: acceptedCandidate?.inediblePct ?? null,
-    canonicalName: ing.canonicalName,
-    rawName: ing.rawName,
-    prepNotes: ing.prepNotes,
     authoritativeMass,
   });
   const resolvedEdibleGrams = mass.edibleG;
@@ -144,14 +141,6 @@ export function resolveIngredient(args: {
   // unresolved in the telemetry trail regardless of whatever Call 2
   // emitted. Diagnostic only — Call 2's edible grams still ship.
   const resolverUnresolved = portion?.provenance === 'unresolved';
-  if (mass.refuse?.degenerateZero) {
-    console.warn('[v2-pipeline] refuse_pct_degenerate_zero', {
-      mealItemIdx,
-      ingredientIdx,
-      ingredientName: ing.rawName,
-      ...mass.refuse,
-    });
-  }
 
   // Where this ingredient's macros come from — see `resolveMacroSource`.
   const macroSource = resolveMacroSource({

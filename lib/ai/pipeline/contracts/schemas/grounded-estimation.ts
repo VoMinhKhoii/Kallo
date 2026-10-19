@@ -1,6 +1,21 @@
 import { z } from 'zod';
 import { boundedEstimateSchema } from './bounded-estimate';
 
+/** The inedible part Call 2 names for an ingredient before its refusePct. */
+export const REFUSE_KINDS = [
+  'none',
+  'bone',
+  'shell',
+  'skin',
+  'rind',
+  'peel',
+  'seed_pit',
+  'core',
+  'trim',
+  'mixed',
+] as const;
+export type RefuseKind = (typeof REFUSE_KINDS)[number];
+
 /**
  * V2 Call 2 (grounded estimation) per-ingredient output. The CRAG verdict
  * decides whether the matched candidate is used; on reject, the runtime
@@ -25,6 +40,14 @@ export function buildGroundedIngredientEstimateSchema() {
   // provider JSON schema because Gemini's `responseJsonSchema` does not
   // reliably honor `exclusiveMinimum`.
   const massFields = {
+    // Listed before the grams so the model names what is not eaten before it
+    // sizes the share (both providers decode in schema key order). Logged
+    // beside refusePct; the server still ships refusePct as emitted.
+    refuseKind: z
+      .enum(REFUSE_KINDS)
+      .describe(
+        'What part of the served piece is NOT eaten, decided before grossG and refusePct: none (boneless, peeled, shell-off, and every drink, broth or sauce), bone, shell, skin, rind, peel, seed_pit, core (corn cob, fruit core), trim (vegetable stems, outer leaves, ends), or mixed. none ⇒ refusePct 0; any other kind ⇒ refusePct > 0.'
+      ),
     grossG: z
       .number()
       .positive()

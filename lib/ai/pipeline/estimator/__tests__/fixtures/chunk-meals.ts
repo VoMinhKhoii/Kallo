@@ -74,6 +74,7 @@ export function fakeEstimator(opts?: {
             ingredients: mi.ingredients.map((ing) => ({
               ingredientName: ing.ingredient.rawName,
               grossG: 100,
+              refuseKind: 'none',
               refusePct: 0,
               caloriesKcal: { low: 100, mid: 110, high: 120 },
               proteinG: { low: 10, mid: 11, high: 12 },

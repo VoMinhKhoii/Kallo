@@ -90,13 +90,12 @@ export function rejectWrongFormRows(state: RunState): {
   const grounded = structuredClone(state.grounded);
   let rejected = 0;
   pairIngredientsWithGrounded(state.decomposition, grounded).forEach(
-    ({ ingredient, ground }, f) => {
+    ({ ground }, f) => {
       const match = state.matchResults[f];
       const row = selectedCandidate(ground, match)?.nutrition;
       if (!ground || !row) return;
       const grams = shippedEdibleGrams(
         ground,
-        ingredient,
         match,
         state.portionResolutions[f]
       );
@@ -208,7 +207,6 @@ function weighs(
   return (
     shippedEdibleGrams(
       pair.ground,
-      pair.ingredient,
       state.matchResults[f],
       state.portionResolutions[f]
     ) >= MIN_FOOD_G

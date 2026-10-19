@@ -11,17 +11,28 @@ describe('groundedIngredientEstimateSchema', () => {
     const base = {
       ingredientName: 'sườn dê',
       grossG: 100,
+      refuseKind: 'bone',
       refusePct: 50,
       proteinG: { low: 8, mid: 10, high: 12 },
       carbohydrateG: { low: 0, mid: 0, high: 0 },
       fatG: { low: 4, mid: 5, high: 6 },
     };
-    expect(schema.parse(base)).toMatchObject({ grossG: 100, refusePct: 50 });
+    expect(schema.parse(base)).toMatchObject({
+      grossG: 100,
+      refuseKind: 'bone',
+      refusePct: 50,
+    });
     const { refusePct: _refusePct, ...withoutRefuse } = base;
     expect(() => schema.parse(withoutRefuse)).toThrow();
-    expect(() => schema.parse({ ...base, refusePct: -1 })).toThrow();
-    expect(() => schema.parse({ ...base, refusePct: 81 })).toThrow();
-    expect(() => schema.parse({ ...base, refusePct: 10.5 })).toThrow();
+    expect(() =>
+      schema.parse({ ...base, refuseKind: 'bone', refusePct: -1 })
+    ).toThrow();
+    expect(() =>
+      schema.parse({ ...base, refuseKind: 'bone', refusePct: 81 })
+    ).toThrow();
+    expect(() =>
+      schema.parse({ ...base, refuseKind: 'bone', refusePct: 10.5 })
+    ).toThrow();
     expect(() => schema.parse({ ...base, grossG: 0 })).toThrow();
     expect(() => schema.parse({ ...base, grams: 50 })).toThrow();
   });
@@ -31,6 +42,7 @@ describe('groundedIngredientEstimateSchema', () => {
       ingredientName: 'đùi gà',
       selectedCandidateId: 'c1',
       grossG: 150,
+      refuseKind: 'none',
       refusePct: 0,
       proteinG: { low: 35, mid: 36, high: 37 },
       carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -46,6 +58,7 @@ describe('groundedIngredientEstimateSchema', () => {
       rejectReason:
         'category mismatch — ức gà ≠ Thịt gà ta whole-bird aggregate',
       grossG: 150,
+      refuseKind: 'none',
       refusePct: 0,
       proteinG: { low: 30, mid: 33, high: 35 },
       carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -59,6 +72,7 @@ describe('groundedIngredientEstimateSchema', () => {
     const parsed = groundedIngredientEstimateSchema.parse({
       ingredientName: 'nem lụi',
       grossG: 200,
+      refuseKind: 'none',
       refusePct: 0,
       proteinG: { low: 28, mid: 32, high: 36 },
       carbohydrateG: { low: 4, mid: 5, high: 6 },
@@ -76,6 +90,7 @@ describe('groundedIngredientEstimateSchema', () => {
     const base = {
       ingredientName: 'mì gói',
       grossG: 80,
+      refuseKind: 'none',
       refusePct: 0,
       proteinG: { low: 7, mid: 8, high: 9 },
       carbohydrateG: { low: 46, mid: 48, high: 50 },
@@ -96,6 +111,7 @@ describe('groundedIngredientEstimateSchema', () => {
         ingredientName: 'cơm',
         selectedCandidateId: 'c1',
         grossG: 200,
+        refuseKind: 'none',
         refusePct: 0,
         caloriesKcal: { low: 250, mid: 260, high: 270 },
         proteinG: { low: 5, mid: 5, high: 5 },
@@ -109,6 +125,7 @@ describe('groundedIngredientEstimateSchema', () => {
     const parsed = groundedIngredientEstimateSchema.parse({
       ingredientName: 'mì chính',
       grossG: 3,
+      refuseKind: 'none',
       refusePct: 0,
       proteinG: { low: 0, mid: 0, high: 0 },
       carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -124,6 +141,7 @@ describe('groundedIngredientEstimateSchema', () => {
         selectedCandidateId: 'none',
         rejectReason: 'x'.repeat(121),
         grossG: 100,
+        refuseKind: 'none',
         refusePct: 0,
         proteinG: { low: 0, mid: 0, high: 0 },
         carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -144,6 +162,7 @@ describe('groundedEstimationSchema', () => {
               ingredientName: 'cơm',
               selectedCandidateId: 'c1',
               grossG: 200,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 5, mid: 5, high: 5 },
               carbohydrateG: { low: 55, mid: 56, high: 57 },

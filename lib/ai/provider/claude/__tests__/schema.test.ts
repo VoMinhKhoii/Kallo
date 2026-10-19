@@ -82,6 +82,7 @@ describe('repairPipelineOutput', () => {
             {
               ingredientName: 'Cơm',
               grossG: 150,
+              refuseKind: 'bone',
               refusePct: 95,
               rejectReason: 'y'.repeat(200),
             },
@@ -129,6 +130,7 @@ describe('repairPipelineOutput', () => {
               ingredientName: 'bánh phở',
               selectedCandidateId: 'c1',
               grossG: 200,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 1, mid: 2, high: 3 },
               carbohydrateG: { low: 40, mid: 45, high: 50 },

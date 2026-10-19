@@ -20,6 +20,7 @@ const estimate = (
   ingredientName,
   ...(selectedCandidateId ? { selectedCandidateId } : {}),
   grossG,
+  refuseKind: 'none' as const,
   refusePct: 0,
   proteinG: triple(grossG / 10),
   carbohydrateG: triple(grossG / 5),
@@ -160,15 +161,17 @@ describe('spliceRescue', () => {
     // through the bridge's own mass rules, so the shipped total still matches.
     const boned = {
       ...part('cá thu', 100, 2),
-      estimate: { ...estimate('cá thu', 100, 'c1'), refusePct: 40 },
+      estimate: {
+        ...estimate('cá thu', 100, 'c1'),
+        refuseKind: 'bone' as const,
+        refusePct: 40,
+      },
     };
     const { state: out } = spliceRescue(state, new Map([[0, [boned]]]));
     const [fish] = out.grounded.mealItems[0].ingredients;
     const shipped = resolveGroundedMass({
       ground: fish,
       candidateInediblePct: null,
-      canonicalName: 'cá thu',
-      rawName: 'cá thu',
     }).edibleG;
     expect(shipped).toBeCloseTo(300);
   });

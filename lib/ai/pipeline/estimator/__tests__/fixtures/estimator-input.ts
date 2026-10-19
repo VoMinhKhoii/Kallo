@@ -61,6 +61,7 @@ export const CALL2: GroundedEstimation = {
           ingredientName: 'ức gà',
           selectedCandidateId: 'c1',
           grossG: 150,
+          refuseKind: 'none',
           refusePct: 0,
           proteinG: { low: 44, mid: 46, high: 48 },
           carbohydrateG: { low: 0, mid: 0, high: 0 },
