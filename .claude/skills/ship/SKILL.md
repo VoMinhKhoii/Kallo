@@ -297,7 +297,6 @@ $(cat <<'BODY'
 **Out of scope:** <what was deliberately left alone>
 BODY
 )")
-REQUEST_ID=${REQUEST_URL##*issuecomment-}   # needed to read Codex's 👍 reaction
 ```
 
 On every later round, the comment names what changed since the last round:
@@ -322,10 +321,13 @@ so it only counts if `HEAD` is still the commit the round was requested on.
 Never use foreground `sleep`; run a background poll or a Monitor until a verdict
 on the current head appears. The verdict is one of:
 
-- **Approved**: either an issue comment from `chatgpt-codex-connector[bot]`
-  starting `Codex Review: Didn't find any major issues` whose `**Reviewed commit:**`
-  matches `git rev-parse --short=10 HEAD`, or a `+1` reaction from the bot on
-  `REQUEST_ID` while `REQUEST_SHA` still equals `HEAD`.
+- **Approved**: an issue comment from `chatgpt-codex-connector[bot]` containing
+  `Codex Review: Didn't find any major issues` whose `**Reviewed commit:**`
+  matches `git rev-parse --short=10 HEAD`. The comment opens with an HTML marker
+  (`<!-- codex-review-receipt:v1 -->`), so match with `contains`, not
+  `startswith`. The bot's `+1` lands on the PR itself, not on our request, and
+  carries no commit: treat it as a hint to look for the comment, never as the
+  approval.
 - **Findings**: a bot review whose `**Reviewed commit:**` is `HEAD`. Its findings
   are the bot's inline comments with `original_commit_id == HEAD` (tagged
   P0/P1/P2/P3). Never match inline comments on `commit_id`: GitHub moves it
@@ -334,12 +336,9 @@ on the current head appears. The verdict is one of:
 ```bash
 HEAD_SHA=$(git rev-parse HEAD)
 BOT='chatgpt-codex-connector[bot]'
-# Approval comment (ignores the status table)
+# Approval comment for this head (ignores the status table)
 gh api repos/{owner}/{repo}/issues/<pr-number>/comments --paginate \
-  --jq ".[] | select(.user.login==\"$BOT\" and (.body | startswith(\"Codex Review:\"))) | {created_at, body: .body[0:200]}"
-# Approval reaction on our request
-gh api repos/{owner}/{repo}/issues/comments/$REQUEST_ID/reactions \
-  --jq ".[] | select(.user.login==\"$BOT\") | .content"
+  --jq ".[] | select(.user.login==\"$BOT\" and (.body | contains(\"Didn't find any major issues\")) and (.body | contains(\"${HEAD_SHA:0:10}\"))) | {created_at, body: .body[0:200]}"
 # Findings raised on this head. Filter on original_commit_id: GitHub moves
 # commit_id forward on older comments that still apply, which would resurface
 # findings from earlier rounds as if they were new.
