@@ -11,7 +11,7 @@ One concern per folder. Nothing lives at this top level except this file.
 | `cloud-run/` | Cloud Run deploy plumbing, smoke checks, staging lease |
 | `data/` | one-off data pipelines: `usda/`, `vtn_fct/`, `translate-usda-vietnamese/` |
 | `db/` | database backfills and coverage probes run against a live DB |
-| `dev/` | local developer conveniences (worktree env links, live OCR probe) |
+| `dev/` | local developer conveniences (worktree env links, live OCR probe, `push-gates/`: the agent pre-push hook that runs CI's fast gates) |
 | `enrich/` | NIN food enrichment ingestion |
 | `eval/` | the AI pipeline eval harness; `eval/local/` holds throwaway probes |
 | `ops/` | scheduled/manual production operations (deletions, webhook upkeep) |
