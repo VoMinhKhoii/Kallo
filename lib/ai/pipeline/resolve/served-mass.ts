@@ -57,7 +57,7 @@ const LIQUID_PART_EN =
 const LIQUID_PART_VI =
   /(?<!\p{L})(?:nước dùng|nước lèo|nước súp|nước canh|nước kho|nước cốt dừa|sốt cà ri|nước lọc)(?!\p{L})/iu;
 
-function isLiquidPart(ingredient: DecomposedIngredientV2): boolean {
+export function isLiquidPart(ingredient: DecomposedIngredientV2): boolean {
   return [ingredient.rawName, ingredient.canonicalName].some(
     (n) => LIQUID_PART_EN.test(n.trim()) || LIQUID_PART_VI.test(n)
   );

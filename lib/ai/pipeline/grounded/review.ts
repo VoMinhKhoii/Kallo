@@ -1,7 +1,8 @@
 /**
  * Review Call 2's row picks against the food they stand for, after the
  * selector. `reviewPicks` is the one entry the orchestrator calls:
- * - first, a pick whose own estimate contradicts the row (a paste or powder
+ * - first, a liquid part (broth, coconut water) ships no refuse share;
+ * - then a pick whose own estimate contradicts the row (a paste or powder
  *   for a prepared dish) becomes a rejection, so the dish rescue can split it;
  * - then the dish rescue splices in the parts of what Call 2 rejected;
  * - then a fried dish's separate oil row is dropped when its foods matched
@@ -16,6 +17,7 @@ import {
   shippedEdibleGrams,
 } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import {
+  isLiquidPart,
   logRawRowYields,
   scaleToServedMass,
 } from '@/lib/ai/pipeline/resolve/served-mass';
@@ -43,7 +45,7 @@ export async function reviewPicks(
   rescued: number;
   summary: string;
 }> {
-  const reviewed = rejectWrongFormRows(state);
+  const reviewed = rejectWrongFormRows(clearLiquidRefuse(state));
   const rescued = rescue ? await rescue.apply(reviewed.state) : null;
   const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state);
   logRawRowYields(oil.state);
@@ -58,6 +60,34 @@ export async function reviewPicks(
     rescued: rescued?.rescued ?? 0,
     summary: `${reviewed.rejected} wrong-form rows, ${rescued?.rescued ?? 0} ingredients rescued, ${oil.dropped} oil rows dropped, ${served.scaled} weighed dishes scaled`,
   };
+}
+
+/**
+ * A liquid part has nothing to throw away: broth made from bones and coconut
+ * water drunk from the shell are all eaten. Call 2 is told so, but now and then
+ * names the bone or shell anyway (rib broth and coconut water at 60%, 1 in 3
+ * replays), which cuts the liquid's grams. By the same liquid names the
+ * dish-weight scaling reads, such a part ships 0% refuse. Returns new state.
+ */
+export function clearLiquidRefuse(state: RunState): RunState {
+  const grounded = structuredClone(state.grounded);
+  let cleared = 0;
+  for (const { ingredient, ground } of pairIngredientsWithGrounded(
+    state.decomposition,
+    grounded
+  )) {
+    if (!ground || ground.refusePct === 0 || !isLiquidPart(ingredient))
+      continue;
+    console.info('[v2-pipeline] liquid_refuse_cleared', {
+      ingredient: ingredient.rawName,
+      refuseKind: ground.refuseKind,
+      refusePct: ground.refusePct,
+    });
+    ground.refusePct = 0;
+    ground.refuseKind = 'none';
+    cleared++;
+  }
+  return cleared > 0 ? { ...state, grounded } : state;
 }
 
 /** A wrong-form pick: the row must give more than this many times Call 2's own energy... */

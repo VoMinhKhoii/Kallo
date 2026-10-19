@@ -7,6 +7,7 @@ import type {
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import {
+  clearLiquidRefuse,
   dropOilInFriedRows,
   rejectWrongFormRows,
   reviewPicks,
@@ -107,6 +108,58 @@ const picks = (g: GroundedEstimation) =>
   g.mealItems.flatMap((mi) =>
     mi.ingredients.map((i) => `${i.ingredientName}:${i.selectedCandidateId}`)
   );
+
+describe('clearLiquidRefuse', () => {
+  /** Rib-and-sấu soup: the ribs keep their bone share; the broth loses its. */
+  const soup = () => {
+    const state = stateOf([
+      {
+        name: 'Canh sườn nấu sấu',
+        cookingMethod: 'nấu',
+        parts: [
+          { name: 'Sườn heo', g: 180, kcal: 300, row: ['Pork ribs', 280] },
+          { name: 'Nước dùng sườn', g: 250, kcal: 40, row: ['Broth', 16] },
+          {
+            name: 'Coconut water',
+            g: 330,
+            kcal: 60,
+            row: ['Coconut water', 19],
+          },
+        ],
+      },
+    ]);
+    const [ribs, broth, coconut] = state.grounded.mealItems[0].ingredients;
+    Object.assign(ribs, { refuseKind: 'bone', refusePct: 45 });
+    Object.assign(broth, { refuseKind: 'bone', refusePct: 60 });
+    Object.assign(coconut, { refuseKind: 'shell', refusePct: 60 });
+    return state;
+  };
+  const refuse = (g: GroundedEstimation) =>
+    g.mealItems[0].ingredients.map((i) => [i.refuseKind, i.refusePct]);
+
+  it('ships a liquid part at 0% refuse and leaves a bone-in solid alone', () => {
+    const state = soup();
+    const out = clearLiquidRefuse(state);
+    expect(refuse(out.grounded)).toEqual([
+      ['bone', 45],
+      ['none', 0],
+      ['none', 0],
+    ]);
+    // The input is not mutated.
+    expect(refuse(state.grounded)[1]).toEqual(['bone', 60]);
+  });
+
+  it('returns the same state when no liquid carries refuse', () => {
+    const state = stateOf([
+      {
+        name: 'Phở',
+        cookingMethod: 'nấu',
+        parts: [{ name: 'Nước dùng', g: 300, kcal: 30, row: ['Broth', 10] }],
+      },
+    ]);
+    expect(clearLiquidRefuse(state)).toBe(state);
+  });
+});
 
 describe('rejectWrongFormRows', () => {
   it('rejects miso paste picked for a bowl of miso soup', () => {
