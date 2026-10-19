@@ -21,7 +21,7 @@ import type { Locale } from '@/i18n/config';
 import { routing } from '@/i18n/routing';
 import { getDocsTree } from '@/lib/domain/docs/tree';
 import { alternateLanguages } from '@/lib/seo/alternates';
-import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
+import { openGraphLocale, SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 import { landingStructuredData } from '@/lib/seo/structured-data';
 
@@ -51,7 +51,11 @@ export async function generateMetadata({
     },
     // Spread, not `{ url }` alone: declaring `openGraph` replaces the layout's
     // object, so setting only the url drops the preview image and site name.
-    openGraph: { ...SHARED_OPEN_GRAPH, url: `${SITE_URL}/${locale}`, locale },
+    openGraph: {
+      ...SHARED_OPEN_GRAPH,
+      url: `${SITE_URL}/${locale}`,
+      locale: openGraphLocale(locale),
+    },
   };
 }
 
@@ -76,11 +80,11 @@ export default async function Home({
   // footer under a cream page needs a rule and still reads as more page.
   const sections = await getDocsTree(locale as Locale);
 
-  const t = await getTranslations({ locale, namespace: 'metadata.root' });
+  const t = await getTranslations({ locale, namespace: 'metadata' });
   const structuredData = landingStructuredData({
     locale,
-    name: t('title'),
-    description: t('description'),
+    description: t('root.description'),
+    organizationDescription: t('organization.description'),
   });
 
   return (

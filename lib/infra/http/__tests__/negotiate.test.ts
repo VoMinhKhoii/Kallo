@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { markdownAlternatePath, negotiate } from '@/lib/infra/http/negotiate';
+import {
+  markdownAlternatePath,
+  negotiate,
+  unknownDocsTarget,
+} from '@/lib/infra/http/negotiate';
 
 const MD = 'text/markdown';
 
@@ -132,5 +136,55 @@ describe('markdownAlternatePath', () => {
     expect(markdownAlternatePath('/en/dashboard')).toBeNull();
     expect(markdownAlternatePath('/en/docs/no-such-doc')).toBeNull();
     expect(markdownAlternatePath('/')).toBeNull();
+  });
+});
+
+describe('unknownDocsTarget', () => {
+  it('sends a docs URL that names no page to a path no route owns', () => {
+    // Each of these answered 200 + noindex before: the slug list is exact.
+    for (const pathname of [
+      '/en/docs/does-not-exist',
+      '/en/docs/Overview',
+      '/en/docs/overview.html',
+      '/en/docs/overview/extra',
+      '/en/docs/logging',
+    ]) {
+      expect(unknownDocsTarget(pathname), pathname).toBe('/en/not-found');
+    }
+    expect(unknownDocsTarget('/vi/docs/legal/zzz')).toBe('/vi/not-found');
+  });
+
+  it('leaves every real docs page, with or without a trailing slash', () => {
+    expect(unknownDocsTarget('/en/docs/overview')).toBeNull();
+    expect(unknownDocsTarget('/vi/docs/logging/barcode')).toBeNull();
+    expect(unknownDocsTarget('/en/docs/overview/')).toBeNull();
+  });
+
+  it('reads the slug the way Next does, percent-escapes decoded', () => {
+    // These reach the page as `overview` and `logging/describe-a-meal`.
+    expect(unknownDocsTarget('/en/docs/%6fverview')).toBeNull();
+    expect(
+      unknownDocsTarget('/en/docs/logging/describe%2Da%2Dmeal')
+    ).toBeNull();
+    expect(unknownDocsTarget('/en/docs/logging%2Fbarcode')).toBeNull();
+    // Decoding does not make an unknown slug real, and a malformed escape is
+    // Next's to answer rather than ours.
+    expect(unknownDocsTarget('/en/docs/%4Fverview')).toBe('/en/not-found');
+    expect(unknownDocsTarget('/en/docs/%E0%A4%A')).toBeNull();
+  });
+
+  it('is null for everything that is not under /{locale}/docs/', () => {
+    for (const pathname of [
+      '/',
+      '/en',
+      '/en/docs',
+      '/en/pricing',
+      '/en/dashboard',
+      '/docs/nope',
+      '/fr/docs/nope',
+      '/en/documents/nope',
+    ]) {
+      expect(unknownDocsTarget(pathname), pathname).toBeNull();
+    }
   });
 });

@@ -29,7 +29,7 @@ export default function robots(): MetadataRoute.Robots {
         ),
       ],
     },
+    // No `host`: it is a Yandex-only directive that Google and Bing ignore.
     sitemap: `${SITE_URL}/sitemap.xml`,
-    host: SITE_URL,
   };
 }

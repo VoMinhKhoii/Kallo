@@ -2,7 +2,11 @@ import { type NextRequest, NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 import { routing } from '@/i18n/routing';
 import { appendVaryAccept } from '@/lib/infra/http/accept';
-import { markdownAlternatePath, negotiate } from '@/lib/infra/http/negotiate';
+import {
+  markdownAlternatePath,
+  negotiate,
+  unknownDocsTarget,
+} from '@/lib/infra/http/negotiate';
 import { updateSession } from '@/lib/infra/supabase/middleware';
 
 const intlMiddleware = createMiddleware(routing);
@@ -128,6 +132,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
+  // An unknown docs URL gets a real 404 from here, not from the page: by the
+  // time the page can call `notFound()` the status is already 200. After the
+  // negotiation above, so a markdown request for the same URL keeps its own 404.
+  const unknownDocs = unknownDocsTarget(request.nextUrl.pathname);
+  if (unknownDocs) {
+    const url = request.nextUrl.clone();
+    url.pathname = unknownDocs;
+    url.search = '';
+    return NextResponse.rewrite(url);
+  }
+
   // No CSP work here. The Content-Security-Policy is static and enforced from
   // `next.config.ts` `headers()` (lib/infra/security/csp.ts): pages are
   // prerendered shells that cannot carry a per-request nonce, so generating
@@ -137,6 +152,21 @@ export async function proxy(request: NextRequest) {
   // get a nonce policy, this is where that nonce would be minted again.
   const intlResponse = intlMiddleware(request);
   const response = await updateSession(request, intlResponse);
+
+  // `/` has no page of its own: next-intl answers it with a redirect to a
+  // locale chosen from the NEXT_LOCALE cookie, then Accept-Language. Without
+  // `Vary` a cache that keys on the URL alone would hand the first visitor's
+  // locale to everyone after them. The status stays whatever next-intl chose
+  // (a 307): this only says what the answer depends on, and that it is not to
+  // be stored.
+  if (
+    request.nextUrl.pathname === '/' &&
+    response.status >= 300 &&
+    response.status < 400
+  ) {
+    response.headers.append('Vary', 'Accept-Language, Cookie');
+    response.headers.set('Cache-Control', 'no-store');
+  }
 
   // Advertise the Markdown sibling on the pages that have one, so a client that
   // reads headers but never parses the HTML can still find it. The docs pages
@@ -171,7 +201,9 @@ export const config = {
     // rewriting. `robots.txt`, `sitemap.xml` and `llms.txt` are omitted so
     // next-intl does not rewrite the generated SEO routes to /{locale}/… —
     // each is a single fixed path that crawlers request at the origin root and
-    // that has no locale-prefixed counterpart to redirect to.
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|geojson)$).*)',
+    // that has no locale-prefixed counterpart to redirect to. `.txt` covers the
+    // IndexNow key file in `public/` (scripts/seo/indexnow.ts): the engines
+    // reject a key file that answers with a redirect to /{locale}/….
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|geojson|txt)$).*)',
   ],
 };

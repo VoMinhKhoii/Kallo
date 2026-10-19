@@ -72,6 +72,36 @@ export function markdownAlternatePath(pathname: string): string | null {
   return markdownTarget(split.locale, split.rest) ? `${pathname}.md` : null;
 }
 
+/**
+ * Where to send an HTML request for a docs URL that names no docs page, or null
+ * when the path is not one.
+ *
+ * A docs slug the build did not list is served from a shell that has already
+ * committed a 200 by the time `notFound()` runs, which leaves a mistyped URL
+ * answering 200 with only an injected `noindex`. Next's guide for real status
+ * codes is to reject early in the proxy; the target is a path no route owns, so
+ * `app/[locale]/[...rest]` answers it with the branded 404. The slug list is
+ * exact: `/docs/Overview`, `/docs/overview.html`, `/docs/overview/extra` and
+ * `/docs/logging` (a section, not a page) all qualify.
+ */
+export function unknownDocsTarget(pathname: string): string | null {
+  const split = splitLocale(pathname);
+  if (!split?.rest.startsWith('/docs/')) return null;
+  // A trailing slash names the same page; Next normally redirects it away
+  // before the proxy runs, but the check must not depend on that.
+  const rest = split.rest.endsWith('/') ? split.rest.slice(0, -1) : split.rest;
+  // The pathname arrives percent-encoded, and Next decodes it before it reaches
+  // the page, so `/docs/%6fverview` is a real page. A malformed escape is left
+  // for Next to answer.
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(rest);
+  } catch {
+    return null;
+  }
+  return docSlug(decoded) ? null : `/${split.locale}/not-found`;
+}
+
 export interface NegotiationInput {
   pathname: string;
   accept: string | null;

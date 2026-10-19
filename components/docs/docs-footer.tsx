@@ -65,12 +65,21 @@ export async function DocsFooter({
           aria-label={t('menu.label')}
           className="grid grid-cols-1 gap-x-8 gap-y-12 text-left sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
         >
+          {/* The group labels are `p`, not headings: a page's outline starts
+              at its `h1`, and nine `h2`s in the footer sat ahead of it in the
+              streamed HTML. The list stays named through `aria-labelledby`. */}
           {sections.map((section) => (
             <div key={section.id}>
-              <h2 className="font-sans-display font-semibold text-base text-kallo-surface">
+              <p
+                className="font-sans-display font-semibold text-base text-kallo-surface"
+                id={`docs-footer-${section.id}`}
+              >
                 {tSections(section.id)}
-              </h2>
-              <ul className="mt-5 space-y-3.5">
+              </p>
+              <ul
+                aria-labelledby={`docs-footer-${section.id}`}
+                className="mt-5 space-y-3.5"
+              >
                 {section.links.map((link) => (
                   <li key={link.slug}>
                     <Link
@@ -96,8 +105,17 @@ export async function DocsFooter({
           <p className="text-caption text-kallo-stone">
             {tFooter('copyright', { year: '2026' })}
           </p>
-          <a
+          {/* The one crawlable link to /pricing: the header's "Pricing" is an
+              in-page scroll on the landing page, so without this the sitemap
+              listed a page nothing on the site pointed at. */}
+          <Link
             className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent sm:ml-auto"
+            href="/pricing"
+          >
+            {tFooter('pricing')}
+          </Link>
+          <a
+            className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
             href={LINKEDIN_URL}
             rel="noopener noreferrer"
             target="_blank"

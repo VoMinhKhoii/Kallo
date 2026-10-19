@@ -1,3 +1,5 @@
+import type { Locale } from '@/i18n/config';
+
 /**
  * The OpenGraph fields every page shares.
  *
@@ -20,3 +22,13 @@ export const SHARED_OPEN_GRAPH = {
   siteName: 'Kallo',
   images: [{ url: '/og-image.png', width: 1200, height: 630 }],
 };
+
+/**
+ * `og:locale` is a `language_TERRITORY` tag (ogp.me), not the bare route
+ * locale: Next prints whatever it is given, so `en` would go out as-is.
+ */
+const OG_LOCALES: Record<Locale, string> = { en: 'en_US', vi: 'vi_VN' };
+
+export function openGraphLocale(locale: Locale): string {
+  return OG_LOCALES[locale];
+}

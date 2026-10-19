@@ -11,8 +11,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
  * gate, not about what happens after.
  */
 
+// What next-intl answers with; a test swaps it for a locale redirect.
+const intl = vi.hoisted(() => ({
+  respond: (): NextResponse => NextResponse.next(),
+}));
+
 vi.mock('next-intl/middleware', () => ({
-  default: () => () => NextResponse.next(),
+  default: () => () => intl.respond(),
 }));
 vi.mock('@/i18n/routing', () => ({ routing: { locales: ['en'] } }));
 vi.mock('@/lib/infra/supabase/middleware', () => ({
@@ -28,14 +33,16 @@ const { proxy } = await import('@/proxy');
 
 function request(path = '/api/healthz', headers: Record<string, string> = {}) {
   const url = new URL(`https://kallo.fit${path}`);
-  const req = new Request(url, { headers }) as unknown as { nextUrl?: URL };
-  req.nextUrl = url;
+  const req = new Request(url, { headers }) as unknown as { nextUrl?: unknown };
+  // `NextURL` is a URL that can `clone()`, which the rewrites rely on.
+  req.nextUrl = Object.assign(url, { clone: () => new URL(url.href) });
   return req as unknown as NextRequest;
 }
 
 afterEach(() => {
   vi.unstubAllEnvs();
   consoleError.mockClear();
+  intl.respond = () => NextResponse.next();
 });
 
 describe('origin lock', () => {
@@ -166,5 +173,67 @@ describe('page responses', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get('x-middleware-rewrite')).toBeNull();
+  });
+
+  // `/` redirects to a locale chosen from the cookie, then Accept-Language, so
+  // the answer depends on request headers a cache must be told about.
+  it('marks the locale redirect at the root as varying and uncacheable', async () => {
+    vi.stubEnv('ORIGIN_SHARED_SECRET', '');
+    vi.stubEnv('K_SERVICE', '');
+    intl.respond = () =>
+      NextResponse.redirect('https://kallo.fit/vi', { status: 307 });
+
+    const res = await proxy(pageRequest('/'));
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe('https://kallo.fit/vi');
+    expect(res.headers.get('vary')).toBe('Accept-Language, Cookie');
+    expect(res.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('adds nothing to other responses', async () => {
+    vi.stubEnv('ORIGIN_SHARED_SECRET', '');
+    vi.stubEnv('K_SERVICE', '');
+    // A page render at the root, and a redirect anywhere else.
+    expect((await proxy(pageRequest('/'))).headers.get('vary')).toBeNull();
+    intl.respond = () =>
+      NextResponse.redirect('https://kallo.fit/en/docs/overview', {
+        status: 307,
+      });
+
+    const res = await proxy(pageRequest('/en/docs'));
+
+    expect(res.headers.get('vary')).toBeNull();
+    expect(res.headers.get('cache-control')).toBeNull();
+  });
+
+  // A slug the build did not list is served from a shell that has already sent
+  // a 200, so the page cannot turn it into a 404. The proxy does, by rewriting
+  // to a path no route owns; the locale catch-all then answers 404.
+  it('rewrites an unknown docs URL to the branded 404 path', async () => {
+    vi.stubEnv('ORIGIN_SHARED_SECRET', '');
+    vi.stubEnv('K_SERVICE', '');
+
+    const res = await proxy(pageRequest('/en/docs/does-not-exist'));
+
+    expect(res.headers.get('x-middleware-rewrite')).toBe(
+      'https://kallo.fit/en/not-found'
+    );
+  });
+
+  it('leaves real docs pages and markdown requests alone', async () => {
+    vi.stubEnv('ORIGIN_SHARED_SECRET', '');
+    vi.stubEnv('K_SERVICE', '');
+
+    const page = await proxy(pageRequest('/en/docs/overview'));
+    expect(page.headers.get('x-middleware-rewrite')).toBeNull();
+
+    // A markdown request for the unknown URL gets the markdown 404, not HTML.
+    const markdown = await proxy(
+      request('/en/docs/does-not-exist', { accept: 'text/markdown' })
+    );
+    expect(markdown.headers.get('x-middleware-rewrite')).toBe(
+      'https://kallo.fit/md/en/not-found'
+    );
   });
 });

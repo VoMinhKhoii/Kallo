@@ -23,14 +23,14 @@ export const LINKEDIN_URL = 'https://www.linkedin.com/company/kallo-fit/';
  */
 export function landingStructuredData({
   locale,
-  name,
   description,
+  organizationDescription,
 }: {
   locale: string;
-  /** Localized product name — `metadata.root.title`. */
-  name: string;
   /** Localized one-liner — `metadata.root.description`. */
   description: string;
+  /** What the company is, in one sentence — `metadata.organization.description`. */
+  organizationDescription: string;
 }) {
   const url = `${SITE_URL}/${locale}`;
 
@@ -41,6 +41,7 @@ export function landingStructuredData({
         '@type': 'Organization',
         '@id': `${SITE_URL}/#organization`,
         name: 'Kallo',
+        description: organizationDescription,
         url: SITE_URL,
         logo: `${SITE_URL}/icon-512.png`,
         email: SUPPORT_EMAIL,
@@ -70,7 +71,7 @@ export function landingStructuredData({
             '@type': 'ContactPoint',
             contactType: 'customer support',
             email: SUPPORT_EMAIL,
-            url: `${SITE_URL}/en/docs/company/contact`,
+            url: `${SITE_URL}/${locale}/docs/company/contact`,
             availableLanguage: ['en', 'vi'],
           },
           {
@@ -87,11 +88,17 @@ export function landingStructuredData({
           },
         ],
       },
+      // Google reads this node for the site name it prints above a result, and
+      // only accepts it for the domain root: `url` is the bare origin even on
+      // /en and /vi (`/` redirects to them), and `name` is the brand alone. The
+      // localized page title (`metadata.root.title`) is a search pitch, not a
+      // name, and is what Google would otherwise show as the site name.
       {
         '@type': 'WebSite',
         '@id': `${SITE_URL}/#website`,
-        url,
-        name,
+        url: `${SITE_URL}/`,
+        name: 'Kallo',
+        alternateName: 'kallo.fit',
         description,
         inLanguage: locale,
         publisher: { '@id': `${SITE_URL}/#organization` },
@@ -119,5 +126,47 @@ export function landingStructuredData({
         },
       },
     ],
+  };
+}
+
+/**
+ * A docs page's breadcrumb trail: Kallo, Docs, then the page itself.
+ *
+ * The visible breadcrumb above the title reads "Docs · <section>", but a
+ * section has no page of its own to link, and Google needs a URL on every crumb
+ * except the last, so the trail leaves the section out and ends on the page
+ * (whose title is the `h1` right under it). The overview page IS the Docs
+ * crumb, so its trail stops there rather than listing the same page twice.
+ */
+export function docsBreadcrumbStructuredData({
+  locale,
+  slug,
+  docsLabel,
+  title,
+}: {
+  locale: string;
+  slug: string;
+  /** The visible breadcrumb's first crumb — `docs.breadcrumb.home`. */
+  docsLabel: string;
+  /** The page's own title (its `h1`). */
+  title: string;
+}) {
+  const isOverview = slug === 'overview';
+  const trail = [
+    { name: 'Kallo', item: `${SITE_URL}/${locale}` },
+    isOverview
+      ? { name: docsLabel }
+      : { name: docsLabel, item: `${SITE_URL}/${locale}/docs/overview` },
+    ...(isOverview ? [] : [{ name: title }]),
+  ];
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: trail.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      ...crumb,
+    })),
   };
 }

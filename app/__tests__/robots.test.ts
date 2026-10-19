@@ -49,6 +49,10 @@ describe('robots.txt', () => {
   it('points at the sitemap', () => {
     expect(robots().sitemap).toBe('https://kallo.fit/sitemap.xml');
   });
+
+  it('carries no Yandex-only Host directive', () => {
+    expect(robots()).not.toHaveProperty('host');
+  });
 });
 
 describe('isKnownNonMarkdownPath', () => {

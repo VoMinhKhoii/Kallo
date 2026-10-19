@@ -17,7 +17,7 @@ import { QueryProvider } from '@/components/providers/query-provider';
 import { TelemetryIdentity } from '@/components/providers/telemetry-identity';
 import { Toaster } from '@/components/ui/sonner';
 import { routing } from '@/i18n/routing';
-import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
+import { openGraphLocale, SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 import '../globals.css';
 
@@ -101,12 +101,13 @@ export async function generateMetadata(): Promise<Metadata> {
       ...SHARED_OPEN_GRAPH,
       title: t('title'),
       description: t('description'),
-      locale,
+      locale: openGraphLocale(locale),
     },
+    // No title or description: Next fills both from each page's resolved
+    // openGraph, so a docs link on X previews as that doc. Setting them here
+    // pinned every page's X card to the landing pitch.
     twitter: {
       card: 'summary_large_image',
-      title: t('title'),
-      description: t('description'),
       images: ['/og-image.png'],
     },
     appleWebApp: {
