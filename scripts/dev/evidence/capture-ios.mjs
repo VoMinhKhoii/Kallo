@@ -9,12 +9,12 @@
 //     [--log <flutter run log>] [--server-log <dev log>] <name>
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { flutterIssues } from './flutter-log.mjs';
-import { apiFailures } from './server-log.mjs';
+import { apiFailures, markLog, sinceMark } from './server-log.mjs';
 
 // A Pro Max screenshot is 1320×2868; this keeps text readable in a PR at a
 // fraction of the size.
@@ -34,12 +34,15 @@ const { values, positionals } = parseArgs({
 mkdirSync(values.out, { recursive: true });
 // Where this run's part of the dev server log starts: the log also holds every
 // request from before the app launched.
-const offsetFile = join(values.out, 'server-log.offset');
+const markFile = join(values.out, 'server-log.mark.json');
 
 if (values.mark) {
   if (!values['server-log'])
     fail('--mark needs --server-log <dev server log>.');
-  writeFileSync(offsetFile, String(statSync(values['server-log']).size));
+  writeFileSync(
+    markFile,
+    JSON.stringify(markLog(readFileSync(values['server-log'])))
+  );
   process.stdout.write(
     `Marked ${values['server-log']}; captures report API errors after this point.\n`
   );
@@ -70,22 +73,29 @@ const issues = [
       )
     : []),
   ...(values['server-log']
-    ? apiFailures(sinceMark(values['server-log'])).map((i) => `api: ${i}`)
+    ? apiFailures(serverLogSinceMark(values['server-log'])).map(
+        (i) => `api: ${i}`
+      )
     : []),
 ];
 for (const issue of issues) process.stdout.write(`- ${issue}\n`);
 process.exitCode = issues.length > 0 ? 1 : 0;
 
-/** The server log after the mark, or all of it when unmarked or restarted. */
-function sinceMark(path) {
-  const log = readFileSync(path);
-  let offset = 0;
+/** The server log since --mark, or all of it, saying so, when the mark is gone. */
+function serverLogSinceMark(path) {
+  let mark = null;
   try {
-    offset = Number(readFileSync(offsetFile, 'utf8'));
+    mark = JSON.parse(readFileSync(markFile, 'utf8'));
   } catch {
     // No mark: the whole log.
   }
-  return log.subarray(offset <= log.length ? offset : 0).toString('utf8');
+  const { text, fromMark } = sinceMark(readFileSync(path), mark);
+  if (!fromMark) {
+    process.stdout.write(
+      `Reading the whole server log: ${mark ? 'it changed since --mark (a restarted server?)' : 'no --mark in this --out folder'}.\n`
+    );
+  }
+  return text;
 }
 
 function fail(message) {

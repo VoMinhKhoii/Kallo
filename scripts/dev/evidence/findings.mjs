@@ -13,9 +13,11 @@
 
 // A signed-in capture that lands here lost its session: the app sends a
 // signed-out visit to `/<locale>?auth=sign-in&next=…`, which opens the sign-in
-// dialog over the landing page.
+// dialog over the landing page. The dialog opens on exactly `sign-in` or
+// `sign-up` (components/auth/request-config/auth-request-config.tsx), so the
+// value must end there.
 const SIGN_IN =
-  /[?&]auth=sign-(?:in|up)\b|\/(?:sign-in|sign-up|auth)(?:[/?]|$)/;
+  /[?&]auth=sign-(?:in|up)(?:&|$)|\/(?:sign-in|sign-up|auth)(?:[/?]|$)/;
 // A run cannot pass without a real screenshot of the page, whatever --allow says.
 const NOT_CAPTURED = ['capture failed:', 'landed on '];
 const MAX_ISSUE_CHARS = 240;

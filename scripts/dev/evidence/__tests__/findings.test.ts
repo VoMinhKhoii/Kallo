@@ -53,6 +53,18 @@ describe('issuesFor', () => {
     ]);
   });
 
+  it('flags the dialog opened on sign-up, last in the query', () => {
+    expect(
+      issuesFor({ ...clean, finalPath: '/en?next=%2Fen&auth=sign-up' })
+    ).toHaveLength(1);
+  });
+
+  it('accepts an auth value the dialog does not open on', () => {
+    expect(issuesFor({ ...clean, finalPath: '/en?auth=sign-in-help' })).toEqual(
+      []
+    );
+  });
+
   it('accepts a page whose query merely mentions auth', () => {
     expect(
       issuesFor({ ...clean, finalPath: '/en/settings?tab=author' })
