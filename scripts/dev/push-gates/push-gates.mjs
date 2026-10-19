@@ -68,11 +68,12 @@ function checkoutOf(root, sha) {
     return { dir: root, cleanup: () => {} };
   }
   const dir = mkdtempSync(path.join(os.tmpdir(), 'kallo-push-gates-'));
+  // Always delete the folder too: `flutter pub get` can leave a background
+  // Xcode package step writing into build/ios after the worktree is removed.
   const cleanup = () => {
-    if (git('worktree', 'remove', '--force', dir) === null) {
-      rmSync(dir, { recursive: true, force: true });
-      git('worktree', 'prune');
-    }
+    const removed = git('worktree', 'remove', '--force', dir) !== null;
+    rmSync(dir, { recursive: true, force: true });
+    if (!removed) git('worktree', 'prune');
   };
   try {
     if (git('worktree', 'add', '--detach', dir, sha) === null) {
