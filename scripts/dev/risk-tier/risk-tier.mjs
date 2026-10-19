@@ -164,10 +164,14 @@ export function tierFor(files, read = () => '') {
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const base = process.argv[2] ?? 'origin/main';
-  const files = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], {
-    encoding: 'utf8',
-  })
-    .split('\n')
+  // --no-renames lists a moved file at both paths, so moving one out of a
+  // high-risk folder still counts; -z keeps non-ASCII names unquoted.
+  const files = execFileSync(
+    'git',
+    ['diff', '--name-only', '--no-renames', '-z', `${base}...HEAD`],
+    { encoding: 'utf8' }
+  )
+    .split('\0')
     .filter(Boolean);
   const root = execFileSync('git', ['rev-parse', '--show-toplevel'], {
     encoding: 'utf8',
