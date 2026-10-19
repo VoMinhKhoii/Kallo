@@ -70,6 +70,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
         ingredientName: 'sữa tươi',
         selectedCandidateId: 'c1',
         grossG: 200,
+        refuseKind: 'none' as const,
         refusePct: 0,
         proteinG: { low: 7, mid: 7.8, high: 8.5 },
         carbohydrateG: { low: 9, mid: 9.6, high: 10.5 },
@@ -93,6 +94,7 @@ describe('completeness gate — per-ingredient, not per-meal', () => {
                   {
                     ingredientName: 'mì gói',
                     grossG: 350,
+                    refuseKind: 'none' as const,
                     refusePct: 0,
                     proteinG: { low: 18, mid: 20, high: 22 },
                     carbohydrateG: { low: 50, mid: 55, high: 60 },

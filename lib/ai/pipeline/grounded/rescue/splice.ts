@@ -82,12 +82,10 @@ export function spliceRescue(
       const portion = state.portionResolutions[f];
       const target =
         ground && portion?.provenance !== 'unresolved'
-          ? shippedEdibleGrams(ground, ing, state.matchResults[f], portion)
+          ? shippedEdibleGrams(ground, state.matchResults[f], portion)
           : 0;
       const partsMass = (subParts ?? []).reduce(
-        (sum, p) =>
-          sum +
-          shippedEdibleGrams(p.estimate, p.ingredient, p.match, undefined),
+        (sum, p) => sum + shippedEdibleGrams(p.estimate, p.match, undefined),
         0
       );
       if (!subParts?.length || target <= 0 || partsMass <= 0) {

@@ -71,6 +71,7 @@ describe('analyzeMealV2 — accepted candidate, server-anchored P/C', () => {
               ingredientName: 'đùi gà',
               selectedCandidateId: 'c1',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 0, mid: 0, high: 0 }, // server overrides anyway
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -161,6 +162,7 @@ describe('analyzeMealV2 — rejected verdict ("none") routes through unmatched p
               selectedCandidateId: 'none',
               rejectReason: 'ức gà ≠ Thịt gà ta whole-bird aggregate',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 30, mid: 33, high: 35 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -232,6 +234,7 @@ describe('analyzeMealV2 — no candidates → unmatched, LLM macros flow through
             {
               ingredientName: 'nem lụi',
               grossG: 200,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 28, mid: 32, high: 36 },
               carbohydrateG: { low: 4, mid: 5, high: 6 },
@@ -290,6 +293,7 @@ describe('analyzeMealV2 — vessel result surface', () => {
             {
               ingredientName: 'phở bò',
               grossG: 500,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 20, mid: 25, high: 30 },
               carbohydrateG: { low: 50, mid: 55, high: 60 },
@@ -366,6 +370,7 @@ describe('analyzeMealV2 — dish rescue', () => {
     const llmEstimate = (name: string, grossG: number) => ({
       ingredientName: name,
       grossG,
+      refuseKind: 'none',
       refusePct: 0,
       proteinG: { low: grossG / 10, mid: grossG / 10, high: grossG / 10 },
       carbohydrateG: { low: grossG / 5, mid: grossG / 5, high: grossG / 5 },
@@ -431,6 +436,7 @@ describe('analyzeMealV2 — dish rescue', () => {
     const llmEstimate = (name: string, grossG: number) => ({
       ingredientName: name,
       grossG,
+      refuseKind: 'none',
       refusePct: 0,
       proteinG: { low: grossG / 10, mid: grossG / 10, high: grossG / 10 },
       carbohydrateG: { low: grossG / 5, mid: grossG / 5, high: grossG / 5 },
@@ -497,6 +503,7 @@ describe('analyzeMealV2 — dish rescue', () => {
     const est = (name: string, grossG: number) => ({
       ingredientName: name,
       grossG,
+      refuseKind: 'none',
       refusePct: 0,
       proteinG: { low: 1, mid: 1, high: 1 },
       carbohydrateG: { low: 1, mid: 1, high: 1 },
@@ -567,6 +574,7 @@ describe('analyzeMealV2 — the Call 1 plan', () => {
             {
               ingredientName: 'nem lụi',
               grossG: 200,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 28, mid: 32, high: 36 },
               carbohydrateG: { low: 4, mid: 5, high: 6 },

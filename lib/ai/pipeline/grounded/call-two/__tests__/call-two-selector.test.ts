@@ -70,6 +70,7 @@ const call2Answer: GroundedEstimation = {
           ingredientName: 'cơm',
           selectedCandidateId: 'c1',
           grossG: 200,
+          refuseKind: 'none',
           refusePct: 0,
           proteinG: { low: 4, mid: 5, high: 6 },
           carbohydrateG: { low: 50, mid: 56, high: 60 },

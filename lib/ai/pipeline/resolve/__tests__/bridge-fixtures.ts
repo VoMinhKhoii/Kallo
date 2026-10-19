@@ -73,6 +73,7 @@ export function groundedAccepted(): GroundedEstimation {
             ingredientName: 'đùi gà',
             selectedCandidateId: 'c1',
             grossG: 150,
+            refuseKind: 'none',
             refusePct: 0,
             proteinG: { low: 38, mid: 40, high: 42 },
             carbohydrateG: { low: 0, mid: 0, high: 0 },

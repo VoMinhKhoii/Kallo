@@ -21,6 +21,7 @@ function riceEstimate(grossG: number) {
     ingredientName: 'Cơm',
     selectedCandidateId: 'c1',
     grossG,
+    refuseKind: 'none' as const,
     refusePct: 0,
     caloriesKcal: { low: 280, mid: 302, high: 330 },
     proteinG: { low: 5, mid: 6.4, high: 8 },

@@ -1,28 +1,25 @@
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
-import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import {
-  classifyRefuseCut,
-  type RefuseCutClass,
-} from '@/lib/ai/portion/refuse-cut';
+import type {
+  GroundedIngredientEstimate,
+  RefuseKind,
+} from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { MassBasis, PortionResolution } from '@/lib/ai/portion/types';
 
-export type AppliedRefuseSource =
-  | 'authoritative_edible_anchor'
-  | 'explicit_served_form'
-  | 'model_cut_band'
-  | 'model_unknown_form';
+export type AppliedRefuseSource = 'authoritative_edible_anchor' | 'model';
 
 export interface RefuseResolutionTelemetry {
   grossG: number;
+  /** What Call 2 named as not eaten, before it sized refusePct. */
+  refuseKind: RefuseKind;
+  /** Call 2's kind and share disagree (none with a share, or a kind at 0%). Logged only. */
+  refuseKindMismatch: boolean;
   modelRefusePct: number;
   candidateDbRefusePct: number | null;
   appliedRefusePct: number;
   appliedRefuseSource: AppliedRefuseSource;
   edibleG: number;
   massBasis: MassBasis;
-  cutClass: RefuseCutClass | null;
-  degenerateZero: boolean;
 }
 
 export interface GroundedMassResolution {
@@ -43,142 +40,38 @@ function clamp(value: number, low: number, high: number): number {
   return Math.min(high, Math.max(low, value));
 }
 
-function normalizedEvidence(args: {
-  canonicalName: string;
-  rawName: string;
-  prepNotes?: string[];
-}): string {
-  // Join fields with ';' so multi-word patterns cannot match across a field
-  // boundary ("xương ống bò" + "xương…" would otherwise fold to a phantom
-  // "bo xuong" and zero the refuse).
-  const normalized = [
-    args.canonicalName,
-    args.rawName,
-    ...(args.prepNotes ?? []),
-  ]
-    .join(' ; ')
-    .toLocaleLowerCase('vi-VN')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const folded = normalized
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .replace(/đ/g, 'd');
-  // ';' between the copies too: with already-unaccented input the normalized
-  // copy IS the folded copy, and a bare-space join recreated the phantom
-  // cross-boundary match ("…ong bo" + "xuong…" → "bo xuong").
-  return `${normalized} ; ${folded}`;
-}
-
-function removeNegatedServedForms(value: string): string {
-  return value
-    .replace(
-      /(?:không|chưa|khong|chua)\s+(?:bỏ|rút|bóc|lột|bo|rut|boc|lot)\s+(?:xương|vỏ|xuong|vo)/g,
-      ''
-    )
-    .replace(
-      /\b(?:not|never)\s+(?:boneless|peeled|shelled|skinless|deboned)\b/g,
-      ''
-    );
-}
-
-/** Served-form evidence that proves the food reaching the plate has no refuse. */
-export function hasExplicitEdibleForm(args: {
-  canonicalName: string;
-  rawName: string;
-  prepNotes?: string[];
-}): boolean {
-  const value = removeNegatedServedForms(normalizedEvidence(args));
-  return (
-    /\b(?:boneless|fillets?|filets?|peeled|shelled|picked|skinless|shell off)\b/.test(
-      value
-    ) ||
-    value.includes('phi lê') ||
-    value.includes('phi le') ||
-    /(?:^|\s)nạc(?:\s|$)/.test(value) ||
-    value.includes('tách riêng') ||
-    value.includes('separable lean') ||
-    value.includes('bỏ xương') ||
-    value.includes('bo xuong') ||
-    value.includes('không xương') ||
-    value.includes('khong xuong') ||
-    value.includes('rút xương') ||
-    value.includes('rut xuong') ||
-    value.includes('bóc vỏ') ||
-    value.includes('boc vo') ||
-    value.includes('lột vỏ') ||
-    value.includes('lot vo') ||
-    value.includes('không vỏ') ||
-    value.includes('khong vo') ||
-    value.includes('thịt cua') ||
-    value.includes('thit cua') ||
-    value.includes('thịt ghẹ') ||
-    value.includes('thit ghe') ||
-    /\bcrab\s*meat\b/.test(value)
-  );
-}
-
+/**
+ * The refuse share applied to Call 2's gross grams: its own `refusePct`,
+ * clamped to 0–80. No name-keyword override: Call 2 reads the same words, and
+ * a keyword rule only misreads them ("xương nạc" meaty bones once read as a
+ * boneless "nạc" and dropped 45% refuse to 0).
+ */
 export function resolveRefusePct(args: {
   modelRefusePct: number;
   candidateInediblePct: number | null;
-  canonicalName: string;
-  rawName: string;
-  prepNotes?: string[];
-}): Omit<RefuseResolutionTelemetry, 'grossG' | 'edibleG' | 'massBasis'> {
+}): Omit<
+  RefuseResolutionTelemetry,
+  'grossG' | 'edibleG' | 'massBasis' | 'refuseKind' | 'refuseKindMismatch'
+> {
   const modelRefusePct = clamp(args.modelRefusePct, 0, 80);
-  const band = classifyRefuseCut(args.canonicalName, args.rawName);
+  // Candidate DB refuse is comparison telemetry only. It describes the DB
+  // row's physical form, which is not proven compatible with the served form.
   const candidateDbRefusePct =
     args.candidateInediblePct != null &&
     Number.isFinite(args.candidateInediblePct)
       ? clamp(args.candidateInediblePct, 0, 80)
       : null;
-
-  if (hasExplicitEdibleForm(args)) {
-    return {
-      modelRefusePct,
-      candidateDbRefusePct,
-      appliedRefusePct: 0,
-      appliedRefuseSource: 'explicit_served_form',
-      cutClass: band?.cutClass ?? null,
-      degenerateZero: false,
-    };
-  }
-
-  if (band) {
-    const degenerateZero = modelRefusePct === 0;
-    return {
-      modelRefusePct,
-      candidateDbRefusePct,
-      appliedRefusePct: degenerateZero
-        ? modelRefusePct
-        : clamp(modelRefusePct, band.low, band.high),
-      appliedRefuseSource: 'model_cut_band',
-      cutClass: band.cutClass,
-      degenerateZero,
-    };
-  }
-
-  // Candidate DB refuse is comparison telemetry only. It describes the DB
-  // row's physical form, which is not proven compatible with the served form.
-  // It may become authoritative once rows carry a physical-form tag such as
-  // whole_as_purchased / shell_on / bone_in and compatibility is validated.
   return {
     modelRefusePct,
     candidateDbRefusePct,
     appliedRefusePct: modelRefusePct,
-    appliedRefuseSource: 'model_unknown_form',
-    cutClass: null,
-    degenerateZero: false,
+    appliedRefuseSource: 'model',
   };
 }
 
 export function resolveGroundedMass(args: {
   ground: GroundedIngredientEstimate | null;
   candidateInediblePct: number | null;
-  canonicalName: string;
-  rawName: string;
-  prepNotes?: string[];
   authoritativeMass?: AuthoritativeMass | null;
 }): GroundedMassResolution {
   const { ground } = args;
@@ -193,9 +86,6 @@ export function resolveGroundedMass(args: {
   const decision = resolveRefusePct({
     modelRefusePct: ground.refusePct,
     candidateInediblePct: args.candidateInediblePct,
-    canonicalName: args.canonicalName,
-    rawName: args.rawName,
-    prepNotes: args.prepNotes,
   });
   const modelEdibleG = ground.grossG * (1 - decision.modelRefusePct / 100);
   const anchor = args.authoritativeMass;
@@ -220,6 +110,9 @@ export function resolveGroundedMass(args: {
     refuse: {
       ...decision,
       grossG,
+      refuseKind: ground.refuseKind,
+      refuseKindMismatch:
+        (ground.refuseKind === 'none') !== (decision.modelRefusePct === 0),
       appliedRefusePct,
       appliedRefuseSource,
       edibleG,
@@ -252,7 +145,6 @@ export function portionAnchor(portion: PortionResolution | undefined) {
 
 function shippedMass(
   estimate: GroundedIngredientEstimate,
-  ingredient: DecomposedIngredientV2,
   match: IngredientV2MatchResult | undefined,
   anchor: ReturnType<typeof portionAnchor>
 ): GroundedMassResolution {
@@ -260,29 +152,22 @@ function shippedMass(
   return resolveGroundedMass({
     ground: estimate,
     candidateInediblePct: candidate?.inediblePct ?? null,
-    canonicalName: ingredient.canonicalName,
-    rawName: ingredient.rawName,
-    prepNotes: ingredient.prepNotes,
     authoritativeMass: anchor,
   });
 }
 
 /**
  * The edible grams the bridge ships for one ingredient, by the bridge's own
- * rules (`resolveGroundedMass`: refuse bands, served-form overrides, a server
- * portion anchor when there is one). Linear in `grossG` when unanchored, which
+ * rules (`resolveGroundedMass`: Call 2's refuse share, or a server portion
+ * anchor when there is one). Linear in `grossG` when unanchored, which
  * is what lets scaling a set of parts' gross mass hit a target exactly.
  */
 export function shippedEdibleGrams(
   estimate: GroundedIngredientEstimate,
-  ingredient: DecomposedIngredientV2,
   match: IngredientV2MatchResult | undefined,
   portion: PortionResolution | undefined
 ): number {
-  return (
-    shippedMass(estimate, ingredient, match, portionAnchor(portion)).edibleG ??
-    0
-  );
+  return shippedMass(estimate, match, portionAnchor(portion)).edibleG ?? 0;
 }
 
 /**
@@ -315,7 +200,7 @@ export function shippedServedGrams(
   portion: PortionResolution | undefined
 ): number {
   const anchor = portionAnchor(portion);
-  const m = shippedMass(estimate, ingredient, match, anchor);
+  const m = shippedMass(estimate, match, anchor);
   const rowGrams =
     m.massBasis === 'gross_as_served'
       ? (m.refuse?.grossG ?? 0)

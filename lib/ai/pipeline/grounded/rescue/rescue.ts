@@ -267,7 +267,6 @@ export function startDishRescue(args: {
       const grams = ground
         ? shippedEdibleGrams(
             ground,
-            pairs[f].ingredient,
             run.matchResults[f],
             run.portionResolutions[f]
           )

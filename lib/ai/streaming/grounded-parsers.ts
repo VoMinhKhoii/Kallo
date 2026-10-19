@@ -161,9 +161,6 @@ export function resolveStreamingV2MealItem(
     const mass = resolveGroundedMass({
       ground: rawIng,
       candidateInediblePct: selectedCandidate?.inediblePct ?? null,
-      canonicalName: decompForName?.canonicalName ?? rawIng.ingredientName,
-      rawName: decompForName?.rawName ?? rawIng.ingredientName,
-      prepNotes: decompForName?.prepNotes,
     });
     const grams = mass.edibleG ?? 0;
     totalGrams += grams;

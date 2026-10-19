@@ -111,6 +111,7 @@ function groundedItem(
         ingredientName: ingName,
         selectedCandidateId: 'c1',
         grossG: 100,
+        refuseKind: 'none',
         refusePct: 0,
         proteinG: { low: 1, mid: 2, high: 3 },
         carbohydrateG: { low: 1, mid: 2, high: 3 },

@@ -35,10 +35,10 @@ export function buildStaticPrefix(
     hasVessel && isVesselGuardEnabled() ? REFUSE_VESSEL_RULE : '';
   const roleMass = 'estimate the whole as-served mass and its inedible share';
   const outputMassContract =
-    'Always emit grossG > 0 and integer refusePct from 0–80 (explicit 0 for boneless/shell-off foods), and every macro triple you emit ordered low ≤ mid ≤ high, non-negative.';
+    'Always emit refuseKind first, then grossG > 0 and integer refusePct from 0–80 (refuseKind "none" ⇔ refusePct 0), and every macro triple you emit ordered low ≤ mid ≤ high, non-negative.';
   const gramsRule = `  If an ingredient carries resolved_grams="N", N is AUTHORITATIVE EDIBLE mass (explicit user weight, package size, or an edible-basis curated concept prior). Emit grossG and refusePct consistent with edible mass N; the server retains N as the anchor. Do NOT re-estimate, scale, or "correct" N. You may still adjust macros / fat for cooking method and prep_notes. Gross PORTION_PRIORS use basis-explicit labels such as "cả xương"/"nguyên vỏ"; the server retains their gross anchor and performs the one refuse deduction.
   If an ingredient carries user_mass_g="N" with mass_basis="gross_as_served", N is AUTHORITATIVE grossG; emit grossG=N and estimate refusePct. With mass_basis="edible", resolved_grams is authoritative. With mass_basis="unknown", infer conservatively from the named physical form.
-  Otherwise, estimate the portion served. BASIS RULE — overrides every other sizing hint in this section: grossG is the WHOLE piece as served, INCLUDING bone/shell/skin/rind not eaten, in the SAME state as the selected candidate's db_state. refusePct is the integer share of grossG that is inedible; boneless/shell-off foods MUST emit 0. The SERVER computes edible mass = grossG × (1 − refusePct/100); never emit edibleG.
+  Otherwise, estimate the portion served. BASIS RULE — overrides every other sizing hint in this section: grossG is the WHOLE piece as served, INCLUDING bone/shell/skin/rind not eaten, in the SAME state as the selected candidate's db_state. refusePct is the integer share of grossG that is inedible; boneless/shell-off foods MUST emit 0. The SERVER computes edible mass = grossG × (1 − refusePct/100); never emit edibleG. Before sizing, set refuseKind to the part NOT eaten: none, bone, shell, skin, rind, peel, seed_pit, core (corn cob, fruit core), trim (vegetable stems, outer leaves, ends), or mixed — name it from the served form (bone-in meat with clinging flesh, e.g. "xương nạc", is bone). A drink, broth or sauce is none even when served in a shell or made from bones (coconut water, bone broth).
     - db_state="cooked": grossG = cooked / as-served whole mass.
     - db_state="raw" (includes DRY staples: dried noodles, raw rice, dry beans): grossG = raw/dry whole mass. Convert from the as-served portion using the cooking yields you know (meat loses water when cooked; dried staples absorb it, ending ~2.5–3× heavier). Cross-check edible mass with db_per_100g_kcal: edibleG × density must give a plausible total for the dish — a dry-basis row (~350–450 kcal/100g) carrying a cooked-basis mass reads 2–3× too high. Also emit servedG = the as-served (cooked, on the plate) whole mass you converted from, e.g. 200g cooked pasta on a dry row → grossG 80, servedG 200.
     - db_state="unknown": treat as cooked unless the user weighed raw.
@@ -49,7 +49,7 @@ export function buildStaticPrefix(
   const serverScalingRule =
     '  The server multiplies DB per_100g × edible mass / 100 and applies NO yield conversion — the raw/cooked basis conversion is yours.';
   const outputIngredient =
-    '  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grossG, refusePct, servedG? (raw rows only), proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.';
+    '  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, refuseKind, grossG, refusePct, servedG? (raw rows only), proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.';
   const finalBasisRule =
     "    - grossG MUST be in the SELECTED candidate's db_state basis and include the whole served piece; refusePct carries the inedible share. Dry/raw row → dry/raw grossG.";
   const verdictMassField = 'grossG';

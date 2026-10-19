@@ -24,6 +24,7 @@ const estimate = (
   ingredientName,
   selectedCandidateId,
   grossG,
+  refuseKind: 'none',
   refusePct: 0,
   proteinG: triple(0),
   carbohydrateG: triple(kcal / 4),

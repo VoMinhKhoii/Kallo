@@ -61,6 +61,7 @@ const estimate = (
   selectedCandidateId,
   ...(selectedCandidateId === 'none' ? { rejectReason: 'no match' } : {}),
   grossG: 100,
+  refuseKind: 'none',
   refusePct: 0,
   proteinG: { low: 1, mid: 2, high: 3 },
   carbohydrateG: { low: 1, mid: 2, high: 3 },

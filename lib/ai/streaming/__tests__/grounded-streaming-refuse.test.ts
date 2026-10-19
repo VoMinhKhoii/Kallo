@@ -6,13 +6,15 @@ import { resolveStreamingV2MealItem } from '@/lib/ai/streaming/grounded-parsers'
 const triple = (mid: number) => ({ low: mid, mid, high: mid });
 
 describe('streamed refuse resolution', () => {
-  it('passes prepNotes into mass reconciliation', () => {
+  it("ships Call 2's refuse even when a prep note names a boneless form", () => {
+    // No name or prep-note keyword overrides the model's share any more.
     const rawItem: GroundedMealItem = {
       mealItemName: 'cá kho',
       ingredients: [
         {
           ingredientName: 'khúc cá',
           grossG: 200,
+          refuseKind: 'bone',
           refusePct: 20,
           proteinG: triple(30),
           carbohydrateG: triple(0),
@@ -36,6 +38,6 @@ describe('streamed refuse resolution', () => {
       0
     );
 
-    expect(streamed.totalGrams).toBe(200);
+    expect(streamed.totalGrams).toBe(160);
   });
 });

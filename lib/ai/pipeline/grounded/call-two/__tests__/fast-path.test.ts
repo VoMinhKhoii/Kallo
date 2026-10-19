@@ -307,6 +307,7 @@ describe('fast path produces the SAME macros the full path would', () => {
               ingredientName: 'ức gà',
               selectedCandidateId: 'c1',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               // Deliberately wrong P/C to prove the server re-derives from DB.
               proteinG: { low: 999, mid: 999, high: 999 },

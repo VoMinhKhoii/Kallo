@@ -36,6 +36,7 @@ describe('bridgeV2ToV1 — accepted verdict', () => {
             {
               ingredientName: 'đậu hũ',
               grossG: 100,
+              refuseKind: 'bone',
               refusePct: 50,
               proteinG: { low: 7, mid: 8, high: 9 },
               carbohydrateG: { low: 1, mid: 2, high: 3 },
@@ -84,6 +85,7 @@ describe('bridgeV2ToV1 — accepted verdict', () => {
             {
               ingredientName: '1 miếng sườn heo',
               grossG: 220,
+              refuseKind: 'bone',
               refusePct: 50,
               proteinG: { low: 0, mid: 0, high: 0 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -114,7 +116,7 @@ describe('bridgeV2ToV1 — accepted verdict', () => {
       grossG: 200,
       modelRefusePct: 50,
       appliedRefusePct: 50,
-      appliedRefuseSource: 'model_cut_band',
+      appliedRefuseSource: 'model',
       edibleG: 100,
       massBasis: 'gross_as_served',
     });
@@ -146,6 +148,7 @@ describe('bridgeV2ToV1 — accepted verdict', () => {
             {
               ingredientName: 'unknown-basis ingredient',
               grossG: 200,
+              refuseKind: 'bone',
               refusePct: 25,
               proteinG: { low: 0, mid: 0, high: 0 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -175,7 +178,7 @@ describe('bridgeV2ToV1 — accepted verdict', () => {
     expect(out.verdicts[0].refuse).toMatchObject({
       grossG: 200,
       appliedRefusePct: 25,
-      appliedRefuseSource: 'model_unknown_form',
+      appliedRefuseSource: 'model',
       edibleG: 150,
       massBasis: 'gross_as_served',
     });
@@ -256,6 +259,7 @@ describe('bridgeV2ToV1 — rejected verdict ("none")', () => {
               selectedCandidateId: 'none',
               rejectReason: 'category mismatch — thigh ≠ whole-bird aggregate',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 25, mid: 28, high: 30 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -293,6 +297,7 @@ describe('bridgeV2ToV1 — unmatched (no candidates emitted)', () => {
             {
               ingredientName: 'đùi gà',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 38, mid: 40, high: 42 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -345,6 +350,7 @@ describe('bridgeV2ToV1 — matched P/C/kcal are DB-anchored regardless of LLM va
               ingredientName: 'đùi gà',
               selectedCandidateId: 'c1',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               // Cheap flat placeholders — discarded for matched ingredients.
               proteinG: ZERO_TRIPLE,
@@ -456,6 +462,7 @@ describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)',
             {
               ingredientName: 'nước lọc',
               grossG: 300,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: ZERO_TRIPLE,
               carbohydrateG: ZERO_TRIPLE,
@@ -487,6 +494,7 @@ describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)',
             {
               ingredientName: 'ức gà',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 44, mid: 46, high: 48 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -520,6 +528,7 @@ describe('bridgeV2ToV1 — unmatched macro plausibility (all triples required)',
               ingredientName: 'đùi gà',
               selectedCandidateId: 'c1',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: ZERO_TRIPLE,
               carbohydrateG: ZERO_TRIPLE,
@@ -555,6 +564,7 @@ describe('bridgeV2ToV1 — selectedCandidateId out of range', () => {
               ingredientName: 'đùi gà',
               selectedCandidateId: 'c9',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 0, mid: 0, high: 0 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -642,6 +652,7 @@ describe('bridgeV2ToV1 — case-insensitive name matching', () => {
               ingredientName: 'đùi gà', // lowercase
               selectedCandidateId: 'c1',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 38, mid: 40, high: 42 },
               carbohydrateG: { low: 0, mid: 0, high: 0 },
@@ -743,6 +754,7 @@ describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
             {
               ingredientName: 'đùi gà',
               grossG: 150,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 4, mid: 5, high: 6 },
               carbohydrateG: { low: 18, mid: 20, high: 22 },
@@ -913,6 +925,7 @@ describe('bridgeV2ToV1 — carb-staple floor (bánh ướt chả bò)', () => {
             {
               ingredientName: 'bánh ướt',
               grossG: 250,
+              refuseKind: 'none',
               refusePct: 0,
               // The bug: the LLM assigned P/F but C≈0 to a starch base.
               proteinG: { low: 14, mid: 15, high: 16 },
@@ -922,6 +935,7 @@ describe('bridgeV2ToV1 — carb-staple floor (bánh ướt chả bò)', () => {
             {
               ingredientName: 'chả bò',
               grossG: 60,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 12, mid: 13, high: 14 },
               carbohydrateG: { low: 1, mid: 2, high: 3 },
@@ -990,6 +1004,7 @@ describe('bridgeV2ToV1 — unmatched staple with an explicit zero carb (mì gói
             {
               ingredientName,
               grossG: 350,
+              refuseKind: 'none',
               refusePct: 0,
               proteinG: { low: 18, mid: 20, high: 22 },
               carbohydrateG,
@@ -1045,6 +1060,7 @@ describe('bridgeV2ToV1 — unmatched staple with an explicit zero carb (mì gói
               {
                 ingredientName: 'mì chính',
                 grossG: 3,
+                refuseKind: 'none',
                 refusePct: 0,
                 proteinG: ZERO_TRIPLE,
                 carbohydrateG: ZERO_TRIPLE,

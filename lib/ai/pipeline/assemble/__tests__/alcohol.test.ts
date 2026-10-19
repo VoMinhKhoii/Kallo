@@ -76,6 +76,7 @@ const grounded: GroundedEstimation = {
           ingredientName: 'bia',
           selectedCandidateId: 'c1',
           grossG: 660,
+          refuseKind: 'none',
           refusePct: 0,
           proteinG: { low: 3, mid: 3, high: 3 },
           carbohydrateG: { low: 23.4, mid: 23.4, high: 23.4 },
