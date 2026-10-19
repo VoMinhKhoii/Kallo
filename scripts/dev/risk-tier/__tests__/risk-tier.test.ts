@@ -19,6 +19,17 @@ describe('tierFor', () => {
     [
       'apps/mobile-flutter/lib/features/settings/screens/account_delete_screen.dart',
     ],
+    ['supabase/config.toml'],
+    ['apps/mobile-flutter/lib/router_redirect.dart'],
+    ['components/landing-page/pricing/checkout/pricing-checkout-provider.tsx'],
+    ['components/settings/account/use-account-actions.ts'],
+    ['lib/admin/premium/accounts/lookup.ts'],
+    ['lib/domain/privacy/consent-gate.ts'],
+    ['lib/infra/db/client.ts'],
+    ['lib/infra/rate-limit/limiter/limiter.ts'],
+    ['scripts/ci/check-structure/check-structure.mjs'],
+    ['release-please-config.json'],
+    ['next.config.ts'],
     ['.github/workflows/ci.yml'],
     ['scripts/cloud-run/deploy.sh'],
     ['lib/ai/pipeline/grounded/orchestrator.ts'],
@@ -34,6 +45,12 @@ describe('tierFor', () => {
       'auth or session: proxy.ts',
       'billing or entitlements: lib/domain/billing/a.ts',
     ]);
+  });
+
+  it('does not count a test beside high-risk code as high', () => {
+    expect(tier(['lib/ai/pipeline/grounded/__tests__/review.test.ts'])).toBe(
+      'low'
+    );
   });
 
   it.each([

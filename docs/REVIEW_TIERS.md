@@ -12,10 +12,11 @@ meal pipeline, migrations and deploy settings.
 
 | Tier | Paths | Agent review | Owner |
 | --- | --- | --- | --- |
-| **High** | migrations and schema; auth, session and email; billing and entitlements (web, API, Flutter paywall); account export and deletion; CI, deploy and release; the AI meal pipeline (`lib/ai/{pipeline,matching,portion,provider,prompts}`, `app/api/analyze-meal`) | Full `/ship` loop, plus evidence from a real run in the PR: the screen on a device or browser, the migration on a scratch database, the pipeline on real meals | Reads the "How to review" section and the diff of the high-risk files |
+| **High** | the database (migrations, schema, client and pool); auth, session, redirects and email, including Supabase auth config and admin authorization; security infrastructure (rate limits, crypto); billing and entitlements (web pricing and checkout, webhooks, admin premium grants, the Flutter paywall and subscription screens); account export, deletion and privacy consent; CI, deploy and release (workflows, `scripts/ci`, `next.config`, release-please, iOS signing); the AI meal pipeline (`lib/ai/{pipeline,matching,portion,provider,prompts}`, `app/api/analyze-meal`) | Full `/ship` loop, plus evidence from a real run in the PR: the screen on a device or browser, the migration on a scratch database, the pipeline on real meals | Reads the "How to review" section and the diff of the high-risk files |
 | **Medium** | Everything else | Full `/ship` loop | Reads the "How to review" section and the evidence, not the whole diff |
-| **Low** | Only docs, agent skills/agents/commands, tests, eval and bench scripts | CI, the local Codex pass, one GitHub Codex round (a second only if the first finds a P0 or P1) | Merges on green |
+| **Low** | Only docs, agent skills/agents/commands, tests, eval and bench scripts | CI, the local Codex pass, at most two GitHub Codex rounds: findings from the first are fixed and re-reviewed once; fixes after the second are named in the summary as not re-reviewed. A P0 or P1 at any point makes it loop like medium | Merges on green |
 
+A test file under a high-risk folder (`__tests__/`) does not make a change high.
 The exact path rules are in `scripts/dev/risk-tier/risk-tier.mjs`. Change them
 there, with a test, when a new area starts producing fixes.
 

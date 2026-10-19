@@ -7,31 +7,105 @@ import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 // Paths where a bug has cost data, money, sign-ins, a deploy or a meal's
-// numbers. Any one of them makes the change high.
+// numbers. A changed file under any of these prefixes makes the change high.
+const FLUTTER = 'apps/mobile-flutter/';
 const HIGH = [
   [
-    'database schema or migration',
-    /^(?:supabase\/migrations\/|drizzle\/|lib\/infra\/db\/schema\.ts$)/,
+    'database schema, client or migration',
+    ['supabase/migrations/', 'drizzle/', 'lib/infra/db/'],
   ],
   [
     'auth or session',
-    /^(?:proxy\.ts$|app\/auth\/|app\/api\/(?:v1\/)?auth\/|app\/api\/supabase-proxy\/|lib\/api\/auth\.ts$|lib\/infra\/(?:auth|apple-auth|supabase|email)\/|(?:hooks|components)\/auth\/|apps\/mobile-flutter\/lib\/(?:services|features)\/auth\/)/,
+    [
+      'proxy.ts',
+      'supabase/config.toml',
+      'app/auth/',
+      'app/api/auth/',
+      'app/api/v1/auth/',
+      'app/api/supabase-proxy/',
+      'app/.well-known/',
+      'app/[locale]/reset-password/',
+      'lib/api/auth.ts',
+      'lib/core/validation/password.ts',
+      'lib/domain/apple-sign-in/',
+      'lib/infra/auth/',
+      'lib/infra/apple-auth/',
+      'lib/infra/supabase/',
+      'lib/infra/email/',
+      'lib/admin/authz/',
+      'hooks/auth/',
+      'components/auth/',
+      'components/landing-page/signed-in-redirect.tsx',
+      `${FLUTTER}lib/services/auth/`,
+      `${FLUTTER}lib/features/auth/`,
+      `${FLUTTER}lib/router_redirect.dart`,
+    ],
+  ],
+  [
+    'security infrastructure',
+    ['lib/infra/security/', 'lib/infra/crypto/', 'lib/infra/rate-limit/'],
   ],
   [
     'billing or entitlements',
-    /^(?:lib\/domain\/billing\/|app\/api\/webhooks\/|app\/api\/v1\/account\/|(?:hooks|components)\/billing\/|apps\/mobile-flutter\/lib\/(?:services\/billing|features\/paywall)\/)/,
+    [
+      'lib/domain/billing/',
+      'app/api/webhooks/',
+      'app/api/v1/account/',
+      'app/[locale]/pricing/',
+      'app/[locale]/(app)/admin/premium/',
+      'lib/admin/premium/',
+      'hooks/billing/',
+      'components/billing/',
+      'components/landing-page/pricing/',
+      'components/admin/premium/',
+      `${FLUTTER}lib/services/billing/`,
+      `${FLUTTER}lib/features/paywall/`,
+      `${FLUTTER}lib/features/settings/logic/delete_subscription_warning.dart`,
+    ],
   ],
   [
-    'account export or deletion',
-    /^(?:lib\/domain\/account-(?:export|deletion)\/|lib\/actions\/identity\/|scripts\/ops\/|apps\/mobile-flutter\/lib\/features\/settings\/screens\/account_delete)/,
+    'account data or privacy consent',
+    [
+      'lib/domain/account-export/',
+      'lib/domain/account-deletion/',
+      'lib/domain/privacy/',
+      'lib/actions/identity/',
+      'lib/actions/privacy/',
+      'app/api/v1/profile/ai-consent/',
+      'components/settings/account/',
+      'components/settings/privacy/',
+      'components/privacy/',
+      'scripts/ops/',
+      `${FLUTTER}lib/features/privacy/`,
+      `${FLUTTER}lib/features/settings/screens/account_`,
+      `${FLUTTER}lib/features/settings/widgets/account/`,
+    ],
   ],
   [
     'CI, deploy or release',
-    /^(?:\.github\/(?:workflows|actions)\/|scripts\/cloud-run\/|Dockerfile|apps\/mobile-flutter\/(?:ios|fastlane)\/)/,
+    [
+      '.github/workflows/',
+      '.github/actions/',
+      'scripts/ci/',
+      'scripts/cloud-run/',
+      'Dockerfile',
+      'next.config',
+      'release-please-config.json',
+      '.release-please-manifest.json',
+      `${FLUTTER}ios/`,
+      `${FLUTTER}fastlane/`,
+    ],
   ],
   [
     'AI meal pipeline',
-    /^(?:lib\/ai\/(?:pipeline|matching|portion|provider|prompts)\/|app\/api\/analyze-meal\/)/,
+    [
+      'lib/ai/pipeline/',
+      'lib/ai/matching/',
+      'lib/ai/portion/',
+      'lib/ai/provider/',
+      'lib/ai/prompts/',
+      'app/api/analyze-meal/',
+    ],
   ],
 ];
 
@@ -48,9 +122,11 @@ const LOW = [
 
 /** `{ tier: 'low' | 'medium' | 'high', reasons: string[] }` for changed paths. */
 export function tierFor(files) {
+  // A test beside high-risk code cannot break it in prod.
+  const shipped = files.filter((f) => !/\/__tests__\//.test(f));
   const reasons = [];
-  for (const [label, pattern] of HIGH) {
-    const hit = files.find((f) => pattern.test(f));
+  for (const [label, prefixes] of HIGH) {
+    const hit = shipped.find((f) => prefixes.some((p) => f.startsWith(p)));
     if (hit) reasons.push(`${label}: ${hit}`);
   }
   if (reasons.length > 0) return { tier: 'high', reasons };
