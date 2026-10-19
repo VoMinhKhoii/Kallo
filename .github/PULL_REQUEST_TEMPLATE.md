@@ -32,9 +32,10 @@ Low tier: write "Low tier, merge on green."
 
 <!--
 What was run and what it showed, each claim pointing at output: gates, tests,
-the screen on a device or browser (screenshots), the eval result, the migration
-on a scratch database. Say what did not run as plainly as what did; high tier
-names what was not exercised in a real environment.
+the screen on a device or browser (screenshots, docs/REAL_RUN_EVIDENCE.md), the
+eval result, the migration on a scratch database. Say what did not run as
+plainly as what did; high tier names what was not exercised in a real
+environment.
 -->
 
 ## Risk tier
