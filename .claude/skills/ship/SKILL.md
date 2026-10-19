@@ -402,12 +402,16 @@ before the next round is requested. `main` requires conversation resolution, and
 open thread at merge is how #419's finding shipped and came back as #420.
 
 ```bash
-# Unresolved threads, with the first comment's id to match against our replies
-gh api graphql -F n=<pr-number> -f query='
-  query($n: Int!) { repository(owner: "VoMinhKhoii", name: "Kallo") {
-    pullRequest(number: $n) { reviewThreads(first: 100) { nodes {
-      id isResolved comments(first: 1) { nodes { databaseId author { login } } }
-  } } } } }' \
+# Unresolved threads, with the first comment's id to match against our replies.
+# --paginate follows $endCursor, so a PR with over 100 threads is read whole.
+gh api graphql --paginate -F n=<pr-number> -f query='
+  query($n: Int!, $endCursor: String) {
+    repository(owner: "VoMinhKhoii", name: "Kallo") { pullRequest(number: $n) {
+      reviewThreads(first: 100, after: $endCursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes { id isResolved
+          comments(first: 1) { nodes { databaseId author { login } } } }
+  } } } }' \
   --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)'
 # Resolve one after replying
 gh api graphql -f id=<thread-node-id> -f query='
@@ -425,8 +429,10 @@ Commit fixes with explicit paths (`fix: address Codex review round <n>`), push,
 wait for CI (6a), then request the next round. Repeat until the bot approves the
 **current** head.
 
-**Depth by tier.** Low tier gets one GitHub round, and a second only if the first
-found a P0 or P1. Medium and high loop until approval.
+**Depth by tier.** Low tier gets at most two GitHub rounds: if the first round has
+findings, fix them and request a second; after the second, fix anything it raised
+and stop, even without an approval, unless it found a P0 or P1 (then the PR loops
+like medium). Medium and high loop until approval.
 
 **From round 3 on, change the round, not just the code.** Before the third and
 every later `@codex review`:
@@ -529,7 +535,8 @@ Then resolve each answered thread (the GraphQL commands in 6c).
 Exit the loop when **all** are true:
 1. `gh pr checks <pr-number>` shows all checks as `pass`
 2. Codex has approved the current `HEAD` (6c), or the user explicitly accepted
-   an open dispute
+   an open dispute, or a low-tier PR has used its two rounds and every finding is
+   fixed (the summary says the last fixes were not re-reviewed)
 3. Every Codex and CodeRabbit thread has a reply and is resolved (the 6c query
    returns nothing); an open dispute the user is deciding stays open and is named
    in the summary
@@ -555,6 +562,7 @@ Tier:    <low|medium|high> — <low: merge on green | medium: read "How to revie
 CI:      All checks green
 Codex:   Approved on <sha> after <n> rounds
          (or: Not approved; user accepted open dispute(s): <finding>, on <date>)
+         (or: Low tier, two rounds used; fixes in <sha> not re-reviewed)
          Fixed: <count>  Disputed (with reasons): <count>
 Review:  All CodeRabbit comments resolved or dismissed
 

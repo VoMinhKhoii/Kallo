@@ -12,6 +12,13 @@ describe('tierFor', () => {
     ['lib/domain/billing/entitlement/grant.ts'],
     ['apps/mobile-flutter/lib/features/paywall/paywall_screen.dart'],
     ['lib/domain/account-deletion/delete.ts'],
+    ['lib/api/auth.ts'],
+    ['hooks/auth/use-google-identity.ts'],
+    ['components/auth/auth-provider.tsx'],
+    ['lib/actions/identity/account.ts'],
+    [
+      'apps/mobile-flutter/lib/features/settings/screens/account_delete_screen.dart',
+    ],
     ['.github/workflows/ci.yml'],
     ['scripts/cloud-run/deploy.sh'],
     ['lib/ai/pipeline/grounded/orchestrator.ts'],

@@ -15,7 +15,7 @@ const HIGH = [
   ],
   [
     'auth or session',
-    /^(?:proxy\.ts$|app\/auth\/|app\/api\/(?:v1\/)?auth\/|app\/api\/supabase-proxy\/|lib\/infra\/(?:auth|apple-auth|supabase|email)\/|apps\/mobile-flutter\/lib\/(?:services|features)\/auth\/)/,
+    /^(?:proxy\.ts$|app\/auth\/|app\/api\/(?:v1\/)?auth\/|app\/api\/supabase-proxy\/|lib\/api\/auth\.ts$|lib\/infra\/(?:auth|apple-auth|supabase|email)\/|(?:hooks|components)\/auth\/|apps\/mobile-flutter\/lib\/(?:services|features)\/auth\/)/,
   ],
   [
     'billing or entitlements',
@@ -23,7 +23,7 @@ const HIGH = [
   ],
   [
     'account export or deletion',
-    /^(?:lib\/domain\/account-(?:export|deletion)\/|scripts\/ops\/)/,
+    /^(?:lib\/domain\/account-(?:export|deletion)\/|lib\/actions\/identity\/|scripts\/ops\/|apps\/mobile-flutter\/lib\/features\/settings\/screens\/account_delete)/,
   ],
   [
     'CI, deploy or release',
