@@ -23,6 +23,8 @@ whole diff, so make it enough to decide on:
 - what behaves differently for a user, in one or two sentences;
 - the 2-3 places the risk sits, as file:line, and what could go wrong there;
 - what the evidence below covers, and what it cannot see.
+High tier also names the decisions only the owner can make and the few diff
+excerpts (file:line ranges) worth reading.
 Low tier: write "Low tier, merge on green."
 -->
 
@@ -31,12 +33,13 @@ Low tier: write "Low tier, merge on green."
 <!--
 What was run and what it showed, each claim pointing at output: gates, tests,
 the screen on a device or browser (screenshots), the eval result, the migration
-on a scratch database. High tier needs a real run, not only tests.
+on a scratch database. Say what did not run as plainly as what did; high tier
+names what was not exercised in a real environment.
 -->
 
 ## Risk tier
 
-<!-- low / medium / high and its reasons, from `node scripts/dev/risk-tier/risk-tier.mjs`. -->
+<!-- low / medium / high and its reasons, from `node scripts/dev/risk-tier/risk-tier.mjs`. A fix-forward PR reviewed as low says both: "medium by path, reviewed as low: fix-forward of #N". -->
 
 ## Regression of
 

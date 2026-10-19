@@ -156,21 +156,26 @@ git diff main..HEAD --stat
 Example: `feat(auth): add JWT-based user authentication`
 
 **Tier first.** `node scripts/dev/risk-tier/risk-tier.mjs` prints the review tier
-of the branch (low / medium / high) and why. The tier sets the depth of the 6c loop
-and what the owner reads (`docs/REVIEW_TIERS.md`). A fix-forward PR runs at low
-depth when its "Regression of" PR merged in the last 14 days, it touches only files
-that PR touched, and its own tier is not high.
+of the branch (low / medium / high) and why. The tier sets what the owner reads and
+what evidence the PR carries (`docs/REVIEW_TIERS.md`); every tier loops to
+approval. A fix-forward PR is reviewed as low when its "Regression of" PR merged in
+the last 14 days, its product code stays within files that PR touched (new tests
+and docs are fine), and its own tier is not high; the Risk tier section then says
+both, e.g. "medium by path, reviewed as low: fix-forward of #N".
 
 **Body:** fill every section of `.github/PULL_REQUEST_TEMPLATE.md`:
 - **Summary**, **Changes**: what the PR does and why; key changes from the diff.
 - **How to review** (medium and high): the owner reads this instead of the whole
   diff. What behaves differently for a user; the 2-3 places the risk sits, as
   `file:line`, and what could go wrong there; what the evidence covers and what it
-  cannot see. Write it for someone who has not read the code since last week. Low
+  cannot see. Write it for someone who has not read the code since last week. High
+  tier adds the decisions only the owner can make and the few diff excerpts
+  (`file:line` ranges) worth their reading; the full diff stays one click away. Low
   tier: "Low tier, merge on green."
 - **Evidence**: each claim points at output you ran (gates, tests, screenshots of
   the screen on a device or browser, the eval result, a migration on a scratch
-  database). High tier needs a real run, not only tests.
+  database). Say what did not run as plainly as what did; a high tier PR names what
+  was not exercised in a real environment (device, browser, prod-like service).
 - **Risk tier**: the script's tier and reasons.
 - **Regression of**: the PR whose defect this fixes, or "none". It is how fix-forward
   breakage gets counted, so never leave it blank.
@@ -380,11 +385,19 @@ Codex findings are claims to verify, not orders. For each one:
        (`{lang, text, components: [{name, role, grams, required}]}`) under
        `arena-train/review-cases/pr<n>.json` with the comment id (never into
        test30), and reply `Eval case: pr<n>/<id>, judged on the arena, not patched
-       here.` Before un-drafting, the PR body's Evidence carries the arena result
-       before → after and pass/fail per review case. A server-side change uses the
-       frozen-capture replay (no DB, no LLM); a prompt change needs a Call 1/2 run,
-       and any paid run needs the owner's go-ahead first. A change inside the ±1.5
-       first-pick noise per 200 meals is dropped, whatever the thread argued.
+       here.` Run it the way `arena-train/CLIMB.md` records: a server-side change
+       uses the frozen-capture replay (no DB, no LLM); a prompt change needs a
+       Call 1/2 run, and any paid run needs the owner's go-ahead first. Judge it on
+       the measure the finding is about (the case's components, grams or kcal),
+       case by case, plus the aggregate to catch a regression elsewhere; the ±1.5
+       first-pick noise rule applies to retrieval comparisons only. Three outcomes,
+       stated in the PR's Evidence before un-drafting:
+       - the case fails today and a change fixes it without an aggregate
+         regression → make the change, with the numbers;
+       - the case already passes, or the change does not help → resolve the
+         thread with the result;
+       - the eval cannot run or is inconclusive → leave the case filed and ask the
+         owner whether to merge without it.
        Review cases join `meals.json` only after a gold-curation batch.
      - Codex re-raising an eval-routed finding gets the case id again, not a patch.
 3. **Sweep the class.** A finding usually names one site of a class of bug (a
@@ -428,31 +441,32 @@ Commit fixes with explicit paths (`fix: address Codex review round <n>`), push,
 wait for CI (6a), then request the next round. Repeat until the bot approves the
 **current** head.
 
-**Depth by tier.** Low tier gets at most two GitHub rounds: if the first round has
-findings, fix them and request a second; after the second, fix anything it raised
-and stop, even without an approval, unless it found a P0 or P1 (then the PR loops
-like medium). Medium and high loop until approval.
+**Every tier loops until approval.** The tier changes what the owner reads and
+what evidence the PR carries, never when review stops.
 
 **From round 3 on, change the round, not just the code.** Before the third and
 every later `@codex review`:
 1. List every finding so far by class. Sweep each class across the whole diff and
    its callers (step 3 above), so this round fixes classes, not sites.
-2. Run the local Codex pass (Phase 3b) on the fixed head, and handle its findings
-   before asking GitHub again. On a low or medium tier PR, skip it when the fixes
-   since the last round are a few lines (the pass costs several minutes of model
-   usage); a high tier PR always runs it.
+2. Run the local Codex pass (Phase 3b) and handle its findings before asking
+   GitHub again. At round 3 it reviews the whole branch. In later rounds the brief
+   scopes it to `git diff <last-reviewed-sha>..HEAD` and the callers of what that
+   changed, and a whole-branch pass runs again only when the approach changed. On
+   a low or medium tier PR, skip it when the fixes since the last round are a few
+   lines (the pass costs several minutes of model usage).
 3. Ask for a narrower review: the request names the last reviewed commit, asks
    Codex to review `git diff <last-reviewed-sha>..HEAD` and the callers of what it
    changed, and lists the findings already answered so they are not raised again.
 
 Keep looping while rounds find real bugs; the round count alone is never a reason
-to stop. Do not cave to win the approval either. Stop and put the positions to the
-user only when:
+to stop. When two rounds in a row find only new sites of classes already swept,
+change the approach instead of adding cases: a different mechanism, not a longer
+list (on #466 the gate stopped parsing Bash commands and used git's own pre-push
+hook, and the findings ended). Say so in the next request. Do not cave to win the
+approval either. Stop and put the positions to the user only when:
 - Codex re-raises a finding we rejected with evidence (do not change the code just
   to quiet it);
-- a finding needs a product or design decision;
-- two rounds in a row found only new sites of classes already swept, which means
-  the approach itself may need rethinking.
+- a finding, or a change of approach, needs a product or design decision.
 
 ### 6d. Triage CodeRabbit Comments
 
@@ -536,8 +550,7 @@ Then resolve each answered thread (the GraphQL commands in 6c).
 Exit the loop when **all** are true:
 1. `gh pr checks <pr-number>` shows all checks as `pass`
 2. Codex has approved the current `HEAD` (6c), or the user explicitly accepted
-   an open dispute, or a low-tier PR has used its two rounds and every finding is
-   fixed (the summary says the last fixes were not re-reviewed)
+   an open dispute
 3. Every Codex and CodeRabbit thread has a reply and is resolved (the 6c query
    returns nothing); an open dispute the user is deciding stays open and is named
    in the summary
@@ -558,12 +571,11 @@ Branch:  <branch>
 PR:      <url>
 Status:  Draft — ready to mark as ready-for-review when you're happy
 Tier:    <low|medium|high> — <low: merge on green | medium: read "How to review"
-         and the evidence | high: also read the diff of <high-risk files>>
+         and the evidence | high: also the decisions and excerpts it names>
 
 CI:      All checks green
 Codex:   Approved on <sha> after <n> rounds
          (or: Not approved; user accepted open dispute(s): <finding>, on <date>)
-         (or: Low tier, two rounds used; fixes in <sha> not re-reviewed)
          Fixed: <count>  Disputed (with reasons): <count>
 Review:  All CodeRabbit comments resolved or dismissed
 
