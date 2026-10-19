@@ -171,10 +171,11 @@ PR body.
 git push -u origin <branch-name>
 ```
 
-A PreToolUse hook (`scripts/dev/push-gates/`) runs CI's fast gates (structure,
-Biome, tsc, migration timestamps, `flutter analyze`, each only when the diff needs
-it) before any agent push, and blocks the push with the failing output. Fix the
-failures and push again; do not work around the hook.
+A git pre-push hook (`.githooks/pre-push` → `scripts/dev/push-gates/`) runs CI's
+fast gates (structure, Biome, tsc, migration timestamps, `dart format`, `flutter
+analyze`, each only when the diff needs it) before any agent push, and makes git
+refuse the push with the failing output. Fix the failures and push again; never
+bypass it with `--no-verify`.
 
 If push is rejected due to diverged history (non-fast-forward), see
 **[Appendix: Handling Diverged Branch]** before proceeding.

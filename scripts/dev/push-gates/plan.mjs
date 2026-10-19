@@ -1,6 +1,18 @@
-// Which of CI's fast gates a change needs, from the files it touches.
+// Whether a push needs the gates, and which of CI's fast gates a change needs
+// from the files it touches.
 
 const MOBILE = 'apps/mobile-flutter/';
+
+/**
+ * Whether git's pre-push stdin (`<local ref> <local sha> <remote ref> <remote
+ * sha>` per line) publishes any commit. A deletion sends an all-zero local sha.
+ */
+export function pushesCode(refLines) {
+  return refLines
+    .split('\n')
+    .map((line) => line.trim().split(/\s+/)[1])
+    .some((sha) => sha !== undefined && !/^0+$/.test(sha));
+}
 // Files that cannot break a type check. JSON is not one: TypeScript imports the
 // message catalogs and reads their keys.
 const PROSE = /\.(?:md|mdx|txt)$/;

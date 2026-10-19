@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gatesFor } from '../plan.mjs';
+import { gatesFor, pushesCode } from '../plan.mjs';
 
 const names = (changed: string[] | null) =>
   gatesFor(changed).map((g: { name: string }) => g.name);
@@ -42,5 +42,23 @@ describe('gatesFor', () => {
       (g: { name: string }) => g.name === 'migrations'
     );
     expect(gate?.env).toEqual({ GITHUB_BASE_REF: 'main' });
+  });
+});
+
+describe('pushesCode', () => {
+  const SHA = 'a'.repeat(40);
+  const ZERO = '0'.repeat(40);
+
+  it('is true when any ref publishes a commit', () => {
+    expect(
+      pushesCode(
+        `refs/heads/x ${SHA} refs/heads/x ${ZERO}\n(delete) ${ZERO} refs/heads/old ${SHA}\n`
+      )
+    ).toBe(true);
+  });
+
+  it('is false for deletions only, or nothing at all', () => {
+    expect(pushesCode(`(delete) ${ZERO} refs/heads/old ${SHA}\n`)).toBe(false);
+    expect(pushesCode('')).toBe(false);
   });
 });
