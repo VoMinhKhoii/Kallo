@@ -132,7 +132,7 @@ Read by the Codex GitHub reviewer and by `/ship`'s local Codex pass (the heading
 
 **AI pipeline (`lib/ai/prompts/`, `lib/ai/pipeline/`, `lib/ai/matching/`).** Two kinds of finding:
 - Code bugs, fixed in the PR with a test: a keyword matched without a word boundary, two prompt rules that contradict, wrong arithmetic in a rule ("half of 400 g" must be 200 g, #441), deadlines, cancellation, dropped fields, raw/cooked mass conversion, provider routing.
-- Food judgment, not patched in the PR: which term belongs in a liquid-dish list, whether "iced tea" implies sugar, how a count splits across parts, which row state a food should pick. State it as a meal text plus the expected outcome; the author files it as a Meal Arena case and the PR is judged on the arena result (`/ship` 6c). The one such patch that was measured made results worse and was reverted (#428).
+- Food judgment, never patched on a reviewer's word: which term belongs in a liquid-dish list, whether "iced tea" implies sugar, how a count splits across parts, which row state a food should pick. State it as a meal text plus the expected outcome; the author files it as a Meal Arena case, and the PR changes behavior only when the arena shows the case failing and the change fixing it without a regression elsewhere (`/ship` 6c). The one such patch made without a measurement made results worse and was reverted (#428).
 
 **Our replies.** `Fixed in <sha>.` · `Not changing: <traced reason>.` · `Eval case: <case id>.` · `Pre-existing: <ttr task>.` Every thread is answered and resolved before merge; GitHub requires conversation resolution on `main`.
 

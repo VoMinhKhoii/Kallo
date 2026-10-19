@@ -380,12 +380,12 @@ Codex findings are claims to verify, not orders. For each one:
      - *Food judgment*: the claim is "input X should yield Y" and only the model's
        output on a meal can confirm it (a keyword-list entry such as "súp", sugar
        implied in iced tea, how a dish count splits, which row state to pick). Do
-       not patch it in the round. Write the meal as an arena case in the train
+       not patch it on the reviewer's word. Write the meal as an arena case in the train
        format of `~/Developer/kallo-meal-arena/climb/arena-train/meals.json`
        (`{lang, text, components: [{name, role, grams, required}]}`) under
        `arena-train/review-cases/pr<n>.json` with the comment id (never into
-       test30), and reply `Eval case: pr<n>/<id>, judged on the arena, not patched
-       here.` Run it the way `arena-train/CLIMB.md` records: a server-side change
+       test30), and reply `Eval case: pr<n>/<id>, judged on the arena before any
+       change.` Run it the way `arena-train/CLIMB.md` records: a server-side change
        uses the frozen-capture replay (no DB, no LLM); a prompt change needs a
        Call 1/2 run, and any paid run needs the owner's go-ahead first. Judge it on
        the measure the finding is about (the case's components, grams or kcal),
