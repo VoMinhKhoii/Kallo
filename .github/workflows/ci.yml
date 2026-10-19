@@ -162,7 +162,7 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.repository.private == false
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/dependency-review-action@v5
 
   container-publish:
     name: Container Publish
