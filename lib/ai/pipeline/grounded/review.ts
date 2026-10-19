@@ -1,8 +1,7 @@
 /**
  * Review Call 2's row picks against the food they stand for, after the
  * selector. `reviewPicks` is the one entry the orchestrator calls:
- * - first, a liquid part (broth, coconut water) ships no refuse share;
- * - then a pick whose own estimate contradicts the row (a paste or powder
+ * - first, a pick whose own estimate contradicts the row (a paste or powder
  *   for a prepared dish) becomes a rejection, so the dish rescue can split it;
  * - then the dish rescue splices in the parts of what Call 2 rejected;
  * - then a fried dish's separate oil row is dropped when its foods matched
@@ -17,7 +16,6 @@ import {
   shippedEdibleGrams,
 } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import {
-  isWholeLiquidPart,
   logRawRowYields,
   scaleToServedMass,
 } from '@/lib/ai/pipeline/resolve/served-mass';
@@ -45,19 +43,14 @@ export async function reviewPicks(
   rescued: number;
   summary: string;
 }> {
-  const liquid = clearLiquidRefuse(state);
-  const reviewed = rejectWrongFormRows(liquid.state);
+  const reviewed = rejectWrongFormRows(state);
   const rescued = rescue ? await rescue.apply(reviewed.state) : null;
-  // The rescue's parts come from their own Call 2, so they get the same check.
-  const rescuedLiquid = rescued ? clearLiquidRefuse(rescued.state) : null;
-  const oil = dropOilInFriedRows(rescuedLiquid?.state ?? reviewed.state);
+  const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state);
   logRawRowYields(oil.state);
   const served = scaleToServedMass(oil.state);
   return {
     state: served.state,
     changed:
-      liquid.cleared > 0 ||
-      (rescuedLiquid?.cleared ?? 0) > 0 ||
       reviewed.rejected > 0 ||
       rescued != null ||
       oil.dropped > 0 ||
@@ -65,40 +58,6 @@ export async function reviewPicks(
     rescued: rescued?.rescued ?? 0,
     summary: `${reviewed.rejected} wrong-form rows, ${rescued?.rescued ?? 0} ingredients rescued, ${oil.dropped} oil rows dropped, ${served.scaled} weighed dishes scaled`,
   };
-}
-
-/**
- * A liquid part has nothing to throw away: broth made from bones and coconut
- * water drunk from the shell are all eaten. Call 2 is told so, but now and then
- * names the bone or shell anyway (rib broth and coconut water at 60%, 1 in 3
- * replays), which cuts the liquid's grams. By the same liquid names the
- * dish-weight scaling reads, when the whole part is the liquid, such a part
- * ships 0% refuse with kind none. Returns new state.
- */
-export function clearLiquidRefuse(state: RunState): {
-  state: RunState;
-  cleared: number;
-} {
-  const grounded = structuredClone(state.grounded);
-  let cleared = 0;
-  for (const { ingredient, ground } of pairIngredientsWithGrounded(
-    state.decomposition,
-    grounded
-  )) {
-    if (!ground || !isWholeLiquidPart(ingredient)) continue;
-    if (ground.refusePct === 0 && ground.refuseKind === 'none') continue;
-    console.info('[v2-pipeline] liquid_refuse_cleared', {
-      ingredient: ingredient.rawName,
-      refuseKind: ground.refuseKind,
-      refusePct: ground.refusePct,
-    });
-    ground.refusePct = 0;
-    ground.refuseKind = 'none';
-    cleared++;
-  }
-  return cleared > 0
-    ? { state: { ...state, grounded }, cleared }
-    : { state, cleared };
 }
 
 /** A wrong-form pick: the row must give more than this many times Call 2's own energy... */

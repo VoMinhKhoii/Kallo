@@ -54,53 +54,13 @@ const SIDE_JOIN =
  */
 const LIQUID_PART_EN =
   /(?<!\p{L})(?:broth|stock|coconut milk|(?<!(?:sour|ice) )cream|gravy|curry sauce|water)$/iu;
-const LIQUID_NAMES_VI =
-  'nước dùng|nước lèo|nước súp|nước canh|nước kho|nước cốt dừa|sốt cà ri|nước lọc';
-const LIQUID_PART_VI = new RegExp(
-  `(?<!\\p{L})(?:${LIQUID_NAMES_VI})(?!\\p{L})`,
-  'iu'
-);
+const LIQUID_PART_VI =
+  /(?<!\p{L})(?:nước dùng|nước lèo|nước súp|nước canh|nước kho|nước cốt dừa|sốt cà ri|nước lọc)(?!\p{L})/iu;
 
 function isLiquidPart(ingredient: DecomposedIngredientV2): boolean {
   return [ingredient.rawName, ingredient.canonicalName].some(
     (n) => LIQUID_PART_EN.test(n.trim()) || LIQUID_PART_VI.test(n)
   );
-}
-
-/** Names that join a liquid to a solid ("chicken with gravy", "sườn trong nước dùng"). */
-const LIQUID_JOIN =
-  /(?<!\p{L})(?:with|in|and|on|trong|với|và|kèm|chan)(?!\p{L})|[+&]/iu;
-/**
- * A comma joins too when a liquid follows it ("roast chicken, gravy"); one
- * after the liquid only qualifies it ("Chicken broth, ready-to-serve").
- */
-const COMMA_THEN_LIQUID = new RegExp(
-  `,.*(?<!\\p{L})(?:broth|stock|coconut milk|cream|gravy|curry sauce|water|${LIQUID_NAMES_VI})(?!\\p{L})`,
-  'iu'
-);
-const WHOLE_LIQUID_VI = new RegExp(`^(?:${LIQUID_NAMES_VI})(?!\\p{L})`, 'iu');
-
-/**
- * The part is the liquid itself, not a solid served in one: no joining word,
- * and a Vietnamese name starts on the liquid ("nước dùng sườn", not "sườn
- * nước dùng"). English names already end on it.
- */
-export function isWholeLiquidPart(ingredient: DecomposedIngredientV2): boolean {
-  const names = [ingredient.rawName, ingredient.canonicalName].map((n) =>
-    n.trim()
-  );
-  // Either name joining a solid, or naming the liquid after one, rules the
-  // part out whatever the other name says.
-  if (
-    names.some(
-      (n) =>
-        LIQUID_JOIN.test(n) ||
-        COMMA_THEN_LIQUID.test(n) ||
-        (LIQUID_PART_VI.test(n) && !WHOLE_LIQUID_VI.test(n))
-    )
-  )
-    return false;
-  return names.some((n) => LIQUID_PART_EN.test(n) || WHOLE_LIQUID_VI.test(n));
 }
 
 /**
