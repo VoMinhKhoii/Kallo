@@ -439,7 +439,8 @@ every later `@codex review`:
 1. List every finding so far by class. Sweep each class across the whole diff and
    its callers (step 3 above), so this round fixes classes, not sites.
 2. Run the local Codex pass (Phase 3b) on the fixed head, and handle its findings
-   before asking GitHub again.
+   before asking GitHub again. Skip it when the fixes since the last round are a
+   few lines; the pass costs several minutes of model usage.
 3. Ask for a narrower review: the request names the last reviewed commit, asks
    Codex to review `git diff <last-reviewed-sha>..HEAD` and the callers of what it
    changed, and lists the findings already answered so they are not raised again.
