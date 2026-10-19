@@ -140,7 +140,8 @@ describe('clearLiquidRefuse', () => {
   it('ships a liquid part at 0% refuse and leaves a bone-in solid alone', () => {
     const state = soup();
     const out = clearLiquidRefuse(state);
-    expect(refuse(out.grounded)).toEqual([
+    expect(out.cleared).toBe(2);
+    expect(refuse(out.state.grounded)).toEqual([
       ['bone', 45],
       ['none', 0],
       ['none', 0],
@@ -157,7 +158,51 @@ describe('clearLiquidRefuse', () => {
         parts: [{ name: 'Nước dùng', g: 300, kcal: 30, row: ['Broth', 10] }],
       },
     ]);
-    expect(clearLiquidRefuse(state)).toBe(state);
+    expect(clearLiquidRefuse(state)).toEqual({ state, cleared: 0 });
+  });
+
+  it.each([
+    'bone-in chicken with gravy',
+    'sườn heo trong nước dùng',
+    'sườn nước dùng',
+  ])('keeps the bone share of a solid served in a liquid: %s', (name) => {
+    const state = stateOf([
+      {
+        name: 'Dish',
+        cookingMethod: 'nấu',
+        parts: [{ name, g: 200, kcal: 300, row: ['Pork ribs', 280] }],
+      },
+    ]);
+    Object.assign(state.grounded.mealItems[0].ingredients[0], {
+      refuseKind: 'bone',
+      refusePct: 40,
+    });
+    expect(clearLiquidRefuse(state).cleared).toBe(0);
+  });
+
+  it('names a liquid kind none even when its share is already 0', () => {
+    const state = stateOf([
+      {
+        name: 'Canh',
+        cookingMethod: 'nấu',
+        parts: [
+          { name: 'Nước dùng xương', g: 250, kcal: 40, row: ['Broth', 16] },
+        ],
+      },
+    ]);
+    Object.assign(state.grounded.mealItems[0].ingredients[0], {
+      refuseKind: 'bone',
+      refusePct: 0,
+    });
+    const out = clearLiquidRefuse(state);
+    expect(refuse(out.state.grounded)).toEqual([['none', 0]]);
+  });
+
+  it('marks the review changed when only a liquid was cleared', async () => {
+    const state = soup();
+    const out = await reviewPicks(state, null);
+    expect(out.changed).toBe(true);
+    expect(refuse(out.state.grounded)[1]).toEqual(['none', 0]);
   });
 });
 

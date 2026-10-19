@@ -17,7 +17,7 @@ import {
   shippedEdibleGrams,
 } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import {
-  isLiquidPart,
+  isWholeLiquidPart,
   logRawRowYields,
   scaleToServedMass,
 } from '@/lib/ai/pipeline/resolve/served-mass';
@@ -45,14 +45,19 @@ export async function reviewPicks(
   rescued: number;
   summary: string;
 }> {
-  const reviewed = rejectWrongFormRows(clearLiquidRefuse(state));
+  const liquid = clearLiquidRefuse(state);
+  const reviewed = rejectWrongFormRows(liquid.state);
   const rescued = rescue ? await rescue.apply(reviewed.state) : null;
-  const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state);
+  // The rescue's parts come from their own Call 2, so they get the same check.
+  const rescuedLiquid = rescued ? clearLiquidRefuse(rescued.state) : null;
+  const oil = dropOilInFriedRows(rescuedLiquid?.state ?? reviewed.state);
   logRawRowYields(oil.state);
   const served = scaleToServedMass(oil.state);
   return {
     state: served.state,
     changed:
+      liquid.cleared > 0 ||
+      (rescuedLiquid?.cleared ?? 0) > 0 ||
       reviewed.rejected > 0 ||
       rescued != null ||
       oil.dropped > 0 ||
@@ -67,17 +72,21 @@ export async function reviewPicks(
  * water drunk from the shell are all eaten. Call 2 is told so, but now and then
  * names the bone or shell anyway (rib broth and coconut water at 60%, 1 in 3
  * replays), which cuts the liquid's grams. By the same liquid names the
- * dish-weight scaling reads, such a part ships 0% refuse. Returns new state.
+ * dish-weight scaling reads, when the whole part is the liquid, such a part
+ * ships 0% refuse with kind none. Returns new state.
  */
-export function clearLiquidRefuse(state: RunState): RunState {
+export function clearLiquidRefuse(state: RunState): {
+  state: RunState;
+  cleared: number;
+} {
   const grounded = structuredClone(state.grounded);
   let cleared = 0;
   for (const { ingredient, ground } of pairIngredientsWithGrounded(
     state.decomposition,
     grounded
   )) {
-    if (!ground || ground.refusePct === 0 || !isLiquidPart(ingredient))
-      continue;
+    if (!ground || !isWholeLiquidPart(ingredient)) continue;
+    if (ground.refusePct === 0 && ground.refuseKind === 'none') continue;
     console.info('[v2-pipeline] liquid_refuse_cleared', {
       ingredient: ingredient.rawName,
       refuseKind: ground.refuseKind,
@@ -87,7 +96,9 @@ export function clearLiquidRefuse(state: RunState): RunState {
     ground.refuseKind = 'none';
     cleared++;
   }
-  return cleared > 0 ? { ...state, grounded } : state;
+  return cleared > 0
+    ? { state: { ...state, grounded }, cleared }
+    : { state, cleared };
 }
 
 /** A wrong-form pick: the row must give more than this many times Call 2's own energy... */

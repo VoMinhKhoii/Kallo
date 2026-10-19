@@ -54,13 +54,35 @@ const SIDE_JOIN =
  */
 const LIQUID_PART_EN =
   /(?<!\p{L})(?:broth|stock|coconut milk|(?<!(?:sour|ice) )cream|gravy|curry sauce|water)$/iu;
-const LIQUID_PART_VI =
-  /(?<!\p{L})(?:nước dùng|nước lèo|nước súp|nước canh|nước kho|nước cốt dừa|sốt cà ri|nước lọc)(?!\p{L})/iu;
+const LIQUID_NAMES_VI =
+  'nước dùng|nước lèo|nước súp|nước canh|nước kho|nước cốt dừa|sốt cà ri|nước lọc';
+const LIQUID_PART_VI = new RegExp(
+  `(?<!\\p{L})(?:${LIQUID_NAMES_VI})(?!\\p{L})`,
+  'iu'
+);
 
-export function isLiquidPart(ingredient: DecomposedIngredientV2): boolean {
+function isLiquidPart(ingredient: DecomposedIngredientV2): boolean {
   return [ingredient.rawName, ingredient.canonicalName].some(
     (n) => LIQUID_PART_EN.test(n.trim()) || LIQUID_PART_VI.test(n)
   );
+}
+
+/** Names that join a liquid to a solid ("chicken with gravy", "sườn trong nước dùng"). */
+const LIQUID_JOIN =
+  /(?<!\p{L})(?:with|in|and|on|trong|với|và|kèm|chan)(?!\p{L})|[,+&]/iu;
+const WHOLE_LIQUID_VI = new RegExp(`^(?:${LIQUID_NAMES_VI})(?!\\p{L})`, 'iu');
+
+/**
+ * The part is the liquid itself, not a solid served in one: no joining word,
+ * and a Vietnamese name starts on the liquid ("nước dùng sườn", not "sườn
+ * nước dùng"). English names already end on it.
+ */
+export function isWholeLiquidPart(ingredient: DecomposedIngredientV2): boolean {
+  return [ingredient.rawName, ingredient.canonicalName].some((n) => {
+    const name = n.trim();
+    if (LIQUID_JOIN.test(name)) return false;
+    return LIQUID_PART_EN.test(name) || WHOLE_LIQUID_VI.test(name);
+  });
 }
 
 /**
