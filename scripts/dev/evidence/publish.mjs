@@ -49,6 +49,9 @@ function gh(args, body) {
       input: body ? JSON.stringify(body) : undefined,
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
+      // gh's error text rides on the thrown error, not the terminal: the
+      // first upload's missing-branch 404 is expected.
+      stdio: ['pipe', 'pipe', 'pipe'],
     })
   );
 }
