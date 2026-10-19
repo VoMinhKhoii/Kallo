@@ -78,11 +78,20 @@ const WHOLE_LIQUID_VI = new RegExp(`^(?:${LIQUID_NAMES_VI})(?!\\p{L})`, 'iu');
  * nước dùng"). English names already end on it.
  */
 export function isWholeLiquidPart(ingredient: DecomposedIngredientV2): boolean {
-  return [ingredient.rawName, ingredient.canonicalName].some((n) => {
-    const name = n.trim();
-    if (LIQUID_JOIN.test(name)) return false;
-    return LIQUID_PART_EN.test(name) || WHOLE_LIQUID_VI.test(name);
-  });
+  const names = [ingredient.rawName, ingredient.canonicalName].map((n) =>
+    n.trim()
+  );
+  // Either name joining a solid, or naming the liquid after one, rules the
+  // part out whatever the other name says.
+  if (
+    names.some(
+      (n) =>
+        LIQUID_JOIN.test(n) ||
+        (LIQUID_PART_VI.test(n) && !WHOLE_LIQUID_VI.test(n))
+    )
+  )
+    return false;
+  return names.some((n) => LIQUID_PART_EN.test(n) || WHOLE_LIQUID_VI.test(n));
 }
 
 /**

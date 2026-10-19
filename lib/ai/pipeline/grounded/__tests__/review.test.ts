@@ -180,6 +180,26 @@ describe('clearLiquidRefuse', () => {
     expect(clearLiquidRefuse(state).cleared).toBe(0);
   });
 
+  it.each([
+    ['bone-in chicken with gravy', 'Chicken gravy'],
+    ['sườn nước dùng', 'pork rib broth'],
+  ])('keeps the bone share when either name joins a solid: %s / %s', (rawName, canonicalName) => {
+    const state = stateOf([
+      {
+        name: 'Dish',
+        cookingMethod: 'nấu',
+        parts: [{ name: rawName, g: 200, kcal: 300, row: ['Pork ribs', 280] }],
+      },
+    ]);
+    state.decomposition.mealItems[0].ingredients[0].canonicalName =
+      canonicalName;
+    Object.assign(state.grounded.mealItems[0].ingredients[0], {
+      refuseKind: 'bone',
+      refusePct: 40,
+    });
+    expect(clearLiquidRefuse(state).cleared).toBe(0);
+  });
+
   it('names a liquid kind none even when its share is already 0', () => {
     const state = stateOf([
       {
