@@ -1,16 +1,24 @@
 #!/usr/bin/env node
 // Run by `.githooks/pre-push` before an agent's push: the fast gates CI would
-// fail the push on, in the checkout being pushed. A failing gate exits 1, which
-// makes git refuse the push and shows this output to the agent.
+// fail the push on, run against exactly the commit being pushed. A failing gate
+// exits 1, which makes git refuse the push and shows this output to the agent.
 //
-// The gates run on the working tree, the same files the agent just edited, not
-// on a clean checkout of the pushed commit: an uncommitted fix can let a push
-// through that CI then fails. Checking out the commit would need a stash or a
-// second worktree per push, which this shared checkout rules out.
+// When the checkout is that commit with nothing uncommitted or untracked, the
+// gates run in place. Otherwise they run in a throwaway checkout of the pushed
+// commit (sharing node_modules and the Flutter build cache), so an uncommitted
+// fix cannot let a broken commit through and unrelated work in progress cannot
+// block a good one.
 import { execFileSync, spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  symlinkSync,
+} from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import { gatesFor, pushesCode } from './plan.mjs';
+import { gatesFor, pushedCommits } from './plan.mjs';
 
 // The gates need node, bun and flutter even from a bare PATH.
 const HOME = process.env.HOME ?? '';
@@ -43,39 +51,73 @@ const git = (...args) => gitRaw(...args)?.trim() ?? null;
 // names ("apps/mobile-flutter/lib/m\303\263n.dart"), hiding their folder.
 const gitFiles = (...args) => gitRaw(...args, '-z')?.split('\0') ?? null;
 
-// Git passes one line per ref being pushed; deleting refs publishes no code.
-if (!pushesCode(readFileSync(0, 'utf8'))) process.exit(0);
+// Untracked build state the gates need, shared into a throwaway checkout.
+const SHARED = [
+  'node_modules',
+  'apps/mobile-flutter/.dart_tool',
+  'apps/mobile-flutter/.flutter-plugins-dependencies',
+];
 
-const root = git('rev-parse', '--show-toplevel') ?? process.cwd();
-// Committed, staged, unstaged and untracked changes since main.
-const base = git('merge-base', 'HEAD', 'origin/main');
-const diff = base ? gitFiles('diff', '--name-only', base) : null;
-const untracked = gitFiles('ls-files', '--others', '--exclude-standard');
-const changed =
-  diff === null
-    ? null
-    : [...new Set([...diff, ...(untracked ?? [])].filter(Boolean))];
-if (changed?.length === 0) process.exit(0);
+// A checkout of `sha` to run the gates in, and how to clean it up.
+function checkoutOf(root, sha) {
+  const status = git('status', '--porcelain');
+  if (git('rev-parse', 'HEAD') === sha && status === '') {
+    return { dir: root, cleanup: () => {} };
+  }
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'kallo-push-gates-'));
+  if (git('worktree', 'add', '--detach', dir, sha) === null) {
+    throw new Error(`could not check out ${sha} to run the gates`);
+  }
+  for (const shared of SHARED) {
+    const from = path.join(root, shared);
+    if (existsSync(from))
+      symlinkSync(realpathSync(from), path.join(dir, shared));
+  }
+  return {
+    dir,
+    cleanup: () => git('worktree', 'remove', '--force', dir),
+  };
+}
 
-const failures = [];
-for (const gate of gatesFor(changed)) {
-  const run = spawnSync(gate.cmd, gate.args, {
-    cwd: path.join(root, gate.cwd ?? ''),
-    env: { ...env, ...gate.env },
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  if (run.status !== 0) {
-    const output = `${run.stdout ?? ''}${run.stderr ?? ''}${run.error ? String(run.error) : ''}`;
-    failures.push(
-      `--- ${gate.name} (${[gate.cmd, ...gate.args].join(' ')}) ---\n${output.trim().split('\n').slice(-40).join('\n')}`
-    );
+function failingGates(root, sha) {
+  // Every file the pushed commit changes since it left main.
+  const base = git('merge-base', sha, 'origin/main');
+  const diff = base
+    ? gitFiles('diff', '--name-only', '--no-renames', base, sha)
+    : null;
+  const changed = diff === null ? null : diff.filter(Boolean);
+  if (changed?.length === 0) return [];
+
+  const checkout = checkoutOf(root, sha);
+  try {
+    const failures = [];
+    for (const gate of gatesFor(changed)) {
+      const run = spawnSync(gate.cmd, gate.args, {
+        cwd: path.join(checkout.dir, gate.cwd ?? ''),
+        env: { ...env, ...gate.env },
+        encoding: 'utf8',
+        maxBuffer: 64 * 1024 * 1024,
+      });
+      if (run.status !== 0) {
+        const output = `${run.stdout ?? ''}${run.stderr ?? ''}${run.error ? String(run.error) : ''}`;
+        failures.push(
+          `--- ${gate.name} on ${sha.slice(0, 10)} (${[gate.cmd, ...gate.args].join(' ')}) ---\n${output.trim().split('\n').slice(-40).join('\n')}`
+        );
+      }
+    }
+    return failures;
+  } finally {
+    checkout.cleanup();
   }
 }
 
+const root = git('rev-parse', '--show-toplevel') ?? process.cwd();
+const failures = pushedCommits(readFileSync(0, 'utf8')).flatMap((sha) =>
+  failingGates(root, sha)
+);
 if (failures.length > 0) {
   process.stderr.write(
-    `Push blocked: ${failures.length} CI gate(s) fail in ${root}. Fix them, commit, and push again. Do not bypass with --no-verify.\n\n${failures.join('\n\n')}\n`
+    `Push blocked: ${failures.length} CI gate(s) fail on the commit being pushed. Fix them, commit, and push again. Do not bypass with --no-verify.\n\n${failures.join('\n\n')}\n`
   );
   process.exit(1);
 }

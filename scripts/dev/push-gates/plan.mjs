@@ -4,14 +4,16 @@
 const MOBILE = 'apps/mobile-flutter/';
 
 /**
- * Whether git's pre-push stdin (`<local ref> <local sha> <remote ref> <remote
- * sha>` per line) publishes any commit. A deletion sends an all-zero local sha.
+ * The commits git's pre-push stdin (`<local ref> <local sha> <remote ref>
+ * <remote sha>` per line) publishes, without repeats. A deletion sends an
+ * all-zero local sha and publishes nothing.
  */
-export function pushesCode(refLines) {
-  return refLines
+export function pushedCommits(refLines) {
+  const shas = refLines
     .split('\n')
     .map((line) => line.trim().split(/\s+/)[1])
-    .some((sha) => sha !== undefined && !/^0+$/.test(sha));
+    .filter((sha) => sha !== undefined && !/^0+$/.test(sha));
+  return [...new Set(shas)];
 }
 // Files that cannot break a type check. JSON is not one: TypeScript imports the
 // message catalogs and reads their keys.
