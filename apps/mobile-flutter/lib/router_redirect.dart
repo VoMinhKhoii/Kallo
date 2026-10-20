@@ -31,8 +31,9 @@ const Set<String> _preAuthRoutes = {
 ///   1. session loading → stay on `/` (the splash).
 ///   2. signed OUT: allow [_preAuthRoutes] and `/circle/invite/*`. Otherwise
 ///      the local draft decides — finished the wizard → `/save-plan`, started
-///      it → `/onboarding`, else `/start`; while it is still coming off disk,
-///      stay on `/`.
+///      it → `/onboarding`, else `/start` from the splash and `/sign-in` from
+///      an in-app route (a session that just ended); while the draft is still
+///      coming off disk, stay on `/`.
 ///   3. signed IN with a non-empty local draft → `/welcome`, which flushes the
 ///      draft onto the server before the setup interstitial runs.
 ///   4. signed IN, no draft: `/welcome` always passes, brand-new first-session
@@ -65,7 +66,12 @@ String? resolveRedirect({
     // `/start` at someone who is three screens into the wizard.
     if (draft.loading) return loc == '/' ? null : '/';
     final value = draft.value;
-    if (value == null || value.isEmpty) return '/start';
+    if (value == null || value.isEmpty) {
+      // Anywhere but the splash, the session ended under them (signed out in
+      // Settings, or revoked on the server and dropped on a refresh). That is
+      // an account: it signs back in rather than starting the wizard over.
+      return loc == '/' ? '/start' : '/sign-in';
+    }
     // `hasFinishedScreens`, NOT `isComplete`: the body metrics are optional,
     // and without them step 2 never gets a payload — that user answered every
     // screen and must reach `/save-plan` rather than loop on the wizard.

@@ -2,7 +2,8 @@
 ///
 /// Port of web `lib/api/client-fetch.ts`. Preserves:
 ///   - base URL resolution (`Env.apiBaseUrl`),
-///   - the auth header derived from the Supabase session access token,
+///   - the auth header derived from the Supabase session access token, with
+///     one refresh-and-resend on a 401 ([ApiAuth]),
 ///   - the server error envelope `{ error: { code, status, retryable, message } }`,
 ///   - `Retry-After` parsing (numeric seconds OR HTTP-date),
 ///   - 204 No Content handling,
@@ -23,12 +24,10 @@ import '../../models/http/api_error.dart';
 import '../../models/http/stream_analyze_input.dart';
 import '../../models/logging/streaming.dart';
 import '../../models/nutrition_label.dart';
-import '../auth/supabase_service.dart';
 import '../env/env.dart';
+import 'api_auth.dart';
 
 part 'api_client_uploads.dart';
-
-const _authRefreshSkew = Duration(minutes: 5);
 
 /// Parse a `Retry-After` header: numeric seconds first, else HTTP-date delta.
 /// Returns `null` when absent/unparseable. Mirrors `parseRetryAfter` in RN.
@@ -69,47 +68,44 @@ ApiError _toApiError(http.Response res) {
 }
 
 class ApiClient {
-  ApiClient({http.Client? httpClient})
+  ApiClient({http.Client? httpClient, ApiAuth? auth})
     : _http = httpClient ?? http.Client(),
+      _auth = auth ?? ApiAuth(),
       _baseUrl = Env.apiBaseUrl;
 
   final http.Client _http;
+  final ApiAuth _auth;
   final String _baseUrl;
 
-  bool _expiresSoon(Session session) {
-    final expiresAt = session.expiresAt;
-    if (expiresAt == null) return false;
-    final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
-    return DateTime.now().add(_authRefreshSkew).isAfter(expiry);
+  /// Sends the request [build] makes from the bearer header (empty when
+  /// signed out). Every route is behind this, JSON, uploads and the SSE
+  /// stream alike. A 401 asks [ApiAuth.recover] once: given a new token, the
+  /// request is built again and resent (our API answers 401 before it does
+  /// any work, so a resend is safe for a POST too); otherwise the 401 is
+  /// returned for the caller to surface. No second recovery, so no loop.
+  Future<http.StreamedResponse> _send(
+    http.BaseRequest Function(Map<String, String> authHeader) build,
+  ) async {
+    final session = await _auth.session();
+    final res = await _http.send(build(_bearer(session)));
+    if (res.statusCode != 401 || !await _auth.recover(session)) return res;
+    await res.stream.drain<void>();
+    return _http.send(build(_bearer(await _auth.session())));
   }
 
-  /// Bearer header from the current Supabase session token, or empty when
-  /// signed out. Mirrors `authHeaders()` in the RN client.
-  Future<Map<String, String>> _authHeaders() async {
-    final auth = SupabaseService.client.auth;
-    var session = auth.currentSession;
-    if (session != null && _expiresSoon(session)) {
-      try {
-        session = (await auth.refreshSession()).session ?? auth.currentSession;
-      } catch (_) {
-        session = auth.currentSession;
-      }
-    }
-    final token = session?.accessToken;
-    return token != null ? {'Authorization': 'Bearer $token'} : {};
-  }
+  Map<String, String> _bearer(Session? session) =>
+      session == null ? {} : {'Authorization': 'Bearer ${session.accessToken}'};
 
   Future<T> _request<T>(String method, String path, [Object? body]) async {
-    final headers = await _authHeaders();
-    if (body != null) {
-      headers['Content-Type'] = 'application/json';
-    }
     final uri = Uri.parse('$_baseUrl$path');
-    final req = http.Request(method, uri)..headers.addAll(headers);
-    if (body != null) {
-      req.body = jsonEncode(body);
-    }
-    final streamed = await _http.send(req);
+    final streamed = await _send((authHeader) {
+      final req = http.Request(method, uri)..headers.addAll(authHeader);
+      if (body != null) {
+        req.headers['Content-Type'] = 'application/json';
+        req.body = jsonEncode(body);
+      }
+      return req;
+    });
     final res = await http.Response.fromStream(streamed);
 
     if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -218,18 +214,17 @@ class ApiClient {
   /// Cancel by cancelling the returned subscription — the underlying request is
   /// aborted (no auto-reconnect, matching `pollingInterval: 0` in RN).
   Stream<StreamEvent> analyzeMeal(StreamAnalyzeInput input) async* {
-    final headers = await _authHeaders();
-    headers['Content-Type'] = 'application/json';
-    headers['Accept'] = 'text/event-stream';
-
-    final req =
-        http.Request('POST', Uri.parse('$_baseUrl/api/analyze-meal'))
-          ..headers.addAll(headers)
-          ..body = jsonEncode(input.toJson());
-
+    final uri = Uri.parse('$_baseUrl/api/analyze-meal');
     http.StreamedResponse streamed;
     try {
-      streamed = await _http.send(req);
+      streamed = await _send(
+        (authHeader) =>
+            http.Request('POST', uri)
+              ..headers.addAll(authHeader)
+              ..headers['Content-Type'] = 'application/json'
+              ..headers['Accept'] = 'text/event-stream'
+              ..body = jsonEncode(input.toJson()),
+      );
     } catch (_) {
       yield const StreamErrorEvent(
         code: 'CONNECTION_ERROR',

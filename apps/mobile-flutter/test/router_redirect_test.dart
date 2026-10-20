@@ -131,10 +131,15 @@ void main() {
   });
 
   group('signed out', () {
-    test('with no draft, every other route lands on /start', () {
+    test('with no draft, the splash lands on /start', () {
       expect(_at('/'), '/start');
-      expect(_at('/dashboard'), '/start');
-      expect(_at('/logging'), '/start');
+    });
+
+    test('with no draft, a session lost in the app lands on /sign-in', () {
+      // Signed out in Settings, or revoked on the server: an account.
+      expect(_at('/dashboard'), '/sign-in');
+      expect(_at('/logging'), '/sign-in');
+      expect(_at('/settings'), '/sign-in');
     });
 
     test('with a partial draft, back into the wizard', () {

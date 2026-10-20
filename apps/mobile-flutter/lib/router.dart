@@ -57,8 +57,9 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 /// added here inherits the gesture by doing nothing.
 ///
 /// The redirect diverges from the web auth gate in `proxy.ts` from Phase
-/// C2 on: mobile runs onboarding BEFORE sign-in, so a signed-out user is not
-/// bounced to `/sign-in` but to wherever their LOCAL DRAFT says they are. The
+/// C2 on: mobile runs onboarding BEFORE sign-in, so a signed-out user is
+/// bounced to wherever their LOCAL DRAFT says they are, and to `/sign-in` only
+/// when there is none and the session ended inside the app. The
 /// rules are quoted, in order, on [resolveRedirect] — one copy, in the file
 /// that applies them; [_redirect] below is only the Riverpod plumbing.
 ///
