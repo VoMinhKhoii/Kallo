@@ -55,8 +55,15 @@ if (routes.length === 0 || routes.some((r) => !r.startsWith('/'))) {
 const unknown = widths.filter((w) => !(w in VIEWPORTS));
 if (unknown.length > 0)
   fail(`Unknown --width ${unknown.join(', ')}; use phone or desktop.`);
-await fetch(base, { signal: AbortSignal.timeout(10_000) }).catch(() =>
-  fail(`Nothing answers at ${base}. Start the dev server first (bun dev).`)
+// The base URL is itself a first load on a fresh `next dev` (10 s measured),
+// so it gets the same allowance; only a refused connection means no server.
+await fetch(base, { signal: AbortSignal.timeout(FIRST_LOAD_MS) }).catch(
+  (error) =>
+    fail(
+      error.name === 'TimeoutError'
+        ? `${base} did not answer within ${FIRST_LOAD_MS / 1000} s.`
+        : `Nothing answers at ${base}. Start the dev server first (bun dev).`
+    )
 );
 
 mkdirSync(out, { recursive: true });

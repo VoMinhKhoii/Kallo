@@ -59,7 +59,7 @@ facebook/fb/idb-companion`) to tap and type.
 
 3. A failure that also happens on main is not this PR's: confirm it on main,
    pass it with `--allow '<text from the issue>'`, and name it under Evidence as
-   pre-existing. As of 2026-10-20 every signed-in page logs one:
+   pre-existing. Until #474 is merged, every signed-in page logs one:
    ``--allow 'unstable value `Date.now()`'``.
 
 4. A state the route alone does not reach (an open sheet, a filled form, an
