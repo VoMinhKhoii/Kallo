@@ -17,6 +17,10 @@ meal pipeline, migrations and deploy settings.
 | **Medium** | Everything else | Full `/ship` loop | Reads the "How to review" section and the evidence, not the whole diff |
 | **Low** | Only docs, agent skills/agents/commands, tests, eval and bench scripts | Full `/ship` loop | Merges on green |
 
+At any tier, a change a user can see carries screenshots from a real browser or
+simulator, or says why it could not run (`docs/REAL_RUN_EVIDENCE.md`, `/ship`
+Phase 3c).
+
 A test file under a high-risk folder (`__tests__/`) does not make a change high.
 The exact path rules are in `scripts/dev/risk-tier/risk-tier.mjs`. Change them
 there, with a test, when a new area starts producing fixes.

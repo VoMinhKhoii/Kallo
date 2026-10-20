@@ -171,6 +171,44 @@ continue. A pass that did not run is never a clean pass.
 
 ---
 
+## Phase 3c: Real Run (changes a user can see)
+
+A change a user can see is opened in a real browser or simulator before the first
+push, and the PR shows the screenshots. More than half of the fixes for something an
+earlier PR broke came within a day, from exactly this kind of run (#307, #353,
+#241, #411). Setup, options and the iOS sign-in: `docs/REAL_RUN_EVIDENCE.md`.
+
+- **Web** (pages and components under `app/`, `components/`, `hooks/`,
+  `messages/`, styles): start `bun run dev` from the branch's checkout, then
+  capture every route the change reaches:
+
+  ```bash
+  node --env-file=.env.local scripts/dev/evidence/capture-web.mjs \
+    --out <scratchpad>/evidence /en/logging /en/dashboard
+  ```
+
+  It signs in as the dev evidence account, captures phone and desktop width, and
+  fails on console errors, failed requests, sideways scrolling, broken images or a
+  lost session. An issue that also happens on main goes in `--allow '<text>'` and
+  under Evidence as pre-existing. A state the route alone does not reach (an open
+  sheet, an error toast): sign Playwright MCP in with `sign-in.mjs` and screenshot it.
+- **iOS** (`apps/mobile-flutter/lib/`): mark the dev server's log, run the dev
+  app on the simulator with `tool/run_dev.sh` (its log kept in a file), drive it
+  by label with `drive-ios.mjs` (never by coordinates), and capture each screen
+  the change reaches with `capture-ios.mjs --log <run log> --server-log <dev
+  server log> <screen>`. It fails on a Flutter exception or layout overflow, or
+  an `/api/v1` call that got an error status.
+- **Look at every screenshot** (downscaled, AGENTS.md §8). A clean report means
+  nothing crashed, not that the screen is right. Fix what is wrong, re-capture.
+- **Publish**: `node scripts/dev/evidence/publish.mjs <scratchpad>/evidence`
+  uploads to the `pr-evidence` branch and prints the image Markdown for Evidence.
+
+When a run is not possible (no simulator, the dev database behind the branch's
+migrations), write "Not run on <web|iOS>: <reason>" under Evidence. Changes with
+nothing to see (server-only code, scripts, docs) skip this phase.
+
+---
+
 ## Phase 4: Push
 
 ```bash
