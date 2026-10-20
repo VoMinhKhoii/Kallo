@@ -46,7 +46,7 @@ jobs:
       # lock while phase 3/4 are still writing; 4h outruns the 180m timeout.
       STAGING_LEASE_TTL_HOURS: 4
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         # Nothing after this runs a git command — the pipeline only reads the
         # tree — so don't leave the checkout token in the runner's git config.
         with:
