@@ -89,8 +89,12 @@ class ApiClient {
     final session = await _auth.session();
     final res = await _http.send(build(_bearer(session)));
     if (res.statusCode != 401 || !await _auth.recover(session)) return res;
+    // Checked here, after every wait, not only inside [ApiAuth.recover]: an
+    // account switched during the refresh must never receive this request.
+    final retry = await _auth.session();
+    if (retry == null || retry.user.id != session?.user.id) return res;
     await res.stream.drain<void>();
-    return _http.send(build(_bearer(await _auth.session())));
+    return _http.send(build(_bearer(retry)));
   }
 
   Map<String, String> _bearer(Session? session) =>

@@ -31,13 +31,17 @@ String _jwt(String label) {
 final _oldToken = _jwt('old');
 final _newToken = _jwt('new');
 
-Map<String, dynamic> _sessionJson(String token, {String? refresh = 'r1'}) => {
+Map<String, dynamic> _sessionJson(
+  String token, {
+  String? refresh = 'r1',
+  String userId = 'user-1',
+}) => {
   'access_token': token,
   'token_type': 'bearer',
   'expires_in': 3600,
   'refresh_token': refresh,
   'user': {
-    'id': 'user-1',
+    'id': userId,
     'app_metadata': <String, dynamic>{},
     'user_metadata': <String, dynamic>{},
     'aud': 'authenticated',
@@ -245,6 +249,27 @@ void main() {
     expect(server.refreshes, 1);
     expect(api.tokens, [_oldToken, _oldToken, _newToken, _newToken]);
   });
+
+  test(
+    'an account switched during the refresh never gets the resend',
+    () async {
+      // The session the refresh leaves behind belongs to someone else, as when
+      // the user signs out and into another account while it runs.
+      final server = _AuthServer(
+        () async => _json(_sessionJson(_newToken, userId: 'user-2'), 200),
+      );
+      final api = _Api();
+      final client = _client(api, await _signedIn(server));
+
+      await expectLater(
+        client.get<Object?>('/x'),
+        throwsA(isA<ApiError>().having((e) => e.status, 'status', 401)),
+      );
+
+      expect(server.refreshes, 1);
+      expect(api.tokens, [_oldToken], reason: 'not resent as user-2');
+    },
+  );
 
   test(
     'a resend that 401s again surfaces it, with no second refresh',
