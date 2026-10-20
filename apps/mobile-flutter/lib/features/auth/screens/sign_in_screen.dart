@@ -9,7 +9,7 @@ import '../widgets/auth_page.dart';
 
 /// The sign-in route.
 ///
-/// Lands on the pre-auth welcome screen (wordmark, typing demo, three social/
+/// Lands on the pre-auth welcome screen (wordmark, one line, three social/
 /// email options). "Continue with email" cross-fades to a single email path;
 /// sign-up cross-fades to a "Check your email" state. No top tab split.
 ///
