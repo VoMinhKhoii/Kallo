@@ -9,7 +9,6 @@ import 'package:kallo_mobile/features/auth/widgets/welcome/apple_button.dart';
 import 'package:kallo_mobile/features/auth/widgets/welcome/auth_brand_hero.dart';
 import 'package:kallo_mobile/features/auth/widgets/welcome/auth_legal_links.dart';
 import 'package:kallo_mobile/features/auth/widgets/welcome/google_button.dart';
-import 'package:kallo_mobile/features/auth/widgets/welcome/welcome_demo.dart';
 import 'package:kallo_mobile/features/onboarding/screens/save_plan_screen.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/backdrop_slice.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/step_backdrop.dart';
@@ -110,7 +109,6 @@ void main() {
 
     // …but NOT the sign-in screen's brand block: one wordmark, one pitch.
     expect(find.byType(AuthBrandHero), findsNothing);
-    expect(find.byType(WelcomeDemo), findsNothing);
 
     // No way past it: no "Later", no skip.
     expect(find.text('Later'), findsNothing);

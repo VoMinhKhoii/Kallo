@@ -4,19 +4,23 @@ import 'package:flutter/material.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import 'auth_brand_hero.dart';
-import 'welcome_demo.dart';
 
-/// The pre-auth welcome face: the brand block — wordmark, tagline, typing demo
-/// — over the [options] stack it was handed.
+/// The pre-auth welcome face: the wordmark and its one line in the space the
+/// [options] stack leaves, with the stack anchored to the bottom — where
+/// `/start` keeps its own buttons, so the thumb finds them in the same place.
 ///
-/// Restyled to the canvas (native pass, 2026-08-31): the brand block sits high
-/// with the buttons anchored low, and the tagline drops to one quiet 14 muted
-/// line so the wordmark keeps the screen's only serif voice.
+/// No demo. A new install reaches this from `/start`, whose device preview has
+/// just shown the app; the typing demo that sat here pitched it a second time,
+/// with a Vietnamese meal and a total no analysis had produced. The other ways
+/// in (signing out, a deleted account, an invite link) are people who know the
+/// app or were sent by someone who does.
 ///
 /// The options come in from outside rather than being built here: `/save-plan`
 /// shows the same stack under the onboarding chrome, with no brand block above
 /// it (it would be the second wordmark on that screen, re-pitching the app to
 /// someone three screens into it).
+///
+/// Needs a bounded height to anchor against; [AuthPage] gives it the safe area.
 class WelcomeView extends StatelessWidget {
   const WelcomeView({super.key, required this.options});
 
@@ -27,23 +31,26 @@ class WelcomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       key: const ValueKey('welcome'),
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: KalloSpacing.sp16),
-        const AuthBrandHero(),
-        const SizedBox(height: KalloSpacing.sp2),
-        // One quiet 14 muted line. It was a serif sentence with a tan italic
-        // clause, which put a second editorial voice directly under the serif
-        // wordmark — two serif moments in one viewport, and the type system
-        // allows exactly one.
-        Text(
-          '${tr('auth.welcome.tagline')} ${tr('auth.welcome.taglineHighlight')}',
-          textAlign: TextAlign.center,
-          style: dashBody(color: kInkMuted),
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const AuthBrandHero(),
+              const SizedBox(height: KalloSpacing.sp2),
+              // One quiet muted line: the wordmark is the headline here.
+              Text(
+                tr('auth.welcome.tagline'),
+                textAlign: TextAlign.center,
+                style: dashBody(color: kInkMuted),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: KalloSpacing.sp8),
-        const WelcomeDemo(),
+        // The least the brand block keeps from the buttons on a short phone,
+        // where the space above has nothing to spare.
         const SizedBox(height: KalloSpacing.sp8),
         options,
       ],

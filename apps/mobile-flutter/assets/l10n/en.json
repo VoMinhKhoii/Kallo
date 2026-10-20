@@ -794,7 +794,7 @@
       "signInTitle": "Welcome back",
       "signInSubtitle": "Sign in to continue tracking your meals.",
       "signUpTitle": "Create your account",
-      "signUpSubtitle": "Start tracking Vietnamese meals with AI-powered nutrition analysis.",
+      "signUpSubtitle": "Log meals the way you say them.",
       "signInTab": "Sign in",
       "signUpTab": "Sign up",
       "continueWithApple": "Continue with Apple",
@@ -826,10 +826,7 @@
       "error": "Invalid code"
     },
     "welcome": {
-      "tagline": "Track Vietnamese meals",
-      "taglineHighlight": "without the guesswork",
-      "demoMeal": "2 mực kho mặn + 1 chén cơm + canh chua",
-      "demoResult": "{kcal} kcal",
+      "tagline": "Log meals the way you say them",
       "continueWithEmail": "Continue with email",
       "terms": "By continuing you agree to our terms and privacy policy."
     },
@@ -2040,7 +2037,7 @@
     "expiredTitle": "Keep your AI analysis",
     "expiredBody": "Your free trial is over. Go Premium to keep logging meals with AI analysis — no more counting by hand.",
     "feature1": "AI reads meals from your own description",
-    "feature2": "Vietnamese dishes, portions and macros",
+    "feature2": "Dishes from any kitchen, with portions and macros",
     "feature3": "Fast meal logging within fair-use limits",
     "purchase": "Start Premium",
     "manageActive": "Manage subscription",
