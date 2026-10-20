@@ -62,6 +62,13 @@ together give Instant Navigations. The rules the build enforces, and the choices
   read down to the smallest component; the rest of the page stays static. The `(app)` layout reads
   the session behind one boundary whose fallback is `components/app/shell/app-shell-skeleton.tsx`;
   each app page's `loading.tsx` is what shows during a client navigation into it.
+- **Clock and random reads wait for `io()`.** Partial Prefetching makes `cookies()` and
+  `headers()` readable in the runtime prefetch, so a `Date.now()`, `new Date()` or
+  `Math.random()` reached right after them, before any network call, still lands in a prerender:
+  `next dev` logs "unstable value `Date.now()` while prerendering" (the build does not catch
+  it). Put `await io()` (`next/cache`) before the read. `createClient()` in
+  `lib/infra/supabase/server.ts` does this, because the Supabase auth client checks the session
+  cookie's expiry against the clock as soon as it is built.
 - **Nothing is cached unless marked.** `'use cache'` + `cacheLife` is only for data that is the
   same for every visitor: docs content (`lib/domain/docs/`), `/md`, `/llms.txt`, the OAuth
   resource metadata. Never put per-user data in a shared `'use cache'` scope. Results built from
