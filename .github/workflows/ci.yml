@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - uses: ./.github/actions/setup-bun
@@ -77,7 +77,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "placeholder"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - uses: ./.github/actions/setup-bun
@@ -122,7 +122,7 @@ jobs:
       # rejected with "Tenant or user not found". `pooler-dev` is the CLI's
       # fixed local tenant id (_supavisor.tenants in the `_supabase` database),
       # NOT this project's `project_id`.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - uses: ./.github/actions/setup-bun
