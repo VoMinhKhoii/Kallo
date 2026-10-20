@@ -21,7 +21,9 @@ import '../../l10n_test_loader.dart';
 Widget _app({required EdgeInsets insets, double textScale = 1}) {
   final router = GoRouter(
     initialLocation: '/sign-in',
-    routes: [GoRoute(path: '/sign-in', builder: (_, _) => const SignInScreen())],
+    routes: [
+      GoRoute(path: '/sign-in', builder: (_, _) => const SignInScreen()),
+    ],
   );
   return ProviderScope(
     child: EasyLocalization(
