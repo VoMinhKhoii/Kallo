@@ -227,6 +227,18 @@ path. The probe gives up after 40 s, comfortably past that. `proxy.ts` lets
 exactly that path through the origin lock (the probe cannot send the
 Cloudflare secret); it answers with no body and reads only in-memory state.
 
+**Local runs use a local build.** Without `CARD_INDEX_URI`, every `bun dev`
+start, eval process and test run loads the ~4 MB catalog from the dev database
+(and again every 30 minutes) and runs vector search there. Over October that
+pushed the dev project past the Free plan's 5 GB egress. Build the index once
+from the dev database with `bun card-index:local` (one ~130 MB read; it writes
+`.cache/card-index/`, which is gitignored), then set
+`CARD_INDEX_URI=file:///<absolute path to the checkout>/.cache/card-index` in
+`.env.local`. Re-run it after `sync-cards.ts` or a card-embedding backfill
+changes the dev cards: a stale build simply lacks the new cards. Prod's
+builds in `gs://kallo-prod-card-search` don't fit the dev database, because
+its card data and vectors differ (checked 2026-10-20).
+
 What this costs: a request that arrives when no container is running waits for
 the boot and the load (9.6–11.2 s measured on three cold starts, instead of
 ~1.5 s). The mobile app's launch warm-up ping (`ApiClient.warmup`) usually

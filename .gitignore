@@ -16,6 +16,9 @@ PRD.md
 # testing
 /coverage
 
+# local card search index (bun card-index:local)
+/.cache/
+
 # next.js
 /.next/
 /out/
