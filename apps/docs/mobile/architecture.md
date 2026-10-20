@@ -23,7 +23,7 @@ lib/
   app.dart             root widget (theme, localization, router wiring)
   router.dart          go_router routes + redirect/auth seam
   services/            infrastructure edges, one folder per concern:
-    http/                api_client.dart, api_client_uploads.dart, query.dart
+    http/                api_client.dart, api_client_uploads.dart, api_auth.dart, query.dart
     auth/                supabase_service.dart, session_provider.dart
     billing/             RevenueCat purchases + entitlement state
     analytics/           PostHog wrapper (no-op until keys set)
@@ -176,7 +176,11 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   sheets that own a `ListView`/`SingleChildScrollView` must not. `test/sheet_overflow_test.dart`
   pumps every content-hugging sheet at 320×568, 360×640 and landscape, at 1.0x and the
   1.3x Dynamic Type ceiling, and fails if the primary action can't be reached.
-- **Data:** `api_client.dart` hits `/api/v1`. Note Drizzle decimals serialize as **strings**, and
+- **Data:** `api_client.dart` hits `/api/v1`. A 401 from it gets one Supabase refresh, shared by
+  every request that 401'd on the same token, and one resend (`api_auth.dart`); a refresh the
+  auth server turns down (a session revoked by a password change or a global sign-out) signs
+  the device out, and the redirect sends an in-app route to `/sign-in`. A network failure on
+  that refresh keeps the session. Note Drizzle decimals serialize as **strings**, and
   targets are **null** for not-fully-onboarded profiles — models tolerate nulls and fall back to
   the same defaults as the web app.
 - **Theming:** warm earthy palette on a cream surface (`theme/kallo_colors.dart`), Lora serif +
