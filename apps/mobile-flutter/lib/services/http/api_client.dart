@@ -320,7 +320,10 @@ class ApiClient {
     if (tail != null) yield tail;
   }
 
-  void close() => _http.close();
+  void close() {
+    _auth.close();
+    _http.close();
+  }
 }
 
 /// Singleton [ApiClient]. Other surfaces read `ref.read(apiClientProvider)`.

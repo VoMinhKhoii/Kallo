@@ -17,13 +17,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// gotrue client against a fake auth server, so they also pin what gotrue
 /// does with a refresh the server turns down, which the fix relies on.
 
-/// An unsigned JWT; gotrue only reads `exp` (an hour out) to time refreshes.
-String _jwt(String label) {
+/// An unsigned JWT; gotrue only reads `exp` ([ttl] out) to time refreshes.
+String _jwt(String label, {Duration ttl = const Duration(hours: 1)}) {
   String part(Map<String, Object> claims) =>
       base64Url.encode(utf8.encode(jsonEncode(claims))).replaceAll('=', '');
-  final exp =
-      DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
-      1000;
+  final exp = DateTime.now().add(ttl).millisecondsSinceEpoch ~/ 1000;
   return '${part({'alg': 'HS256'})}.'
       '${part({'exp': exp, 'sub': 'user-1', 'label': label})}.sig';
 }
@@ -55,16 +53,26 @@ http.Response _json(Object body, int status) => http.Response(
   headers: {'content-type': 'application/json'},
 );
 
-/// The Supabase auth server: `/token` answers [refreshReply].
+/// The Supabase auth server: a refresh answers [refreshReply], a password
+/// sign-in signs in `user-2`.
 class _AuthServer {
-  _AuthServer(this.refreshReply);
+  _AuthServer(
+    this.refreshReply, {
+    String? signInToken,
+    this.signInUser = 'user-2',
+  }) : signInToken = signInToken ?? _jwt('b');
 
   final Future<http.Response> Function() refreshReply;
+  final String signInToken;
+  final String signInUser;
   int refreshes = 0;
   int logouts = 0;
 
   late final client = MockClient((req) async {
     if (req.url.path.endsWith('/token')) {
+      if (req.url.queryParameters['grant_type'] == 'password') {
+        return _json(_sessionJson(signInToken, userId: signInUser), 200);
+      }
       refreshes++;
       return refreshReply();
     }
@@ -248,6 +256,79 @@ void main() {
 
     expect(server.refreshes, 1);
     expect(api.tokens, [_oldToken, _oldToken, _newToken, _newToken]);
+  });
+
+  group('an account change while the refresh is in flight', () {
+    // gotrue saves the refresh's result even after a sign-out or a sign-in
+    // landed meanwhile, which would quietly bring back the account the user
+    // just left.
+    late Completer<void> held;
+    late _AuthServer server;
+    late _Api api;
+    late GoTrueClient gotrue;
+    late Future<Object?> request;
+
+    setUp(() async {
+      held = Completer<void>();
+      server = _AuthServer(() async {
+        await held.future;
+        return _json(_sessionJson(_newToken), 200);
+      });
+      api = _Api();
+      gotrue = await _signedIn(server);
+      request = _client(api, gotrue).get<Object?>('/x');
+      // Let the 401 come back and the refresh start.
+      while (server.refreshes == 0) {
+        await pumpEventQueue();
+      }
+    });
+
+    test('a sign-out stays signed out', () async {
+      await gotrue.signOut(scope: SignOutScope.local);
+      held.complete();
+
+      await expectLater(request, throwsA(isA<ApiError>()));
+      expect(gotrue.currentSession, isNull);
+      expect(api.tokens, [_oldToken], reason: 'no resend');
+    });
+
+    test(
+      'a sign-in as someone else never brings the old account back',
+      () async {
+        await gotrue.signOut(scope: SignOutScope.local);
+        await gotrue.signInWithPassword(email: 'b@test.dev', password: 'pw');
+        held.complete();
+
+        await expectLater(request, throwsA(isA<ApiError>()));
+        expect(gotrue.currentSession?.user.id, isNot('user-1'));
+        expect(api.tokens, [_oldToken], reason: 'no resend');
+      },
+    );
+  });
+
+  test('a fresh sign-in is not mistaken for an account change', () async {
+    // onAuthStateChange replays its last event (here signedIn) to a new
+    // listener. The first refresh, a proactive one on an expiring token, must
+    // not count that replay as a sign-in that happened while it ran.
+    final server = _AuthServer(
+      _refreshed,
+      signInToken: _jwt('expiring', ttl: const Duration(minutes: 2)),
+      signInUser: 'user-1',
+    );
+    final api = _Api();
+    final gotrue = GoTrueClient(
+      url: 'https://auth.test/auth/v1',
+      httpClient: server.client,
+      autoRefreshToken: false,
+    );
+    await gotrue.signInWithPassword(email: 'a@test.dev', password: 'pw');
+
+    final body = await _client(api, gotrue).get<Map<String, dynamic>>('/x');
+
+    expect(body['ok'], isTrue);
+    expect(server.refreshes, 1);
+    expect(api.tokens, [_newToken]);
+    expect(gotrue.currentSession?.accessToken, _newToken);
   });
 
   test(

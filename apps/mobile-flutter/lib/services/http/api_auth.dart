@@ -2,6 +2,8 @@
 /// gets when our API turns that token down with a 401.
 library;
 
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../auth/supabase_service.dart';
@@ -25,6 +27,11 @@ const _refreshSkew = Duration(minutes: 5);
 ///     the session and emits `signedOut`, supabase_flutter deletes the stored
 ///     copy, and the router leaves for sign-in. That is the local sign-out.
 ///     [_refresh] signs out itself only when gotrue threw and kept the session.
+///
+/// gotrue also saves a refresh's result whatever happened while it ran, so a
+/// sign-out (or a sign-in as someone else) that lands mid-refresh is quietly
+/// overwritten by the account the user just left. [_refresh] counts sign-ins
+/// and sign-outs to catch that, and puts the app back to signed out.
 class ApiAuth {
   ApiAuth({GoTrueClient Function()? client})
     : _client = client ?? (() => SupabaseService.client.auth);
@@ -35,16 +42,34 @@ class ApiAuth {
 
   Future<bool>? _refreshing;
 
+  /// Sign-ins and sign-outs seen since [_watchTransitions] started.
+  int _transitions = 0;
+  StreamSubscription<AuthState>? _transitionWatch;
+  Future<void>? _watching;
+
+  /// Starts counting [_transitions] once, and completes when it is safe to
+  /// compare counts: `onAuthStateChange` replays its last event to a new
+  /// listener, so that replay is let through first (a zero timer runs after
+  /// the microtask that delivers it), or it would read as a change.
+  Future<void> _watchTransitions(GoTrueClient auth) =>
+      _watching ??= () async {
+        _transitionWatch = auth.onAuthStateChange.listen((state) {
+          if (state.event == AuthChangeEvent.signedIn ||
+              state.event == AuthChangeEvent.signedOut) {
+            _transitions++;
+          }
+        }, onError: (Object _) {});
+        await Future<void>.delayed(Duration.zero);
+      }();
+
   /// The session to send with the next request, refreshed first when its
   /// token expires within five minutes; `null` while signed out.
   Future<Session?> session() async {
     final auth = _client();
     final session = auth.currentSession;
-    if (session == null || !_expiresSoon(session)) return session;
-    try {
-      await auth.refreshSession();
-    } catch (_) {
-      // Send what is held; a 401 brings the request back through [recover].
+    if (session != null && _expiresSoon(session)) {
+      // Send what is held if it fails; a 401 brings the request back here.
+      await _refreshOnce(session.user.id);
     }
     return auth.currentSession;
   }
@@ -60,30 +85,45 @@ class ApiAuth {
     // The token moved on after this request left (another 401's refresh, or
     // gotrue's own timer): resend with it rather than refresh again.
     if (current.accessToken != sent.accessToken) return Future.value(true);
-    return _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
+    return _refreshOnce(sent.user.id);
   }
 
-  Future<bool> _refresh() async {
+  void close() => _transitionWatch?.cancel();
+
+  /// One refresh at a time, shared by everyone asking for the same account.
+  Future<bool> _refreshOnce(String userId) =>
+      _refreshing ??= _refresh(userId).whenComplete(() => _refreshing = null);
+
+  /// Refreshes [userId]'s session. True when that account is still signed in,
+  /// on a new token, and nobody signed out or in while it ran.
+  Future<bool> _refresh(String userId) async {
     final auth = _client();
+    await _watchTransitions(auth);
+    final transitions = _transitions;
     try {
       await auth.refreshSession();
-      return auth.currentSession != null;
     } on AuthRetryableFetchException {
       return false;
     } on AuthException {
       // The auth server turned the session down. gotrue has normally dropped
       // it already; one it threw on and kept (no refresh token to send) is
       // just as dead, and must not leave the app on the error screens.
-      if (auth.currentSession != null) await _signOutLocally(auth);
+      if (auth.currentSession?.user.id == userId) await _signOutLocally(auth);
       return false;
     } catch (_) {
       return false;
     }
+    if (_transitions == transitions) {
+      return auth.currentSession?.user.id == userId;
+    }
+    // Signed out, or in as someone else, while this ran: what gotrue just
+    // saved is the account the user left. Back to signed out, no resend.
+    if (auth.currentSession?.user.id == userId) await _signOutLocally(auth);
+    return false;
   }
 
   /// [SignOutScope.local] drops the session before it calls `/logout` for
-  /// this one session, which is already gone on the server; that call's
-  /// outcome changes nothing here.
+  /// that one session; whatever that call returns changes nothing here.
   Future<void> _signOutLocally(GoTrueClient auth) async {
     try {
       await auth.signOut(scope: SignOutScope.local);
