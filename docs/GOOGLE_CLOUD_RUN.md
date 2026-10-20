@@ -235,7 +235,10 @@ from the dev database with `bun card-index:local` (one ~130 MB read; it writes
 `.cache/card-index/`, which is gitignored), then set
 `CARD_INDEX_URI=file:///<absolute path to the checkout>/.cache/card-index` in
 `.env.local`. Re-run it after `sync-cards.ts` or a card-embedding backfill
-changes the dev cards: a stale build simply lacks the new cards. Prod's
+changes the dev cards. Nothing checks a local build against the database: it
+is a snapshot, so until it is rebuilt local matching silently uses the old
+names, facets and links, still returns removed cards, and misses new ones.
+Rebuild before evaluating a card change. Prod's
 builds in `gs://kallo-prod-card-search` don't fit the dev database, because
 its card data and vectors differ (checked 2026-10-20).
 
