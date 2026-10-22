@@ -155,6 +155,17 @@ void main() {
     }
   });
 
+  test('tokens added for Dark keep the literal they replaced in light', () {
+    KalloPalette.apply(KalloPaletteId.light);
+    expect(KalloColors.sheet, const Color(0xFFFFFFFF)); // was kCardSurface
+    expect(KalloColors.thumb, const Color(0xFFFFFFFF)); // was kCardSurface
+    expect(KalloColors.onBrand, const Color(0xFF141413)); // was text
+    expect(KalloColors.onDanger, const Color(0xFFFFFFFF)); // was white
+    expect(KalloColors.seatYou, const Color(0xFF141413)); // seat 0 ink
+    expect(KalloColors.sheetPeek, const Color(0xFFD9D6CE));
+    expect(KalloColors.sheetPeekInk, const Color(0xFF55534D));
+  });
+
   test('KalloColors reads whichever palette is current', () {
     KalloPalette.apply(KalloPaletteId.dark);
     expect(KalloColors.surface, const Color(0xFF0F0F0E));
