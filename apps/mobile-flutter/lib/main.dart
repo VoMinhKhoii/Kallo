@@ -109,9 +109,12 @@ Future<void> _boot() async {
   // The Appearance choice paints the FIRST frame: read it (bounded) and apply
   // its palette and status-bar style before anything builds. Later switches —
   // and the phone's own brightness, under System — are the controller's.
-  final themeChoice = await readThemeChoice(const FlutterSecureStorage());
+  final themeRead = await readThemeChoice(const FlutterSecureStorage());
   applyPalette(
-    resolvePalette(themeChoice, PlatformDispatcher.instance.platformBrightness),
+    resolvePalette(
+      themeRead.choice,
+      PlatformDispatcher.instance.platformBrightness,
+    ),
   );
 
   runApp(
@@ -120,7 +123,10 @@ Future<void> _boot() async {
       path: 'assets/l10n',
       fallbackLocale: const Locale('en'),
       child: ProviderScope(
-        overrides: [initialThemeChoiceProvider.overrideWithValue(themeChoice)],
+        overrides: [
+          initialThemeChoiceProvider.overrideWithValue(themeRead.choice),
+          lateThemeChoiceProvider.overrideWithValue(themeRead.late),
+        ],
         child: const KalloApp(),
       ),
     ),

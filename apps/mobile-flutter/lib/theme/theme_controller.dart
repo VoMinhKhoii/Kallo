@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,22 +23,33 @@ KalloPaletteId resolvePalette(
   KalloThemeChoice.aurora => KalloPaletteId.aurora,
 };
 
-/// The stored choice; System for anything missing, unknown or unreadable.
+/// What `main()` read before the first frame.
 ///
-/// Bounded because `main()` awaits it before `runApp`: a keychain channel that
-/// never answers must not hold the launch screen. A slow read costs the first
-/// frame its palette, never the app its start.
-Future<KalloThemeChoice> readThemeChoice(FlutterSecureStorage storage) async {
+/// [choice] is the stored choice; System for anything missing, unknown or
+/// unreadable. The read is bounded because `main()` awaits it before `runApp`:
+/// a keychain channel that never answers must not hold the launch screen. A
+/// read that outlasts the bound paints the first frame as System, and [late]
+/// still completes with the stored choice for the controller to adopt.
+typedef ThemeChoiceRead =
+    ({KalloThemeChoice choice, Future<KalloThemeChoice>? late});
+
+Future<ThemeChoiceRead> readThemeChoice(
+  FlutterSecureStorage storage, {
+  Duration bound = const Duration(seconds: 1),
+}) async {
+  final read = storage
+      .read(key: kThemeStorageKey)
+      .then(
+        (raw) => KalloThemeChoice.values.firstWhere(
+          (choice) => choice.name == raw,
+          orElse: () => KalloThemeChoice.system,
+        ),
+        onError: (Object _) => KalloThemeChoice.system,
+      );
   try {
-    final raw = await storage
-        .read(key: kThemeStorageKey)
-        .timeout(const Duration(seconds: 1));
-    return KalloThemeChoice.values.firstWhere(
-      (choice) => choice.name == raw,
-      orElse: () => KalloThemeChoice.system,
-    );
-  } catch (_) {
-    return KalloThemeChoice.system;
+    return (choice: await read.timeout(bound), late: null);
+  } on TimeoutException {
+    return (choice: KalloThemeChoice.system, late: read);
   }
 }
 
@@ -82,6 +95,12 @@ final initialThemeChoiceProvider = Provider<KalloThemeChoice>(
   (ref) => KalloThemeChoice.system,
 );
 
+/// The stored choice when `main()`'s read ran past its bound (it overrides
+/// this); null when the read finished in time.
+final lateThemeChoiceProvider = Provider<Future<KalloThemeChoice>?>(
+  (ref) => null,
+);
+
 final kalloThemeProvider =
     NotifierProvider<KalloThemeController, KalloThemeChoice>(
       KalloThemeController.new,
@@ -99,16 +118,29 @@ class KalloThemeController extends Notifier<KalloThemeChoice>
   KalloThemeChoice build() {
     final binding = WidgetsBinding.instance;
     binding.addObserver(this);
-    ref.onDispose(() => binding.removeObserver(this));
+    var disposed = false;
+    ref.onDispose(() {
+      disposed = true;
+      binding.removeObserver(this);
+    });
     final choice = ref.read(initialThemeChoiceProvider);
     // `main()` already painted this choice before the first frame, so in the
     // app this is a no-op; nothing is built yet that would need a rebuild.
     _paint(choice, rebuild: false);
+    // A slow keychain read lands here; a choice made meanwhile wins.
+    ref.read(lateThemeChoiceProvider)?.then((stored) {
+      if (disposed || _chosen || stored == state) return;
+      state = stored;
+      _paint(stored, rebuild: true);
+    });
     return choice;
   }
 
+  bool _chosen = false;
+
   /// Switches to [choice] at once, then stores it for the next launch.
   Future<void> select(KalloThemeChoice choice) async {
+    _chosen = true;
     if (choice == state) return;
     state = choice;
     _paint(choice, rebuild: true);

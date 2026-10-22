@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -41,13 +43,13 @@ void main() {
   group('persistence', () {
     test('reads the stored choice; anything else is System', () async {
       const storage = FlutterSecureStorage();
-      expect(await readThemeChoice(storage), KalloThemeChoice.system);
+      expect((await readThemeChoice(storage)).choice, KalloThemeChoice.system);
 
       FlutterSecureStorage.setMockInitialValues({kThemeStorageKey: 'aurora'});
-      expect(await readThemeChoice(storage), KalloThemeChoice.aurora);
+      expect((await readThemeChoice(storage)).choice, KalloThemeChoice.aurora);
 
       FlutterSecureStorage.setMockInitialValues({kThemeStorageKey: 'sepia'});
-      expect(await readThemeChoice(storage), KalloThemeChoice.system);
+      expect((await readThemeChoice(storage)).choice, KalloThemeChoice.system);
     });
 
     test('select writes the choice under kallo.theme', () async {
@@ -61,7 +63,49 @@ void main() {
       expect(container.read(kalloThemeProvider), KalloThemeChoice.dark);
       const storage = FlutterSecureStorage();
       expect(await storage.read(key: kThemeStorageKey), 'dark');
-      expect(await readThemeChoice(storage), KalloThemeChoice.dark);
+      expect((await readThemeChoice(storage)).choice, KalloThemeChoice.dark);
+    });
+
+    test('a read past the bound paints System, then hands over the stored '
+        'choice', () async {
+      final reply = Completer<String?>();
+      final read = await readThemeChoice(
+        _SlowStorage(reply),
+        bound: Duration.zero,
+      );
+      expect(read.choice, KalloThemeChoice.system);
+
+      reply.complete('aurora');
+      expect(await read.late, KalloThemeChoice.aurora);
+    });
+
+    test('adopts a late stored choice unless the user chose first', () async {
+      final late = Completer<KalloThemeChoice>();
+      final container = ProviderContainer(
+        overrides: [lateThemeChoiceProvider.overrideWithValue(late.future)],
+      );
+      addTearDown(container.dispose);
+      expect(container.read(kalloThemeProvider), KalloThemeChoice.system);
+
+      late.complete(KalloThemeChoice.dark);
+      await pumpEventQueue();
+      expect(container.read(kalloThemeProvider), KalloThemeChoice.dark);
+      expect(KalloPalette.currentId, KalloPaletteId.dark);
+
+      final chosenFirst = Completer<KalloThemeChoice>();
+      final other = ProviderContainer(
+        overrides: [
+          lateThemeChoiceProvider.overrideWithValue(chosenFirst.future),
+        ],
+      );
+      addTearDown(other.dispose);
+      await other
+          .read(kalloThemeProvider.notifier)
+          .select(KalloThemeChoice.light);
+      chosenFirst.complete(KalloThemeChoice.aurora);
+      await pumpEventQueue();
+      expect(other.read(kalloThemeProvider), KalloThemeChoice.light);
+      expect(KalloPalette.currentId, KalloPaletteId.light);
     });
 
     test('starts from the choice main() read', () {
@@ -194,4 +238,22 @@ class _ProbeState extends State<_Probe> {
       child: const SizedBox.expand(),
     );
   }
+}
+
+/// A keychain whose read answers only when the test completes [reply].
+class _SlowStorage extends FlutterSecureStorage {
+  const _SlowStorage(this.reply);
+
+  final Completer<String?> reply;
+
+  @override
+  Future<String?> read({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) => reply.future;
 }
