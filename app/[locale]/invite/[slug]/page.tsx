@@ -31,7 +31,7 @@ function Shell({
       <div className="flex w-full max-w-sm flex-col items-center gap-5 text-center">
         {label ? (
           <span className="flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-kallo-accent/40 to-kallo-border/50 ring-1 ring-kallo-accent/25">
-            <span className="font-bold font-sans-display text-2xl text-kallo-btn">
+            <span className="font-bold font-sans-display text-2xl text-kallo-umber-text">
               {label.charAt(0).toUpperCase()}
             </span>
           </span>

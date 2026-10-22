@@ -27,7 +27,7 @@ export function MealTriggerNotice({
       <button
         type="button"
         onClick={streaming.onRetry}
-        className="shrink-0 font-medium text-kallo-btn text-xs underline-offset-2 hover:underline"
+        className="shrink-0 font-medium text-kallo-umber-text text-xs underline-offset-2 hover:underline"
       >
         {td('retry')}
       </button>

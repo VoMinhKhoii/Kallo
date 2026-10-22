@@ -171,6 +171,7 @@
   --color-kallo-stone: var(--kallo-stone);
   --color-kallo-btn: var(--kallo-btn);
   --color-kallo-btn-ink: var(--kallo-btn-ink);
+  --color-kallo-umber-text: var(--kallo-umber-text);
   --color-kallo-bubble: var(--kallo-bubble);
   --color-kallo-bubble-ink: var(--kallo-bubble-ink);
   --color-kallo-mention: var(--kallo-mention);
@@ -293,6 +294,10 @@
   /* The label on a `bg-kallo-btn` fill. White on umber here; cream on the
      Graphite fill; ink on Aurora's light gradient, where white would vanish. */
   --kallo-btn-ink: #ffffff;
+  /* The umber as running text or a glyph (the analysis ticker, a link, an
+     outline button). The dark themes swap it for a tone that reads on the
+     page, since their button fill is too dark to be text. */
+  --kallo-umber-text: #695e4e;
   /* The user's sent meal in the logging thread. */
   --kallo-bubble: #695e4e;
   --kallo-bubble-ink: #fcfcfc;
@@ -421,6 +426,7 @@
   --kallo-btn: #524636;
   --kallo-btn-hover: #5e513f;
   --kallo-btn-ink: #f2f1ec;
+  --kallo-umber-text: #c9a87c;
   --kallo-bubble: #3d352b;
   --kallo-bubble-ink: #f2f1ec;
   --kallo-mention: #6fa8f0;
@@ -473,6 +479,7 @@
   --kallo-btn: #ecc9c3;
   --kallo-btn-hover: #f2d6cf;
   --kallo-btn-ink: #141413;
+  --kallo-umber-text: #e7c4b2;
   --kallo-bubble: #2c272d;
   --kallo-bubble-ink: #f4f0ec;
   --kallo-chart-muted: #3b353c;
@@ -494,9 +501,15 @@
 }
 
 /* Aurora's primary action wears the brand sweep, as the tab bar's "+" does.
-   The `md:` form covers buttons that only fill from tablet width up. */
-.aurora [data-slot="button"].bg-primary,
-.aurora .bg-kallo-btn {
+   Only on something you can press and only while it is enabled: a disabled
+   button falls back to its own disabled fill, and a decorative mark that
+   borrows the button colour (the vessel-tape needle) stays flat. The `md:`
+   form covers buttons that only fill from tablet width up. */
+.aurora
+:is(button, a, [role="button"]):not(:disabled, [aria-disabled="true"]):is(
+  [data-slot="button"].bg-primary,
+  .bg-kallo-btn
+) {
   background-image: linear-gradient(
     135deg,
     var(--kallo-brand-apricot),
@@ -504,7 +517,11 @@
   );
 }
 @media (width >= 48rem) {
-  .aurora .md\:bg-kallo-btn {
+  .aurora
+    :is(button, a, [role="button"]):not(
+      :disabled,
+      [aria-disabled="true"]
+    ).md\:bg-kallo-btn {
     background-image: linear-gradient(
       135deg,
       var(--kallo-brand-apricot),

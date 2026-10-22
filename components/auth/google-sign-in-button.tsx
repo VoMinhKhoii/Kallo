@@ -68,7 +68,7 @@ export function GoogleSignInButton() {
         onClick={onClick}
         disabled={loading}
         aria-busy={loading}
-        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-kallo-border bg-card px-4 py-3 font-medium font-sans-display text-kallo-text text-sm tracking-tight transition-all duration-200 hover:bg-card disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-kallo-border bg-card px-4 py-3 font-medium font-sans-display text-kallo-text text-sm tracking-tight transition-all duration-200 hover:bg-[#FFFCF8] disabled:opacity-60 dark:hover:bg-kallo-track"
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

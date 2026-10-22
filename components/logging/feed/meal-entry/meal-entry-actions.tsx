@@ -28,7 +28,7 @@ export function MealEntryActions({
         className={cn(
           'relative flex flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-xl px-3 py-2.5 font-medium text-xs transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50',
           isEditing
-            ? 'border border-kallo-btn/40 bg-transparent text-kallo-btn enabled:hover:border-kallo-btn enabled:hover:bg-kallo-btn/5'
+            ? 'border border-kallo-umber-text/40 bg-transparent text-kallo-umber-text enabled:hover:border-kallo-umber-text enabled:hover:bg-kallo-umber-text/5'
             : 'bg-kallo-btn text-kallo-btn-ink shadow-sm enabled:hover:bg-kallo-btn-hover enabled:hover:shadow-md',
           'font-sans-display'
         )}

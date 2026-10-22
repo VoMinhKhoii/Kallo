@@ -119,7 +119,7 @@ function Disc({
           : 'flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-kallo-accent/40 to-kallo-border/50 ring-1 ring-kallo-accent/25'
       }
     >
-      <span className="font-bold font-sans-display text-kallo-btn text-xl">
+      <span className="font-bold font-sans-display text-kallo-umber-text text-xl">
         {label.charAt(0).toUpperCase()}
       </span>
     </span>

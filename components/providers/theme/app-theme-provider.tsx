@@ -3,6 +3,7 @@
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import { APP_THEMES, THEME_STORAGE_KEY } from '@/lib/core/theme/themes';
+import { ThemeColorScript } from './theme-color-script';
 import { ThemeColorSync } from './theme-color-sync';
 
 /**
@@ -29,6 +30,7 @@ export function AppThemeProvider({
       storageKey={THEME_STORAGE_KEY}
       disableTransitionOnChange
     >
+      <ThemeColorScript />
       <ThemeColorSync />
       {children}
     </ThemeProvider>

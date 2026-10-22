@@ -37,12 +37,14 @@ export function StreamTicker({
     >
       {/* The brand brown: the loader and the verb beside it are the app
           working, so they carry the logo's umber rather than muted ink. */}
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center text-kallo-btn">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center text-kallo-umber-text">
         <CanvasLoader spec={loaderAt(loaderIndex)} size={20} />
       </span>
       <div className="flex min-w-0 flex-1 items-baseline gap-1">
         {line.prefix && (
-          <span className="shrink-0 text-kallo-btn text-sm">{line.prefix}</span>
+          <span className="shrink-0 text-kallo-umber-text text-sm">
+            {line.prefix}
+          </span>
         )}
         <AnimatePresence mode="wait" initial={false}>
           <motion.span
@@ -55,7 +57,7 @@ export function StreamTicker({
               'min-w-0 truncate text-sm',
               line.kind === 'dish'
                 ? 'font-serif text-kallo-text italic'
-                : 'text-kallo-btn'
+                : 'text-kallo-umber-text'
             )}
           >
             {line.text}
