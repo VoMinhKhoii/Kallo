@@ -8,15 +8,19 @@ import {
 /**
  * The Settings → Appearance choice, kept in localStorage and nowhere else.
  *
- * There is deliberately no in-memory copy: Next keeps pages mounted (hidden)
- * across navigations, so a copy held by one page's tree would go stale while
- * the user changed the theme on another page and come back wrong when revealed.
- * Every reader reads storage; writers notify subscribers.
+ * There is deliberately no copy per page tree: Next keeps pages mounted
+ * (hidden) across navigations, so a copy held by one page's tree would go stale
+ * while the user changed the theme on another page and come back wrong when
+ * revealed. Every reader reads storage; writers notify subscribers. The one
+ * module-wide fallback below covers a browser that refuses storage, for the
+ * rest of this page view.
  */
 const listeners = new Set<() => void>();
+let unstoredChoice: ThemeChoice | null = null;
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 export function readThemeChoice(): ThemeChoice {
+  if (unstoredChoice) return unstoredChoice;
   try {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
     return isThemeChoice(stored) ? stored : 'system';
@@ -35,8 +39,10 @@ export function readResolvedTheme(): AppTheme {
 export function writeThemeChoice(choice: ThemeChoice): void {
   try {
     window.localStorage.setItem(THEME_STORAGE_KEY, choice);
+    unstoredChoice = null;
   } catch {
     // Storage blocked: the switch still happens for this page view.
+    unstoredChoice = choice;
   }
   suspendTransitions();
   for (const listener of listeners) listener();

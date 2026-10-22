@@ -3,6 +3,7 @@
 import { useLayoutEffect } from 'react';
 import { useResolvedTheme } from '@/hooks/theme/use-theme-choice';
 import { paintTheme } from '@/lib/core/theme/paint-theme';
+import { readResolvedTheme } from '@/lib/core/theme/theme-store';
 import { THEME_COLOR, THEME_STORAGE_KEY } from '@/lib/core/theme/themes';
 
 /**
@@ -18,7 +19,8 @@ export function ThemeApplier() {
   useResolvedTheme();
 
   useLayoutEffect(() => {
-    paintTheme(THEME_STORAGE_KEY, THEME_COLOR);
+    // Resolved by the store at paint time, not taken from the last render.
+    paintTheme(THEME_STORAGE_KEY, THEME_COLOR, readResolvedTheme());
   });
 
   return null;

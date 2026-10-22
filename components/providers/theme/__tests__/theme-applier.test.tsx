@@ -50,6 +50,22 @@ describe('ThemeApplier', () => {
     expect(html.className).toBe('');
   });
 
+  // Codex round 3: a browser that refuses storage must still switch.
+  it('switches for this page view when storage refuses the write', () => {
+    render(<ThemeApplier />);
+    const setItem = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new DOMException('blocked', 'SecurityError');
+      });
+
+    act(() => writeThemeChoice('aurora'));
+
+    expect(html.className).toBe('aurora');
+    setItem.mockRestore();
+    act(() => writeThemeChoice('light'));
+  });
+
   it('follows a choice written in another tab', () => {
     render(<ThemeApplier />);
 
