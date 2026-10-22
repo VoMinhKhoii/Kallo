@@ -367,7 +367,7 @@ export function WizardShell({
               type="button"
               onClick={handleNext}
               disabled={isNextDisabled}
-              className="flex touch-manipulation items-center gap-2 rounded-xl bg-kallo-ink px-5 py-2.5 font-medium text-[14px] text-kallo-surface shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
+              className="flex touch-manipulation items-center gap-2 rounded-xl bg-kallo-ink px-5 py-2.5 font-medium text-[14px] text-kallo-surface shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50 dark:hover:bg-kallo-ink-hover"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {currentStep >= TOTAL_STEPS ? t('finish') : t('next')}

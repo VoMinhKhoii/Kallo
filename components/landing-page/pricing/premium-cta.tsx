@@ -35,7 +35,7 @@ export function PremiumCta({
       {savePercent !== null && (
         <span
           data-testid="pricing-save-chip"
-          className="pointer-events-none absolute -top-3 right-3 z-10 whitespace-nowrap rounded-full bg-kallo-on-gold px-2.5 py-1 font-medium font-sans-display text-kallo-gold text-xs"
+          className="pointer-events-none absolute -top-3 right-3 z-10 whitespace-nowrap rounded-full bg-kallo-ink-fixed px-2.5 py-1 font-medium font-sans-display text-kallo-gold text-xs"
         >
           {t('discount', { percent: savePercent })}
         </span>
@@ -46,7 +46,7 @@ export function PremiumCta({
         disabled={disabled || busy}
         aria-busy={busy}
         data-testid="pricing-premium-cta"
-        className="relative flex h-12 w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full border border-kallo-gold-edge bg-gradient-to-br from-kallo-gold-light via-kallo-gold to-kallo-gold-deep font-sans-display font-semibold text-base text-kallo-on-gold tracking-[-0.2px] shadow-kallo-gold-deep/30 shadow-lg transition-[filter,opacity] hover:brightness-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-gold-edge focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        className="relative flex h-12 w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full border border-kallo-gold-edge bg-gradient-to-br from-kallo-gold-light via-kallo-gold to-kallo-gold-deep font-sans-display font-semibold text-base text-kallo-ink-fixed tracking-[-0.2px] shadow-kallo-gold-deep/30 shadow-lg transition-[filter,opacity] hover:brightness-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-gold-edge focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {/* The sheen: a soft diagonal highlight across the fill. */}
         <span

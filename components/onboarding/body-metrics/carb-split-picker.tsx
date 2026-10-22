@@ -48,7 +48,7 @@ export function CarbSplitPicker({
                     }}
                     className={`overflow-hidden rounded-[22px] border text-left transition-all ${
                       field.value === opt.id
-                        ? 'border-kallo-accent bg-[#FFF8EF] shadow-[0_10px_24px_rgba(201,168,124,0.14)]'
+                        ? 'border-kallo-accent bg-[#FFF8EF] shadow-[0_10px_24px_rgba(201,168,124,0.14)] dark:bg-kallo-hover'
                         : 'border-kallo-border bg-card hover:border-kallo-accent/50'
                     }`}
                   >

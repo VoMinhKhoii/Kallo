@@ -157,7 +157,7 @@
   --color-kallo-gold-deep: var(--kallo-gold-deep);
   --color-kallo-gold-edge: var(--kallo-gold-edge);
   --color-kallo-gold-wash: var(--kallo-gold-wash);
-  --color-kallo-on-gold: var(--kallo-on-gold);
+  --color-kallo-ink-fixed: var(--kallo-ink-fixed);
   --color-kallo-segment: var(--kallo-segment);
   --color-kallo-thumb: var(--kallo-thumb);
   --color-kallo-premium-fill: var(--kallo-premium-fill);
@@ -269,9 +269,9 @@
   --kallo-gold-deep: #edbf2f;
   --kallo-gold-edge: #e2a81c;
   --kallo-gold-wash: #fffbea;
-  /* Ink on and beside the gold fill — the same in every theme, because the
-     gold is. */
-  --kallo-on-gold: #141413;
+  /* Ink that stays ink in every theme, for labels on surfaces that do not
+     change with it: the gold Upgrade fill, the camera's lit torch disc. */
+  --kallo-ink-fixed: #141413;
   /* The segmented period switch's track, and the thumb on any segmented
      control (white here, the warm selection fill in the dark themes). */
   --kallo-segment: #edece7;

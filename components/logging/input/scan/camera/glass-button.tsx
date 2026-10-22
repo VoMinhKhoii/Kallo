@@ -42,7 +42,7 @@ export function ScanGlassButton({
       <span
         className={cn(
           'flex items-center justify-center rounded-full transition-colors',
-          active ? 'bg-white text-kallo-text' : SCAN_GLASS
+          active ? 'bg-white text-kallo-ink-fixed' : SCAN_GLASS
         )}
         style={{ width: size, height: size }}
       >

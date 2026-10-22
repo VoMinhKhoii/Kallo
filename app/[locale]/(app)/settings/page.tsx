@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { SubscriptionSettings } from '@/components/billing/subscription/subscription-settings';
 import { AccountPanel } from '@/components/settings/account/account-panel';
+import { AppearanceRow } from '@/components/settings/appearance/appearance-row';
 import { SettingsAnchorNav } from '@/components/settings/chrome/anchor-nav';
 import { SettingsGroup } from '@/components/settings/chrome/group';
 import { SectionHeader } from '@/components/settings/chrome/section-header';
@@ -70,6 +71,9 @@ export default async function SettingsPage({
             />
             <SettingsGroup>
               <IdentityRows />
+              {/* A device setting, not a profile one: reachable before the
+                  profile exists, since the theme already applies. */}
+              <AppearanceRow />
             </SettingsGroup>
             <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-kallo-border bg-card px-4 py-12 text-center">
               <h2 className="font-serif text-kallo-text text-lg">
