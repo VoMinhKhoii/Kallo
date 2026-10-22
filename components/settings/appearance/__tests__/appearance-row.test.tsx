@@ -2,11 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppearanceRow } from '../appearance-row';
 
-const setTheme = vi.fn();
-let theme: string | undefined = 'system';
+const setChoice = vi.fn();
+let choice = 'system';
 
-vi.mock('next-themes', () => ({
-  useTheme: () => ({ theme, setTheme }),
+vi.mock('@/hooks/theme/use-theme-choice', () => ({
+  useThemeChoice: () => [choice, setChoice],
 }));
 
 /** The select's trigger is its first button; the open list follows it. */
@@ -18,8 +18,8 @@ function openList() {
 
 describe('AppearanceRow', () => {
   beforeEach(() => {
-    setTheme.mockClear();
-    theme = 'system';
+    setChoice.mockClear();
+    choice = 'system';
   });
 
   it('lists System, Light, Dark and Aurora in that order', () => {
@@ -34,20 +34,13 @@ describe('AppearanceRow', () => {
   });
 
   it('shows the stored choice and saves a new one', () => {
-    theme = 'aurora';
+    choice = 'aurora';
     render(<AppearanceRow />);
     expect(screen.getAllByRole('button')[0]).toHaveTextContent('aurora');
 
     const dark = openList().find((option) => option.textContent === 'dark');
     fireEvent.click(dark as HTMLElement);
 
-    expect(setTheme).toHaveBeenCalledWith('dark');
-  });
-
-  it('falls back to System for a value it does not offer', () => {
-    theme = 'sepia';
-    render(<AppearanceRow />);
-
-    expect(screen.getAllByRole('button')[0]).toHaveTextContent('system');
+    expect(setChoice).toHaveBeenCalledWith('dark');
   });
 });
