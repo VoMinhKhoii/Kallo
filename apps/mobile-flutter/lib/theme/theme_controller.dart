@@ -139,11 +139,15 @@ class KalloThemeController extends Notifier<KalloThemeChoice>
   bool _chosen = false;
 
   /// Switches to [choice] at once, then stores it for the next launch.
+  ///
+  /// Stores it even when it is already showing: under a late startup read the
+  /// keychain may still hold an older choice that this one must replace.
   Future<void> select(KalloThemeChoice choice) async {
     _chosen = true;
-    if (choice == state) return;
-    state = choice;
-    _paint(choice, rebuild: true);
+    if (choice != state) {
+      state = choice;
+      _paint(choice, rebuild: true);
+    }
     try {
       await ref
           .read(themeStorageProvider)

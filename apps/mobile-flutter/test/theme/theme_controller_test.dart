@@ -108,6 +108,28 @@ void main() {
       expect(KalloPalette.currentId, KalloPaletteId.light);
     });
 
+    test(
+      'picking the showing choice during a late read still stores it',
+      () async {
+        FlutterSecureStorage.setMockInitialValues({kThemeStorageKey: 'dark'});
+        final late = Completer<KalloThemeChoice>();
+        final container = ProviderContainer(
+          overrides: [lateThemeChoiceProvider.overrideWithValue(late.future)],
+        );
+        addTearDown(container.dispose);
+
+        await container
+            .read(kalloThemeProvider.notifier)
+            .select(KalloThemeChoice.system);
+        late.complete(KalloThemeChoice.dark);
+        await pumpEventQueue();
+
+        expect(container.read(kalloThemeProvider), KalloThemeChoice.system);
+        const storage = FlutterSecureStorage();
+        expect(await storage.read(key: kThemeStorageKey), 'system');
+      },
+    );
+
     test('starts from the choice main() read', () {
       final container = ProviderContainer(
         overrides: [
