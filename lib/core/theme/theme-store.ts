@@ -52,7 +52,10 @@ export function writeThemeChoice(choice: ThemeChoice): void {
 export function subscribeTheme(listener: () => void): () => void {
   listeners.add(listener);
   const onStorage = (event: StorageEvent) => {
-    if (event.key === THEME_STORAGE_KEY) listener();
+    if (event.key !== THEME_STORAGE_KEY) return;
+    // Another tab stored a newer choice: it outranks this tab's unstored one.
+    unstoredChoice = null;
+    listener();
   };
   const media = window.matchMedia(DARK_QUERY);
   window.addEventListener('storage', onStorage);

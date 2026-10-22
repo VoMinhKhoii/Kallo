@@ -66,6 +66,29 @@ describe('ThemeApplier', () => {
     act(() => writeThemeChoice('light'));
   });
 
+  // Local Codex review: once another tab stores a newer choice, this tab's
+  // unstored one must stop overriding it.
+  it('lets another tab override a choice it could not store', () => {
+    render(<ThemeApplier />);
+    const setItem = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new DOMException('full', 'QuotaExceededError');
+      });
+    act(() => writeThemeChoice('aurora'));
+    setItem.mockRestore();
+
+    act(() => {
+      localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: THEME_STORAGE_KEY })
+      );
+    });
+
+    expect(html.className).toBe('dark');
+    act(() => writeThemeChoice('light'));
+  });
+
   it('follows a choice written in another tab', () => {
     render(<ThemeApplier />);
 
