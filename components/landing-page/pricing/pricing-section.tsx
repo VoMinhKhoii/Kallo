@@ -51,11 +51,12 @@ export function PricingSection({
     // on their panels, so the page has one card-on-beige relationship rather
     // than two grounds doing the same job. It is opaque, so the drifting wash
     // stops at this band — which is wanted: the page ends on something solid
-    // instead of fading out under the footer.
+    // instead of fading out under the footer. On /pricing in a dark theme the
+    // band drops away and the page's own surface shows.
     <section
       aria-labelledby="landing-pricing"
       id="pricing"
-      className="relative scroll-mt-20 border-kallo-border/40 border-t bg-kallo-hover pt-8 pb-8 md:pt-10 md:pb-10"
+      className="relative scroll-mt-20 border-kallo-border/40 border-t bg-kallo-hover pt-8 pb-8 md:pt-10 md:pb-10 dark:bg-transparent"
     >
       <div className="mx-auto max-w-[92rem] px-6 sm:px-12 lg:px-20">
         <Title
