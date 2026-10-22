@@ -12,6 +12,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
 import '../../logic/slider_nutrition.dart';
 import 'cheat_stop_band.dart';
+import '../../../../shared/widgets/surface/primary_fill.dart';
 
 /// One food-domain icon per axis — encodes the slider's identity (and shares
 /// its accent color), matching the web `CHEAT_SLIDER_ICONS`.
@@ -389,21 +390,19 @@ class _SaveButtonState extends State<_SaveButton> {
             padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color:
-                  _pressed && tappable
-                      ? Color.alphaBlend(
-                        KalloColors.pressWash,
-                        KalloColors.btnPrimarySoft,
-                      )
-                      : KalloColors.btnPrimarySoft,
+              color: PrimaryFill.color(pressed: _pressed && tappable),
+              gradient: PrimaryFill.gradient(pressed: _pressed && tappable),
               borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(LucideIcons.check400, size: 16, color: KalloColors.text),
+                Icon(LucideIcons.check400, size: 16, color: PrimaryFill.label),
                 const SizedBox(width: 6),
-                Text('logging.cheatSliders.confirm'.tr(), style: dashBody()),
+                Text(
+                  'logging.cheatSliders.confirm'.tr(),
+                  style: dashBody(color: PrimaryFill.label),
+                ),
               ],
             ),
           ),

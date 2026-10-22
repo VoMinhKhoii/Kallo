@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
+import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_shapes.dart';
 
@@ -130,7 +131,7 @@ class KalloSheetSurface extends StatelessWidget {
   /// barrier tappable so the sheet never reads as a full-screen page.
   final double maxHeightFraction;
 
-  /// White ([kCardSurface]) by default. A sheet whose body is itself made of
+  /// [KalloColors.sheet] by default — white in light. A sheet whose body is itself made of
   /// white grouped cards (the scan result) paints the canvas colour instead,
   /// so the cards separate by surface the way they do on a page.
   final Color? color;
@@ -165,7 +166,7 @@ class KalloSheetSurface extends StatelessWidget {
         // curvature the way every iOS sheet's do. `ShapeDecoration` is what
         // takes a `ShapeBorder` — note it spells shadows `shadows`.
         decoration: ShapeDecoration(
-          color: color ?? kCardSurface,
+          color: color ?? KalloColors.sheet,
           shape: KalloShapes.squircleTop(kSheetRadius),
           // Sheets are TRUE elevation on the borderless-card canvas.
           shadows: kSheetShadows,

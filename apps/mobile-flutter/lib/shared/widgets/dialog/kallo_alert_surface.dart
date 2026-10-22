@@ -7,7 +7,6 @@ library;
 
 import 'package:flutter/widgets.dart';
 
-import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 
@@ -44,6 +43,6 @@ class KalloAlertSurface extends StatelessWidget {
   Widget build(BuildContext context) => ClipRSuperellipse(
     key: kKalloConfirmSurface,
     borderRadius: BorderRadius.circular(kKalloAlertRadius),
-    child: ColoredBox(color: kCardSurface, child: child),
+    child: ColoredBox(color: KalloColors.sheet, child: child),
   );
 }

@@ -61,6 +61,7 @@ class DashboardScreen extends ConsumerWidget {
 
     if (userId == null) {
       return Screen(
+        glow: true,
         bottom: false,
         child: Center(
           child: Padding(
@@ -83,6 +84,7 @@ class DashboardScreen extends ConsumerWidget {
     Future<void> refresh() => ref.refresh(dashboardBundleProvider(args).future);
 
     return Screen(
+      glow: true,
       bottom: false,
       child: ScrollSeparator(
         header: const Padding(

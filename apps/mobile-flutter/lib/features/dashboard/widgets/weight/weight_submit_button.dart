@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../../../../shared/widgets/surface/primary_fill.dart';
 
 /// The weight logger's full-width Save/Update — the in-app primary: beige
 /// wash, ink label, fully rounded. (Its first native-pass ship kept the
@@ -47,26 +47,21 @@ class WeightSubmitButton extends StatelessWidget {
           ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color:
-                pressed && !pending
-                    ? Color.alphaBlend(
-                      KalloColors.pressWash,
-                      KalloColors.btnPrimarySoft,
-                    )
-                    : KalloColors.btnPrimarySoft,
+            color: PrimaryFill.color(pressed: pressed && !pending),
+            gradient: PrimaryFill.gradient(pressed: pressed && !pending),
             borderRadius: BorderRadius.circular(KalloRadii.button),
           ),
           child:
               pending
                   ? CupertinoActivityIndicator(
                     radius: 8,
-                    color: KalloColors.text,
+                    color: PrimaryFill.label,
                   )
                   : Text(
                     label,
                     // Sentence-case, body-sized label — a native button reads as
                     // a word, not a techy 11px all-caps eyebrow.
-                    style: kButtonLabel(color: KalloColors.text),
+                    style: kButtonLabel(color: PrimaryFill.label),
                   ),
         ),
       ),

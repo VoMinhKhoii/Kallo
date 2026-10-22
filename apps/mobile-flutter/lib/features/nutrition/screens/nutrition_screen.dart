@@ -79,6 +79,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
 
     if (userId == null) {
       return Screen(
+        glow: true,
         bottom: false,
         child: Center(
           child: Padding(
@@ -113,6 +114,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     final isFetching = async.isLoading && async.hasValue;
 
     return Screen(
+      glow: true,
       bottom: false,
       child: ScrollSeparator(
         header: Padding(

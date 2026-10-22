@@ -36,7 +36,12 @@ abstract final class KalloColors {
   // ── Core surfaces ────────────────────────────────────────────────────
   static Color get surface =>
       _p.surface; // app background — below white; cards need no border/shadow
-  static Color get elev => _p.elev; // cards / sheets
+  static Color get elev => _p.elev; // cards
+
+  /// Bottom sheets, dialogs, anchored menus and Dark's nav pill: one step
+  /// ABOVE the cards. White like [elev] in light; lighter than the cards in
+  /// Dark and Aurora, where elevation reads by surface rather than shadow.
+  static Color get sheet => _p.sheet;
   static Color get hover => _p.hover; // warm hover/select wash
   // Kept where it was when the canvas darkened: the canvas↔track step is the
   // whole point of this token, and against the brighter page it now sits
@@ -157,6 +162,10 @@ abstract final class KalloColors {
       _p.btnPrimary; // black & white CTA — auth/paywall
   static Color get btnPrimarySoft =>
       _p.btnPrimarySoft; // beige + ink — in-app primary
+
+  /// Ink on the brand sweep (the tab bar's "+", Aurora's in-app primary):
+  /// `#141413` in every palette, since the sweep's two hues never change.
+  static Color get onBrand => _p.onBrand;
   static Color get btn => _p.btn; // legacy umber — toggles/progress
   static Color get btnHover => _p.btnHover;
   static Color get btnBorderGhost => _p.btnBorderGhost; // btn umber @ 40%

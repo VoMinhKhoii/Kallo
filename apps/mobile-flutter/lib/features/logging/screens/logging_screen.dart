@@ -119,6 +119,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
     // composer, and the picker scrim below — win their own taps in the gesture
     // arena, so only genuinely empty surface dismisses.
     return Screen(
+      glow: true,
       bottom: false,
       child: Column(
         children: [

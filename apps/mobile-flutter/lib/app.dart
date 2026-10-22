@@ -111,6 +111,9 @@ class _NhamAppState extends ConsumerState<KalloApp>
           title: 'Kallo',
           debugShowCheckedModeBanner: false,
           theme: kalloAppTheme(),
+          // Material colours switch in the same frame as the palette tokens;
+          // a lerping theme left scaffolds a beat behind every card.
+          themeAnimationDuration: Duration.zero,
           routerConfig: router,
           // Dynamic Type is respected, but capped: the feed's fixed-width
           // columns overflow past ~1.3x. The launch intro sits over the whole

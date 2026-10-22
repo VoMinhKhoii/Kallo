@@ -13,6 +13,7 @@ import 'add_sheet.dart';
 import 'nav_actions.dart';
 import 'nav_visibility.dart';
 import 'pill_nav_item.dart';
+import 'pill_nav_surface.dart';
 import 'pill_nav_veil.dart';
 
 /// The floating pill tab bar (native pass, 2026-08-31): a 72pt-tall white
@@ -71,19 +72,7 @@ class PillNavBar extends ConsumerWidget {
       // SafeArea'd to zero height — the 2026-08-31 TestFlight regression).
       child: Center(
         heightFactor: 1,
-        child: Container(
-          // No max width: the capsule takes everything [kNavInset] leaves it,
-          // so it is derived from the screen rather than pinned to one phone.
-          // Under Center's loose constraints `infinity` resolves to exactly
-          // that padded width.
-          width: double.infinity,
-          height: kNavHeight,
-          padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3_5),
-          decoration: BoxDecoration(
-            color: kCardSurface,
-            borderRadius: BorderRadius.circular(kNavRadius),
-            boxShadow: kNavShadows,
-          ),
+        child: PillNavSurface(
           child: Row(
             children: [
               PillNavItem(
@@ -187,7 +176,7 @@ class _AddButton extends StatelessWidget {
               child: Icon(
                 LucideIcons.plus400,
                 size: 24,
-                color: KalloColors.text,
+                color: KalloColors.onBrand,
               ),
             ),
           ),

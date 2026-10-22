@@ -128,7 +128,7 @@ class KalloMenuCard extends StatelessWidget {
     final radius = BorderRadius.circular(KalloRadii.xl);
     return DecoratedBox(
       decoration: ShapeDecoration(
-        color: KalloColors.elev,
+        color: KalloColors.sheet,
         shape: KalloShapes.squircle(KalloRadii.xl),
         shadows: const [KalloShadows.md],
       ),
