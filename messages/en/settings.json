@@ -15,6 +15,14 @@
   },
   "language": "Language",
   "languageHint": "Change the app language",
+  "appearance": {
+    "label": "Appearance",
+    "hint": "Light, dark, or match your device",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "aurora": "Aurora"
+  },
   "anchorNav": {
     "label": "On this page",
     "profile": "Profile",

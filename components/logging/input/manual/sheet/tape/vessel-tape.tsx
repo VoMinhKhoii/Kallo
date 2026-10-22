@@ -148,9 +148,9 @@ export function VesselTape({
         className="absolute left-1/2 flex -translate-x-1/2 flex-col items-center"
         style={{ top: band + NEEDLE_GAP }}
       >
-        <span className="h-0 w-0 border-x-[4.5px] border-x-transparent border-t-[7px] border-t-kallo-btn" />
+        <span className="h-0 w-0 border-x-[4.5px] border-x-transparent border-t-[7px] border-t-kallo-btn dark:border-t-kallo-accent" />
         <span
-          className="w-0.5 rounded-[1px] bg-kallo-btn"
+          className="w-0.5 rounded-[1px] bg-kallo-btn dark:bg-kallo-accent"
           style={{ height: RULER + 4 - 7 }}
         />
       </div>

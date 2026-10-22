@@ -69,7 +69,7 @@ export function ManualSearchPage({
         }
       />
       <div className="px-4">
-        <label className="flex h-[52px] items-center gap-2.5 rounded-full bg-white px-[18px]">
+        <label className="flex h-[52px] items-center gap-2.5 rounded-full bg-card px-[18px]">
           <Search aria-hidden className="size-[18px] text-kallo-text-muted" />
           <input
             ref={inputRef}
@@ -114,7 +114,7 @@ export function ManualSearchPage({
                 : t('recentsHint')
           )
         ) : (
-          <div className="rounded-[22px] bg-white px-4">
+          <div className="rounded-[22px] bg-card px-4">
             {results.map((food, index) => {
               const item = itemFor(food.id);
               const inMeal = item

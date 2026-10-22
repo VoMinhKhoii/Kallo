@@ -40,14 +40,14 @@ export function ProfileAvatar({
   return (
     <span
       className={cn(
-        'relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E8E6DC]',
+        'relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-kallo-border',
         className
       )}
     >
       {fallback ?? (
         <span
           aria-hidden="true"
-          className="font-bold font-sans-display text-[#141413] text-[12px]"
+          className="font-bold font-sans-display text-[12px] text-kallo-text"
         >
           {label.charAt(0).toUpperCase()}
         </span>

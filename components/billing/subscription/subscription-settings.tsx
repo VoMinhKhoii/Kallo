@@ -37,7 +37,7 @@ export function SubscriptionSettings({
 
   if (isPending) {
     return (
-      <div className="flex items-center gap-2 rounded-2xl border border-kallo-border/70 bg-white px-4 py-5 text-[14px] text-kallo-text-muted">
+      <div className="flex items-center gap-2 rounded-2xl border border-kallo-border/70 bg-card px-4 py-5 text-[14px] text-kallo-text-muted">
         <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
         {t('loading')}
       </div>
@@ -46,7 +46,7 @@ export function SubscriptionSettings({
 
   if (isError || !data) {
     return (
-      <div className="rounded-2xl border border-kallo-border/70 bg-white px-4 py-5 text-[14px] text-kallo-text-muted">
+      <div className="rounded-2xl border border-kallo-border/70 bg-card px-4 py-5 text-[14px] text-kallo-text-muted">
         {t('loadError')}
       </div>
     );
@@ -73,7 +73,7 @@ export function SubscriptionSettings({
         />
       )}
 
-      <div className="rounded-2xl border border-kallo-border/70 bg-white px-4 py-4">
+      <div className="rounded-2xl border border-kallo-border/70 bg-card px-4 py-4">
         {data.tier === 'premium' ? (
           <PremiumState
             data={data}

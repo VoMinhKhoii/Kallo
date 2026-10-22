@@ -17,7 +17,7 @@ import {
 import { CustomSelect } from './custom-select';
 
 const inputClass =
-  'w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[14px] text-kallo-text transition-colors hover:border-kallo-accent/50 focus-visible:border-kallo-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/20';
+  'w-full rounded-lg border border-kallo-border bg-card px-3 py-2 text-[14px] text-kallo-text transition-colors hover:border-kallo-accent/50 focus-visible:border-kallo-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/20';
 
 /** "About You" card: sex, weight, height, age, activity level. */
 export function AboutYouFields({
@@ -29,7 +29,7 @@ export function AboutYouFields({
 }) {
   const t = useTranslations('onboarding');
   return (
-    <section className="rounded-[28px] border border-[#EAE7E0] bg-white p-5">
+    <section className="rounded-[28px] border border-kallo-border bg-card p-5">
       <div className="mb-4">
         <div>
           <p className="font-bold text-[11px] text-kallo-stone uppercase tracking-widest">

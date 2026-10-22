@@ -57,7 +57,7 @@ export function InviteDeck({ invites }: { invites: MealShareInvite[] }) {
       {[...layers].reverse().map((layer) => (
         <div
           aria-hidden="true"
-          className={`absolute inset-y-0 rounded-2xl border border-kallo-border/60 bg-white ring-1 ring-kallo-surface ${layer}`}
+          className={`absolute inset-y-0 rounded-2xl border border-kallo-border/60 bg-card ring-1 ring-kallo-surface ${layer}`}
           data-testid="invite-deck-layer"
           key={layer}
         />

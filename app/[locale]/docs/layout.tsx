@@ -1,5 +1,6 @@
 import { DocsFooter } from '@/components/docs/docs-footer';
 import { DocsHeader } from '@/components/docs/docs-header';
+import { LightOnly } from '@/components/providers/theme/light-only';
 import type { Locale } from '@/i18n/config';
 import { getSearchIndex } from '@/lib/domain/docs/search-index';
 import { getDocsTree } from '@/lib/domain/docs/tree';
@@ -35,6 +36,7 @@ export default async function DocsLayout({
 
   return (
     <div className="flex min-h-dvh flex-col bg-kallo-surface">
+      <LightOnly />
       <DocsHeader searchEntries={searchEntries} />
 
       <div className="mx-auto w-full max-w-[90rem] flex-1 px-4 sm:px-6">

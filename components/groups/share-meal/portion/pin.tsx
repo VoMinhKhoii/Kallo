@@ -53,7 +53,7 @@ export function PortionPin({
             drop's radius, costs no layout, and leaves `shadow-md` alone. */}
         <span
           aria-hidden="true"
-          className="flex size-9 rotate-[-45deg] items-center justify-center rounded-[50%_50%_50%_0] border-2 border-white shadow-md"
+          className="flex size-9 rotate-[-45deg] items-center justify-center rounded-[50%_50%_50%_0] border-2 border-card shadow-md"
           style={{ backgroundColor: color, outline: `2px solid ${color}` }}
         >
           <ProfileAvatar
@@ -73,7 +73,7 @@ export function PortionPin({
         {onRemove && (
           <button
             aria-label={`Bỏ ${label}`}
-            className="absolute -top-1.5 -right-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-kallo-border bg-white"
+            className="absolute -top-1.5 -right-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-kallo-border bg-card"
             onClick={onRemove}
             type="button"
           >

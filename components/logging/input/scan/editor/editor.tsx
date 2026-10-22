@@ -115,9 +115,9 @@ export function ScanFoodEditor({
         value={name}
         maxLength={200}
         onChange={(event) => setName(event.target.value)}
-        className="h-[52px] w-full rounded-[22px] bg-white px-4 text-[16px] text-kallo-text outline-none placeholder:text-kallo-text-muted"
+        className="h-[52px] w-full rounded-[22px] bg-card px-4 text-[16px] text-kallo-text outline-none placeholder:text-kallo-text-muted"
       />
-      <div className="mt-3 flex min-h-[52px] items-center justify-between rounded-[22px] bg-white px-4">
+      <div className="mt-3 flex min-h-[52px] items-center justify-between rounded-[22px] bg-card px-4">
         <span className="text-[16px] text-kallo-text">
           {t('scan.valuesPer')}
         </span>
@@ -152,11 +152,11 @@ export function ScanFoodEditor({
         </DropdownMenu>
       </div>
       {caption(t('scan.nutrition'))}
-      <div className="overflow-hidden rounded-[22px] bg-white">
+      <div className="overflow-hidden rounded-[22px] bg-card">
         {SCAN_MACRO_DEFINITIONS.map(field)}
       </div>
       {caption(t('scan.otherNutrients'))}
-      <div className="overflow-hidden rounded-[22px] bg-white">
+      <div className="overflow-hidden rounded-[22px] bg-card">
         {SCAN_MICRONUTRIENT_DEFINITIONS.map(field)}
       </div>
       <p className="px-4 pt-2 text-[14px] text-kallo-text-muted">

@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-kallo-surface px-4 font-sans-display">
-      <div className="w-full max-w-[400px] rounded-2xl border border-kallo-border/40 bg-[#FFFCF8] p-8 shadow-[0_25px_60px_-12px_rgba(44,36,22,0.18)]">
+      <div className="w-full max-w-[400px] rounded-2xl border border-kallo-border/40 bg-card p-8 shadow-[0_25px_60px_-12px_rgba(44,36,22,0.18)]">
         <h1 className="mb-1 text-center font-normal font-serif text-2xl text-kallo-text">
           {t('title')}
         </h1>
@@ -102,7 +102,7 @@ export default function ResetPasswordPage() {
         {status === 'expired' && (
           <Link
             href="/"
-            className="block w-full rounded-xl bg-kallo-ink px-4 py-3 text-center font-medium text-sm text-white transition-colors hover:bg-[#3D3425]"
+            className="block w-full rounded-xl bg-kallo-ink px-4 py-3 text-center font-medium text-kallo-surface text-sm transition-colors hover:bg-kallo-ink-hover"
           >
             {t('backHome')}
           </Link>
@@ -131,7 +131,7 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading || done}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-kallo-ink px-4 py-3 font-medium text-sm text-white transition-colors hover:bg-[#3D3425] disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-kallo-ink px-4 py-3 font-medium text-kallo-surface text-sm transition-colors hover:bg-kallo-ink-hover disabled:opacity-60"
             >
               {(loading || done) && (
                 <Loader2 className="h-4 w-4 animate-spin" />

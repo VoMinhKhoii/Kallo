@@ -82,13 +82,13 @@ export function OnboardingNudge({
           total,
         })}
         className={cn(
-          'group flex w-full items-center gap-2 rounded-lg border border-[#141413]/10 bg-kallo-surface px-2.5 py-2 text-left transition-colors hover:bg-[#141413]/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+          'group flex w-full items-center gap-2 rounded-lg border border-kallo-text/10 bg-kallo-surface px-2.5 py-2 text-left transition-colors hover:bg-kallo-ink/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white',
           className
         )}
       >
         <span
           aria-hidden="true"
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#141413]/[0.06] text-[#141413]"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-kallo-ink/[0.06] text-kallo-text"
         >
           <Sparkles className="h-3 w-3" />
         </span>
@@ -109,7 +109,7 @@ export function OnboardingNudge({
       role="region"
       aria-label={t('regionLabel')}
       className={cn(
-        'group relative overflow-hidden rounded-2xl bg-kallo-surface ring-1 ring-[#141413]/10 ring-inset transition-shadow hover:ring-[#141413]/15',
+        'group relative overflow-hidden rounded-2xl bg-kallo-surface ring-1 ring-kallo-text/10 ring-inset transition-shadow hover:ring-kallo-text/15',
         variant === 'default' ? 'p-3.5' : 'p-4',
         className
       )}
@@ -125,7 +125,7 @@ export function OnboardingNudge({
 
       <div className="mb-2 flex items-center gap-1.5">
         <span
-          className="flex h-5 w-5 items-center justify-center rounded-md bg-[#141413]/[0.06] text-[#141413]"
+          className="flex h-5 w-5 items-center justify-center rounded-md bg-kallo-ink/[0.06] text-kallo-text"
           aria-hidden="true"
         >
           <Sparkles className="h-3 w-3" />
@@ -143,7 +143,7 @@ export function OnboardingNudge({
       </p>
 
       <div
-        className="mb-3 h-1 overflow-hidden rounded-full bg-[#141413]/10"
+        className="mb-3 h-1 overflow-hidden rounded-full bg-kallo-ink/10"
         role="progressbar"
         aria-valuenow={completedSteps}
         aria-valuemin={0}
@@ -151,7 +151,7 @@ export function OnboardingNudge({
         aria-label={t('progressLabel')}
       >
         <div
-          className="h-full rounded-full bg-[#141413] transition-[width] duration-500 ease-out"
+          className="h-full rounded-full bg-kallo-ink transition-[width] duration-500 ease-out"
           style={{ width: `${progressPct}%` }}
         />
       </div>
@@ -159,7 +159,7 @@ export function OnboardingNudge({
       <button
         type="button"
         onClick={onResume}
-        className="w-full rounded-lg bg-kallo-btn px-3 py-2 font-medium font-sans-display text-[11px] text-white shadow-kallo-btn/20 shadow-sm transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="w-full rounded-lg bg-kallo-btn px-3 py-2 font-medium font-sans-display text-[11px] text-kallo-btn-ink shadow-kallo-btn/20 shadow-sm transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white"
       >
         {t('cta')}
       </button>
@@ -179,7 +179,7 @@ export function OnboardingDot({
     <span
       aria-hidden="true"
       className={cn(
-        'pointer-events-none absolute h-2 w-2 animate-pulse-dot rounded-full bg-[#141413] ring-2 ring-kallo-surface',
+        'pointer-events-none absolute h-2 w-2 animate-pulse-dot rounded-full bg-kallo-ink ring-2 ring-kallo-surface',
         className
       )}
       {...rest}

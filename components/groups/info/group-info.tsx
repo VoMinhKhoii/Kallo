@@ -38,14 +38,14 @@ function AvatarStack({
           key={member.userId}
           avatarUrl={member.avatarUrl}
           label={labelFor(member)}
-          className={`${size} ring-2 ring-white`}
+          className={`${size} ring-2 ring-card`}
         />
       ))}
       {overflow > 0 && (
         <span
-          className={`flex ${size} items-center justify-center rounded-full bg-[#E8E6DC] ring-2 ring-white`}
+          className={`flex ${size} items-center justify-center rounded-full bg-kallo-border ring-2 ring-card`}
         >
-          <span className="font-bold font-sans-display text-[#141413] text-[10px]">
+          <span className="font-bold font-sans-display text-[10px] text-kallo-text">
             +{overflow}
           </span>
         </span>
@@ -87,7 +87,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
 
   const rail = (
     <div
-      className="flex h-full min-h-0 flex-col rounded-xl border border-kallo-border/60 bg-white shadow-kallo-text/[0.03] shadow-sm transition-[width] duration-[220ms] ease-out"
+      className="flex h-full min-h-0 flex-col rounded-xl border border-kallo-border/60 bg-card shadow-kallo-text/[0.03] shadow-sm transition-[width] duration-[220ms] ease-out"
       style={{ width: collapsed ? 56 : 304 }}
     >
       {collapsed ? (
@@ -96,7 +96,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
             type="button"
             aria-label={t('expand')}
             onClick={toggleCollapsed}
-            className="flex size-8 items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-[#141413]/[0.06] hover:text-kallo-text"
+            className="flex size-8 items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-kallo-ink/[0.06] hover:text-kallo-text"
           >
             <PanelRightOpen className="size-4" />
           </button>
@@ -110,7 +110,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
               />
             ))}
             {group.members.length > STACK_LIMIT && (
-              <span className="font-sans-display text-[#6E6D66] text-[10px]">
+              <span className="font-sans-display text-[10px] text-kallo-text-muted">
                 +{group.members.length - STACK_LIMIT}
               </span>
             )}
@@ -123,7 +123,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
               type="button"
               aria-label={t('collapse')}
               onClick={toggleCollapsed}
-              className="flex size-7 items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-[#141413]/[0.06] hover:text-kallo-text"
+              className="flex size-7 items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-kallo-ink/[0.06] hover:text-kallo-text"
             >
               <PanelRightClose className="size-4" />
             </button>
@@ -143,15 +143,15 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
             <button
               type="button"
               aria-label={t('expand')}
-              className="flex items-center gap-1.5 rounded-full py-0.5 pr-1 pl-2 transition-colors hover:bg-[#141413]/[0.04]"
+              className="flex items-center gap-1.5 rounded-full py-0.5 pr-1 pl-2 transition-colors hover:bg-kallo-ink/[0.04]"
             >
               <AvatarStack members={group.members} size="size-6" />
-              <ChevronRight className="size-3.5 text-[#6E6D66]" />
+              <ChevronRight className="size-3.5 text-kallo-text-muted" />
             </button>
           </SheetTrigger>
           <SheetContent
             side="right"
-            className="flex w-[88vw] max-w-[340px] flex-col gap-0 border-kallo-border/60 bg-white p-0"
+            className="flex w-[88vw] max-w-[340px] flex-col gap-0 border-kallo-border/60 bg-card p-0"
           >
             <SheetHeader className="sr-only">
               <SheetTitle>{t('title')}</SheetTitle>

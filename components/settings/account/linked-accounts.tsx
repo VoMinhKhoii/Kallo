@@ -96,7 +96,7 @@ export function LinkedAccounts() {
         <button
           type="button"
           onClick={() => refetch()}
-          className="shrink-0 rounded-lg border border-kallo-border bg-white px-3 py-1.5 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+          className="shrink-0 rounded-lg border border-kallo-border bg-card px-3 py-1.5 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
         >
           {t('linkedRetry')}
         </button>
@@ -140,7 +140,7 @@ export function LinkedAccounts() {
                 disabled={busy || identitiesLoading}
                 aria-busy={busy}
                 aria-label={`${t('linkedConnect')} ${label}`}
-                className="shrink-0 rounded-lg border border-kallo-border bg-white px-3 py-1.5 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
+                className="shrink-0 rounded-lg border border-kallo-border bg-card px-3 py-1.5 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
               >
                 {t('linkedConnect')}
               </button>

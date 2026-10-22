@@ -48,7 +48,7 @@ export function SidebarBrandHeader({
           aria-pressed={pinnedCollapsed}
           aria-keyshortcuts="Meta+B Control+B"
           className={cn(
-            'group/toggle relative flex items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-[#141413]/[0.06] hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent',
+            'group/toggle relative flex items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-kallo-ink/[0.06] hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent',
             collapsed ? 'h-8 w-8' : 'h-7 w-7'
           )}
         >

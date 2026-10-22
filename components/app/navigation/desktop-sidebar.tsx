@@ -176,7 +176,7 @@ export function DesktopSidebar({
       onBlurCapture={handleFocusLeave}
       onClick={handleAsideClick}
       className={cn(
-        'sticky top-3 flex h-full shrink-0 flex-col rounded-xl border border-kallo-border/60 bg-white shadow-kallo-text/[0.03] shadow-sm transition-[width,opacity,filter] duration-[220ms] ease-out',
+        'sticky top-3 flex h-full shrink-0 flex-col rounded-xl border border-kallo-border/60 in-[.aurora]:border-sidebar-border bg-sidebar shadow-kallo-text/[0.03] shadow-sm in-[.aurora]:backdrop-blur-xl transition-[width,opacity,filter] duration-[220ms] ease-out',
         collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH,
         pinnedCollapsed && collapsed && 'cursor-pointer'
       )}
@@ -223,7 +223,7 @@ export function DesktopSidebar({
       {/* Footer — onboarding nudge + user menu, pinned to bottom.
           Onboarding lives here (not in the scroll region) so toggling
           collapse/expand never reflows nav items. */}
-      <div className="shrink-0 border-kallo-border/40 border-t bg-white/40 p-2.5">
+      <div className="shrink-0 border-kallo-border/40 border-t bg-card/40 p-2.5">
         {onboardingIncomplete && onResumeOnboarding && !collapsed && (
           <div className="mb-2.5">
             <OnboardingNudge

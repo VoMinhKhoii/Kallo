@@ -96,7 +96,7 @@ export function UserMenu({
       aria-haspopup="menu"
       aria-expanded={open}
       className={cn(
-        'group/usermenu relative flex w-full items-center rounded-lg text-left transition-colors hover:bg-[#141413]/[0.04] focus-visible:bg-[#141413]/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent',
+        'group/usermenu relative flex w-full items-center rounded-lg text-left transition-colors hover:bg-kallo-ink/[0.04] focus-visible:bg-kallo-ink/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent',
         collapsed ? 'justify-center gap-0 p-1' : 'gap-3 p-1.5'
       )}
     >
@@ -105,7 +105,7 @@ export function UserMenu({
         {showOnboardingDot && (
           <span
             aria-hidden="true"
-            className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 animate-pulse-dot rounded-full bg-[#141413] ring-2 ring-kallo-surface"
+            className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 animate-pulse-dot rounded-full bg-kallo-ink ring-2 ring-kallo-surface"
           />
         )}
       </span>
@@ -131,7 +131,7 @@ export function UserMenu({
         side={collapsed ? 'right' : 'top'}
         align={collapsed ? 'end' : 'start'}
         sideOffset={collapsed ? 12 : 8}
-        className="min-w-[12rem] border border-[#141413]/10 bg-white font-sans-display"
+        className="min-w-[12rem] border border-kallo-text/10 bg-card font-sans-display"
       >
         {label && (
           <>
@@ -145,7 +145,7 @@ export function UserMenu({
                 </span>
               )}
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-[#141413]/10" />
+            <DropdownMenuSeparator className="bg-kallo-ink/10" />
           </>
         )}
 
@@ -156,19 +156,19 @@ export function UserMenu({
               onCheckedChange={(checked) =>
                 onExpandModeChange?.(checked ? 'hover' : 'click')
               }
-              className="gap-2 text-[12px] text-kallo-text focus:bg-[#141413]/[0.04] focus:text-kallo-text"
+              className="gap-2 text-[12px] text-kallo-text focus:bg-kallo-ink/[0.04] focus:text-kallo-text"
             >
               <MousePointerClick className="h-3.5 w-3.5 text-kallo-text-muted" />
               {t('expandOnHover')}
             </DropdownMenuCheckboxItem>
-            <DropdownMenuSeparator className="bg-[#141413]/10" />
+            <DropdownMenuSeparator className="bg-kallo-ink/10" />
           </>
         )}
 
         <DropdownMenuItem asChild>
           <Link
             href="/settings"
-            className="flex items-center gap-2 text-[12px] text-kallo-text focus:bg-[#141413]/[0.04] focus:text-kallo-text"
+            className="flex items-center gap-2 text-[12px] text-kallo-text focus:bg-kallo-ink/[0.04] focus:text-kallo-text"
           >
             <UserIcon className="h-3.5 w-3.5" />
             {t('profile')}
@@ -177,14 +177,14 @@ export function UserMenu({
         <DropdownMenuItem asChild>
           <Link
             href="/settings"
-            className="flex items-center gap-2 text-[12px] text-kallo-text focus:bg-[#141413]/[0.04] focus:text-kallo-text"
+            className="flex items-center gap-2 text-[12px] text-kallo-text focus:bg-kallo-ink/[0.04] focus:text-kallo-text"
           >
             <Settings className="h-3.5 w-3.5" />
             {t('settings')}
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="bg-[#141413]/10" />
+        <DropdownMenuSeparator className="bg-kallo-ink/10" />
 
         <DropdownMenuItem
           onClick={handleSignOut}

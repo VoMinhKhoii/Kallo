@@ -6,6 +6,7 @@ import { ElevationSection } from '@/components/design-system/elevation-section';
 import { SpacingSection } from '@/components/design-system/spacing-section';
 import { StatesSection } from '@/components/design-system/states-section';
 import { TypographySection } from '@/components/design-system/typography-section';
+import { LightOnly } from '@/components/providers/theme/light-only';
 
 export const metadata: Metadata = {
   title: 'Design system',
@@ -33,6 +34,7 @@ export default function DesignSystemPage() {
 
   return (
     <main className="min-h-dvh bg-kallo-surface">
+      <LightOnly />
       <div className="mx-auto max-w-5xl px-6 py-16">
         <header>
           <p className="eyebrow">Kallo design system</p>

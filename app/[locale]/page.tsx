@@ -17,6 +17,7 @@ import { PricingSection } from '@/components/landing-page/pricing/pricing-sectio
 import { SignedInRedirect } from '@/components/landing-page/signed-in-redirect';
 import { UnderstandingSection } from '@/components/landing-page/understanding/understanding-section';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
+import { LightOnly } from '@/components/providers/theme/light-only';
 import type { Locale } from '@/i18n/config';
 import { routing } from '@/i18n/routing';
 import { getDocsTree } from '@/lib/domain/docs/tree';
@@ -89,6 +90,7 @@ export default async function Home({
 
   return (
     <AuthProvider initialTab="sign-up">
+      <LightOnly />
       {/* JSON-LD must be raw script text, and Next has no metadata API for it,
           so a script tag is the documented route. The value is a locally-built
           object passed through JSON.stringify — never user input. */}

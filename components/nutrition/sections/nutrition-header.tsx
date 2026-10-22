@@ -53,7 +53,7 @@ export function NutritionHeader({
               className={cn(
                 'touch-manipulation whitespace-nowrap rounded-full px-2.5 py-1.5 font-medium text-[12px] tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface disabled:opacity-60 md:px-3',
                 active
-                  ? 'bg-card text-kallo-text shadow-sm'
+                  ? 'bg-kallo-thumb text-kallo-text shadow-sm'
                   : 'text-kallo-text-muted hover:text-kallo-text'
               )}
             >

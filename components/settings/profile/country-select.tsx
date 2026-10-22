@@ -35,8 +35,8 @@ export function CountrySelect({
           'flex w-full items-center justify-between gap-2 rounded-xl border py-2.5 pl-4 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30',
           value ? 'pr-10' : 'pr-4',
           isOpen
-            ? 'border-kallo-accent bg-white'
-            : 'border-kallo-border bg-white hover:border-kallo-accent/50'
+            ? 'border-kallo-accent bg-card'
+            : 'border-kallo-border bg-card hover:border-kallo-accent/50'
         )}
       >
         <span
@@ -65,7 +65,7 @@ export function CountrySelect({
       )}
 
       {isOpen && (
-        <div className="absolute z-[120] mt-1 w-full overflow-hidden rounded-xl border border-kallo-border bg-white shadow-lg">
+        <div className="absolute z-[120] mt-1 w-full overflow-hidden rounded-xl border border-kallo-border bg-card shadow-lg">
           <div className="border-kallo-border border-b p-2">
             <input
               type="text"

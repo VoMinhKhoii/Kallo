@@ -72,7 +72,7 @@ export function PrecisePersistedMealCard({
       </TurnHeader>
 
       {/* Card */}
-      <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
+      <div className="rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <p className="font-sans-display text-kallo-text text-sm leading-relaxed">

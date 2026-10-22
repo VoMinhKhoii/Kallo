@@ -77,7 +77,7 @@ export function PricingSection({
             holds them at the ~26rem they were at three across, so removing a
             plan changes the count and nothing else. */}
         {status ? (
-          <div className="mx-auto mt-10 max-w-md rounded-3xl border border-kallo-border/60 bg-white shadow-sm md:mt-12">
+          <div className="mx-auto mt-10 max-w-md rounded-3xl border border-kallo-border/60 bg-card shadow-sm md:mt-12">
             <PaywallStatus
               activationPending={status.activationPending}
               checkingActivation={status.checkingActivation}

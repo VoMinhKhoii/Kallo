@@ -49,7 +49,7 @@ export function MealEntryItem({
               aria-label={t('decreaseQuantity', { name: item.name })}
               disabled={item.quantity <= MIN_DISH_GRAMS}
               onClick={() => onQuantityChange(item.id, getDelta(-1))}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-white text-kallo-text transition-colors hover:bg-kallo-hover disabled:opacity-40"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-card text-kallo-text transition-colors hover:bg-kallo-hover disabled:opacity-40"
             >
               <Minus className="h-2.5 w-2.5" />
             </button>
@@ -60,7 +60,7 @@ export function MealEntryItem({
               type="button"
               aria-label={t('increaseQuantity', { name: item.name })}
               onClick={() => onQuantityChange(item.id, getDelta(1))}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-white text-kallo-text transition-colors hover:bg-kallo-hover"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-card text-kallo-text transition-colors hover:bg-kallo-hover"
             >
               <Plus className="h-2.5 w-2.5" />
             </button>

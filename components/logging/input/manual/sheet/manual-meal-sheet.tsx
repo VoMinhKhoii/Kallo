@@ -95,7 +95,7 @@ export function ManualMealSheet({
                     )
                   : t('mealNameEmpty')
               }
-              className="h-[52px] w-full truncate rounded-full bg-white px-[18px] text-[16px] text-kallo-text outline-none placeholder:text-kallo-text-muted"
+              className="h-[52px] w-full truncate rounded-full bg-card px-[18px] text-[16px] text-kallo-text outline-none placeholder:text-kallo-text-muted"
             />
           </label>
           <div className="mt-3">

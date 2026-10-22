@@ -25,7 +25,7 @@ export function ComposerSendButton({
       <button
         type="button"
         onClick={onCancel}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-kallo-btn text-white transition-all duration-200 hover:bg-kallo-btn-hover active:scale-95"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-kallo-btn text-kallo-btn-ink transition-all duration-200 hover:bg-kallo-btn-hover active:scale-95"
         aria-label={t('stopAnalyzing')}
       >
         <Square className="h-3.5 w-3.5 fill-current" />
@@ -38,7 +38,7 @@ export function ComposerSendButton({
       type="button"
       onClick={onSubmit}
       disabled={!canSubmit}
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-kallo-btn text-white transition-all duration-200 hover:bg-kallo-btn-hover active:scale-95 disabled:opacity-30"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-kallo-btn text-kallo-btn-ink transition-all duration-200 hover:bg-kallo-btn-hover active:scale-95 disabled:opacity-30"
       aria-label={t('submit')}
     >
       <ArrowUp className="h-4 w-4" />

@@ -93,10 +93,10 @@ export function CustomSelect({
         }}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[14px] text-kallo-text transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30 ${
+        className={`flex w-full items-center justify-between rounded-lg border bg-card px-3 py-2 text-[14px] text-kallo-text transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30 ${
           isOpen
             ? 'border-kallo-accent shadow-sm ring-1 ring-kallo-accent/20'
-            : 'border-[#EAE7E0] hover:border-kallo-accent/50'
+            : 'border-kallo-border hover:border-kallo-accent/50'
         }`}
       >
         <span className="truncate pr-2">{selectedOption?.label}</span>
@@ -124,7 +124,7 @@ export function CustomSelect({
                     ? { top: menuPosition.anchor.top }
                     : { bottom: menuPosition.anchor.bottom }),
                 }}
-                className="overflow-y-auto rounded-xl border border-[#EAE7E0] bg-white py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
+                className="overflow-y-auto rounded-xl border border-kallo-border bg-card py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
               >
                 {options.map((opt) => (
                   <button

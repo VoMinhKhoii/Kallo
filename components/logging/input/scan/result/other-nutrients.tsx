@@ -37,7 +37,7 @@ export function ScanOtherNutrients({
       <h3 className="px-4 pb-1.5 text-[14px] text-kallo-text-muted">
         {caption}
       </h3>
-      <ul className="overflow-hidden rounded-[22px] bg-white">
+      <ul className="overflow-hidden rounded-[22px] bg-card">
         {rows.map(({ key, labelKey, unit, value }) => (
           <li
             key={key}

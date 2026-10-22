@@ -71,7 +71,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
 
     return (
       /* `relative` anchors popupSlot, which opens upward over the feed. */
-      <div className="relative flex flex-col gap-2 rounded-2xl border border-kallo-border/40 bg-white p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-kallo-accent)_6%,transparent)] transition-all duration-300 focus-within:border-kallo-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-kallo-accent)_12%,transparent)]">
+      <div className="relative flex flex-col gap-2 rounded-2xl border border-kallo-border/40 bg-card p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-kallo-accent)_6%,transparent)] transition-all duration-300 focus-within:border-kallo-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-kallo-accent)_12%,transparent)]">
         {popupSlot}
 
         {/* Manual mode: DB-backed ingredient rows */}

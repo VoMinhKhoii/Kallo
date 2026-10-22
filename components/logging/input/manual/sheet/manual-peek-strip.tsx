@@ -32,7 +32,7 @@ export function ManualPeekStrip({ peek }: { peek: ManualPeek }) {
   return (
     <div
       aria-hidden
-      className="absolute inset-x-3.5 top-0 rounded-t-[30px] bg-[#d9d6ce] px-6 pt-[7px] text-center text-[#55534d] text-[12px] tabular-nums leading-[15px]"
+      className="absolute inset-x-3.5 top-0 rounded-t-[30px] bg-[#d9d6ce] px-6 pt-[7px] text-center text-[#55534d] text-[12px] tabular-nums leading-[15px] dark:bg-kallo-track dark:text-kallo-text-muted"
       style={{ height: PEEK_HEIGHT + 34 }}
     >
       <span className="inline-flex max-w-full items-center gap-1 truncate">

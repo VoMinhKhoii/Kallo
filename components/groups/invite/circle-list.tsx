@@ -48,14 +48,14 @@ export function CircleList() {
 
   return (
     <section className="space-y-2">
-      <h3 className="px-1 font-medium font-sans-display text-[#6E6D66] text-[10px] uppercase tracking-[0.08em]">
+      <h3 className="px-1 font-medium font-sans-display text-[10px] text-kallo-text-muted uppercase tracking-[0.08em]">
         {t('title', { count: circle.length })}
       </h3>
       <ul className="space-y-2">
         {circle.map((member: CircleMember) => (
           <li
             key={member.friendshipId}
-            className="flex items-center justify-between gap-3 rounded-xl border border-[#E8E6DC] bg-white p-3"
+            className="flex items-center justify-between gap-3 rounded-xl border border-kallo-border bg-card p-3"
           >
             <ProfileIdentity profile={member.profile} />
             <div className="flex shrink-0 items-center gap-1.5">
@@ -69,7 +69,7 @@ export function CircleList() {
                 }
                 disabled={blockFriend.isPending}
                 aria-busy={blockFriend.isPending}
-                className="inline-flex items-center rounded-lg border border-[#E8E6DC] px-2.5 py-1.5 font-medium font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:bg-kallo-danger/10 hover:text-kallo-danger disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-lg border border-kallo-border px-2.5 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text-muted transition-colors hover:bg-kallo-danger/10 hover:text-kallo-danger disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {tWall('block')}
               </button>
@@ -82,7 +82,7 @@ export function CircleList() {
                 }
                 disabled={removeFriend.isPending}
                 aria-busy={removeFriend.isPending}
-                className="inline-flex items-center rounded-lg border border-[#E8E6DC] px-2.5 py-1.5 font-medium font-sans-display text-[#6E6D66] text-[12px] transition-colors hover:bg-kallo-danger/10 hover:text-kallo-danger disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-lg border border-kallo-border px-2.5 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text-muted transition-colors hover:bg-kallo-danger/10 hover:text-kallo-danger disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {t('remove')}
               </button>

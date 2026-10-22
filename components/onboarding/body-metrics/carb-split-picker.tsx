@@ -49,13 +49,13 @@ export function CarbSplitPicker({
                     className={`overflow-hidden rounded-[22px] border text-left transition-all ${
                       field.value === opt.id
                         ? 'border-kallo-accent bg-[#FFF8EF] shadow-[0_10px_24px_rgba(201,168,124,0.14)]'
-                        : 'border-[#EAE7E0] bg-white hover:border-kallo-accent/50'
+                        : 'border-kallo-border bg-card hover:border-kallo-accent/50'
                     }`}
                   >
                     <div
                       className={`px-3.5 py-2.5 ${
                         field.value === opt.id
-                          ? 'bg-[#FBF2E6] text-kallo-text'
+                          ? 'bg-[#FBF2E6] text-kallo-text dark:bg-kallo-hover'
                           : 'bg-kallo-track text-kallo-text'
                       }`}
                     >
@@ -63,7 +63,7 @@ export function CarbSplitPicker({
                       <div
                         className={`mt-0.5 text-[10px] ${
                           field.value === opt.id
-                            ? 'text-[#6F6556]'
+                            ? 'text-[#6F6556] dark:text-kallo-text-soft'
                             : 'text-[#8B8682]'
                         }`}
                       >
@@ -90,7 +90,7 @@ export function CarbSplitPicker({
                             key={macro.label}
                             className="flex items-center justify-between gap-3"
                           >
-                            <span className="text-[#6F6556] text-[10px] uppercase tracking-wide">
+                            <span className="text-[#6F6556] text-[10px] uppercase tracking-wide dark:text-kallo-text-soft">
                               {macro.label}
                             </span>
                             <span className="font-semibold text-[12px] text-kallo-text">

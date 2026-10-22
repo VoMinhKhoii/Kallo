@@ -80,7 +80,7 @@ export function ConnectPanel({
         {connected ? (
           <Link
             href="/circle"
-            className="inline-flex items-center justify-center rounded-xl border border-kallo-border/60 bg-white px-6 py-3 font-medium font-sans-display text-[15px] text-kallo-text transition-colors hover:border-kallo-accent/50"
+            className="inline-flex items-center justify-center rounded-xl border border-kallo-border/60 bg-card px-6 py-3 font-medium font-sans-display text-[15px] text-kallo-text transition-colors hover:border-kallo-accent/50"
           >
             {t('goToCircle')}
           </Link>
@@ -89,7 +89,7 @@ export function ConnectPanel({
             type="button"
             onClick={onAccept}
             disabled={accept.isPending}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-kallo-btn px-6 py-3 font-medium font-sans-display text-[15px] text-white shadow-kallo-btn/20 shadow-sm transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-kallo-btn px-6 py-3 font-medium font-sans-display text-[15px] text-kallo-btn-ink shadow-kallo-btn/20 shadow-sm transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {accept.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />

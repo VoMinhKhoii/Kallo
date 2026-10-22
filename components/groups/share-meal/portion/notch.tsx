@@ -72,7 +72,7 @@ export function PortionNotch({
     >
       <span
         className={cn(
-          'block rounded-full border-[1.5px] border-kallo-text bg-white transition-all',
+          'block rounded-full border-[1.5px] border-kallo-text bg-card transition-all',
           // The grip is the only thing spanning the full shell, and it grows
           // past it under a pointer — a 12px bar among 12px cell gaps is
           // invisible otherwise.

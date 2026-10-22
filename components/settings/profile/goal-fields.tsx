@@ -83,7 +83,7 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
                       }}
                       className={`flex-1 rounded-lg px-2 py-2 text-center font-medium text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 ${
                         field.value === g
-                          ? 'bg-white text-kallo-text shadow-sm'
+                          ? 'bg-kallo-thumb text-kallo-text shadow-sm'
                           : 'text-kallo-text-muted hover:text-kallo-text'
                       }`}
                     >
@@ -165,7 +165,7 @@ export function GoalFields({ tdee, targetCalories, goal }: GoalFieldsProps) {
                       className={`flex flex-col gap-1 rounded-xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 ${
                         field.value === opt.id
                           ? 'border-kallo-text/30 bg-kallo-hover shadow-sm'
-                          : 'border-kallo-border bg-white hover:border-kallo-accent/50'
+                          : 'border-kallo-border bg-card hover:border-kallo-accent/50'
                       }`}
                     >
                       <span className="font-medium text-[14px] text-kallo-text">

@@ -156,8 +156,8 @@ function CountryPicker({
         className={cn(
           'flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30',
           isOpen
-            ? 'border-kallo-accent bg-white'
-            : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-kallo-accent/50'
+            ? 'border-kallo-accent bg-card'
+            : 'border-kallo-border bg-card hover:border-kallo-accent/50'
         )}
       >
         <span
@@ -197,9 +197,9 @@ function CountryPicker({
                 ? { top: menuPosition.anchor.top }
                 : { bottom: menuPosition.anchor.bottom }),
             }}
-            className="fixed z-[140] flex flex-col overflow-hidden rounded-2xl border border-[#EAE7E0] bg-white shadow-[0_20px_60px_rgba(44,36,22,0.18)]"
+            className="fixed z-[140] flex flex-col overflow-hidden rounded-2xl border border-kallo-border bg-card shadow-[0_20px_60px_rgba(44,36,22,0.18)]"
           >
-            <div className="border-[#EAE7E0] border-b p-2">
+            <div className="border-kallo-border border-b p-2">
               <input
                 type="text"
                 value={search}
@@ -292,7 +292,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
       </div>
 
       {/* Language preference */}
-      <div className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
+      <div className="rounded-[24px] border border-kallo-border bg-card p-5 sm:p-6">
         <label className="mb-3 flex items-center gap-2 font-bold text-[13px] text-kallo-text">
           <Languages className="h-4 w-4 text-kallo-text-muted" />
           {t('origin.preferredLanguage')}
@@ -318,7 +318,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
       </div>
 
       {/* Country pickers */}
-      <div className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
+      <div className="rounded-[24px] border border-kallo-border bg-card p-5 sm:p-6">
         <div className="grid gap-4 lg:grid-cols-2">
           <CountryPicker
             label={t('origin.countryOfOrigin')}

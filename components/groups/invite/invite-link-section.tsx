@@ -88,7 +88,7 @@ export function InviteLinkSection() {
 
   return (
     <div className="space-y-1.5">
-      <p className="flex items-center gap-1.5 px-1 font-medium font-sans-display text-[#6E6D66] text-[10px] uppercase tracking-[0.08em]">
+      <p className="flex items-center gap-1.5 px-1 font-medium font-sans-display text-[10px] text-kallo-text-muted uppercase tracking-[0.08em]">
         <Link2 className="h-3.5 w-3.5" />
         {t('yourLink')}
       </p>
@@ -96,7 +96,7 @@ export function InviteLinkSection() {
       <div className="flex items-stretch gap-2">
         {editing ? (
           <div className="relative flex-1">
-            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-sans-display text-[#6E6D66] text-[13px]">
+            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-sans-display text-[13px] text-kallo-text-muted">
               …/invite/
             </span>
             <Input
@@ -115,7 +115,7 @@ export function InviteLinkSection() {
               autoCapitalize="none"
               spellCheck={false}
               maxLength={20}
-              className="border-[#E8E6DC] bg-white pl-[70px] font-sans-display text-[#141413] text-[13px]"
+              className="border-kallo-border bg-card pl-[70px] font-sans-display text-[13px] text-kallo-text"
             />
           </div>
         ) : (
@@ -124,7 +124,7 @@ export function InviteLinkSection() {
             value={inviteLink}
             onFocus={(event) => event.currentTarget.select()}
             aria-label={t('yourLink')}
-            className="flex-1 border-[#E8E6DC] bg-white font-sans-display text-[#141413] text-[13px]"
+            className="flex-1 border-kallo-border bg-card font-sans-display text-[13px] text-kallo-text"
           />
         )}
 
@@ -135,7 +135,7 @@ export function InviteLinkSection() {
               onClick={save}
               disabled={!canSave}
               aria-label={t('save')}
-              className="inline-flex shrink-0 items-center rounded-lg bg-kallo-btn px-3 text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex shrink-0 items-center rounded-lg bg-kallo-btn px-3 text-kallo-btn-ink transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {saveProfile.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -147,7 +147,7 @@ export function InviteLinkSection() {
               type="button"
               onClick={() => setEditing(false)}
               aria-label={t('cancel')}
-              className="inline-flex shrink-0 items-center rounded-lg border border-[#E8E6DC] bg-white px-3 text-[#6E6D66] transition-colors hover:text-[#141413]"
+              className="inline-flex shrink-0 items-center rounded-lg border border-kallo-border bg-card px-3 text-kallo-text-muted transition-colors hover:text-kallo-text"
             >
               <X className="h-4 w-4" />
             </button>
@@ -158,14 +158,14 @@ export function InviteLinkSection() {
               type="button"
               onClick={startEdit}
               aria-label={t('editLink')}
-              className="inline-flex shrink-0 items-center rounded-lg border border-[#E8E6DC] bg-white px-3 text-[#6E6D66] transition-colors hover:text-[#141413]"
+              className="inline-flex shrink-0 items-center rounded-lg border border-kallo-border bg-card px-3 text-kallo-text-muted transition-colors hover:text-kallo-text"
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               onClick={copy}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-kallo-btn px-4 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-kallo-btn px-4 font-medium font-sans-display text-[13px] text-kallo-btn-ink transition-colors hover:bg-kallo-btn/90"
             >
               {copied ? (
                 <>
@@ -185,7 +185,7 @@ export function InviteLinkSection() {
 
       <p
         aria-live="polite"
-        className={`px-1 font-sans-display text-[11px] ${issue ? 'text-kallo-danger' : 'text-[#6E6D66]'}`}
+        className={`px-1 font-sans-display text-[11px] ${issue ? 'text-kallo-danger' : 'text-kallo-text-muted'}`}
       >
         {editing ? issue || t('editHint') : t('hint')}
       </p>

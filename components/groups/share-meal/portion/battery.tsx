@@ -27,7 +27,9 @@ export interface PortionSeat {
  * look like the same share on both platforms.
  */
 export const SEAT_COLORS = [
-  '#141413',
+  // Seat 0 (you) is ink on light and a mid grey on dark, so the white
+  // initials on its pin read in both; see --kallo-seat-self in globals.css.
+  'var(--kallo-seat-self)',
   '#12B76A',
   '#FFB020',
   '#FF8A6B',
@@ -120,7 +122,7 @@ export function PortionBattery({
 
       <div className="flex items-center">
         <div className="relative flex-1">
-          <div className="flex h-[56px] rounded-[14px] border-2 border-kallo-text bg-white p-1">
+          <div className="flex h-[56px] rounded-[14px] border-2 border-kallo-text bg-card p-1">
             <div className="flex flex-1 gap-[2px]" id={trackId}>
               {seats.flatMap((seat, i) =>
                 Array.from({ length: seat.parts }, (_, cell) => (

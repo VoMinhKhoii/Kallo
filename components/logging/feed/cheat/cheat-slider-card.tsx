@@ -78,7 +78,7 @@ export function CheatSliderCard({
         className="relative"
       >
         <TurnHeader timeLabel={timeLabel} message={userInput} />
-        <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm sm:p-5">
+        <div className="rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-sm sm:p-5">
           {userInput && (
             <p className="mb-3 font-sans-display text-kallo-text text-sm leading-relaxed">
               {userInput}
@@ -116,7 +116,7 @@ export function CheatSliderCard({
     >
       <TurnHeader timeLabel={timeLabel} message={userInput} />
 
-      <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm sm:p-5">
+      <div className="rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-start justify-between gap-3">
           {userInput && (
             <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
@@ -166,7 +166,7 @@ export function CheatSliderCard({
         disabled={isConfirming}
         aria-busy={isConfirming}
         onClick={() => onConfirm?.(levels)}
-        className="mt-2 w-full rounded-xl bg-kallo-btn py-2.5 font-medium font-sans-display text-sm text-white transition-colors hover:bg-kallo-btn-hover disabled:opacity-50"
+        className="mt-2 w-full rounded-xl bg-kallo-btn py-2.5 font-medium font-sans-display text-kallo-btn-ink text-sm transition-colors hover:bg-kallo-btn-hover disabled:opacity-50"
       >
         {t('confirm')}
       </button>

@@ -58,7 +58,7 @@ export function AccountPanel({
             onClick={handleExport}
             disabled={exportPending}
             aria-busy={exportPending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-white px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-card px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
           >
             <Download className="h-3.5 w-3.5" />
             {exportPending ? t('exporting') : t('exportAction')}
@@ -71,7 +71,7 @@ export function AccountPanel({
             onClick={handleSignOut}
             disabled={signOutPending}
             aria-busy={signOutPending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-white px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-card px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
           >
             <LogOut className="h-3.5 w-3.5" />
             {t('signOutAction')}

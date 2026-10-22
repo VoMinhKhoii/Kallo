@@ -42,7 +42,7 @@ export function BillingToggle({
             className={cn(
               'cursor-pointer rounded-full px-3 py-1 font-sans-display text-xs transition-colors',
               selected
-                ? 'bg-white font-semibold text-kallo-text shadow-sm'
+                ? 'bg-kallo-thumb font-semibold text-kallo-text shadow-sm'
                 : 'text-kallo-text-muted hover:text-kallo-text'
             )}
           >

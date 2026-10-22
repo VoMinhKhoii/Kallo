@@ -95,7 +95,7 @@ export function CreateGroupForm({
       <div className="space-y-1.5">
         <label
           htmlFor="group-name"
-          className="px-1 font-medium font-sans-display text-[#6E6D66] text-[10px] uppercase tracking-[0.08em]"
+          className="px-1 font-medium font-sans-display text-[10px] text-kallo-text-muted uppercase tracking-[0.08em]"
         >
           {t('nameLabel')}
         </label>
@@ -106,7 +106,7 @@ export function CreateGroupForm({
           placeholder={t('namePlaceholder')}
           maxLength={GROUP_NAME_MAX_LENGTH}
           autoComplete="off"
-          className="border-[#E8E6DC] bg-white font-sans-display text-[#141413]"
+          className="border-kallo-border bg-card font-sans-display text-kallo-text"
         />
       </div>
 
@@ -128,17 +128,17 @@ export function CreateGroupForm({
       ) : (
         <div className="space-y-3">
           <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#6E6D66]" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-kallo-text-muted" />
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t('searchPlaceholder')}
               autoComplete="off"
-              className="border-[#E8E6DC] bg-white pl-9 font-sans-display text-[#141413]"
+              className="border-kallo-border bg-card pl-9 font-sans-display text-kallo-text"
             />
           </div>
 
-          <p className="flex items-center justify-between px-1 font-medium font-sans-display text-[#6E6D66] text-[10px] uppercase tracking-[0.08em]">
+          <p className="flex items-center justify-between px-1 font-medium font-sans-display text-[10px] text-kallo-text-muted uppercase tracking-[0.08em]">
             <span>{t('suggested')}</span>
             {selected.size > 0 && (
               <span>{t('membersCount', { count: selected.size })}</span>
@@ -146,7 +146,7 @@ export function CreateGroupForm({
           </p>
 
           {filtered.length === 0 ? (
-            <p className="px-1 py-2 font-sans-display text-[#6E6D66] text-[12px]">
+            <p className="px-1 py-2 font-sans-display text-[12px] text-kallo-text-muted">
               {t('noMatches')}
             </p>
           ) : (
@@ -168,7 +168,7 @@ export function CreateGroupForm({
         type="button"
         onClick={submit}
         disabled={!canSubmit}
-        className="inline-flex w-full items-center justify-center rounded-xl bg-kallo-btn px-4 py-2.5 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex w-full items-center justify-center rounded-xl bg-kallo-btn px-4 py-2.5 font-medium font-sans-display text-[13px] text-kallo-btn-ink transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {createGroup.isPending ? t('creating') : t('submit')}
       </button>

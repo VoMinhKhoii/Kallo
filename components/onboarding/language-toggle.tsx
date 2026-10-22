@@ -28,7 +28,7 @@ export function LanguageToggle({ value, onChange }: LanguageToggleProps) {
               'flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors',
               selected
                 ? 'border-kallo-text/30 bg-kallo-hover'
-                : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-kallo-accent/50'
+                : 'border-kallo-border bg-card hover:border-kallo-accent/50'
             )}
           >
             <Flag className="h-5 w-7 shrink-0 rounded-[3px]" />

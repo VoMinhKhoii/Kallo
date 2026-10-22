@@ -34,7 +34,7 @@ export function CircleAddMenu() {
           <button
             type="button"
             aria-label={t('addFriend')}
-            className="inline-flex size-11 shrink-0 items-center justify-center gap-1.5 rounded-xl text-kallo-text transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface md:size-auto md:bg-kallo-btn md:px-3 md:py-2 md:text-white md:hover:bg-kallo-btn/90"
+            className="inline-flex size-11 shrink-0 items-center justify-center gap-1.5 rounded-xl text-kallo-text transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface md:size-auto md:bg-kallo-btn md:px-3 md:py-2 md:text-kallo-btn-ink md:hover:bg-kallo-btn/90"
           >
             <UserPlus
               className="size-6 md:size-3.5"
@@ -52,14 +52,14 @@ export function CircleAddMenu() {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="min-w-44 border-[#E8E6DC] bg-white"
+          className="min-w-44 border-kallo-border bg-card"
         >
           <DropdownMenuItem
             onSelect={() => {
               if (!requirePremium('unlimited_circle')) return;
               setTab('group');
             }}
-            className="gap-2 font-sans-display text-[#141413] text-[13px]"
+            className="gap-2 font-sans-display text-[13px] text-kallo-text"
           >
             <Users2 className="h-4 w-4" />
             {t('createGroup')}
@@ -67,7 +67,7 @@ export function CircleAddMenu() {
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => setTab('friend')}
-            className="gap-2 font-sans-display text-[#141413] text-[13px]"
+            className="gap-2 font-sans-display text-[13px] text-kallo-text"
           >
             <UserPlus className="h-4 w-4" />
             {t('addFriend')}

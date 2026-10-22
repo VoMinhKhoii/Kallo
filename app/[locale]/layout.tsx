@@ -149,7 +149,8 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
+    // next-themes sets the theme class on <html> before React hydrates.
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${dmSans.variable} ${viSans.variable} ${fraunces.variable} antialiased`}
       >

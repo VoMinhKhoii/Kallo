@@ -24,7 +24,7 @@ export async function AppShellSkeleton() {
     >
       <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-clip px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] md:p-3">
         <div className="hidden md:block">
-          <div className="flex h-full w-[260px] shrink-0 flex-col gap-3 rounded-xl border border-kallo-border/60 bg-white p-3 shadow-kallo-text/[0.03] shadow-sm">
+          <div className="flex h-full w-[260px] shrink-0 flex-col gap-3 rounded-xl border border-kallo-border/60 bg-card p-3 shadow-kallo-text/[0.03] shadow-sm">
             <div className="h-5 w-24 rounded-md bg-kallo-track motion-safe:animate-pulse" />
             {Array.from({ length: 5 }, (_, index) => (
               <div
@@ -43,7 +43,7 @@ export async function AppShellSkeleton() {
       </div>
       {/* The mobile tab bar's pill, at its real footprint. */}
       <div className="shrink-0 px-2 pt-1.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] md:hidden">
-        <div className="h-16 rounded-full bg-white shadow-nav" />
+        <div className="h-16 rounded-full bg-card shadow-nav" />
       </div>
     </div>
   );

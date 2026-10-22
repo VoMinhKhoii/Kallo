@@ -93,7 +93,7 @@ export function TimelineCalendar({
           rather than the primitive's grid, for the same reason Share Meal
           gives: flex items stretch to the card, grid items size to content. */}
       <DialogContent
-        className="flex flex-col gap-0 rounded-2xl border-kallo-border/60 bg-white p-0 sm:max-w-[404px]"
+        className="flex flex-col gap-0 rounded-2xl border-kallo-border/60 bg-card p-0 sm:max-w-[404px]"
         showCloseButton={false}
       >
         <DialogHeader className="gap-1 px-[22px] pt-5 text-left sm:text-left">

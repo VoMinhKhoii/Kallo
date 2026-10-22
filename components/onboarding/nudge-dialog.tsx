@@ -67,7 +67,7 @@ export function NudgeDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="overflow-hidden rounded-2xl border border-kallo-border/60 bg-[#FFFCF8] p-6 shadow-lg sm:max-w-md">
+      <DialogContent className="overflow-hidden rounded-2xl border border-kallo-border/60 bg-card p-6 shadow-lg sm:max-w-md">
         <DialogHeader className="space-y-3 pb-2 text-left">
           <DialogTitle className="font-normal font-serif text-kallo-text text-xl">
             Hồ sơ chưa hoàn tất
@@ -87,7 +87,7 @@ export function NudgeDialog({
           </Button>
           <Button
             onClick={handleGoToOnboarding}
-            className="h-10 w-full rounded-xl bg-kallo-ink px-6 font-medium font-sans-display text-[#FFFCF8] text-sm transition-colors hover:bg-kallo-ink-hover sm:w-auto"
+            className="h-10 w-full rounded-xl bg-kallo-ink px-6 font-medium font-sans-display text-kallo-surface text-sm transition-colors hover:bg-kallo-ink-hover sm:w-auto"
           >
             Hoàn tất ngay
           </Button>

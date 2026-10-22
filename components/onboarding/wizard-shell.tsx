@@ -260,17 +260,17 @@ export function WizardShell({
           total: TOTAL_STEPS,
         })}
         aria-modal="true"
-        className={`flex max-h-[92dvh] w-full ${modalMaxWidthClass} flex-col overflow-hidden rounded-[28px] bg-[#FDFCF8] shadow-2xl`}
+        className={`flex max-h-[92dvh] w-full ${modalMaxWidthClass} flex-col overflow-hidden rounded-[28px] bg-card shadow-2xl`}
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-b px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-kallo-border/60 border-b px-6 py-4">
           <StepIndicator currentStep={currentStep} totalSteps={TOTAL_STEPS} />
           {onClose && (
             <button
               type="button"
               onClick={onClose}
               aria-label={tCommon('close')}
-              className="-mr-2 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-[#EAE7E0]/50 hover:text-kallo-text"
+              className="-mr-2 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-kallo-border/50 hover:text-kallo-text"
             >
               <X className="h-5 w-5" />
             </button>
@@ -333,12 +333,12 @@ export function WizardShell({
 
           {/* Bottom fade gradient — hints more content below */}
           {showScrollGradient && (
-            <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-gradient-to-t from-[#FDFCF8] to-transparent" />
+            <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-gradient-to-t from-card to-transparent" />
           )}
         </div>
 
         {/* Footer Navigation */}
-        <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-t bg-kallo-track/50 px-5 py-4 sm:px-6">
+        <div className="flex shrink-0 items-center justify-between border-kallo-border/60 border-t bg-kallo-track/50 px-5 py-4 sm:px-6">
           <button
             type="button"
             onClick={handleBack}
@@ -358,7 +358,7 @@ export function WizardShell({
               type="button"
               onClick={handleSkip}
               disabled={isPending}
-              className="flex touch-manipulation items-center gap-1.5 rounded-xl px-4 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#EAE7E0]/50 hover:text-kallo-text disabled:opacity-50"
+              className="flex touch-manipulation items-center gap-1.5 rounded-xl px-4 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-kallo-border/50 hover:text-kallo-text disabled:opacity-50"
             >
               {t('skip')}
               <SkipForward className="h-3.5 w-3.5" />
@@ -367,7 +367,7 @@ export function WizardShell({
               type="button"
               onClick={handleNext}
               disabled={isNextDisabled}
-              className="flex touch-manipulation items-center gap-2 rounded-xl bg-kallo-ink px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
+              className="flex touch-manipulation items-center gap-2 rounded-xl bg-kallo-ink px-5 py-2.5 font-medium text-[14px] text-kallo-surface shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {currentStep >= TOTAL_STEPS ? t('finish') : t('next')}

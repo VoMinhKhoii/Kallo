@@ -23,7 +23,7 @@ export function SettingsGroup({
     <section
       id={id}
       className={cn(
-        'divide-y divide-kallo-border rounded-2xl border bg-white shadow-xs',
+        'divide-y divide-kallo-border rounded-2xl border bg-card shadow-xs',
         variant === 'danger' ? 'border-kallo-danger/40' : 'border-kallo-border',
         id && 'scroll-mt-20',
         className

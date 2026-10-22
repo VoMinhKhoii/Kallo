@@ -24,16 +24,18 @@ export function GroupMemberRow({
         onClick={onToggle}
         aria-pressed={isSelected}
         aria-label={labelFor(member.profile)}
-        className="flex w-full items-center gap-3 rounded border-[#E8E6DC] border-b py-2.5 text-left transition-colors last:border-b-0 hover:bg-[#141413]/[0.03]"
+        className="flex w-full items-center gap-3 rounded border-kallo-border border-b py-2.5 text-left transition-colors last:border-b-0 hover:bg-kallo-ink/[0.03]"
       >
         <ProfileIdentity profile={member.profile} />
         <span
           className={cn(
             'ml-auto flex size-[22px] shrink-0 items-center justify-center rounded-full border-2',
-            isSelected ? 'border-[#141413] bg-[#141413]' : 'border-[#E8E6DC]'
+            isSelected
+              ? 'border-kallo-text bg-kallo-ink'
+              : 'border-kallo-border'
           )}
         >
-          {isSelected && <span className="size-2.5 rounded-full bg-white" />}
+          {isSelected && <span className="size-2.5 rounded-full bg-card" />}
         </span>
       </button>
     </li>

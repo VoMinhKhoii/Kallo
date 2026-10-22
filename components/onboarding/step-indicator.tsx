@@ -9,7 +9,7 @@ export function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
   function getStepClass(step: number): string {
     if (step === currentStep) return 'w-6 bg-kallo-ink';
     if (step < currentStep) return 'w-2 bg-kallo-ink';
-    return 'w-2 bg-[#EAE7E0]';
+    return 'w-2 bg-kallo-border';
   }
 
   return (

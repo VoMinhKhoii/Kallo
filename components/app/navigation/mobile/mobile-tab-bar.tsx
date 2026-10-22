@@ -67,7 +67,7 @@ export function MobileTabBar() {
       data-mobile-tab-bar=""
       className="typing:hidden shrink-0 px-2 pt-1.5 pb-[max(env(safe-area-inset-bottom),0.5rem)] md:hidden"
     >
-      <ul className="flex h-16 items-center rounded-full bg-white px-3 shadow-nav">
+      <ul className="flex h-16 items-center rounded-full bg-card in-[.aurora]:bg-popover/80 px-3 shadow-nav in-[.aurora]:backdrop-blur-xl dark:bg-popover dark:ring-1 dark:ring-white/[0.06]">
         {LEADING_TABS.map(renderTab)}
         <li className="flex h-full w-16 shrink-0 items-center justify-center">
           <MobileAddSheet />

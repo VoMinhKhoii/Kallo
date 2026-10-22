@@ -29,7 +29,10 @@ export function FeedbackPanel() {
           role="status"
           className="flex flex-col items-center gap-4 p-card-sm py-8 text-center"
         >
-          <CheckCircle2 className="size-8 text-[#7A9B76]" aria-hidden />
+          <CheckCircle2
+            className="size-8 text-[#7A9B76] dark:text-kallo-success-accent"
+            aria-hidden
+          />
           <div>
             <h3
               ref={form.sentHeading}
@@ -45,7 +48,7 @@ export function FeedbackPanel() {
           <button
             type="button"
             onClick={form.reset}
-            className="rounded-lg border border-kallo-border bg-white px-4 py-2 font-medium text-kallo-text text-sm transition-colors hover:border-kallo-accent/50"
+            className="rounded-lg border border-kallo-border bg-card px-4 py-2 font-medium text-kallo-text text-sm transition-colors hover:border-kallo-accent/50"
           >
             {t('sendAnother')}
           </button>

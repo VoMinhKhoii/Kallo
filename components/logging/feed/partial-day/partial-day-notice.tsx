@@ -25,7 +25,7 @@ export function PartialDayNotice({
   return (
     <div
       role="status"
-      className="rounded-2xl border border-kallo-border/60 bg-white p-3 sm:p-4"
+      className="rounded-2xl border border-kallo-border/60 bg-card p-3 sm:p-4"
     >
       <p className="font-sans-display text-base text-kallo-danger italic">
         {t('title')}

@@ -10,7 +10,7 @@
  * Content/Title/Description parts; each caller adds only its own layout.
  */
 export const dialogShell = {
-  card: 'rounded-2xl border-kallo-border/60 bg-white text-kallo-text',
+  card: 'rounded-2xl border-kallo-border/60 bg-card text-kallo-text',
   title: 'font-medium font-serif text-[22px] text-kallo-text leading-snug',
   description: 'font-sans-display text-[13px] text-kallo-text-muted',
 } as const;

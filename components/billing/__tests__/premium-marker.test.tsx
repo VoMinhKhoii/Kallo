@@ -31,7 +31,9 @@ describe('PremiumChip', () => {
 });
 
 describe('PremiumDot', () => {
-  it('is a decorative 7px blue dot with a white ring on the corner', () => {
+  // The ring is the card colour (white in light), so it still cuts the dot
+  // out of the card it sits on in the dark themes.
+  it('is a decorative 7px blue dot with a card-coloured ring on the corner', () => {
     const { container } = render(
       <span className="relative">
         <PremiumDot />
@@ -45,7 +47,7 @@ describe('PremiumDot', () => {
     expect(dot.className).toContain('size-[7px]');
     expect(dot.className).toContain('bg-kallo-premium-dot');
     expect(dot.className).toContain('ring-2');
-    expect(dot.className).toContain('ring-white');
+    expect(dot.className).toContain('ring-card');
     expect(dot.className).toContain('absolute');
   });
 });
