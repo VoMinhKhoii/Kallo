@@ -23,6 +23,7 @@ import '../widgets/account/ai_consent_toggle.dart';
 import '../widgets/account/auto_share_to_circle_toggle.dart';
 import '../widgets/account/sign_out_row.dart';
 import '../widgets/account/subscription_section.dart';
+import '../widgets/appearance/appearance_row.dart';
 import '../widgets/chrome/settings_navigator.dart';
 import '../widgets/list/settings_group.dart';
 import '../widgets/profile/settings_profile_header.dart';
@@ -86,16 +87,19 @@ class _SettingsList extends ConsumerWidget {
       _NutritionProfileGroup(profile: profile),
 
       // ── Preferences ─────────────────────────────────────────────────────
-      // Hidden until the profile loads (web parity) — an enabled switch with
-      // no profile row can only produce an error.
-      if (profile != null)
-        SettingsGroup(
-          label: tr('settings.preferences'),
-          children: [
+      // Appearance is a device setting and shows at once. The two switches
+      // wait for the profile (web parity) — an enabled switch with no profile
+      // row can only produce an error.
+      SettingsGroup(
+        label: tr('settings.preferences'),
+        children: [
+          const AppearanceRow(),
+          if (profile != null) ...[
             AutoShareToCircleToggle(value: profile.autoShareToCircle),
             const AiConsentToggle(),
           ],
-        ),
+        ],
+      ),
 
       if (showSubscription) const SubscriptionSection(),
 

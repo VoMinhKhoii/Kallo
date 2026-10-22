@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -15,6 +15,7 @@ import 'services/analytics/analytics.dart';
 import 'services/env/env.dart';
 import 'services/monitoring/monitoring.dart';
 import 'services/auth/supabase_service.dart';
+import 'theme/theme_controller.dart';
 
 /// Supabase connection, supplied at build/run time via `--dart-define`
 /// (mirrors RN's `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`):
@@ -105,13 +106,12 @@ Future<void> _boot() async {
   precacheFilledHeart();
   precacheBrushCheck();
 
-  // Dark status-bar content on the cream surface — RN `<StatusBar style="dark" />`.
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-    ),
+  // The Appearance choice paints the FIRST frame: read it (bounded) and apply
+  // its palette and status-bar style before anything builds. Later switches —
+  // and the phone's own brightness, under System — are the controller's.
+  final themeChoice = await readThemeChoice(const FlutterSecureStorage());
+  applyPalette(
+    resolvePalette(themeChoice, PlatformDispatcher.instance.platformBrightness),
   );
 
   runApp(
@@ -119,7 +119,10 @@ Future<void> _boot() async {
       supportedLocales: const [Locale('en'), Locale('vi')],
       path: 'assets/l10n',
       fallbackLocale: const Locale('en'),
-      child: const ProviderScope(child: KalloApp()),
+      child: ProviderScope(
+        overrides: [initialThemeChoiceProvider.overrideWithValue(themeChoice)],
+        child: const KalloApp(),
+      ),
     ),
   );
 }
