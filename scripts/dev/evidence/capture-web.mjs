@@ -5,8 +5,11 @@
 //
 //   node --env-file=.env.local scripts/dev/evidence/capture-web.mjs \
 //     [--base-url http://localhost:3000] [--out <dir>] [--width phone|desktop]
-//     [--signed-out] [--full-page] [--allow <text>] /en/logging /en/dashboard
+//     [--signed-out] [--full-page] [--theme light|dark|aurora]
+//     [--allow <text>] /en/logging /en/dashboard
 //
+// --theme sets Settings → Appearance before each page loads (the app pages
+// honour it; the marketing site stays light) and adds it to the file names.
 // --allow excuses an issue whose text contains <text>, for problems already
 // shown to happen on main; the report still lists them.
 //
@@ -41,8 +44,11 @@ const { values, positionals: routes } = parseArgs({
     'signed-out': { type: 'boolean', default: false },
     'full-page': { type: 'boolean', default: false },
     allow: { type: 'string', multiple: true, default: [] },
+    theme: { type: 'string' },
   },
 });
+
+const THEMES = ['light', 'dark', 'aurora'];
 
 const base = values['base-url'].replace(/\/$/, '');
 const widths = values.width ?? Object.keys(VIEWPORTS);
@@ -55,6 +61,8 @@ if (routes.length === 0 || routes.some((r) => !r.startsWith('/'))) {
 const unknown = widths.filter((w) => !(w in VIEWPORTS));
 if (unknown.length > 0)
   fail(`Unknown --width ${unknown.join(', ')}; use phone or desktop.`);
+if (values.theme && !THEMES.includes(values.theme))
+  fail(`Unknown --theme ${values.theme}; use ${THEMES.join(', ')}.`);
 // The base URL is itself a first load on a fresh `next dev` (10 s measured),
 // so it gets the same allowance; only a refused connection means no server.
 await fetch(base, { signal: AbortSignal.timeout(FIRST_LOAD_MS) }).catch(
@@ -76,6 +84,12 @@ try {
       ...VIEWPORTS[width],
       storageState,
     });
+    if (values.theme) {
+      // The same key Settings → Appearance writes (lib/core/theme/themes.ts).
+      await context.addInitScript((theme) => {
+        localStorage.setItem('kallo-theme', theme);
+      }, values.theme);
+    }
     for (const route of routes) {
       observations.push(await observe(context, route, width));
     }
@@ -177,7 +191,9 @@ async function observe(context, route, width) {
     await page.addStyleTag({
       content: 'nextjs-portal { display: none !important; }',
     });
-    const name = `${route.replace(/^\/|\/$/g, '').replace(/[^a-z0-9]+/gi, '-') || 'root'}-${width}.png`;
+    const slug =
+      route.replace(/^\/|\/$/g, '').replace(/[^a-z0-9]+/gi, '-') || 'root';
+    const name = `${slug}-${width}${values.theme ? `-${values.theme}` : ''}.png`;
     await page.screenshot({
       path: join(out, name),
       fullPage: values['full-page'],
