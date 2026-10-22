@@ -4,7 +4,20 @@ import { useSyncExternalStore } from 'react';
 import { paintTheme } from '@/lib/core/theme/paint-theme';
 import { THEME_COLOR, THEME_STORAGE_KEY } from '@/lib/core/theme/themes';
 
-const SCRIPT = `(${paintTheme.toString()})(${JSON.stringify(THEME_STORAGE_KEY)},${JSON.stringify(THEME_COLOR)})`;
+/**
+ * A value as JSON that is safe inside a <script> body: `<` (so nothing can
+ * close the tag) and the two JSON-legal line separators JavaScript treats as
+ * line breaks are escaped. The values are our own constants; this keeps them
+ * safe if one ever is not.
+ */
+function scriptJson(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+const SCRIPT = `(${paintTheme.toString()})(${scriptJson(THEME_STORAGE_KEY)},${scriptJson(THEME_COLOR)})`;
 const subscribeNever = () => () => {};
 
 /**
