@@ -82,7 +82,7 @@ export function OnboardingNudge({
           total,
         })}
         className={cn(
-          'group flex w-full items-center gap-2 rounded-lg border border-kallo-text/10 bg-kallo-surface px-2.5 py-2 text-left transition-colors hover:bg-kallo-ink/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+          'group flex w-full items-center gap-2 rounded-lg border border-kallo-text/10 bg-kallo-surface px-2.5 py-2 text-left transition-colors hover:bg-kallo-ink/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card',
           className
         )}
       >
@@ -159,7 +159,7 @@ export function OnboardingNudge({
       <button
         type="button"
         onClick={onResume}
-        className="w-full rounded-lg bg-kallo-btn px-3 py-2 font-medium font-sans-display text-[11px] text-kallo-btn-ink shadow-kallo-btn/20 shadow-sm transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="w-full rounded-lg bg-kallo-btn px-3 py-2 font-medium font-sans-display text-[11px] text-kallo-btn-ink shadow-kallo-btn/20 shadow-sm transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card"
       >
         {t('cta')}
       </button>

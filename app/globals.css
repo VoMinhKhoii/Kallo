@@ -516,6 +516,16 @@
     var(--kallo-brand-lilac)
   );
 }
+/* The sweep sits above the hover background colour, so hover lifts the
+   sweep itself instead. */
+.aurora
+:is(button, a, [role="button"]):not(:disabled, [aria-disabled="true"]):is(
+  [data-slot="button"].bg-primary,
+  .bg-kallo-btn,
+  .md\:bg-kallo-btn
+):hover {
+  filter: brightness(1.06);
+}
 @media (width >= 48rem) {
   .aurora
     :is(button, a, [role="button"]):not(
