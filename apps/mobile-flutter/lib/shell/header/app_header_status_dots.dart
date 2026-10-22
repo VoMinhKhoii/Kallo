@@ -10,7 +10,7 @@ class InviteBadge extends StatelessWidget {
     return Container(
       width: 8,
       height: 8,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KalloColors.accent,
         shape: BoxShape.circle,
       ),

@@ -138,7 +138,7 @@ class PortionPin extends StatelessWidget {
                           shape: BoxShape.circle,
                           border: Border.all(color: KalloColors.border),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           LucideIcons.x300,
                           size: 11,
                           color: KalloColors.textSoft,

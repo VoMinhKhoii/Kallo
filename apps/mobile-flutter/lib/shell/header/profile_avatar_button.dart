@@ -55,13 +55,13 @@ class ProfileAvatarButton extends ConsumerWidget {
                     width: 36,
                     height: 36,
                     alignment: Alignment.center,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: kTrack,
                       shape: BoxShape.circle,
                     ),
                     child: Text(
                       initial,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: KalloTextStyles.sansFamily,
                         fontSize: 12,
                         fontWeight: FontWeight.w400,

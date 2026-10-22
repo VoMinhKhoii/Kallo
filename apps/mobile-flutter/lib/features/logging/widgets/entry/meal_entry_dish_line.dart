@@ -54,7 +54,7 @@ class MealEntryDishLine extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: dashBody().merge(
                 struck
-                    ? const TextStyle(
+                    ? TextStyle(
                       decoration: TextDecoration.lineThrough,
                       decorationColor: kInkMuted,
                       color: kInkMuted,

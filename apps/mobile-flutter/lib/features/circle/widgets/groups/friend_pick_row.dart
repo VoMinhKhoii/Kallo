@@ -53,7 +53,7 @@ class FriendPickRow extends StatelessWidget {
                 ),
               ),
               if (selected)
-                const Icon(
+                Icon(
                   LucideIcons.check300,
                   size: KalloIcons.tertiary,
                   color: KalloColors.btn,

@@ -100,7 +100,7 @@ class _MealInputState extends State<MealInput>
   static const _fieldBox = BoxConstraints(minHeight: 24, maxHeight: 200);
 
   /// Body — typed at the size it will be read back at in the feed.
-  static final _fieldText = dashBody();
+  static TextStyle get _fieldText => dashBody();
 
   /// Owned only when the caller didn't supply one — disposing a borrowed
   /// controller would break the feed the moment the composer rebuilt.

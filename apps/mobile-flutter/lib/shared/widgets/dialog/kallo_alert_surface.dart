@@ -21,7 +21,7 @@ const double kKalloAlertRadius = KalloRadii.xl;
 
 /// `showCupertinoDialog` ignores `dialogTheme.barrierColor`, so the alert
 /// passes the app's scrim explicitly. Same token the theme uses.
-const Color kKalloAlertBarrier = KalloColors.scrim;
+Color get kKalloAlertBarrier => KalloColors.scrim;
 
 /// Finds the alert card in a widget test, and marks it in the tree.
 ///

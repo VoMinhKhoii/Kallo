@@ -89,7 +89,7 @@ class _TabStripState extends State<TabStrip> {
       labels.fold<double>(0, (tallest, size) => math.max(tallest, size.height)),
     );
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: kHairline)),
       ),
       child: SizedBox(

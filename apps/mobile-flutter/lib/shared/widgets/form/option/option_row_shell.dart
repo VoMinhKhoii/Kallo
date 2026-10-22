@@ -30,7 +30,7 @@ class OptionRowShell extends StatefulWidget {
     required this.border,
     required this.surface,
     required this.children,
-    this.radioIdleColor = KalloColors.border,
+    this.radioIdleColor,
     this.insetVertically = false,
   });
 
@@ -50,8 +50,9 @@ class OptionRowShell extends StatefulWidget {
   /// What sits after the radio.
   final List<Widget> children;
 
-  /// The idle ring's colour — the hairline everywhere except on gold.
-  final Color radioIdleColor;
+  /// The idle ring's colour — the hairline ([KalloColors.border], the
+  /// default) everywhere except on gold.
+  final Color? radioIdleColor;
 
   /// Whether the inset applies to the top and bottom edges too. A fixed-height
   /// row centres its content in the height it was given; a row that sizes to
@@ -93,7 +94,10 @@ class _OptionRowShellState extends State<OptionRowShell> {
         ),
         child: Row(
           children: [
-            _Radio(selected: widget.selected, idleColor: widget.radioIdleColor),
+            _Radio(
+              selected: widget.selected,
+              idleColor: widget.radioIdleColor ?? KalloColors.border,
+            ),
             const SizedBox(width: KalloSpacing.sp3),
             ...widget.children,
           ],

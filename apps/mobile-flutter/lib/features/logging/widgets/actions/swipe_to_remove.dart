@@ -92,7 +92,7 @@ class _SwipeToRemoveState extends State<SwipeToRemove> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: KalloColors.danger,
           borderRadius: _rest,
         ),

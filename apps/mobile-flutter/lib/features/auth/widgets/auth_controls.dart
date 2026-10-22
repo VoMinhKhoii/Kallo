@@ -57,7 +57,7 @@ class AuthBackButton extends StatelessWidget {
                     HapticFeedback.selectionClick();
                     onBack!();
                   },
-          child: const SizedBox.square(
+          child: SizedBox.square(
             dimension: KalloIcons.hit,
             child: Icon(
               LucideIcons.chevronLeft300,

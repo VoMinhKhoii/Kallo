@@ -58,7 +58,7 @@ class WeightSubmitButton extends StatelessWidget {
           ),
           child:
               pending
-                  ? const CupertinoActivityIndicator(
+                  ? CupertinoActivityIndicator(
                     radius: 8,
                     color: KalloColors.text,
                   )

@@ -67,7 +67,7 @@ const List<Color> kSeatColors = [
 ];
 
 /// Ink or white for initials drawn on [kSeatColors] at the same index.
-const List<Color> kSeatInk = [
+List<Color> get kSeatInk => [
   Colors.white,
   Colors.white,
   KalloColors.text,

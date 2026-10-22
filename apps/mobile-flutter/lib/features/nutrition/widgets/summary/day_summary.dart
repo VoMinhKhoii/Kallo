@@ -142,7 +142,7 @@ class DaySummary extends StatelessWidget {
               selectedIndex == null &&
               !isEmpty) ...[
             const SizedBox(height: KalloSpacing.sp4),
-            const Divider(height: 1, thickness: 1, color: kHairline),
+            Divider(height: 1, thickness: 1, color: kHairline),
             const SizedBox(height: KalloSpacing.sp3),
             Text(
               tr(

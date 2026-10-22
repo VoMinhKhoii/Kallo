@@ -59,7 +59,7 @@ class CreateGroupMemberPicker extends StatelessWidget {
               onChanged: (_) => onChanged(),
               decoration: InputDecoration(
                 hintText: tr('groups.createGroup.searchPlaceholder'),
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   LucideIcons.search300,
                   size: KalloIcons.tertiary,
                   color: kInkMuted,

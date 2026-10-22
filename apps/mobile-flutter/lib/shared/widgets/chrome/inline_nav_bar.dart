@@ -107,7 +107,7 @@ class InlineNavBar extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               LucideIcons.chevronLeft300,
               size: KalloIcons.size,
               color: KalloColors.textMuted,

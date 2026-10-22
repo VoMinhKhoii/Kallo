@@ -109,7 +109,7 @@ class KalloPullDown<T> extends StatelessWidget {
                   ),
                   if (enabled) ...[
                     const SizedBox(width: KalloSpacing.sp1),
-                    const Icon(
+                    Icon(
                       LucideIcons.chevronsUpDown300,
                       size: 16,
                       color: KalloColors.textMuted,

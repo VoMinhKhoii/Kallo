@@ -85,9 +85,9 @@ class FeedEntryIdentity extends StatelessWidget {
                     horizontal: KalloSpacing.sp2,
                     vertical: 1,
                   ),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: kTrack,
-                    borderRadius: BorderRadius.all(Radius.circular(99)),
+                    borderRadius: const BorderRadius.all(Radius.circular(99)),
                   ),
                   child: Text(
                     tr(

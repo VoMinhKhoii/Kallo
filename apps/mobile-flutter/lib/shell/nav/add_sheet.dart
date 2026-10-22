@@ -49,9 +49,12 @@ Future<void> showAddSheet(BuildContext context, WidgetRef ref) {
                 },
               ),
               // Separator inset to the text column, as in every grouped card.
-              const Padding(
-                padding: EdgeInsets.only(left: 36),
-                child: ColoredBox(color: kHairline, child: SizedBox(height: 1)),
+              Padding(
+                padding: const EdgeInsets.only(left: 36),
+                child: ColoredBox(
+                  color: kHairline,
+                  child: const SizedBox(height: 1),
+                ),
               ),
               ListRow(
                 icon: LucideIcons.gauge300,

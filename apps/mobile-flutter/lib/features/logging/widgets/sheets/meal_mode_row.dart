@@ -55,7 +55,7 @@ class MealModeRow extends StatelessWidget {
                   if (locked && selected)
                     const SizedBox(width: KalloSpacing.sp2),
                   if (selected)
-                    const Icon(
+                    Icon(
                       LucideIcons.check300,
                       size: KalloIcons.size,
                       color: KalloColors.text,

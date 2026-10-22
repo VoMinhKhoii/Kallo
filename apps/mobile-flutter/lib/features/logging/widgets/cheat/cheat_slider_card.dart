@@ -401,11 +401,7 @@ class _SaveButtonState extends State<_SaveButton> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  LucideIcons.check400,
-                  size: 16,
-                  color: KalloColors.text,
-                ),
+                Icon(LucideIcons.check400, size: 16, color: KalloColors.text),
                 const SizedBox(width: 6),
                 Text('logging.cheatSliders.confirm'.tr(), style: dashBody()),
               ],

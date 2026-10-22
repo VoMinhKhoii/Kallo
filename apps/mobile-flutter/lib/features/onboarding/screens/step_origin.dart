@@ -90,7 +90,7 @@ class _StepOriginState extends State<StepOrigin> {
           controller: _search,
           hintText: tr('onboarding.origin.searchHint'),
           onChanged: (v) => setState(() => _query = v),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             LucideIcons.search300,
             size: KalloIcons.tertiary,
             color: kInkMuted,
@@ -144,7 +144,7 @@ class _StepOriginState extends State<StepOrigin> {
       onTap: () => _pick(country.value),
       trailing:
           selected
-              ? const Icon(
+              ? Icon(
                 LucideIcons.check300,
                 size: KalloIcons.tertiary,
                 color: kInk,

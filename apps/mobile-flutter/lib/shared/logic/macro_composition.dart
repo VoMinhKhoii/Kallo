@@ -21,7 +21,7 @@ const Map<String, double> kKcalPerGram = {
 
 const List<String> kCompositionKeys = ['protein', 'carbohydrate', 'fat'];
 
-const Map<String, Color> kCompositionColors = {
+Map<String, Color> get kCompositionColors => {
   'protein': KalloColors.chartProtein,
   'carbohydrate': KalloColors.chartCarbs,
   'fat': KalloColors.chartFat,

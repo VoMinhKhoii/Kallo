@@ -58,7 +58,7 @@ class PaywallBuyBand extends StatelessWidget {
   Widget build(BuildContext context) {
     final welcome = this.welcome;
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: kPage,
         border: Border(top: BorderSide(color: kHairline)),
       ),

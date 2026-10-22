@@ -100,9 +100,9 @@ class _GroupRenamePageState extends State<GroupRenamePage> {
                 ),
                 // `CupertinoTextField` takes a BoxDecoration only, so the
                 // card's squircle is approximated by its rounded rect.
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: kCardSurface,
-                  borderRadius: BorderRadius.all(
+                  borderRadius: const BorderRadius.all(
                     Radius.circular(KalloRadii.containerLg),
                   ),
                 ),

@@ -92,7 +92,7 @@ class ThreadSendButton extends StatelessWidget {
             width: kReplyDockHeight,
             height: kReplyDockHeight,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               // The press is carried by [KalloPressable]'s wash over this
               // fill, not by a second one: beige has nowhere lighter to go.
               color: KalloColors.btnPrimarySoft,
@@ -100,13 +100,13 @@ class ThreadSendButton extends StatelessWidget {
             ),
             child:
                 submitting
-                    ? const CupertinoActivityIndicator(
+                    ? CupertinoActivityIndicator(
                       // `radius * 2` is the indicator's own box, so this puts
                       // the spinner in the glyph's exact footprint.
                       radius: KalloIcons.action / 2,
                       color: KalloColors.text,
                     )
-                    : const Icon(
+                    : Icon(
                       LucideIcons.arrowUp400,
                       // `action`: a glyph acting ON something, one tier under
                       // the navigation 24 — at `primary` it filled too much of

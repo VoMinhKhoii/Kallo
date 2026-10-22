@@ -46,7 +46,7 @@ class ManualMealTotals extends StatelessWidget {
             child: Column(
               children: [
                 for (final (i, key) in kCompositionKeys.indexed) ...[
-                  if (i > 0) const Divider(height: 1, color: kHairline),
+                  if (i > 0) Divider(height: 1, color: kHairline),
                   SizedBox(
                     height: 40,
                     child: Row(

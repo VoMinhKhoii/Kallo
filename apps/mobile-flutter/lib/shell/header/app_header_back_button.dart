@@ -50,7 +50,7 @@ class _AppHeaderBackButtonState extends State<AppHeaderBackButton> {
                 color: _pressed ? KalloColors.pressWash : null,
                 borderRadius: BorderRadius.circular(KalloRadii.sm),
               ),
-              child: const Icon(
+              child: Icon(
                 LucideIcons.chevronLeft300,
                 size: KalloIcons.size,
                 color: KalloColors.text,

@@ -63,7 +63,7 @@ class _PersistedMealChevronToggleState
             ),
             child: RotationTransition(
               turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
-              child: const Icon(
+              child: Icon(
                 LucideIcons.chevronDown300, // lucide ChevronDown
                 // The tertiary tier (18), under the 21pt action row below it,
                 // and muted: this is furniture ON the card, not one of the

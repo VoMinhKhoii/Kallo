@@ -158,7 +158,7 @@ class _GroupDisc extends StatelessWidget {
   const _GroupDisc();
 
   @override
-  Widget build(BuildContext context) => const DecoratedBox(
+  Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(color: KalloColors.track, shape: BoxShape.circle),
     child: Center(
       child: Icon(LucideIcons.users300, size: KalloIcons.action, color: kInk),

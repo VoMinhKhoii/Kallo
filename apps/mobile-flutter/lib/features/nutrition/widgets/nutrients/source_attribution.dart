@@ -33,7 +33,7 @@ class SourceAttribution extends StatelessWidget {
           child: Text.rich(
             TextSpan(
               children: [
-                const WidgetSpan(
+                WidgetSpan(
                   alignment: PlaceholderAlignment.middle,
                   child: Icon(
                     LucideIcons.shieldCheck300,
@@ -44,7 +44,7 @@ class SourceAttribution extends StatelessWidget {
                 const WidgetSpan(child: SizedBox(width: KalloSpacing.sp1_5)),
                 TextSpan(text: tr('nutrition.sources.caption')),
                 const WidgetSpan(child: SizedBox(width: KalloSpacing.sp1)),
-                const WidgetSpan(
+                WidgetSpan(
                   alignment: PlaceholderAlignment.middle,
                   child: Icon(LucideIcons.info300, size: 13, color: kInkMuted),
                 ),

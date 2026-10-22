@@ -83,7 +83,7 @@ class _TimelineChipState extends State<TimelineChip> {
                   // Ink, not muted: inside a chip the glyph reads with the
                   // label rather than as a caption beside it. Tertiary tier
                   // (18) — the app's pairing for a glyph sitting beside Body.
-                  const Icon(
+                  Icon(
                     LucideIcons.calendar300,
                     size: KalloIcons.tertiary,
                     color: kInk,
@@ -105,7 +105,7 @@ class _TimelineChipState extends State<TimelineChip> {
                     Container(
                       width: 6,
                       height: 6,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: kInk,
                       ),

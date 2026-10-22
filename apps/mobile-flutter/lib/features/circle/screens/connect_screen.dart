@@ -301,7 +301,7 @@ class _Disc extends StatelessWidget {
           colors:
               highlighted
                   ? const [Color(0x8CC9A87C), Color(0x99E8E6DC)] // 55% → 60%
-                  : const [KalloColors.accent40, KalloColors.borderHalf],
+                  : [KalloColors.accent40, KalloColors.borderHalf],
         ),
         border: Border.all(
           color:

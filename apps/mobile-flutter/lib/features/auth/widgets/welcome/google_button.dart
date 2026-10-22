@@ -66,10 +66,7 @@ class _GoogleButtonState extends State<GoogleButton> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (widget.loading)
-                const CupertinoActivityIndicator(
-                  radius: 8,
-                  color: KalloColors.text,
-                )
+                CupertinoActivityIndicator(radius: 8, color: KalloColors.text)
               else
                 const GoogleLogo(),
               const SizedBox(width: 10), // gap-2.5

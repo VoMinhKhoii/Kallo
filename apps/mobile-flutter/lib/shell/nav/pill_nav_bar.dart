@@ -184,7 +184,7 @@ class _AddButton extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 LucideIcons.plus400,
                 size: 24,
                 color: KalloColors.text,

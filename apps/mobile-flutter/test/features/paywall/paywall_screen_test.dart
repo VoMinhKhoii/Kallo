@@ -360,7 +360,7 @@ void main() {
                 .decoration
             as BoxDecoration;
     expect(decoration.color, kPage);
-    expect(decoration.border, const Border(top: BorderSide(color: kHairline)));
+    expect(decoration.border, Border(top: BorderSide(color: kHairline)));
 
     // The table's viewport stops at the band's hairline, and the chip hanging
     // off the button starts below it — so nothing scrolls under the chip.

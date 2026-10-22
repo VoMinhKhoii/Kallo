@@ -48,7 +48,7 @@ class MealList extends StatelessWidget {
         for (var i = 0; i < meals.length; i++) ...[
           // A hairline between rows. The card insets its own sides, so the rule
           // is already inset to the text column it separates.
-          if (i > 0) const Divider(height: 1, thickness: 1, color: kHairline),
+          if (i > 0) Divider(height: 1, thickness: 1, color: kHairline),
           _MealRow(meal: meals[i]),
         ],
       ],

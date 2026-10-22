@@ -145,7 +145,7 @@ class MacroTrendChart extends StatelessWidget {
               drawVerticalLine: false,
               horizontalInterval: step,
               getDrawingHorizontalLine:
-                  (value) => const FlLine(
+                  (value) => FlLine(
                     color: KalloColors.borderBiscotti40,
                     strokeWidth: 1,
                     dashArray: [4, 4],

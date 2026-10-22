@@ -43,7 +43,7 @@ class PaywallHeader extends StatelessWidget {
     child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onClose,
-      child: const SizedBox(
+      child: SizedBox(
         width: KalloIcons.hit,
         height: KalloIcons.hit,
         child: Icon(LucideIcons.x300, size: KalloIcons.primary, color: kInk),

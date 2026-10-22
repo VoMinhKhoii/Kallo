@@ -66,7 +66,7 @@ class PickerCloseRow extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onDismiss,
-        child: const SizedBox(
+        child: SizedBox(
           width: LoggingIcons.hit,
           height: LoggingIcons.hit,
           // White @ 70% — the notice's own dismiss glyph. Translucent only

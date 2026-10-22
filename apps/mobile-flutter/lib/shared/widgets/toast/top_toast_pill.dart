@@ -68,7 +68,7 @@ class TopToastPill extends StatelessWidget {
           color: kCardSurface,
           shape: KalloShapes.squircle(
             KalloRadii.xxl,
-            side: const BorderSide(color: kHairline),
+            side: BorderSide(color: kHairline),
           ),
           shadows: kCardShadows,
         ),

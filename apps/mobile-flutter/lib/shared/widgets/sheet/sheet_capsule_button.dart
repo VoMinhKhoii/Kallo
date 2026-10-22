@@ -46,9 +46,9 @@ class SheetCapsuleButton extends StatelessWidget {
               start: icon == null ? KalloSpacing.sp4 : KalloSpacing.sp3,
               end: KalloSpacing.sp4,
             ),
-            decoration: const ShapeDecoration(
+            decoration: ShapeDecoration(
               color: kTrack,
-              shape: StadiumBorder(),
+              shape: const StadiumBorder(),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

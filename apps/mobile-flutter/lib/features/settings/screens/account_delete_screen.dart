@@ -107,7 +107,7 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
                   children: [
                     ListRow(
                       label: tr('settings.account.deleteManageSubscription'),
-                      trailing: const Icon(
+                      trailing: Icon(
                         LucideIcons.externalLink300,
                         size: KalloIcons.tertiary,
                         color: kInkMuted,

@@ -96,7 +96,7 @@ class _SaveDockState extends State<SaveDock>
                 end: Offset.zero,
               ).animate(curved),
               child: DecoratedBox(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: kPage,
                   border: Border(top: BorderSide(color: kHairline)),
                 ),

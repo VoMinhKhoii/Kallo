@@ -45,11 +45,8 @@ class MealEntryBody extends StatelessWidget {
   final void Function(String itemId, double delta) onChange;
   final ValueChanged<MealItem> onAdjustPortion;
 
-  static const Divider _hairline = Divider(
-    height: 1,
-    thickness: 1,
-    color: KalloColors.borderFaint,
-  );
+  static Divider get _hairline =>
+      Divider(height: 1, thickness: 1, color: KalloColors.borderFaint);
 
   @override
   Widget build(BuildContext context) {

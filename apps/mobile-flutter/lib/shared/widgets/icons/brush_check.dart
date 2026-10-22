@@ -21,23 +21,20 @@ import 'tinted_svg.dart';
 /// 14pt row label beside it. Checked against a mock of the real row at device
 /// scale before it shipped.
 class BrushCheck extends StatelessWidget {
-  const BrushCheck({
-    required this.size,
-    this.color = KalloColors.successAccent,
-    super.key,
-  });
+  const BrushCheck({required this.size, this.color, super.key});
 
   final double size;
 
   /// Emerald in the Pro column, muted ink in the Free one: both mean
   /// "included", and the colour is what says which column is the offer.
-  final Color color;
+  /// Defaults to [KalloColors.successAccent].
+  final Color? color;
 
   @override
   Widget build(BuildContext context) => TintedSvg(
     svg: _svg,
     size: size,
-    color: color,
+    color: color ?? KalloColors.successAccent,
     // The row's label says what is included; the mark is not a second thing
     // to announce. The COLUMN heading gives it its meaning, and a screen
     // reader gets that from the table's own text.

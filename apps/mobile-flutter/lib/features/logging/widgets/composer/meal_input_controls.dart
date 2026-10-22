@@ -46,7 +46,7 @@ class _ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
             child: AnimatedScale(
               scale: _pressed ? 0.96 : 1,
               duration: const Duration(milliseconds: 200),
-              child: const Icon(
+              child: Icon(
                 LucideIcons.scanBarcode300,
                 size: 20,
                 color: KalloColors.textMuted,

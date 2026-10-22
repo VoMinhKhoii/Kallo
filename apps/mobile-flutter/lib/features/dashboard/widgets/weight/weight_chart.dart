@@ -54,7 +54,7 @@ class WeightChart extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     LucideIcons.cloudOff300,
                     size: KalloIcons.size,
                     color: kInkMuted,

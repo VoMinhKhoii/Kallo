@@ -68,7 +68,7 @@ class _SheetConfirmButtonState extends State<SheetConfirmButton> {
             ),
             child:
                 widget.saving
-                    ? const CupertinoActivityIndicator(
+                    ? CupertinoActivityIndicator(
                       radius: 9,
                       color: KalloColors.text,
                     )

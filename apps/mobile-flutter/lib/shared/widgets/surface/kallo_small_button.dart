@@ -65,7 +65,7 @@ class KalloSmallButton extends StatelessWidget {
         color: ink ? kInk : kCardSurface,
         shape: RoundedSuperellipseBorder(
           borderRadius: BorderRadius.circular(radius),
-          side: ink ? BorderSide.none : const BorderSide(color: kHairline),
+          side: ink ? BorderSide.none : BorderSide(color: kHairline),
         ),
       ),
       // `widthFactor: 1` hugs the label; an expanded button centres it in

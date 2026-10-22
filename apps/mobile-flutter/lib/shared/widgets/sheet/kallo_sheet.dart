@@ -115,7 +115,7 @@ class KalloSheetSurface extends StatelessWidget {
     this.clipBehavior = Clip.none,
     this.scrollable = false,
     this.maxHeightFraction = 0.9,
-    this.color = kCardSurface,
+    this.color,
   });
 
   final Widget child;
@@ -130,10 +130,10 @@ class KalloSheetSurface extends StatelessWidget {
   /// barrier tappable so the sheet never reads as a full-screen page.
   final double maxHeightFraction;
 
-  /// White by default. A sheet whose body is itself made of white grouped
-  /// cards (the scan result) paints the canvas colour instead, so the cards
-  /// separate by surface the way they do on a page.
-  final Color color;
+  /// White ([kCardSurface]) by default. A sheet whose body is itself made of
+  /// white grouped cards (the scan result) paints the canvas colour instead,
+  /// so the cards separate by surface the way they do on a page.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +165,7 @@ class KalloSheetSurface extends StatelessWidget {
         // curvature the way every iOS sheet's do. `ShapeDecoration` is what
         // takes a `ShapeBorder` — note it spells shadows `shadows`.
         decoration: ShapeDecoration(
-          color: color,
+          color: color ?? kCardSurface,
           shape: KalloShapes.squircleTop(kSheetRadius),
           // Sheets are TRUE elevation on the borderless-card canvas.
           shadows: kSheetShadows,

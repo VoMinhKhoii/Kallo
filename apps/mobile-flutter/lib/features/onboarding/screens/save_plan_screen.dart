@@ -95,7 +95,7 @@ class SavePlanScreen extends StatelessWidget {
     child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => popOr(context, (router) => router.go('/onboarding')),
-      child: const SizedBox(
+      child: SizedBox(
         width: KalloIcons.hit,
         height: KalloIcons.hit,
         child: Icon(

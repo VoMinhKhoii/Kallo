@@ -47,7 +47,7 @@ class ComposerCardSurface extends StatelessWidget {
         // before it withdraws. One tap outside, two visible changes to the
         // card — the flicker, and it read as one because the deepening lands
         // in the same 250ms as the keyboard's retract.
-        const ring = KalloColors.borderAccent40;
+        final ring = KalloColors.borderAccent40;
         final borderColor = ring.withValues(alpha: ring.a * t);
         return Container(
           // No padding here — the notice sets its own inset, so the field and

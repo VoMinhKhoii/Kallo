@@ -37,7 +37,7 @@ const double _sidePad = KalloSpacing.sp3_5;
 /// already dims to 50% to mean exactly that, so the enabled and disabled
 /// states were separated by very little. Data stays on the two-colour rule;
 /// controls need to look pressable.
-const Color _actionInk = KalloColors.textSoft;
+Color get _actionInk => KalloColors.textSoft;
 
 /// One Circle-post action: a tertiary-tier glyph in a 44pt-tall target, with
 /// an optional label riding alongside it INSIDE the same target — so a

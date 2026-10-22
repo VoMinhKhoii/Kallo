@@ -74,12 +74,14 @@ class SvgLoaderView extends StatefulWidget {
     super.key,
     required this.spec,
     this.size = 20,
-    this.color = KalloColors.textMuted,
+    this.color,
   });
 
   final SvgLoaderSpec spec;
   final double size;
-  final Color color;
+
+  /// Defaults to [KalloColors.textMuted].
+  final Color? color;
 
   @override
   State<SvgLoaderView> createState() => _SvgLoaderViewState();
@@ -123,7 +125,10 @@ class _SvgLoaderViewState extends State<SvgLoaderView>
       child: RepaintBoundary(
         child: CustomPaint(
           size: widget.spec.sizeFor(widget.size),
-          painter: widget.spec.painter(_clock, widget.color),
+          painter: widget.spec.painter(
+            _clock,
+            widget.color ?? KalloColors.textMuted,
+          ),
         ),
       ),
     );

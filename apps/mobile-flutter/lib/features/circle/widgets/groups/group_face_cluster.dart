@@ -78,7 +78,7 @@ class GroupFaceCluster extends StatelessWidget {
                 child: disc(
                   Container(
                     alignment: Alignment.center,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: kTrack,
                       shape: BoxShape.circle,
                     ),

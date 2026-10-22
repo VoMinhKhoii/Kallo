@@ -11,7 +11,7 @@ class PaywallSpinner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      const CupertinoActivityIndicator(radius: 11, color: KalloColors.accent);
+      CupertinoActivityIndicator(radius: 11, color: KalloColors.accent);
 }
 
 class PaywallCenteredNote extends StatelessWidget {

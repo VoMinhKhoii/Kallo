@@ -167,7 +167,7 @@ class _ListRowState extends State<ListRow> {
     // A row waiting on its own action shows the spinner INSTEAD of its
     // value/chevron — the affordance it replaces is exactly what is pending.
     if (widget.busy) {
-      return const CupertinoActivityIndicator(radius: 7, color: kInkMuted);
+      return CupertinoActivityIndicator(radius: 7, color: kInkMuted);
     }
     final List<Widget> parts = [
       if (widget.value != null)
@@ -177,7 +177,7 @@ class _ListRowState extends State<ListRow> {
         // Disclosure chevrons join the tertiary tier (18) rather than keeping
         // a private 16 (Threads icon tiers, 2026-09-01): beside a 16pt row
         // label a 16pt chevron read as a speck.
-        const Icon(
+        Icon(
           LucideIcons.chevronRight300,
           size: KalloIcons.tertiary,
           color: kInkMuted,

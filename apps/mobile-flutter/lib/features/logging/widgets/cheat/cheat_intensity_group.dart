@@ -40,7 +40,7 @@ class CheatIntensityGroup extends StatelessWidget {
           label: 'logging.cheatIntensity.title'.tr(),
           value: cheatIntensityLabel(value),
           onTap: onOpen,
-          trailing: const Icon(
+          trailing: Icon(
             LucideIcons.chevronRight300,
             size: KalloIcons.tertiary,
             color: kInkMuted,
@@ -86,7 +86,7 @@ class CheatIntensityPage extends StatelessWidget {
                 },
                 trailing:
                     intensity == value
-                        ? const Icon(
+                        ? Icon(
                           LucideIcons.check300,
                           size: KalloIcons.size,
                           color: KalloColors.text,

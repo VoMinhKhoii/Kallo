@@ -18,7 +18,7 @@ class MealTimeDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const line = Expanded(
+    final line = Expanded(
       child: Divider(color: KalloColors.borderFaint, height: 1, thickness: 1),
     );
     return Row(
