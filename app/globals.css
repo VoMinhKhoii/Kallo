@@ -701,3 +701,26 @@ svg.lucide {
   background-repeat: no-repeat;
   background-size: 100% 760px;
 }
+
+/* On a phone the desktop glow reaches halfway down the screen. Phones get the
+   iOS app's: two small corner lights, gone by about 190px, the top's middle
+   left dark. */
+@media (max-width: 767.98px) {
+  .aurora {
+    --kallo-glow:
+      radial-gradient(
+        80% 60% at 0% 0%,
+        rgba(255, 210, 176, 0.3),
+        rgba(255, 210, 176, 0) 70%
+      ),
+      radial-gradient(
+        80% 60% at 100% 0%,
+        rgba(220, 196, 255, 0.27),
+        rgba(220, 196, 255, 0) 70%
+      );
+  }
+
+  [data-app-shell] {
+    background-size: 100% 460px;
+  }
+}
