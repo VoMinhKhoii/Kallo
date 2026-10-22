@@ -37,7 +37,7 @@ enum SegmentedStripTone {
   };
 
   Color get thumb => switch (this) {
-    standard => kCardSurface,
+    standard => KalloColors.thumb,
     overPhoto => const Color(0x38FFFFFF),
   };
 

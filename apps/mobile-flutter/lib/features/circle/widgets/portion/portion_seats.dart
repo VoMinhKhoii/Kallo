@@ -57,21 +57,24 @@ class PortionSeat {
 /// other, and the warm palette cannot supply them. Red sits fifth so it only
 /// appears at a five-person table, away from the common cases and away from
 /// the × badge it would otherwise read as a warning beside.
-const List<Color> kSeatColors = [
-  Color(0xFF141413), // you
-  Color(0xFF12B76A),
-  Color(0xFFFFB020),
-  Color(0xFFFF8A6B),
-  Color(0xFFF04438),
-  Color(0xFF2E90FA),
+List<Color> get kSeatColors => [
+  KalloColors.seatYou, // you
+  const Color(0xFF12B76A),
+  const Color(0xFFFFB020),
+  const Color(0xFFFF8A6B),
+  const Color(0xFFF04438),
+  const Color(0xFF2E90FA),
 ];
 
 /// Ink or white for initials drawn on [kSeatColors] at the same index.
-List<Color> get kSeatInk => [
+///
+/// Fixed, not palette ink: the seat hues never change, so neither does what
+/// reads on them.
+const List<Color> kSeatInk = [
   Colors.white,
   Colors.white,
-  KalloColors.text,
-  KalloColors.text,
+  Color(0xFF141413),
+  Color(0xFF141413),
   Colors.white,
   Colors.white,
 ];

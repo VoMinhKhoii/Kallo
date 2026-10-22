@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -205,13 +204,13 @@ class _DeleteButton extends StatelessWidget {
             child: Center(
               child:
                   deleting
-                      ? const CupertinoActivityIndicator(
+                      ? CupertinoActivityIndicator(
                         radius: 8,
-                        color: CupertinoColors.white,
+                        color: KalloColors.onDanger,
                       )
                       : Text(
                         tr('settings.account.deleteConfirmAction'),
-                        style: kButtonLabel(color: Colors.white),
+                        style: kButtonLabel(color: KalloColors.onDanger),
                       ),
             ),
           ),

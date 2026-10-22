@@ -27,13 +27,16 @@ class StepBackdrop extends StatelessWidget {
   const StepBackdrop({super.key});
 
   @override
-  Widget build(BuildContext context) => const RepaintBoundary(
+  Widget build(BuildContext context) => RepaintBoundary(
     child: IgnorePointer(
       child: Stack(
         fit: StackFit.expand,
         children: [
-          StartAurora(spec: AuroraSpec.step),
-          CustomPaint(painter: _StepBackdropPainter(), size: Size.infinite),
+          const StartAurora(spec: AuroraSpec.step),
+          CustomPaint(
+            painter: _StepBackdropPainter(dim: backdropDim),
+            size: Size.infinite,
+          ),
         ],
       ),
     ),
@@ -60,7 +63,10 @@ class _Blob {
 }
 
 class _StepBackdropPainter extends CustomPainter {
-  const _StepBackdropPainter();
+  const _StepBackdropPainter({required this.dim});
+
+  /// [backdropDim] at build time.
+  final double dim;
 
   static const List<_Blob> _blobs = [
     _Blob(Color(0xFFE2966E), 0.16, Offset(0.84, 0.10), 0.34, 0.22),
@@ -82,7 +88,7 @@ class _StepBackdropPainter extends CustomPainter {
               // 0.5 is exactly the unit circle.
               radius: 0.5,
               colors: [
-                blob.color.withValues(alpha: blob.opacity),
+                blob.color.withValues(alpha: blob.opacity * dim),
                 blob.color.withValues(alpha: 0),
               ],
               stops: const [0, 0.7],
@@ -100,5 +106,6 @@ class _StepBackdropPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_StepBackdropPainter oldDelegate) => false;
+  bool shouldRepaint(_StepBackdropPainter oldDelegate) =>
+      oldDelegate.dim != dim;
 }

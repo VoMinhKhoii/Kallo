@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../../theme/calm_tokens.dart';
 import '../../../../logic/manual/manual_display.dart';
+import '../../../../../../theme/kallo_colors.dart';
 
 /// The meal sheet's edge, peeking above the add sheet stacked on it, with the
 /// one thing worth knowing while you search: what is already on the plate,
@@ -24,8 +25,8 @@ class ManualPeekStrip extends StatelessWidget {
       7 + MediaQuery.textScalerOf(context).scale(12) * 1.25 + 4;
 
   /// The strip's tint: the meal sheet's canvas under the route's dimming.
-  static const Color _fill = Color(0xFFD9D6CE);
-  static const Color _ink = Color(0xFF55534D);
+  static Color get _fill => KalloColors.sheetPeek;
+  static Color get _ink => KalloColors.sheetPeekInk;
 
   static String _summary(int count, double? kcal) =>
       'logging.manualLogging.peek'.tr(
@@ -52,9 +53,9 @@ class ManualPeekStrip extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.only(top: 7, left: 24, right: 24),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: _fill,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       ),
       alignment: Alignment.topCenter,
       child: Text.rich(
@@ -63,7 +64,7 @@ class ManualPeekStrip extends StatelessWidget {
           children: [
             if (after != null) ...[
               const TextSpan(text: ' '),
-              const WidgetSpan(
+              WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
                 child: Icon(LucideIcons.arrowRight300, size: 12, color: _ink),
               ),

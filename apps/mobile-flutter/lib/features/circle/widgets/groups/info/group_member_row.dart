@@ -81,7 +81,7 @@ class GroupMemberRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
             child: Text(
               tr('common.actions.remove'),
-              style: dashBody(color: Colors.white),
+              style: dashBody(color: KalloColors.onDanger),
             ),
           ),
           child: row,

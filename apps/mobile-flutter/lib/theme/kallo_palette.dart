@@ -28,8 +28,11 @@ class KalloPalette {
     required this.surface,
     required this.elev,
     required this.sheet,
+    required this.sheetPeek,
+    required this.sheetPeekInk,
     required this.hover,
     required this.track,
+    required this.thumb,
     required this.text,
     required this.textMuted,
     required this.textSoft,
@@ -38,6 +41,7 @@ class KalloPalette {
     required this.bandSurface,
     required this.bandForeground,
     required this.mention,
+    required this.seatYou,
     required this.premiumChipFill,
     required this.premiumChipBorder,
     required this.premiumChipText,
@@ -64,6 +68,7 @@ class KalloPalette {
     required this.successDark,
     required this.successFaint,
     required this.danger,
+    required this.onDanger,
     required this.offTarget,
     required this.heatmapOnTarget,
     required this.heatmapClose,
@@ -141,9 +146,10 @@ class KalloPalette {
   final bool isDark;
 
   // One field per [KalloColors] token, same names, same groups.
-  final Color surface, elev, sheet, hover, track, track50;
+  final Color surface, elev, sheet, sheetPeek, sheetPeekInk;
+  final Color hover, track, track50, thumb;
   final Color text, textMuted, textSoft, accent, accentDark;
-  final Color bandSurface, bandForeground, bandForeground70, mention;
+  final Color bandSurface, bandForeground, bandForeground70, mention, seatYou;
   final Color premiumChipFill, premiumChipBorder, premiumChipText, premiumDot;
   final Color border, borderSoft, borderHalf, borderFaint, borderBiscotti40;
   final Color border70, border15;
@@ -163,7 +169,7 @@ class KalloPalette {
   final Color macroProtein, macroCarbs, macroFat;
   final Color chartProtein, chartCarbs, chartFat, chartMuted;
   final Color success, successAccent, successDark, successFaint;
-  final Color successBorder, danger, offTarget, offTarget70;
+  final Color successBorder, danger, onDanger, offTarget, offTarget70;
   final Color heatmapOnTarget, heatmapClose, heatmapSlight, heatmapModerate;
   final Color heatmapFar, heatmapBarMiss;
   final Color inputBorder, inputBorder40, textWarm, textHelp, textSelected;

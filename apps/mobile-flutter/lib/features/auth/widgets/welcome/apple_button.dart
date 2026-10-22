@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_palette.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../auth_controls.dart' show kAuthButtonHeight;
 
@@ -35,8 +35,19 @@ class _AppleButtonState extends State<AppleButton> {
   static const Color _black = Color(0xFF000000);
   static const Color _blackPressed = Color(0xFF1C1C1E);
 
+  // Apple's WHITE style, which its guidelines ask for on a dark background —
+  // the black button vanished into the Dark and Aurora pages.
+  static const Color _white = Color(0xFFFFFFFF);
+  static const Color _whitePressed = Color(0xFFE5E5EA);
+
   @override
   Widget build(BuildContext context) {
+    final onDark = KalloPalette.current.isDark;
+    final Color fill =
+        onDark
+            ? (_pressed ? _whitePressed : _white)
+            : (_pressed ? _blackPressed : _black);
+    final Color ink = onDark ? _black : _white;
     return Opacity(
       opacity: widget.busy ? 0.6 : 1.0,
       child: GestureDetector(
@@ -50,20 +61,20 @@ class _AppleButtonState extends State<AppleButton> {
           constraints: const BoxConstraints(minHeight: kAuthButtonHeight),
           padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
           decoration: BoxDecoration(
-            color: _pressed ? _blackPressed : _black,
+            color: fill,
             borderRadius: BorderRadius.circular(KalloRadii.button),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Apple's genuine logo glyph from the iOS system font.
-              const Text(
+              Text(
                 '\u{F8FF}',
                 style: TextStyle(
                   fontFamily: '.SF Pro Text',
                   fontSize: 19,
                   height: 1,
-                  color: Colors.white,
+                  color: ink,
                 ),
               ),
               const SizedBox(width: 8),
@@ -71,7 +82,7 @@ class _AppleButtonState extends State<AppleButton> {
                 tr('auth.dialog.continueWithApple'),
                 style: dashBody(
                   weight: FontWeight.w500,
-                ).copyWith(color: KalloColors.elev, letterSpacing: -0.2),
+                ).copyWith(color: ink, letterSpacing: -0.2),
               ),
             ],
           ),

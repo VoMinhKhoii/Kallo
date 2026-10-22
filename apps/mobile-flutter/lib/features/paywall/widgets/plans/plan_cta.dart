@@ -137,7 +137,7 @@ class _PlanCtaState extends State<PlanCta> {
 
   /// Ink on gold and white on ink — never white on gold: the lightest stop of
   /// the gradient is #FBE27A, where white text falls to 1.3:1.
-  Color _ink() => widget.gold ? kInk : KalloColors.elev;
+  Color _ink() => widget.gold ? KalloColors.onBrand : KalloColors.elev;
 
   Widget _content() =>
       widget.loading

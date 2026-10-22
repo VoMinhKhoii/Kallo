@@ -61,7 +61,10 @@ class SentBubble extends StatelessWidget {
           vertical: KalloSpacing.sp2_5, // 10
         ),
         decoration: BoxDecoration(
-          color: KalloColors.btnPrimarySoft,
+          // The warm wash ([KalloColors.hover]) — the in-app primary's value
+          // in light, its quieter sibling on Dark, where a button-bright
+          // bubble out-weighed the meal answering it.
+          color: KalloColors.hover,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(KalloRadii.xxl), // 18
             topRight: Radius.circular(KalloRadii.xxl),

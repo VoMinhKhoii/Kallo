@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 
 /// The pill that marks the selected segment of a [SegmentedStrip], drawn
@@ -26,7 +26,7 @@ class SegmentedThumb extends StatelessWidget {
 
   /// The pill's fill, and whether it casts the small shadow that lifts a white
   /// thumb off a warm track (a glass thumb over a photo has nothing to lift).
-  /// The fill defaults to [kCardSurface].
+  /// The fill defaults to [KalloColors.thumb].
   final Color? color;
   final bool raised;
 
@@ -64,7 +64,7 @@ class SegmentedThumb extends StatelessWidget {
           alignment: anchor(position, count),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: color ?? kCardSurface,
+              color: color ?? KalloColors.thumb,
               borderRadius: const BorderRadius.all(
                 Radius.circular(KalloRadii.pill),
               ),

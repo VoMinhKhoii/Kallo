@@ -42,12 +42,23 @@ abstract final class KalloColors {
   /// ABOVE the cards. White like [elev] in light; lighter than the cards in
   /// Dark and Aurora, where elevation reads by surface rather than shadow.
   static Color get sheet => _p.sheet;
+
+  /// The edge of a sheet showing above a full-height one stacked on it (the
+  /// manual-log peek strip): [sheet] under the route's dimming, and the muted
+  /// ink that reads on it.
+  static Color get sheetPeek => _p.sheetPeek;
+  static Color get sheetPeekInk => _p.sheetPeekInk;
   static Color get hover => _p.hover; // warm hover/select wash
   // Kept where it was when the canvas darkened: the canvas↔track step is the
   // whole point of this token, and against the brighter page it now sits
   // further below it, which is the direction that reads recessed.
   static Color get track => _p.track; // warm segmented/track
   static Color get track50 => _p.track50; // track @ 50%
+
+  /// A segmented control's thumb, raised off [track]: white in light; a
+  /// lighter grey on Dark and Aurora, where a card-coloured thumb sat BELOW
+  /// its track and read as a hole.
+  static Color get thumb => _p.thumb;
 
   // ── Text ─────────────────────────────────────────────────────────────
   static Color get text => _p.text; // near-black ink
@@ -98,6 +109,11 @@ abstract final class KalloColors {
   /// one measures 4.86:1 at the same size, which is the bar every other text
   /// token in this palette is held to.
   static Color get mention => _p.mention;
+
+  /// Seat 0 — you — on a portion meter. Ink in light; a mid grey on Dark and
+  /// Aurora, where ink would vanish into the page and white initials must
+  /// still read on it (web paints the same grey).
+  static Color get seatYou => _p.seatYou;
 
   // ── Premium lock marker (PremiumChip / PremiumDot) ───────────────────
   /// A soft blue, not the paywall gold: the marker only says "this is in
@@ -163,8 +179,9 @@ abstract final class KalloColors {
   static Color get btnPrimarySoft =>
       _p.btnPrimarySoft; // beige + ink — in-app primary
 
-  /// Ink on the brand sweep (the tab bar's "+", Aurora's in-app primary):
-  /// `#141413` in every palette, since the sweep's two hues never change.
+  /// Ink on the app's fixed bright fills — the brand sweep (the tab bar's
+  /// "+", Aurora's in-app primary) and the paywall gold: `#141413` in every
+  /// palette, since those fills never change.
   static Color get onBrand => _p.onBrand;
   static Color get btn => _p.btn; // legacy umber — toggles/progress
   static Color get btnHover => _p.btnHover;
@@ -302,6 +319,11 @@ abstract final class KalloColors {
   /// [danger] is for ACTIONS and ERRORS only. "Your numbers are off" is
   /// [offTarget], and the heatmap keeps its own scale — see both below.
   static Color get danger => _p.danger;
+
+  /// Label and glyph on a [danger] FILL (a delete button, a swipe-to-remove
+  /// action). White in light; ink on Dark and Aurora, whose lifted red is
+  /// 2.6:1 under white and 7:1 under ink.
+  static Color get onDanger => _p.onDanger;
 
   /// Over/under target — the calorie ring's overflow arc, the exceed state on a
   /// target bar, a nutrient figure past its limit, a "short by" figure.
