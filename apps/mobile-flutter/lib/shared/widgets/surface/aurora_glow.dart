@@ -3,8 +3,14 @@ import 'package:flutter/widgets.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_palette.dart';
 
-/// Aurora's glow behind the top of a main page: apricot centred on the
-/// top-left corner, lilac on the top-right, both gone by [reach].
+/// Aurora's glow behind the top of a main page: a small apricot light in the
+/// top-left corner and a lilac one in the top-right, gone well before the
+/// page's first card.
+///
+/// The design canvas's recipe, exactly: each light is an ellipse 80% of the
+/// width across and 60% of a [band]-tall strip down, fading to nothing at 70%
+/// of its radius (about 220 pt across and 190 pt down on a phone), so the
+/// middle of the top stays dark between the two.
 ///
 /// Painted UNDER [child], on the page background, and only in Aurora — Light
 /// and Dark get the bare child's paint. The widget stays in the tree in every
@@ -14,8 +20,8 @@ class AuroraGlow extends StatelessWidget {
 
   final Widget child;
 
-  /// How far down the page the glow fades out.
-  static const double reach = 440;
+  /// The strip the two lights are sized against.
+  static const double band = 460;
 
   @override
   Widget build(BuildContext context) => CustomPaint(
@@ -32,19 +38,31 @@ class _GlowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (!on) return;
-    const reach = AuroraGlow.reach;
-    void glow(Offset centre, Color color) {
-      final rect = Rect.fromCircle(center: centre, radius: reach);
-      final paint =
-          Paint()
-            ..shader = RadialGradient(
-              colors: [color, color.withAlpha(0)],
-            ).createShader(rect);
-      canvas.drawRect(Offset.zero & Size(size.width, reach), paint);
+    const band = AuroraGlow.band;
+    final radiusX = size.width * 0.8;
+    const radiusY = band * 0.6;
+    canvas.save();
+    canvas.clipRect(Offset.zero & Size(size.width, band));
+    void glow(double x, Color color) {
+      // A circle of radiusY, stretched sideways into the ellipse.
+      canvas.save();
+      canvas.translate(x, 0);
+      canvas.scale(radiusX / radiusY, 1);
+      final circle = Rect.fromCircle(center: Offset.zero, radius: radiusY);
+      canvas.drawRect(
+        circle,
+        Paint()
+          ..shader = RadialGradient(
+            colors: [color, color.withAlpha(0)],
+            stops: const [0, 0.7],
+          ).createShader(circle),
+      );
+      canvas.restore();
     }
 
-    glow(Offset.zero, KalloColors.brandApricot.withAlpha(0x4D)); // 30%
-    glow(Offset(size.width, 0), KalloColors.brandLilac.withAlpha(0x42)); // 26%
+    glow(0, KalloColors.brandApricot.withAlpha(0x4D)); // 30%
+    glow(size.width, KalloColors.brandLilac.withAlpha(0x45)); // 27%
+    canvas.restore();
   }
 
   @override
