@@ -11,6 +11,9 @@ describe('isPlainRice', () => {
     [['ご飯']],
     [['米饭']],
     [['Bhaat', 'steamed white rice']],
+    // "rang" must not match inside "orange"; decomposed Vietnamese still reads.
+    [['Rice', 'steamed rice, orange-scented']],
+    [['Cơm trắng'.normalize('NFD')]],
   ])('plain rice: %j', (names) => {
     expect(isPlainRice(names)).toBe(true);
   });
@@ -24,6 +27,10 @@ describe('isPlainRice', () => {
     [['Rice cakes']],
     [['Gạo', 'raw white rice']],
     [['Chè đậu xanh']],
+    [['Cơm gà']],
+    [['비빔밥']],
+    [['炒米饭']],
+    [['Dal bhat']],
   ])('not plain rice: %j', (names) => {
     expect(isPlainRice(names)).toBe(false);
   });

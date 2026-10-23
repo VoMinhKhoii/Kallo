@@ -74,10 +74,39 @@ export function riceBowlFor(profile: {
   return bandAround(mid);
 }
 
-const PLAIN_RICE =
-  /\brice\b|^(cơm|cơm trắng|cơm tẻ|com trang|bhaat|bhat|chawal|kanin|nasi putih|ข้าวสวย|밥|공깃밥|흰밥|ご飯|ごはん|白飯|白饭|米饭|米飯)$/i;
-const NOT_PLAIN_RICE =
-  /fried|chiên|rang|congee|porridge|cháo|noodle|vermicelli|paper|cake|cracker|flour|pudding|milk|wine|vinegar|sticky|glutinous|nếp|risotto|pilaf|pulao|biryani|bran|syrup|puffed|crisp|raw|uncooked|dry/i;
+/** Whole words only, in any script: `\b` is ASCII-only, so a bare
+ *  substring would let "rang" (cơm rang) match "orange". */
+const words = (alternatives: string) =>
+  new RegExp(`(?<!\\p{L})(?:${alternatives})(?!\\p{L})`, 'iu');
+
+const RICE_WORD = words('rice');
+/** Local names count only as the WHOLE name: "cơm" is plain rice, but "cơm
+ *  gà" is chicken rice and "dal bhat" is lentils with rice. */
+const LOCAL_PLAIN_RICE = new Set(
+  [
+    'cơm',
+    'cơm trắng',
+    'cơm tẻ',
+    'bhaat',
+    'bhat',
+    'chawal',
+    'kanin',
+    'nasi putih',
+    'ข้าวสวย',
+    '밥',
+    '공깃밥',
+    '흰밥',
+    'ご飯',
+    'ごはん',
+    '白飯',
+    '白饭',
+    '米饭',
+    '米飯',
+  ].map((name) => name.normalize('NFC'))
+);
+const NOT_PLAIN_RICE = words(
+  'fried|chiên|rang|congee|porridge|cháo|noodles?|vermicelli|paper|cakes?|crackers?|flour|pudding|milk|wine|vinegar|sticky|glutinous|nếp|risotto|pilaf|pulao|biryani|bran|syrup|puffed|crisps?|raw|uncooked|dry'
+);
 
 /** Plain cooked rice, named in any language. Call 1 always writes an English
  *  `queryEn` ("steamed white rice, cooked"), so English carries most cases;
@@ -85,9 +114,10 @@ const NOT_PLAIN_RICE =
 export function isPlainRice(names: Array<string | null | undefined>): boolean {
   const named = names
     .filter((name): name is string => !!name)
-    .map((name) => name.trim());
+    .map((name) => name.normalize('NFC').trim());
   return (
-    named.some((name) => PLAIN_RICE.test(name)) &&
-    !named.some((name) => NOT_PLAIN_RICE.test(name))
+    named.some(
+      (name) => RICE_WORD.test(name) || LOCAL_PLAIN_RICE.has(name.toLowerCase())
+    ) && !named.some((name) => NOT_PLAIN_RICE.test(name))
   );
 }
