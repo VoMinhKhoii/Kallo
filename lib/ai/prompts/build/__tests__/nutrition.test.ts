@@ -196,6 +196,23 @@ describe('buildNutritionPrompt — sort determinism', () => {
   });
 });
 
+describe('nutrition prompt — default rice portion', () => {
+  it("sizes the default rice portion by the user's country", () => {
+    const korea = { ...USER_CONTEXT, countryOfOrigin: 'South Korea' };
+    for (const build of [
+      buildNutritionPrompt,
+      buildCompressedNutritionPrompt,
+    ]) {
+      expect(build([], [], [], USER_CONTEXT)).toContain(
+        'default_rice_portion: ~1 bowl (~120g cooked rice)'
+      );
+      expect(build([], [], [], korea)).toContain(
+        'default_rice_portion: ~1 bowl (~210g cooked rice)'
+      );
+    }
+  });
+});
+
 describe('buildCompressedNutritionPrompt', () => {
   it('omits runtime ids while keeping language contract and exact name echo instructions', () => {
     const prompt = buildCompressedNutritionPrompt(

@@ -9,8 +9,8 @@
  * head-of-distribution (the staples in the logs + obvious global units).
  *
  * The resolver no longer pins grams from this table (removed 2026-10-12: the
- * anchors oversized portions on the benchmark). Today it only feeds the rice
- * bowl size quoted in the legacy prompts (`prompts/text/portion-descriptions.ts`).
+ * anchors oversized portions on the benchmark), and the prompts take the rice
+ * bowl from `rice-bowls.ts`.
  *
  * Every grams band declares its physical basis. Legacy priors are EDIBLE mass;
  * refuse-bearing head-portion priors are GROSS as served so they compose with
@@ -28,9 +28,8 @@ const band = (low: number, mid: number, high: number): GramsBand => ({
   high,
 });
 
-/** A Vietnamese chén/bát of plain cooked rice (80 / 120 / 160 g), for the
- *  legacy prompts. The v2 pipeline sizes rice by the user's country. */
-export const RICE_BOWL_G = riceBowlFor({ countryOfOrigin: 'Vietnam' });
+/** A Vietnamese chén/bát of plain cooked rice (80 / 120 / 160 g). */
+const RICE_BOWL_G = riceBowlFor({ countryOfOrigin: 'Vietnam' });
 
 /**
  * Seeded priors, keyed by (conceptId, unitType, locale, form). Every entry is

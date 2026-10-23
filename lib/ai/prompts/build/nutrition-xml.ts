@@ -8,6 +8,7 @@ import {
   ingredientDisplayName,
   ingredientGrams,
 } from '@/lib/ai/pipeline/contracts/ingredient-accessors';
+import { riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import { buildPromptContextLine } from '@/lib/ai/prompts/sanitize';
 import type { NutritionPromptParts } from '@/lib/ai/prompts/text/nutrition';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
@@ -175,5 +176,11 @@ export function buildNutritionPromptParts(
     unmatchedSection += '</unmatched_ingredients>\n';
   }
 
-  return { cookingHabits, countryLines, ingredientData, unmatchedSection };
+  return {
+    cookingHabits,
+    countryLines,
+    riceBowlMidG: riceBowlFor(userContext).mid,
+    ingredientData,
+    unmatchedSection,
+  };
 }

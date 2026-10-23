@@ -12,7 +12,7 @@
  */
 import {
   PROTEIN_PORTION_DESCRIPTION,
-  RICE_PORTION_DESCRIPTION,
+  ricePortionDescription,
 } from '@/lib/ai/prompts/text/portion-descriptions';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 
@@ -20,13 +20,15 @@ import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 export interface DecompositionPromptParts {
   cookingHabits: PromptPersonalizationContext['cookingHabits'];
   countryLines: string[];
+  /** The user's bowl of plain cooked rice, in grams. */
+  riceBowlMidG: number;
 }
 
 export function compressedDecompositionPromptText(
   parts: DecompositionPromptParts,
   outputLanguage: string
 ): string {
-  const { cookingHabits, countryLines } = parts;
+  const { cookingHabits, countryLines, riceBowlMidG } = parts;
 
   return `You are a cuisine-aware meal decomposition engine. Return JSON only.
 
@@ -78,7 +80,7 @@ export function compressedDecompositionPromptText(
 
 <user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
+  default_rice_portion: ${ricePortionDescription(cookingHabits.defaultRicePortion, riceBowlMidG)}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
   broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>`;
@@ -91,7 +93,7 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
 export function decompositionPromptText(
   parts: DecompositionPromptParts
 ): string {
-  const { cookingHabits, countryLines } = parts;
+  const { cookingHabits, countryLines, riceBowlMidG } = parts;
 
   return `You are a Cuisine Expert. Decompose meal descriptions into dish-wrapped structured ingredient data.
 
@@ -242,7 +244,7 @@ export function decompositionPromptText(
 
 <user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
+  default_rice_portion: ${ricePortionDescription(cookingHabits.defaultRicePortion, riceBowlMidG)}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
   broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>
