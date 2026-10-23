@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
+import { AppearanceRow } from '@/components/settings/appearance/appearance-row';
 import { CustomSelect } from '@/components/settings/chrome/custom-select';
 import { SettingsRow } from '@/components/settings/chrome/group';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
@@ -38,6 +39,8 @@ export function RegionalRows() {
           />
         </div>
       </SettingsRow>
+
+      <AppearanceRow />
 
       <div id={SUBSECTION_ANCHOR.regional} className="scroll-mt-20">
         <FormField

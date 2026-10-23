@@ -82,7 +82,7 @@ export function DangerZone({
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
-              className="mt-1.5 w-full rounded-xl border border-kallo-border bg-white px-3.5 py-2.5 text-[15px] text-kallo-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-kallo-danger/30"
+              className="mt-1.5 w-full rounded-xl border border-kallo-border bg-card px-3.5 py-2.5 text-[15px] text-kallo-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-kallo-danger/30"
             />
           </label>
           <div className="mt-3 flex items-center justify-end gap-2">

@@ -48,8 +48,8 @@ export function PlanCard({
       className={cn(
         'flex flex-col rounded-3xl border p-7 text-left sm:p-8 md:row-span-4 md:grid md:grid-rows-subgrid',
         featured
-          ? 'border-kallo-gold-edge bg-linear-to-b from-kallo-gold-wash to-20% to-white shadow-kallo-gold-deep/20 shadow-xl'
-          : 'border-kallo-border/60 bg-white shadow-sm'
+          ? 'border-kallo-gold-edge bg-linear-to-b from-kallo-gold-wash to-20% to-card shadow-kallo-gold-deep/20 shadow-xl'
+          : 'border-kallo-border/60 bg-card shadow-sm'
       )}
     >
       {/* The switch shares a row with the NAME only, and the tagline sits

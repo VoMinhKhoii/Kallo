@@ -98,7 +98,7 @@ export function InlineMealTrigger({
             type="submit"
             aria-label={tm('send')}
             disabled={text.trim().length === 0}
-            className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-kallo-btn text-white transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:bg-kallo-btn-hover disabled:bg-kallo-track disabled:text-kallo-text-muted"
+            className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-kallo-btn text-kallo-btn-ink transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:bg-kallo-btn-hover disabled:bg-kallo-track disabled:text-kallo-text-muted"
           >
             <ArrowUp className="h-4 w-4" />
           </button>

@@ -29,14 +29,14 @@ function Section({
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between rounded-lg px-1.5 py-2 text-left transition-colors hover:bg-[#141413]/[0.03]"
+        className="flex w-full items-center justify-between rounded-lg px-1.5 py-2 text-left transition-colors hover:bg-kallo-ink/[0.03]"
       >
-        <span className="font-sans-display font-semibold text-[#141413] text-[13px]">
+        <span className="font-sans-display font-semibold text-[13px] text-kallo-text">
           {title}
         </span>
         <ChevronDown
           className={cn(
-            'size-4 text-[#6E6D66] transition-transform',
+            'size-4 text-kallo-text-muted transition-transform',
             open && 'rotate-180'
           )}
         />
@@ -84,19 +84,19 @@ export function GroupInfoPanel({ group }: { group: ChatGroupDetail }) {
               maxLength={60}
               // biome-ignore lint/a11y/noAutofocus: entering rename mode is an explicit click
               autoFocus
-              className="min-w-0 flex-1 border-[#E8E6DC] border-b bg-transparent pb-0.5 text-center font-bold font-sans-display text-[#141413] text-[16px] focus:border-[#141413] focus:outline-none"
+              className="min-w-0 flex-1 border-kallo-border border-b bg-transparent pb-0.5 text-center font-bold font-sans-display text-[16px] text-kallo-text focus:border-kallo-text focus:outline-none"
             />
             <button
               type="submit"
               disabled={draft.trim().length === 0 || rename.isPending}
-              className="shrink-0 font-medium font-sans-display text-[#141413] text-[12px] disabled:opacity-50"
+              className="shrink-0 font-medium font-sans-display text-[12px] text-kallo-text disabled:opacity-50"
             >
               {t('renameSave')}
             </button>
           </form>
         ) : (
           <span className="flex max-w-full items-center gap-1.5 px-2">
-            <span className="truncate font-bold font-sans-display text-[#141413] text-[16px]">
+            <span className="truncate font-bold font-sans-display text-[16px] text-kallo-text">
               {name}
             </span>
             {isOwner && (
@@ -107,14 +107,14 @@ export function GroupInfoPanel({ group }: { group: ChatGroupDetail }) {
                   setDraft(name);
                   setEditing(true);
                 }}
-                className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#6E6D66] transition-colors hover:bg-[#141413]/[0.05] hover:text-[#141413]"
+                className="flex size-6 shrink-0 items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-kallo-ink/[0.05] hover:text-kallo-text"
               >
                 <Pencil className="size-3.5" />
               </button>
             )}
           </span>
         )}
-        <span className="font-sans-display text-[#6E6D66] text-[12px]">
+        <span className="font-sans-display text-[12px] text-kallo-text-muted">
           {t('memberCount', { count: group.members.length })}
         </span>
       </div>
@@ -127,7 +127,7 @@ export function GroupInfoPanel({ group }: { group: ChatGroupDetail }) {
         <GroupAddPeople group={group} />
       </Section>
 
-      <div className="mt-auto shrink-0 border-[#E8E6DC] border-t pt-2">
+      <div className="mt-auto shrink-0 border-kallo-border border-t pt-2">
         <GroupLeaveButton groupId={group.id} />
       </div>
     </div>

@@ -53,7 +53,7 @@ export function MealList({ meals }: MealListProps) {
           dashboard. The meal name takes the bold-ink identity slot the
           author's name held there. */}
       <div
-        className="flex min-h-0 flex-1 flex-col divide-y divide-kallo-border/50 overflow-y-auto rounded-2xl bg-white px-4 [-ms-overflow-style:none] [scrollbar-width:none] md:rounded-none md:bg-transparent md:px-0 [&::-webkit-scrollbar]:hidden"
+        className="flex min-h-0 flex-1 flex-col divide-y divide-kallo-border/50 overflow-y-auto rounded-2xl bg-card px-4 [-ms-overflow-style:none] [scrollbar-width:none] md:rounded-none md:bg-transparent md:px-0 [&::-webkit-scrollbar]:hidden"
         data-testid="meal-list-scroll"
       >
         {meals.map((meal) => (

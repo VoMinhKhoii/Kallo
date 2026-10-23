@@ -27,7 +27,7 @@ export function AggressionSlider({
         return (
           <FormItem>
             <FormControl>
-              <div className="rounded-2xl border border-[#EAE7E0] bg-white p-4">
+              <div className="rounded-2xl border border-kallo-border bg-card p-4">
                 <div className="mb-3 flex items-end justify-between">
                   <label className="block font-bold text-[13px] text-kallo-text">
                     {t('bodyMetrics.aggression')}
@@ -49,7 +49,7 @@ export function AggressionSlider({
                       field.onChange(v);
                       reportChange();
                     }}
-                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-[#EAE7E0] accent-kallo-ink"
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-kallo-border accent-kallo-ink"
                   />
                   <div className="mt-2.5 flex justify-between text-[#8B8682] text-[11px]">
                     <span

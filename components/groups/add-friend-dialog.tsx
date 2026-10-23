@@ -63,16 +63,16 @@ export function AddFriendDialog({
       bodyClassName="px-4 pt-1 pb-[max(env(safe-area-inset-bottom),1rem)] md:px-[22px] md:pt-4 md:pb-[22px]"
     >
       <Tabs value={tab} onValueChange={(value) => setTab(value as DialogTab)}>
-        <TabsList className="w-full rounded-xl bg-[#E8E6DC]/60 p-1">
+        <TabsList className="w-full rounded-xl bg-kallo-border/60 p-1">
           <TabsTrigger
             value="friend"
-            className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[#6E6D66] text-[13px] transition-colors data-[state=active]:bg-white data-[state=active]:text-[#141413] data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-[#E8E6DC]"
+            className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[13px] text-kallo-text-muted transition-colors data-[state=active]:bg-kallo-thumb data-[state=active]:text-kallo-text data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-kallo-border"
           >
             {t('tabAddFriend')}
           </TabsTrigger>
           <TabsTrigger
             value="group"
-            className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[#6E6D66] text-[13px] transition-colors data-[state=active]:bg-white data-[state=active]:text-[#141413] data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-[#E8E6DC]"
+            className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[13px] text-kallo-text-muted transition-colors data-[state=active]:bg-kallo-thumb data-[state=active]:text-kallo-text data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-kallo-border"
           >
             {t('tabCreateGroup')}
           </TabsTrigger>

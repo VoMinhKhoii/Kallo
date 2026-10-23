@@ -58,7 +58,7 @@ export function ScanAmountCard({
     choices.find((choice) => choice.value === selected) ?? choices[0];
   const menu = choices.length > 1 && !disabled;
   return (
-    <section className="mt-4 overflow-hidden rounded-[22px] bg-white">
+    <section className="mt-4 overflow-hidden rounded-[22px] bg-card">
       <div className="flex min-h-[52px] items-center justify-between gap-3 px-4">
         <span className="text-[16px] text-kallo-text">{t('portion')}</span>
         {menu ? (

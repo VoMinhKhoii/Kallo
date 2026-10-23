@@ -6,6 +6,7 @@ import { AppShellSkeleton } from '@/components/app/shell/app-shell-skeleton';
 import { EntitlementLifecycleSync } from '@/components/billing/activation/entitlement-lifecycle-sync';
 import { PremiumGuardProvider } from '@/components/billing/premium-guard-provider';
 import { AiConsentProvider } from '@/components/privacy/ai-consent-provider';
+import { AppThemeProvider } from '@/components/providers/theme/app-theme-provider';
 import { getMyPublicProfile } from '@/lib/actions/groups/profile';
 import { isAdminEmail } from '@/lib/admin/authz/is-admin';
 import { getBillingConfig } from '@/lib/domain/billing/billing';
@@ -39,9 +40,11 @@ interface AppLayoutProps {
  */
 export default function AppLayout({ children }: Readonly<AppLayoutProps>) {
   return (
-    <Suspense fallback={<AppShellSkeleton />}>
-      <SessionAppShell>{children}</SessionAppShell>
-    </Suspense>
+    <AppThemeProvider>
+      <Suspense fallback={<AppShellSkeleton />}>
+        <SessionAppShell>{children}</SessionAppShell>
+      </Suspense>
+    </AppThemeProvider>
   );
 }
 

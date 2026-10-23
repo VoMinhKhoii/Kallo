@@ -24,7 +24,7 @@ export function OnboardingCard({
   const progress = (stepsCompleted / totalSteps) * 100;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-kallo-border/40 bg-[#FFFCF8] p-6 shadow-sm transition-all hover:shadow-md">
+    <div className="relative overflow-hidden rounded-2xl border border-kallo-border/40 bg-card p-6 shadow-sm transition-all hover:shadow-md">
       <div className="absolute top-0 left-0 h-1 w-full bg-kallo-hover">
         <div
           className="h-full bg-kallo-accent transition-all duration-500 ease-out"
@@ -59,7 +59,7 @@ export function OnboardingCard({
         <div className="flex-shrink-0">
           <Link
             href="/onboarding"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-kallo-ink px-6 font-medium font-sans-display text-[#FFFCF8] text-sm transition-colors hover:bg-kallo-ink-hover"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-kallo-ink px-6 font-medium font-sans-display text-kallo-surface text-sm transition-colors hover:bg-kallo-ink-hover"
           >
             Tiếp tục thiết lập
             <ArrowRight className="h-4 w-4" />

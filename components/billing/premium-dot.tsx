@@ -14,7 +14,7 @@ export function PremiumDot({ className }: { className?: string }) {
       aria-hidden
       data-premium-dot=""
       className={cn(
-        'pointer-events-none absolute -top-[3px] -right-[3px] size-[7px] rounded-full bg-kallo-premium-dot ring-2 ring-white',
+        'pointer-events-none absolute -top-[3px] -right-[3px] size-[7px] rounded-full bg-kallo-premium-dot ring-2 ring-card',
         className
       )}
     />

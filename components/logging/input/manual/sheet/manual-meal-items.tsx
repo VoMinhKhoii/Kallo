@@ -43,7 +43,7 @@ export function ManualMealItems({
           <p className="mx-1 mt-4 mb-2 text-[14px] text-kallo-text-muted">
             {t('ingredientCount', { count: items.length })}
           </p>
-          <div className="rounded-[22px] bg-white px-4">
+          <div className="rounded-[22px] bg-card px-4">
             {items.map((item, index) => {
               const grams = `${formatGrams(item.grams)} g`;
               return (
@@ -72,7 +72,7 @@ export function ManualMealItems({
         type="button"
         disabled={!onAdd || full}
         onClick={onAdd}
-        className="mt-3 flex min-h-[52px] w-full items-center gap-3 rounded-[22px] bg-white px-4 py-2 text-left text-[16px] text-kallo-text transition-colors hover:bg-kallo-hover/40 disabled:opacity-60"
+        className="mt-3 flex min-h-[52px] w-full items-center gap-3 rounded-[22px] bg-card px-4 py-2 text-left text-[16px] text-kallo-text transition-colors hover:bg-kallo-hover/40 disabled:opacity-60"
       >
         <Plus aria-hidden className="size-6 shrink-0" strokeWidth={1.5} />
         <span className="flex flex-col">

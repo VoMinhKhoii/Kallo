@@ -104,7 +104,7 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
   };
 
   return (
-    <div className="rounded-2xl border border-kallo-border/60 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-sm">
       <div className="flex items-center gap-2">
         <ProfileAvatar
           avatarUrl={invite.from.avatarUrl}

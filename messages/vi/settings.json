@@ -15,6 +15,14 @@
   },
   "language": "Ngôn ngữ",
   "languageHint": "Thay đổi ngôn ngữ ứng dụng",
+  "appearance": {
+    "label": "Giao diện",
+    "hint": "Sáng, tối, hoặc theo thiết bị",
+    "system": "Theo hệ thống",
+    "light": "Sáng",
+    "dark": "Tối",
+    "aurora": "Aurora"
+  },
   "anchorNav": {
     "label": "Trong trang này",
     "profile": "Hồ sơ",

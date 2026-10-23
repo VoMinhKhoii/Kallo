@@ -28,7 +28,7 @@ export function OptionStrip({ options, value, onChange }: OptionStripProps) {
           className={cn(
             'flex flex-1 flex-col items-center rounded-lg py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40',
             value === opt.value
-              ? 'bg-white text-kallo-text shadow-sm'
+              ? 'bg-kallo-thumb text-kallo-text shadow-sm'
               : 'text-kallo-text-muted hover:text-kallo-text'
           )}
         >

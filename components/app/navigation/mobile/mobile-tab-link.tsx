@@ -41,7 +41,7 @@ export function MobileTabLink({
           {badged && (
             <span
               aria-hidden="true"
-              className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-kallo-accent ring-2 ring-white"
+              className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-kallo-accent ring-2 ring-card"
             />
           )}
         </span>

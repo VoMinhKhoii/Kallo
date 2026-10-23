@@ -69,7 +69,7 @@ export function MobileAccountSheet({
         onClose={close}
       />
       <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-4 pb-[max(env(safe-area-inset-bottom),1rem)]">
-        <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3">
+        <div className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3">
           <ProfileAvatar
             avatarUrl={user.avatarUrl}
             label={label}
@@ -101,7 +101,7 @@ export function MobileAccountSheet({
           />
         ) : null}
 
-        <ul className="divide-y divide-kallo-border/70 overflow-hidden rounded-2xl bg-white">
+        <ul className="divide-y divide-kallo-border/70 overflow-hidden rounded-2xl bg-card">
           <AccountSheetRow
             href="/settings"
             icon={<Settings className="size-[18px]" aria-hidden="true" />}
@@ -118,7 +118,7 @@ export function MobileAccountSheet({
           ) : null}
         </ul>
 
-        <div className="overflow-hidden rounded-2xl bg-white">
+        <div className="overflow-hidden rounded-2xl bg-card">
           <button
             type="button"
             onClick={signOut}

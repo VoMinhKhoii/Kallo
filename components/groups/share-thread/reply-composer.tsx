@@ -134,7 +134,7 @@ export function ReplyComposer({
             because at 24 the arrow filled too much of the disc. */}
         <button
           aria-label={t('send')}
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-kallo-btn text-white transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30 active:scale-95 disabled:opacity-50"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-kallo-btn text-kallo-btn-ink transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30 active:scale-95 disabled:opacity-50"
           disabled={createReply.isPending || !hasDraft}
           type="submit"
         >

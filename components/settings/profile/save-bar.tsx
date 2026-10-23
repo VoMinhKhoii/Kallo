@@ -39,7 +39,7 @@ export function SaveBar({
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 -top-8 bottom-0 bg-gradient-to-t from-55% from-kallo-surface to-transparent"
           />
-          <div className="relative flex items-center justify-end gap-3 rounded-2xl border border-kallo-border bg-white/95 px-5 py-3.5 shadow-lg backdrop-blur-sm sm:px-6 sm:py-4">
+          <div className="relative flex items-center justify-end gap-3 rounded-2xl border border-kallo-border bg-card/95 px-5 py-3.5 shadow-lg backdrop-blur-sm sm:px-6 sm:py-4">
             <button
               type="button"
               onClick={onCancel}
@@ -51,7 +51,7 @@ export function SaveBar({
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center gap-2 rounded-xl bg-kallo-btn px-5 py-2.5 font-medium text-[14px] text-white shadow-sm transition-all hover:bg-kallo-btn/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-kallo-btn px-5 py-2.5 font-medium text-[14px] text-kallo-btn-ink shadow-sm transition-all hover:bg-kallo-btn/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60 disabled:opacity-50"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {pendingTarget !== null

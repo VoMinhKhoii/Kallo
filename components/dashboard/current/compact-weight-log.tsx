@@ -142,7 +142,7 @@ export function CompactWeightLog({
           type="submit"
           disabled={logWeightMutation.isPending}
           aria-busy={logWeightMutation.isPending}
-          className="bg-kallo-btn text-white hover:bg-kallo-btn-hover"
+          className="bg-kallo-btn text-kallo-btn-ink hover:bg-kallo-btn-hover"
         >
           {logWeightMutation.isPending
             ? t('saving')

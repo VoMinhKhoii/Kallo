@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
+import { LightOnly } from '@/components/providers/theme/light-only';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
@@ -44,6 +45,7 @@ export default function NotFound() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-16">
+      <LightOnly />
       <div className="w-full max-w-md text-center">
         <SurfaceState
           action={

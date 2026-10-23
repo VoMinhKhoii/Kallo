@@ -11,7 +11,7 @@ export default function SettingsLoading() {
         {[0, 1, 2].map((row) => (
           <div
             key={row}
-            className="flex items-center justify-between gap-4 rounded-2xl border border-kallo-border/60 bg-white px-4 py-4"
+            className="flex items-center justify-between gap-4 rounded-2xl border border-kallo-border/60 bg-card px-4 py-4"
           >
             <div className="flex-1 space-y-2">
               <div className="h-3.5 w-32 rounded-full bg-kallo-track" />

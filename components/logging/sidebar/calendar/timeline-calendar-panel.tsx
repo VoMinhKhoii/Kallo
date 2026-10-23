@@ -158,7 +158,7 @@ export function TimelineCalendarPanel({
 }
 
 const NAV_BUTTON =
-  'flex size-9 items-center justify-center rounded-xl border border-kallo-border bg-white text-kallo-text-soft transition-colors hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent aria-disabled:pointer-events-none aria-disabled:opacity-40';
+  'flex size-9 items-center justify-center rounded-xl border border-kallo-border bg-card text-kallo-text-soft transition-colors hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent aria-disabled:pointer-events-none aria-disabled:opacity-40';
 
 /**
  * Replaces the shared calendar's keys wholesale (DayPicker takes the object

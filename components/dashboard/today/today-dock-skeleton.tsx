@@ -30,7 +30,7 @@ export function TodayDockSkeleton() {
       <div className="mb-2 h-[25px] w-36 rounded-full bg-kallo-track" />
       {/* Three rows at a real row's height (~108px: name, kcal, composition
           bar, macros) — a typical day, so the list usually lands in place. */}
-      <div className="divide-y divide-kallo-border/50 rounded-2xl bg-white px-4">
+      <div className="divide-y divide-kallo-border/50 rounded-2xl bg-card px-4">
         {[0, 1, 2].map((row) => (
           <div
             key={row}

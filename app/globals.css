@@ -2,7 +2,9 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* Both dark themes (Graphite `.dark` and `.aurora`) turn on the `dark:`
+   variant — see lib/core/theme/themes.ts. */
+@custom-variant dark (&:is(.dark *, .aurora *));
 /* Inside the app shell while a text field has focus — on a phone, the
    on-screen keyboard is up. The mobile tab bar steps aside then. */
 @custom-variant typing ([data-app-shell]:has(
@@ -155,7 +157,9 @@
   --color-kallo-gold-deep: var(--kallo-gold-deep);
   --color-kallo-gold-edge: var(--kallo-gold-edge);
   --color-kallo-gold-wash: var(--kallo-gold-wash);
+  --color-kallo-ink-fixed: var(--kallo-ink-fixed);
   --color-kallo-segment: var(--kallo-segment);
+  --color-kallo-thumb: var(--kallo-thumb);
   --color-kallo-premium-fill: var(--kallo-premium-fill);
   --color-kallo-premium-edge: var(--kallo-premium-edge);
   --color-kallo-premium-ink: var(--kallo-premium-ink);
@@ -166,6 +170,10 @@
   --color-kallo-track: var(--kallo-track);
   --color-kallo-stone: var(--kallo-stone);
   --color-kallo-btn: var(--kallo-btn);
+  --color-kallo-btn-ink: var(--kallo-btn-ink);
+  --color-kallo-umber-text: var(--kallo-umber-text);
+  --color-kallo-bubble: var(--kallo-bubble);
+  --color-kallo-bubble-ink: var(--kallo-bubble-ink);
   --color-kallo-mention: var(--kallo-mention);
   --color-kallo-btn-hover: var(--kallo-btn-hover);
   --color-kallo-macro-protein: var(--kallo-macro-protein);
@@ -262,8 +270,13 @@
   --kallo-gold-deep: #edbf2f;
   --kallo-gold-edge: #e2a81c;
   --kallo-gold-wash: #fffbea;
-  /* The segmented period switch's track (white thumb on it). */
+  /* Ink that stays ink in every theme, for labels on surfaces that do not
+     change with it: the gold Upgrade fill, the camera's lit torch disc. */
+  --kallo-ink-fixed: #141413;
+  /* The segmented period switch's track, and the thumb on any segmented
+     control (white here, the warm selection fill in the dark themes). */
   --kallo-segment: #edece7;
+  --kallo-thumb: #ffffff;
   /* The Premium marker on a locked entry point — the soft blue chip
      (components/billing/premium-chip.tsx) and, on icon-only buttons, its dot
      (premium-dot.tsx). Blue so it reads as a label, not a warning or a price;
@@ -278,6 +291,16 @@
   --kallo-stone: #a8a29e;
   --kallo-btn: #695e4e;
   --kallo-btn-hover: #5a5043;
+  /* The label on a `bg-kallo-btn` fill. White on umber here; cream on the
+     Graphite fill; ink on Aurora's light gradient, where white would vanish. */
+  --kallo-btn-ink: #ffffff;
+  /* The umber as running text or a glyph (the analysis ticker, a link, an
+     outline button). The dark themes swap it for a tone that reads on the
+     page, since their button fill is too dark to be text. */
+  --kallo-umber-text: #695e4e;
+  /* The user's sent meal in the logging thread. */
+  --kallo-bubble: #695e4e;
+  --kallo-bubble-ink: #fcfcfc;
   /* The one deliberate exception to "no default blue": relog mentions in the
      composer. A picked dish is a REFERENCE to stored data, not typed prose, and
      the warm palette has no hue that reads as "this token is not free text"
@@ -327,19 +350,33 @@
   --kallo-brand-lilac: #dcc4ff;
   /* Bar visualization token */
   --kallo-bar-miss: #d4c9ad;
+  /* The page glow behind the app — Aurora's only (see .aurora below). */
+  --kallo-glow: none;
+  /* The portion battery's own seat (components/groups/share-meal). */
+  --kallo-seat-self: #141413;
 }
 
-.dark {
-  /* shadcn semantic tokens — dark, same warm re-pointing as :root.
-     Cards/popovers elevate to a slightly lighter warm brown, never gray. */
+/* ---------- Dark themes ----------
+   Two of them, picked in Settings → Appearance (lib/core/theme/themes.ts):
+   `.dark` is Graphite — a near-black neutral page with lighter cards, the
+   light theme's neutral-canvas logic turned over, warmth kept to the tan ring
+   and the warm selection / button fills. `.aurora` starts from Graphite and
+   overrides it below: a plum-neutral page under the brand's apricot + lilac
+   glow, the brand sweep on the primary button, a see-through sidebar.
+   Every text token clears WCAG AA (4.5:1) on both the page and the card. */
+.dark,
+.aurora {
+  color-scheme: dark;
+  /* shadcn semantic tokens. Cards sit one step above the page, popovers and
+     dialogs one step above the cards — elevation by lightness, iOS-style. */
   --background: var(--kallo-surface);
   --foreground: var(--kallo-text);
-  --card: #251f15;
+  --card: #1a1a18;
   --card-foreground: var(--kallo-text);
-  --popover: #251f15;
+  --popover: #232321;
   --popover-foreground: var(--kallo-text);
-  --primary: var(--kallo-btn); /* in dark, the accent becomes the CTA */
-  --primary-foreground: var(--kallo-surface);
+  --primary: var(--kallo-btn);
+  --primary-foreground: var(--kallo-btn-ink);
   --secondary: var(--kallo-track);
   --secondary-foreground: var(--kallo-text);
   --muted: var(--kallo-track);
@@ -355,57 +392,152 @@
   --chart-3: var(--kallo-stone);
   --chart-4: var(--kallo-success);
   --chart-5: var(--kallo-danger);
-  --sidebar: #251f15;
+  --sidebar: #161615;
   --sidebar-foreground: var(--kallo-text);
   --sidebar-primary: var(--kallo-btn);
-  --sidebar-primary-foreground: var(--kallo-surface);
+  --sidebar-primary-foreground: var(--kallo-btn-ink);
   --sidebar-accent: var(--kallo-hover);
   --sidebar-accent-foreground: var(--kallo-text);
-  --sidebar-border: var(--kallo-border);
+  --sidebar-border: #262624;
   --sidebar-ring: var(--kallo-accent);
-  /* Kallo warm palette — dark mode */
-  --kallo-surface: #1c1810;
-  --kallo-text: #f5f0e8;
-  --kallo-text-muted: #b8a88e;
-  --kallo-text-soft: #cbbda6;
-  --kallo-ink: #f5f0e8; /* ink flips with text in dark */
-  --kallo-ink-hover: #e5ddce;
+  /* Kallo palette — Graphite */
+  --kallo-surface: #0f0f0e;
+  --kallo-text: #f2f1ec;
+  --kallo-text-muted: #93918a;
+  --kallo-text-soft: #d9d7d0;
+  --kallo-ink: #f2f1ec; /* ink as a surface flips to cream */
+  --kallo-ink-hover: #dcdad3;
   --kallo-accent: #c9a87c;
   --kallo-accent-hover: #d4b88c;
-  --kallo-border: #3d3529;
-  --kallo-hover: #2a2418;
-  --kallo-track: #2a2418;
+  --kallo-gold-wash: #2a2410;
+  --kallo-segment: #1f1f1d;
+  --kallo-thumb: #3d352b;
+  --kallo-premium-fill: #16213a;
+  --kallo-premium-edge: #3b5a9a;
+  --kallo-premium-ink: #9db8f5;
+  --kallo-premium-dot: #6c93f0;
+  --kallo-border: #2c2b28;
+  /* Selection, the sent-message bubble and hover washes: a warm fill bright
+     enough to find at a glance (owner, 2026-10-22). The primary button is the
+     same family one step brighter, so the action still reads first. */
+  --kallo-hover: #3d352b;
+  --kallo-track: #2a2a27;
   --kallo-stone: #8a8580;
-  --kallo-mention: #7ab3ea;
-  --kallo-btn: #c9a87c;
-  --kallo-btn-hover: #d4b88c;
-  --kallo-macro-protein: #d46a86;
-  --kallo-macro-carbs: #e09c84;
-  --kallo-macro-fat: #e8c55c;
-  /* Chart pigments carry over unchanged: all three are mid-tone enough to hold
-     against the dark card (#251f15) without the light-mode values washing out. */
-  --kallo-chart-protein: var(--kallo-macro-protein);
-  --kallo-chart-carbs: var(--kallo-macro-carbs);
-  --kallo-chart-fat: var(--kallo-macro-fat);
-  --kallo-chart-muted: #4a4336;
+  --kallo-btn: #524636;
+  --kallo-btn-hover: #5e513f;
+  --kallo-btn-ink: #f2f1ec;
+  --kallo-umber-text: #c9a87c;
+  --kallo-bubble: #3d352b;
+  --kallo-bubble-ink: #f2f1ec;
+  --kallo-mention: #6fa8f0;
+  /* Macros lifted a step so they hold their hue on near-black. */
+  --kallo-macro-protein: #e07c96;
+  --kallo-macro-carbs: #e7a68d;
+  --kallo-macro-fat: #eacb66;
+  --kallo-chart-muted: #3a3936;
   /* Semantic status tokens */
-  --kallo-success: #7faf6a;
-  --kallo-success-faint: #16281f;
-  --kallo-success-border: rgba(52, 200, 145, 0.28);
-  --kallo-success-accent: #34c891;
-  --kallo-success-dark: #34c891;
+  --kallo-success: #6fa35c;
+  --kallo-success-faint: #13261c;
+  --kallo-success-border: rgba(79, 200, 145, 0.22);
+  --kallo-success-accent: #4fc892;
+  --kallo-success-dark: #4fc892;
   --kallo-danger: #e08878;
-  --kallo-error: #ef4444;
+  --kallo-error: #ff6a5f;
   /* Heatmap gradient tokens */
-  --kallo-heatmap-on-target: #7faf6a;
-  --kallo-heatmap-close: #9bbe8a;
-  --kallo-heatmap-slight: #c4b99d;
-  --kallo-heatmap-moderate: #cf8b76;
-  --kallo-heatmap-far: #e08878;
+  --kallo-heatmap-on-target: #6fa35c;
+  --kallo-heatmap-close: #4c6b42;
+  --kallo-heatmap-slight: #5a5344;
+  --kallo-heatmap-moderate: #b9786a;
+  --kallo-heatmap-far: #c9735f;
   /* Cheat-day base — the opaque ground the aurora wash is mixed into */
-  --kallo-cheat-fill: #4a3f2e;
+  --kallo-cheat-fill: #3a3140;
   /* Bar visualization token */
-  --kallo-bar-miss: #6b6054;
+  --kallo-bar-miss: #4a4336;
+  /* No glow on Graphite; Aurora sets one. */
+  --kallo-glow: none;
+  --kallo-seat-self: #6b6963;
+}
+
+.aurora {
+  --card: #1e1b1f;
+  --popover: #272328;
+  --sidebar: rgba(30, 27, 31, 0.66);
+  --sidebar-border: rgba(255, 255, 255, 0.07);
+  --kallo-surface: #131114;
+  --kallo-text: #f4f0ec;
+  --kallo-text-muted: #9c959c;
+  --kallo-text-soft: #dcd6d8;
+  --kallo-ink: #f4f0ec;
+  --kallo-ink-hover: #e2dcd8;
+  --kallo-border: #332e34;
+  --kallo-hover: #2c272d;
+  --kallo-track: #2c282d;
+  --kallo-segment: #1e1b1f;
+  --kallo-thumb: #3b353c;
+  /* The flat stand-in for the brand sweep (the button paints the gradient
+     itself, below); ink on it, never white. */
+  --kallo-btn: #ecc9c3;
+  --kallo-btn-hover: #f2d6cf;
+  --kallo-btn-ink: #141413;
+  --kallo-umber-text: #e7c4b2;
+  --kallo-bubble: #2c272d;
+  --kallo-bubble-ink: #f4f0ec;
+  --kallo-chart-muted: #3b353c;
+  --kallo-heatmap-slight: #5b5246;
+  --kallo-bar-miss: #4a4049;
+  /* The brand aurora — the onboarding sweep's two hues — lit from the top
+     corners of every app page. */
+  --kallo-glow:
+    radial-gradient(
+      50% 75% at 12% 0%,
+      rgba(255, 210, 176, 0.3),
+      rgba(255, 210, 176, 0) 70%
+    ),
+    radial-gradient(
+      45% 70% at 88% 0%,
+      rgba(220, 196, 255, 0.26),
+      rgba(220, 196, 255, 0) 70%
+    );
+}
+
+/* Aurora's primary action wears the brand sweep, as the tab bar's "+" does.
+   Only on something you can press and only while it is enabled: a disabled
+   button falls back to its own disabled fill, and a decorative mark that
+   borrows the button colour (the vessel-tape needle) stays flat. The `md:`
+   form covers buttons that only fill from tablet width up. */
+.aurora
+:is(button, a, [role="button"]):not(:disabled, [aria-disabled="true"]):is(
+  [data-slot="button"].bg-primary,
+  .bg-kallo-btn
+) {
+  background-image: linear-gradient(
+    135deg,
+    var(--kallo-brand-apricot),
+    var(--kallo-brand-lilac)
+  );
+}
+/* The sweep sits above the hover background colour, so hover lifts the
+   sweep itself instead. */
+.aurora
+:is(button, a, [role="button"]):not(:disabled, [aria-disabled="true"]):is(
+  [data-slot="button"].bg-primary,
+  .bg-kallo-btn,
+  .md\:bg-kallo-btn
+):hover {
+  filter: brightness(1.06);
+}
+@media (width >= 48rem) {
+  .aurora
+    :is(button, a, [role="button"]):not(
+      :disabled,
+      [aria-disabled="true"]
+    ).md\:bg-kallo-btn {
+    background-image: linear-gradient(
+      135deg,
+      var(--kallo-brand-apricot),
+      var(--kallo-brand-lilac)
+    );
+  }
 }
 
 @layer base {
@@ -559,5 +691,36 @@ svg.lucide {
   body:has([data-mobile-tab-bar])
     [data-sonner-toaster][data-y-position="bottom"] {
     bottom: calc(max(env(safe-area-inset-bottom), 0.5rem) + 5rem);
+  }
+}
+
+/* Aurora's glow, lit behind the whole app shell from its top corners. Every
+   other theme sets --kallo-glow to none, so this paints nothing there. */
+[data-app-shell] {
+  background-image: var(--kallo-glow);
+  background-repeat: no-repeat;
+  background-size: 100% 760px;
+}
+
+/* On a phone the desktop glow reaches halfway down the screen. Phones get the
+   iOS app's: two small corner lights, gone by about 190px, the top's middle
+   left dark. */
+@media (max-width: 767.98px) {
+  .aurora {
+    --kallo-glow:
+      radial-gradient(
+        80% 60% at 0% 0%,
+        rgba(255, 210, 176, 0.3),
+        rgba(255, 210, 176, 0) 70%
+      ),
+      radial-gradient(
+        80% 60% at 100% 0%,
+        rgba(220, 196, 255, 0.27),
+        rgba(220, 196, 255, 0) 70%
+      );
+  }
+
+  [data-app-shell] {
+    background-size: 100% 460px;
   }
 }

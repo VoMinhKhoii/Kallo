@@ -90,7 +90,7 @@ export default function PricingPage({
       <PricingCheckoutProvider>
         <Header standalone />
         {/* pt-20 clears the fixed header; the cards then centre in what is left. */}
-        <main className="flex min-h-dvh flex-col justify-center bg-kallo-hover pt-20">
+        <main className="flex min-h-dvh flex-col justify-center bg-kallo-hover pt-20 dark:bg-kallo-surface">
           <PricingBackLink />
           <PricingSection titleAs="h1" />
         </main>

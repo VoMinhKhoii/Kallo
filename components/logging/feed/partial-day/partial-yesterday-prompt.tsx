@@ -48,7 +48,7 @@ export function PartialYesterdayPrompt({
       <div className="mx-auto max-w-4xl">
         <div
           role="status"
-          className="flex items-start gap-3 rounded-2xl border border-kallo-border/60 bg-white p-3 sm:p-4"
+          className="flex items-start gap-3 rounded-2xl border border-kallo-border/60 bg-card p-3 sm:p-4"
         >
           <div className="min-w-0 flex-1">
             <p className="font-sans-display text-base text-kallo-danger italic">

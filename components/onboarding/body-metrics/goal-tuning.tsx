@@ -53,8 +53,8 @@ export function GoalTuning({
   );
 
   return (
-    <section className="space-y-4 rounded-[28px] border border-[#EAE7E0] bg-white p-5">
-      <div className="flex flex-col gap-4 border-[#EAE7E0]/80 border-b pb-4 xl:flex-row xl:items-end xl:justify-between">
+    <section className="space-y-4 rounded-[28px] border border-kallo-border bg-card p-5">
+      <div className="flex flex-col gap-4 border-kallo-border/80 border-b pb-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <span className="mb-1 block font-bold text-[11px] text-kallo-stone uppercase tracking-widest">
             {t('bodyMetrics.tdee')}
@@ -77,7 +77,7 @@ export function GoalTuning({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <div className="grid grid-cols-3 rounded-xl bg-[#EAE7E0]/50 p-1">
+                  <div className="grid grid-cols-3 rounded-xl bg-kallo-border/50 p-1">
                     {GOALS.map((g) => (
                       <button
                         key={g}
@@ -88,7 +88,7 @@ export function GoalTuning({
                         }}
                         className={`rounded-lg px-3 py-1.5 font-medium text-[14px] transition-all ${
                           field.value === g
-                            ? 'bg-white text-kallo-text shadow-sm'
+                            ? 'bg-kallo-thumb text-kallo-text shadow-sm'
                             : 'text-[#8B8682] hover:text-kallo-text'
                         }`}
                       >

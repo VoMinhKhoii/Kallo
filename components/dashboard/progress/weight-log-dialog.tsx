@@ -36,7 +36,7 @@ export function WeightLogDialog({
       trigger={
         <Button
           size="xs"
-          className="h-9 shrink-0 gap-1.5 rounded-xl bg-kallo-btn px-3 text-white hover:bg-kallo-btn-hover"
+          className="h-9 shrink-0 gap-1.5 rounded-xl bg-kallo-btn px-3 text-kallo-btn-ink hover:bg-kallo-btn-hover"
         >
           <Plus aria-hidden className="h-4 w-4" />
           {hasTodayWeight ? t('weightCard.update') : t('weightCard.logWeight')}

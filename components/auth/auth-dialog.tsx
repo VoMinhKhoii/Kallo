@@ -121,7 +121,7 @@ export function AuthDialog() {
             }}
             className="fixed top-1/2 left-1/2 z-101 w-[calc(100%-2rem)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 focus:outline-none"
           >
-            <div className="overflow-hidden rounded-2xl border border-kallo-border/40 bg-[#FFFCF8] shadow-[0_25px_60px_-12px_rgba(44,36,22,0.25),0_0_0_1px_rgba(201,168,124,0.08)]">
+            <div className="overflow-hidden rounded-2xl border border-kallo-border/40 bg-card shadow-[0_25px_60px_-12px_rgba(44,36,22,0.25),0_0_0_1px_rgba(201,168,124,0.08)]">
               <AuthDialogHeader title={title} subtitle={subtitle} />
 
               {/* Credentials screen: Google first, then email form. The mode

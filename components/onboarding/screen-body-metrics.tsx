@@ -165,7 +165,7 @@ export function ScreenBodyMetrics({
               targetCalories={targetCalories}
             />
           ) : (
-            <div className="rounded-[28px] border border-[#EAE7E0] border-dashed bg-[#FFFCF8] p-5">
+            <div className="rounded-[28px] border border-kallo-border border-dashed bg-card p-5">
               <p className="font-medium text-[14px] text-kallo-text">
                 Fill the basics to unlock targets.
               </p>

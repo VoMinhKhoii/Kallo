@@ -27,11 +27,11 @@ export function GroupMembersList({ group }: { group: ChatGroupDetail }) {
             className="group/member flex items-center gap-2.5 rounded-xl px-1.5 py-1.5"
           >
             <ProfileAvatar avatarUrl={member.avatarUrl} label={name} />
-            <span className="min-w-0 flex-1 truncate font-sans-display text-[#141413] text-[13.5px]">
+            <span className="min-w-0 flex-1 truncate font-sans-display text-[13.5px] text-kallo-text">
               {name}
             </span>
             {member.role === 'owner' ? (
-              <span className="shrink-0 font-sans-display text-[#6E6D66] text-[11px]">
+              <span className="shrink-0 font-sans-display text-[11px] text-kallo-text-muted">
                 {t('owner')}
               </span>
             ) : (
@@ -41,7 +41,7 @@ export function GroupMembersList({ group }: { group: ChatGroupDetail }) {
                     <button
                       type="button"
                       aria-label={t('removeLabel', { name })}
-                      className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#6E6D66] opacity-0 transition-all hover:bg-kallo-danger/10 hover:text-kallo-danger focus-visible:opacity-100 group-hover/member:opacity-100"
+                      className="flex size-6 shrink-0 items-center justify-center rounded-md text-kallo-text-muted opacity-0 transition-all hover:bg-kallo-danger/10 hover:text-kallo-danger focus-visible:opacity-100 group-hover/member:opacity-100"
                     >
                       <X className="size-3.5" />
                     </button>

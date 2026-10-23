@@ -132,7 +132,7 @@ export function ShareInviteRow({
               onClick={() => setConfirming('accept')}
               disabled={busy}
               aria-busy={accept.isPending}
-              className="inline-flex items-center gap-1.5 rounded-full bg-kallo-text px-4 py-1.5 font-sans-display text-[12px] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
+              className="inline-flex items-center gap-1.5 rounded-full bg-kallo-text px-4 py-1.5 font-sans-display text-[12px] text-kallo-surface transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
             >
               {accept.isPending && (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

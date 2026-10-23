@@ -57,7 +57,7 @@ export function ManualAmountCard({
   const state = food.stateLabel;
 
   return (
-    <section className="overflow-hidden rounded-[22px] bg-white">
+    <section className="overflow-hidden rounded-[22px] bg-card">
       {state && (
         <div className="flex min-h-[52px] items-center justify-between gap-3 px-4">
           <span className="text-[16px] text-kallo-text">{t('weighed')}</span>

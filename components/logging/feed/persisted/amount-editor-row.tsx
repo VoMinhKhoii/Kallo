@@ -48,7 +48,7 @@ export function AmountEditorRow({
               aria-label={t('removeRow', { name: row.name })}
               disabled={row.grams <= MIN_DISH_GRAMS}
               onClick={() => onStep(row.id, -10)}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-white text-kallo-text transition-colors hover:bg-kallo-hover disabled:opacity-40"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-card text-kallo-text transition-colors hover:bg-kallo-hover disabled:opacity-40"
             >
               <Minus className="h-2.5 w-2.5" />
             </button>
@@ -59,7 +59,7 @@ export function AmountEditorRow({
             <button
               type="button"
               onClick={() => onStep(row.id, 10)}
-              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-white text-kallo-text transition-colors hover:bg-kallo-hover"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-kallo-border bg-card text-kallo-text transition-colors hover:bg-kallo-hover"
             >
               <Plus className="h-2.5 w-2.5" />
             </button>

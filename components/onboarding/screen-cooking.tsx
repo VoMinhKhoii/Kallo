@@ -58,7 +58,7 @@ function OptionStrip({
           className={cn(
             'flex min-w-0 flex-col items-center rounded-lg px-2 py-2.5 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30',
             value === opt.value
-              ? 'bg-white text-kallo-text shadow-sm'
+              ? 'bg-kallo-thumb text-kallo-text shadow-sm'
               : 'text-[#8B8682] hover:text-kallo-text'
           )}
         >
@@ -123,7 +123,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             control={form.control}
             name="oilUsage"
             render={({ field }) => (
-              <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
+              <FormItem className="rounded-[24px] border border-kallo-border bg-card p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[13px] text-kallo-text">
                   {t('cooking.oilUsage')}
                 </FormLabel>
@@ -162,7 +162,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             control={form.control}
             name="defaultRicePortion"
             render={({ field }) => (
-              <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
+              <FormItem className="rounded-[24px] border border-kallo-border bg-card p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[13px] text-kallo-text">
                   {t('cooking.ricePortion')}
                 </FormLabel>
@@ -201,7 +201,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             control={form.control}
             name="defaultProteinPortion"
             render={({ field }) => (
-              <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
+              <FormItem className="rounded-[24px] border border-kallo-border bg-card p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[13px] text-kallo-text">
                   {t('cooking.proteinPortion')}
                 </FormLabel>
@@ -240,7 +240,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             control={form.control}
             name="brothConsumption"
             render={({ field }) => (
-              <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
+              <FormItem className="rounded-[24px] border border-kallo-border bg-card p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[13px] text-kallo-text">
                   {t('cooking.broth')}
                 </FormLabel>

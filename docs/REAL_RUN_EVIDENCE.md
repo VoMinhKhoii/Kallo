@@ -55,7 +55,9 @@ facebook/fb/idb-companion`) to tap and type.
    - shows an image that did not load.
 
    Options: `--signed-out` for public pages, `--width phone` for one width,
-   `--full-page` for the whole scroll height, `--base-url` for another server.
+   `--full-page` for the whole scroll height, `--base-url` for another server,
+   `--theme dark` (or `aurora`, `light`) to set Settings → Appearance first —
+   a change to colours or surfaces runs once per theme.
 
 3. A failure that also happens on main is not this PR's: confirm it on main,
    pass it with `--allow '<text from the issue>'`, and name it under Evidence as

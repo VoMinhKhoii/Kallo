@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { SubscriptionSettings } from '@/components/billing/subscription/subscription-settings';
 import { AccountPanel } from '@/components/settings/account/account-panel';
+import { AppearanceRow } from '@/components/settings/appearance/appearance-row';
 import { SettingsAnchorNav } from '@/components/settings/chrome/anchor-nav';
 import { SettingsGroup } from '@/components/settings/chrome/group';
 import { SectionHeader } from '@/components/settings/chrome/section-header';
@@ -70,8 +71,11 @@ export default async function SettingsPage({
             />
             <SettingsGroup>
               <IdentityRows />
+              {/* A device setting, not a profile one: reachable before the
+                  profile exists, since the theme already applies. */}
+              <AppearanceRow />
             </SettingsGroup>
-            <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-kallo-border bg-white px-4 py-12 text-center">
+            <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-kallo-border bg-card px-4 py-12 text-center">
               <h2 className="font-serif text-kallo-text text-lg">
                 {tProfile('emptyTitle')}
               </h2>
@@ -80,7 +84,7 @@ export default async function SettingsPage({
               </p>
               <Link
                 href="/onboarding"
-                className="rounded-lg bg-kallo-btn px-4 py-2 font-medium text-sm text-white"
+                className="rounded-lg bg-kallo-btn px-4 py-2 font-medium text-kallo-btn-ink text-sm"
               >
                 {tProfile('startSetup')}
               </Link>
@@ -99,7 +103,7 @@ export default async function SettingsPage({
               <h2 className="font-normal font-serif text-kallo-text text-xl tracking-tight">
                 {tBilling('title')}
               </h2>
-              <p className="mt-1 text-[#7B6F62] text-[14px]">
+              <p className="mt-1 text-[#7B6F62] text-[14px] dark:text-kallo-text-muted">
                 {tBilling('description')}
               </p>
             </div>

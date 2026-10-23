@@ -113,21 +113,21 @@ export function ThreadFeed({
           <>
             {days.map((day) => (
               <section key={day.key}>
-                <h2 className="flex items-center gap-2.5 px-1 pt-2 pb-2 font-sans-display text-[15px] text-kallo-text-muted md:px-4 md:pt-5 md:pb-3 md:text-[#6E6D66] md:text-[11px]">
-                  <span className="hidden h-px flex-1 bg-[#E8E6DC] md:block" />
+                <h2 className="flex items-center gap-2.5 px-1 pt-2 pb-2 font-sans-display text-[15px] text-kallo-text-muted md:px-4 md:pt-5 md:pb-3 md:text-[11px] md:text-kallo-text-muted">
+                  <span className="hidden h-px flex-1 bg-kallo-border md:block" />
                   {threadDayLabel(
                     day.timestamp,
                     locale,
                     t('todayLabel'),
                     t('yesterdayLabel')
                   )}
-                  <span className="hidden h-px flex-1 bg-[#E8E6DC] md:block" />
+                  <span className="hidden h-px flex-1 bg-kallo-border md:block" />
                 </h2>
-                <div className="overflow-hidden rounded-2xl bg-white md:rounded-none md:bg-transparent">
+                <div className="overflow-hidden rounded-2xl bg-card md:rounded-none md:bg-transparent">
                   {day.items.map((entry) => (
                     <div
                       key={entry.id}
-                      className="border-[#E8E6DC] border-b p-4 last:border-b-0"
+                      className="border-kallo-border border-b p-4 last:border-b-0"
                     >
                       {entry.content}
                     </div>
@@ -136,7 +136,7 @@ export function ThreadFeed({
               </section>
             ))}
             {isFetchingNextPage && (
-              <p className="py-2 text-center font-sans-display text-[#6E6D66] text-[11px]">
+              <p className="py-2 text-center font-sans-display text-[11px] text-kallo-text-muted">
                 {t('loadingMore')}
               </p>
             )}

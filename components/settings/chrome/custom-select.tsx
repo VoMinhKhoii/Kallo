@@ -50,7 +50,7 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[14px] text-kallo-text transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 ${
+        className={`flex w-full items-center justify-between rounded-lg border bg-card px-3 py-2 text-[14px] text-kallo-text transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 ${
           isOpen
             ? 'border-kallo-accent shadow-sm ring-1 ring-kallo-accent/20'
             : 'border-kallo-border hover:border-kallo-accent/50'
@@ -68,7 +68,7 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -5, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute top-full right-0 left-0 z-[120] mt-1.5 overflow-hidden rounded-xl border border-kallo-border bg-white py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
+            className="absolute top-full right-0 left-0 z-[120] mt-1.5 overflow-hidden rounded-xl border border-kallo-border bg-card py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
           >
             {options.map((opt) => (
               <button

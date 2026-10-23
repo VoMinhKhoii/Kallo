@@ -28,7 +28,7 @@ export function AnalysisStageBanner({
       aria-live="polite"
       aria-atomic="true"
     >
-      <div className="rounded-2xl border border-kallo-border/30 bg-white p-4">
+      <div className="rounded-2xl border border-kallo-border/30 bg-card p-4">
         <div className="flex items-center gap-2.5">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-kallo-accent border-t-transparent" />
           <span className="font-medium text-kallo-text-muted text-sm">
@@ -41,7 +41,7 @@ export function AnalysisStageBanner({
             {items.map((item) => (
               <span
                 key={item}
-                className="rounded-full border border-kallo-border bg-white px-2.5 py-0.5 text-kallo-text-muted text-xs"
+                className="rounded-full border border-kallo-border bg-card px-2.5 py-0.5 text-kallo-text-muted text-xs"
               >
                 {item}
               </span>

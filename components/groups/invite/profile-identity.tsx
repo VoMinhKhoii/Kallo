@@ -35,7 +35,7 @@ export function ProfileIdentity({ profile }: { profile: Identity }) {
         avatarUrl={profile.avatarUrl ?? null}
         label={labelFor(profile)}
       />
-      <span className="truncate font-sans-display text-[#141413] text-[14px]">
+      <span className="truncate font-sans-display text-[14px] text-kallo-text">
         {labelFor(profile)}
       </span>
     </div>
