@@ -11,6 +11,8 @@ describe('isPlainRice', () => {
     [['ご飯']],
     [['米饭']],
     [['Bhaat', 'steamed white rice']],
+    [['steamed white rice, Chinese restaurant']],
+    [['instant white rice, prepared']],
     // "rang" (cơm rang) must not match inside "orange"; decomposed
     // Vietnamese still reads.
     [['Cơm trắng', 'Orange County kitchen']],
@@ -70,6 +72,15 @@ describe('riceBowlFor', () => {
     ).toBe(150);
     expect(riceBowlFor({ countryOfOrigin: 'Germany' }).mid).toBe(150);
     expect(riceBowlFor({}).mid).toBe(150);
+  });
+
+  it('reads codes and other spellings of a country', () => {
+    for (const country of ['VN', 'VIET NAM', 'Việt Nam', ' vietnam ']) {
+      expect(riceBowlFor({ countryOfOrigin: country }).mid, country).toBe(120);
+    }
+    expect(riceBowlFor({ countryOfResidence: 'KR' }).mid).toBe(210);
+    expect(riceBowlFor({ countryOfOrigin: 'USA' }).mid).toBe(160);
+    expect(riceBowlFor({ countryOfOrigin: 'Singapore' }).mid).toBe(200);
   });
 
   it('spans a small bowl to a heaped one around the middle', () => {

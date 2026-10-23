@@ -614,6 +614,12 @@ describe('a bowl of plain rice', () => {
     expect(rice(0.5)?.guardG).toEqual({ low: 40, high: 80 });
   });
 
+  it('gives the picker a part bowl, but no small bowl for several', () => {
+    expect(rice(0.5)?.smallBowlG).toBe(60);
+    expect(rice(2)?.smallBowlG).toBeUndefined();
+    expect(rice(0.1)?.smallBowlG).toBeUndefined();
+  });
+
   it('leaves other dishes in a chén on the generic band', () => {
     const che = resolveVesselEnvelope({
       name: 'Chè đậu xanh',

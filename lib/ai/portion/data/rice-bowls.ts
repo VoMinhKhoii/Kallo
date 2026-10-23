@@ -66,14 +66,61 @@ function bandAround(mid: number): GramsBand {
   };
 }
 
+/** Older profiles store codes and other spellings ("VN", "VIET NAM"). */
+const COUNTRY_ALIASES: Record<string, string> = {
+  VN: 'Vietnam',
+  'VIET NAM': 'Vietnam',
+  KR: 'South Korea',
+  KOREA: 'South Korea',
+  'REPUBLIC OF KOREA': 'South Korea',
+  JP: 'Japan',
+  TW: 'Taiwan',
+  CN: 'China',
+  HK: 'Hong Kong',
+  US: 'United States',
+  USA: 'United States',
+  'UNITED STATES OF AMERICA': 'United States',
+  PH: 'Philippines',
+  AU: 'Australia',
+  GB: 'United Kingdom',
+  UK: 'United Kingdom',
+  KH: 'Cambodia',
+  SG: 'Singapore',
+  TH: 'Thailand',
+  MY: 'Malaysia',
+  ID: 'Indonesia',
+  IN: 'India',
+};
+
+/** "Việt Nam", "viet-nam" and "VIET NAM" all read as "VIET NAM". */
+const countryKey = (country: string) =>
+  country
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[^\p{L}]+/gu, ' ')
+    .trim()
+    .toUpperCase();
+
+const RICE_BOWL_BY_KEY = new Map(
+  [
+    ...Object.entries(RICE_BOWL_MID_G),
+    ...Object.entries(COUNTRY_ALIASES).map(
+      ([alias, country]) => [alias, RICE_BOWL_MID_G[country]] as const
+    ),
+  ].map(([country, mid]) => [countryKey(country), mid])
+);
+
+const riceBowlMidOf = (country?: string | null) =>
+  country ? RICE_BOWL_BY_KEY.get(countryKey(country)) : undefined;
+
 /** The user's bowl of rice: country of origin first, then residence. */
 export function riceBowlFor(profile: {
   countryOfOrigin?: string | null;
   countryOfResidence?: string | null;
 }): GramsBand {
   const mid =
-    RICE_BOWL_MID_G[profile.countryOfOrigin ?? ''] ??
-    RICE_BOWL_MID_G[profile.countryOfResidence ?? ''] ??
+    riceBowlMidOf(profile.countryOfOrigin) ??
+    riceBowlMidOf(profile.countryOfResidence) ??
     DEFAULT_RICE_BOWL_MID_G;
   return bandAround(mid);
 }
@@ -124,6 +171,13 @@ const PLAIN_RICE_WORDS = new Set([
   'warm',
   'cold',
   'leftover',
+  // Where it came from: "steamed white rice, Chinese restaurant", "instant
+  // white rice, prepared".
+  'chinese',
+  'restaurant',
+  'takeout',
+  'instant',
+  'prepared',
   // Portion notes Call 1 sometimes leaves in queryEn ("plain cooked white
   // rice, half bowl", "…, second helping"): they never change the food.
   'bowl',

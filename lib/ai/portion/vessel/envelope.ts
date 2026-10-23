@@ -8,6 +8,7 @@ import {
 import type { GramsBand } from '@/lib/ai/portion/types';
 import {
   guardBandG,
+  isSmallBowlG,
   midG,
   normalizeVesselToken,
   resolveVesselFromToken,
@@ -180,7 +181,12 @@ export function resolveVesselEnvelope(
     midG: bowls
       ? Math.round(riceBowl.mid * bowls)
       : midG(resolved.family, tier, dishClass),
-    ...(bowls ? { smallBowlG: riceBowl.mid } : {}),
+    // The picker opens no lower than 60% of its small bowl, so a part bowl
+    // brings its own size; several bowls keep the plain bowl sizes rather
+    // than call two bowls "small".
+    ...(bowls && bowls <= 1 && isSmallBowlG(Math.round(riceBowl.mid * bowls))
+      ? { smallBowlG: Math.round(riceBowl.mid * bowls) }
+      : {}),
   };
 }
 
