@@ -628,6 +628,13 @@ describe('a bowl of plain rice', () => {
       queryEn: 'egg fried rice',
     });
     expect(friedRice?.guardG).toEqual(guardBandG('bowl', 2, 'solid'));
+    const ricePasta = rice(1, 'bowl', {
+      name: 'Rice pasta',
+      rawName: 'Rice pasta',
+      queryEn: 'brown rice pasta, cooked',
+    });
+    expect(ricePasta?.guardG).toEqual(guardBandG('bowl', 2, 'solid'));
+    expect(ricePasta?.smallBowlG).toBeUndefined();
   });
 
   it('leaves rice in a tô, or with other food, on the generic band', () => {

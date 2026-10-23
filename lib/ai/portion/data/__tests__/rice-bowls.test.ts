@@ -11,9 +11,22 @@ describe('isPlainRice', () => {
     [['ご飯']],
     [['米饭']],
     [['Bhaat', 'steamed white rice']],
-    // "rang" must not match inside "orange"; decomposed Vietnamese still reads.
-    [['Rice', 'steamed rice, orange-scented']],
+    // "rang" (cơm rang) must not match inside "orange"; decomposed
+    // Vietnamese still reads.
+    [['Cơm trắng', 'Orange County kitchen']],
     [['Cơm trắng'.normalize('NFD')]],
+    // Portion notes Call 1 leaves in queryEn do not change the food.
+    [['Cơm', 'plain cooked white rice, heaped bowl plus extra half bowl']],
+    [['White rice', 'white rice, cooked, second helping']],
+    // How the food cards write it.
+    [['Rice, white, medium-grain, cooked, enriched']],
+    [['long-grain white rice, cooked without salt, unenriched']],
+    [
+      [
+        'Cơm trắng, hạt trung bình, đã nấu chín',
+        'medium-grain white rice, cooked',
+      ],
+    ],
   ])('plain rice: %j', (names) => {
     expect(isPlainRice(names)).toBe(true);
   });
@@ -31,6 +44,13 @@ describe('isPlainRice', () => {
     [['비빔밥']],
     [['炒米饭']],
     [['Dal bhat']],
+    // An allowlist: any other word makes it another rice food.
+    [['Rice pasta', 'brown rice pasta, cooked']],
+    [['Rice cereal', 'crisped rice cereal']],
+    [['Cơm', 'orange-scented steamed rice']],
+    [['Cơm chiên']],
+    [['Rice and beans', 'rice and black beans']],
+    [['Gạo', 'white rice, raw, cooked from 80g dry rice']],
   ])('not plain rice: %j', (names) => {
     expect(isPlainRice(names)).toBe(false);
   });

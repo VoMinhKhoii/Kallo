@@ -80,6 +80,75 @@ const words = (alternatives: string) =>
   new RegExp(`(?<!\\p{L})(?:${alternatives})(?!\\p{L})`, 'iu');
 
 const RICE_WORD = words('rice');
+/** The only words an English name of plain cooked rice may carry besides
+ *  "rice" — what Call 1's `queryEn` and the food cards write ("steamed white
+ *  rice, cooked"; "long-grain white rice, cooked without salt, unenriched").
+ *  An allowlist, not a blocklist: any other word (pasta, cereal, fried,
+ *  pudding…) makes it a different food, so a new rice product cannot slip in. */
+const PLAIN_RICE_WORDS = new Set([
+  'rice',
+  'white',
+  'brown',
+  'steamed',
+  'cooked',
+  'boiled',
+  'plain',
+  'jasmine',
+  'basmati',
+  'japonica',
+  'calrose',
+  'fragrant',
+  'long',
+  'medium',
+  'short',
+  'grain',
+  'regular',
+  'enriched',
+  'unenriched',
+  'parboiled',
+  'salted',
+  'unsalted',
+  'with',
+  'without',
+  'salt',
+  'added',
+  'no',
+  'of',
+  'a',
+  'broken',
+  'hot',
+  'warm',
+  'cold',
+  'leftover',
+  // Portion notes Call 1 sometimes leaves in queryEn ("plain cooked white
+  // rice, half bowl", "…, second helping"): they never change the food.
+  'bowl',
+  'bowls',
+  'cup',
+  'cups',
+  'box',
+  'serving',
+  'portion',
+  'helping',
+  'half',
+  'third',
+  'thirds',
+  'one',
+  'two',
+  'second',
+  'seconds',
+  'extra',
+  'plus',
+  'heaped',
+  'full',
+  'small',
+  'large',
+  'big',
+  'about',
+  'eaten',
+  'the',
+  'and',
+]);
 /** Local names count only as the WHOLE name: "cơm" is plain rice, but "cơm
  *  gà" is chicken rice and "dal bhat" is lentils with rice. */
 const LOCAL_PLAIN_RICE = new Set(
@@ -104,20 +173,30 @@ const LOCAL_PLAIN_RICE = new Set(
     '米飯',
   ].map((name) => name.normalize('NFC'))
 );
-const NOT_PLAIN_RICE = words(
-  'fried|chiên|rang|congee|porridge|cháo|noodles?|vermicelli|paper|cakes?|crackers?|flour|pudding|milk|wine|vinegar|sticky|glutinous|nếp|risotto|pilaf|pulao|biryani|bran|syrup|puffed|crisps?|raw|uncooked|dry'
-);
+/** Vietnamese words that make a cơm something else, for rows whose English
+ *  name is missing. */
+const NOT_PLAIN_COM = words('chiên|rang|cháo|nếp|xôi');
 
-/** Plain cooked rice, named in any language. Call 1 always writes an English
+/** What one name says: plain rice, another food made with rice, or nothing
+ *  about rice (a name in a script we do not read, a Vietnamese row name). */
+function riceVerdict(name: string): 'plain' | 'other' | null {
+  if (LOCAL_PLAIN_RICE.has(name.toLowerCase())) return 'plain';
+  if (NOT_PLAIN_COM.test(name)) return 'other';
+  if (!RICE_WORD.test(name)) return null;
+  const extra = name
+    .toLowerCase()
+    .split(/[^\p{L}]+/u)
+    .filter((word) => word && !PLAIN_RICE_WORDS.has(word));
+  return extra.length === 0 ? 'plain' : 'other';
+}
+
+/** Plain cooked rice, named in any language: at least one name says plain
+ *  rice and none says another rice food. Call 1 always writes an English
  *  `queryEn` ("steamed white rice, cooked"), so English carries most cases;
  *  the local names cover rows without it. */
 export function isPlainRice(names: Array<string | null | undefined>): boolean {
-  const named = names
+  const verdicts = names
     .filter((name): name is string => !!name)
-    .map((name) => name.normalize('NFC').trim());
-  return (
-    named.some(
-      (name) => RICE_WORD.test(name) || LOCAL_PLAIN_RICE.has(name.toLowerCase())
-    ) && !named.some((name) => NOT_PLAIN_RICE.test(name))
-  );
+    .map((name) => riceVerdict(name.normalize('NFC').trim()));
+  return verdicts.includes('plain') && !verdicts.includes('other');
 }

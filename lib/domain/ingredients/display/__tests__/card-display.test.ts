@@ -253,6 +253,11 @@ describe('cardDisplayFields — vessel', () => {
         })
       )
     ).toEqual({ family: 'bowl', dishClass: 'solid' });
+    expect(
+      withBowl(
+        row('Mì gạo lứt', 'Cereal Grains and Pasta', 'brown rice pasta, cooked')
+      )
+    ).toEqual({ family: 'bowl', dishClass: 'solid' });
   });
 
   it('weighs raw grains, raw produce and oils in grams', () => {
