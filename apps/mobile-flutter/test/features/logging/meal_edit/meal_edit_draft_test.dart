@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/logic/meal_edit/meal_edit_sources.dart';
+import 'package:kallo_mobile/features/logging/logic/meal_utils.dart';
 import 'package:kallo_mobile/models/logging/meal.dart';
 import 'package:kallo_mobile/models/nutrition/vessel.dart';
 
@@ -265,6 +266,26 @@ void main() {
       expect(out.first, same(odd.first)); // no floor, no rounding
       expect(out.last.quantity, 23); // 12.5 + 10, rounded once
       expect(out.last.macros.calories, closeTo(20 * 23 / 12.5, 1e-9));
+    });
+
+    test('stepping back to the staged amount restores it exactly', () {
+      final odd = [item('b', 12.5, 20)];
+      final up = stagedItemsFrom(
+        draftFromStaged(odd, odd).stepAmount('b', 1),
+        odd,
+        'en',
+      );
+      expect(up.single.quantity, 23);
+      // Reopen on the edited card, step Servings back down to 1×.
+      final back = stagedItemsFrom(
+        // 1.84× → 1.5× → 1×.
+        draftFromStaged(up, odd).stepServings('b', -1).stepServings('b', -1),
+        up,
+        'en',
+      );
+      expect(back.single.quantity, 12.5);
+      expect(back.single.macros.calories, 20);
+      expect(deriveQuantityEdits(back, odd), isEmpty);
     });
 
     test('an already-edited item reopens at its current grams', () {

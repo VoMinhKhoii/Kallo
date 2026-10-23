@@ -137,7 +137,12 @@ MealItem _stagedItem(MealItem item, EditDish? dish, String locale) {
   // Untouched dishes come back exactly as they went in — no rounding, no
   // re-derived macros, so they add nothing to the confirm's overrides.
   if (dish == null || dish.grams == item.quantity) return item;
-  final grams = dish.grams.roundToDouble();
+  // Back on the amount as staged (1×, or a round trip of edits): commit the
+  // staged figure itself. Rounding a fractional one — 12.5 g → 13 g — would
+  // leave an override behind that the user had just undone.
+  final staged = dish.originalGrams;
+  final grams =
+      (dish.grams - staged).abs() < 1e-6 ? staged : dish.grams.roundToDouble();
   final t = dish.at(grams).totals;
   final vessel = dish.vessel;
   return item.copyWith(
