@@ -30,26 +30,14 @@ class MacroLegend extends StatelessWidget {
       for (final key in kCompositionKeys)
         if (gramLabels[key] != null) _entry(key, gramLabels[key]!),
     ];
-    // Macros alone (the meal edit sheet): equal columns, the first against
-    // the bar's left end, the last against its right, the middle exactly under
-    // its centre — so the space either side of the middle entry is the same
-    // however wide "P 36g" and "F 6g" are. Distributing by spaceBetween put
-    // the middle entry wherever the widths left it.
+    // Macros alone (the meal edit sheet): three equal columns, each figure
+    // centred in its own, so the space either side of every figure is the
+    // same and their positions never move with the numbers (the owner's
+    // ruling: "left space of P must equal right space of P").
     if (leading == null && trailing == null && entries.length > 1) {
       return Row(
         children: [
-          for (var i = 0; i < entries.length; i++)
-            Expanded(
-              child: Align(
-                alignment:
-                    i == 0
-                        ? AlignmentDirectional.centerStart
-                        : i == entries.length - 1
-                        ? AlignmentDirectional.centerEnd
-                        : Alignment.center,
-                child: entries[i],
-              ),
-            ),
+          for (final entry in entries) Expanded(child: Center(child: entry)),
         ],
       );
     }

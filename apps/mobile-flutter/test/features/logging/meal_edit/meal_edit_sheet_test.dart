@@ -117,21 +117,27 @@ void main() {
     expect(find.text('Size'), findsOneWidget);
     expect(find.text('Medium cut'), findsOneWidget);
 
-    // Under the bar: P at its left end, F at its right, C exactly centred —
-    // with "P 30g" wider than "F 6g", which is what pulled C off centre.
+    // Under the bar: each figure centred in its own third — the space either
+    // side of every figure is equal, whatever its width ("P 30g" against
+    // "F 6g").
     final bar = tester.getRect(find.byType(CompositionBar));
-    double textLeft(String t) => tester.getRect(find.text(t)).left;
-    double textRight(String t) => tester.getRect(find.text(t)).right;
-    expect(tester.getRect(find.byIcon(kMacroIcons['protein']!)).left, bar.left);
-    expect(textRight('F 6g'), moreOrLessEquals(bar.right, epsilon: 0.5));
-    final c = Rect.fromLTRB(
-      tester.getRect(find.byIcon(kMacroIcons['carbohydrate']!)).left,
-      0,
-      textRight('C 4g'),
-      0,
+    double centre(String key, String label) =>
+        (tester.getRect(find.byIcon(kMacroIcons[key]!)).left +
+            tester.getRect(find.text(label)).right) /
+        2;
+    final third = bar.width / 3;
+    expect(
+      centre('protein', 'P 30g'),
+      moreOrLessEquals(bar.left + third / 2, epsilon: 0.5),
     );
-    expect(c.center.dx, moreOrLessEquals(bar.center.dx, epsilon: 0.5));
-    expect(textLeft('P 30g'), greaterThan(bar.left));
+    expect(
+      centre('carbohydrate', 'C 4g'),
+      moreOrLessEquals(bar.center.dx, epsilon: 0.5),
+    );
+    expect(
+      centre('fat', 'F 6g'),
+      moreOrLessEquals(bar.right - third / 2, epsilon: 0.5),
+    );
 
     // The tier name sits against its chevron, not halfway along the row.
     // Measured on the GLYPHS: the Text's own box spans the whole slot, so its
