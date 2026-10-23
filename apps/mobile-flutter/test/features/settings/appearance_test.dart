@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:kallo_mobile/shared/widgets/list/list_row.dart';
 import 'package:kallo_mobile/features/settings/widgets/appearance/appearance_row.dart';
 import 'package:kallo_mobile/theme/kallo_palette.dart';
 import 'package:kallo_mobile/theme/theme_controller.dart';
@@ -31,6 +33,22 @@ void main() {
       for (final label in options) tester.getTopLeft(find.text(label).last).dy,
     ];
     expect(tops, orderedEquals([...tops]..sort()));
+    for (final (label, icon) in [
+      ('Theo hệ thống', LucideIcons.monitor300),
+      ('Sáng', LucideIcons.sun300),
+      ('Tối', LucideIcons.moon300),
+      ('Aurora', LucideIcons.sunset300),
+    ]) {
+      final row = find.ancestor(
+        of: find.text(label).last,
+        matching: find.byType(ListRow),
+      );
+      expect(
+        find.descendant(of: row, matching: find.byIcon(icon)),
+        findsOneWidget,
+        reason: '$label shows its icon',
+      );
+    }
 
     await tester.tap(find.text('Tối'));
     await tester.pumpAndSettle();
