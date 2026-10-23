@@ -4,7 +4,7 @@ import { TodayDockSkeleton } from '@/components/dashboard/today/today-dock-skele
 export default function DashboardLoading() {
   return (
     <main
-      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-kallo-surface/30 font-sans-display xl:overflow-hidden"
+      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-kallo-surface/30 font-sans-display xl:overflow-hidden dark:bg-transparent"
       aria-busy="true"
     >
       <div className="min-h-full px-4 pt-1 pb-6 sm:px-5 sm:py-4 lg:px-8 xl:h-full xl:min-h-0 xl:overflow-hidden xl:py-3 xl:pb-3">

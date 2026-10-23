@@ -87,7 +87,7 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
   );
 
   return (
-    <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-kallo-surface/30 font-sans-display">
+    <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-kallo-surface/30 font-sans-display dark:bg-transparent">
       {/* The xl layout fills the viewport with fr rows; when the viewport is
           too short for the rows' content minimums the page degrades to a
           gentle scroll (main is overflow-y-auto) instead of letting cards
