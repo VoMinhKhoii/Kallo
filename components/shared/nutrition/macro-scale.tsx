@@ -50,13 +50,13 @@ interface MacroScaleProps {
    */
   leading?: ReactNode;
   /**
-   * `edges` (no `leading`): three equal columns — the first figure against the
-   * bar's left end, the last against its right, the middle exactly under its
-   * centre, so the space either side of the middle one is the same however
-   * wide its neighbours are. The meal edit dialog's legend; the owner asked
-   * for it there. Mirrors mobile's `MacroLegend`.
+   * `columns` (no `leading`): three equal columns, each figure centred in its
+   * own, so the space either side of every figure is the same and their
+   * positions never move with the numbers — the owner's ruling for the meal
+   * edit dialog ("left space of P must equal right space of P"). Mirrors
+   * mobile's `MacroLegend`.
    */
-  spread?: 'even' | 'edges';
+  spread?: 'even' | 'columns';
   className?: string;
 }
 
@@ -67,15 +67,15 @@ export function MacroScale({
   className,
 }: MacroScaleProps) {
   const locale = useLocale();
-  const edges = spread === 'edges' && !leading;
+  const columns = spread === 'columns' && !leading;
 
   return (
     <div
       className={cn(
-        edges
-          ? 'grid grid-cols-3 items-center gap-2 [&>*:first-child]:justify-self-start [&>*:last-child]:justify-self-end [&>*]:justify-self-center'
+        columns
+          ? 'grid grid-cols-3 items-center justify-items-center'
           : 'flex items-center gap-2',
-        !edges && (leading ? 'justify-between' : 'justify-evenly'),
+        !columns && (leading ? 'justify-between' : 'justify-evenly'),
         className
       )}
     >

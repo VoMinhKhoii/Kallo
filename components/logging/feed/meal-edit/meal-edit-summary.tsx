@@ -41,7 +41,7 @@ export function MealEditSummary({ totals }: { totals: EditTotals }) {
       {composition.totalKcal > 0 && (
         <CompositionBar segments={composition.segments} variant="compact" />
       )}
-      <MacroScale grams={rounded} spread="edges" className="mt-2" />
+      <MacroScale grams={rounded} spread="columns" className="mt-2" />
     </div>
   );
 }

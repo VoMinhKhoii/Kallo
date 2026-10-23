@@ -39,4 +39,20 @@ describe('MacroScale', () => {
 
     expect(container.firstElementChild).toHaveClass('justify-evenly');
   });
+
+  it('centres each figure in its own third when asked for columns', () => {
+    // The meal edit dialog: equal space either side of every figure, at a
+    // position the numbers never move.
+    const { container } = render(
+      <MacroScale
+        grams={{ protein: 152, carbohydrate: 8, fat: 36 }}
+        spread="columns"
+      />
+    );
+
+    const row = container.firstElementChild;
+    expect(row).toHaveClass('grid', 'grid-cols-3', 'justify-items-center');
+    expect(row).not.toHaveClass('justify-evenly');
+    expect(row?.children).toHaveLength(3);
+  });
 });
