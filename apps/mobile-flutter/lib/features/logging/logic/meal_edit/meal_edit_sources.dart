@@ -42,13 +42,16 @@ EditDish _persistedDish(PersistedMealItemGroup group) {
         fat: i.nutrition.fatG,
       ),
   ];
-  final weighed = group.ingredients.where((i) => i.estimatedGrams != null);
+  final weighed = group.ingredients.where((i) => (i.estimatedGrams ?? 0) > 0);
   // A drink logged in millilitres reads in ml; anything mixed reads in grams.
   final unit =
       weighed.isNotEmpty && weighed.every((i) => i.userFacingUnit == 'ml')
           ? 'ml'
           : 'g';
-  final logged = parts.fold<double>(0, (sum, p) => sum + (p.grams ?? 0));
+  final logged = parts.fold<double>(
+    0,
+    (sum, p) => sum + (p.scales ? p.grams! : 0),
+  );
   // Exactly as logged — no floor applied on the way in, so an untouched sheet
   // saves nothing and shows what the card shows.
   return EditDish(
@@ -83,7 +86,7 @@ EditDish _persistedDish(PersistedMealItemGroup group) {
     if ((ratio - 1).abs() < 1e-9) continue;
     for (final p in before.parts) {
       final grams = p.grams;
-      if (p.id == null || grams == null) continue;
+      if (p.id == null || grams == null || !p.scales) continue;
       // Tenths, not whole grams: a 2 g pinch of salt at 1.5× is 3 g, and at
       // 0.25× it must not round away to nothing (the endpoint wants > 0).
       final rounded = (grams * ratio * 10).round() / 10;

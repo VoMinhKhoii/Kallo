@@ -139,6 +139,20 @@ void main() {
       expect(d.totals.kcal, 250);
     });
 
+    test('a zero-gram row is held like a missing one, preview and save', () {
+      final m = meal([
+        dish(0, [
+          ing('weighed', grams: 100, kcal: 100),
+          ing('zero', grams: 0, kcal: 50),
+        ]),
+      ]);
+      final d = draftFromPersisted(m).stepServings('0', 1).stepServings('0', 1);
+      expect(d.totals.kcal, 250); // the 0 g row's 50 kcal does not double
+      expect(persistedEditFrom(m, d).edits, [
+        {'id': 'weighed', 'newGrams': 200.0},
+      ]);
+    });
+
     test('a dish with no grams at all cannot be stepped', () {
       final d = draftFromPersisted(
         meal([

@@ -40,6 +40,12 @@ class EditPart {
   final double? protein;
   final double? carbs;
   final double? fat;
+
+  /// Whether this part moves with its dish: only a row with a positive weight.
+  /// A null or zero-gram legacy row keeps its nutrition as is — the update
+  /// endpoint leaves non-positive rows untouched, so scaling one here would
+  /// preview a number the save never writes.
+  bool get scales => (grams ?? 0) > 0;
 }
 
 /// The four figures the sheet shows, each null when no part carries it.
@@ -85,7 +91,8 @@ class EditDish {
   final ClientVessel? vessel;
 
   /// The grams as logged: the sum of the parts that have one.
-  double get originalGrams => parts.fold(0, (sum, p) => sum + (p.grams ?? 0));
+  double get originalGrams =>
+      parts.fold(0, (sum, p) => sum + (p.scales ? p.grams! : 0));
 
   /// False for a dish whose parts carry no grams at all — nothing to step.
   bool get scalable => originalGrams > 0;
@@ -143,7 +150,7 @@ EditTotals sumTotals(Iterable<EditDish> dishes) {
   for (final dish in dishes) {
     final ratio = dish.servings;
     for (final part in dish.parts) {
-      final scale = part.grams == null ? 1.0 : ratio;
+      final scale = part.scales ? ratio : 1.0;
       final values = [part.kcal, part.protein, part.carbs, part.fat];
       for (var i = 0; i < 4; i++) {
         final v = values[i];

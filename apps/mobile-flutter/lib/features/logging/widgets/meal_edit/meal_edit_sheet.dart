@@ -7,6 +7,7 @@ import '../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../shared/widgets/sheet/sheet_capsule_button.dart';
 import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/meal_edit/meal_edit_draft.dart';
 import '../../logic/meal_edit/meal_edit_format.dart';
@@ -64,6 +65,27 @@ class _MealEditSheetState extends State<MealEditSheet> {
   late String? _sizeOpen = widget.sizeOpen;
   bool _saving = false;
 
+  /// The dish the sheet was opened onto from its portion line. It may sit
+  /// below the first screenful, so the sheet scrolls it into view once laid
+  /// out — otherwise the user taps "≈ medium bowl" and sees the summary.
+  final GlobalKey _sizeTarget = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sizeOpen == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _sizeTarget.currentContext;
+      if (target == null || !mounted) return;
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0.1,
+        duration: KalloMotion.page,
+        curve: KalloEase.decelerate,
+      );
+    });
+  }
+
   Future<void> _commit() async {
     setState(() => _saving = true);
     try {
@@ -83,75 +105,83 @@ class _MealEditSheetState extends State<MealEditSheet> {
   Widget build(BuildContext context) {
     final locale = localeOf(context);
     final d = _draft;
-    return KalloSheetSurface(
-      // The dishes sit in white grouped cards, so the sheet paints the canvas
-      // and the cards separate by surface, as they do on a page.
-      color: kPage,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.92,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          KalloSheetHeader(
-            title: 'logging.mealEdit.title'.tr(),
-            closeEnabled: !_saving,
-            trailing: SheetCapsuleButton(
-              label: widget.commitLabel,
-              onTap: _saving ? null : _commit,
-            ),
-          ),
-          Flexible(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                KalloSpacing.sp4,
-                KalloSpacing.sp2,
-                KalloSpacing.sp4,
-                MediaQuery.paddingOf(context).bottom + KalloSpacing.sp6,
+    // A save in flight holds the sheet: a drag or a barrier tap mid-request
+    // would throw the edits away if the request then failed.
+    return PopScope(
+      canPop: !_saving,
+      child: KalloSheetSurface(
+        // The dishes sit in white grouped cards, so the sheet paints the canvas
+        // and the cards separate by surface, as they do on a page.
+        color: kPage,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.92,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            KalloSheetHeader(
+              title: 'logging.mealEdit.title'.tr(),
+              closeEnabled: !_saving,
+              trailing: SheetCapsuleButton(
+                label: widget.commitLabel,
+                onTap: _saving ? null : _commit,
               ),
-              child: AbsorbPointer(
-                absorbing: _saving,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    MealEditSummary(totals: d.totals),
-                    const SizedBox(height: KalloSpacing.sp5),
-                    GroupedListCard(
-                      separatorInset: 0,
-                      children: [
-                        MealEditStepperRow(
-                          label: 'logging.mealEdit.wholeMeal'.tr(),
-                          value: formatTimes(d.whole, locale),
-                          minusLabel: 'logging.mealEdit.lessWhole'.tr(),
-                          plusLabel: 'logging.mealEdit.moreWhole'.tr(),
-                          onMinus:
-                              d.whole <= servingStep
-                                  ? null
-                                  : () => _set(d.stepWhole(-1)),
-                          onPlus: () => _set(d.stepWhole(1)),
-                        ),
-                      ],
-                    ),
-                    for (final dish in d.dishes)
-                      MealEditDishSection(
-                        key: ValueKey(dish.key),
-                        draft: d,
-                        dish: dish,
-                        sizeOpen: _sizeOpen == dish.key,
-                        onDraft: _set,
-                        onToggleSize:
-                            () => setState(
-                              () =>
-                                  _sizeOpen =
-                                      _sizeOpen == dish.key ? null : dish.key,
-                            ),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  KalloSpacing.sp4,
+                  KalloSpacing.sp2,
+                  KalloSpacing.sp4,
+                  MediaQuery.paddingOf(context).bottom + KalloSpacing.sp6,
+                ),
+                child: AbsorbPointer(
+                  absorbing: _saving,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      MealEditSummary(totals: d.totals),
+                      const SizedBox(height: KalloSpacing.sp5),
+                      GroupedListCard(
+                        separatorInset: 0,
+                        children: [
+                          MealEditStepperRow(
+                            label: 'logging.mealEdit.wholeMeal'.tr(),
+                            value: formatTimes(d.whole, locale),
+                            minusLabel: 'logging.mealEdit.lessWhole'.tr(),
+                            plusLabel: 'logging.mealEdit.moreWhole'.tr(),
+                            onMinus:
+                                d.whole <= servingStep
+                                    ? null
+                                    : () => _set(d.stepWhole(-1)),
+                            onPlus: () => _set(d.stepWhole(1)),
+                          ),
+                        ],
                       ),
-                  ],
+                      for (final dish in d.dishes)
+                        MealEditDishSection(
+                          key:
+                              dish.key == widget.sizeOpen
+                                  ? _sizeTarget
+                                  : ValueKey(dish.key),
+                          draft: d,
+                          dish: dish,
+                          sizeOpen: _sizeOpen == dish.key,
+                          onDraft: _set,
+                          onToggleSize:
+                              () => setState(
+                                () =>
+                                    _sizeOpen =
+                                        _sizeOpen == dish.key ? null : dish.key,
+                              ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

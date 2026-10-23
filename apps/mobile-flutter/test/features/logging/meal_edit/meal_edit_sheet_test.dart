@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -9,6 +11,7 @@ import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/logic/meal_edit/meal_edit_draft.dart';
 import 'package:kallo_mobile/features/logging/logic/meal_edit/meal_edit_sources.dart';
 import 'package:kallo_mobile/features/logging/widgets/meal_edit/meal_edit_sheet.dart';
+import 'package:kallo_mobile/features/logging/widgets/portion/ruler/portion_ruler_control.dart';
 import 'package:kallo_mobile/models/logging/meal.dart';
 import 'package:kallo_mobile/models/nutrition/vessel.dart';
 import 'package:kallo_mobile/shared/logic/macro_composition.dart';
@@ -216,6 +219,51 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Edit meal'), findsNothing);
     expect(commits, isEmpty);
+  });
+
+  testWidgets('a save in flight cannot be dismissed', (tester) async {
+    final items = _staged(_fish, 150);
+    final pending = Completer<void>();
+    await _open(
+      tester,
+      draftFromStaged(items, items),
+      onCommit: (_) => pending.future,
+    );
+    await tester.tap(find.text('Done'));
+    await tester.pump();
+    await tester.tapAt(const Offset(20, 20)); // the barrier
+    await tester.pumpAndSettle();
+    expect(find.text('Edit meal'), findsOneWidget);
+    pending.completeError(Exception('offline'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit meal'), findsOneWidget, reason: 'kept to retry');
+  });
+
+  testWidgets('opening onto a lower dish scrolls its Size into view', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final items = [
+      for (final id in ['a', 'b', 'c', 'd'])
+        MealItem(
+          id: id,
+          name: 'Dish $id',
+          quantity: 150,
+          unit: 'g',
+          macros: const MacroBreakdown(
+            calories: 300,
+            protein: 30,
+            carbs: 4,
+            fat: 6,
+          ),
+          vessel: _fish,
+        ),
+    ];
+    await _open(tester, draftFromStaged(items, items), sizeOpen: 'd');
+    final ruler = tester.getRect(find.byType(PortionRulerControl));
+    expect(ruler.bottom, lessThanOrEqualTo(700));
+    expect(ruler.top, greaterThanOrEqualTo(0));
   });
 
   testWidgets('a failed save keeps the sheet open to retry', (tester) async {
