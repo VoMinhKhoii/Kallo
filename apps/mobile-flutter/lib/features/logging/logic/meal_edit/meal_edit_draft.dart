@@ -61,8 +61,9 @@ class EditDish {
     required this.unit,
     required this.parts,
     required this.grams,
+    double? target,
     this.vessel,
-  });
+  }) : target = target ?? grams;
 
   /// Stable identity: the group order on a saved meal, the item id otherwise.
   final String key;
@@ -72,8 +73,13 @@ class EditDish {
   final String unit;
   final List<EditPart> parts;
 
-  /// The dish's grams now.
+  /// The dish's grams now — what the sheet shows and what is saved.
   final double grams;
+
+  /// The amount the Whole meal multiplier asked for, before the [floor]. It is
+  /// kept apart from [grams] so taking the whole meal down and back up returns
+  /// a dish that hit the floor to exactly where it started.
+  final double target;
 
   /// The vessel the pipeline pictured it in — unsaved dishes only.
   final ClientVessel? vessel;
@@ -87,17 +93,48 @@ class EditDish {
   /// How much of the logged amount this is: 1 as logged, 2 for double.
   double get servings => scalable ? grams / originalGrams : 1;
 
+  /// The least this dish can be stepped down to: [minDishGrams], or what it
+  /// was logged at when that is less. A 5 g pat of butter stays 5 g until the
+  /// user moves it — opening the sheet never rewrites a saved amount.
+  double get floor =>
+      originalGrams < minDishGrams ? originalGrams : minDishGrams;
+
+  /// True when no step down is left: the next minus would remove the dish.
+  bool get atBottom =>
+      !scalable || servings <= servingStep + _eps || grams <= floor + _eps;
+
   EditTotals get totals => sumTotals([this]);
 
-  EditDish withGrams(double next) => EditDish(
+  EditDish _copy({required double grams, required double target}) => EditDish(
     key: key,
     name: name,
     unit: unit,
     parts: parts,
-    grams: next < minDishGrams ? minDishGrams : next,
+    grams: grams,
+    target: target,
     vessel: vessel,
   );
+
+  /// A user's own adjustment, held at the [floor].
+  EditDish withGrams(double next) {
+    final g = next < floor ? floor : next;
+    return _copy(grams: g, target: g);
+  }
+
+  /// The Whole meal multiplier: scales the [target], then floors the grams.
+  EditDish scaledBy(double factor) {
+    final t = target * factor;
+    return _copy(grams: t < floor ? floor : t, target: t);
+  }
+
+  /// This dish at exactly [g] — for computing what a committed amount is
+  /// worth, never for an edit.
+  EditDish at(double g) => _copy(grams: g, target: g);
 }
+
+/// Float slack only. A wider tolerance skipped real half-serving steps: 460 g
+/// of a 450 g dish stepped down to 225 g instead of back to 450 g.
+const double _eps = 1e-6;
 
 /// Each dish's parts scaled by its own ratio, summed per macro.
 EditTotals sumTotals(Iterable<EditDish> dishes) {
@@ -146,14 +183,14 @@ class MealEditDraft {
     return null;
   }
 
-  /// True when Servings' minus would take this dish out rather than halve it.
+  /// True when Servings' minus would take this dish out rather than shrink it:
+  /// at half a serving, at its floor, or for a dish with no grams to step.
   bool removesOnMinus(EditDish dish) =>
-      dish.servings <= servingStep + 1e-6 && canRemove && dishes.length > 1;
+      dish.atBottom && canRemove && dishes.length > 1;
 
   /// True when Servings' minus can do nothing at all.
   bool servingsMinusDisabled(EditDish dish) =>
-      !dish.scalable ||
-      (dish.servings <= servingStep + 1e-6 && !removesOnMinus(dish));
+      dish.atBottom && !removesOnMinus(dish);
 
   MealEditDraft _with(List<EditDish> next, {double? whole}) => MealEditDraft(
     dishes: next,
@@ -167,14 +204,16 @@ class MealEditDraft {
   /// Up or down to the next whole half serving: 1.2× goes to 1.5× or 1×.
   MealEditDraft stepServings(String key, int direction) {
     final d = dish(key);
-    if (d == null || !d.scalable) return this;
+    if (d == null) return this;
     if (direction < 0 && removesOnMinus(d)) return remove(key);
-    if (direction < 0 && servingsMinusDisabled(d)) return this;
+    if (!d.scalable || (direction < 0 && servingsMinusDisabled(d))) {
+      return this;
+    }
     final steps = d.servings / servingStep;
     final next =
         direction > 0
-            ? ((steps + 0.05).floorToDouble() + 1) * servingStep
-            : ((steps - 0.05).ceilToDouble() - 1) * servingStep;
+            ? ((steps + _eps).floorToDouble() + 1) * servingStep
+            : ((steps - _eps).ceilToDouble() - 1) * servingStep;
     return _map(key, (d) => d.withGrams(d.originalGrams * next));
   }
 
@@ -194,7 +233,7 @@ class MealEditDraft {
     if (next < servingStep) return this;
     final factor = next / whole;
     return _with([
-      for (final d in dishes) d.scalable ? d.withGrams(d.grams * factor) : d,
+      for (final d in dishes) d.scalable ? d.scaledBy(factor) : d,
     ], whole: next);
   }
 

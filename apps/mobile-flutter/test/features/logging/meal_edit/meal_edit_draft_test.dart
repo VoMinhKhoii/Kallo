@@ -182,6 +182,64 @@ void main() {
     });
   });
 
+  group('review round 1', () {
+    test('a dish logged under the floor opens and saves as logged', () {
+      final m = meal([
+        dish(0, [ing('rice', grams: 200, kcal: 260)]),
+        dish(1, [ing('butter', grams: 5, kcal: 36)]),
+      ]);
+      final d = draftFromPersisted(m);
+      expect(d.dish('1')!.grams, 5);
+      expect(d.totals.kcal, 296);
+      expect(persistedEditFrom(m, d).edits, isEmpty);
+      // Its own floor is what it was logged at, so Amount minus does nothing.
+      expect(d.dish('1')!.floor, 5);
+      expect(d.stepAmount('1', -1).dish('1')!.grams, 5);
+    });
+
+    test('half servings step from an off-step amount to the NEAREST half', () {
+      final d = draftFromPersisted(bowl); // dish 0 is 350 g
+      final off = d.setGrams('0', 360); // 1.03×
+      expect(off.stepServings('0', -1).dish('0')!.servings, 1);
+      final high = d.setGrams('0', 516.25); // 1.475×
+      expect(high.stepServings('0', 1).dish('0')!.servings, 1.5);
+    });
+
+    test('a small dish can still be removed once it hits the floor', () {
+      final m = meal([
+        dish(0, [ing('rice', grams: 200)]),
+        dish(1, [ing('sauce', grams: 15)]),
+      ]);
+      final d = draftFromPersisted(m).stepServings('1', -1);
+      expect(d.dish('1')!.grams, 10); // 0.67×, held at the floor
+      expect(d.removesOnMinus(d.dish('1')!), isTrue);
+      expect(d.stepServings('1', -1).dish('1'), isNull);
+    });
+
+    test('a dish with no grams can be removed but not grown', () {
+      final m = meal([
+        dish(0, [ing('rice', grams: 200)]),
+        dish(1, [ing('legacy', kcal: 50)]),
+      ]);
+      final d = draftFromPersisted(m);
+      expect(d.removesOnMinus(d.dish('1')!), isTrue);
+      expect(d.stepServings('1', 1).dish('1')!.servings, 1);
+      expect(d.stepServings('1', -1).dish('1'), isNull);
+    });
+
+    test('Whole meal down then up restores a dish that hit the floor', () {
+      final m = meal([
+        dish(0, [ing('rice', grams: 200)]),
+        dish(1, [ing('sauce', grams: 15)]),
+      ]);
+      final d = draftFromPersisted(m).stepWhole(-1);
+      expect(d.dish('1')!.grams, 10);
+      final back = d.stepWhole(1);
+      expect(back.dish('1')!.grams, 15);
+      expect(persistedEditFrom(m, back).edits, isEmpty);
+    });
+  });
+
   group('unsaved', () {
     final staged = [item('a', 400, 600), item('b', 100, 200)];
 
@@ -195,6 +253,18 @@ void main() {
       expect(out.first.macros.calories, 900);
       expect(out.last.quantity, 100);
       expect(out.last.macros.calories, 200);
+    });
+
+    test('untouched items come back exactly as they went in', () {
+      final odd = [item('a', 5, 36), item('b', 12.5, 20)];
+      final out = stagedItemsFrom(
+        draftFromStaged(odd, odd).stepAmount('b', 1),
+        odd,
+        'en',
+      );
+      expect(out.first, same(odd.first)); // no floor, no rounding
+      expect(out.last.quantity, 23); // 12.5 + 10, rounded once
+      expect(out.last.macros.calories, closeTo(20 * 23 / 12.5, 1e-9));
     });
 
     test('an already-edited item reopens at its current grams', () {

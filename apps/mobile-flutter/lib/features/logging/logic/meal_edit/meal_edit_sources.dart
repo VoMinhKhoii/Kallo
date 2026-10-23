@@ -48,14 +48,16 @@ EditDish _persistedDish(PersistedMealItemGroup group) {
       weighed.isNotEmpty && weighed.every((i) => i.userFacingUnit == 'ml')
           ? 'ml'
           : 'g';
-  final dish = EditDish(
+  final logged = parts.fold<double>(0, (sum, p) => sum + (p.grams ?? 0));
+  // Exactly as logged — no floor applied on the way in, so an untouched sheet
+  // saves nothing and shows what the card shows.
+  return EditDish(
     key: '${group.order}',
     name: group.name,
     unit: unit,
     parts: parts,
-    grams: 0,
+    grams: logged,
   );
-  return dish.scalable ? dish.withGrams(dish.originalGrams) : dish;
 }
 
 /// The update payload for [draft] against the meal it was opened on: every
@@ -132,9 +134,11 @@ List<MealItem> stagedItemsFrom(
 ) => [for (final item in items) _stagedItem(item, draft.dish(item.id), locale)];
 
 MealItem _stagedItem(MealItem item, EditDish? dish, String locale) {
-  if (dish == null) return item;
+  // Untouched dishes come back exactly as they went in — no rounding, no
+  // re-derived macros, so they add nothing to the confirm's overrides.
+  if (dish == null || dish.grams == item.quantity) return item;
   final grams = dish.grams.roundToDouble();
-  final t = dish.withGrams(grams).totals;
+  final t = dish.at(grams).totals;
   final vessel = dish.vessel;
   return item.copyWith(
     quantity: grams,

@@ -186,6 +186,17 @@ void main() {
     expect(find.text('Edit meal'), findsNothing);
   });
 
+  testWidgets('VoiceOver can activate the steppers', (tester) async {
+    final handle = tester.ensureSemantics();
+    final items = _staged(_fish, 150);
+    await _open(tester, draftFromStaged(items, items));
+    // The screen-reader gesture, not a synthetic tap on the button's rect.
+    tester.semantics.tap(find.semantics.byLabel('More of the whole meal'));
+    await tester.pumpAndSettle();
+    expect(find.text('1.5×'), findsNWidgets(2));
+    handle.dispose();
+  });
+
   testWidgets('a container dish names the bowl its grams claim', (
     tester,
   ) async {

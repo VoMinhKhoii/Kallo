@@ -49,6 +49,10 @@ class MealEditStepperRow extends StatelessWidget {
           Semantics(
             button: true,
             label: minusLabel,
+            enabled: onMinus != null,
+            // The child's own tap is excluded with its semantics, so the
+            // activation has to be handed to VoiceOver here.
+            onTap: onMinus == null ? null : () => _tap(onMinus),
             excludeSemantics: true,
             child: MealStepperButton(
               icon: minusRemoves ? LucideIcons.trash2300 : LucideIcons.minus300,
@@ -69,6 +73,10 @@ class MealEditStepperRow extends StatelessWidget {
           Semantics(
             button: true,
             label: plusLabel,
+            enabled: onPlus != null,
+            // The child's own tap is excluded with its semantics, so the
+            // activation has to be handed to VoiceOver here.
+            onTap: onPlus == null ? null : () => _tap(onPlus),
             excludeSemantics: true,
             child: MealStepperButton(
               icon: LucideIcons.plus300,
