@@ -1,8 +1,9 @@
 'use client';
 
-import { LogOut, Settings, ShieldCheck } from 'lucide-react';
+import { LogOut, Settings, ShieldCheck, SunMoon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
+import { ThemeSegments } from '@/components/settings/appearance/theme-segments';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { ResponsiveSheet } from '@/components/shared/responsive-sheet';
 import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-header';
@@ -51,6 +52,7 @@ export function MobileAccountSheet({
   const tShell = useTranslations('app.shell');
   const tNav = useTranslations('app.mainSidebar');
   const tMenu = useTranslations('app.userMenu');
+  const tAppearance = useTranslations('settings.appearance');
   const { signOut, signingOut } = useSignOut();
   const label = deriveLabel(user) || tMenu('account');
   const [open, setOpen] = useState(false);
@@ -102,6 +104,16 @@ export function MobileAccountSheet({
         ) : null}
 
         <ul className="divide-y divide-kallo-border/70 overflow-hidden rounded-2xl bg-card">
+          <li className="flex min-h-12 items-center gap-3 px-4">
+            <SunMoon
+              className="size-[18px] text-kallo-text-muted"
+              aria-hidden="true"
+            />
+            <span className="flex-1 font-medium text-[15px] text-kallo-text">
+              {tAppearance('label')}
+            </span>
+            <ThemeSegments />
+          </li>
           <AccountSheetRow
             href="/settings"
             icon={<Settings className="size-[18px]" aria-hidden="true" />}

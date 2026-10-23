@@ -5,6 +5,7 @@ import { CustomSelect } from '@/components/settings/chrome/custom-select';
 import { SettingsRow } from '@/components/settings/chrome/group';
 import { useThemeChoice } from '@/hooks/theme/use-theme-choice';
 import { isThemeChoice, THEME_CHOICES } from '@/lib/core/theme/themes';
+import { THEME_ICONS } from './theme-icons';
 
 /**
  * Settings → Appearance: System, Light, Dark (Graphite) or Aurora. Applies at
@@ -19,10 +20,19 @@ export function AppearanceRow() {
     <SettingsRow label={t('label')} description={t('hint')}>
       <div className="w-full sm:w-72">
         <CustomSelect
-          options={THEME_CHOICES.map((option) => ({
-            value: option,
-            label: t(option),
-          }))}
+          options={THEME_CHOICES.map((option) => {
+            const Icon = THEME_ICONS[option];
+            return {
+              value: option,
+              label: t(option),
+              icon: (
+                <Icon
+                  className="size-4 shrink-0 text-kallo-text-muted"
+                  aria-hidden="true"
+                />
+              ),
+            };
+          })}
           value={choice}
           onChange={(next) => {
             if (isThemeChoice(next)) setChoice(next);

@@ -36,7 +36,6 @@
   },
   "userMenu": {
     "openMenu": "Mở menu tài khoản",
-    "profile": "Hồ sơ",
     "settings": "Cài đặt",
     "signOut": "Đăng xuất",
     "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
