@@ -35,16 +35,14 @@ interface MealEditDialogProps {
  */
 export function MealEditDialog(props: MealEditDialogProps) {
   const t = useTranslations('logging.mealEdit');
-  // A save in flight holds the dialog: Escape, the backdrop or the × would
-  // throw the edits away if the request then failed.
+  // A save in flight holds the dialog: Escape, the backdrop, the × or a
+  // drag-down would throw the edits away if the request then failed.
   const [saving, setSaving] = useState(false);
   return (
     <ResponsiveModal
       open={props.open}
-      onOpenChange={(open) => {
-        if (!open && saving) return;
-        props.onOpenChange(open);
-      }}
+      onOpenChange={props.onOpenChange}
+      dismissible={!saving}
       title={t('title')}
       subtitle={props.subtitle}
       dialogClassName="sm:max-w-[440px]"

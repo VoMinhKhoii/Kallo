@@ -32,6 +32,13 @@ interface ResponsiveModalProps {
   dialogClassName?: string;
   /** Padding around `children`, for a body that brings none of its own. */
   bodyClassName?: string;
+  /**
+   * False locks every exit — Escape, the backdrop, the close button and, on a
+   * phone, the drag-down — while something must not be walked away from (a
+   * save in flight). Passed straight to `ResponsiveSheet`, whose drawer would
+   * otherwise slide off before any `onOpenChange` guard could refuse it.
+   */
+  dismissible?: boolean;
   children: ReactNode;
 }
 
@@ -59,6 +66,7 @@ export function ResponsiveModal({
   subtitle,
   dialogClassName,
   bodyClassName,
+  dismissible = true,
   children,
 }: ResponsiveModalProps) {
   const t = useTranslations('common');
@@ -69,6 +77,7 @@ export function ResponsiveModal({
       <ResponsiveSheet
         open={open}
         onOpenChange={onOpenChange}
+        dismissible={dismissible}
         title={title}
         trigger={trigger}
         returnFocusRef={returnFocusRef}
@@ -76,7 +85,7 @@ export function ResponsiveModal({
         <ResponsiveSheetHeader
           title={title}
           closeLabel={t('close')}
-          onClose={() => onOpenChange(false)}
+          onClose={() => dismissible && onOpenChange(false)}
         />
         {subtitle ? (
           <p className="-mt-2 truncate px-4 pb-2 text-center text-[13px] text-kallo-text-muted">
@@ -97,7 +106,13 @@ export function ResponsiveModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && !dismissible) return;
+        onOpenChange(next);
+      }}
+    >
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent
         aria-describedby={undefined}
