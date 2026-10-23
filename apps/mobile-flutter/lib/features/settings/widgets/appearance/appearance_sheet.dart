@@ -24,9 +24,18 @@ Future<void> showAppearanceSheet(BuildContext context) =>
 String appearanceLabel(KalloThemeChoice choice) =>
     tr('settings.appearance.${choice.name}');
 
-/// One grouped card of the four choices with a tick on the current one — the
-/// app's single-select sheet pattern (`CheatIntensityPage`): no fill behind the
-/// chosen row, the tick is the whole signal. A pick applies at once and closes
+/// The icon of a choice, the same ones the web app shows.
+IconData appearanceIcon(KalloThemeChoice choice) => switch (choice) {
+  KalloThemeChoice.system => LucideIcons.monitor300,
+  KalloThemeChoice.light => LucideIcons.sun300,
+  KalloThemeChoice.dark => LucideIcons.moon300,
+  KalloThemeChoice.aurora => LucideIcons.sunset300,
+};
+
+/// One grouped card of the four choices, each with its icon, and a tick on the
+/// current one — the app's single-select sheet pattern (`CheatIntensityPage`):
+/// no fill behind the chosen row, the tick is the whole signal. Dividers start
+/// under the labels, past the icons, as on the Settings list. A pick applies at once and closes
 /// the sheet, which then slides away already in the new palette.
 class AppearanceSheet extends ConsumerWidget {
   const AppearanceSheet({super.key});
@@ -52,10 +61,10 @@ class AppearanceSheet extends ConsumerWidget {
         children: [
           KalloSheetHeader(title: tr('settings.appearance.title')),
           GroupedListCard(
-            separatorInset: 0,
             children: [
               for (final choice in KalloThemeChoice.values)
                 ListRow(
+                  icon: appearanceIcon(choice),
                   label: appearanceLabel(choice),
                   onTap: () {
                     HapticFeedback.selectionClick();
