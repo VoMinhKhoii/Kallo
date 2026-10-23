@@ -95,41 +95,49 @@ const noRepoint = <T>(v: T) => v;
 describe('servings', () => {
   it('doubles a dish and scales every part with it', () => {
     const d = stepServings(
-      stepServings(draftFromPersisted(bowl), '0', 1),
-      '0',
+      stepServings(draftFromPersisted(bowl), '0:dish 0', 1),
+      '0:dish 0',
       1
     );
-    expect(findDish(d, '0')?.grams).toBe(700);
+    expect(findDish(d, '0:dish 0')?.grams).toBe(700);
     expect(sumTotals(d.dishes).kcal).toBe(2 * 510 + 190);
     expect(sumTotals(d.dishes).protein).toBe(2 * 45 + 12);
   });
 
   it('steps from an off-step amount to the NEAREST half, both ways', () => {
     const d = draftFromPersisted(bowl); // dish 0 is 350 g
-    const off = setDishGrams(d, '0', 360);
-    expect(servingsOf(findDish(stepServings(off, '0', -1), '0')!)).toBe(1);
-    const high = setDishGrams(d, '0', 516.25); // 1.475×
-    expect(servingsOf(findDish(stepServings(high, '0', 1), '0')!)).toBe(1.5);
+    const off = setDishGrams(d, '0:dish 0', 360);
+    expect(
+      servingsOf(findDish(stepServings(off, '0:dish 0', -1), '0:dish 0')!)
+    ).toBe(1);
+    const high = setDishGrams(d, '0:dish 0', 516.25); // 1.475×
+    expect(
+      servingsOf(findDish(stepServings(high, '0:dish 0', 1), '0:dish 0')!)
+    ).toBe(1.5);
   });
 
   it('removes a dish at half a serving on a saved meal, never the last one', () => {
-    const half = stepServings(draftFromPersisted(bowl), '1', -1);
-    expect(removesOnMinus(half, findDish(half, '1')!)).toBe(true);
-    expect(findDish(stepServings(half, '1', -1), '1')).toBeUndefined();
+    const half = stepServings(draftFromPersisted(bowl), '1:dish 1', -1);
+    expect(removesOnMinus(half, findDish(half, '1:dish 1')!)).toBe(true);
+    expect(
+      findDish(stepServings(half, '1:dish 1', -1), '1:dish 1')
+    ).toBeUndefined();
 
     const only = stepServings(
       draftFromPersisted(meal([bowl.mealItemGroups[1]])),
-      '1',
+      '1:dish 1',
       -1
     );
-    expect(servingsMinusDisabled(only, findDish(only, '1')!)).toBe(true);
+    expect(servingsMinusDisabled(only, findDish(only, '1:dish 1')!)).toBe(true);
   });
 
   it('a small dish can still be removed once it hits the floor', () => {
     const m = meal([dish(0, [ing('rice', 200)]), dish(1, [ing('sauce', 15)])]);
-    const d = stepServings(draftFromPersisted(m), '1', -1);
-    expect(findDish(d, '1')?.grams).toBe(10);
-    expect(findDish(stepServings(d, '1', -1), '1')).toBeUndefined();
+    const d = stepServings(draftFromPersisted(m), '1:dish 1', -1);
+    expect(findDish(d, '1:dish 1')?.grams).toBe(10);
+    expect(
+      findDish(stepServings(d, '1:dish 1', -1), '1:dish 1')
+    ).toBeUndefined();
   });
 
   it('a dish with no grams can be removed but not grown', () => {
@@ -138,16 +146,20 @@ describe('servings', () => {
       dish(1, [ing('legacy', null, 50)]),
     ]);
     const d = draftFromPersisted(m);
-    expect(servingsOf(findDish(stepServings(d, '1', 1), '1')!)).toBe(1);
-    expect(findDish(stepServings(d, '1', -1), '1')).toBeUndefined();
+    expect(
+      servingsOf(findDish(stepServings(d, '1:dish 1', 1), '1:dish 1')!)
+    ).toBe(1);
+    expect(
+      findDish(stepServings(d, '1:dish 1', -1), '1:dish 1')
+    ).toBeUndefined();
   });
 });
 
 describe('amount and floor', () => {
   it('steps ten at a time and holds the floor', () => {
     const d = draftFromPersisted(meal([dish(0, [ing('salt', 15)])]));
-    expect(findDish(stepAmount(d, '0', 1), '0')?.grams).toBe(25);
-    expect(findDish(stepAmount(d, '0', -1), '0')?.grams).toBe(10);
+    expect(findDish(stepAmount(d, '0:dish 0', 1), '0:dish 0')?.grams).toBe(25);
+    expect(findDish(stepAmount(d, '0:dish 0', -1), '0:dish 0')?.grams).toBe(10);
   });
 
   it('a dish logged under the floor opens and saves as logged', () => {
@@ -156,16 +168,16 @@ describe('amount and floor', () => {
       dish(1, [ing('butter', 5, 36)]),
     ]);
     const d = draftFromPersisted(m);
-    expect(findDish(d, '1')?.grams).toBe(5);
-    expect(floorOf(findDish(d, '1')!)).toBe(5);
+    expect(findDish(d, '1:dish 1')?.grams).toBe(5);
+    expect(floorOf(findDish(d, '1:dish 1')!)).toBe(5);
     expect(sumTotals(d.dishes).kcal).toBe(296);
     expect(persistedEditFrom(m, d).edits).toEqual([]);
   });
 
   it('reads in ml only when every weighed part is ml', () => {
     const d = draftFromPersisted(bowl);
-    expect(findDish(d, '0')?.unit).toBe('g');
-    expect(findDish(d, '1')?.unit).toBe('ml');
+    expect(findDish(d, '0:dish 0')?.unit).toBe('g');
+    expect(findDish(d, '1:dish 1')?.unit).toBe('ml');
   });
 });
 
@@ -173,16 +185,16 @@ describe('whole meal', () => {
   it('scales every dish and stops at half a meal', () => {
     const d = stepWhole(draftFromPersisted(bowl), 1);
     expect(d.whole).toBe(1.5);
-    expect(findDish(d, '0')?.grams).toBe(525);
+    expect(findDish(d, '0:dish 0')?.grams).toBe(525);
     expect(stepWhole(stepWhole(stepWhole(d, -1), -1), -1).whole).toBe(0.5);
   });
 
   it('down then up restores a dish that hit the floor', () => {
     const m = meal([dish(0, [ing('rice', 200)]), dish(1, [ing('sauce', 15)])]);
     const down = stepWhole(draftFromPersisted(m), -1);
-    expect(findDish(down, '1')?.grams).toBe(10);
+    expect(findDish(down, '1:dish 1')?.grams).toBe(10);
     const back = stepWhole(down, 1);
-    expect(findDish(back, '1')?.grams).toBe(15);
+    expect(findDish(back, '1:dish 1')?.grams).toBe(15);
     expect(persistedEditFrom(m, back).edits).toEqual([]);
   });
 });
@@ -197,15 +209,41 @@ describe('nulls are not zero', () => {
     const m = meal([
       dish(0, [ing('weighed', 100, 100), ing('legacy', null, 50)]),
     ]);
-    const d = stepServings(stepServings(draftFromPersisted(m), '0', 1), '0', 1);
+    const d = stepServings(
+      stepServings(draftFromPersisted(m), '0:dish 0', 1),
+      '0:dish 0',
+      1
+    );
     expect(sumTotals(d.dishes).kcal).toBe(250);
+  });
+});
+
+describe('dish identity', () => {
+  it('keeps two dishes that share an order apart', () => {
+    const twin = (name: string, id: string): PersistedMealItemGroup => ({
+      ...dish(0, [ing(id, 100, 100)]),
+      name,
+    });
+    const m = meal([twin('Rice', 'rice'), twin('Soup', 'soup')]);
+    const d = stepServings(
+      stepServings(draftFromPersisted(m), '0:Rice', -1),
+      '0:Rice',
+      -1
+    );
+    expect(findDish(d, '0:Rice')).toBeUndefined();
+    expect(findDish(d, '0:Soup')?.grams).toBe(100);
+    expect(persistedEditFrom(m, d)).toEqual({ edits: [], removeIds: ['rice'] });
   });
 });
 
 describe('zero-gram rows', () => {
   it('hold like missing ones, in the preview and the payload', () => {
     const m = meal([dish(0, [ing('weighed', 100, 100), ing('zero', 0, 50)])]);
-    const d = stepServings(stepServings(draftFromPersisted(m), '0', 1), '0', 1);
+    const d = stepServings(
+      stepServings(draftFromPersisted(m), '0:dish 0', 1),
+      '0:dish 0',
+      1
+    );
     expect(sumTotals(d.dishes).kcal).toBe(250);
     expect(persistedEditFrom(m, d).edits).toEqual([
       { id: 'weighed', newGrams: 200 },
@@ -222,8 +260,8 @@ describe('saved payload', () => {
   });
 
   it('sends every weighed row of a resized dish and the ids of a removed one', () => {
-    let d = stepServings(draftFromPersisted(bowl), '0', 1);
-    d = stepServings(stepServings(d, '1', -1), '1', -1);
+    let d = stepServings(draftFromPersisted(bowl), '0:dish 0', 1);
+    d = stepServings(stepServings(d, '1:dish 1', -1), '1:dish 1', -1);
     expect(persistedEditFrom(bowl, d)).toEqual({
       edits: [
         { id: 'rice', newGrams: 300 },
@@ -237,7 +275,7 @@ describe('saved payload', () => {
     const m = meal([dish(0, [ing('rice', 200), ing('salt', 0.1)])]);
     const out = persistedEditFrom(
       m,
-      stepServings(draftFromPersisted(m), '0', -1)
+      stepServings(draftFromPersisted(m), '0:dish 0', -1)
     );
     expect(out.edits).toEqual([{ id: 'rice', newGrams: 100 }]);
   });

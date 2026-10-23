@@ -44,7 +44,10 @@ function persistedDish(group: PersistedMealItemGroup): EditDish {
     0
   );
   return {
-    key: String(group.order),
+    // Order AND name, the identity the server groups rows by
+    // (`buildMealItemGroupsFromRows`): two dishes can share an order, and an
+    // order-only key resized — or removed — both together.
+    key: `${group.order}:${group.name}`,
     name: group.name,
     // A drink logged in millilitres reads in ml; anything mixed in grams.
     unit:

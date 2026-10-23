@@ -42,7 +42,7 @@ export interface EditTotals {
 }
 
 export interface EditDish {
-  /** Stable identity: the group order on a saved meal, the item id otherwise. */
+  /** Stable identity: `order:name` on a saved meal, the item id otherwise. */
   key: string;
   name: string;
   unit: 'g' | 'ml';
