@@ -3,15 +3,7 @@
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { forwardRef } from 'react';
-import {
-  buildPieceAnchors,
-  claimedAnchor,
-} from '@/components/logging/feed/meal-entry/portion/portion-anchors';
-import {
-  PIECE_TIERS,
-  VESSEL_FAMILIES,
-} from '@/lib/ai/portion/data/vessel-tables';
-import { pieceAssetFor } from '@/lib/ai/portion/vessel/geometry';
+import { portionDisplay } from '@/components/logging/feed/meal-entry/portion/portion-display';
 import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 
 interface PortionAssumptionLineProps
@@ -24,8 +16,8 @@ interface PortionAssumptionLineProps
 /**
  * A quiet one-line portion assumption under a meal item — a small vessel
  * thumbnail and '≈ {tier label}', kept visually subordinate to the macros.
- * The whole line is the button that opens the portion picker (used as the
- * picker's trigger via `asChild`, so it forwards ref + props).
+ * The whole line is a button: on an unsaved card it opens the meal edit
+ * dialog (it forwards ref + props).
  */
 export const PortionAssumptionLine = forwardRef<
   HTMLButtonElement,
@@ -35,22 +27,7 @@ export const PortionAssumptionLine = forwardRef<
   const locale = useLocale();
   const loc = locale === 'vi' ? 'vi' : 'en';
 
-  let thumb: { file: string; aspect: number };
-  let label: string;
-  if ('dishClass' in vessel) {
-    const tier = VESSEL_FAMILIES[vessel.family].tiers[vessel.tier];
-    thumb = { file: tier.asset, aspect: tier.aspect };
-    label = tier.label[loc];
-  } else {
-    // Only claim a tier label the picker would also commit; otherwise state
-    // the honest gram amount.
-    const claimed = claimedAnchor(buildPieceAnchors(vessel, loc), grams);
-    const tier = PIECE_TIERS[(claimed?.tier ?? vessel.tier) - 1];
-    const prefix = vessel.count > 1 ? `${vessel.count} × ` : '';
-    const asset = pieceAssetFor(tier, vessel.kind);
-    thumb = { file: asset.file, aspect: asset.aspect };
-    label = claimed ? `${prefix}${claimed.label}` : `${prefix}${grams} g`;
-  }
+  const { thumb, label } = portionDisplay(vessel, grams, loc);
 
   return (
     <button

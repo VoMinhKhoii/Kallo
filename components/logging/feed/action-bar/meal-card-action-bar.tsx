@@ -1,19 +1,17 @@
 'use client';
 
-import {
-  PencilLine,
-  RotateCcw,
-  SlidersHorizontal,
-  UserPlus,
-} from 'lucide-react';
+import { PencilLine, RotateCcw, UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { PremiumDot } from '@/components/billing/premium-dot';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { ShareMealDialog } from '@/components/groups/share-meal-dialog';
+import {
+  MealCardMenuButton,
+  type MealCardMenuItem,
+} from '@/components/logging/feed/meal-edit/meal-card-menu-button';
 import { ShareToCircleButton } from '@/components/logging/feed/persisted/share-buttons';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { ActionIconButton } from './action-icon-button';
-import { RemoveMealButton } from './remove-meal-button';
 
 interface MealCardActionBarProps {
   mealId: string;
@@ -22,13 +20,13 @@ interface MealCardActionBarProps {
   /** Whole-dish calories, for the per-person readout on the meter. */
   totalKcal: number | null;
   share: PersistedMeal['share'];
-  canEdit: boolean;
   canShare?: boolean;
   isRefineOpen: boolean;
   onLogAgain?: () => void;
   onRefineToggle?: () => void;
-  onEditAmounts: () => void;
-  onDelete?: () => void;
+  /** Edit and Remove, behind the ⋯ at the row's end (and the card's
+   *  right-click menu) rather than as icons of their own. */
+  menuItems: MealCardMenuItem[];
 }
 
 export function MealCardActionBar({
@@ -36,13 +34,11 @@ export function MealCardActionBar({
   mealName,
   totalKcal,
   share,
-  canEdit,
   canShare,
   isRefineOpen,
   onLogAgain,
   onRefineToggle,
-  onEditAmounts,
-  onDelete,
+  menuItems,
 }: MealCardActionBarProps) {
   const t = useTranslations('logging.persistedMealCard');
   const { locked, requirePremium } = usePremiumGuard();
@@ -72,13 +68,6 @@ export function MealCardActionBar({
             onClick={onRefineToggle}
           />
         )}
-        {canEdit && (
-          <ActionIconButton
-            icon={SlidersHorizontal}
-            label={t('editAmounts')}
-            onClick={onEditAmounts}
-          />
-        )}
         {canShare &&
           (shareLocked ? (
             // Locked: no ShareMealDialog at all, so the trigger cannot open a
@@ -102,11 +91,11 @@ export function MealCardActionBar({
               }
             />
           ))}
-        {onDelete && (
-          <RemoveMealButton label={t('remove')} onConfirm={onDelete} />
-        )}
       </div>
-      <ShareToCircleButton mealId={mealId} share={share} />
+      <div className="flex items-center gap-0.5">
+        <ShareToCircleButton mealId={mealId} share={share} />
+        <MealCardMenuButton items={menuItems} />
+      </div>
     </div>
   );
 }

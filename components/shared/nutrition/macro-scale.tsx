@@ -49,17 +49,33 @@ interface MacroScaleProps {
    * `MealBlock` legend does with the same four (`spaceBetween`).
    */
   leading?: ReactNode;
+  /**
+   * `columns` (no `leading`): three equal columns, each figure centred in its
+   * own, so the space either side of every figure is the same and their
+   * positions never move with the numbers — the owner's ruling for the meal
+   * edit dialog ("left space of P must equal right space of P"). Mirrors
+   * mobile's `MacroLegend`.
+   */
+  spread?: 'even' | 'columns';
   className?: string;
 }
 
-export function MacroScale({ grams, leading, className }: MacroScaleProps) {
+export function MacroScale({
+  grams,
+  leading,
+  spread = 'even',
+  className,
+}: MacroScaleProps) {
   const locale = useLocale();
+  const columns = spread === 'columns' && !leading;
 
   return (
     <div
       className={cn(
-        'flex items-center gap-2',
-        leading ? 'justify-between' : 'justify-evenly',
+        columns
+          ? 'grid grid-cols-3 items-center justify-items-center'
+          : 'flex items-center gap-2',
+        !columns && (leading ? 'justify-between' : 'justify-evenly'),
         className
       )}
     >

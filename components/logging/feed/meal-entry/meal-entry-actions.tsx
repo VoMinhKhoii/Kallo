@@ -5,13 +5,11 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/core/ui/cn';
 
 interface MealEntryActionsProps {
-  isEditing: boolean;
   disabled?: boolean;
   onConfirm: () => void;
 }
 
 export function MealEntryActions({
-  isEditing,
   disabled,
   onConfirm,
 }: MealEntryActionsProps) {
@@ -19,17 +17,13 @@ export function MealEntryActions({
 
   return (
     <div className="mt-3 flex">
-      {/* While editing the button demotes to a ghost style so it pulls less
-          focus than the +/- controls, but stays clickable. */}
       <button
         type="button"
         onClick={onConfirm}
         disabled={disabled}
         className={cn(
           'relative flex flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-xl px-3 py-2.5 font-medium text-xs transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50',
-          isEditing
-            ? 'border border-kallo-umber-text/40 bg-transparent text-kallo-umber-text enabled:hover:border-kallo-umber-text enabled:hover:bg-kallo-umber-text/5'
-            : 'bg-kallo-btn text-kallo-btn-ink shadow-sm enabled:hover:bg-kallo-btn-hover enabled:hover:shadow-md',
+          'bg-kallo-btn text-kallo-btn-ink shadow-sm enabled:hover:bg-kallo-btn-hover enabled:hover:shadow-md',
           'font-sans-display'
         )}
       >

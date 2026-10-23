@@ -118,13 +118,17 @@ export function FeedCards({
             if (msg.parsedMeal) {
               return (
                 <div key={msg.id}>
+                  {/* Discard lives in the card's own menu (its ⋯ and a
+                      right-click), so nothing sits under the save button. */}
                   <MealEntry
                     message={msg}
                     isConfirming={isConfirming}
                     revealing={streamedIds.current.has(msg.id)}
                     onConfirm={(edits) => onConfirmMeal(msg, edits)}
+                    onDiscard={
+                      msg.analysisId ? () => onDiscardPending(msg) : undefined
+                    }
                   />
-                  {discard}
                 </div>
               );
             }

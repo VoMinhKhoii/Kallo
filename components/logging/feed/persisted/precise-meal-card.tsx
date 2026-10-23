@@ -1,6 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion } from 'motion/react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { MealCardActionBar } from '@/components/logging/feed/action-bar/meal-card-action-bar';
@@ -9,11 +10,17 @@ import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
+import { MealCardContextMenu } from '@/components/logging/feed/meal-edit/meal-card-context-menu';
+import type { MealCardMenuItem } from '@/components/logging/feed/meal-edit/meal-card-menu-button';
+import { MealEditDialog } from '@/components/logging/feed/meal-edit/meal-edit-dialog';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 import { formatTime } from '@/lib/core/date/format-time';
-import { MealAmountEditor } from './meal-amount-editor';
-import { MealDetails } from './meal-details';
-// The NL-refine is submitted as `${rawInput} (${correction})` — the joining
+import {
+  draftFromPersisted,
+  persistedEditFrom,
+} from '@/lib/domain/meals/meal-edit/meal-edit-sources';
+import { PersistedMealBody } from './persisted-meal-body';
 import type { PersistedMealCardProps } from './persisted-meal-card';
 import { RefineField } from './refine-field';
 
@@ -25,18 +32,22 @@ export function PrecisePersistedMealCard({
   onRefine,
 }: PersistedMealCardProps) {
   const t = useTranslations('logging.persistedMealCard');
+  const tEdit = useTranslations('logging.mealEdit');
+  const tLogging = useTranslations('logging');
+  const tCommon = useTranslations('common');
   const locale = useLocale();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   // "Fix with words" from the always-visible action row — opens the refine
-  // input directly, without requiring expand → Edit amounts.
+  // input directly.
   const [isRefineOpen, setIsRefineOpen] = useState(false);
-  // Only meals with gram-bearing ingredient rows can be amount-edited; a
-  // legacy/empty meal (no item rows) has nothing to step.
+  // Only meals with gram-bearing ingredient rows can be edited; a legacy/empty
+  // meal (no item rows) has nothing to scale.
   const canEdit =
     onUpdate != null &&
     meal.mealItemGroups.some((g) =>
-      g.ingredients.some((i) => i.estimatedGrams != null)
+      g.ingredients.some((i) => (i.estimatedGrams ?? 0) > 0)
     );
   // Copy/split need item rows to reproduce; a legacy/empty meal has none.
   const canShare = meal.mealItemGroups.some((g) => g.ingredients.length > 0);
@@ -45,16 +56,40 @@ export function PrecisePersistedMealCard({
   const isFractional = portionFactor > 0 && portionFactor < 1;
   const portionText = isFractional ? `1/${Math.round(1 / portionFactor)}` : '';
   // NL-refine re-estimates the FULL portion from the text, silently undoing a
-  // split — so hide "Fix with words" on a fractional meal (amount-edit still
-  // works for tweaking the share).
+  // split — so hide "Fix with words" on a fractional meal (the edit dialog
+  // still works for tweaking the share).
   const refine = isFractional ? undefined : onRefine;
 
-  const timeLabel = formatTime(meal.loggedAt, locale);
+  const totals = {
+    calories: formatCaloriesOrNA(meal.nutrition.caloriesKcal),
+    protein: formatMacroOrNA(meal.nutrition.proteinG),
+    carbs: formatMacroOrNA(meal.nutrition.carbohydrateG),
+    fat: formatMacroOrNA(meal.nutrition.fatG),
+  };
 
-  const calories = formatCaloriesOrNA(meal.nutrition.caloriesKcal);
-  const protein = formatMacroOrNA(meal.nutrition.proteinG);
-  const carbs = formatMacroOrNA(meal.nutrition.carbohydrateG);
-  const fat = formatMacroOrNA(meal.nutrition.fatG);
+  // Edit and Remove live in the card's menus — its ⋯ and a right-click (or a
+  // press and hold on touch) — not as icons in the row under it.
+  const menuItems: MealCardMenuItem[] = [
+    ...(canEdit
+      ? [
+          {
+            label: tLogging('edit'),
+            icon: Pencil,
+            onSelect: () => setIsEditing(true),
+          },
+        ]
+      : []),
+    ...(onDelete
+      ? [
+          {
+            label: t('remove'),
+            icon: Trash2,
+            danger: true,
+            onSelect: () => setIsRemoving(true),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <motion.article
@@ -63,7 +98,10 @@ export function PrecisePersistedMealCard({
       exit={{ opacity: 0, height: 0 }}
       className="relative"
     >
-      <TurnHeader timeLabel={timeLabel} message={meal.rawInput}>
+      <TurnHeader
+        timeLabel={formatTime(meal.loggedAt, locale)}
+        message={meal.rawInput}
+      >
         {isFractional && (
           <span className="rounded-full bg-kallo-hover px-2 py-0.5 font-medium font-sans-display text-[10px] text-kallo-text">
             {t('portionChip', { portion: portionText })}
@@ -71,121 +109,83 @@ export function PrecisePersistedMealCard({
         )}
       </TurnHeader>
 
-      {/* Card */}
-      <div className="rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
-            {meal.rawInput}
-          </p>
-          <CardDisclosureButton
-            label={t('toggleDetails')}
-            isExpanded={!isCollapsed}
-            onToggle={() => setIsCollapsed((prev) => !prev)}
-          />
-        </div>
-
-        {/* Edit mode swaps the read-only body for the amount editor IN PLACE
-            (one ternary, one frame). The read-only AnimatePresence blocks
-            unmount with the branch, so no exit animation overlaps the editor —
-            the collapse toggle keeps its smooth height animation, entering/
-            leaving edit doesn't animate at all. */}
-        {isEditing && onUpdate ? (
-          <MealAmountEditor
+      <MealCardContextMenu items={menuItems}>
+        <div className="rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
+              {meal.rawInput}
+            </p>
+            <CardDisclosureButton
+              label={t('toggleDetails')}
+              isExpanded={!isCollapsed}
+              onToggle={() => setIsCollapsed((prev) => !prev)}
+            />
+          </div>
+          <PersistedMealBody
             meal={meal}
-            onCancel={() => setIsEditing(false)}
-            onSave={onUpdate}
-            onRefine={
-              refine
-                ? (correction) => {
-                    setIsEditing(false);
-                    refine(correction);
-                  }
-                : undefined
-            }
+            isCollapsed={isCollapsed}
+            totals={totals}
           />
-        ) : (
-          <>
-            {/* Collapsed summary */}
-            <AnimatePresence initial={false}>
-              {isCollapsed && (
-                <motion.div
-                  key="summary"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="mt-2 flex items-center justify-between font-sans-display"
-                >
-                  <span className="text-[11px] text-kallo-text-muted tabular-nums">
-                    P: {protein}
-                    {'  '}C: {carbs}
-                    {'  '}F: {fat}
-                  </span>
-                  <span className="font-bold text-kallo-text text-sm tabular-nums">
-                    {calories}
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Expanded details */}
-            <AnimatePresence initial={false}>
-              {!isCollapsed && (
-                <motion.div
-                  key="details"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2, ease: 'easeInOut' }}
-                  style={{ overflow: 'hidden' }}
-                >
-                  <MealDetails
-                    meal={meal}
-                    totals={{ calories, protein, carbs, fat }}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* The refine field opened from the action row — one interaction
-                from the collapsed card. Also inside the amount editor. */}
-            {isRefineOpen && refine && (
-              <div className="mt-3 border-kallo-border/40 border-t pt-3">
-                <RefineField
-                  meal={meal}
-                  autoFocus
-                  onRefine={(correction) => {
-                    setIsRefineOpen(false);
-                    refine(correction);
-                  }}
-                />
-              </div>
-            )}
-          </>
-        )}
-      </div>
-      {!isEditing && (
-        <div className="mt-1.5 px-1">
-          <MealCardActionBar
-            mealId={meal.id}
-            mealName={meal.rawInput}
-            totalKcal={meal.nutrition.caloriesKcal ?? null}
-            share={meal.share}
-            canEdit={canEdit}
-            canShare={canShare}
-            isRefineOpen={isRefineOpen}
-            onLogAgain={onLogAgain}
-            onRefineToggle={
-              refine ? () => setIsRefineOpen((prev) => !prev) : undefined
-            }
-            onEditAmounts={() => {
-              setIsRefineOpen(false);
-              setIsEditing(true);
-            }}
-            onDelete={onDelete}
-          />
+          {/* The refine field opened from the action row — one interaction
+              from the collapsed card. */}
+          {isRefineOpen && refine && (
+            <div className="mt-3 border-kallo-border/40 border-t pt-3">
+              <RefineField
+                meal={meal}
+                autoFocus
+                onRefine={(correction) => {
+                  setIsRefineOpen(false);
+                  refine(correction);
+                }}
+              />
+            </div>
+          )}
         </div>
+      </MealCardContextMenu>
+
+      <div className="mt-1.5 px-1">
+        <MealCardActionBar
+          mealId={meal.id}
+          mealName={meal.rawInput}
+          totalKcal={meal.nutrition.caloriesKcal ?? null}
+          share={meal.share}
+          canShare={canShare}
+          isRefineOpen={isRefineOpen}
+          onLogAgain={onLogAgain}
+          onRefineToggle={
+            refine ? () => setIsRefineOpen((prev) => !prev) : undefined
+          }
+          menuItems={menuItems}
+        />
+      </div>
+
+      {canEdit && onUpdate && (
+        <MealEditDialog
+          open={isEditing}
+          onOpenChange={setIsEditing}
+          initial={draftFromPersisted(meal)}
+          subtitle={meal.rawInput}
+          commitLabel={tEdit('save')}
+          onCommit={async (draft) => {
+            const changes = persistedEditFrom(meal, draft);
+            // An untouched dialog saves nothing.
+            if (changes.edits.length === 0 && changes.removeIds.length === 0)
+              return;
+            await onUpdate(changes);
+          }}
+        />
+      )}
+      {onDelete && (
+        <ConfirmDialog
+          open={isRemoving}
+          onOpenChange={setIsRemoving}
+          title={t('removeConfirmTitle')}
+          description={t('removeConfirmDescription')}
+          confirmLabel={t('remove')}
+          cancelLabel={tCommon('cancel')}
+          tone="destructive"
+          onConfirm={onDelete}
+        />
       )}
     </motion.article>
   );

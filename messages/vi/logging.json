@@ -158,10 +158,6 @@
     }
   },
   "mealEntry": {
-    "edit": "Sửa",
-    "done": "Xong",
-    "decreaseQuantity": "Giảm khối lượng {name}",
-    "increaseQuantity": "Tăng khối lượng {name}",
     "toggleDetails": "Bật/tắt chi tiết bữa ăn",
     "total": "Tổng"
   },
@@ -180,13 +176,8 @@
     "removeConfirmTitle": "Xoá bữa ăn này?",
     "removeConfirmDescription": "Bữa ăn sẽ biến mất khỏi nhật ký của bạn và bảng tin của vòng kết nối.",
     "logAgain": "Ghi lại",
-    "editAmounts": "Sửa lượng",
     "shareWithFriends": "Gửi cho bạn bè",
     "portionChip": "{portion} phần",
-    "cancelEdit": "Hủy",
-    "saveEdit": "Lưu thay đổi",
-    "savingEdit": "Đang lưu…",
-    "removeRow": "Bỏ {name}",
     "mealUpdated": "Đã cập nhật bữa ăn",
     "updateError": "Không cập nhật được bữa ăn — hãy thử lại.",
     "refineAction": "Sửa bằng lời",
@@ -195,6 +186,26 @@
     "refineSubmit": "Phân tích lại",
     "refineHint": "Chúng tôi sẽ đọc lại cả bữa ăn cùng đính chính của bạn và thay thế.",
     "refineTightHint": "Mô tả gốc khá dài — chúng tôi sẽ rút gọn một chút để vừa phần đính chính."
+  },
+  "mealEdit": {
+    "title": "Sửa bữa ăn",
+    "save": "Lưu",
+    "saving": "Đang lưu…",
+    "done": "Xong",
+    "cancel": "Huỷ",
+    "wholeMeal": "Cả bữa",
+    "servings": "Khẩu phần",
+    "amount": "Lượng",
+    "size": "Cỡ",
+    "lessServing": "Bớt một khẩu phần {name}",
+    "moreServing": "Thêm một khẩu phần {name}",
+    "removeDish": "Bỏ {name}",
+    "lessAmount": "Bớt 10 {name}",
+    "moreAmount": "Thêm 10 {name}",
+    "lessWhole": "Bớt cả bữa",
+    "moreWhole": "Thêm cả bữa",
+    "editDish": "Sửa {name}",
+    "moreOptions": "Tuỳ chọn khác"
   },
   "manualLogging": {
     "searchPlaceholder": "Tìm món ăn...",
