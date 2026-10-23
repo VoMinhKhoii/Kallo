@@ -2,11 +2,13 @@
 
 import { Check, ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 interface CustomSelectOption {
   value: string;
   label: string;
+  /** Shown before the label, in the list and on the closed field. */
+  icon?: ReactNode;
 }
 
 interface CustomSelectProps {
@@ -56,7 +58,10 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
             : 'border-kallo-border hover:border-kallo-accent/50'
         }`}
       >
-        <span className="min-w-0 truncate pr-2">{selectedOption?.label}</span>
+        <span className="flex min-w-0 items-center gap-2 pr-2">
+          {selectedOption?.icon}
+          <span className="truncate">{selectedOption?.label}</span>
+        </span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-kallo-text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         />
@@ -81,7 +86,10 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
                 }}
                 className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[14px] text-kallo-text transition-colors hover:bg-kallo-track focus-visible:bg-kallo-track focus-visible:outline-none"
               >
-                <span className={value === opt.value ? 'font-medium' : ''}>
+                <span
+                  className={`flex items-center gap-2.5 ${value === opt.value ? 'font-medium' : ''}`}
+                >
+                  {opt.icon}
                   {opt.label}
                 </span>
                 {value === opt.value && (
