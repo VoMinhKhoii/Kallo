@@ -40,6 +40,8 @@ export function ThemeMenuRadio() {
               value={option}
               aria-label={t(option)}
               title={t(option)}
+              // Icon-only, so typeahead needs the name spelled out.
+              textValue={t(option)}
               onSelect={(event) => event.preventDefault()}
               className={cn(
                 SEGMENT,

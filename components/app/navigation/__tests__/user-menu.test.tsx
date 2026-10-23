@@ -81,4 +81,12 @@ describe('UserMenu', () => {
       within(menu).queryByText('minh@example.com')
     ).not.toBeInTheDocument();
   });
+
+  it('reaches a theme by typing its name', async () => {
+    const { u, menu } = await openMenu();
+    await u.keyboard('d');
+    expect(
+      within(menu).getByRole('menuitemradio', { name: 'dark' })
+    ).toHaveFocus();
+  });
 });
