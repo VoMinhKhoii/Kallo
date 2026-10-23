@@ -49,17 +49,33 @@ interface MacroScaleProps {
    * `MealBlock` legend does with the same four (`spaceBetween`).
    */
   leading?: ReactNode;
+  /**
+   * `edges` (no `leading`): three equal columns — the first figure against the
+   * bar's left end, the last against its right, the middle exactly under its
+   * centre, so the space either side of the middle one is the same however
+   * wide its neighbours are. The meal edit dialog's legend; the owner asked
+   * for it there. Mirrors mobile's `MacroLegend`.
+   */
+  spread?: 'even' | 'edges';
   className?: string;
 }
 
-export function MacroScale({ grams, leading, className }: MacroScaleProps) {
+export function MacroScale({
+  grams,
+  leading,
+  spread = 'even',
+  className,
+}: MacroScaleProps) {
   const locale = useLocale();
+  const edges = spread === 'edges' && !leading;
 
   return (
     <div
       className={cn(
-        'flex items-center gap-2',
-        leading ? 'justify-between' : 'justify-evenly',
+        edges
+          ? 'grid grid-cols-3 items-center gap-2 [&>*:first-child]:justify-self-start [&>*:last-child]:justify-self-end [&>*]:justify-self-center'
+          : 'flex items-center gap-2',
+        !edges && (leading ? 'justify-between' : 'justify-evenly'),
         className
       )}
     >

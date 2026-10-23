@@ -28,18 +28,22 @@ vi.mock('@/components/logging/feed/persisted/share-buttons', () => ({
   ShareToCircleButton: () => <div data-testid="share-to-circle" />,
 }));
 
+import { Pencil, Trash2 } from 'lucide-react';
+import type { MealCardMenuItem } from '@/components/logging/feed/meal-edit/meal-card-menu-button';
 import { MealCardActionBar } from '../meal-card-action-bar';
 
-function renderBar(onLogAgain?: () => void) {
+function renderBar(
+  onLogAgain?: () => void,
+  menuItems: MealCardMenuItem[] = []
+) {
   return render(
     <MealCardActionBar
       onLogAgain={onLogAgain}
-      canEdit
       canShare
       isRefineOpen={false}
       mealId="meal-1"
       mealName="Bánh mì thịt nướng"
-      onEditAmounts={vi.fn()}
+      menuItems={menuItems}
       share={null}
       totalKcal={1040}
     />
@@ -95,5 +99,38 @@ describe('MealCardActionBar — copy/split entry point', () => {
         .getByRole('button', { name: 'logAgain' })
         .querySelector('[data-premium-dot]')
     ).toBeNull();
+  });
+});
+
+describe('MealCardActionBar — the ⋯ menu', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.locked.mockReturnValue(false);
+  });
+
+  it('carries Edit and Remove instead of icons of their own', async () => {
+    const user = userEvent.setup();
+    const edit = vi.fn();
+    const remove = vi.fn();
+    renderBar(undefined, [
+      { label: 'Edit', icon: Pencil, onSelect: edit },
+      { label: 'Remove', icon: Trash2, onSelect: remove, danger: true },
+    ]);
+
+    expect(screen.queryByRole('button', { name: 'editAmounts' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'remove' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'moreOptions' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Edit' }));
+    expect(edit).toHaveBeenCalledOnce();
+
+    await user.click(screen.getByRole('button', { name: 'moreOptions' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove' }));
+    expect(remove).toHaveBeenCalledOnce();
+  });
+
+  it('draws no ⋯ when there is nothing to put in it', () => {
+    renderBar();
+    expect(screen.queryByRole('button', { name: 'moreOptions' })).toBeNull();
   });
 });

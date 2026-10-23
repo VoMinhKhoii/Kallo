@@ -1,14 +1,21 @@
 'use client';
 
-import { Check, Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { CardDisclosureButton } from '@/components/logging/feed/card-disclosure-button';
+import { MealCardContextMenu } from '@/components/logging/feed/meal-edit/meal-card-context-menu';
+import {
+  MealCardMenuButton,
+  type MealCardMenuItem,
+} from '@/components/logging/feed/meal-edit/meal-card-menu-button';
+import { MealEditDialog } from '@/components/logging/feed/meal-edit/meal-edit-dialog';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entry-actions';
-import { MealEntryItem } from '@/components/logging/feed/meal-entry/meal-entry-item';
-import { PortionPicker } from '@/components/logging/feed/meal-entry/portion/portion-picker';
+import { MealEntryDetails } from '@/components/logging/feed/meal-entry/meal-entry-details';
+import { repointVesselTo } from '@/components/logging/feed/meal-entry/portion/portion-picker';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 import { formatTime } from '@/lib/core/date/format-time';
 import type {
   ChatMessage,
@@ -16,14 +23,13 @@ import type {
   MealQuantityEdit,
 } from '@/lib/core/types/meal';
 import {
-  applyQuantityChange,
+  draftFromStaged,
+  stagedItemsFrom,
+} from '@/lib/domain/meals/meal-edit/meal-edit-sources';
+import {
   deriveQuantityEdits,
   recalculateTotals,
 } from '@/lib/domain/meals/quantity-recalculation';
-
-// Briefly block Confirm after a quantity tap so a fast double-tap on a
-// stepper can't slip through and save before the user is done adjusting.
-const CONFIRM_DEBOUNCE_MS = 300;
 
 interface MealEntryProps {
   message: ChatMessage;
@@ -33,6 +39,8 @@ interface MealEntryProps {
   isConfirming?: boolean;
   /** The answer to a run just watched: it takes over in place, not enters. */
   revealing?: boolean;
+  /** Throws the staged analysis away, after a confirm. Omitted: no Discard. */
+  onDiscard?: () => void;
 }
 
 export function MealEntry({
@@ -40,50 +48,64 @@ export function MealEntry({
   onConfirm,
   isConfirming,
   revealing = false,
+  onDiscard,
 }: MealEntryProps) {
   const t = useTranslations('logging.mealEntry');
+  const tLogging = useTranslations('logging');
+  const tEdit = useTranslations('logging.mealEdit');
+  const tFeed = useTranslations('logging.feedArea');
+  const tCommon = useTranslations('common');
   const locale = useLocale();
-  const [isEditing, setIsEditing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [items, setItems] = useState<MealItem[]>(
     message.parsedMeal?.items ?? []
   );
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [confirmCoolingDown, setConfirmCoolingDown] = useState(false);
-  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
-    };
-  }, []);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDiscarding, setIsDiscarding] = useState(false);
 
   const meal = message.parsedMeal;
   if (!meal) return null;
 
   const currentTotals = recalculateTotals(items);
 
-  // Edits apply live to `items` — no separate save step. Quantities scale
-  // against the original AI estimate so repeated +/- stays proportional.
-  const handleQuantityChange = (itemId: string, delta: number) => {
-    setItems((prev) => applyQuantityChange(prev, meal.items, itemId, delta));
-    setConfirmCoolingDown(true);
-    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
-    confirmTimerRef.current = setTimeout(
-      () => setConfirmCoolingDown(false),
-      CONFIRM_DEBOUNCE_MS
-    );
-  };
-
   const handleConfirm = () => {
     const edits = deriveQuantityEdits(items, meal.items);
     setConfirmed(true);
-    setIsEditing(false);
     setIsCollapsed(true);
     onConfirm?.(edits);
   };
 
-  const timeLabel = formatTime(message.timestamp, locale);
+  // Unsaved: the card's own menus carry Edit and Discard, and every dish row is
+  // a way into the edit dialog. Nothing sits under the save button.
+  const menuItems: MealCardMenuItem[] = confirmed
+    ? []
+    : [
+        {
+          label: tLogging('edit'),
+          icon: Pencil,
+          onSelect: () => setIsEditing(true),
+        },
+        ...(onDiscard && !isConfirming
+          ? [
+              {
+                label: tLogging('discard'),
+                icon: Trash2,
+                danger: true,
+                onSelect: () => setIsDiscarding(true),
+              },
+            ]
+          : []),
+      ];
+  const openEditor = confirmed ? undefined : () => setIsEditing(true);
+
+  const totalsLine = (
+    <span className="text-[11px] text-kallo-text-muted tabular-nums">
+      P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
+      {Math.round(currentTotals.carbs)}g{'  '}F: {Math.round(currentTotals.fat)}
+      g
+    </span>
+  );
 
   return (
     <motion.article
@@ -93,142 +115,105 @@ export function MealEntry({
       animate={{ opacity: 1 }}
       className="relative"
     >
-      <TurnHeader timeLabel={timeLabel} message={message.userInput} />
+      <TurnHeader
+        timeLabel={formatTime(message.timestamp, locale)}
+        message={message.userInput}
+      />
 
-      {/* Card */}
-      <div className="rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
-        {/* Header: quoted input + controls */}
-        <div className="flex items-start justify-between gap-3">
-          {message.userInput && (
-            <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
-              {message.userInput}
-            </p>
-          )}
-          <div className="flex shrink-0 items-center gap-2">
-            {confirmed && (
+      <MealCardContextMenu items={menuItems}>
+        <div className="rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
+          {/* Header: quoted input + its one control */}
+          <div className="flex items-start justify-between gap-3">
+            {message.userInput && (
+              <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
+                {message.userInput}
+              </p>
+            )}
+            {confirmed ? (
               <CardDisclosureButton
                 label={t('toggleDetails')}
                 isExpanded={!isCollapsed}
                 onToggle={() => setIsCollapsed((prev) => !prev)}
               />
-            )}
-            {/* One button whose face swaps in place — a mode="wait" morph here
-                left a beat with no button at all. */}
-            {!confirmed && (
-              <button
-                type="button"
-                onClick={() => setIsEditing((prev) => !prev)}
-                className={
-                  isEditing
-                    ? 'flex items-center gap-1.5 rounded-full border border-kallo-border bg-kallo-hover px-2.5 py-1 text-kallo-text transition-colors hover:bg-kallo-hover/70'
-                    : 'flex items-center gap-1.5 rounded-full border border-kallo-border/50 px-2.5 py-1 text-kallo-text-muted transition-colors hover:border-kallo-accent/50 hover:bg-kallo-hover/40 hover:text-kallo-text'
-                }
-              >
-                {isEditing ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <Pencil className="h-3 w-3" />
-                )}
-                <span
-                  className={
-                    isEditing
-                      ? 'font-sans-display font-semibold text-[10px]'
-                      : 'font-medium font-sans-display text-[10px]'
-                  }
-                >
-                  {isEditing ? t('done') : t('edit')}
-                </span>
-              </button>
+            ) : (
+              <div className="-mt-1 -mr-1.5 shrink-0">
+                <MealCardMenuButton items={menuItems} />
+              </div>
             )}
           </div>
+
+          {/* Collapsed summary */}
+          <AnimatePresence initial={false}>
+            {confirmed && isCollapsed && (
+              <motion.div
+                key="summary"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="mt-2 flex items-center justify-between font-sans-display"
+              >
+                {totalsLine}
+                <span className="font-bold text-kallo-text text-sm tabular-nums">
+                  {Math.round(currentTotals.calories)} kcal
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Expandable details */}
+          <AnimatePresence initial={false}>
+            {!isCollapsed && (
+              <motion.div
+                key="details"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                style={{ overflow: 'hidden' }}
+              >
+                <MealEntryDetails
+                  items={items}
+                  totals={currentTotals}
+                  totalsLine={totalsLine}
+                  onOpen={openEditor}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+      </MealCardContextMenu>
 
-        {/* Collapsed summary */}
-        <AnimatePresence initial={false}>
-          {confirmed && isCollapsed && (
-            <motion.div
-              key="summary"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="mt-2 flex items-center justify-between font-sans-display"
-            >
-              <span className="text-[11px] text-kallo-text-muted tabular-nums">
-                P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
-                {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
-                {Math.round(currentTotals.fat)}g
-              </span>
-              <span className="font-bold text-kallo-text text-sm tabular-nums">
-                {Math.round(currentTotals.calories)} kcal
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Expandable details */}
-        <AnimatePresence initial={false}>
-          {!isCollapsed && (
-            <motion.div
-              key="details"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-              style={{ overflow: 'hidden' }}
-            >
-              <div className="mt-5 border-kallo-border border-t pt-4">
-                {/* Items list */}
-                <div className="mb-4 space-y-1">
-                  {items.map((item, idx) => (
-                    <div key={item.id}>
-                      <MealEntryItem
-                        item={item}
-                        index={idx}
-                        isEditing={isEditing}
-                        onQuantityChange={handleQuantityChange}
-                      />
-                      {!confirmed && item.vessel && (
-                        <PortionPicker
-                          item={item}
-                          items={items}
-                          onApply={setItems}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Totals — flat, no card */}
-                <div className="border-kallo-border/50 border-t pt-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold font-sans-display text-[13px] text-kallo-text">
-                      {t('total')}
-                    </span>
-                    <div className="flex items-center gap-4">
-                      <span className="font-sans-display text-[11px] text-kallo-text-muted tabular-nums">
-                        P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
-                        {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
-                        {Math.round(currentTotals.fat)}g
-                      </span>
-                      <span className="font-bold font-sans-display text-kallo-text tabular-nums">
-                        {Math.round(currentTotals.calories)} kcal
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Action buttons */}
       {!confirmed && (
-        <MealEntryActions
-          isEditing={isEditing}
-          disabled={isConfirming || (isEditing && confirmCoolingDown)}
-          onConfirm={handleConfirm}
+        <MealEntryActions disabled={isConfirming} onConfirm={handleConfirm} />
+      )}
+
+      {!confirmed && (
+        <MealEditDialog
+          open={isEditing}
+          onOpenChange={setIsEditing}
+          initial={draftFromStaged(items, meal.items)}
+          subtitle={message.userInput}
+          commitLabel={tEdit('done')}
+          onCommit={(draft) =>
+            setItems((current) =>
+              stagedItemsFrom(draft, current, (vessel, grams) =>
+                repointVesselTo(vessel, grams, locale)
+              )
+            )
+          }
+        />
+      )}
+      {onDiscard && (
+        <ConfirmDialog
+          open={isDiscarding}
+          onOpenChange={setIsDiscarding}
+          title={tFeed('discardConfirmTitle')}
+          description={tFeed('discardConfirmDescription')}
+          confirmLabel={tLogging('discard')}
+          cancelLabel={tCommon('cancel')}
+          tone="destructive"
+          onConfirm={onDiscard}
         />
       )}
     </motion.article>

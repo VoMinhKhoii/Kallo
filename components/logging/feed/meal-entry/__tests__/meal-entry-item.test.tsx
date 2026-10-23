@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { userEvent } from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming/streaming-meal-entry';
 import type { ChatMessage, MealItem } from '@/lib/core/types/meal';
 import { MealEntryItem } from '../meal-entry-item';
@@ -19,14 +20,7 @@ const item: MealItem = {
 
 describe('MealEntryItem', () => {
   it('renders macro and calorie units for confirmed meal rows', () => {
-    render(
-      <MealEntryItem
-        item={item}
-        index={0}
-        isEditing={false}
-        onQuantityChange={() => {}}
-      />
-    );
+    render(<MealEntryItem item={item} index={0} />);
 
     expect(screen.getByText('P:13g')).toBeInTheDocument();
     expect(screen.getByText('C:0g')).toBeInTheDocument();
@@ -34,31 +28,18 @@ describe('MealEntryItem', () => {
     expect(screen.getByText('304 kcal')).toBeInTheDocument();
   });
 
-  it('disables the decrease button at the minimum dish weight', () => {
-    render(
-      <MealEntryItem
-        item={{ ...item, quantity: 10 }}
-        index={0}
-        isEditing={true}
-        onQuantityChange={() => {}}
-      />
-    );
-
-    expect(screen.getByLabelText('decreaseQuantity')).toBeDisabled();
-    expect(screen.getByLabelText('increaseQuantity')).toBeEnabled();
+  it('is a button into the edit dialog while the meal is unsaved', async () => {
+    const onOpen = vi.fn();
+    render(<MealEntryItem item={item} index={0} onOpen={onOpen} />);
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'editDish' }));
+    expect(onOpen).toHaveBeenCalledOnce();
   });
 
-  it('allows decreasing above the minimum dish weight', () => {
-    render(
-      <MealEntryItem
-        item={{ ...item, quantity: 100 }}
-        index={0}
-        isEditing={true}
-        onQuantityChange={() => {}}
-      />
-    );
-
-    expect(screen.getByLabelText('decreaseQuantity')).toBeEnabled();
+  it('is plain text once saved', () => {
+    render(<MealEntryItem item={item} index={0} />);
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('renders macro and calorie units for streaming completed rows', () => {

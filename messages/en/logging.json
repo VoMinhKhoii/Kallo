@@ -158,10 +158,6 @@
     }
   },
   "mealEntry": {
-    "edit": "Edit",
-    "done": "Done",
-    "decreaseQuantity": "Decrease {name} quantity",
-    "increaseQuantity": "Increase {name} quantity",
     "toggleDetails": "Toggle meal details",
     "total": "Total"
   },
@@ -180,13 +176,8 @@
     "removeConfirmTitle": "Remove this meal?",
     "removeConfirmDescription": "It disappears from your log and your circle's feed.",
     "logAgain": "Log again",
-    "editAmounts": "Edit amounts",
     "shareWithFriends": "Send to friends",
     "portionChip": "{portion} portion",
-    "cancelEdit": "Cancel",
-    "saveEdit": "Save changes",
-    "savingEdit": "Saving…",
-    "removeRow": "Remove {name}",
     "mealUpdated": "Meal updated",
     "updateError": "Couldn't update the meal — try again.",
     "refineAction": "Fix with words",
@@ -195,6 +186,26 @@
     "refineSubmit": "Re-analyze",
     "refineHint": "We'll re-read the whole meal with your correction and replace it.",
     "refineTightHint": "The original text is long — we'll trim it a little to fit your correction."
+  },
+  "mealEdit": {
+    "title": "Edit meal",
+    "save": "Save",
+    "saving": "Saving…",
+    "done": "Done",
+    "cancel": "Cancel",
+    "wholeMeal": "Whole meal",
+    "servings": "Servings",
+    "amount": "Amount",
+    "size": "Size",
+    "lessServing": "One less serving of {name}",
+    "moreServing": "One more serving of {name}",
+    "removeDish": "Remove {name}",
+    "lessAmount": "10 less of {name}",
+    "moreAmount": "10 more of {name}",
+    "lessWhole": "Less of the whole meal",
+    "moreWhole": "More of the whole meal",
+    "editDish": "Edit {name}",
+    "moreOptions": "More options"
   },
   "manualLogging": {
     "searchPlaceholder": "Search foods...",
