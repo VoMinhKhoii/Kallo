@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/logging_models.dart';
 import '../cheat/cheat_meal_card.dart';
 import '../composer/entrances.dart';
-import '../persisted/persisted_meal_amount_editor.dart' show AmountEditSave;
+import '../../logic/meal_edit/meal_edit_sources.dart' show AmountEditSave;
 import '../persisted/persisted_meal_card.dart';
 
 /// One saved meal in the day's feed — the cheat card or the regular persisted

@@ -1,10 +1,6 @@
-/// The unconfirmed card's quantity-edit state machine: the draft the steppers
-/// and the portion picker write into, and the brief block they put on Confirm.
+/// The unconfirmed card's quantity draft: what the meal edit sheet hands back,
+/// and exactly what Log meal will send.
 library;
-
-import 'dart:async';
-
-import 'package:flutter/foundation.dart';
 
 import '../../../models/logging/meal.dart';
 import 'meal_utils.dart';
@@ -14,12 +10,12 @@ import 'meal_utils.dart';
 /// submitted.
 ///
 /// [dirty] is the SAME predicate the confirm sends, not a proxy for it. The
-/// proxy was `identical(items, original)`, and [applyQuantityChange] ends in
-/// `.toList()` — a NEW list on every tap, no-op or not (a minus at the
-/// [minDishGrams] floor, a plus then a minus). So the card's total flipped to
-/// the round-then-sum figure (490 against the server's 489) while
-/// [deriveQuantityEdits] reported nothing to send at all: the user watched the
-/// number change, confirmed, and the saved card came back at the original.
+/// proxy was `identical(items, original)`, and every edit builds a NEW list,
+/// no-op or not (a minus at the [minDishGrams] floor, a plus then a minus). So
+/// the card's total flipped to the round-then-sum figure (490 against the
+/// server's 489) while [deriveQuantityEdits] reported nothing to send at all:
+/// the user watched the number change, confirmed, and the saved card came back
+/// at the original.
 class QuantityDraft {
   QuantityDraft(this.original) : items = original;
 
@@ -29,11 +25,6 @@ class QuantityDraft {
 
   /// The quantities as they now stand.
   List<MealItem> items;
-
-  /// One dish stepped by [delta], scaled off [original] so repeated taps
-  /// don't compound rounding.
-  List<MealItem> changed(String itemId, double delta) =>
-      applyQuantityChange(items, original, itemId, delta);
 
   /// The minimal set of overrides the confirm will carry.
   List<MealQuantityEdit> get edits => deriveQuantityEdits(items, original);
@@ -79,30 +70,4 @@ class QuantityDraft {
       a.protein == b.protein &&
       a.carbs == b.carbs &&
       a.fat == b.fat;
-}
-
-/// Blocks Confirm for a moment after a quantity tap, so a fast double-tap on a
-/// stepper can't slip through and save before the user is done adjusting.
-class ConfirmCooldown {
-  ConfirmCooldown(this.onSettled);
-
-  static const Duration _window = Duration(milliseconds: 300);
-
-  /// Called when the window closes — the card has to repaint its CTA.
-  final VoidCallback onSettled;
-
-  Timer? _timer;
-  bool active = false;
-
-  /// (Re-)start the window. Each edit pushes it out again.
-  void arm() {
-    active = true;
-    _timer?.cancel();
-    _timer = Timer(_window, () {
-      active = false;
-      onSettled();
-    });
-  }
-
-  void dispose() => _timer?.cancel();
 }

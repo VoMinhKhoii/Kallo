@@ -45,47 +45,6 @@ MacroBreakdown recalculateTotals(List<MealItem> items) {
   );
 }
 
-/// Apply a +/- quantity change to one item, scaling its macros off the
-/// ORIGINAL item (so repeated taps don't compound rounding). Grams/ml dishes
-/// clamp at [minDishGrams]; count dishes clamp at 0.
-List<MealItem> applyQuantityChange(
-  List<MealItem> items,
-  List<MealItem> originalItems,
-  String itemId,
-  double delta,
-) {
-  return items.map((item) {
-    if (item.id != itemId) return item;
-    MealItem? originalItem;
-    for (final i in originalItems) {
-      if (i.id == itemId) {
-        originalItem = i;
-        break;
-      }
-    }
-    if (originalItem == null) return item;
-
-    final double minQuantity =
-        (item.unit == 'g' || item.unit == 'ml') ? minDishGrams : 0;
-    final double newQuantity =
-        (item.quantity + delta) < minQuantity
-            ? minQuantity
-            : item.quantity + delta;
-    final double ratio =
-        originalItem.quantity > 0 ? newQuantity / originalItem.quantity : 0;
-
-    return item.copyWith(
-      quantity: newQuantity,
-      macros: MacroBreakdown(
-        calories: originalItem.macros.calories * ratio,
-        protein: originalItem.macros.protein * ratio,
-        carbs: originalItem.macros.carbs * ratio,
-        fat: originalItem.macros.fat * ratio,
-      ),
-    );
-  }).toList();
-}
-
 /// Compute the minimal set of quantity overrides vs. the original list, keyed
 /// by item order (the server scales the whole dish to [MealQuantityEdit.newGrams]).
 List<MealQuantityEdit> deriveQuantityEdits(

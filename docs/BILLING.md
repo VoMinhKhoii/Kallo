@@ -236,7 +236,7 @@ entitled" from "nothing is being enforced yet" without guessing from env.
 
 Notes the table cannot hold:
 
-- **"Visual edit" has no key.** The pre-confirm portion picker is only reachable
+- **"Visual edit" has no key.** The pre-confirm portion ruler is only reachable
   from the AI-analysis and relog flows, both gated, so it is premium
   transitively; a dedicated gate would be a second lock on the same door.
 - **Accepting a meal share is free.** `acceptMealShareInviteAction` is

@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/logic/meal_log_mode.dart';
-import 'package:kallo_mobile/features/logging/widgets/portion/portion_picker_sheet.dart';
+import 'package:kallo_mobile/features/logging/logic/meal_edit/meal_edit_sources.dart';
+import 'package:kallo_mobile/features/logging/widgets/meal_edit/meal_edit_sheet.dart';
+import 'package:kallo_mobile/features/logging/widgets/portion/ruler/portion_ruler_control.dart';
+import 'package:kallo_mobile/models/logging/meal.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/meal_mode_sheet.dart';
 import 'package:kallo_mobile/features/nutrition/widgets/nutrients/source_attribution.dart';
 import 'package:kallo_mobile/models/nutrition/vessel.dart';
@@ -89,6 +92,34 @@ Future<void> _openSheet(
   await tester.pumpAndSettle();
 }
 
+/// The meal edit sheet on one staged dish in [vessel], its Size dropdown open —
+/// the tallest state the sheet has.
+VoidCallback Function(BuildContext) _editSheet(ClientVessel vessel, int grams) {
+  final items = [
+    MealItem(
+      id: 'a',
+      name: 'Cá kho',
+      quantity: grams.toDouble(),
+      unit: 'g',
+      macros: const MacroBreakdown(
+        calories: 300,
+        protein: 30,
+        carbs: 4,
+        fat: 18,
+      ),
+      vessel: vessel,
+    ),
+  ];
+  return (c) =>
+      () => showMealEditSheet(
+        c,
+        draft: draftFromStaged(items, items),
+        commitLabel: 'Done',
+        sizeOpen: 'a',
+        onCommit: (_) async {},
+      );
+}
+
 /// The action must be reachable — scrollable counts, clipped does not.
 Future<void> _expectReachable(
   WidgetTester tester,
@@ -131,20 +162,16 @@ void main() {
     _sizeTo(tester, const Size(390, 844), 1.0);
     await _openSheet(
       tester,
-      (c) =>
-          () => showPortionPicker(
-            c,
-            vessel: const PieceVessel(tier: 3, count: 1, kind: PieceKind.fish),
-            grams: 150,
-            itemCalories: 300,
-            itemQuantity: 150,
-          ),
+      _editSheet(
+        const PieceVessel(tier: 3, count: 1, kind: PieceKind.fish),
+        150,
+      ),
     );
-    expect(find.text('Portion size'), findsOneWidget);
-    await tester.drag(find.text('Portion size'), const Offset(0, 500));
+    expect(find.text('Edit meal'), findsOneWidget);
+    await tester.drag(find.text('Edit meal'), const Offset(0, 500));
     await tester.pumpAndSettle();
     expect(
-      find.text('Portion size'),
+      find.text('Edit meal'),
       findsNothing,
       reason: 'the inner scroll view swallowed swipe-to-dismiss',
     );
@@ -154,47 +181,45 @@ void main() {
     for (final scale in _scales) {
       final where = '${entry.key} @${scale}x';
 
-      testWidgets('portion picker — piece branch, $where', (tester) async {
+      testWidgets('meal edit sheet — piece ruler, $where', (tester) async {
         _sizeTo(tester, entry.value, scale);
         await _openSheet(
           tester,
-          (c) =>
-              () => showPortionPicker(
-                c,
-                // Poultry: the drumstick is the tallest silhouette in the set.
-                vessel: const PieceVessel(
-                  tier: 3,
-                  count: 1,
-                  kind: PieceKind.poultry,
-                ),
-                grams: 150,
-                itemCalories: 300,
-                itemQuantity: 150,
-              ),
+          // Poultry: the drumstick is the tallest silhouette in the set.
+          _editSheet(
+            const PieceVessel(tier: 3, count: 1, kind: PieceKind.poultry),
+            150,
+          ),
         );
-        await _expectReachable(tester, find.text('Apply'), entry.value);
+        await _expectReachable(tester, find.text('Done'), entry.value);
+        await _expectReachable(
+          tester,
+          find.byType(PortionRulerControl),
+          entry.value,
+        );
       });
 
-      testWidgets('portion picker — cup branch, $where', (tester) async {
+      testWidgets('meal edit sheet — cup ruler, $where', (tester) async {
         _sizeTo(tester, entry.value, scale);
         await _openSheet(
           tester,
-          (c) =>
-              () => showPortionPicker(
-                c,
-                // Cups are the tall case: aspect 0.57 makes tier 4 ~149pt tall,
-                // which is what pushed Apply off a 320pt screen entirely.
-                vessel: const ContainerVessel(
-                  family: ContainerFamily.cup,
-                  tier: 4,
-                  dishClass: DishClass.drink,
-                ),
-                grams: 600,
-                itemCalories: 300,
-                itemQuantity: 150,
-              ),
+          // Cups are the tall case: aspect 0.57 makes tier 4 ~149pt tall,
+          // which is what pushed the old picker's Apply off a 320pt screen.
+          _editSheet(
+            const ContainerVessel(
+              family: ContainerFamily.cup,
+              tier: 4,
+              dishClass: DishClass.drink,
+            ),
+            600,
+          ),
         );
-        await _expectReachable(tester, find.text('Apply'), entry.value);
+        await _expectReachable(tester, find.text('Done'), entry.value);
+        await _expectReachable(
+          tester,
+          find.byType(PortionRulerControl),
+          entry.value,
+        );
       });
 
       testWidgets('citations sheet, $where', (tester) async {

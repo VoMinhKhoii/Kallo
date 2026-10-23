@@ -102,9 +102,19 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   (`food/`: the scan result's header, an amount card, and the vessel tape for foods with
   a vessel hint), so each food is weighed as it goes in. Mirrored on web phones by
   `components/logging/input/manual/sheet/`.
+  Meal editing (`logic/meal_edit/` + `widgets/meal_edit/` + `widgets/actions/
+  meal_hold_menu.dart`): press and hold any meal card — saved or staged — for the
+  system context menu (Edit, and Remove or Discard); tapping a staged dish opens Edit
+  directly. Edit is one sheet: the whole meal (kcal, bar, legend, a Whole meal
+  stepper), then each dish with Servings (half steps), Amount (±10) and, for a dish with
+  a vessel, Size, which drops the portion ruler open under its row. A dish scales as
+  one thing; there is no ingredient level. A saved meal saves per-row gram overrides
+  and removals through the existing update endpoint; a staged one hands its dishes back
+  to the card for Save meal. Saved meals store no vessel, so Size is pre-save only.
   Portion clarity (`logic/portion/` + `widgets/portion/`): every staged dish the pipeline
-  resolved a vessel for carries a `≈ tô vừa` assumption line under it, opening a picker
-  sheet — true-to-scale silhouettes from `assets/portions/` riding a **tape measure**:
+  resolved a vessel for carries a `≈ tô vừa` assumption line under it, opening the edit
+  sheet on that dish's Size — true-to-scale silhouettes from `assets/portions/` riding a
+  **tape measure**:
   the scale scrolls under a fixed accent needle, tall graduations mark each vessel tier,
   and every graduation gives one haptic detent plus a click. The bowl / plate / cup branch
   and the fish / meat / poultry branch share one control (`widgets/portion/ruler/`); only

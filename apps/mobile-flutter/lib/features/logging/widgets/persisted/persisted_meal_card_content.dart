@@ -17,7 +17,6 @@ class PersistedMealCardContent extends StatelessWidget {
     required this.meal,
     required this.curvedExpand,
     required this.onToggle,
-    this.editorBody,
     this.borderRadius = const BorderRadius.all(
       Radius.circular(KalloRadii.card),
     ),
@@ -31,11 +30,6 @@ class PersistedMealCardContent extends StatelessWidget {
   /// so no part of the card can lag another.
   final Animation<double> curvedExpand;
   final VoidCallback onToggle;
-
-  /// When set, the read-only body (collapsed summary + expanded details) is
-  /// swapped IN PLACE for this editor — the header (quote + chevron) stays. No
-  /// enter/exit animation overlaps the swap, mirroring the web's amount editor.
-  final Widget? editorBody;
 
   /// The card's shape. Squared on the trailing side mid-swipe, so the card and
   /// the removal panel behind it meet on a straight seam — see [SwipeToRemove].
@@ -90,22 +84,16 @@ class PersistedMealCardContent extends StatelessWidget {
               // The breakdown opens BETWEEN the title and the bar+legend, so
               // the bar and its total always close the card. The details grow
               // in place and push the bar down with them — no jump-cut.
-              middle:
-                  editorBody == null
-                      ? SizeTransition(
-                        sizeFactor: curvedExpand,
-                        alignment: Alignment.topCenter,
-                        child: FadeTransition(
-                          opacity: curvedExpand,
-                          child: PersistedMealExpandedDetails(meal: meal),
-                        ),
-                      )
-                      : null,
+              middle: SizeTransition(
+                sizeFactor: curvedExpand,
+                alignment: Alignment.topCenter,
+                child: FadeTransition(
+                  opacity: curvedExpand,
+                  child: PersistedMealExpandedDetails(meal: meal),
+                ),
+              ),
             ),
           ),
-
-          // Edit mode swaps the read-only body for the amount editor in place.
-          if (editorBody != null) editorBody!,
         ],
       ),
     );

@@ -1,36 +1,34 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/logging/meal.dart';
 import '../../../../theme/kallo_motion.dart';
 import '../composer/entrances.dart';
 import 'meal_entry_dish_line.dart';
+import 'meal_entry_row_press.dart';
 import '../portion/portion_assumption_line.dart';
 
-/// One dish inside an unconfirmed [MealEntry]: the name + macros row (with the
-/// +/- steppers in edit mode) and, underneath it, the quiet portion-assumption
-/// line whenever the pipeline resolved a vessel for the dish.
+/// One dish inside an unconfirmed [MealEntry]: the name + macros row and,
+/// underneath it, the quiet portion-assumption line whenever the pipeline
+/// resolved a vessel for the dish.
 ///
-/// The assumption line is a SIBLING of the row, not part of it — it must stay
-/// outside the edit-mode wash, exactly as `meal-entry.tsx` renders the picker
-/// outside `MealEntryItem`.
+/// Both are buttons into the meal edit sheet: the row opens it on the dish,
+/// the assumption line opens it with that dish's Size already dropped open.
 class MealEntryItemRow extends StatelessWidget {
   const MealEntryItemRow({
     super.key,
     required this.item,
     required this.index,
-    required this.editing,
     required this.revealing,
     required this.animateIn,
-    required this.onChange,
-    required this.onAdjustPortion,
+    required this.onOpen,
+    required this.onOpenSize,
   });
 
   final MealItem item;
 
   /// Position in the list — drives the entrance stagger.
   final int index;
-
-  final bool editing;
 
   /// True on the streaming-reveal morph's first mount.
   final bool revealing;
@@ -39,18 +37,19 @@ class MealEntryItemRow extends StatelessWidget {
   /// from the server, which is only being scrolled back to.
   final bool animateIn;
 
-  final void Function(String itemId, double delta) onChange;
+  /// Opens the edit sheet on this dish.
+  final VoidCallback onOpen;
 
-  /// Opens the portion picker for this dish.
-  final ValueChanged<MealItem> onAdjustPortion;
+  /// Opens it with this dish's Size dropdown already open.
+  final VoidCallback onOpenSize;
 
   @override
   Widget build(BuildContext context) {
     final vessel = item.vessel;
-    final dishLine = MealEntryDishLine(
-      item: item,
-      editing: editing,
-      onChange: onChange,
+    final dishLine = MealEntryRowPress(
+      label: 'logging.mealEdit.editDish'.tr(namedArgs: {'name': item.name}),
+      onTap: onOpen,
+      child: MealEntryDishLine(item: item),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,7 +80,7 @@ class MealEntryItemRow extends StatelessWidget {
           PortionAssumptionLine(
             vessel: vessel,
             grams: item.quantity.round(),
-            onTap: () => onAdjustPortion(item),
+            onTap: onOpenSize,
           ),
       ],
     );

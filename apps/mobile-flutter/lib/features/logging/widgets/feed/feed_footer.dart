@@ -114,7 +114,7 @@ class FeedFooter extends StatelessWidget {
           StreamingEntry(stream: stream, loaderIndex: loaderIndex),
         // The completed answer, closing around the rows that were already on
         // screen: per-row macros already real, totals count up, the ticker line
-        // swapped for Edit/Confirm. This IS a remount (StreamingEntry and
+        // swapped for Log meal. This IS a remount (StreamingEntry and
         // MealEntry are different widgets) — the `revealing` flag softens the
         // seam by crossfading the item rows in place instead of re-entering
         // them, and both keep the same 16px content inset so nothing shifts
@@ -130,12 +130,7 @@ class FeedFooter extends StatelessWidget {
             busy: confirmPending,
             revealing: true,
             onConfirm: (edits) => onConfirmReveal(stream.analysisId!, edits),
-            actions: [
-              DiscardStagedButton(
-                busy: confirmPending,
-                onDiscard: () => onDiscardReveal(stream.analysisId!),
-              ),
-            ],
+            onDiscard: () => onDiscardReveal(stream.analysisId!),
           ),
         // The cheat reveal: an interactive slider card when the estimate is
         // staged (analysisId set), or the clarifying-question card when the

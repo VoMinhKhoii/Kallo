@@ -18,6 +18,7 @@ import 'package:kallo_mobile/theme/kallo_theme.dart';
 import '../../../l10n_test_loader.dart';
 
 import '../../../app_fonts.dart';
+import '../actions/hold_to_open_menu.dart';
 
 /// The two widths the card has to survive: a 390pt phone (iPhone 14/15) and a
 /// 320pt one (SE / small Android). Both are the DEVICE width — the card's own
@@ -120,52 +121,55 @@ void main() {
   });
 
   for (final width in [_phone390, _phone320]) {
-    testWidgets('edit mode fits the card at ${width.toInt()}pt', (
+    testWidgets('a dish tap opens the edit sheet at ${width.toInt()}pt', (
       tester,
     ) async {
       await tester.binding.setSurfaceSize(Size(width, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _pumpCard(tester, width: width);
 
-      await tester.tap(find.text('Edit'));
+      await tester.tap(find.text('Cơm gà Hải Nam'));
       await tester.pumpAndSettle();
 
-      // The reported bug: two 36pt steppers, a quantity readout AND the full
-      // `P:/C:/F: + kcal` tail together demand more than the card has, so the
-      // row overflowed — 12pt on the reporter's device, more on a narrower one.
       expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('editing moves nothing at ${width.toInt()}pt', (tester) async {
-      await tester.binding.setSurfaceSize(Size(width, 1400));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      await _pumpCard(tester, width: width);
-
-      final name = find.text('Sữa chua uống berries');
-      final kcal = find.text('526 kcal');
-      // Horizontal only. Rows DO get taller — a stepper carries a 36pt tap
-      // target and the P/C/F line it replaces is half that — but the reported
-      // complaint was sideways: names changing column when you tap Edit.
-      List<double> xs(Finder f) => [
-        tester.getRect(f).left,
-        tester.getRect(f).right,
-      ];
-      final nameBefore = xs(name);
-      final kcalBefore = xs(kcal);
-
-      await tester.tap(find.text('Edit'));
-      await tester.pumpAndSettle();
-      tester.takeException(); // the overflow, if the fix regressed
-
-      // The steppers used to sit in FRONT of the name, shoving every dish 112pt
-      // right — on a phone there was nothing to shove into, so names collapsed
-      // to zero width. They now take the P/C/F block's slot instead, which is
-      // the same width whatever is in it, so no column moves.
-      expect(xs(name), nameBefore, reason: 'the name changed column');
-      expect(xs(kcal), kcalBefore, reason: 'the calories changed column');
-      expect(find.text('180'), findsOneWidget, reason: 'no quantity readout');
+      expect(find.text('Edit meal'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
+      // Every dish of the meal, not just the one tapped.
+      expect(find.text('Kem vani'), findsNWidgets(2));
     });
   }
+
+  testWidgets('holding the card offers Edit and Discard', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var discarded = 0;
+    await tester.pumpWidget(
+      _wrap(
+        MealEntry(
+          parsedMeal: _meal,
+          rawInput: 'cơm gà',
+          onConfirm: (_) {},
+          onDiscard: () => discarded++,
+        ),
+        width: _phone390,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await holdToOpenMenu(tester, find.byType(MealEntryCard));
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text('Discard'), findsOneWidget);
+    // Nothing sits under Save meal any more — no trash row.
+    expect(find.byIcon(LucideIcons.trash2300), findsOneWidget); // the menu's
+
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+    // The discard still asks first.
+    expect(discarded, 0);
+    await tester.tap(find.text('Discard').last);
+    await tester.pumpAndSettle();
+    expect(discarded, 1);
+  });
 
   testWidgets('the staged total is the server\'s, not a re-sum of the rows', (
     tester,
@@ -267,6 +271,7 @@ void main() {
       ],
     );
 
+    /// The card, with its edit sheet open on the first dish.
     Future<void> pumpEditing(WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -281,33 +286,36 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Edit'));
+      await tester.tap(find.text('Món một'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> tapAndSettle(WidgetTester tester, Finder f) async {
+      await tester.tap(f);
       await tester.pumpAndSettle();
     }
 
     testWidgets('a real edit shows the recalculated figure', (tester) async {
       await pumpEditing(tester);
 
-      await tester.tap(find.byIcon(LucideIcons.plus300).first);
-      await tester.pumpAndSettle();
+      await tapAndSettle(tester, find.bySemanticsLabel('10 more of Món một'));
+      await tapAndSettle(tester, find.text('Done'));
 
       // 100g → 110g scales the first dish to 179.3, so 506 is the honest sum.
       expect(find.text('506 kcal'), findsOneWidget);
     });
 
     testWidgets('plus then minus returns to the server figure', (tester) async {
-      // The sentinel was `identical(_items, _original)`, and
-      // `applyQuantityChange` ends in `.toList()` — a NEW list every call, no-op
-      // or not. So stepping up and back down flipped the display to the
+      // The sentinel was `identical(_items, _original)`, and every edit builds
+      // a NEW list, no-op or not. So stepping up and back down flipped the display to the
       // round-then-sum figure (490) while `deriveQuantityEdits` reported NO
       // edits: the user watched the number change, confirmed, and the saved
       // card came back at the original.
       await pumpEditing(tester);
 
-      await tester.tap(find.byIcon(LucideIcons.plus300).first);
-      await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(LucideIcons.minus300).first);
-      await tester.pumpAndSettle();
+      await tapAndSettle(tester, find.bySemanticsLabel('10 more of Món một'));
+      await tapAndSettle(tester, find.bySemanticsLabel('10 less of Món một'));
+      await tapAndSettle(tester, find.text('Done'));
 
       expect(
         find.text('489 kcal'),
@@ -381,41 +389,6 @@ void main() {
     expect(lefts.toSet(), hasLength(1), reason: 'P: drifted between rows');
   });
 
-  testWidgets('the card says it is editable without a wash on every row', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await _pumpCard(tester, width: _phone390);
-
-    Border cardBorder() =>
-        (tester
-                        .widgetList<AnimatedContainer>(
-                          find.byType(AnimatedContainer),
-                        )
-                        .firstWhere(
-                          (c) =>
-                              (c.decoration as BoxDecoration?)?.borderRadius ==
-                              BorderRadius.circular(KalloRadii.card),
-                        )
-                        .decoration
-                    as BoxDecoration)
-                .border!
-            as Border;
-
-    // Borderless at rest on the native canvas — the ring is drawn transparent
-    // so the card never changes size as edit mode arrives.
-    expect(cardBorder().top.color, const Color(0x00000000));
-
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
-
-    // The grey per-row wash is gone. What signals edit mode is the card's own
-    // hairline going to the accent this app already uses for a focused input —
-    // said once, in existing vocabulary, without insetting anything.
-    expect(cardBorder().top.color, KalloColors.accent40);
-  });
-
   testWidgets('the card is white, including on the reveal', (tester) async {
     await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -441,7 +414,7 @@ void main() {
       // transparent. Both cards are white; that is what removes the seam.
       final decoration =
           tester
-                  .widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
+                  .widgetList<Container>(find.byType(Container))
                   .firstWhere(
                     (c) =>
                         (c.decoration as BoxDecoration?)?.borderRadius ==
@@ -647,13 +620,12 @@ void main() {
     });
   });
 
-  testWidgets('a re-stage under an open portion picker wins', (tester) async {
-    // The picker computes its answer from a SNAPSHOT of the items as they were
-    // when it opened — its own comment says nothing can move the row while it
-    // is modal, and for the ROW that holds. A re-stage is not the row moving:
-    // it replaces the whole analysis under the sheet. Applying the snapshot
-    // then wrote the superseded meal back over it, so a user who opened the
-    // picker just before a retry landed undid the retry by pressing Apply.
+  testWidgets('a re-stage under an open edit sheet wins', (tester) async {
+    // The sheet computes its answer from a SNAPSHOT of the items as they were
+    // when it opened. A re-stage replaces the whole analysis under it, and
+    // committing the snapshot then would write the superseded meal back over
+    // it — a user who opened the sheet just before a retry landed would undo
+    // the retry by pressing Done. (The old portion picker shipped exactly that.)
     await tester.binding.setSurfaceSize(const Size(_phone390, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -723,14 +695,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(line);
     await tester.pumpAndSettle();
-    expect(find.text('Apply'), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
 
     // The retry's answer lands while the sheet is up.
     meal.value = restaged;
     await tester.pumpAndSettle();
 
-    // Apply commits the picker's view of a meal that no longer exists.
-    await tester.tap(find.text('Apply'));
+    // Done commits the sheet's view of a meal that no longer exists.
+    await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
     expect(

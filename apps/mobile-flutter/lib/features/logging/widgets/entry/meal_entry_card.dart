@@ -16,32 +16,16 @@ import '../../logic/logging_spacing.dart';
 /// it. Both cards being white is what removes the seam the parameter was
 /// reaching for.
 class MealEntryCard extends StatelessWidget {
-  const MealEntryCard({super.key, required this.child, this.editing = false});
+  const MealEntryCard({super.key, required this.child});
   final Widget child;
-
-  /// Editing lifts the hairline to the accent this app already uses for a
-  /// focused input, on the WHOLE card.
-  ///
-  /// It replaces a grey wash behind each row, which said "these three rows are
-  /// something" without saying what, cost every row an 8pt inset that shifted
-  /// its contents, and repeated the message once per item. Ringing the card
-  /// states it once, in the app's existing vocabulary for "this is live", and
-  /// moves nothing.
-  final bool editing;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150), // transition-colors
+    return Container(
       padding: LoggingSpacing.card,
       decoration: BoxDecoration(
         color: KalloColors.elev, // solid white card on neutral canvas
         borderRadius: BorderRadius.circular(KalloRadii.card),
-        // Only the editing ring is drawn; at rest the border is transparent
-        // rather than absent, so the card's size never changes with its state.
-        border: Border.all(
-          color: editing ? KalloColors.accent40 : const Color(0x00000000),
-        ),
       ),
       child: child,
     );
