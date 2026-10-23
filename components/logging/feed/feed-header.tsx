@@ -35,7 +35,7 @@ export function FeedHeader({
   return (
     <>
       <div
-        className="shrink-0 bg-kallo-surface px-3 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-3"
+        className="shrink-0 bg-kallo-surface px-3 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-3 dark:bg-transparent"
         data-testid="macro-summary-region"
       >
         <div className="mx-auto max-w-3xl">
