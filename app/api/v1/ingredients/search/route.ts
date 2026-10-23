@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import { ingredientSearchQuerySchema } from '@/lib/api/contracts/ingredients';
 import { handleRouteError } from '@/lib/api/respond';
 import { searchIngredients } from '@/lib/domain/ingredients/search/ingredient-search';
@@ -22,6 +23,7 @@ export async function GET(req: NextRequest) {
       q,
       limit,
       allowLiveEmbedding: hasAiConsent(profile),
+      riceBowlG: riceBowlFor(profile).mid,
     });
 
     return Response.json({ results });

@@ -47,6 +47,7 @@ exports[`grounded-estimation prompt structure > keeps the vessel-less extracted 
     - Only when NO such row exists may you fold absorbed oil into the fried food's fatG (pan-sear 3–7g, stir-fry 5–10g, shallow-fry 8–15g, deep-fry ~10–18% of food weight; scale within the range using oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat.
     - Skip entirely when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
   dish_count and dish_unit on a <meal_item> are the user's count of whole pieces of the DISH ("1 miếng tôm tonkatsu" is one whole shrimp cutlet, breading included; "2 cái bánh bao" is two whole buns, ~100–120 g each, mostly wrapper): size one whole piece as served, multiply by dish_count, and share that weight across the dish's ingredients. Never size one ingredient as one unit of itself (one shrimp, one piece of filling).
+  Plain cooked rice by the bowl (chén, bát) with no weight given: size each bowl with rice_bowl_g in <user_context> — the middle figure for a normal bowl, the small figure for ít / lưng chén / vơi, the full figure for đầy / vun.
   If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — emit normal best-effort fields (grossG must be > 0 and refusePct is required) and never treat the zero as one standard serving in meal-level reasoning.
   The server multiplies DB per_100g × edible mass / 100 and applies NO yield conversion — the raw/cooked basis conversion is yours.
 </grams_rule>

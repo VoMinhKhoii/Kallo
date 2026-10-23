@@ -115,6 +115,23 @@ function withRestoredEnv(keys: string[], callback: () => void): void {
 }
 
 describe('grounded-estimation prompt structure', () => {
+  it("tells Call 2 the user's own bowl of rice, by country", () => {
+    const prompt = (countryOfOrigin: string, outputLanguage: 'vi' | 'en') =>
+      buildGroundedEstimationPrompt({
+        originalPrompt: 'test prompt',
+        mealItems: [mealItemWithIng([candidate()])],
+        userContext: { ...baseUserContext, countryOfOrigin, outputLanguage },
+      });
+    expect(prompt('Vietnam', 'vi')).toContain(
+      'rice_bowl_g: 120 (small 80, full 160)'
+    );
+    const korean = prompt('South Korea', 'en');
+    expect(korean).toContain('rice_bowl_g: 210 (small 140, full 280)');
+    // The global rule names no Vietnamese bowl words.
+    expect(korean).toContain('Plain cooked rice by the bowl with no weight');
+    expect(korean).not.toContain('lưng chén');
+  });
+
   it('keeps the vessel-less extracted prefix byte-stable', () => {
     expect(buildStaticPrefix(false)).toMatchSnapshot();
   });

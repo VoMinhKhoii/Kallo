@@ -5,6 +5,7 @@
 // Pure — the search enrichment feeds it rows; the rules live here alone so the
 // web and mobile pickers can never disagree about a label.
 
+import { isPlainRice } from '@/lib/ai/portion/data/rice-bowls';
 import { pieceKindFromFoodGroup } from '@/lib/ai/portion/vessel/piece';
 import type {
   IngredientStateLabel,
@@ -20,6 +21,8 @@ export interface CardDisplayInput {
   food: string | null;
   cookingMethod: string | null;
   brand: string | null;
+  /** Grams in one bowl of plain rice for the searching user's country. */
+  riceBowlG?: number;
 }
 
 export interface CardDisplayFields {
@@ -193,6 +196,11 @@ function vesselHintOf(
       ? null
       : { family: 'plate', dishClass: 'solid' };
   }
-  if (BOWL_STARCH.test(text)) return { family: 'bowl', dishClass: 'solid' };
-  return null;
+  if (!BOWL_STARCH.test(text)) return null;
+  // Plain rice starts at one bowl as eaten in the user's country, not at the
+  // bowl's volume (~225 g): see `lib/ai/portion/data/rice-bowls.ts`.
+  return input.riceBowlG !== undefined &&
+    isPlainRice([input.food, input.namePrimary])
+    ? { family: 'bowl', dishClass: 'solid', smallBowlG: input.riceBowlG }
+    : { family: 'bowl', dishClass: 'solid' };
 }

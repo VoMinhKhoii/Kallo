@@ -28,6 +28,7 @@ import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
 import { resolveCompletenessGate } from '@/lib/ai/pipeline/resolve/completeness-gate';
 import type { bridgeV2ToV1 } from '@/lib/ai/pipeline/resolve/resolve';
 import { initV2BudgetAccounting } from '@/lib/ai/pipeline/telemetry/budget';
+import { riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import { resolveVesselEnvelope } from '@/lib/ai/portion/vessel/envelope';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
@@ -235,10 +236,14 @@ export async function analyzeMealV2(
       review.rescued > 0 && vesselEnabled
         ? run.decomposition.mealItems.map((mi, d) => {
             const before = vesselEnvelopes[d] ?? null;
+            const riceBowl = riceBowlFor(userContext);
             return (
-              resolveVesselEnvelope(mi) ??
+              resolveVesselEnvelope(mi, riceBowl) ??
               (before
-                ? resolveVesselEnvelope({ ...mi, vesselToken: before.token })
+                ? resolveVesselEnvelope(
+                    { ...mi, vesselToken: before.token },
+                    riceBowl
+                  )
                 : null)
             );
           })

@@ -53,6 +53,9 @@ function toClientVessel(vessel?: PipelineVessel): ClientVessel | undefined {
           family: vessel.family,
           tier: vessel.tier,
           dishClass: vessel.dishClass,
+          ...(vessel.smallBowlG !== undefined
+            ? { smallBowlG: vessel.smallBowlG }
+            : {}),
         };
   return isRenderableVessel(client) ? client : undefined;
 }

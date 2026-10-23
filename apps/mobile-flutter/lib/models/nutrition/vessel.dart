@@ -56,6 +56,15 @@ double? _countOrNull(Object? raw) {
   return (value < 1 || value > maxPieceCount) ? null : value;
 }
 
+/// A plain-rice bowl's grams, or null unless believable (20–1000 g). Mirrors
+/// the server's `isSmallBowlG`. A bad value drops only the override — the bowl
+/// falls back to its geometry — never the vessel.
+double? _smallBowlGOrNull(Object? raw) {
+  if (raw is! num || !raw.isFinite) return null;
+  final value = raw.toDouble();
+  return (value < 20 || value > 1000) ? null : value;
+}
+
 /// Beyond this many pieces the vessel stops being a useful affordance and is
 /// almost certainly corruption or a hallucinated number. The picker would
 /// otherwise happily build an envelope around it: `count: 1e9` yields a
@@ -91,7 +100,12 @@ sealed class ClientVessel {
     final family = _byNameOrNull(ContainerFamily.values, json['family']);
     final dishClass = _byNameOrNull(DishClass.values, json['dishClass']);
     if (tier == null || family == null || dishClass == null) return null;
-    return ContainerVessel(family: family, tier: tier, dishClass: dishClass);
+    return ContainerVessel(
+      family: family,
+      tier: tier,
+      dishClass: dishClass,
+      smallBowlG: _smallBowlGOrNull(json['smallBowlG']),
+    );
   }
 
   Map<String, dynamic> toJson();
@@ -105,10 +119,15 @@ class ContainerVessel extends ClientVessel {
   final int tier;
   final DishClass dishClass;
 
+  /// Plain rice only: grams in one small bowl — the user's country's bowl of
+  /// rice — shown for tier 1 instead of the bowl's geometry.
+  final double? smallBowlG;
+
   const ContainerVessel({
     required this.family,
     required this.tier,
     required this.dishClass,
+    this.smallBowlG,
   });
 
   @override
@@ -116,12 +135,14 @@ class ContainerVessel extends ClientVessel {
     'family': family.name,
     'tier': tier,
     'dishClass': dishClass.name,
+    if (smallBowlG != null) 'smallBowlG': smallBowlG,
   };
 
   ContainerVessel copyWith({int? tier}) => ContainerVessel(
     family: family,
     tier: tier ?? this.tier,
     dishClass: dishClass,
+    smallBowlG: smallBowlG,
   );
 
   @override
@@ -129,10 +150,11 @@ class ContainerVessel extends ClientVessel {
       other is ContainerVessel &&
       other.family == family &&
       other.tier == tier &&
-      other.dishClass == dishClass;
+      other.dishClass == dishClass &&
+      other.smallBowlG == smallBowlG;
 
   @override
-  int get hashCode => Object.hash(family, tier, dishClass);
+  int get hashCode => Object.hash(family, tier, dishClass, smallBowlG);
 }
 
 /// A countable cut of fish / meat / poultry — five tiers, `count` of them.

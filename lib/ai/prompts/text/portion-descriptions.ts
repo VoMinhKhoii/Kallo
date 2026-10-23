@@ -1,4 +1,4 @@
-import { PORTION_PRIORS } from '@/lib/ai/portion/data/priors';
+import { RICE_BOWL_G } from '@/lib/ai/portion/data/priors';
 import type {
   ProteinPortion,
   RicePortion,
@@ -7,17 +7,11 @@ import type {
 /**
  * User-facing portion descriptions interpolated into LLM prompts.
  *
- * Rice sizes are derived from PORTION_PRIORS rather than restated, so every
- * prompt quotes the same bowl size as the table (150 g cooked since
- * 2026-10-12).
+ * Rice sizes are derived from RICE_BOWL_G rather than restated, so every
+ * prompt quotes the same bowl size as the table (120 g cooked since
+ * 2026-10-22).
  */
-const riceBowlPrior = PORTION_PRIORS.find(
-  (prior) =>
-    prior.conceptId === 'cooked-rice' &&
-    prior.unitType === 'container' &&
-    prior.form === 'cooked'
-);
-const riceBowlMidG = riceBowlPrior?.perUnit.mid ?? 200;
+const riceBowlMidG = RICE_BOWL_G.mid;
 
 export const RICE_PORTION_DESCRIPTION: Record<RicePortion, string> = {
   small: `~1 small bowl (~${riceBowlMidG * 0.7}–${riceBowlMidG * 0.8}g cooked rice)`,

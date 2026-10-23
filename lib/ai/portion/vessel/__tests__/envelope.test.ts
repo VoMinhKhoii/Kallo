@@ -3,6 +3,7 @@ import {
   NULL_BOUNDED_NUTRITION,
   NULL_NUTRITION_VALUES,
 } from '@/lib/ai/__fixtures__/test-helpers';
+import { riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import {
   type DishClass,
   PIECE_TIERS,
@@ -437,7 +438,7 @@ describe('attachVesselToMealItems', () => {
     attachVesselToMealItems(
       mealItems,
       dishes,
-      dishes.map(resolveVesselEnvelope)
+      dishes.map((d) => resolveVesselEnvelope(d))
     );
 
     expect(mealItems[0].vessel).toMatchObject({
@@ -459,7 +460,7 @@ describe('attachVesselToMealItems', () => {
     attachVesselToMealItems(
       mealItems,
       dishes,
-      dishes.map(resolveVesselEnvelope)
+      dishes.map((d) => resolveVesselEnvelope(d))
     );
 
     expect(mealItems.every((item) => !('vessel' in item))).toBe(true);
@@ -549,5 +550,108 @@ describe('container word on the ingredient instead of the dish', () => {
         ],
       })
     ).toBeNull();
+  });
+});
+
+/**
+ * A bowl of plain rice is sized by the user's country, in any language: the
+ * generic bowl bands (a chén 140–320 g, an English "bowl" 250–570 g) sat far
+ * above a real bowl of rice and pulled Call 2's rice up.
+ */
+describe('a bowl of plain rice', () => {
+  const korea = riceBowlFor({ countryOfOrigin: 'South Korea' });
+  const vietnam = riceBowlFor({ countryOfOrigin: 'Vietnam' });
+  const rice = (
+    count: number | undefined,
+    vesselToken = 'chén',
+    names: { name?: string; rawName?: string; queryEn?: string } = {}
+  ) =>
+    resolveVesselEnvelope(
+      {
+        name: names.name ?? 'Cơm trắng',
+        vesselToken,
+        ingredients: [
+          {
+            rawName: names.rawName ?? 'cơm',
+            queryEn: names.queryEn ?? 'steamed white rice, cooked',
+            count,
+            unitToken: vesselToken,
+          },
+        ],
+      },
+      vietnam
+    );
+
+  it('bands one Vietnamese chén or bát at 80–160 g', () => {
+    for (const token of ['chén', 'bát']) {
+      expect(rice(1, token)?.guardG, token).toEqual({ low: 80, high: 160 });
+      expect(rice(1, token)?.smallBowlG, token).toBe(120);
+    }
+  });
+
+  it('treats an English bowl of rice as one small rice bowl', () => {
+    const envelope = rice(1, 'bowl', {
+      name: 'White rice',
+      rawName: 'White rice',
+      queryEn: 'cooked white rice',
+    });
+    expect(envelope?.tier).toBe(1);
+    expect(envelope?.guardG).toEqual({ low: 80, high: 160 });
+  });
+
+  it("uses the user's country's bowl and scales by the bowls eaten", () => {
+    const one = resolveVesselEnvelope(
+      {
+        name: 'Steamed rice',
+        vesselToken: 'bowl',
+        ingredients: [{ rawName: 'Rice', queryEn: 'steamed white rice' }],
+      },
+      korea
+    );
+    expect(one?.guardG).toEqual({ low: 140, high: 280 });
+    expect(one?.smallBowlG).toBe(210);
+    expect(rice(2)?.guardG).toEqual({ low: 160, high: 320 });
+    expect(rice(0.5)?.guardG).toEqual({ low: 40, high: 80 });
+  });
+
+  it('leaves other dishes in a chén on the generic band', () => {
+    const che = resolveVesselEnvelope({
+      name: 'Chè đậu xanh',
+      vesselToken: 'chén',
+      ingredients: [{ rawName: 'chè đậu xanh', count: 1, unitToken: 'chén' }],
+    });
+    expect(che?.guardG).toEqual(guardBandG('bowl', 1, 'solid'));
+    expect(che?.smallBowlG).toBeUndefined();
+    const friedRice = rice(1, 'bowl', {
+      name: 'Fried rice',
+      rawName: 'Fried rice',
+      queryEn: 'egg fried rice',
+    });
+    expect(friedRice?.guardG).toEqual(guardBandG('bowl', 2, 'solid'));
+  });
+
+  it('leaves rice in a tô, or with other food, on the generic band', () => {
+    expect(rice(1, 'tô')?.guardG).toEqual(guardBandG('bowl', 2, 'solid'));
+    const riceAndEgg = resolveVesselEnvelope({
+      name: 'Cơm',
+      vesselToken: 'chén',
+      ingredients: [{ rawName: 'cơm' }, { rawName: 'trứng chiên' }],
+    });
+    expect(riceAndEgg?.guardG).toEqual(guardBandG('bowl', 1, 'solid'));
+  });
+
+  it('hands the rice bowl size to the meal item for the picker', () => {
+    const items = [mealItem('Cơm trắng')];
+    const dish = {
+      name: 'Cơm trắng',
+      vesselToken: 'chén',
+      ingredients: [{ rawName: 'cơm', count: 1, unitToken: 'chén' }],
+    };
+    attachVesselToMealItems(
+      items,
+      [dish],
+      [resolveVesselEnvelope(dish, vietnam)]
+    );
+    expect(items[0].vessel).toMatchObject({ tier: 1, smallBowlG: 120 });
   });
 });

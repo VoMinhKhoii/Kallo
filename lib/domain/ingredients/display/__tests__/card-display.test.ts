@@ -234,6 +234,27 @@ describe('cardDisplayFields — vessel', () => {
     });
   });
 
+  it("starts plain rice at the user's bowl of rice, other starches at the bowl", () => {
+    const withBowl = (r: ReturnType<typeof row>) =>
+      cardDisplayFields({ ...r, riceBowlG: 210 }).vessel;
+    expect(
+      withBowl(
+        row(
+          'Cơm trắng',
+          'Cereal Grains and Pasta',
+          'long-grain white rice, cooked'
+        )
+      )
+    ).toEqual({ family: 'bowl', dishClass: 'solid', smallBowlG: 210 });
+    expect(
+      withBowl(
+        row('Bánh ướt', 'Cereal and products', 'rice noodles, cooked', {
+          cookingMethod: 'boiled',
+        })
+      )
+    ).toEqual({ family: 'bowl', dishClass: 'solid' });
+  });
+
   it('weighs raw grains, raw produce and oils in grams', () => {
     expect(
       vesselOf(

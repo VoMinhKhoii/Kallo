@@ -22,7 +22,8 @@ type CardDisplayRow = {
  * were: the picker falls back to the row's own names, never to an error.
  */
 export async function attachCardDisplay(
-  results: IngredientSearchResult[]
+  results: IngredientSearchResult[],
+  riceBowlG?: number
 ): Promise<IngredientSearchResult[]> {
   if (results.length === 0) return results;
   const idList = sql.join(
@@ -56,6 +57,7 @@ export async function attachCardDisplay(
         food: row.food,
         cookingMethod: row.cooking_method,
         brand: row.brand,
+        riceBowlG,
       }),
     };
   });

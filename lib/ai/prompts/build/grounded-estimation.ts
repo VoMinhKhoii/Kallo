@@ -1,3 +1,4 @@
+import { riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import {
   buildIngredientDataBlock,
   escapeXmlAttribute,
@@ -64,8 +65,10 @@ function buildUserContextBlock(
   // No default_rice_portion / default_protein_portion lines: the onboarding
   // portion defaults pushed Call 2's grams up on the 2026-10-12 benchmark, so
   // Call 2 sizes from the meal text alone.
+  const riceBowl = riceBowlFor(userContext);
   return `<user_context>
-${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
+${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  rice_bowl_g: ${riceBowl.mid} (small ${riceBowl.low}, full ${riceBowl.high})
+  oil_usage: ${cookingHabits.oilUsage}
   broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>`;
 }

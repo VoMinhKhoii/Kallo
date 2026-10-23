@@ -10,6 +10,7 @@ import type { StreamedMatching } from '@/lib/ai/matching/streamed-matching';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import { riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import { resolvePortionsForCallTwo } from '@/lib/ai/portion/ingredient-portion';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import {
@@ -75,8 +76,9 @@ export async function prepareGrounding(args: {
   const { resolutions: portionResolutions, anchors: resolvedGramsAnchors } =
     resolvePortionsForCallTwo(flatIngredients, args.userContext.inputLanguage);
 
+  const riceBowl = riceBowlFor(args.userContext);
   const vesselEnvelopes = decomposition.mealItems.map((mealItem) =>
-    args.vesselEnabled ? resolveVesselEnvelope(mealItem) : null
+    args.vesselEnabled ? resolveVesselEnvelope(mealItem, riceBowl) : null
   );
   const mealItemsWithCandidates: MealItemWithCandidates[] = buildCallTwoPayload(
     decomposition,

@@ -23,6 +23,9 @@ export interface IngredientSearchParams {
    * trigram-led but never refused.
    */
   allowLiveEmbedding: boolean;
+  /** Grams in one bowl of plain rice for this user's country — where the
+   *  amount ruler starts a rice result. */
+  riceBowlG?: number;
 }
 
 /**
@@ -41,9 +44,11 @@ export async function searchIngredients({
   q,
   limit,
   allowLiveEmbedding,
+  riceBowlG,
 }: IngredientSearchParams): Promise<IngredientSearchResult[]> {
   return attachCardDisplay(
-    await rankedResults({ userId, q, limit, allowLiveEmbedding })
+    await rankedResults({ userId, q, limit, allowLiveEmbedding }),
+    riceBowlG
   );
 }
 
