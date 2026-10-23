@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   unseen: vi.fn(() => 0),
   createClient: vi.fn(),
   toastError: vi.fn(),
+  setTheme: vi.fn(),
 }));
 
 vi.mock('@/i18n/navigation', () => ({
@@ -37,6 +38,9 @@ vi.mock('@/lib/infra/supabase/client', () => ({
   createClient: mocks.createClient,
 }));
 vi.mock('sonner', () => ({ toast: { error: mocks.toastError } }));
+vi.mock('@/hooks/theme/use-theme-choice', () => ({
+  useThemeChoice: () => ['dark', mocks.setTheme],
+}));
 
 const user = {
   email: 'minh@example.com',
@@ -112,6 +116,30 @@ describe('MobileHeader', () => {
         name: 'admin',
       })
     ).toHaveAttribute('href', '/admin');
+  });
+
+  it('offers Appearance in the account sheet and saves a tapped choice', async () => {
+    const u = userEvent.setup();
+    render(<MobileHeader user={user} />);
+    await u.click(screen.getByRole('button', { name: 'openMenu' }));
+
+    const group = within(await screen.findByRole('dialog')).getByRole('group', {
+      name: 'label',
+    });
+    const options = within(group).getAllByRole('button');
+    expect(options.map((o) => o.getAttribute('aria-label'))).toEqual([
+      'system',
+      'light',
+      'dark',
+      'aurora',
+    ]);
+    expect(within(group).getByRole('button', { name: 'dark' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+
+    await u.click(within(group).getByRole('button', { name: 'aurora' }));
+    expect(mocks.setTheme).toHaveBeenCalledWith('aurora');
   });
 
   it('reports a sign-out failure via toast and re-enables the button', async () => {
