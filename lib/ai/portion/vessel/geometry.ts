@@ -13,7 +13,11 @@ import {
   type VesselFamilyData,
   type VesselTier,
 } from '@/lib/ai/portion/data/vessel-tables';
-import type { ClientVessel, PieceVessel } from '@/lib/ai/portion/vessel/types';
+import type {
+  ClientVessel,
+  ContainerVessel,
+  PieceVessel,
+} from '@/lib/ai/portion/vessel/types';
 
 export function isContainerFamily(
   family: VesselFamily
@@ -135,8 +139,27 @@ export function isRenderableVessel(vessel: ClientVessel): boolean {
   // it goes stale silently.
   const tiers = VESSEL_FAMILIES[vessel.family]?.tiers;
   return (
-    !!tiers && vessel.tier >= 1 && vessel.tier <= Object.keys(tiers).length
+    !!tiers &&
+    vessel.tier >= 1 &&
+    vessel.tier <= Object.keys(tiers).length &&
+    (vessel.smallBowlG === undefined || isSmallBowlG(vessel.smallBowlG))
   );
+}
+
+/** A believable bowl of food: anything else is corruption, not a portion. */
+export function isSmallBowlG(grams: number): boolean {
+  return Number.isFinite(grams) && grams >= 20 && grams <= 1000;
+}
+
+/** The grams a container tier shows: a plain-rice bowl's own size for the
+ *  small bowl, else the tier's fill-and-density midpoint. */
+export function containerAnchorG(
+  vessel: ContainerVessel,
+  tier: VesselTier
+): number {
+  return tier === 1 && vessel.smallBowlG !== undefined
+    ? vessel.smallBowlG
+    : midG(vessel.family, tier, vessel.dishClass);
 }
 
 /**

@@ -81,6 +81,8 @@ export type IngredientVesselHint =
   | {
       family: 'bowl' | 'plate' | 'cup';
       dishClass: 'soup' | 'solid' | 'airy' | 'drink';
+      /** Plain rice: grams in one bowl for this user's country. */
+      smallBowlG?: number;
     };
 
 export interface IngredientSearchResponse {

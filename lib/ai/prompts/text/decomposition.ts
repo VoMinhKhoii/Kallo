@@ -12,7 +12,7 @@
  */
 import {
   PROTEIN_PORTION_DESCRIPTION,
-  RICE_PORTION_DESCRIPTION,
+  ricePortionDescription,
 } from '@/lib/ai/prompts/text/portion-descriptions';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 
@@ -20,13 +20,15 @@ import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 export interface DecompositionPromptParts {
   cookingHabits: PromptPersonalizationContext['cookingHabits'];
   countryLines: string[];
+  /** The user's bowl of plain cooked rice, in grams. */
+  riceBowlMidG: number;
 }
 
 export function compressedDecompositionPromptText(
   parts: DecompositionPromptParts,
   outputLanguage: string
 ): string {
-  const { cookingHabits, countryLines } = parts;
+  const { cookingHabits, countryLines, riceBowlMidG } = parts;
 
   return `You are a cuisine-aware meal decomposition engine. Return JSON only.
 
@@ -78,7 +80,7 @@ export function compressedDecompositionPromptText(
 
 <user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
+  default_rice_portion: ${ricePortionDescription(cookingHabits.defaultRicePortion, riceBowlMidG)}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
   broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>`;
@@ -91,7 +93,7 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
 export function decompositionPromptText(
   parts: DecompositionPromptParts
 ): string {
-  const { cookingHabits, countryLines } = parts;
+  const { cookingHabits, countryLines, riceBowlMidG } = parts;
 
   return `You are a Cuisine Expert. Decompose meal descriptions into dish-wrapped structured ingredient data.
 
@@ -112,7 +114,7 @@ export function decompositionPromptText(
 
   <grams_only>
     grams = cooked/as-eaten mass by default. Convert colloquial portions to grams based on the user's cuisine and serving-size norms.
-    Examples (Vietnamese): 1 chén cơm → 200; 1 dĩa rau → 150; 1 miếng cá → 60; 1 lát bánh mì → 30.
+    Examples (Vietnamese): 1 chén cơm → 120; 1 dĩa rau → 150; 1 miếng cá → 60; 1 lát bánh mì → 30.
     Use the supplied cooking-habit context and regional serving-size priors from the user's cuisine context.
     The runtime accepts grams only: no unit field and no unit conversion fallback.
     If quantity is genuinely ambiguous, set ambiguityFlags: ["unspecified_quantity"] and emit your best-estimate grams.
@@ -155,7 +157,7 @@ export function decompositionPromptText(
     - If user says "rib eye" or "steak lõi vai" → use "rib eye" or "steak lõi vai"
     - If user says "cá lóc" → rawName: "cá lóc", canonicalName: "Cá quả"
     - If user says "cơm" → rawName: "cơm", canonicalName: "Cơm"
-    - If user says "1 chén cơm" → rawName: "cơm", grams: 200
+    - If user says "1 chén cơm" → rawName: "cơm", grams: 120
 
     For common seasonings/condiments, use standard names in the user's cuisine:
     - Vietnamese: "nước mắm" · "dầu ăn" · "đường" · "tỏi" · "hành" · "tiêu"
@@ -242,7 +244,7 @@ export function decompositionPromptText(
 
 <user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
+  default_rice_portion: ${ricePortionDescription(cookingHabits.defaultRicePortion, riceBowlMidG)}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
   broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>

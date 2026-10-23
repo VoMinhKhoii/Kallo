@@ -9,8 +9,8 @@
  * head-of-distribution (the staples in the logs + obvious global units).
  *
  * The resolver no longer pins grams from this table (removed 2026-10-12: the
- * anchors oversized portions on the benchmark). Today it only feeds the rice
- * bowl size quoted in prompts (`prompts/text/portion-descriptions.ts`).
+ * anchors oversized portions on the benchmark), and the prompts take the rice
+ * bowl from `rice-bowls.ts`.
  *
  * Every grams band declares its physical basis. Legacy priors are EDIBLE mass;
  * refuse-bearing head-portion priors are GROSS as served so they compose with
@@ -19,6 +19,7 @@
  * a concept prior remains usable even when matching chooses the wrong row.
  */
 
+import { riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import type { GramsBand, PortionPrior } from '@/lib/ai/portion/types';
 
 const band = (low: number, mid: number, high: number): GramsBand => ({
@@ -26,6 +27,9 @@ const band = (low: number, mid: number, high: number): GramsBand => ({
   mid,
   high,
 });
+
+/** A Vietnamese chén/bát of plain cooked rice (80 / 120 / 160 g). */
+const RICE_BOWL_G = riceBowlFor({ countryOfOrigin: 'Vietnam' });
 
 /**
  * Seeded priors, keyed by (conceptId, unitType, locale, form). Every entry is
@@ -83,16 +87,16 @@ export const PORTION_PRIORS: PortionPrior[] = [
     source: 'VN bánh mì loaf (bread only) ~90–120g; excludes fillings.',
   },
   {
-    // 1 chén/bát cơm ≈ 130–170g cooked. Container prior scoped to rice.
+    // 1 chén/bát cơm ≈ 80–160g cooked. Container prior scoped to rice.
     conceptId: 'cooked-rice',
     unitType: 'container',
     locale: 'vi',
     form: 'cooked',
-    perUnit: band(130, 150, 170),
+    perUnit: RICE_BOWL_G,
     massBasis: 'edible',
     confidence: 'high',
     source:
-      'VN chén/bát cơm ~150g cooked: matches the benchmark key and USDA 1 cup cooked rice (158 g); rice-concept-scoped.',
+      'VN chén/bát cơm ~120g cooked (owner ruling 2026-10-22; NIN says 110 g); rice-concept-scoped.',
   },
   {
     // 1 ức gà ≈ 150–200g cooked (single breast fillet).

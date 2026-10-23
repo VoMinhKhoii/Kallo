@@ -19,6 +19,39 @@ Map<String, dynamic> _item(Map<String, dynamic>? vessel) => {
 
 void main() {
   group('ClientVessel.fromJson', () {
+    test("keeps a plain-rice bowl's size and round-trips it", () {
+      final vessel = ClientVessel.fromJson({
+        'family': 'bowl',
+        'tier': 1,
+        'dishClass': 'solid',
+        'smallBowlG': 210,
+      });
+      expect(
+        vessel,
+        const ContainerVessel(
+          family: ContainerFamily.bowl,
+          tier: 1,
+          dishClass: DishClass.solid,
+          smallBowlG: 210,
+        ),
+      );
+      expect(vessel!.toJson()['smallBowlG'], 210);
+      expect((vessel as ContainerVessel).copyWith(tier: 2).smallBowlG, 210);
+    });
+
+    test('drops an unbelievable rice size but keeps the vessel', () {
+      for (final bad in [-5, 0, 5000, double.nan, 'big']) {
+        final vessel = ClientVessel.fromJson({
+          'family': 'bowl',
+          'tier': 1,
+          'dishClass': 'solid',
+          'smallBowlG': bad,
+        });
+        expect(vessel, isA<ContainerVessel>(), reason: '$bad');
+        expect((vessel as ContainerVessel).smallBowlG, isNull, reason: '$bad');
+      }
+    });
+
     test('parses a container vessel', () {
       final vessel = ClientVessel.fromJson({
         'family': 'bowl',

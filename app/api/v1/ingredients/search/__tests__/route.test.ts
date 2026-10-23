@@ -45,6 +45,8 @@ describe('GET /api/v1/ingredients/search', () => {
       q: 'com trang',
       limit: 5,
       allowLiveEmbedding: true,
+      // No country on the profile: about one cup of rice.
+      riceBowlG: 150,
     });
   });
 
@@ -62,6 +64,21 @@ describe('GET /api/v1/ingredients/search', () => {
     );
   });
 
+  it("starts rice at the user's country's bowl", async () => {
+    requireAuthAndProfile.mockResolvedValueOnce({
+      user: { id: 'user-123' },
+      profile: {
+        aiProcessingConsentedAt: new Date('2026-01-02T00:00:00Z'),
+        countryOfOrigin: 'South Korea',
+        countryOfResidence: 'Vietnam',
+      },
+    });
+    await GET(makeRequest({ q: 'rice' }));
+    expect(searchIngredients).toHaveBeenCalledWith(
+      expect.objectContaining({ riceBowlG: 210 })
+    );
+  });
+
   it('defaults to an empty query and a limit of 10', async () => {
     await GET(makeRequest({}));
 
@@ -70,6 +87,7 @@ describe('GET /api/v1/ingredients/search', () => {
       q: '',
       limit: 10,
       allowLiveEmbedding: true,
+      riceBowlG: 150,
     });
   });
 

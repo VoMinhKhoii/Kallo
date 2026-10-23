@@ -5,7 +5,7 @@
 // `features/logging/logic/manual/` (keep in sync).
 
 import { PIECE_TIERS } from '@/lib/ai/portion/data/vessel-tables';
-import { midG } from '@/lib/ai/portion/vessel/geometry';
+import { containerAnchorG } from '@/lib/ai/portion/vessel/geometry';
 import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 import {
   type IngredientMacrosPer100g,
@@ -74,7 +74,12 @@ export function vesselFromHint(
     return { family: 'piece', tier: 3, count: 1, kind: hint.kind };
   }
   const chen = hint.family === 'bowl' && hint.dishClass === 'solid';
-  return { family: hint.family, tier: chen ? 1 : 2, dishClass: hint.dishClass };
+  return {
+    family: hint.family,
+    tier: chen ? 1 : 2,
+    dishClass: hint.dishClass,
+    ...(hint.smallBowlG !== undefined ? { smallBowlG: hint.smallBowlG } : {}),
+  };
 }
 
 /** The amount field's floor — whole grams, never 0 (the contract's ceiling is
@@ -89,7 +94,7 @@ export function initialManualGrams(result: IngredientSearchResult): number {
   if (vessel.family === 'piece') {
     return vessel.count * PIECE_TIERS[vessel.tier - 1].grams;
   }
-  return midG(vessel.family, vessel.tier, vessel.dishClass);
+  return containerAnchorG(vessel, vessel.tier);
 }
 
 /** One − (-1) or + (1) press, landing on the next multiple of 10: 147 steps

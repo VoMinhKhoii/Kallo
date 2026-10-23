@@ -4,7 +4,7 @@ import {
   VESSEL_FAMILIES,
   type VesselTier,
 } from '@/lib/ai/portion/data/vessel-tables';
-import { midG } from '@/lib/ai/portion/vessel/geometry';
+import { containerAnchorG } from '@/lib/ai/portion/vessel/geometry';
 import type {
   ContainerVessel,
   PieceVessel,
@@ -44,7 +44,7 @@ export function buildContainerAnchors(
   const tiers: VesselTier[] = [1, 2, 3, 4];
   return tiers.map((tier) => ({
     tier,
-    value: midG(vessel.family, tier, vessel.dishClass),
+    value: containerAnchorG(vessel, tier),
     label: VESSEL_FAMILIES[vessel.family].tiers[tier].label[loc],
   }));
 }

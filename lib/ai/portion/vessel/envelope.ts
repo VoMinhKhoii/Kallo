@@ -1,12 +1,16 @@
+import { isPlainRice, riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import {
   type DishClass,
   VESSEL_FAMILIES,
   type VesselFamily,
   type VesselTier,
 } from '@/lib/ai/portion/data/vessel-tables';
+import type { GramsBand } from '@/lib/ai/portion/types';
 import {
   guardBandG,
+  isSmallBowlG,
   midG,
+  normalizeVesselToken,
   resolveVesselFromToken,
 } from '@/lib/ai/portion/vessel/geometry';
 import { resolvePieceVessel } from '@/lib/ai/portion/vessel/piece';
@@ -20,6 +24,7 @@ export interface DishLike {
   ingredients: Array<{
     rawName?: string;
     canonicalName?: string;
+    queryEn?: string;
     count?: number;
     unitToken?: string;
   }>;
@@ -33,6 +38,10 @@ export interface VesselEnvelope {
   vesselMl: number;
   guardG: { low: number; high: number };
   midG: number;
+  /** Grams in ONE bowl of this food, when it is plain rice: the user's
+   *  country's rice bowl, which the picker shows instead of the bowl's
+   *  geometry. */
+  smallBowlG?: number;
 }
 
 const SOUP_INGREDIENT = /nước dùng|nước lèo|nước súp|canh|súp|broth|stock/i;
@@ -106,7 +115,33 @@ function dishVesselToken(dish: DishLike): string | undefined {
   return token && resolveVesselFromToken(token) ? token : undefined;
 }
 
-export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
+/** Bowl words that, holding plain rice, mean one everyday rice bowl. "tô"
+ *  stays out: it names a big noodle bowl. */
+const RICE_BOWL_TOKENS = new Set(['chen', 'bat', 'bowl']);
+
+/**
+ * A plain bowl of rice: the dish's only ingredient is plain cooked rice, in a
+ * rice-bowl word. Returns how many bowls, or null. A rice bowl is sized by
+ * the user's country (`riceBowlFor`), not by the bowl's volume: a 400 ml chén
+ * at solid-food density allows 140–320 g, and an English "bowl" defaults to
+ * the 700 ml medium bowl (250–570 g) — both far above a real bowl of rice.
+ */
+function riceBowls(dish: DishLike, vesselToken: string): number | null {
+  if (!RICE_BOWL_TOKENS.has(normalizeVesselToken(vesselToken))) return null;
+  if (dish.ingredients.length !== 1) return null;
+  const [rice] = dish.ingredients;
+  if (
+    !isPlainRice([rice.rawName, rice.canonicalName, rice.queryEn, dish.name])
+  ) {
+    return null;
+  }
+  return rice.count !== undefined && rice.count > 0 ? rice.count : 1;
+}
+
+export function resolveVesselEnvelope(
+  dish: DishLike,
+  riceBowl: GramsBand = riceBowlFor({})
+): VesselEnvelope | null {
   const vesselToken = dishVesselToken(dish);
   if (
     !vesselToken ||
@@ -118,10 +153,15 @@ export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
   const resolved = resolveVesselFromToken(vesselToken, dish.vesselSize);
   if (!resolved) return null;
 
-  const tier =
-    resolved.family === 'bowl' &&
-    dish.vesselSize === undefined &&
-    LARGE_BOWL_DISH.test(dish.name)
+  const bowls =
+    resolved.family === 'bowl' ? riceBowls(dish, vesselToken) : null;
+  // A bowl of rice is a small bowl whatever the word: "a bowl of rice" is a
+  // rice bowl, not the medium noodle bowl a bare "bowl" defaults to.
+  const tier: VesselTier = bowls
+    ? 1
+    : resolved.family === 'bowl' &&
+        dish.vesselSize === undefined &&
+        LARGE_BOWL_DISH.test(dish.name)
       ? 3
       : resolved.tier;
   const dishClass = classifyDishClass(dish, resolved.family);
@@ -132,8 +172,21 @@ export function resolveVesselEnvelope(dish: DishLike): VesselEnvelope | null {
     dishClass,
     token: vesselToken,
     vesselMl: VESSEL_FAMILIES[resolved.family].tiers[tier].ml,
-    guardG: guardBandG(resolved.family, tier, dishClass),
-    midG: midG(resolved.family, tier, dishClass),
+    guardG: bowls
+      ? {
+          low: Math.round(riceBowl.low * bowls),
+          high: Math.round(riceBowl.high * bowls),
+        }
+      : guardBandG(resolved.family, tier, dishClass),
+    midG: bowls
+      ? Math.round(riceBowl.mid * bowls)
+      : midG(resolved.family, tier, dishClass),
+    // The picker opens no lower than 60% of its small bowl, so a part bowl
+    // brings its own size; several bowls keep the plain bowl sizes rather
+    // than call two bowls "small".
+    ...(bowls && bowls <= 1 && isSmallBowlG(Math.round(riceBowl.mid * bowls))
+      ? { smallBowlG: Math.round(riceBowl.mid * bowls) }
+      : {}),
   };
 }
 
@@ -153,6 +206,7 @@ export function attachVesselToMealItems(
         family: envelope.family,
         tier: envelope.tier,
         dishClass: envelope.dishClass,
+        ...(envelope.smallBowlG ? { smallBowlG: envelope.smallBowlG } : {}),
         provenance: 'vessel_prior',
       };
     }

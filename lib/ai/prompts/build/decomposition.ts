@@ -1,3 +1,4 @@
+import { riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import { buildPromptContextLine } from '@/lib/ai/prompts/sanitize';
 import {
   compressedDecompositionPromptText,
@@ -52,6 +53,7 @@ function buildPromptParts(
         userContext.countryOfResidence
       ),
     ].filter((line): line is string => line !== null),
+    riceBowlMidG: riceBowlFor(userContext).mid,
   };
 }
 

@@ -132,6 +132,29 @@ void main() {
       expect(pieceAnchors.first.value, 90);
       expect(pieceAnchors.first.label, 'small piece');
     });
+
+    test("shows a plain-rice bowl's own size for the small bowl only", () {
+      const rice = ContainerVessel(
+        family: ContainerFamily.bowl,
+        tier: 1,
+        dishClass: DishClass.solid,
+        smallBowlG: 210,
+      );
+      const plain = ContainerVessel(
+        family: ContainerFamily.bowl,
+        tier: 1,
+        dishClass: DishClass.solid,
+      );
+      final riceAnchors = buildContainerAnchors(rice, 'en');
+      final plainAnchors = buildContainerAnchors(plain, 'en');
+      expect(riceAnchors.first.value, 210);
+      // Bigger bowls, and any bowl without the rice size, keep the geometry.
+      expect(plainAnchors.first.value, 225);
+      expect(
+        riceAnchors.skip(1).map((a) => a.value),
+        plainAnchors.skip(1).map((a) => a.value),
+      );
+    });
   });
 
   group('fractional piece counts', () {

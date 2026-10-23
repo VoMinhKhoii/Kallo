@@ -1,4 +1,3 @@
-import { PORTION_PRIORS } from '@/lib/ai/portion/data/priors';
 import type {
   ProteinPortion,
   RicePortion,
@@ -7,23 +6,23 @@ import type {
 /**
  * User-facing portion descriptions interpolated into LLM prompts.
  *
- * Rice sizes are derived from PORTION_PRIORS rather than restated, so every
- * prompt quotes the same bowl size as the table (150 g cooked since
- * 2026-10-12).
+ * Rice sizes are derived from the user's bowl of rice (`riceBowlFor`)
+ * rather than restated, so the legacy prompts quote the same bowl as v2.
  */
-const riceBowlPrior = PORTION_PRIORS.find(
-  (prior) =>
-    prior.conceptId === 'cooked-rice' &&
-    prior.unitType === 'container' &&
-    prior.form === 'cooked'
-);
-const riceBowlMidG = riceBowlPrior?.perUnit.mid ?? 200;
-
-export const RICE_PORTION_DESCRIPTION: Record<RicePortion, string> = {
-  small: `~1 small bowl (~${riceBowlMidG * 0.7}–${riceBowlMidG * 0.8}g cooked rice)`,
-  medium: `~1 bowl (~${riceBowlMidG}g cooked rice)`,
-  large: `~1.5–2 bowls (~${riceBowlMidG * 1.5}–${riceBowlMidG * 2}g cooked rice)`,
-};
+export function ricePortionDescription(
+  portion: RicePortion,
+  riceBowlMidG: number
+): string {
+  const g = (bowls: number) => Math.round(riceBowlMidG * bowls);
+  switch (portion) {
+    case 'small':
+      return `~1 small bowl (~${g(0.7)}–${g(0.8)}g cooked rice)`;
+    case 'medium':
+      return `~1 bowl (~${g(1)}g cooked rice)`;
+    case 'large':
+      return `~1.5–2 bowls (~${g(1.5)}–${g(2)}g cooked rice)`;
+  }
+}
 
 export const PROTEIN_PORTION_DESCRIPTION: Record<ProteinPortion, string> = {
   small: 'smaller than palm, ~2-3 eggs (~80g cooked)',

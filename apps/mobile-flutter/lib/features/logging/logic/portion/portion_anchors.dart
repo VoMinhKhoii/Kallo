@@ -70,7 +70,12 @@ List<PortionAnchor> buildContainerAnchors(
     for (var tier = 1; tier <= 4; tier++)
       PortionAnchor(
         tier: tier,
-        value: midG(vessel.family, tier, vessel.dishClass).toDouble(),
+        // A plain-rice bowl's own size for the small bowl (web
+        // `containerAnchorG`), else the tier's fill-and-density midpoint.
+        value:
+            tier == 1 && vessel.smallBowlG != null
+                ? vessel.smallBowlG!
+                : midG(vessel.family, tier, vessel.dishClass).toDouble(),
         label: vesselFamilies[vessel.family]![tier]!.label(locale),
       ),
   ];

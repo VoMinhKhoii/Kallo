@@ -12,7 +12,7 @@
  */
 import {
   PROTEIN_PORTION_DESCRIPTION,
-  RICE_PORTION_DESCRIPTION,
+  ricePortionDescription,
 } from '@/lib/ai/prompts/text/portion-descriptions';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 
@@ -20,6 +20,8 @@ import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 export interface NutritionPromptParts {
   cookingHabits: PromptPersonalizationContext['cookingHabits'];
   countryLines: string[];
+  /** The user's bowl of plain cooked rice, in grams. */
+  riceBowlMidG: number;
   ingredientData: string;
   unmatchedSection: string;
 }
@@ -29,8 +31,13 @@ export function compressedNutritionPromptText(
   parts: NutritionPromptParts,
   outputLanguage: string
 ): string {
-  const { cookingHabits, countryLines, ingredientData, unmatchedSection } =
-    parts;
+  const {
+    cookingHabits,
+    countryLines,
+    riceBowlMidG,
+    ingredientData,
+    unmatchedSection,
+  } = parts;
 
   return `You are a nutrition estimator. Return JSON only.
 
@@ -80,7 +87,7 @@ export function compressedNutritionPromptText(
 
 <user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
+  default_rice_portion: ${ricePortionDescription(cookingHabits.defaultRicePortion, riceBowlMidG)}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
   broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>
@@ -98,8 +105,13 @@ ${unmatchedSection}
 
 /** V1 verbose prompt, kept for debugging via PIPELINE_NUTRITION_PROMPT_LABEL. */
 export function nutritionPromptText(parts: NutritionPromptParts): string {
-  const { cookingHabits, countryLines, ingredientData, unmatchedSection } =
-    parts;
+  const {
+    cookingHabits,
+    countryLines,
+    riceBowlMidG,
+    ingredientData,
+    unmatchedSection,
+  } = parts;
 
   return `You are a nutrition expert. Produce cooking-adjusted, bounded nutrition estimates based on the user's cuisine and cooking context.
 
@@ -179,7 +191,7 @@ export function nutritionPromptText(parts: NutritionPromptParts): string {
 
 <user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
+  default_rice_portion: ${ricePortionDescription(cookingHabits.defaultRicePortion, riceBowlMidG)}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
   broth_consumption: ${cookingHabits.brothConsumption}
 </user_context>

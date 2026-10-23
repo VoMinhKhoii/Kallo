@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   anchorPositions,
+  buildContainerAnchors,
   claimedAnchor,
   committedPieceTier,
   glyphRowAspect,
@@ -159,5 +160,22 @@ describe('rulerStep', () => {
 
   it('ignores zero-width gram segments and never returns 0', () => {
     expect(rulerStep([100, 100, 100], [0, 500, 1000])).toBe(1);
+  });
+});
+
+describe('buildContainerAnchors', () => {
+  it("shows a plain-rice bowl's own size for the small bowl only", () => {
+    const rice = buildContainerAnchors(
+      { family: 'bowl', tier: 1, dishClass: 'solid', smallBowlG: 210 },
+      'en'
+    );
+    expect(rice[0]).toEqual({ tier: 1, value: 210, label: 'small bowl' });
+    // Bigger bowls, and any bowl without the rice size, keep the geometry.
+    const plain = buildContainerAnchors(
+      { family: 'bowl', tier: 1, dishClass: 'solid' },
+      'en'
+    );
+    expect(plain[0].value).toBe(225);
+    expect(rice.slice(1)).toEqual(plain.slice(1));
   });
 });

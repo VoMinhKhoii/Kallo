@@ -21,6 +21,14 @@ const DENSITY_PRIORS: Record<EstimationPromptLocale, string> = {
     'Density priors for common items: pizza slice ~250–300 kcal/100g; french fries ~290–330 kcal/100g; beef burger patty ~250–290 kcal/100g; cooked pasta ~130–160 kcal/100g; creamy dressings/sauces ~300–450 kcal/100g; light broth ~5–50 kcal/100g.',
 };
 
+/** How big one bowl of plain rice is: the user's own size sits in
+ *  <user_context> (`rice_bowl_g`, by country), so the rule stays static. */
+const RICE_BOWL_RULE: Record<EstimationPromptLocale, string> = {
+  vi: 'Plain cooked rice by the bowl (chén, bát) with no weight given: size each bowl with rice_bowl_g in <user_context> — the middle figure for a normal bowl, the small figure for ít / lưng chén / vơi, the full figure for đầy / vun.',
+  global:
+    'Plain cooked rice by the bowl with no weight given: size each bowl with rice_bowl_g in <user_context> — the middle figure for a normal bowl, the small figure for a small or half-full bowl, the full figure for a large or heaped bowl.',
+};
+
 const REFUSE_VESSEL_RULE = `
 
 <vessel_rule>
@@ -102,6 +110,7 @@ ${gramsRule}
     - Only when NO such row exists may you fold absorbed oil into the fried food's fatG (${renderAbsorbedOilPromptRule()}; scale within the range using oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat.
     - Skip entirely when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
   dish_count and dish_unit on a <meal_item> are the user's count of whole pieces of the DISH ("1 miếng tôm tonkatsu" is one whole shrimp cutlet, breading included; "2 cái bánh bao" is two whole buns, ~100–120 g each, mostly wrapper): size one whole piece as served, multiply by dish_count, and share that weight across the dish's ingredients. Never size one ingredient as one unit of itself (one shrimp, one piece of filling).
+  ${RICE_BOWL_RULE[locale]}
   If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — ${zeroMassContract} and never treat the zero as one standard serving in meal-level reasoning.
 ${serverScalingRule}
 </grams_rule>${vesselRule}

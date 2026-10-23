@@ -40,6 +40,20 @@ describe('buildDecompositionPrompt — quantity precedence rule', () => {
     expect(prompt).toContain('default_protein_portion');
     expect(prompt).toMatch(/fallbacks?/);
   });
+
+  it("sizes the default rice portion by the user's country", () => {
+    expect(buildDecompositionPrompt(USER_CONTEXT)).toContain(
+      'default_rice_portion: ~1 bowl (~120g cooked rice)'
+    );
+    const korea = {
+      ...USER_CONTEXT,
+      countryOfOrigin: 'South Korea',
+      countryOfResidence: 'South Korea',
+    };
+    expect(buildCompressedDecompositionPrompt(korea)).toContain(
+      'default_rice_portion: ~1 bowl (~210g cooked rice)'
+    );
+  });
 });
 
 describe('buildCompressedDecompositionPrompt — quantity precedence rule', () => {
