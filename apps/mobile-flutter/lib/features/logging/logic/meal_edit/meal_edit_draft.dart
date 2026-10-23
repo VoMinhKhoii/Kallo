@@ -71,7 +71,7 @@ class EditDish {
     this.vessel,
   }) : target = target ?? grams;
 
-  /// Stable identity: the group order on a saved meal, the item id otherwise.
+  /// Stable identity: `order:name` on a saved meal, the item id otherwise.
   final String key;
   final String name;
 

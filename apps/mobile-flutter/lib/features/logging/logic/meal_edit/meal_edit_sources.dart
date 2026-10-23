@@ -55,7 +55,10 @@ EditDish _persistedDish(PersistedMealItemGroup group) {
   // Exactly as logged — no floor applied on the way in, so an untouched sheet
   // saves nothing and shows what the card shows.
   return EditDish(
-    key: '${group.order}',
+    // Order AND name, the identity the server groups rows by
+    // (`buildMealItemGroupsFromRows`): two dishes can share an order, and an
+    // order-only key resized — or removed — both together.
+    key: '${group.order}:${group.name}',
     name: group.name,
     unit: unit,
     parts: parts,
