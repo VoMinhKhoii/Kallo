@@ -17,33 +17,37 @@ import type { GramsBand } from '@/lib/ai/portion/types';
  * the figure is the usual portion worked out from it.
  */
 const RICE_BOWL_MID_G: Record<string, number> = {
-  // Owner ruling 2026-10-22; NIN's pyramid puts a bowl at 110 g.
+  // Owner ruling 2026-10-22; NIN's adult pyramid puts a bowl at 110 g.
   Vietnam: 120,
-  // Hetbahn's standard pack and the restaurant 공깃밥.
+  // Hetbahn's 210 g pack (CJ's 1996 average-bowl survey); a restaurant
+  // 공깃밥 is about 200 g.
   'South Korea': 210,
-  // MAFF 食事バランスガイド: a medium 茶碗 is 150 g.
+  // MAFF 食事バランスガイド: a small 茶碗 (100 g) is 1 serving, a medium one
+  // 1.5 (about 150 g).
   Japan: 150,
-  // HPA exchange table: a 250 ml bowl, 1/4 bowl = 40 g.
+  // HPA exchange table: 1/4 bowl = 40 g (NTUH sets the bowl at 250 ml).
   Taiwan: 160,
-  // est.: the same 250–300 ml bowl as Taiwan.
-  China: 160,
+  // Department of Health: a bowl is 250–300 ml, as in Taiwan.
   'Hong Kong': 160,
-  // USDA FoodData Central: 1 cup cooked long-grain = 158 g.
+  // est.: the Chinese guidelines give raw grain only; Hong Kong's bowl.
+  China: 160,
+  // USDA FoodData Central 168878: 1 cup cooked long-grain = 158 g.
   'United States': 160,
-  // Pinggang Pinoy: 1 cup per meal.
+  // est.: Pinggang Pinoy's 1 cup per meal, as reported (FNRI gives no grams).
   Philippines: 160,
-  // est.: a meal is about 1 cup (2 serves).
+  // est.: a serve is ½ cup (75–120 g); a meal is about 2 serves.
   Australia: 160,
-  // BNF portion: 65–75 g dry, about 180 g cooked.
+  // BNF portion guide 2019: 65–75 g dry, 180 g cooked.
   'United Kingdom': 180,
-  // NIPH food-based dietary guideline: 1 small bowl = 140 g.
+  // NIPH food-based dietary guideline 2017: 1 small bowl = 140 g.
   Cambodia: 140,
+  // HPB My Healthy Plate: ½ bowl = 100 g.
+  Singapore: 200,
   // est.: a plate of 2–3 ladles (Thailand), 2 scoops (Malaysia), above the
-  // 100 g porsi (Indonesia) and the 100 g serving (Singapore); a katori (India).
+  // 100 g porsi (Indonesia); a katori (India).
   Thailand: 150,
   Malaysia: 150,
   Indonesia: 150,
-  Singapore: 150,
   India: 150,
 };
 
