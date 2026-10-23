@@ -153,6 +153,47 @@ void main() {
     expect(chevron.left - inkRight, lessThanOrEqualTo(8));
   });
 
+  testWidgets('a missing macro keeps its third empty, never shifts the rest', (
+    tester,
+  ) async {
+    const meal = PersistedMeal(
+      id: 'm',
+      rawInput: 'x',
+      loggedAt: '2026-10-23T12:00:00Z',
+      nutrition: MealNutrition(),
+      mealItemGroups: [
+        PersistedMealItemGroup(
+          name: 'Rice',
+          order: 0,
+          nutrition: MealNutrition(),
+          ingredients: [
+            PersistedIngredient(
+              id: 'rice',
+              ingredientName: 'rice',
+              estimatedGrams: 200,
+              userFacingUnit: 'g',
+              // No fat recorded: F has no figure, but its third stays.
+              nutrition: MealNutrition(
+                caloriesKcal: 260,
+                proteinG: 5,
+                carbohydrateG: 56,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+    await _open(tester, draftFromPersisted(meal));
+    final bar = tester.getRect(find.byType(CompositionBar));
+    final third = bar.width / 3;
+    final p = tester.getRect(find.byIcon(kMacroIcons['protein']!)).left;
+    final c = tester.getRect(find.byIcon(kMacroIcons['carbohydrate']!)).left;
+    expect(p, lessThan(bar.left + third));
+    expect(c, greaterThan(bar.left + third));
+    expect(c, lessThan(bar.left + 2 * third));
+    expect(find.byIcon(kMacroIcons['fat']!), findsNothing);
+  });
+
   testWidgets('Whole meal doubles every dish and the total follows', (
     tester,
   ) async {

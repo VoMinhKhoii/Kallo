@@ -46,6 +46,7 @@ class MealEditSummary extends StatelessWidget {
         CompositionBar.compact(segments: composition.segments),
         const SizedBox(height: 6),
         MacroLegend(
+          columns: true,
           gramLabels: {
             if (totals.protein != null) 'protein': 'P ${fmtG(totals.protein)}',
             if (totals.carbs != null) 'carbohydrate': 'C ${fmtG(totals.carbs)}',

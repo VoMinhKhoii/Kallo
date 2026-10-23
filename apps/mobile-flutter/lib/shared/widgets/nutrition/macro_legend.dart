@@ -16,6 +16,7 @@ class MacroLegend extends StatelessWidget {
     required this.gramLabels,
     this.leading,
     this.trailing,
+    this.columns = false,
   });
 
   /// Gram label per macro key, in [kCompositionKeys] order where present —
@@ -23,6 +24,12 @@ class MacroLegend extends StatelessWidget {
   final Map<String, String> gramLabels;
   final Widget? leading;
   final Widget? trailing;
+
+  /// Three equal columns, each figure centred in its own — the meal edit
+  /// sheet's legend (the owner's ruling: the space either side of every figure
+  /// is equal, and fixed). Off everywhere else: Recent meals and the feed card
+  /// keep the end-to-end spread. Ignored when [leading] or [trailing] is set.
+  final bool columns;
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +41,20 @@ class MacroLegend extends StatelessWidget {
     // centred in its own, so the space either side of every figure is the
     // same and their positions never move with the numbers (the owner's
     // ruling: "left space of P must equal right space of P").
-    if (leading == null && trailing == null && entries.length > 1) {
+    // Every macro keeps its own third even when its figure is missing — a
+    // dropped slot would slide the other two into the wrong columns.
+    if (columns && leading == null && trailing == null) {
       return Row(
         children: [
-          for (final entry in entries) Expanded(child: Center(child: entry)),
+          for (final key in kCompositionKeys)
+            Expanded(
+              child: Center(
+                child:
+                    gramLabels[key] == null
+                        ? const SizedBox.shrink()
+                        : _entry(key, gramLabels[key]!),
+              ),
+            ),
         ],
       );
     }
