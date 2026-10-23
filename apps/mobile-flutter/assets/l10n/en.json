@@ -1313,8 +1313,6 @@
       "tryAgain": "Try again"
     },
     "mealEntry": {
-      "edit": "Edit",
-      "done": "Done",
       "decreaseQuantity": "Decrease {name} quantity",
       "increaseQuantity": "Increase {name} quantity",
       "toggleDetails": "Toggle meal details",
@@ -1323,24 +1321,33 @@
     "portionPicker": {
       "title": "Portion size",
       "assumption": "≈ {label}",
-      "adjust": "Adjust portion, currently {label}",
-      "custom": "Custom portion",
-      "apply": "Apply",
-      "cancel": "Cancel"
+      "adjust": "Adjust portion, currently {label}"
     },
     "persistedMealCard": {
       "toggleDetails": "Toggle meal details",
       "total": "Total",
       "shareWithFriends": "Send to friends",
-      "editAmounts": "Edit amounts",
       "logAgain": "Log again",
       "logAgainError": "Couldn't log it again — try again.",
-      "removeRow": "Remove {name}",
-      "cancelEdit": "Cancel",
-      "saveEdit": "Save changes",
-      "savingEdit": "Saving…",
       "mealUpdated": "Meal updated",
       "updateError": "Couldn't update the meal — try again."
+    },
+    "mealEdit": {
+      "title": "Edit meal",
+      "save": "Save",
+      "done": "Done",
+      "wholeMeal": "Whole meal",
+      "servings": "Servings",
+      "amount": "Amount",
+      "size": "Size",
+      "lessServing": "One less serving of {name}",
+      "moreServing": "One more serving of {name}",
+      "removeDish": "Remove {name}",
+      "lessAmount": "10 less of {name}",
+      "moreAmount": "10 more of {name}",
+      "lessWhole": "Less of the whole meal",
+      "moreWhole": "More of the whole meal",
+      "editDish": "Edit {name}"
     },
     "timelineSidebar": {
       "navigationLabel": "Timeline navigation",

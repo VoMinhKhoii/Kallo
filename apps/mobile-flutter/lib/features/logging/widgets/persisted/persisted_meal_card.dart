@@ -6,10 +6,13 @@ import '../../data/logging_ui_state.dart';
 import '../../data/logging_models.dart';
 import '../../../../theme/kallo_motion.dart';
 import '../../logic/logging_spacing.dart';
+import '../../logic/meal_edit/meal_edit_sources.dart';
+import '../actions/confirm_meal_removal.dart';
+import '../actions/meal_hold_menu.dart';
 import '../actions/swipe_to_remove.dart';
+import '../meal_edit/meal_edit_sheet.dart';
 import '../turn/turn_header.dart';
 import 'persisted_meal_actions.dart';
-import 'persisted_meal_amount_editor.dart';
 import 'persisted_meal_card_content.dart';
 
 /// A saved meal in the day's feed — collapsed by default, expandable.
@@ -39,8 +42,8 @@ class PersistedMealCard extends ConsumerStatefulWidget {
   /// dismissed. Null disables the swipe.
   final VoidCallback? onRemove;
 
-  /// Persist an amount edit (gram overrides + per-row removals). Null disables
-  /// the "Edit amounts" affordance entirely.
+  /// Persist an edit from the sheet (gram overrides + per-row removals). Null
+  /// drops Edit from the hold menu.
   final AmountEditSave? onUpdate;
 
   /// Re-log this meal onto the current day (deterministic server-side copy).
@@ -60,7 +63,6 @@ class _PersistedMealCardState extends ConsumerState<PersistedMealCard>
   // open animation on re-entry.
   late bool _collapsed =
       !ref.read(expandedMealCardsProvider).contains(widget.meal.id);
-  bool _editing = false;
 
   // expandProgress 0 (collapsed) → 1 (expanded). Opens on [disclosure] (180),
   // closes on [press] (150) — see the token docs for why the two differ.
@@ -99,6 +101,27 @@ class _PersistedMealCardState extends ConsumerState<PersistedMealCard>
     ref.read(expandedMealCardsProvider.notifier).state = expanded;
   }
 
+  /// Opens the edit sheet. Its Save sends only what changed; an untouched sheet
+  /// closes without a request.
+  void _openEditor() {
+    final meal = widget.meal;
+    final save = widget.onUpdate!;
+    showMealEditSheet(
+      context,
+      draft: draftFromPersisted(meal),
+      commitLabel: 'logging.mealEdit.save'.tr(),
+      onCommit: (draft) async {
+        final out = persistedEditFrom(meal, draft);
+        if (out.edits.isEmpty && out.removeIds.isEmpty) return;
+        await save(edits: out.edits, removeIds: out.removeIds);
+      },
+    );
+  }
+
+  Future<void> _confirmRemove() async {
+    if (await confirmMealRemoval(context) && mounted) widget.onRemove?.call();
+  }
+
   @override
   void dispose() {
     _curvedExpand.dispose();
@@ -113,22 +136,13 @@ class _PersistedMealCardState extends ConsumerState<PersistedMealCard>
       context.locale.toString(),
     ).format(DateTime.parse(meal.loggedAt).toLocal());
 
-    // Only meals with a gram-bearing ingredient row can be amount-edited; a
-    // legacy/empty meal has nothing to step. Mirrors the web card's `canEdit`.
+    // Only meals with a gram-bearing ingredient row can be edited; a
+    // legacy/empty meal has nothing to scale. Mirrors the web card's `canEdit`.
     final canEdit =
         widget.onUpdate != null &&
         meal.mealItemGroups.any(
           (g) => g.ingredients.any((i) => i.estimatedGrams != null),
         );
-
-    final Widget? editorBody =
-        _editing && widget.onUpdate != null
-            ? PersistedMealAmountEditor(
-              meal: meal,
-              onCancel: () => setState(() => _editing = false),
-              onSave: widget.onUpdate!,
-            )
-            : null;
 
     // No bottom margin: the feed's list separator owns the gap to the next
     // card, so a card never adds spacing of its own.
@@ -138,32 +152,24 @@ class _PersistedMealCardState extends ConsumerState<PersistedMealCard>
         // Time as a centered divider on top of the card (── 1:04 AM ──) —
         // no left timeline gutter, so the card gets the full row width.
         TurnHeader(time: time, message: meal.rawInput),
-        // Editing swaps the body in place AND hides the action row (the web
-        // hides the action bar while editing).
         SwipeToRemove(
           mealId: meal.id,
-          // Not swipe-dismissible mid-edit — a stray swipe must not delete the
-          // meal while its amounts are open.
-          onRemove: _editing ? null : widget.onRemove,
+          onRemove: widget.onRemove,
           builder:
-              (context, radius) => PersistedMealCardContent(
-                meal: meal,
-                curvedExpand: _curvedExpand,
-                onToggle: _toggle,
-                editorBody: editorBody,
-                borderRadius: radius,
+              (context, radius) => MealHoldMenu(
+                removeLabel: 'logging.remove'.tr(),
+                onEdit: canEdit ? _openEditor : null,
+                onRemove: widget.onRemove == null ? null : _confirmRemove,
+                child: PersistedMealCardContent(
+                  meal: meal,
+                  curvedExpand: _curvedExpand,
+                  onToggle: _toggle,
+                  borderRadius: radius,
+                ),
               ),
         ),
-        if (!_editing) ...[
-          const SizedBox(height: LoggingSpacing.actions),
-          PersistedMealActions(
-            meal: meal,
-            onRemove: widget.onRemove,
-            onEditAmounts:
-                canEdit ? () => setState(() => _editing = true) : null,
-            onLogAgain: widget.onLogAgain,
-          ),
-        ],
+        const SizedBox(height: LoggingSpacing.actions),
+        PersistedMealActions(meal: meal, onLogAgain: widget.onLogAgain),
       ],
     );
   }

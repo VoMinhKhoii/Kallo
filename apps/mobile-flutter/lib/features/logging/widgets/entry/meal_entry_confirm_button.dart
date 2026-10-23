@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../../logic/logging_spacing.dart';
 import '../composer/entrances.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../shared/widgets/surface/primary_fill.dart';
@@ -22,14 +21,10 @@ import '../../../../shared/widgets/surface/primary_fill.dart';
 class MealEntryConfirmButton extends StatefulWidget {
   const MealEntryConfirmButton({
     super.key,
-    required this.editing,
     required this.disabled,
     required this.onTap,
   });
 
-  /// While the amounts are open the pill goes quiet (track fill, muted label):
-  /// saving is still possible, but adjusting is what the user came here to do.
-  final bool editing;
   final bool disabled;
   final VoidCallback? onTap;
 
@@ -51,18 +46,10 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
     // does not disable is a trap for the next caller, and this one submits a
     // meal.
     final tappable = !widget.disabled && widget.onTap != null;
-    final quiet = widget.editing;
 
     // Press is a background colour-shift, not an opacity dim — as on
     // [KalloButton].
     final pressed = _pressed && tappable;
-    final Color? fill =
-        quiet
-            ? (pressed
-                ? Color.alphaBlend(KalloColors.pressWash, KalloColors.track)
-                : KalloColors.track)
-            : PrimaryFill.color(pressed: pressed);
-    final Color fg = quiet ? KalloColors.textMuted : PrimaryFill.label;
 
     return Semantics(
       button: true,
@@ -83,11 +70,14 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
             height: _height,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: fill,
-              gradient: quiet ? null : PrimaryFill.gradient(pressed: pressed),
+              color: PrimaryFill.color(pressed: pressed),
+              gradient: PrimaryFill.gradient(pressed: pressed),
               borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
-            child: Text('logging.confirm'.tr(), style: kButtonLabel(color: fg)),
+            child: Text(
+              'logging.confirm'.tr(),
+              style: kButtonLabel(color: PrimaryFill.label),
+            ),
           ),
         ),
       ),
@@ -96,7 +86,8 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
 }
 
 /// Everything the staged card ASKS for, under the content it commits: the
-/// full-width confirm pill and the quiet icon row beneath it.
+/// full-width confirm pill, alone. Discard moved into the card's hold menu, so
+/// nothing sits under the pill (the owner's ruling, 2026-10-22).
 ///
 /// Split out of [MealEntry] because the card's own file is at its size budget
 /// and this is the seam — nothing here reads the quantity draft, only the
@@ -104,14 +95,10 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
 class MealEntryCommitRow extends StatelessWidget {
   const MealEntryCommitRow({
     super.key,
-    required this.editing,
     required this.revealing,
     required this.disabled,
     required this.onConfirm,
-    required this.actions,
   });
-
-  final bool editing;
 
   /// The reveal morph's opening frame: the pill slides up into the slot the
   /// spinner row has just slid out of.
@@ -120,33 +107,23 @@ class MealEntryCommitRow extends StatelessWidget {
   final bool disabled;
   final VoidCallback onConfirm;
 
-  /// A staged card's discard lives here — BENEATH the button, never beside it,
-  /// where a trash target would read as the confirm's equal. Empty draws no
-  /// second row at all.
-  final List<Widget> actions;
-
   @override
   Widget build(BuildContext context) {
     final button = MealEntryConfirmButton(
-      editing: editing,
       disabled: disabled,
       onTap: disabled ? null : onConfirm,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // The house step, NOT [LoggingSpacing.actions] like the icon row below.
-        // That token is 2 because an icon button carries (44 − 21) / 2 ≈ 11.5
-        // of centring inset above its glyph, which supplies the rest of the
-        // gap. The pill is a filled 50pt block with no inset at all, so 2 was
-        // the whole gap: the card's white and the pill's beige met with a
-        // 2px seam and read as one welded slab.
+        // The house step, NOT [LoggingSpacing.actions]. That token is 2
+        // because an icon button carries (44 − 21) / 2 ≈ 11.5 of centring
+        // inset above its glyph, which supplies the rest of the gap. The pill
+        // is a filled 50pt block with no inset at all, so 2 was the whole gap:
+        // the card's white and the pill's beige met with a 2px seam and read
+        // as one welded slab.
         const SizedBox(height: LoggingSpacing.turn),
         revealing ? FadeInUp(offset: 12, child: button) : button,
-        if (actions.isNotEmpty) ...[
-          const SizedBox(height: LoggingSpacing.actions),
-          Row(children: [const Spacer(), ...actions]),
-        ],
       ],
     );
   }

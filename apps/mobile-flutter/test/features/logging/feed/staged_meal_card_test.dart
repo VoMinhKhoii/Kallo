@@ -5,12 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/entrances.dart';
+import 'package:kallo_mobile/features/logging/widgets/entry/meal_entry_card.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/staged_meal_card.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/meal_time_divider.dart';
 import 'package:kallo_mobile/features/logging/widgets/turn/user_message_bubble.dart';
 import 'package:kallo_mobile/models/logging/meal.dart';
 
 import '../../../l10n_test_loader.dart';
+import '../actions/hold_to_open_menu.dart';
 
 const _meal = ParsedMeal(
   mealName: 'Bữa trưa',
@@ -135,7 +137,9 @@ void main() {
 
     // Before this the only exit from a staged card was confirming it: the user
     // had to save a meal they did not want in order to be able to delete it.
-    await tester.tap(find.bySemanticsLabel('Discard'));
+    // Discard lives in the card's hold menu.
+    await holdToOpenMenu(tester, find.byType(MealEntryCard));
+    await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();
     expect(discarded, 0, reason: 'the confirm must come first');
 
@@ -169,9 +173,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // The row is mid-save. Deleting it now would race the confirm.
-    await tester.tap(find.bySemanticsLabel('Discard'), warnIfMissed: false);
-    await tester.pumpAndSettle();
+    // The row is mid-save. Deleting it now would race the confirm, so the hold
+    // menu leaves Discard out.
+    await holdToOpenMenu(tester, find.byType(MealEntryCard));
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text('Discard'), findsNothing);
 
     expect(find.byKey(kKalloConfirmSurface), findsNothing);
     expect(discarded, 0);

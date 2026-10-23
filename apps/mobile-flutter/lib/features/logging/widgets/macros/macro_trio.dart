@@ -17,24 +17,12 @@ class MacroTrio extends StatelessWidget {
     required this.carbs,
     required this.fat,
     required this.calories,
-    this.splitReplacement,
   });
 
   final double? protein;
   final double? carbs;
   final double? fat;
   final double? calories;
-
-  /// Put in the P/C/F block's slot instead of the split, at exactly the same
-  /// width — so the dish name beside it and the kcal after it do not move.
-  ///
-  /// For the meal card's EDIT mode, which borrows the slot for its `−/+`
-  /// steppers. Putting those controls in FRONT of the name instead pushed every
-  /// name 112pt to the right, and on a phone there was nothing left to push
-  /// into: names collapsed to zero width and the row overflowed anyway.
-  /// Swapping only the middle block keeps the row still — the numbers change
-  /// under your thumb and nothing else does.
-  final Widget? splitReplacement;
 
   /// Shared with the `/` picker's options, so a kcal figure sits at the same x
   /// whether you are choosing a dish, reading one back, or looking at a total.
@@ -47,9 +35,7 @@ class MacroTrio extends StatelessWidget {
       children: [
         SizedBox(
           width: MacroColumns.split,
-          child:
-              splitReplacement ??
-              MacroSplit(protein: protein, carbs: carbs, fat: fat),
+          child: MacroSplit(protein: protein, carbs: carbs, fat: fat),
         ),
         const SizedBox(width: MacroColumns.gap),
         MacroKcal(

@@ -8,31 +8,26 @@ import '../macros/macro_trio.dart';
 import 'meal_entry_header.dart';
 import 'meal_entry_item_row.dart';
 
-/// The unconfirmed card's contents: quote + Edit pill, the dish rows, and the
-/// totals line, separated by the card's two hairlines.
+/// The unconfirmed card's contents: the quote, the dish rows, and the totals
+/// line, separated by the card's two hairlines.
 ///
-/// Split out of [MealEntry] so that widget keeps only the quantity-edit state
-/// machine (steppers, portion picker, confirm cooldown) and this stays purely
-/// presentational.
+/// Split out of [MealEntry] so that widget keeps only the quantity draft and
+/// the sheet that edits it, and this stays purely presentational.
 class MealEntryBody extends StatelessWidget {
   const MealEntryBody({
     super.key,
     required this.rawInput,
     required this.items,
     required this.totals,
-    required this.editing,
     required this.revealing,
     required this.animateIn,
     required this.countUp,
-    required this.onToggleEditing,
-    required this.onChange,
-    required this.onAdjustPortion,
+    required this.onOpen,
   });
 
   final String rawInput;
   final List<MealItem> items;
   final MacroBreakdown totals;
-  final bool editing;
   final bool revealing;
 
   /// See [MealEntryItemRow.animateIn].
@@ -41,9 +36,8 @@ class MealEntryBody extends StatelessWidget {
   /// Only the reveal's opening frame counts the totals up from zero.
   final bool countUp;
 
-  final VoidCallback onToggleEditing;
-  final void Function(String itemId, double delta) onChange;
-  final ValueChanged<MealItem> onAdjustPortion;
+  /// Opens the edit sheet on [item]; [size] drops its Size row open.
+  final void Function(MealItem item, {bool size}) onOpen;
 
   static Divider get _hairline =>
       Divider(height: 1, thickness: 1, color: KalloColors.borderFaint);
@@ -53,11 +47,7 @@ class MealEntryBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        MealEntryHeader(
-          rawInput: rawInput,
-          editing: editing,
-          onToggleEditing: onToggleEditing,
-        ),
+        MealEntryHeader(rawInput: rawInput),
         const SizedBox(height: LoggingSpacing.section),
         _hairline,
         const SizedBox(height: LoggingSpacing.section),
@@ -71,11 +61,10 @@ class MealEntryBody extends StatelessWidget {
                   key: ValueKey(item.id),
                   item: item,
                   index: index,
-                  editing: editing,
                   revealing: revealing,
                   animateIn: animateIn,
-                  onChange: onChange,
-                  onAdjustPortion: onAdjustPortion,
+                  onOpen: () => onOpen(item),
+                  onOpenSize: () => onOpen(item, size: true),
                 ),
             ],
           ),

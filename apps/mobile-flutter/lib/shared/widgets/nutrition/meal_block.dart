@@ -4,6 +4,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../logic/display_format.dart';
 import '../../logic/macro_composition.dart';
 import 'composition_bar.dart';
+import 'macro_legend.dart';
 
 /// Where the kcal figure sits in a [MealBlock].
 ///
@@ -97,33 +98,10 @@ class MealBlock extends StatelessWidget {
         // mix — fixed 14pt gaps clustering the macros at the left, then a
         // Spacer shoving kcal to the right — made the same legend read
         // differently on a Circle post and on the Log card.
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            if (kcalPlacement == MealBlockKcal.legendLeading && kcal != null)
-              kcal,
-            for (final key in kCompositionKeys)
-              if (gramLabels[key] != null)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      kMacroIcons[key],
-                      size: 14,
-                      color: kCompositionColors[key],
-                    ),
-                    const SizedBox(width: 4),
-                    // Caption, not Meta. This legend is three icon+figure
-                    // pairs and a kcal total on ONE line: at Meta it measured
-                    // ~253pt of legend plus a ~70pt kcal, which does not fit
-                    // a 320pt phone's card. The tier exists for exactly this
-                    // — a compact component the secondary size visibly breaks.
-                    Text(gramLabels[key]!, style: dashCaption()),
-                  ],
-                ),
-            if (kcalPlacement == MealBlockKcal.legendTrailing && kcal != null)
-              kcal,
-          ],
+        MacroLegend(
+          gramLabels: gramLabels,
+          leading: kcalPlacement == MealBlockKcal.legendLeading ? kcal : null,
+          trailing: kcalPlacement == MealBlockKcal.legendTrailing ? kcal : null,
         ),
       ],
     );

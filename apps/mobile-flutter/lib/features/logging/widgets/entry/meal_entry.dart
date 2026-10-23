@@ -1,19 +1,21 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../../models/logging/meal.dart';
 import '../../logic/logging_spacing.dart';
+import '../../logic/meal_edit/meal_edit_sources.dart';
 import '../../logic/meal_utils.dart';
 import '../../logic/quantity_editing.dart';
+import '../actions/confirm_meal_removal.dart';
+import '../actions/meal_hold_menu.dart';
+import '../meal_edit/meal_edit_sheet.dart';
 import 'meal_entry_card.dart';
 import 'meal_entry_confirm_button.dart';
 import 'meal_entry_body.dart';
 import '../turn/meal_time_divider.dart';
-import '../portion/portion_pick_flow.dart';
 
-/// An unconfirmed analysis: editable dish quantities (+/- steppers) + confirm.
-/// Reuses the web's pure quantity helpers so scaling math is identical.
+/// An unconfirmed analysis: its dishes, the meal edit sheet they open into
+/// (tap a dish, or hold the card), and Log meal.
 class MealEntry extends StatefulWidget {
   const MealEntry({
     super.key,
@@ -24,13 +26,12 @@ class MealEntry extends StatefulWidget {
     this.revealing = false,
     this.showTimeDivider = true,
     this.loggedAt,
-    this.actions = const [],
+    this.onDiscard,
   });
 
-  /// Extra action targets for the quiet icon row BENEATH the confirm pill — a
-  /// staged card's discard lives here. Empty means no second row is drawn at
-  /// all.
-  final List<Widget> actions;
+  /// Throws the staged analysis away, after a confirm — offered from the
+  /// card's hold menu. Null leaves Discard out of the menu.
+  final VoidCallback? onDiscard;
 
   /// When the analysis was staged, for a card restored from the server. Null
   /// for the live reveal, which has not been staged with a time yet.
@@ -66,20 +67,10 @@ class _MealEntryState extends State<MealEntry> {
   /// Only the live reveal has no `loggedAt`, and there "now" is right. Seeded
   /// rather than read in `build`, so a stepper cannot creep it forward.
   late DateTime _enteredAt = widget.loggedAt ?? DateTime.now();
-  bool _editing = false;
 
-  /// Confirm waits a beat after each tap; [dispose] cancels the window, so it
-  /// can never settle onto a dead State. See [ConfirmCooldown].
-  late final ConfirmCooldown _cooldown = ConfirmCooldown(() => setState(() {}));
   // After the first totals count-up, edits should jump rather than re-animate
   // from zero — only the reveal's opening frame counts up.
   late bool _countUp = widget.revealing;
-
-  @override
-  void dispose() {
-    _cooldown.dispose();
-    super.dispose();
-  }
 
   /// A re-stage arrives at this very card with a different meal in it — see
   /// [QuantityDraft.sameDishes] — and brings its own staging time. As a
@@ -96,41 +87,36 @@ class _MealEntryState extends State<MealEntry> {
     });
   }
 
-  void _change(String itemId, double delta) {
-    HapticFeedback.selectionClick();
-    _edit(() => _draft.changed(itemId, delta));
-  }
-
-  /// Every quantity edit — stepper or portion picker — lands here: it snaps the
-  /// totals (only the reveal counts up) and, when [debounce] is set, re-arms
-  /// the confirm cooldown so a fast double-tap can't save mid-adjust.
-  void _edit(List<MealItem> Function() mutate, {bool debounce = true}) {
-    setState(() {
-      _countUp = false;
-      _draft.items = mutate();
-    });
-    if (debounce) _cooldown.arm();
-  }
-
-  /// Commits whatever the portion picker previewed. No debounce, matching web's
-  /// `handleApply`: dismissing the sheet already separates this from Confirm.
-  Future<void> _adjustPortion(MealItem item) async {
-    // The picker answers from a SNAPSHOT of these items, and a re-stage can
-    // land while it is open — committing then would put the superseded
-    // analysis's dishes back onto a card that has already moved on.
+  /// Opens the edit sheet on the card's draft. Done hands the re-scaled
+  /// dishes back to this card; nothing is sent until Log meal.
+  void _openEditor({String? sizeOpen}) {
+    // The sheet edits a SNAPSHOT of these items, and a re-stage can land while
+    // it is open — committing then would put the superseded analysis's dishes
+    // back onto a card that has already moved on.
     final staged = widget.parsedMeal;
-    final next = await pickPortion(
+    final locale = context.locale.languageCode == 'vi' ? 'vi' : 'en';
+    showMealEditSheet(
       context,
-      item: item,
-      items: _draft.items,
-      original: _draft.original,
+      draft: draftFromStaged(_draft.items, _draft.original),
+      commitLabel: 'logging.mealEdit.done'.tr(),
+      sizeOpen: sizeOpen,
+      onCommit: (draft) async {
+        if (!mounted || !QuantityDraft.sameDishes(staged, widget.parsedMeal)) {
+          return;
+        }
+        setState(() {
+          _countUp = false;
+          _draft.items = stagedItemsFrom(draft, _draft.items, locale);
+        });
+      },
     );
-    if (next == null || !mounted) return;
-    if (!QuantityDraft.sameDishes(staged, widget.parsedMeal)) return;
-    _edit(() => next, debounce: false);
   }
 
-  bool get _confirmDisabled => widget.busy || (_editing && _cooldown.active);
+  Future<void> _confirmDiscard() async {
+    if (await confirmPendingDiscard(context) && mounted) {
+      widget.onDiscard?.call();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,33 +142,36 @@ class _MealEntryState extends State<MealEntry> {
           ),
           const SizedBox(height: LoggingSpacing.block),
         ],
-        MealEntryCard(
-          editing: _editing,
-          child: MealEntryBody(
-            rawInput: widget.rawInput,
-            items: _draft.items,
-            totals: totals,
-            editing: _editing,
-            revealing: widget.revealing,
-            // Only the live turn earns an entrance. A card restored from the
-            // server carries a real loggedAt (see [_enteredAt] above) and has
-            // been on the day all along — replaying its stagger every time the
-            // list recycles it back into view read as the card re-arriving.
-            animateIn: widget.loggedAt == null,
-            countUp: _countUp,
-            onToggleEditing: () => setState(() => _editing = !_editing),
-            onChange: _change,
-            onAdjustPortion: _adjustPortion,
+        MealHoldMenu(
+          removeLabel: 'logging.stagedMealCard.discard'.tr(),
+          onEdit: _openEditor,
+          onRemove:
+              widget.onDiscard == null || widget.busy ? null : _confirmDiscard,
+          child: MealEntryCard(
+            child: MealEntryBody(
+              rawInput: widget.rawInput,
+              items: _draft.items,
+              totals: totals,
+              revealing: widget.revealing,
+              // Only the live turn earns an entrance. A card restored from the
+              // server carries a real loggedAt (see [_enteredAt] above) and has
+              // been on the day all along — replaying its stagger every time
+              // the list recycles it back into view read as the card
+              // re-arriving.
+              animateIn: widget.loggedAt == null,
+              countUp: _countUp,
+              onOpen:
+                  (item, {bool size = false}) =>
+                      _openEditor(sizeOpen: size ? item.id : null),
+            ),
           ),
         ),
         // The one thing this card asks for, full width under the content it
         // commits. See [MealEntryCommitRow].
         MealEntryCommitRow(
-          editing: _editing,
           revealing: widget.revealing,
-          disabled: _confirmDisabled,
+          disabled: widget.busy,
           onConfirm: () => widget.onConfirm(_draft.edits),
-          actions: widget.actions,
         ),
       ],
     );

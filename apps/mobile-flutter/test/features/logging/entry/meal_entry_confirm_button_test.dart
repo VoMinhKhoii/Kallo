@@ -44,13 +44,7 @@ void main() {
     // button saves a meal.
     var taps = 0;
     await tester.pumpWidget(
-      _wrap(
-        MealEntryConfirmButton(
-          editing: false,
-          disabled: true,
-          onTap: () => taps++,
-        ),
-      ),
+      _wrap(MealEntryConfirmButton(disabled: true, onTap: () => taps++)),
     );
     await tester.pumpAndSettle(); // EasyLocalization resolves on the next frame
 
@@ -63,13 +57,7 @@ void main() {
   testWidgets('and still fires when it is enabled', (tester) async {
     var taps = 0;
     await tester.pumpWidget(
-      _wrap(
-        MealEntryConfirmButton(
-          editing: false,
-          disabled: false,
-          onTap: () => taps++,
-        ),
-      ),
+      _wrap(MealEntryConfirmButton(disabled: false, onTap: () => taps++)),
     );
     await tester.pumpAndSettle(); // EasyLocalization resolves on the next frame
 
@@ -89,11 +77,7 @@ void main() {
       _wrap(
         const SizedBox(
           width: 300,
-          child: MealEntryConfirmButton(
-            editing: false,
-            disabled: false,
-            onTap: null,
-          ),
+          child: MealEntryConfirmButton(disabled: false, onTap: null),
         ),
       ),
     );
@@ -118,26 +102,5 @@ void main() {
     final decoration = container.decoration! as BoxDecoration;
     expect(decoration.color, KalloColors.btnPrimarySoft);
     expect(decoration.borderRadius, BorderRadius.circular(KalloRadii.button));
-  });
-
-  testWidgets('the editing state goes quiet rather than beige', (tester) async {
-    await tester.pumpWidget(
-      _wrap(
-        const MealEntryConfirmButton(
-          editing: true,
-          disabled: false,
-          onTap: null,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final container = tester.widget<AnimatedContainer>(
-      find.descendant(
-        of: find.byType(MealEntryConfirmButton),
-        matching: find.byType(AnimatedContainer),
-      ),
-    );
-    expect((container.decoration! as BoxDecoration).color, KalloColors.track);
   });
 }

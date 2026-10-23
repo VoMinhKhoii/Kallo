@@ -7,7 +7,6 @@ import '../../../../services/billing/entitlement_state.dart';
 import '../../../../services/billing/feature_lock.dart';
 import '../../../circle/widgets/share/show_share_meal_sheet.dart';
 import '../../data/logging_models.dart';
-import '../actions/confirm_meal_removal.dart';
 import '../actions/meal_action_icon_button.dart';
 import 'persisted_meal_share_to_circle_button.dart';
 
@@ -15,20 +14,9 @@ import 'persisted_meal_share_to_circle_button.dart';
 /// the plan lacks one, its icon wears a [PremiumDot] and a tap opens the
 /// paywall instead of the action.
 class PersistedMealActions extends ConsumerWidget {
-  const PersistedMealActions({
-    super.key,
-    required this.meal,
-    required this.onRemove,
-    this.onEditAmounts,
-    this.onLogAgain,
-  });
+  const PersistedMealActions({super.key, required this.meal, this.onLogAgain});
 
   final PersistedMeal meal;
-  final VoidCallback? onRemove;
-
-  /// Opens the in-place amount editor. Null hides the "Edit amounts" action
-  /// (the meal has no gram-bearing ingredient to step).
-  final VoidCallback? onEditAmounts;
 
   /// Re-log this meal onto the current day — a deterministic server-side copy.
   /// Null hides the "Log again" action. Awaited so the button can show its
@@ -39,19 +27,13 @@ class PersistedMealActions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final relog = premiumGate(ref, PremiumFeature.relog);
     final share = premiumGate(ref, PremiumFeature.copySplit);
-    // Web action order (meal-card-action-bar.tsx): logAgain, [refine — not on
-    // mobile], editAmounts, shareWithFriends. The right-side circle-share +
-    // remove arrangement is mobile's own and stays put.
+    // Edit and Remove are not here: they live in the card's hold menu
+    // (MealHoldMenu), so the row under a meal is only what you do WITH it —
+    // log it again, send it, share it to your circle.
     return Row(
       children: [
         if (onLogAgain != null)
           _LogAgainButton(onLogAgain: onLogAgain!, locked: relog.locked),
-        if (onEditAmounts != null)
-          MealActionIconButton(
-            icon: LucideIcons.slidersHorizontal300,
-            label: 'logging.persistedMealCard.editAmounts'.tr(),
-            onTap: onEditAmounts,
-          ),
         if (meal.mealItemGroups.isNotEmpty)
           MealActionIconButton(
             icon: LucideIcons.userPlus300,
@@ -61,18 +43,6 @@ class PersistedMealActions extends ConsumerWidget {
           ),
         const Spacer(),
         PersistedMealShareToCircleButton(mealId: meal.id, share: meal.share),
-        if (onRemove != null)
-          MealActionIconButton(
-            icon: LucideIcons.trash2300,
-            label: 'logging.remove'.tr(),
-            danger: true,
-            onTap: () async {
-              if (await confirmMealRemoval(context)) {
-                if (!context.mounted) return;
-                onRemove?.call();
-              }
-            },
-          ),
       ],
     );
   }

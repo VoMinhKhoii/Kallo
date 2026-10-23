@@ -1310,8 +1310,6 @@
       "tryAgain": "Thử lại"
     },
     "mealEntry": {
-      "edit": "Sửa",
-      "done": "Xong",
       "decreaseQuantity": "Giảm khối lượng {name}",
       "increaseQuantity": "Tăng khối lượng {name}",
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
@@ -1320,24 +1318,33 @@
     "portionPicker": {
       "title": "Khẩu phần",
       "assumption": "≈ {label}",
-      "adjust": "Chỉnh khẩu phần, hiện tại {label}",
-      "custom": "Khẩu phần tuỳ chỉnh",
-      "apply": "Áp dụng",
-      "cancel": "Huỷ"
+      "adjust": "Chỉnh khẩu phần, hiện tại {label}"
     },
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
       "shareWithFriends": "Gửi cho bạn bè",
-      "editAmounts": "Sửa lượng",
       "logAgain": "Ghi lại",
       "logAgainError": "Không ghi lại được — hãy thử lại.",
-      "removeRow": "Bỏ {name}",
-      "cancelEdit": "Huỷ",
-      "saveEdit": "Lưu thay đổi",
-      "savingEdit": "Đang lưu…",
       "mealUpdated": "Đã cập nhật bữa ăn",
       "updateError": "Không cập nhật được bữa ăn — hãy thử lại."
+    },
+    "mealEdit": {
+      "title": "Sửa bữa ăn",
+      "save": "Lưu",
+      "done": "Xong",
+      "wholeMeal": "Cả bữa",
+      "servings": "Khẩu phần",
+      "amount": "Lượng",
+      "size": "Cỡ",
+      "lessServing": "Bớt một khẩu phần {name}",
+      "moreServing": "Thêm một khẩu phần {name}",
+      "removeDish": "Bỏ {name}",
+      "lessAmount": "Bớt 10 {name}",
+      "moreAmount": "Thêm 10 {name}",
+      "lessWhole": "Bớt cả bữa",
+      "moreWhole": "Thêm cả bữa",
+      "editDish": "Sửa {name}"
     },
     "timelineSidebar": {
       "navigationLabel": "Điều hướng dòng thời gian",

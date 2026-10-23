@@ -82,8 +82,8 @@ class StagedMealCard extends StatelessWidget {
             showTimeDivider: false,
             busy: busy,
             onConfirm: (edits) => onConfirm(pending.id, edits),
-            // The way out: a quiet trash in its own row under the confirm pill.
-            actions: [discard],
+            // The way out: Discard in the card's hold menu.
+            onDiscard: onDiscard,
           ),
         ],
         // The cheat slider draws its own body but no action row, so it gets

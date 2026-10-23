@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kallo_mobile/features/logging/widgets/entry/meal_entry_card.dart';
 import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
 import 'package:kallo_mobile/features/logging/logic/feed/view_state.dart';
@@ -13,6 +14,7 @@ import 'package:kallo_mobile/models/logging/meal.dart';
 import 'package:kallo_mobile/models/logging/streaming.dart';
 
 import '../../../l10n_test_loader.dart';
+import '../actions/hold_to_open_menu.dart';
 
 const _raw = 'phở bò tái nạm';
 
@@ -173,8 +175,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // The card a user sees right after analysing is the one they most often
-    // want gone; before this its only way out was a day reload.
-    await tester.tap(find.bySemanticsLabel('Discard'));
+    // want gone; before this its only way out was a day reload. Discard lives
+    // in the card's hold menu.
+    await holdToOpenMenu(tester, find.byType(MealEntryCard));
+    await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();
     expect(discarded, isEmpty, reason: 'the confirm must come first');
 

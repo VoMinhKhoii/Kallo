@@ -1,0 +1,223 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:kallo_mobile/features/logging/data/logging_models.dart';
+import 'package:kallo_mobile/features/logging/logic/meal_edit/meal_edit_sources.dart';
+import 'package:kallo_mobile/models/logging/meal.dart';
+import 'package:kallo_mobile/models/nutrition/vessel.dart';
+
+PersistedIngredient ing(
+  String id, {
+  double? grams,
+  double? kcal,
+  double? p,
+  String unit = 'g',
+}) => PersistedIngredient(
+  id: id,
+  ingredientName: id,
+  estimatedGrams: grams,
+  userFacingUnit: unit,
+  nutrition: MealNutrition(caloriesKcal: kcal, proteinG: p),
+);
+
+PersistedMealItemGroup dish(int order, List<PersistedIngredient> parts) =>
+    PersistedMealItemGroup(
+      name: 'dish $order',
+      order: order,
+      nutrition: const MealNutrition(),
+      ingredients: parts,
+    );
+
+PersistedMeal meal(List<PersistedMealItemGroup> groups) => PersistedMeal(
+  id: 'm',
+  rawInput: 'lunch',
+  loggedAt: '2026-10-23T12:00:00Z',
+  nutrition: const MealNutrition(),
+  mealItemGroups: groups,
+);
+
+MealItem item(String id, double grams, double kcal, {ClientVessel? vessel}) =>
+    MealItem(
+      id: id,
+      name: id,
+      quantity: grams,
+      unit: 'g',
+      macros: MacroBreakdown(calories: kcal, protein: 10, carbs: 20, fat: 5),
+      vessel: vessel,
+    );
+
+void main() {
+  final bowl = meal([
+    dish(0, [
+      ing('rice', grams: 200, kcal: 260, p: 5),
+      ing('chicken', grams: 150, kcal: 250, p: 40),
+    ]),
+    dish(1, [ing('latte', grams: 350, kcal: 190, p: 12, unit: 'ml')]),
+  ]);
+
+  group('servings', () {
+    test('plus doubles a dish and scales every part with it', () {
+      final d = draftFromPersisted(
+        bowl,
+      ).stepServings('0', 1).stepServings('0', 1);
+      expect(d.dish('0')!.servings, 2);
+      expect(d.dish('0')!.grams, 700);
+      expect(d.totals.kcal, 2 * 510 + 190);
+      expect(d.totals.protein, 2 * 45 + 12);
+    });
+
+    test('an off-step amount snaps to the next half, both ways', () {
+      final d = draftFromPersisted(bowl).stepAmount('0', 1).stepAmount('0', 1);
+      expect(d.dish('0')!.grams, 370); // 1.06×
+      expect(d.stepServings('0', 1).dish('0')!.servings, 1.5);
+      expect(d.stepServings('0', -1).dish('0')!.servings, 1);
+    });
+
+    test('minus at half a serving removes the dish on a saved meal', () {
+      final d = draftFromPersisted(bowl).stepServings('1', -1);
+      expect(d.dish('1')!.servings, 0.5);
+      expect(d.removesOnMinus(d.dish('1')!), isTrue);
+      expect(d.stepServings('1', -1).dish('1'), isNull);
+    });
+
+    test('the last dish can never be removed', () {
+      final one = draftFromPersisted(meal([bowl.mealItemGroups[1]]));
+      final half = one.stepServings('1', -1);
+      expect(half.removesOnMinus(half.dish('1')!), isFalse);
+      expect(half.servingsMinusDisabled(half.dish('1')!), isTrue);
+      expect(half.stepServings('1', -1).dish('1')!.servings, 0.5);
+    });
+  });
+
+  group('amount', () {
+    test('steps ten at a time and floors at the minimum', () {
+      final d = draftFromPersisted(
+        meal([
+          dish(0, [ing('salt', grams: 15)]),
+        ]),
+      );
+      expect(d.stepAmount('0', 1).dish('0')!.grams, 25);
+      expect(d.stepAmount('0', -1).dish('0')!.grams, 10);
+    });
+
+    test('reads in ml only when every weighed part is ml', () {
+      final d = draftFromPersisted(bowl);
+      expect(d.dish('0')!.unit, 'g');
+      expect(d.dish('1')!.unit, 'ml');
+    });
+  });
+
+  group('whole meal', () {
+    test('scales every dish by the same factor and keeps its own step', () {
+      final d = draftFromPersisted(bowl).stepWhole(1);
+      expect(d.whole, 1.5);
+      expect(d.dish('0')!.grams, 525);
+      expect(d.dish('1')!.grams, 525);
+      expect(d.stepWhole(-1).stepWhole(-1).whole, 0.5);
+      expect(d.stepWhole(-1).stepWhole(-1).stepWhole(-1).whole, 0.5);
+    });
+  });
+
+  group('nulls are not zero', () {
+    test('a macro no part carries stays null', () {
+      final d = draftFromPersisted(
+        meal([
+          dish(0, [ing('x', grams: 100)]),
+        ]),
+      );
+      expect(d.totals.kcal, isNull);
+    });
+
+    test('a part with no grams keeps its nutrition as the dish scales', () {
+      final d = draftFromPersisted(
+        meal([
+          dish(0, [
+            ing('weighed', grams: 100, kcal: 100),
+            ing('legacy', kcal: 50),
+          ]),
+        ]),
+      ).stepServings('0', 1).stepServings('0', 1);
+      expect(d.totals.kcal, 250);
+    });
+
+    test('a dish with no grams at all cannot be stepped', () {
+      final d = draftFromPersisted(
+        meal([
+          dish(0, [ing('legacy', kcal: 50)]),
+        ]),
+      );
+      expect(d.dish('0')!.scalable, isFalse);
+      expect(d.stepServings('0', 1).totals.kcal, 50);
+    });
+  });
+
+  group('saved payload', () {
+    test('nothing changed sends nothing', () {
+      final out = persistedEditFrom(bowl, draftFromPersisted(bowl));
+      expect(out.edits, isEmpty);
+      expect(out.removeIds, isEmpty);
+    });
+
+    test('a resized dish sends every weighed row; a removed one its ids', () {
+      final draft = draftFromPersisted(
+        bowl,
+      ).stepServings('0', 1).stepServings('1', -1).stepServings('1', -1);
+      final out = persistedEditFrom(bowl, draft);
+      expect(out.edits, [
+        {'id': 'rice', 'newGrams': 300.0},
+        {'id': 'chicken', 'newGrams': 225.0},
+      ]);
+      expect(out.removeIds, ['latte']);
+    });
+
+    test('a tiny part keeps a positive amount', () {
+      final m = meal([
+        dish(0, [ing('rice', grams: 200), ing('salt', grams: 0.1)]),
+      ]);
+      final out = persistedEditFrom(
+        m,
+        draftFromPersisted(m).stepServings('0', -1),
+      );
+      expect(out.edits, [
+        {'id': 'rice', 'newGrams': 100.0},
+      ]); // the salt stays at its 0.1 g floor rather than rounding to 0
+    });
+  });
+
+  group('unsaved', () {
+    final staged = [item('a', 400, 600), item('b', 100, 200)];
+
+    test('scales off the item as staged and cannot remove a dish', () {
+      final draft = draftFromStaged(staged, staged);
+      expect(draft.canRemove, isFalse);
+      final half = draft.stepServings('a', -1);
+      expect(half.servingsMinusDisabled(half.dish('a')!), isTrue);
+      final out = stagedItemsFrom(draft.stepServings('a', 1), staged, 'en');
+      expect(out.first.quantity, 600);
+      expect(out.first.macros.calories, 900);
+      expect(out.last.quantity, 100);
+      expect(out.last.macros.calories, 200);
+    });
+
+    test('an already-edited item reopens at its current grams', () {
+      final edited = [item('a', 500, 750), staged.last];
+      final draft = draftFromStaged(edited, staged);
+      expect(draft.dish('a')!.grams, 500);
+      expect(draft.dish('a')!.servings, 1.25);
+      expect(draft.totals.kcal, 750 + 200);
+    });
+
+    test('a resized bowl re-points its vessel to the tier it now claims', () {
+      const medium = ContainerVessel(
+        family: ContainerFamily.bowl,
+        tier: 2,
+        dishClass: DishClass.solid,
+      );
+      final bowlItem = [item('a', 450, 600, vessel: medium)];
+      final out = stagedItemsFrom(
+        draftFromStaged(bowlItem, bowlItem).setGrams('a', 2000),
+        bowlItem,
+        'en',
+      );
+      expect((out.first.vessel! as ContainerVessel).tier, 4);
+    });
+  });
+}

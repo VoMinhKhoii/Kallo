@@ -4,13 +4,16 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:kallo_mobile/features/logging/widgets/portion/portion_picker_sheet.dart';
+import 'package:kallo_mobile/features/logging/logic/meal_edit/meal_edit_sources.dart';
+import 'package:kallo_mobile/features/logging/widgets/meal_edit/meal_edit_sheet.dart';
+import 'package:kallo_mobile/models/logging/meal.dart';
 import 'package:kallo_mobile/models/nutrition/vessel.dart';
 
 import '../../../l10n_test_loader.dart';
 
-/// The picker's slider must be OPERABLE by assistive technology, not merely
-/// readable by it.
+/// The portion ruler must be OPERABLE by assistive technology, not merely
+/// readable by it. It lives in the meal edit sheet's Size dropdown now; the
+/// guarantee travelled with it.
 ///
 /// It shipped announced-but-inert: an outer `Semantics(..., excludeSemantics:
 /// true)` discarded the Material Slider's whole semantics subtree, taking its
@@ -50,23 +53,39 @@ SemanticsNode _sliderNode(WidgetTester tester) {
   return nodes.single;
 }
 
+/// Opens the edit sheet on one staged dish with its Size dropdown open.
 Future<void> _openPicker(
   WidgetTester tester,
   ClientVessel vessel,
   int grams,
 ) async {
+  final items = [
+    MealItem(
+      id: 'a',
+      name: 'Cá kho',
+      quantity: grams.toDouble(),
+      unit: 'g',
+      macros: const MacroBreakdown(
+        calories: 300,
+        protein: 30,
+        carbs: 4,
+        fat: 18,
+      ),
+      vessel: vessel,
+    ),
+  ];
   await tester.pumpWidget(
     _wrap(
       Builder(
         builder:
             (context) => TextButton(
               onPressed:
-                  () => showPortionPicker(
+                  () => showMealEditSheet(
                     context,
-                    vessel: vessel,
-                    grams: grams,
-                    itemCalories: 300,
-                    itemQuantity: 150,
+                    draft: draftFromStaged(items, items),
+                    commitLabel: 'Done',
+                    sizeOpen: 'a',
+                    onCommit: (_) async {},
                   ),
               child: const Text('open'),
             ),
