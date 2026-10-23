@@ -1,17 +1,12 @@
 'use client';
 
-import {
-  LogOut,
-  MousePointerClick,
-  Settings,
-  User as UserIcon,
-} from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { ThemeMenuRadio } from '@/components/settings/appearance/theme-menu-radio';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -22,6 +17,11 @@ import { useSignOut } from '@/hooks/auth/use-sign-out';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import type { SidebarExpandMode } from '@/lib/sidebar/types';
+import {
+  ExpandModeMenuItem,
+  MENU_ROW,
+  MENU_ROW_ICON,
+} from './sidebar/expand-mode-menu-item';
 
 export interface UserMenuUser {
   email: string | null;
@@ -111,11 +111,11 @@ export function UserMenu({
       </span>
       {!collapsed && (
         <span className="min-w-0 flex-1 overflow-hidden">
-          <span className="block truncate font-medium font-sans-display text-[12px] text-kallo-text">
+          <span className="block truncate font-medium font-sans-display text-[13px] text-kallo-text">
             {label}
           </span>
           {user.email && (
-            <span className="block truncate font-sans-display text-[10.5px] text-kallo-text-muted">
+            <span className="block truncate font-sans-display text-[11.5px] text-kallo-text-muted">
               {user.email}
             </span>
           )}
@@ -131,16 +131,25 @@ export function UserMenu({
         side={collapsed ? 'right' : 'top'}
         align={collapsed ? 'end' : 'start'}
         sideOffset={collapsed ? 12 : 8}
-        className="min-w-[12rem] border border-kallo-text/10 bg-card font-sans-display"
+        className={cn(
+          'rounded-xl border border-kallo-text/10 bg-card p-1.5 font-sans-display shadow-lg',
+          // Expanded, the menu is exactly as wide as the account row it opens
+          // from; collapsed, that row is just the avatar.
+          collapsed
+            ? 'w-64'
+            : 'w-(--radix-dropdown-menu-trigger-width) min-w-60'
+        )}
       >
-        {label && (
+        {/* Who is signed in, when the collapsed rail shows only the avatar;
+            expanded, the row the menu opens from already says it. */}
+        {collapsed && label && (
           <>
-            <DropdownMenuLabel className="px-2 py-1.5 text-[11px] text-kallo-text-muted">
-              <span className="block truncate font-medium text-kallo-text">
+            <DropdownMenuLabel className="px-2 py-1.5">
+              <span className="block truncate font-medium text-[14px] text-kallo-text">
                 {label}
               </span>
               {user.email && (
-                <span className="block truncate font-normal text-[10.5px]">
+                <span className="block truncate font-normal text-[12px] text-kallo-text-muted">
                   {user.email}
                 </span>
               )}
@@ -149,40 +158,24 @@ export function UserMenu({
           </>
         )}
 
-        {showModeToggle && (
-          <>
-            <DropdownMenuCheckboxItem
-              checked={expandMode === 'hover'}
-              onCheckedChange={(checked) =>
-                onExpandModeChange?.(checked ? 'hover' : 'click')
-              }
-              className="gap-2 text-[12px] text-kallo-text focus:bg-kallo-ink/[0.04] focus:text-kallo-text"
-            >
-              <MousePointerClick className="h-3.5 w-3.5 text-kallo-text-muted" />
-              {t('expandOnHover')}
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuSeparator className="bg-kallo-ink/10" />
-          </>
-        )}
-
-        <DropdownMenuItem asChild>
-          <Link
-            href="/settings"
-            className="flex items-center gap-2 text-[12px] text-kallo-text focus:bg-kallo-ink/[0.04] focus:text-kallo-text"
-          >
-            <UserIcon className="h-3.5 w-3.5" />
-            {t('profile')}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link
-            href="/settings"
-            className="flex items-center gap-2 text-[12px] text-kallo-text focus:bg-kallo-ink/[0.04] focus:text-kallo-text"
-          >
-            <Settings className="h-3.5 w-3.5" />
+        <DropdownMenuItem asChild className={MENU_ROW}>
+          <Link href="/settings">
+            <Settings className={MENU_ROW_ICON} />
             {t('settings')}
           </Link>
         </DropdownMenuItem>
+
+        <DropdownMenuSeparator className="bg-kallo-ink/10" />
+
+        <ThemeMenuRadio />
+
+        {showModeToggle && (
+          <ExpandModeMenuItem
+            label={t('expandOnHover')}
+            mode={expandMode}
+            onModeChange={onExpandModeChange}
+          />
+        )}
 
         <DropdownMenuSeparator className="bg-kallo-ink/10" />
 
@@ -190,9 +183,12 @@ export function UserMenu({
           onClick={handleSignOut}
           disabled={signingOut}
           aria-busy={signingOut}
-          className="flex items-center gap-2 text-[12px] text-kallo-danger focus:bg-kallo-danger/10 focus:text-kallo-danger"
+          className={cn(
+            MENU_ROW,
+            'text-kallo-danger focus:bg-kallo-danger/10 focus:text-kallo-danger data-[highlighted]:bg-kallo-danger/10'
+          )}
         >
-          <LogOut className="h-3.5 w-3.5" />
+          <LogOut className="size-4 shrink-0" />
           {t('signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>

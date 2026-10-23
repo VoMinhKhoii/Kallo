@@ -6,6 +6,9 @@ const { unseenCountMock } = vi.hoisted(() => ({
   unseenCountMock: vi.fn(() => 0),
 }));
 
+vi.mock('@/hooks/theme/use-theme-choice', () => ({
+  useThemeChoice: () => ['system', vi.fn()],
+}));
 vi.mock('@/lib/infra/supabase/client', () => ({
   createClient: () => ({
     auth: {
