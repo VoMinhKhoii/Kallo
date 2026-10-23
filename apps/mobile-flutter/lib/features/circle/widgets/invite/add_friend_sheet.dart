@@ -115,5 +115,5 @@ class _RowSeparator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      const ColoredBox(color: kHairline, child: SizedBox(height: 1));
+      ColoredBox(color: kHairline, child: const SizedBox(height: 1));
 }

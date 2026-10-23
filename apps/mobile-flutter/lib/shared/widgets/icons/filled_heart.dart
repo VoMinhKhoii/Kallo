@@ -11,11 +11,7 @@ import 'tinted_svg.dart';
 /// `<Heart fill>` does. Stroke 1.5 matches the 300 weight of the outline glyph
 /// beside it. Drawn by [TintedSvg], like every other one-colour glyph.
 class FilledHeart extends StatelessWidget {
-  const FilledHeart({
-    required this.size,
-    this.color = KalloColors.danger,
-    super.key,
-  });
+  const FilledHeart({required this.size, this.color, super.key});
 
   /// Required, with no default: this glyph is the ON state of an outline that
   /// is optically compensated per glyph ([KalloIcons.optical]), and the two
@@ -23,13 +19,14 @@ class FilledHeart extends StatelessWidget {
   /// default here was a size nothing rendered and an invitation to mismatch.
   final double size;
 
-  final Color color;
+  /// Defaults to [KalloColors.danger].
+  final Color? color;
 
   @override
   Widget build(BuildContext context) => TintedSvg(
     svg: _svg,
     size: size,
-    color: color,
+    color: color ?? KalloColors.danger,
     // The outline heart beside it carries the label; this is the same glyph
     // in its other state, not a second thing to announce.
     excludeFromSemantics: true,

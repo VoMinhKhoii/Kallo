@@ -32,9 +32,9 @@ Widget _host(Locale locale) => EasyLocalization(
           // A real Scaffold, not a bare ColoredBox: without a Material
           // ancestor every Text renders with Flutter's amber debug underline,
           // which would be baked into the golden as if it were design.
-          home: const Scaffold(
+          home: Scaffold(
             backgroundColor: kCardSurface,
-            body: Padding(
+            body: const Padding(
               padding: EdgeInsets.all(12),
               child: Align(
                 alignment: Alignment.topLeft,

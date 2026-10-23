@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../shared/widgets/form/segmented/segmented_strip.dart';
 import 'gold_surface.dart';
@@ -140,7 +141,7 @@ class PlanToggle extends StatelessWidget {
               borderRadius: BorderRadius.circular(KalloRadii.pill),
             ),
           ),
-        _label(yearlyLabel, true),
+        _label(yearlyLabel, true, onGold: true),
       ],
     ),
   );
@@ -151,7 +152,7 @@ class PlanToggle extends StatelessWidget {
   /// Colour marks the selection here, and the strip's selected label is 500;
   /// this one goes to semibold because a gold half needs more than that to
   /// read as chosen.
-  Widget _label(String text, bool selected) => Center(
+  Widget _label(String text, bool selected, {bool onGold = false}) => Center(
     child: FittedBox(
       fit: BoxFit.scaleDown,
       child: Text(
@@ -159,7 +160,7 @@ class PlanToggle extends StatelessWidget {
         maxLines: 1,
         softWrap: false,
         style: dashBody(
-          color: selected ? kInk : kInkMuted,
+          color: onGold ? KalloColors.onBrand : (selected ? kInk : kInkMuted),
           weight: selected ? FontWeight.w600 : FontWeight.w400,
         ),
       ),

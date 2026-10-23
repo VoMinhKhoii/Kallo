@@ -26,17 +26,17 @@ class GroupSearchField extends StatelessWidget {
         horizontal: KalloSpacing.sp2,
         vertical: KalloSpacing.sp2_5,
       ),
-      prefix: const Padding(
-        padding: EdgeInsets.only(left: KalloSpacing.sp2_5),
+      prefix: Padding(
+        padding: const EdgeInsets.only(left: KalloSpacing.sp2_5),
         child: Icon(
           LucideIcons.search300,
           size: KalloIcons.tertiary,
           color: kInkMuted,
         ),
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: kTrack,
-        borderRadius: BorderRadius.all(Radius.circular(KalloRadii.lg)),
+        borderRadius: const BorderRadius.all(Radius.circular(KalloRadii.lg)),
       ),
     );
   }

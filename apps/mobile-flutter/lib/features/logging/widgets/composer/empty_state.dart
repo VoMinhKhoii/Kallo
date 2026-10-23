@@ -73,8 +73,8 @@ class _EmptyStateState extends ConsumerState<EmptyState> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // The mark stands on the page itself, no plate behind it.
-          const ZoomIn(
-            delay: Duration(milliseconds: 50),
+          ZoomIn(
+            delay: const Duration(milliseconds: 50),
             // Ink, the same tint the sidebar's wordmark carries by default —
             // the mark reads as the brand, not as an accent decoration.
             child: KalloMark(height: 28, color: kInk),

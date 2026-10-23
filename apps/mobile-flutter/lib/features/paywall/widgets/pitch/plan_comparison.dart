@@ -41,7 +41,7 @@ class PlanComparison extends StatelessWidget {
   /// one step below the label, whichever size the label is.
   static TextStyle _small(
     bool roomy, {
-    Color color = kInkMuted,
+    Color? color,
     FontWeight weight = FontWeight.w400,
   }) =>
       roomy
@@ -102,7 +102,7 @@ class PlanComparison extends StatelessWidget {
 
   /// The hairline between rows: none under the last line and none between
   /// the heads and row one.
-  static const Widget _rule = SizedBox(
+  static Widget get _rule => SizedBox(
     width: double.infinity,
     height: 1,
     child: ColoredBox(color: KalloColors.borderSoft),
@@ -182,7 +182,7 @@ class _PlanComparisonRow extends StatelessWidget {
         size: KalloIcons.tertiary,
         color: pro ? KalloColors.successAccent : kInkMuted,
       ),
-      Excluded() => const Icon(
+      Excluded() => Icon(
         LucideIcons.minus300,
         size: KalloIcons.tertiary,
         color: KalloColors.textMuted50,

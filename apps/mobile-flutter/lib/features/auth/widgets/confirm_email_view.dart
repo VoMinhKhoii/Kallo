@@ -99,11 +99,11 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
           child: Container(
             width: 56,
             height: 56,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: KalloColors.hover,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               LucideIcons.mail300,
               size: 24,
               color: KalloColors.textMuted,

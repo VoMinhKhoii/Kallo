@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../theme/kallo_colors.dart';
+import '../../../../theme/kallo_palette.dart';
 
 /// How hard the sweep is turned up, and how far down the page it reaches.
 ///
@@ -29,6 +30,11 @@ class AuroraSpec {
   final double reach;
 }
 
+/// How strongly the onboarding washes paint: full on the light page; under
+/// 60% on Dark and Aurora, where the same alphas over a near-black page read
+/// as a muddy band instead of a glow.
+double get backdropDim => KalloPalette.current.isDark ? 0.6 : 1;
+
 /// The warm sweep behind the signed-out start screen, and — at [AuroraSpec.step]
 /// — the top of every onboarding step under [StepBackdrop]'s blobs.
 ///
@@ -47,14 +53,22 @@ class StartAurora extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IgnorePointer(
-    child: CustomPaint(painter: _AuroraPainter(spec), size: Size.infinite),
+    child: CustomPaint(
+      painter: _AuroraPainter(spec, dim: backdropDim),
+      size: Size.infinite,
+    ),
   );
 }
 
 class _AuroraPainter extends CustomPainter {
-  const _AuroraPainter(this.spec);
+  const _AuroraPainter(this.spec, {required this.dim});
 
   final AuroraSpec spec;
+
+  /// [backdropDim] at build time.
+  final double dim;
+
+  double get _strength => spec.strength * dim;
 
   static const Color _apricot = KalloColors.brandApricot;
   static const Color _lilac = KalloColors.brandLilac;
@@ -77,9 +91,9 @@ class _AuroraPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            _apricot.withValues(alpha: _alphas[0] * spec.strength),
-            _apricot.withValues(alpha: _alphas[1] * spec.strength),
-            _lilac.withValues(alpha: _alphas[2] * spec.strength),
+            _apricot.withValues(alpha: _alphas[0] * _strength),
+            _apricot.withValues(alpha: _alphas[1] * _strength),
+            _lilac.withValues(alpha: _alphas[2] * _strength),
             _lilac.withValues(alpha: 0), // gone by `reach` of the height
           ],
           stops: [for (final stop in _stops) stop * spec.reach],
@@ -110,7 +124,7 @@ class _AuroraPainter extends CustomPainter {
             // 0.5 is exactly the unit circle.
             radius: 0.5,
             colors: [
-              color.withValues(alpha: opacity * spec.strength),
+              color.withValues(alpha: opacity * _strength),
               color.withValues(alpha: 0),
             ],
             stops: const [0, 0.7],
@@ -124,5 +138,5 @@ class _AuroraPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_AuroraPainter oldDelegate) => false;
+  bool shouldRepaint(_AuroraPainter oldDelegate) => oldDelegate.dim != dim;
 }

@@ -133,11 +133,7 @@ class _MarkCompleteButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                LucideIcons.check300,
-                size: LoggingIcons.size,
-                color: kInk,
-              ),
+              Icon(LucideIcons.check300, size: LoggingIcons.size, color: kInk),
               const SizedBox(width: KalloSpacing.sp2),
               Text(
                 'logging.feedArea.partialDayNotice.markComplete'.tr(),
@@ -166,7 +162,7 @@ class _DismissButton extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: const SizedBox.square(
+        child: SizedBox.square(
           dimension: LoggingIcons.hit,
           child: Align(
             alignment: Alignment.topRight,

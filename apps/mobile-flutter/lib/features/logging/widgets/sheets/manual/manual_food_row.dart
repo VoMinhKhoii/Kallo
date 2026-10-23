@@ -138,7 +138,7 @@ class _ManualFoodRowState extends State<ManualFoodRow> {
             color: kInk,
             semanticLabel: widget.addedLabel,
           )
-          : const Icon(LucideIcons.chevronRight300, size: 18, color: kInkMuted),
+          : Icon(LucideIcons.chevronRight300, size: 18, color: kInkMuted),
     ],
   );
 }

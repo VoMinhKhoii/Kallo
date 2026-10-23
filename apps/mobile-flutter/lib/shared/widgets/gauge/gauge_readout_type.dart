@@ -25,13 +25,13 @@ import '../../../theme/kallo_typography.dart';
 /// 17 / 400 — the figure a FULL-SIZE dial holds: the Today row's `202g`, the
 /// Log header's calorie headline. Pinned (2026-09-02): it used to alias
 /// [dashValue], which stepped to 16 with the metric-compensated ramp.
-TextStyle gaugeFigure() => const TextStyle(
+TextStyle gaugeFigure() => TextStyle(
   fontFamily: KalloTextStyles.sansFamily,
   fontSize: 17,
   fontWeight: FontWeight.w400,
   height: 1.1,
   color: kInk,
-  fontFeatures: [FontFeature.tabularFigures()],
+  fontFeatures: [const FontFeature.tabularFigures()],
 );
 
 /// 40 / 400 — the one hero figure, in the dial that gets the top of a screen.
@@ -40,13 +40,13 @@ TextStyle gaugeHeroFigure() => dashHero();
 /// 14 / 400 — the figure a COMPACT dial holds. A smaller radius means less
 /// room, so the compact variant steps its figure down one notch and keeps the
 /// same denominator beneath it.
-TextStyle gaugeCompactFigure() => const TextStyle(
+TextStyle gaugeCompactFigure() => TextStyle(
   fontFamily: KalloTextStyles.sansFamily,
   fontSize: 14,
   fontWeight: FontWeight.w400,
   height: 1.3,
   color: kInk,
-  fontFeatures: [FontFeature.tabularFigures()],
+  fontFeatures: [const FontFeature.tabularFigures()],
 );
 
 /// 14 / 400 ink — the WORD under a calorie figure ("Kcal left", "Kcal còn
@@ -57,7 +57,7 @@ TextStyle gaugeCompactFigure() => const TextStyle(
 /// and the two grey lines read as one phrase: on device "1.014 / còn lại /
 /// 918/1.932" was read as "ate 1.014, 918 of 1.932 left". Sharing the
 /// headline's ink binds the word UP to the figure it names.
-TextStyle gaugeUnit() => const TextStyle(
+TextStyle gaugeUnit() => TextStyle(
   fontFamily: KalloTextStyles.sansFamily,
   fontSize: 14,
   fontWeight: FontWeight.w400,
@@ -75,11 +75,11 @@ TextStyle gaugeCompactUnit() => gaugeUnit().copyWith(fontSize: 12);
 /// 12 / 400 muted, tabular — the quiet line under the figure: `/140g`, and the
 /// calorie dial's `2.485/1.844`. The SAME size in both variants; the figure
 /// above it is what changes, and that difference is the whole hierarchy.
-TextStyle gaugeDenominator() => const TextStyle(
+TextStyle gaugeDenominator() => TextStyle(
   fontFamily: KalloTextStyles.sansFamily,
   fontSize: 12,
   fontWeight: FontWeight.w400,
   height: 1.25,
   color: kInkMuted,
-  fontFeatures: [FontFeature.tabularFigures()],
+  fontFeatures: [const FontFeature.tabularFigures()],
 );

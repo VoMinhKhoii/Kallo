@@ -474,7 +474,7 @@ void main() {
             builder: (context) {
               span = c.buildTextSpan(
                 context: context,
-                style: const TextStyle(color: KalloColors.text),
+                style: TextStyle(color: KalloColors.text),
                 withComposing: false,
               );
               return const SizedBox();
@@ -529,7 +529,7 @@ void main() {
           builder: (context) {
             span = c.buildTextSpan(
               context: context,
-              style: const TextStyle(color: KalloColors.text),
+              style: TextStyle(color: KalloColors.text),
               withComposing: false,
             );
             return const SizedBox();

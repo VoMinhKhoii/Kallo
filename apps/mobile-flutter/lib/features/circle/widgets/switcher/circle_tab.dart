@@ -171,7 +171,7 @@ class _CircleTabState extends State<CircleTab> {
                   builder:
                       (_, t, __) => Transform.scale(
                         scaleX: t,
-                        child: const ColoredBox(color: kInk),
+                        child: ColoredBox(color: kInk),
                       ),
                 ),
               ),

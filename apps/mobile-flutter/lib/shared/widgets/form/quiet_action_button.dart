@@ -55,7 +55,7 @@ class QuietActionButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (busy) ...[
-                  const CupertinoActivityIndicator(radius: 7, color: kInk),
+                  CupertinoActivityIndicator(radius: 7, color: kInk),
                   const SizedBox(width: 6),
                 ],
                 Text(

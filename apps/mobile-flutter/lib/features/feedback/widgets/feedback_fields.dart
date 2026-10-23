@@ -76,8 +76,8 @@ class FeedbackScreenshotField extends StatelessWidget {
               onTap: onRemove,
               child: GestureDetector(
                 onTap: onRemove,
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
                   child: Icon(LucideIcons.x300, size: 16, color: kInkMuted),
                 ),
               ),
@@ -105,7 +105,7 @@ class FeedbackScreenshotField extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(LucideIcons.imagePlus300, size: 16, color: kInkMuted),
+              Icon(LucideIcons.imagePlus300, size: 16, color: kInkMuted),
               const SizedBox(width: 8),
               Text(
                 tr('settings.feedback.addScreenshot'),

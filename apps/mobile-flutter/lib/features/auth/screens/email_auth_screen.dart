@@ -170,7 +170,7 @@ class _OrDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const line = Expanded(child: Divider(color: KalloColors.border, height: 1));
+    final line = Expanded(child: Divider(color: KalloColors.border, height: 1));
     return Row(
       children: [
         line,

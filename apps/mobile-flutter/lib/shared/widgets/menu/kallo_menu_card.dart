@@ -81,7 +81,7 @@ class KalloMenuActionRow extends StatelessWidget {
             width: KalloIcons.tertiary + KalloSpacing.sp2,
             child:
                 checked!
-                    ? const Align(
+                    ? Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: Icon(
                         LucideIcons.check300,
@@ -128,7 +128,7 @@ class KalloMenuCard extends StatelessWidget {
     final radius = BorderRadius.circular(KalloRadii.xl);
     return DecoratedBox(
       decoration: ShapeDecoration(
-        color: KalloColors.elev,
+        color: KalloColors.sheet,
         shape: KalloShapes.squircle(KalloRadii.xl),
         shadows: const [KalloShadows.md],
       ),
@@ -164,8 +164,6 @@ class _Hairline extends StatelessWidget {
   const _Hairline();
 
   @override
-  Widget build(BuildContext context) => const SizedBox(
-    height: kKalloMenuHairline,
-    child: ColoredBox(color: kHairline),
-  );
+  Widget build(BuildContext context) =>
+      SizedBox(height: kKalloMenuHairline, child: ColoredBox(color: kHairline));
 }

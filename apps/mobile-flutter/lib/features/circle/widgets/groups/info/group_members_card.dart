@@ -49,7 +49,7 @@ class GroupMembersCard extends StatelessWidget {
       label: tr('groups.info.membersHeading'),
       rows: [
         GroupPersonRow(
-          leading: const DecoratedBox(
+          leading: DecoratedBox(
             decoration: BoxDecoration(color: kTrack, shape: BoxShape.circle),
             child: Icon(
               LucideIcons.plus300,
@@ -58,7 +58,7 @@ class GroupMembersCard extends StatelessWidget {
             ),
           ),
           label: tr('groups.info.addMembers'),
-          trailing: const Icon(
+          trailing: Icon(
             LucideIcons.chevronRight300,
             size: KalloIcons.tertiary,
             color: kInkMuted,

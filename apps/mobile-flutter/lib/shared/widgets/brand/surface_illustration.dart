@@ -17,7 +17,7 @@ class SurfaceIllustration extends StatelessWidget {
     required this.area,
     required this.kind,
     this.height = 120,
-    this.color = KalloColors.text,
+    this.color,
     this.now,
   });
 
@@ -28,7 +28,8 @@ class SurfaceIllustration extends StatelessWidget {
   /// ratio (the poses are not a single aspect).
   final double height;
 
-  final Color color;
+  /// Defaults to [KalloColors.text].
+  final Color? color;
 
   /// The clock, injectable so a test can stand at 23:00.
   final DateTime Function()? now;
@@ -39,7 +40,7 @@ class SurfaceIllustration extends StatelessWidget {
     return SvgPicture.asset(
       surfaceIllustrationAsset(area, kind, lateNight: isLateNight(hour)),
       height: height,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      colorFilter: ColorFilter.mode(color ?? KalloColors.text, BlendMode.srcIn),
       excludeFromSemantics: true,
     );
   }

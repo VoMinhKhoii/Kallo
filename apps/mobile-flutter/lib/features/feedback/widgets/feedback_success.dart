@@ -30,7 +30,7 @@ class FeedbackSuccess extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.circleCheck300, size: 40, color: kInk),
+            Icon(LucideIcons.circleCheck300, size: 40, color: kInk),
             const SizedBox(height: KalloSpacing.sp4),
             Text(
               tr('settings.feedback.successTitle'),

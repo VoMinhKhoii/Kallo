@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../theme/kallo_colors.dart';
+import '../../../../shared/widgets/surface/primary_fill.dart';
 
 /// Icon-only barcode trigger beside the mode control — same quiet styling,
 /// 44pt tap target.
@@ -46,7 +47,7 @@ class _ComposerBarcodeButtonState extends State<ComposerBarcodeButton> {
             child: AnimatedScale(
               scale: _pressed ? 0.96 : 1,
               duration: const Duration(milliseconds: 200),
-              child: const Icon(
+              child: Icon(
                 LucideIcons.scanBarcode300,
                 size: 20,
                 color: KalloColors.textMuted,
@@ -115,13 +116,14 @@ class _ComposerActionButtonState extends State<ComposerActionButton> {
                 decoration: BoxDecoration(
                   // The press is carried by the scale above, not by a second
                   // fill: beige has nowhere lighter to go on white.
-                  color: armed ? KalloColors.btnPrimarySoft : KalloColors.track,
+                  color: armed ? PrimaryFill.color() : KalloColors.track,
+                  gradient: armed ? PrimaryFill.gradient() : null,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   widget.icon,
                   size: 18,
-                  color: armed ? KalloColors.text : KalloColors.textMuted,
+                  color: armed ? PrimaryFill.label : KalloColors.textMuted,
                 ),
               ),
             ),

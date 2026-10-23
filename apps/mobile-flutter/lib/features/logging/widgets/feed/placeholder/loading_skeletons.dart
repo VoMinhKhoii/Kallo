@@ -126,11 +126,7 @@ class LoggingDaySkeleton extends StatelessWidget {
                       ),
                 ),
                 const SizedBox(height: LoggingSpacing.section),
-                const Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: KalloColors.borderHalf,
-                ),
+                Divider(height: 1, thickness: 1, color: KalloColors.borderHalf),
                 const SizedBox(height: LoggingSpacing.section),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

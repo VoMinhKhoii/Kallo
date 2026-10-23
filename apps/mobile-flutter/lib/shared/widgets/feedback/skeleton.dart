@@ -115,10 +115,7 @@ class SkeletonCircle extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: size,
     height: size,
-    decoration: const BoxDecoration(
-      color: KalloColors.track,
-      shape: BoxShape.circle,
-    ),
+    decoration: BoxDecoration(color: KalloColors.track, shape: BoxShape.circle),
   );
 }
 

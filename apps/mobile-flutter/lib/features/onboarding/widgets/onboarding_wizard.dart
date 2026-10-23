@@ -192,7 +192,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
         draft: draft,
       )) {
         if (signedIn && profile.hasError) _reportSeedError();
-        return const ColoredBox(color: kPage);
+        return ColoredBox(color: kPage);
       }
       _resolveStart(profile.valueOrNull, draft.valueOrNull);
     }

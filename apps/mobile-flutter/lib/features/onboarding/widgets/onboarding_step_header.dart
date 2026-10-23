@@ -85,7 +85,7 @@ class OnboardingStepHeader extends StatelessWidget {
     child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onBack,
-      child: const SizedBox(
+      child: SizedBox(
         width: KalloIcons.hit,
         height: KalloIcons.hit,
         child: Icon(
@@ -123,7 +123,7 @@ class OnboardingStepHeader extends StatelessWidget {
                   ),
                 ),
             // Constant across every frame of the fill — built once.
-            child: const ColoredBox(color: KalloColors.btn),
+            child: ColoredBox(color: KalloColors.btn),
           ),
         ),
       ),

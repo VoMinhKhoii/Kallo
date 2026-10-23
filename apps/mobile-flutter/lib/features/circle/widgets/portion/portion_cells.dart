@@ -63,9 +63,11 @@ class BatteryFrame extends StatelessWidget {
           width: borderWidth > 1.5 ? 5 : 4,
           height: _nubHeight,
           margin: const EdgeInsets.only(left: 3),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: KalloColors.text,
-            borderRadius: BorderRadius.horizontal(right: Radius.circular(3)),
+            borderRadius: const BorderRadius.horizontal(
+              right: Radius.circular(3),
+            ),
           ),
         ),
       ],

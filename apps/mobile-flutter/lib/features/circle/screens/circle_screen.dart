@@ -38,6 +38,7 @@ class CircleScreen extends ConsumerWidget {
             ?.title ??
         '';
     return Screen(
+      glow: true,
       bottom: false,
       child: ScrollSeparator(
         // A large LEFT-aligned page title, not a centred header line (native

@@ -17,14 +17,14 @@ import 'router.dart';
 import 'shell/kallo_app_theme.dart';
 import 'shell/launch/launch_curtain.dart';
 import 'shell/launch/route_settled.dart';
+import 'theme/theme_controller.dart';
 
 /// Root app widget — the mobile counterpart of web `app/[locale]/layout.tsx`.
 ///
 /// Wires the Nham [ThemeData], the Riverpod-built [GoRouter], and
 /// easy_localization's delegates/locale (EasyLocalization already wraps this
-/// in `main()`, the equivalent of RN's `LocaleProvider`). The status-bar style
-/// is forced dark-content to match RN's `<StatusBar style="dark" />` on the
-/// cream surface.
+/// in `main()`, the equivalent of RN's `LocaleProvider`). The theme and the
+/// status-bar style follow the Appearance choice (`theme/theme_controller.dart`).
 class KalloApp extends ConsumerStatefulWidget {
   const KalloApp({super.key});
 
@@ -62,6 +62,9 @@ class _NhamAppState extends ConsumerState<KalloApp>
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final launchReady = ref.watch(launchReadyProvider);
+    // Builds the Appearance controller — which starts it observing the phone's
+    // brightness — and rebuilds `theme:` below from the palette it applied.
+    ref.watch(kalloThemeProvider);
 
     // Tie PostHog + Sentry identity and the RevenueCat customer to the auth session:
     // identify / logIn on sign-in (email, Google, sign-up, restore). On
@@ -108,6 +111,9 @@ class _NhamAppState extends ConsumerState<KalloApp>
           title: 'Kallo',
           debugShowCheckedModeBanner: false,
           theme: kalloAppTheme(),
+          // Material colours switch in the same frame as the palette tokens;
+          // a lerping theme left scaffolds a beat behind every card.
+          themeAnimationDuration: Duration.zero,
           routerConfig: router,
           // Dynamic Type is respected, but capped: the feed's fixed-width
           // columns overflow past ~1.3x. The launch intro sits over the whole

@@ -27,7 +27,7 @@ class RoundedGaugeArc extends StatefulWidget {
     required this.progress,
     required this.outerRadius,
     required this.fill,
-    this.track = kTrack,
+    this.track,
     super.key,
   });
 
@@ -36,10 +36,12 @@ class RoundedGaugeArc extends StatefulWidget {
   final double progress;
   final double outerRadius;
   final Color fill;
-  final Color track;
+
+  /// Defaults to [kTrack].
+  final Color? track;
 
   /// The over-target cap colour — information, never alarm.
-  static const Color overFill = KalloColors.offTarget;
+  static Color get overFill => KalloColors.offTarget;
 
   @override
   State<RoundedGaugeArc> createState() => _RoundedGaugeArcState();
@@ -97,7 +99,7 @@ class _RoundedGaugeArcState extends State<RoundedGaugeArc>
               progress: reduceMotion ? widget.progress : _sweep.value,
               outerRadius: widget.outerRadius,
               fill: widget.fill,
-              track: widget.track,
+              track: widget.track ?? kTrack,
             ),
           ),
     );

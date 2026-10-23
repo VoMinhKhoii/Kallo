@@ -392,7 +392,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                                 child: Text(
                                   _bubble!.text,
                                   textAlign: TextAlign.center,
-                                  style: dashMeta(color: Colors.white),
+                                  style: dashMeta(color: KalloColors.elev),
                                 ),
                               ),
                             ),

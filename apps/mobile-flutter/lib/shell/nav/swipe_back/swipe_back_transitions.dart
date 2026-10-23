@@ -83,7 +83,7 @@ class KalloSwipeBackTransitionsBuilder extends PageTransitionsBuilder {
 
 /// The app's `pageTransitionsTheme`, composed into [MaterialApp] by `app.dart`.
 ///
-/// It lives HERE, beside the builder, rather than in `KalloTheme.light()`:
+/// It lives HERE, beside the builder, rather than in `KalloTheme.build()`:
 /// `lib/theme/` is the layer every widget imports for a spacing token, and a
 /// theme that reached up into `shell/nav/` dragged the gesture stack in behind
 /// it and left a `theme -> shell -> theme` cycle one edit away.

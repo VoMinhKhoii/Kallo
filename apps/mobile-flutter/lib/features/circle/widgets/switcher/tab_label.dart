@@ -31,12 +31,12 @@ class TabLabel extends StatelessWidget {
         child: Text(label, maxLines: 1),
       ),
       if (unread && !selected)
-        const Padding(
-          padding: EdgeInsets.only(left: TabGeometry.dotGap, top: 2),
+        Padding(
+          padding: const EdgeInsets.only(left: TabGeometry.dotGap, top: 2),
           child: DecoratedBox(
-            key: Key('circle-unread-dot'),
+            key: const Key('circle-unread-dot'),
             decoration: BoxDecoration(color: kInk, shape: BoxShape.circle),
-            child: SizedBox.square(dimension: TabGeometry.dotSize),
+            child: const SizedBox.square(dimension: TabGeometry.dotSize),
           ),
         ),
     ],

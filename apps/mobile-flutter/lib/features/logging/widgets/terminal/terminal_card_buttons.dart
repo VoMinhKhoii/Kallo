@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../../../../shared/widgets/surface/primary_fill.dart';
 
 /// Solid-umber primary pill for the terminal feed cards — currently the
 /// failed-attempt "Try again". Icon + label, a pressed-state
@@ -59,21 +60,16 @@ class _TerminalPrimaryButtonState extends State<TerminalPrimaryButton> {
             padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp4),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color:
-                  _pressed
-                      ? Color.alphaBlend(
-                        KalloColors.pressWash,
-                        KalloColors.btnPrimarySoft,
-                      )
-                      : KalloColors.btnPrimarySoft,
+              color: PrimaryFill.color(pressed: _pressed),
+              gradient: PrimaryFill.gradient(pressed: _pressed),
               borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(widget.icon, size: 16, color: KalloColors.text),
+                Icon(widget.icon, size: 16, color: PrimaryFill.label),
                 const SizedBox(width: 6),
-                Text(widget.label, style: dashBody()),
+                Text(widget.label, style: dashBody(color: PrimaryFill.label)),
               ],
             ),
           ),

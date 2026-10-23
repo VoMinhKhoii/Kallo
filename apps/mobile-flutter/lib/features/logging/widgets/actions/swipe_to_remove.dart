@@ -92,20 +92,23 @@ class _SwipeToRemoveState extends State<SwipeToRemove> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp5),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: KalloColors.danger,
           borderRadius: _rest,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               LucideIcons.trash2300,
               size: LoggingIcons.action,
-              color: Colors.white,
+              color: KalloColors.onDanger,
             ),
             const SizedBox(width: 6),
-            Text('logging.remove'.tr(), style: dashBody(color: Colors.white)),
+            Text(
+              'logging.remove'.tr(),
+              style: dashBody(color: KalloColors.onDanger),
+            ),
           ],
         ),
       ),

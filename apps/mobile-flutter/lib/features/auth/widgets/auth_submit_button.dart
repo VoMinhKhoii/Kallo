@@ -73,7 +73,7 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (widget.loading) ...[
-                  const CupertinoActivityIndicator(
+                  CupertinoActivityIndicator(
                     radius: 8,
                     color: KalloColors.elev,
                   ),

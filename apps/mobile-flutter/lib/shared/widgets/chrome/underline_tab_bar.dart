@@ -51,7 +51,7 @@ class UnderlineTabBar extends StatelessWidget implements PreferredSizeWidget {
       unselectedLabelStyle: dashBody(),
       labelColor: kInk,
       unselectedLabelColor: kInkMuted,
-      indicator: const UnderlineTabIndicator(
+      indicator: UnderlineTabIndicator(
         borderSide: BorderSide(color: kInk, width: 2),
       ),
       indicatorSize: TabBarIndicatorSize.tab,

@@ -30,11 +30,11 @@ enum HeatmapTier { onTarget, nearlyFull, light, veryLight, overTarget, noData }
 
 abstract final class HeatmapColors {
   /// The one hue the scale is built from.
-  static const Color scale = KalloColors.heatmapOnTarget; // #7ca368
+  static Color get scale => KalloColors.heatmapOnTarget; // #7ca368
 
   /// Over target — the one warm cell, ungraded on purpose. 120% and 200% are
   /// the same colour; the figure is a tap away.
-  static const Color over = KalloColors.heatmapFar; // #d37b69
+  static Color get over => KalloColors.heatmapFar; // #d37b69
 
   static Color scaleAt(double opacity) => scale.withValues(alpha: opacity);
 }
@@ -99,7 +99,7 @@ abstract final class HeatmapCellPaints {
 
   /// A logged day under the gate that the user has NOT attested — the one cell
   /// that wants them to act, so the one cell with a ring.
-  static final HeatmapCellPaint awaiting = (
+  static HeatmapCellPaint get awaiting => (
     fill: HeatmapColors.scaleAt(HeatmapRamp.awaiting),
     gradient: null,
     stroke: KalloColors.textMuted,
@@ -108,7 +108,7 @@ abstract final class HeatmapCellPaints {
   /// Unlogged, future and out-of-range alike. The user does not need to tell
   /// them apart — none is a reading — and collapsing them keeps the empty state
   /// one material instead of several greys.
-  static final HeatmapCellPaint empty = (
+  static HeatmapCellPaint get empty => (
     fill: HeatmapColors.scaleAt(HeatmapRamp.empty),
     gradient: null,
     stroke: null,

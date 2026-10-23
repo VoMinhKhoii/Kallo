@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
+import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 
 /// The gold treatment the yearly plan row wears — the ONE loud surface in the
@@ -91,7 +92,7 @@ class GoldPlanSurface extends StatelessWidget {
               vertical: KalloSpacing.sp1,
             ),
             decoration: BoxDecoration(
-              color: kInk,
+              color: KalloColors.onBrand,
               borderRadius: BorderRadius.circular(KalloRadii.pill),
             ),
             child: Text(chipLabel!, style: dashCaption(color: kGoldChipText)),

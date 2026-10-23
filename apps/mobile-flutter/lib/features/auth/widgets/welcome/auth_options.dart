@@ -116,11 +116,7 @@ class _EmailEntryButtonState extends State<_EmailEntryButton> {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  LucideIcons.mail300,
-                  size: 18,
-                  color: KalloColors.text,
-                ),
+                Icon(LucideIcons.mail300, size: 18, color: KalloColors.text),
                 const SizedBox(width: KalloSpacing.sp2),
                 Text(
                   tr('auth.welcome.continueWithEmail'),

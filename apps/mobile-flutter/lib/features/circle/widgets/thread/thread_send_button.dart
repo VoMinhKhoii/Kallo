@@ -3,10 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../shared/widgets/surface/kallo_pressable.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/circle_spacing.dart';
+import '../../../../shared/widgets/surface/primary_fill.dart';
 
 /// The reply dock's send affordance — the arrow-up beside the pill. Its
 /// placement, and the morph it drives, are documented at the Row
@@ -92,28 +92,29 @@ class ThreadSendButton extends StatelessWidget {
             width: kReplyDockHeight,
             height: kReplyDockHeight,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               // The press is carried by [KalloPressable]'s wash over this
               // fill, not by a second one: beige has nowhere lighter to go.
-              color: KalloColors.btnPrimarySoft,
+              color: PrimaryFill.color(),
+              gradient: PrimaryFill.gradient(),
               shape: BoxShape.circle,
             ),
             child:
                 submitting
-                    ? const CupertinoActivityIndicator(
+                    ? CupertinoActivityIndicator(
                       // `radius * 2` is the indicator's own box, so this puts
                       // the spinner in the glyph's exact footprint.
                       radius: KalloIcons.action / 2,
-                      color: KalloColors.text,
+                      color: PrimaryFill.label,
                     )
-                    : const Icon(
+                    : Icon(
                       LucideIcons.arrowUp400,
                       // `action`: a glyph acting ON something, one tier under
                       // the navigation 24 — at `primary` it filled too much of
                       // the disc and the button out-weighed the field it sends.
                       // (It was `tertiary` 18 back when the disc was 32.)
                       size: KalloIcons.action,
-                      color: KalloColors.text,
+                      color: PrimaryFill.label,
                     ),
           ),
         ),

@@ -190,7 +190,8 @@ class _Check extends StatelessWidget {
     ),
     child:
         selected
-            ? const Icon(LucideIcons.check300, size: 15, color: Colors.white)
+            // The card colour, not white: on Dark the ink disc is light.
+            ? Icon(LucideIcons.check300, size: 15, color: KalloColors.elev)
             : null,
   );
 }

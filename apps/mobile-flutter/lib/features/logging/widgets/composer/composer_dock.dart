@@ -78,7 +78,7 @@ class ComposerDock extends StatelessWidget {
             // feed used to hit disappears across the whole width. It replaces
             // the dock's old top padding, so the composer keeps its breathing
             // room and the measured height stays comparable.
-            const SizedBox(
+            SizedBox(
               height: ComposerDock.scrimHeight,
               child: DecoratedBox(
                 decoration: BoxDecoration(

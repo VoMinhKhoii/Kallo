@@ -136,9 +136,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         Positioned.fill(
           child:
               widget.background ??
-              const ColoredBox(
+              ColoredBox(
                 color: KalloColors.surface,
-                child: StepBackdrop(),
+                child: const StepBackdrop(),
               ),
         ),
         content,

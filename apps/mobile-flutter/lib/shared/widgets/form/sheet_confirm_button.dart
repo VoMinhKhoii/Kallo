@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
-import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_typography.dart';
 import '../../../theme/calm_tokens.dart';
+import '../surface/primary_fill.dart';
 
 /// A sheet footer's commit action: a beige in-app-primary pill (native pass,
 /// 2026-08-31 — umber retired from buttons) that hugs its label rather than
@@ -57,25 +57,20 @@ class _SheetConfirmButtonState extends State<SheetConfirmButton> {
               vertical: KalloSpacing.sp3,
             ),
             decoration: BoxDecoration(
-              color:
-                  _pressed
-                      ? Color.alphaBlend(
-                        KalloColors.pressWash,
-                        KalloColors.btnPrimarySoft,
-                      )
-                      : KalloColors.btnPrimarySoft,
+              color: PrimaryFill.color(pressed: _pressed),
+              gradient: PrimaryFill.gradient(pressed: _pressed),
               borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
             child:
                 widget.saving
-                    ? const CupertinoActivityIndicator(
+                    ? CupertinoActivityIndicator(
                       radius: 9,
-                      color: KalloColors.text,
+                      color: PrimaryFill.label,
                     )
                     : Text(
                       widget.label,
                       style: kButtonLabel(
-                        color: KalloColors.text,
+                        color: PrimaryFill.label,
                         size: KalloFontSize.sm,
                       ),
                     ),

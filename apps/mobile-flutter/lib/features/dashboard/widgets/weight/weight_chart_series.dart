@@ -65,7 +65,7 @@ WeightSeries buildWeightSeries({
         getDotPainter:
             (spot, pct, bar, idx) =>
                 idx == lastIndex
-                    ? const TodayDotPainter(color: KalloColors.accent)
+                    ? TodayDotPainter(color: KalloColors.accent)
                     : FlDotCirclePainter(
                       radius: 4,
                       color: KalloColors.accent,
@@ -100,7 +100,7 @@ WeightSeries buildWeightSeries({
                   .toList(),
       touchTooltipData: LineTouchTooltipData(
         getTooltipColor: (_) => kCardSurface,
-        tooltipBorder: const BorderSide(color: kHairline),
+        tooltipBorder: BorderSide(color: kHairline),
         tooltipRoundedRadius: KalloRadii.md,
         getTooltipItems:
             (touchedSpots) =>

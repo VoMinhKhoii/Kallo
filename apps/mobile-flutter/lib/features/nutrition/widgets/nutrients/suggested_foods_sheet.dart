@@ -67,7 +67,7 @@ class _SuggestedFoodsSheet extends StatelessWidget {
               ),
               itemCount: nutrients.length,
               separatorBuilder:
-                  (_, __) => const Divider(
+                  (_, __) => Divider(
                     height: KalloSpacing.sp5,
                     thickness: 1,
                     color: KalloColors.borderFaint,
@@ -230,11 +230,7 @@ class _FoodChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (reserved) ...[
-              const Icon(
-                LucideIcons.check300,
-                size: 13,
-                color: KalloColors.text,
-              ),
+              Icon(LucideIcons.check300, size: 13, color: KalloColors.text),
               const SizedBox(width: 4),
             ],
             Flexible(
@@ -267,7 +263,7 @@ class _RefreshButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.refreshCw300, size: 13, color: kInkMuted),
+            Icon(LucideIcons.refreshCw300, size: 13, color: kInkMuted),
             const SizedBox(width: 5),
             Text(
               tr('nutrition.suggestedFoods.refresh'),

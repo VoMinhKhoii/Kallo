@@ -50,7 +50,7 @@ class ShareMealFooter extends StatelessWidget {
             );
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(top: BorderSide(color: KalloColors.borderFaint)),
       ),
       padding: const EdgeInsets.fromLTRB(

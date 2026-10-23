@@ -28,7 +28,7 @@ void main() {
     expect(svg.height, size);
     expect(
       svg.colorFilter,
-      const ColorFilter.mode(KalloColors.danger, BlendMode.srcIn),
+      ColorFilter.mode(KalloColors.danger, BlendMode.srcIn),
     );
   });
 

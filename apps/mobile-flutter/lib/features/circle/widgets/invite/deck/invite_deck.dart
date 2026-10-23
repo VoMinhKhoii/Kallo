@@ -114,7 +114,7 @@ class InvitePeekLayer extends StatelessWidget {
           color: KalloColors.elev,
           borderRadius: BorderRadius.circular(KalloRadii.containerLg),
           border: Border.all(color: KalloColors.borderSoft),
-          boxShadow: const [
+          boxShadow: [
             // Zero blur, 1pt spread, canvas colour: a hairline gap that
             // separates this layer from the card sitting on top of it.
             BoxShadow(color: KalloColors.surface, spreadRadius: 1),

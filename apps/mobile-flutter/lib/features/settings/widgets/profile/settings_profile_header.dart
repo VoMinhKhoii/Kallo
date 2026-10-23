@@ -157,7 +157,7 @@ class _Disc extends StatelessWidget {
     return Container(
       width: SettingsProfileHeader._avatar,
       height: SettingsProfileHeader._avatar,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: KalloColors.track,
         shape: BoxShape.circle,
       ),

@@ -38,7 +38,7 @@ class BlockedLinkRow extends StatelessWidget {
         child: Row(
           children: [
             Expanded(child: Text(label, style: dashMeta())),
-            const Icon(
+            Icon(
               LucideIcons.chevronRight300,
               size: KalloIcons.tertiary,
               color: kInkMuted,

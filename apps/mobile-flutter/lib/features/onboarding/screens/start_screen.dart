@@ -319,7 +319,7 @@ class _Dissolve extends StatelessWidget {
   const _Dissolve();
 
   @override
-  Widget build(BuildContext context) => const IgnorePointer(
+  Widget build(BuildContext context) => IgnorePointer(
     child: DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(

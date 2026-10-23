@@ -1,7 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'kallo_colors.dart';
+import 'kallo_palette.dart';
 import 'kallo_typography.dart';
 
 /// Spacing scale: sp1=4 .. sp20=80, plus the recurring Tailwind fractional
@@ -157,10 +159,18 @@ abstract final class KalloShadows {
   );
 }
 
-/// Builds the Nham [ThemeData]. Surface = cream, card = white.
+/// Builds the Nham [ThemeData] from the CURRENT palette
+/// ([KalloPalette.current]): surface = canvas, card = elev.
+///
+/// Dark and Aurora build a dark [ColorScheme] — which makes the whole
+/// [ThemeData] dark — plus a dark [CupertinoThemeData], so switches, pickers
+/// and the keyboard go dark with the palette. Light builds the theme it always
+/// did, field for field.
 abstract final class KalloTheme {
-  static ThemeData light() {
-    final colorScheme = const ColorScheme.light(
+  static ThemeData build() {
+    final isDark = KalloPalette.current.isDark;
+    final scheme = isDark ? ColorScheme.dark : ColorScheme.light;
+    final colorScheme = scheme(
       surface: KalloColors.surface,
       onSurface: KalloColors.text,
       primary: KalloColors.accent,
@@ -176,6 +186,8 @@ abstract final class KalloTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      cupertinoOverrideTheme:
+          isDark ? const CupertinoThemeData(brightness: Brightness.dark) : null,
       scaffoldBackgroundColor: KalloColors.surface,
       textTheme: TextTheme(
         displayLarge: KalloTextStyles.displayLarge().copyWith(
@@ -221,15 +233,15 @@ abstract final class KalloTheme {
         fillColor: KalloColors.elev,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(KalloRadii.input),
-          borderSide: const BorderSide(color: KalloColors.border),
+          borderSide: BorderSide(color: KalloColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(KalloRadii.input),
-          borderSide: const BorderSide(color: KalloColors.border),
+          borderSide: BorderSide(color: KalloColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(KalloRadii.input),
-          borderSide: const BorderSide(color: KalloColors.accent40, width: 2),
+          borderSide: BorderSide(color: KalloColors.accent40, width: 2),
         ),
         hintStyle: KalloTextStyles.body().copyWith(
           color: KalloColors.placeholderMuted40,
@@ -239,7 +251,7 @@ abstract final class KalloTheme {
           vertical: KalloSpacing.sp3_5,
         ),
       ),
-      dividerTheme: const DividerThemeData(
+      dividerTheme: DividerThemeData(
         color: KalloColors.border,
         thickness: 1,
         space: 0,

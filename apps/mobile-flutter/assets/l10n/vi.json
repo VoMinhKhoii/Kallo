@@ -1892,6 +1892,13 @@
     "saved": "Đã lưu thay đổi",
     "language": "Ngôn ngữ",
     "languageHint": "Thay đổi ngôn ngữ ứng dụng",
+    "appearance": {
+      "title": "Giao diện",
+      "system": "Theo hệ thống",
+      "light": "Sáng",
+      "dark": "Tối",
+      "aurora": "Aurora"
+    },
     "sharing": {
       "autoShareLabel": "Tự động chia sẻ với vòng kết nối",
       "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."

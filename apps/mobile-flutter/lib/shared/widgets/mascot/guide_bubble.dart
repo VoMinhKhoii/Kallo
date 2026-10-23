@@ -85,7 +85,7 @@ class GuideBubble extends StatelessWidget {
               height: 10,
               child: Transform.rotate(
                 angle: math.pi / 4,
-                child: const DecoratedBox(
+                child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: kCardSurface,
                     border: Border(

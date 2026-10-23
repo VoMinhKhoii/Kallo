@@ -80,10 +80,7 @@ class _RoundButton extends StatelessWidget {
         child: Container(
           width: 32,
           height: 32,
-          decoration: const BoxDecoration(
-            color: kTrack,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: kTrack, shape: BoxShape.circle),
           child: Icon(
             icon,
             size: 16,

@@ -6,6 +6,7 @@ import '../composer/entrances.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../../theme/calm_tokens.dart';
+import '../../../../shared/widgets/surface/primary_fill.dart';
 
 /// "Save meal" — the FULL-WIDTH confirm pill under the staged card.
 ///
@@ -52,14 +53,16 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
     final tappable = !widget.disabled && widget.onTap != null;
     final quiet = widget.editing;
 
-    final Color base = quiet ? KalloColors.track : KalloColors.btnPrimarySoft;
     // Press is a background colour-shift, not an opacity dim — as on
     // [KalloButton].
-    final Color fill =
-        _pressed && tappable
-            ? Color.alphaBlend(KalloColors.pressWash, base)
-            : base;
-    final Color fg = quiet ? KalloColors.textMuted : KalloColors.text;
+    final pressed = _pressed && tappable;
+    final Color? fill =
+        quiet
+            ? (pressed
+                ? Color.alphaBlend(KalloColors.pressWash, KalloColors.track)
+                : KalloColors.track)
+            : PrimaryFill.color(pressed: pressed);
+    final Color fg = quiet ? KalloColors.textMuted : PrimaryFill.label;
 
     return Semantics(
       button: true,
@@ -81,6 +84,7 @@ class _MealEntryConfirmButtonState extends State<MealEntryConfirmButton> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: fill,
+              gradient: quiet ? null : PrimaryFill.gradient(pressed: pressed),
               borderRadius: BorderRadius.circular(KalloRadii.button),
             ),
             child: Text('logging.confirm'.tr(), style: kButtonLabel(color: fg)),

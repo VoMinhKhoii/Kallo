@@ -47,7 +47,9 @@ lib/
                        tab_scaffold.dart, placeholder_screen.dart,
                        route_error_screen.dart (go_router errorBuilder: unknown
                        deep link / route failure)
-  theme/               kallo_colors, kallo_typography, kallo_theme, calm_tokens
+  theme/               kallo_colors, kallo_palette (light / Dark / Aurora values),
+                       theme_controller (Settings → Appearance), kallo_typography,
+                       kallo_theme, calm_tokens
 ```
 
 There is no `lib/data/`: everything it held was infrastructure and merged into `services/`.
@@ -144,7 +146,7 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   pushes from the dashboard avatar.
 - **The back gesture:** every pushed route can be dragged back from ANYWHERE on the
   page, not from iOS's 20pt edge strip (`shell/nav/swipe_back/`, 2026-09-10). It is
-  a vendored Cupertino gesture installed once as `KalloTheme.light`'s
+  a vendored Cupertino gesture installed once as `KalloTheme.build`'s
   `pageTransitionsTheme`, so routes inherit it by being ordinary `MaterialPage`s —
   which is why there are no `CupertinoPage`s left: one would build its own
   transition and opt that route out. The detector WRAPS each page rather than
@@ -185,6 +187,11 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   the same defaults as the web app.
 - **Theming:** warm earthy palette on a cream surface (`theme/kallo_colors.dart`), Lora serif +
   DM Sans (`theme/kallo_typography.dart`) — see the `kallo-design` skill for the brand source.
+  Every colour token is a getter onto `KalloPalette.current` (light, Dark or Aurora —
+  `theme/kallo_palette.dart`), chosen in Settings → Appearance and stored per device under
+  `kallo.theme`. `main()` applies the stored choice before the first frame;
+  `theme/theme_controller.dart` switches at runtime by rebuilding every element in place
+  (state and navigation survive) and follows the phone's brightness under System.
 
 ## Web parity
 

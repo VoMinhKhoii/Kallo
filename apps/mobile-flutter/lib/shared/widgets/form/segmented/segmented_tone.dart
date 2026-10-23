@@ -8,11 +8,8 @@ import '../../../../theme/kallo_theme.dart';
 enum SegmentedStripTone {
   /// The warm track under a white thumb, filling the row.
   standard(
-    track: KalloColors.track,
-    thumb: kCardSurface,
     rim: Color(0x0F141413), // ink @ 6%
     thumbShadow: true,
-    label: kInk,
     labelInset: 0,
   ),
 
@@ -20,30 +17,41 @@ enum SegmentedStripTone {
   /// controls around it under a lighter thumb, white words — sized to its
   /// labels and centred, a chip rather than a full-width bar.
   overPhoto(
-    track: kGlass,
-    thumb: Color(0x38FFFFFF),
     rim: Color(0x33FFFFFF), // white @ 20%, the glass edge catching light
     thumbShadow: false,
-    label: Color(0xFFFFFFFF),
     labelInset: KalloSpacing.sp3 + 2,
   );
 
   const SegmentedStripTone({
-    required this.track,
-    required this.thumb,
     required this.rim,
     required this.thumbShadow,
-    required this.label,
     required this.labelInset,
   });
 
+  // [track], [thumb] and [label] are getters, not constructor fields: an enum
+  // value is a constant, and the standard tone's colours come from the
+  // runtime palette.
+  Color get track => switch (this) {
+    standard => KalloColors.track,
+    overPhoto => kGlass,
+  };
+
+  Color get thumb => switch (this) {
+    standard => KalloColors.thumb,
+    overPhoto => const Color(0x38FFFFFF),
+  };
+
   /// [rim] is the thumb's hairline edge — what makes it read as a raised
   /// piece of glass rather than a flat fill (iOS 26's segmented control).
-  final Color track, thumb, rim;
+  final Color rim;
 
   /// Every label's colour. The selection is the thumb plus a heavier label,
   /// as on iOS — not a muted colour for the segments beside it.
-  final Color label;
+  Color get label => switch (this) {
+    standard => kInk,
+    overPhoto => const Color(0xFFFFFFFF),
+  };
+
   final bool thumbShadow;
 
   /// Room either side of a label, for a strip sized to its words.

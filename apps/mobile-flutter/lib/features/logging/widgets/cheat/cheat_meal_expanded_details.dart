@@ -32,11 +32,7 @@ class CheatMealExpandedDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(
-            height: 1,
-            thickness: 1,
-            color: KalloColors.borderFaint,
-          ),
+          Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
           const SizedBox(height: LoggingSpacing.section),
           if (persisted != null) ...[
             Text('logging.cheatMealCard.youSet'.tr(), style: dashMeta()),
@@ -52,11 +48,7 @@ class CheatMealExpandedDetails extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: LoggingSpacing.section),
-            const Divider(
-              height: 1,
-              thickness: 1,
-              color: KalloColors.borderFaint,
-            ),
+            Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
             const SizedBox(height: LoggingSpacing.section),
           ],
           Row(

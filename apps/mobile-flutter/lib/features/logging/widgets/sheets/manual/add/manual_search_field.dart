@@ -40,8 +40,8 @@ class ManualSearchField extends StatelessWidget {
             // so the magnifier lands on the pill's own padding line. The glyph
             // moved 20 → the tertiary tier (Threads icon tiers, 2026-09-01) and
             // the gap absorbed the 2pt, keeping the 48 intact.
-            prefixIcon: const Padding(
-              padding: EdgeInsets.only(left: 18, right: 12),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.only(left: 18, right: 12),
               child: Icon(
                 LucideIcons.search300,
                 size: KalloIcons.tertiary,

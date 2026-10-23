@@ -123,7 +123,7 @@ class WeightChartCanvas extends StatelessWidget {
     // Dashed, at full hairline weight: the plot carries no frame any more, so
     // the gridlines are the only structure and a 50%-alpha solid rule read as
     // a smudge rather than a scale.
-    const gridLine = FlLine(
+    final gridLine = FlLine(
       color: kHairline,
       strokeWidth: 1,
       dashArray: [3, 4],

@@ -27,11 +27,7 @@ class PersistedMealExpandedDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(
-            height: 1,
-            thickness: 1,
-            color: KalloColors.borderFaint,
-          ),
+          Divider(height: 1, thickness: 1, color: KalloColors.borderFaint),
           const SizedBox(height: LoggingSpacing.section),
           for (final group in groups)
             Padding(

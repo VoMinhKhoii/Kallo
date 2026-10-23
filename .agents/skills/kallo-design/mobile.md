@@ -226,6 +226,27 @@ lighter surface. A control that sits **transparent on the canvas** presses with
 canvas, so on the page they composite to within ~3 points of it and the press
 simply doesn't register. Warm for selected, ink for pressed-on-page.
 
+**Three palettes, one set of names (2026-10-22).** Every hex above is the
+LIGHT palette. `KalloColors` and the `k*` aliases are getters onto
+`KalloPalette.current` — light, Dark (the Graphite design) or Aurora — picked
+in Settings → Appearance; System follows the phone between light and Dark. So
+a token never sits in a `const` expression and is never cached in a
+`static final` or top-level `final`: either keeps the palette that was current
+when it was first read. Make such a declaration a getter, and a colour default
+parameter nullable with `??` in the body. Dark and Aurora values live in
+`theme/palette/kallo_palette_values.dart`; their text tokens hold 4.5:1 on
+canvas and card alike, muted included.
+
+Elevation on the dark palettes is by surface, not shadow: sheets, alerts,
+anchored menus and Dark's nav pill paint `KalloColors.sheet`, one step above
+the cards (white in light). Every in-app primary button takes its fill and
+label from `PrimaryFill` (`shared/widgets/surface/`) — the warm wash in Light
+and Dark, the brand sweep with an ink label in Aurora — never from
+`btnPrimarySoft` directly. A main page passes `Screen(glow: true)` for
+Aurora's apricot/lilac glow; anything opaque painted in the canvas colour on
+top of it (a sticky header, an edge fade) shows as a slab there. Ink on the
+fixed bright fills (the sweep, the paywall gold) is `onBrand`, never `text`.
+
 ## Spacing — one 12px rhythm
 
 `12px` (`KalloSpacing.sp3`) between **all** major stacked components:

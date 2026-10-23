@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_motion.dart';
+import '../../../../theme/kallo_palette.dart';
 import 'circle_tab.dart';
 import 'tab_layout.dart';
 
@@ -89,7 +90,7 @@ class _TabStripState extends State<TabStrip> {
       labels.fold<double>(0, (tallest, size) => math.max(tallest, size.height)),
     );
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: kHairline)),
       ),
       child: SizedBox(
@@ -130,7 +131,11 @@ class _TabStripState extends State<TabStrip> {
                     ],
                   ),
                 ),
-                if (overflows)
+                // Not in Aurora: the fade paints the plain canvas colour, and
+                // the strip sits on the page's glow, where that reads as a
+                // dark slab rather than an edge.
+                if (overflows &&
+                    KalloPalette.currentId != KalloPaletteId.aurora)
                   PositionedDirectional(
                     top: 0,
                     end: 0,

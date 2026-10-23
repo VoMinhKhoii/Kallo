@@ -110,7 +110,7 @@ class InviteGlyphAction extends StatelessWidget {
             child: Center(
               child:
                   loading
-                      ? const CupertinoActivityIndicator(
+                      ? CupertinoActivityIndicator(
                         radius: 9,
                         color: KalloColors.textMuted,
                       )

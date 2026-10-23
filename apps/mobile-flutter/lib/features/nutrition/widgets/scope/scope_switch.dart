@@ -43,21 +43,13 @@ class ScopeSwitch extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (!onComplete) ...[
-                const Icon(
-                  LucideIcons.arrowLeft400,
-                  size: 14,
-                  color: kInkMuted,
-                ),
+                Icon(LucideIcons.arrowLeft400, size: 14, color: kInkMuted),
                 const SizedBox(width: 6),
               ],
               Text(label, style: dashMeta()),
               if (onComplete) ...[
                 const SizedBox(width: 6),
-                const Icon(
-                  LucideIcons.arrowRight400,
-                  size: 14,
-                  color: kInkMuted,
-                ),
+                Icon(LucideIcons.arrowRight400, size: 14, color: kInkMuted),
               ],
             ],
           ),

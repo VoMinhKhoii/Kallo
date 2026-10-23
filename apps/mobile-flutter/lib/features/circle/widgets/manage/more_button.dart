@@ -33,7 +33,7 @@ class MoreButton extends StatelessWidget {
         minimumSize: const Size.square(KalloIcons.hit),
         padding: EdgeInsets.zero,
         onPressed: onPressed,
-        child: const Icon(
+        child: Icon(
           LucideIcons.ellipsis300,
           size: KalloIcons.tertiary,
           color: kInkMuted,

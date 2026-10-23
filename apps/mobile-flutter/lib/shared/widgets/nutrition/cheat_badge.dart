@@ -30,7 +30,7 @@ class CheatBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(LucideIcons.partyPopper300, size: 12, color: kInk),
+          Icon(LucideIcons.partyPopper300, size: 12, color: kInk),
           const SizedBox(width: 4),
           Text(label, style: dashMeta(color: kInk)),
         ],

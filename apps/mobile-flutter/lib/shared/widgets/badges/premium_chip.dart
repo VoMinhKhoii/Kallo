@@ -37,7 +37,7 @@ class PremiumChip extends StatelessWidget {
         // The pill is a fixed 18pt: past 1.0x the label would clip its own
         // border, and the chip is a marker whose meaning the row label carries.
         textScaler: TextScaler.noScaling,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: KalloTextStyles.sansFamily,
           fontSize: 11,
           fontWeight: FontWeight.w600,

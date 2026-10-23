@@ -19,7 +19,7 @@ enum _Action { copy, edit }
 /// why the reveal card is handed an empty `rawInput` — its own Lora quote would
 /// otherwise print the same sentence a line below this one.
 ///
-/// Beige (`KalloColors.btnPrimarySoft`) with INK text — the same wash that
+/// Beige (`KalloColors.hover`, the in-app primary's value) with INK text — the same wash that
 /// marks every in-app primary, a selected choice and the confirm circle, so a
 /// sent message reads as "mine" in the app's one warm colour rather than in a
 /// colour used nowhere else. It replaced solid umber with white text (native

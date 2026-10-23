@@ -51,7 +51,7 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 ///   • `/` redirects based on auth + onboarding state.
 ///
 /// Pages are `MaterialPage`, NOT `CupertinoPage`: the app's transition and its
-/// full-width back drag are installed once in `KalloTheme.light`'s
+/// full-width back drag are installed once in `KalloTheme.build`'s
 /// `pageTransitionsTheme` (`shell/nav/swipe_back/`), and a `CupertinoPage`
 /// builds its own transition without ever consulting the theme. So a route
 /// added here inherits the gesture by doing nothing.

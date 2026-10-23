@@ -50,10 +50,7 @@ class SheetCircleButton extends StatelessWidget {
             child: Container(
               width: size,
               height: size,
-              decoration: const BoxDecoration(
-                color: kTrack,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: kTrack, shape: BoxShape.circle),
               child: Icon(
                 icon,
                 size: KalloIcons.tertiary,

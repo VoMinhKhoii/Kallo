@@ -6,6 +6,7 @@ import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/calm_tokens.dart';
+import 'primary_fill.dart';
 
 enum KalloButtonVariant { primary, secondary, danger, ghost, cta }
 
@@ -72,13 +73,7 @@ class _NhamButtonState extends State<KalloButton> {
       case KalloButtonVariant.cta:
         bg = _pressed ? KalloColors.btnDarkHover : KalloColors.btnPrimary;
       case KalloButtonVariant.primary:
-        bg =
-            _pressed
-                ? Color.alphaBlend(
-                  KalloColors.pressWash,
-                  KalloColors.btnPrimarySoft,
-                )
-                : KalloColors.btnPrimarySoft;
+        bg = PrimaryFill.color(pressed: _pressed);
       case KalloButtonVariant.secondary:
         bg = _pressed ? KalloColors.hover : KalloColors.elev;
         border = Border.all(color: KalloColors.border);
@@ -93,6 +88,7 @@ class _NhamButtonState extends State<KalloButton> {
     final Color labelColor = switch (variant) {
       KalloButtonVariant.cta => KalloColors.elev,
       KalloButtonVariant.danger => KalloColors.danger,
+      KalloButtonVariant.primary => PrimaryFill.label,
       _ => KalloColors.text,
     };
 
@@ -100,13 +96,7 @@ class _NhamButtonState extends State<KalloButton> {
 
     final Widget content =
         widget.loading
-            ? CupertinoActivityIndicator(
-              radius: 10,
-              color:
-                  variant == KalloButtonVariant.cta
-                      ? KalloColors.elev
-                      : KalloColors.text,
-            )
+            ? CupertinoActivityIndicator(radius: 10, color: labelColor)
             : _label(labelColor);
 
     return AnimatedOpacity(
@@ -146,6 +136,10 @@ class _NhamButtonState extends State<KalloButton> {
           ),
           decoration: BoxDecoration(
             color: bg,
+            gradient:
+                variant == KalloButtonVariant.primary
+                    ? PrimaryFill.gradient(pressed: _pressed)
+                    : null,
             borderRadius: BorderRadius.circular(KalloRadii.button),
             border: border,
           ),

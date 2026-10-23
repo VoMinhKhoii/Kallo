@@ -51,7 +51,7 @@ class PersistedMealAmountEditorRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: dashBody().merge(
                   row.removed
-                      ? const TextStyle(
+                      ? TextStyle(
                         decoration: TextDecoration.lineThrough,
                         decorationColor: kInkMuted,
                         color: kInkMuted,

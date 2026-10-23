@@ -7,7 +7,6 @@ library;
 
 import 'package:flutter/widgets.dart';
 
-import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 
@@ -21,7 +20,7 @@ const double kKalloAlertRadius = KalloRadii.xl;
 
 /// `showCupertinoDialog` ignores `dialogTheme.barrierColor`, so the alert
 /// passes the app's scrim explicitly. Same token the theme uses.
-const Color kKalloAlertBarrier = KalloColors.scrim;
+Color get kKalloAlertBarrier => KalloColors.scrim;
 
 /// Finds the alert card in a widget test, and marks it in the tree.
 ///
@@ -44,6 +43,6 @@ class KalloAlertSurface extends StatelessWidget {
   Widget build(BuildContext context) => ClipRSuperellipse(
     key: kKalloConfirmSurface,
     borderRadius: BorderRadius.circular(kKalloAlertRadius),
-    child: ColoredBox(color: kCardSurface, child: child),
+    child: ColoredBox(color: KalloColors.sheet, child: child),
   );
 }

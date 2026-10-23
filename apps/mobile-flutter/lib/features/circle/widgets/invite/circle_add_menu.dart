@@ -59,7 +59,7 @@ class CircleAddMenu extends ConsumerWidget {
             // 4pt wider than the leading slot, which pushed the title off centre.
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-            icon: const Icon(
+            icon: Icon(
               LucideIcons.userPlus300,
               size: KalloIcons.size,
               color: kInk,
