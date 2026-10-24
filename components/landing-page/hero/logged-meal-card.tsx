@@ -25,6 +25,10 @@ import { type HeroMeal, mealTotals } from './logged-meals';
  */
 const ART_OPACITY = 0.65;
 
+/** On a dark card the cream painting would sit under cream type; it drops
+ * back to a tint there (`!`, to beat the inline opacity). */
+const ART_DARK = 'dark:opacity-[0.2]!';
+
 /**
  * The app's logged-meal card, on the landing page.
  *
@@ -95,7 +99,7 @@ export function LoggedMealCard({
           onSelectMeal();
           setIsCollapsed((prev) => !prev);
         }}
-        className="relative isolate flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-kallo-border/60 bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md"
+        className="relative isolate flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-kallo-border/60 bg-card p-4 text-left shadow-sm transition-shadow hover:shadow-md"
       >
         <Image
           src={meal.art}
@@ -103,7 +107,7 @@ export function LoggedMealCard({
           fill
           sizes="(min-width: 1024px) 34rem, (min-width: 640px) 45vw, 90vw"
           style={{ opacity: ART_OPACITY }}
-          className={`-z-10 object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          className={`-z-10 object-cover ${ART_DARK} transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
             active ? 'scale-105' : 'scale-100'
           }`}
         />

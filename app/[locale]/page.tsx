@@ -17,7 +17,7 @@ import { PricingSection } from '@/components/landing-page/pricing/pricing-sectio
 import { SignedInRedirect } from '@/components/landing-page/signed-in-redirect';
 import { UnderstandingSection } from '@/components/landing-page/understanding/understanding-section';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
-import { LightOnly } from '@/components/providers/theme/light-only';
+import { AppThemeProvider } from '@/components/providers/theme/app-theme-provider';
 import type { Locale } from '@/i18n/config';
 import { routing } from '@/i18n/routing';
 import { getDocsTree } from '@/lib/domain/docs/tree';
@@ -90,32 +90,35 @@ export default async function Home({
 
   return (
     <AuthProvider initialTab="sign-up">
-      <LightOnly />
-      {/* JSON-LD must be raw script text, and Next has no metadata API for it,
-          so a script tag is the documented route. The value is a locally-built
-          object passed through JSON.stringify — never user input. */}
-      <script
-        type="application/ld+json"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is raw script text built locally, not user input — see comment above.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
-      {/* One fixed layer behind everything, so the drift runs the whole way
-          down instead of stopping where the hero ends. */}
-      <AmbientWash />
-      <Header />
-      <main>
-        <MealCardHero />
-        <UnderstandingSection />
-        <PricingSection />
-      </main>
-      <DocsFooter landing sections={sections} />
-      <AuthDialog />
-      <Suspense fallback={null}>
-        <OAuthErrorToast />
-        <WaitlistStatusToast />
-        <AuthRequestConfig searchParams={searchParams} />
-        <SignedInRedirect searchParams={searchParams} />
-      </Suspense>
+      {/* The visitor's theme, picked from the header or in the app. Docs and
+          legal pages stay light. */}
+      <AppThemeProvider>
+        {/* JSON-LD must be raw script text, and Next has no metadata API for it,
+            so a script tag is the documented route. The value is a locally-built
+            object passed through JSON.stringify — never user input. */}
+        <script
+          type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is raw script text built locally, not user input — see comment above.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+        {/* One fixed layer behind everything, so the drift runs the whole way
+            down instead of stopping where the hero ends. */}
+        <AmbientWash />
+        <Header />
+        <main>
+          <MealCardHero />
+          <UnderstandingSection />
+          <PricingSection />
+        </main>
+        <DocsFooter landing sections={sections} />
+        <AuthDialog />
+        <Suspense fallback={null}>
+          <OAuthErrorToast />
+          <WaitlistStatusToast />
+          <AuthRequestConfig searchParams={searchParams} />
+          <SignedInRedirect searchParams={searchParams} />
+        </Suspense>
+      </AppThemeProvider>
     </AuthProvider>
   );
 }

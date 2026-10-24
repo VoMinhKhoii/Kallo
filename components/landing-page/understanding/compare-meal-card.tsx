@@ -73,7 +73,7 @@ export function CompareMealCard({
   const base = `categories.${comparison.id}`;
 
   return (
-    <div className="relative isolate flex h-full flex-col overflow-hidden rounded-2xl border border-kallo-border/60 bg-white p-3.5 shadow-sm md:row-span-3 md:grid md:grid-rows-subgrid">
+    <div className="relative isolate flex h-full flex-col overflow-hidden rounded-2xl border border-kallo-border/60 bg-card p-3.5 shadow-sm md:row-span-3 md:grid md:grid-rows-subgrid">
       {/* `fill` makes this absolutely positioned, so it is out of flow and
           never becomes a grid item. That matters: the card is a 3-row subgrid
           from `md`, and an in-flow child here would take the sentence's row and
@@ -85,7 +85,8 @@ export function CompareMealCard({
           fill
           sizes="(min-width: 1536px) 40rem, (min-width: 768px) 45vw, 90vw"
           style={{ opacity: ART_OPACITY }}
-          className="-z-10 object-cover"
+          // A tint on a dark card, as on the hero's (`!` beats the inline style).
+          className="-z-10 object-cover dark:opacity-[0.14]!"
         />
       )}
 

@@ -43,7 +43,7 @@ export function WaitlistForm({ source = 'hero' }: { source?: 'hero' | 'cta' }) {
     return (
       <output
         aria-live="polite"
-        className="flex items-start gap-3 rounded-xl border border-kallo-border bg-white/70 px-4 py-4"
+        className="flex items-start gap-3 rounded-xl border border-kallo-border bg-card/70 px-4 py-4"
       >
         <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-kallo-accent" />
         <div>
@@ -78,7 +78,7 @@ export function WaitlistForm({ source = 'hero' }: { source?: 'hero' | 'cta' }) {
             aria-invalid={errors.email ? true : undefined}
             aria-describedby={errors.email ? 'waitlist-email-error' : undefined}
             className={cn(
-              'w-full rounded-xl border bg-white px-4 py-4 font-sans-display text-base text-kallo-text outline-none transition-all duration-200 placeholder:text-kallo-text-soft',
+              'w-full rounded-xl border bg-card px-4 py-4 font-sans-display text-base text-kallo-text outline-none transition-all duration-200 placeholder:text-kallo-text-soft',
               errors.email
                 ? 'border-kallo-danger/50 focus:border-kallo-danger focus:ring-2 focus:ring-kallo-danger/10'
                 : 'border-kallo-border/60 focus:border-kallo-accent focus:ring-2 focus:ring-kallo-accent/10'
