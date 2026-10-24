@@ -53,7 +53,9 @@ export async function DocsFooter({
   const tFooter = await getTranslations('landing.footer');
 
   return (
-    <footer className={`bg-kallo-ink ${landing ? '' : 'mt-24'}`}>
+    <footer
+      className={`bg-kallo-ink dark:border-kallo-border dark:border-t dark:bg-card ${landing ? '' : 'mt-24'}`}
+    >
       <div
         className={
           landing
@@ -71,7 +73,7 @@ export async function DocsFooter({
           {sections.map((section) => (
             <div key={section.id}>
               <p
-                className="font-sans-display font-semibold text-base text-kallo-surface"
+                className="font-sans-display font-semibold text-base text-kallo-surface dark:text-kallo-text"
                 id={`docs-footer-${section.id}`}
               >
                 {tSections(section.id)}
@@ -83,7 +85,7 @@ export async function DocsFooter({
                 {section.links.map((link) => (
                   <li key={link.slug}>
                     <Link
-                      className="rounded-sm font-sans-display text-base text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+                      className="rounded-sm font-sans-display text-base text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
                       href={`/docs/${link.slug}`}
                     >
                       {link.title}
@@ -100,7 +102,7 @@ export async function DocsFooter({
             className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
             href="/"
           >
-            <KalloWordmark className="h-4 w-auto text-kallo-surface" />
+            <KalloWordmark className="h-4 w-auto text-kallo-surface dark:text-kallo-text" />
           </Link>
           <p className="text-caption text-kallo-stone">
             {tFooter('copyright', { year: '2026' })}
@@ -109,13 +111,13 @@ export async function DocsFooter({
               in-page scroll on the landing page, so without this the sitemap
               listed a page nothing on the site pointed at. */}
           <Link
-            className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent sm:ml-auto"
+            className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent sm:ml-auto dark:hover:text-kallo-text"
             href="/pricing"
           >
             {tFooter('pricing')}
           </Link>
           <a
-            className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+            className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
             href={LINKEDIN_URL}
             rel="noopener noreferrer"
             target="_blank"

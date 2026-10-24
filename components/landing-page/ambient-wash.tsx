@@ -94,7 +94,17 @@ export function AmbientWash() {
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(72% 62% at 50% 44%, rgba(249,249,247,0.92) 0%, rgba(249,249,247,0.66) 46%, rgba(249,249,247,0) 82%)',
+            'radial-gradient(72% 62% at 50% 44%, color-mix(in srgb, var(--kallo-surface) 92%, transparent) 0%, color-mix(in srgb, var(--kallo-surface) 66%, transparent) 46%, transparent 82%)',
+        }}
+      />
+
+      {/* Aurora's corner glow, the one the app shell wears (globals.css); the
+          other themes set --kallo-glow to none. */}
+      <div
+        className="absolute inset-x-0 top-0 h-[460px] bg-no-repeat md:h-[760px]"
+        style={{
+          backgroundImage: 'var(--kallo-glow)',
+          backgroundSize: '100% 100%',
         }}
       />
     </div>

@@ -9,6 +9,7 @@ import { Link } from '@/i18n/navigation';
 import { AUTH_CTAS_LIVE } from './cta-hold';
 import { LocaleSwitcher } from './locale-switcher';
 import { scrollToAnchorId } from './scroll-to-anchor';
+import { ThemeSwitcher } from './theme-switcher';
 
 /** The two in-page sections. Docs is a route, so it isn't in here. */
 const ANCHORS = [
@@ -81,7 +82,10 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
 
         {/* CTA Buttons */}
         <div className="flex items-center gap-4">
-          <LocaleSwitcher />
+          <div className="flex items-center gap-1">
+            <ThemeSwitcher />
+            <LocaleSwitcher />
+          </div>
           <Button
             variant="landing-ghost"
             className="hidden font-sans-display sm:block"

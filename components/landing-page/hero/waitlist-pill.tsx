@@ -35,7 +35,7 @@ export function WaitlistPill() {
     return (
       <output
         aria-live="polite"
-        className="mx-auto flex w-full max-w-2xl items-start gap-3 rounded-[1.75rem] border border-kallo-border bg-white px-5 py-4 text-left"
+        className="mx-auto flex w-full max-w-2xl items-start gap-3 rounded-[1.75rem] border border-kallo-border bg-card px-5 py-4 text-left"
       >
         <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-kallo-text" />
         <div>
@@ -75,7 +75,7 @@ export function WaitlistPill() {
         // the order they are written here — the error border was a coin toss.
         // tailwind-merge drops the loser instead.
         className={cn(
-          'flex w-full flex-col gap-3 rounded-[1.75rem] border border-kallo-border bg-white p-3 shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)] transition-colors focus-within:border-kallo-accent focus-within:ring-[3px] focus-within:ring-kallo-accent/25 sm:h-16 sm:flex-row sm:items-center sm:gap-3 sm:rounded-full sm:py-2 sm:pr-2 sm:pl-6',
+          'flex w-full flex-col gap-3 rounded-[1.75rem] border border-kallo-border bg-card p-3 shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)] transition-colors focus-within:border-kallo-accent focus-within:ring-[3px] focus-within:ring-kallo-accent/25 sm:h-16 sm:flex-row sm:items-center sm:gap-3 sm:rounded-full sm:py-2 sm:pr-2 sm:pl-6',
           errors.email && 'border-kallo-danger/60'
         )}
       >
@@ -90,7 +90,7 @@ export function WaitlistPill() {
           aria-invalid={errors.email ? true : undefined}
           aria-describedby={errors.email ? 'hero-waitlist-error' : undefined}
           disabled={signup.isPending}
-          className="min-w-0 flex-1 bg-transparent px-2 py-2 text-base text-kallo-text outline-none placeholder:text-[#B0A695] disabled:cursor-default sm:px-0 sm:py-0 sm:text-lg"
+          className="min-w-0 flex-1 bg-transparent px-2 py-2 text-base text-kallo-text outline-none placeholder:text-[#B0A695] disabled:cursor-default sm:px-0 sm:py-0 sm:text-lg dark:placeholder:text-kallo-text-muted"
           {...register('email')}
         />
 
