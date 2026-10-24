@@ -2,10 +2,13 @@
 
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Button } from '@/components/ui/button';
+import { useHeaderOverFooter } from '@/hooks/landing/use-header-over-footer';
 import { Link } from '@/i18n/navigation';
+import { cn } from '@/lib/core/ui/cn';
 import { AUTH_CTAS_LIVE } from './cta-hold';
 import { LocaleSwitcher } from './locale-switcher';
 import { scrollToAnchorId } from './scroll-to-anchor';
@@ -31,6 +34,8 @@ const NAV_LINK =
 export function Header({ standalone = false }: { standalone?: boolean } = {}) {
   const t = useTranslations('landing.header');
   const { openDialog } = useAuthDialog();
+  const headerRef = useRef<HTMLElement>(null);
+  const overFooter = useHeaderOverFooter(headerRef);
 
   const scrollToAnchor =
     (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -43,7 +48,14 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="fixed top-0 right-0 left-0 z-50 backdrop-blur-xl"
+      // No fill, so the page runs up behind it; the blur keeps the nav
+      // readable over scrolled content. The fill comes back only over the
+      // footer, which in Light is the same ink as the header's type.
+      ref={headerRef}
+      className={cn(
+        'fixed top-0 right-0 left-0 z-50 backdrop-blur-xl transition-colors',
+        overFooter && 'bg-kallo-surface/80'
+      )}
     >
       {/* Matches the section measure below it, so the wordmark sits on the
           same left edge as the first meal card and the first plan. */}
