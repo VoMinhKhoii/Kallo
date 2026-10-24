@@ -43,7 +43,7 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="fixed top-0 right-0 left-0 z-50 border-kallo-border/30 border-b bg-kallo-surface/80 backdrop-blur-xl"
+      className="fixed top-0 right-0 left-0 z-50 backdrop-blur-xl"
     >
       {/* Matches the section measure below it, so the wordmark sits on the
           same left edge as the first meal card and the first plan. */}
