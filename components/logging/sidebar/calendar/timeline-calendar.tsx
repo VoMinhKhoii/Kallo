@@ -75,9 +75,9 @@ export function TimelineCalendar({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger className="ml-3 flex w-[calc(100%-0.75rem)] min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border border-kallo-border/60 px-2.5 py-2 font-medium font-sans-display text-kallo-text text-xs transition-colors hover:border-kallo-accent/50 hover:bg-kallo-hover/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2">
+      <DialogTrigger className="ml-3 flex w-[calc(100%-0.75rem)] min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border border-kallo-border/60 px-2.5 py-2 font-medium font-sans-display text-kallo-text text-xs transition-colors hover:border-kallo-accent/50 hover:bg-kallo-hover/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 dark:border-kallo-border dark:bg-kallo-track/70 dark:hover:bg-kallo-hover">
         <CalendarDays
-          className="h-3.5 w-3.5 shrink-0 text-kallo-text-muted"
+          className="h-3.5 w-3.5 shrink-0 text-kallo-text-muted dark:text-kallo-text-soft"
           aria-hidden="true"
         />
         <span className="min-w-0 truncate">{t('openCalendar')}</span>
