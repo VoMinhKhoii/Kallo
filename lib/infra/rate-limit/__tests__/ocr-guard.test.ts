@@ -6,7 +6,13 @@ const buildAnalysisGuardEvent = vi.fn((input: unknown) => input);
 const insertValues = vi.fn();
 const insert = vi.fn(() => ({ values: insertValues }));
 
-vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({ assertRateLimit }));
+const settle = vi.fn();
+const acquireSpendLease = vi.fn();
+
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
+  acquireSpendLease,
+  assertRateLimit,
+}));
 vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
@@ -37,6 +43,10 @@ beforeEach(() => {
   insertValues.mockReset();
   buildAnalysisGuardEvent.mockClear();
   assertRateLimit.mockResolvedValue(undefined);
+  settle.mockReset();
+  settle.mockResolvedValue(undefined);
+  acquireSpendLease.mockReset();
+  acquireSpendLease.mockResolvedValue({ settle, addLate: vi.fn() });
   checkAnalysisGuards.mockResolvedValue({ allowed: true, release });
   insertValues.mockResolvedValue(undefined);
 });
@@ -187,5 +197,51 @@ describe('withOcrGuard', () => {
     await expect(withOcrGuard('user-1', chargingWork())).resolves.toBe('label');
     expect(errors).toHaveBeenCalled();
     errors.mockRestore();
+  });
+
+  describe('the app-wide AI spend brake', () => {
+    it('reserves a label scan only once the global budget has been charged', async () => {
+      const order: string[] = [];
+      assertRateLimit.mockImplementation(async () => {
+        order.push('global');
+      });
+      acquireSpendLease.mockImplementation(async () => {
+        order.push('brake');
+        return { settle, addLate: vi.fn() };
+      });
+
+      await withOcrGuard(
+        'user-1',
+        chargingWork(() => order.push('validate'))
+      );
+
+      expect(order).toEqual(['validate', 'global', 'brake']);
+      expect(acquireSpendLease).toHaveBeenCalledWith('labelOcr', {
+        enforce: true,
+      });
+      expect(settle).toHaveBeenCalledOnce();
+    });
+
+    it('reserves nothing when the work fails before the provider call', async () => {
+      await expect(
+        withOcrGuard('user-1', async () => {
+          throw new Error('malformed base64');
+        })
+      ).rejects.toThrow('malformed base64');
+      expect(acquireSpendLease).not.toHaveBeenCalled();
+    });
+
+    it('refuses with the RATE_LIMITED 429 once the brake trips, and frees the slot', async () => {
+      acquireSpendLease.mockRejectedValue(Errors.aiPaused(3600));
+
+      await expect(
+        withOcrGuard('user-1', chargingWork())
+      ).rejects.toMatchObject({
+        code: 'RATE_LIMITED',
+        status: 429,
+        retryAfterSeconds: 3600,
+      });
+      expect(release).toHaveBeenCalledOnce();
+    });
   });
 });

@@ -129,7 +129,7 @@ another domain module is a smell worth a second look.
 | `platform/` | runtime environment detection from the user agent |
 | `push/` | the native-push transport: the `PushSender` seam, the dependency-free APNs HTTP/2 sender, and the no-op used when the `APNS_*` vars are unset |
 | `route-template/` | the app's route tree as data (`app-route-patterns.ts`, checked against `app/` by a test) and `routeTemplate`, which redacts a URL path by segment position — shared by CSP reports and telemetry |
-| `rate-limit/` | the generic API limiter (`limiter/`: policies, keys, Postgres consume, failMode) plus the older concurrency-modelling analysis guards and the guard wrappers over them (`ocr-guard.ts`, `relog-guard.ts`) |
+| `rate-limit/` | the generic API limiter (`limiter/`: policies, keys, Postgres consume, failMode; `limiter/lease/`: the app-wide AI spend brake's reserve/settle) plus the older concurrency-modelling analysis guards and the guard wrappers over them (`ocr-guard.ts`, `relog-guard.ts`) |
 | `security/` | webhook signatures, the enforced CSP + violation-report parsing, request IP |
 | `storage/` | object storage on Cloudflare R2 (`object-storage.ts`: put / list / delete / prefix purge / presigned read over the S3 API; `r2-client.ts` holds the credentials and bucket naming; `usage-cap.ts` is the hard cap at 95% of the R2 free tier) — `docs/STORAGE.md` |
 | `telemetry/` | what leaves the app about how it behaves (`docs/MONITORING.md`): `telemetry-url.ts` (every outgoing URL → origin + route template), `analytics/` (PostHog: EU init, the typed event list, `track`/identify/reset) and `monitoring/` (Sentry: options shared by browser, Node and Edge, the payload scrubbers, `reportError`) |
@@ -176,7 +176,7 @@ another domain module is a smell worth a second look.
 | Folder | Concern | Status |
 |---|---|---|
 | `provider/` | the only folder allowed to touch an LLM SDK: Gemini (AI Studio / Vertex), plus `claude/` — Claude structured output and the router that sends `claude-*` models there with a per-call Gemini fallback (`createPipelineLlm`) | ok |
-| `cost/` | the model rate card, mirrored by `scripts/bench/ai-cost.sql` (`docs/AI_COST.md`) | ok |
+| `cost/` | the model rate card, mirrored by `scripts/bench/ai-cost.sql` (`docs/AI_COST.md`); the per-request spend meter the provider layer feeds (`spend-meter.ts`) and the brake wrapper over it (`ai-spend.ts`, `docs/RATE_LIMITING.md`) | ok |
 | `types/` | the shared vocabulary, split by stage | ok |
 | `cache/` | every pipeline cache in one place | ok |
 | `prompts/` | `text/` (the strings) vs `build/` (the builders) | ok |

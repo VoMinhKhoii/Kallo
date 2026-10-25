@@ -23,11 +23,25 @@ import * as Sentry from '@sentry/nextjs';
 export function reportError(
   error: unknown,
   scope: string,
-  { redactMessage = false }: { redactMessage?: boolean } = {}
+  {
+    redactMessage = false,
+    fingerprint,
+  }: {
+    redactMessage?: boolean;
+    /**
+     * Groups reports into one Sentry issue per value. A new value is a new
+     * issue, which is what fires Sentry's "new issue" alert — use it for an
+     * event that must alert every time it happens (one fingerprint per day).
+     */
+    fingerprint?: string[];
+  } = {}
 ): void {
   const reported =
     redactMessage && error instanceof Error ? withoutMessage(error) : error;
-  Sentry.captureException(reported, { tags: { scope } });
+  Sentry.captureException(reported, {
+    tags: { scope },
+    ...(fingerprint ? { fingerprint } : {}),
+  });
 }
 
 function withoutMessage(error: Error): Error {

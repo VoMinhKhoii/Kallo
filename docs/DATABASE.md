@@ -176,6 +176,8 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261015020000_drop_supabase_storage_policies.sql` | B (Manual, journaled) | Drops every remaining `storage.objects` policy of the retired Supabase buckets (`feedback_screenshots_*`, `nutrition_labels_*`, `avatars_*`, all `IF EXISTS`) after #416 moved uploads to R2; the buckets are emptied and deleted afterwards through the Storage API by `scripts/ops/delete-supabase-storage-buckets.ts` (`docs/STORAGE.md`) |
 | `20261015143608_budget_events_cost_latency.sql` | A (Drizzle) | `analysis_model_budget_events` gains `cache_write_tokens` (default 0), `cost_usd numeric(12,8)`, `latency_ms` and `fallback_from`, with non-negative CHECKs; the app writes them per attempt (`docs/AI_COST.md`) |
 | `20261015143620_budget_events_cost_backfill_and_view.sql` | B (Manual) | Prices pre-existing attempt rows' `cost_usd` from a 2026-10-15 snapshot of the rate card (reservation rows, unpriced models and zero-token attempts stay NULL); appends the cost inputs and new columns to `analytics.v_budget_events` for the admin dashboard |
+| `20261025133838_add_ai_spend_brake.sql` | A + deny boundary | `ai_spend_days` (one row per UTC day, AI spend in micro-USD) + `rate_limit_counters.slot_count` / `slot_expires_at`; RLS/REVOKE/GRANT appended under the failure-boundary exception |
+| `20261025133900_rate_limit_spend_and_slots.sql` | B (Manual) | 11-arg `rate_limit_consume()` (spend brake → windows + slot → reservation, one call) and `rate_limit_release()` (free a slot, settle spend by a signed delta); the 7-arg consume is kept until deployed code stops calling it |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
@@ -566,6 +568,19 @@ analysis-guard tables that shipped without any:
 `reap_analysis_in_flight_limits()` (1 day, **including rows with `count > 0`** —
 those are crash-abandoned concurrency leases; the live path is covered by the
 90-second stale reset in `analysis-guard-counters.ts`).
+
+**Slots and the AI spend brake** (`20261025133838` + `20261025133900`).
+`rate_limit_counters` gained `slot_count` / `slot_expires_at` (a one-at-a-time
+slot that reads as free once its lifetime passes), and **`ai_spend_days`** holds
+one row per UTC day with the app-wide AI spend in micro-USD
+(`spent_micro_usd`, `first_blocked_at`). `ai_spend_days` is LOGGED on purpose —
+it is money, and a crash must not hand out a fresh budget — and is never
+reaped (one row a day). Same server-only boundary as the other limiter tables.
+An 11-argument `rate_limit_consume(...)` overload checks the brake (locking the
+day row `FOR UPDATE`), then the key's windows and slot in the same upsert, and
+books the reservation only once both admitted; `rate_limit_release(...)` frees
+a slot and settles spend by a signed delta. The 7-argument consume stays until
+no deployed code calls it, then a later migration drops it.
 
 If the legacy tables are large on first deploy, run
 `SELECT public.reap_analysis_rate_limit_windows();` once by hand rather than

@@ -13,6 +13,8 @@ const {
   startCallOrder,
   createGeminiClientSpy,
   checkAdminReplayGuardSpy,
+  acquireSpendLeaseSpy,
+  spendSettleSpy,
 } = vi.hoisted(() => {
   const insertedTables: unknown[] = [];
   const insertValuesSpy = vi.fn();
@@ -42,7 +44,14 @@ const {
         }
     > => ({ allowed: true })
   );
+  const spendSettleSpy = vi.fn(async (_cost: number | null) => undefined);
+  const acquireSpendLeaseSpy = vi.fn(async (..._args: unknown[]) => ({
+    settle: spendSettleSpy,
+    addLate: vi.fn(),
+  }));
   return {
+    acquireSpendLeaseSpy,
+    spendSettleSpy,
     insertedTables,
     insertValuesSpy,
     updateSpy,
@@ -110,6 +119,9 @@ vi.mock('@/lib/infra/rate-limit/analysis-guards', async (importOriginal) => {
   };
 });
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
+  acquireSpendLease: acquireSpendLeaseSpy,
+}));
 
 import {
   analysisGuardEvents,
@@ -133,6 +145,10 @@ describe('replayRequest', () => {
     startCallOrder.length = 0;
     insertValuesSpy.mockResolvedValue(undefined);
     checkAdminReplayGuardSpy.mockResolvedValue({ allowed: true });
+    acquireSpendLeaseSpy.mockResolvedValue({
+      settle: spendSettleSpy,
+      addLate: vi.fn(),
+    });
     process.env.GEMINI_API_KEY = 'test-key';
     selectSpy.mockResolvedValue([
       {
@@ -257,6 +273,34 @@ describe('replayRequest', () => {
     expect(insertedTables).toContain(analysisGuardEvents);
     expect(insertedTables).not.toContain(pipelineRequests);
     expect(insertedTables).not.toContain(pipelineRequestReplayAuditLogs);
+  });
+
+  it('reserves a live replay under the AI brake and settles it', async () => {
+    await replayRequest('11111111-1111-4111-a111-111111111111');
+
+    expect(acquireSpendLeaseSpy).toHaveBeenCalledWith('replay', {
+      enforce: true,
+    });
+    expect(spendSettleSpy).toHaveBeenCalledOnce();
+  });
+
+  it('refuses a live replay once the AI brake trips, before any model call', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    acquireSpendLeaseSpy.mockRejectedValueOnce(Errors.aiPaused(3600));
+
+    const result = await replayRequest('11111111-1111-4111-a111-111111111111');
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        code: 'RATE_LIMITED',
+        status: 429,
+        reason: 'ai_paused',
+        retryAfterSeconds: 3600,
+      },
+    });
+    expect(createGeminiClientSpy).not.toHaveBeenCalled();
+    expect(analyzeMealSpy).not.toHaveBeenCalled();
   });
 
   it('writes an admin_replay guard event without raw input on live replay block', async () => {

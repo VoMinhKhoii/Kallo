@@ -3,6 +3,7 @@
   "profileNotFound": "Profile not found. Please sign in again.",
   "pipelineTimeout": "Analysis took too long. Please try again.",
   "rateLimited": "The service is busy. Please wait a moment and try again.",
+  "aiPaused": "AI logging is paused for everyone until tomorrow. Barcode scans and relogging still work.",
   "featureLockedNotEntitled": "Upgrade to Kallo Premium to analyze meals with AI.",
   "aiConsentRequired": "Allow Kallo to send your meal to its AI provider before analyzing it. You can turn this on when you log a meal or in Settings.",
   "internal": "Something went wrong. Please try again.",

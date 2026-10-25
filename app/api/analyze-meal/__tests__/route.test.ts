@@ -10,6 +10,8 @@ const mockBuildUserContext = vi.fn();
 const mockInsert = vi.fn();
 const mockCreateGeminiClient = vi.fn((..._args: unknown[]) => ({}));
 const mockCheckAnalysisGuards = vi.fn();
+const mockAcquireSpendLease = vi.fn();
+const mockSpendSettle = vi.fn();
 const mockCheckFeatureAccess = vi.fn();
 const mockGetBillingConfig = vi.fn();
 const mockLogPipelineStart = vi.fn();
@@ -134,6 +136,13 @@ vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
   buildAnalysisGuardEvent: (input: MockBuildAnalysisGuardEventInput) =>
     mockBuildAnalysisGuardEvent(input),
   checkAnalysisGuards: (...args: unknown[]) => mockCheckAnalysisGuards(...args),
+}));
+
+// The app-wide AI spend brake. Mocked at the lease, so the real meter and
+// `createAiSpend` run inside the route.
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  acquireSpendLease: (...args: unknown[]) => mockAcquireSpendLease(...args),
 }));
 
 vi.mock('@/lib/ai/pipeline/telemetry/logging', () => ({
@@ -343,6 +352,13 @@ describe('POST /api/analyze-meal', () => {
     mockCreateGeminiClient.mockReturnValue({});
     mockCheckAnalysisGuards.mockReset();
     mockCheckAnalysisGuards.mockResolvedValue({ allowed: true });
+    mockSpendSettle.mockReset();
+    mockSpendSettle.mockResolvedValue(undefined);
+    mockAcquireSpendLease.mockReset();
+    mockAcquireSpendLease.mockResolvedValue({
+      settle: mockSpendSettle,
+      addLate: vi.fn(),
+    });
     // Enforcement OFF by default — existing tests must see no gating call.
     mockGetBillingConfig.mockReset();
     mockGetBillingConfig.mockReturnValue({
@@ -536,6 +552,117 @@ describe('POST /api/analyze-meal', () => {
     expect(mockDbInsert).not.toHaveBeenCalledWith(mockAnalysisGuardEvents);
 
     vi.unstubAllEnvs();
+  });
+
+  describe('the app-wide AI spend brake', () => {
+    it('refuses with the same RATE_LIMITED 429 shape, its own message, and frees the slot', async () => {
+      const { Errors } = await import('@/lib/core/errors/catalog');
+      const release = vi.fn();
+      mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
+      mockAcquireSpendLease.mockRejectedValue(Errors.aiPaused(7200));
+
+      const res = await POST(createRequest(mealRequestBody('phở bò')));
+
+      expect(res.status).toBe(429);
+      expect(res.headers.get('Retry-After')).toBe('7200');
+      const json = await res.json();
+      expect(json).toEqual({
+        error: {
+          code: 'RATE_LIMITED',
+          status: 429,
+          retryable: true,
+          // The global next-intl mock echoes the key it was asked for.
+          message: 'aiPaused',
+          resolution: expect.any(String),
+        },
+      });
+      expect(release).toHaveBeenCalledTimes(1);
+      expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+      expect(mockLogPipelineStart).not.toHaveBeenCalled();
+    });
+
+    it('never asks the brake for a request the per-user guard refused', async () => {
+      mockCheckAnalysisGuards.mockResolvedValue({
+        allowed: false,
+        status: 429,
+        reason: 'per_user_day',
+        retryAfterSeconds: 60,
+      });
+
+      const res = await POST(createRequest(mealRequestBody('phở bò')));
+
+      expect(res.status).toBe(429);
+      expect(mockAcquireSpendLease).not.toHaveBeenCalled();
+    });
+
+    it('answers 503 when the brake cannot be read, and frees the slot', async () => {
+      const { Errors } = await import('@/lib/core/errors/catalog');
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      const release = vi.fn();
+      mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
+      mockAcquireSpendLease.mockRejectedValue(
+        Errors.rateLimiterUnavailable(new Error('deadline'), 'timeout')
+      );
+
+      const res = await POST(createRequest(mealRequestBody('phở bò')));
+
+      expect(res.status).toBe(503);
+      expect(res.headers.get('Retry-After')).toBe('10');
+      expect((await res.json()).error.code).toBe('RATE_LIMITER_UNAVAILABLE');
+      expect(release).toHaveBeenCalledTimes(1);
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('reserves a meal and settles what its model calls cost when the stream closes', async () => {
+      const { meterAttemptSpend } = await import('@/lib/ai/cost/spend-meter');
+      mockAnalyzeMeal.mockImplementation(async () => {
+        // A Call 1 + Call 2 on the default model, reported by the provider.
+        for (const _call of [1, 2]) {
+          meterAttemptSpend('gemini-3.1-flash-lite', {
+            inputTokens: 6000,
+            outputTokens: 500,
+            cachedTokens: 0,
+            cacheWriteTokens: 0,
+            thoughtTokens: 0,
+          });
+        }
+        return { success: true, data: mockPipelineData };
+      });
+
+      const res = await POST(createRequest(mealRequestBody('phở bò')));
+      await readSSEEvents(res);
+
+      expect(mockAcquireSpendLease).toHaveBeenCalledWith('meal', {
+        enforce: true,
+      });
+      expect(mockSpendSettle).toHaveBeenCalledTimes(1);
+      // 2 × (6000 × $0.25 + 500 × $1.50) / 1M
+      expect(mockSpendSettle.mock.calls[0][0]).toBeCloseTo(0.0045, 10);
+    });
+
+    it('never applies the brake to an App Review account', async () => {
+      vi.stubEnv(
+        'BILLING_SANDBOX_USER_IDS',
+        '4541b370-41bb-4bf8-8076-0e7c1327933a'
+      );
+      mockGetUser.mockResolvedValue({
+        data: { user: { id: '4541b370-41bb-4bf8-8076-0e7c1327933a' } },
+      });
+      mockAnalyzeMeal.mockResolvedValue({
+        success: true,
+        data: mockPipelineData,
+      });
+
+      const res = await POST(createRequest(mealRequestBody('phở bò')));
+      await readSSEEvents(res);
+
+      expect(mockAcquireSpendLease).toHaveBeenCalledWith('meal', {
+        enforce: false,
+      });
+      vi.unstubAllEnvs();
+    });
   });
 
   it('releases an allowed guard exactly once on pipeline success', async () => {

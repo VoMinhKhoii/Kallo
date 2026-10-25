@@ -275,6 +275,9 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
   },
   rate_limit_counters: { excluded: ABUSE_CONTROL },
   rate_limit_events: { excluded: ABUSE_CONTROL },
+  ai_spend_days: {
+    excluded: 'App-wide AI spend per UTC day; no user id or hash.',
+  },
 
   // --- Reference data ------------------------------------------------------
   ingredient_sources: { excluded: REFERENCE_DATA },

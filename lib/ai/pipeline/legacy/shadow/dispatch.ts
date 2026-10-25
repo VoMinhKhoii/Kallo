@@ -1,3 +1,4 @@
+import { withAiSpend } from '@/lib/ai/cost/ai-spend';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
@@ -98,7 +99,10 @@ export function scheduleShadowRun(args: {
         candidateModel,
       },
       {
-        runCandidate: () => args.runCandidate(candidateModel),
+        // Its own spend under the AI brake, not the meal's: a refusal is
+        // recorded as an errored shadow run and the meal is untouched.
+        runCandidate: () =>
+          withAiSpend('shadow', {}, () => args.runCandidate(candidateModel)),
         persistShadowRun:
           shadowCfg.persistShadowRun ?? persistShadowRunDefault(args.db),
         now: () => Date.now(),

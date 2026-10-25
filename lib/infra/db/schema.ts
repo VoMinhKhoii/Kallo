@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -2538,6 +2539,13 @@ export const rateLimitCounters = pgTable(
     hourCount: integer('hour_count').notNull().default(0),
     dayStart: timestamp('day_start', { withTimezone: true }).notNull(),
     dayCount: integer('day_count').notNull().default(0),
+    /**
+     * Requests holding a one-at-a-time slot on this key right now. Reads as 0
+     * once `slot_expires_at` has passed, so a crashed request frees its slot
+     * without anyone releasing it.
+     */
+    slotCount: integer('slot_count').notNull().default(0),
+    slotExpiresAt: timestamp('slot_expires_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -2559,6 +2567,31 @@ export const rateLimitCounters = pgTable(
     ),
     check('rate_limit_counters_hour_count_check', sql`${table.hourCount} >= 0`),
     check('rate_limit_counters_day_count_check', sql`${table.dayCount} >= 0`),
+    check('rate_limit_counters_slot_count_check', sql`${table.slotCount} >= 0`),
+  ]
+);
+
+// The app-wide AI spend brake: one row per UTC day holding what every paid AI
+// call that day has reserved or cost, in micro-USD. `rate_limit_consume`
+// reserves an estimate before a call and `rate_limit_release` swaps it for
+// the real cost afterwards. LOGGED, unlike the counters: this is money, and a
+// crash must not hand an attacker a fresh budget. One row a day, so it is
+// never reaped.
+export const aiSpendDays = pgTable(
+  'ai_spend_days',
+  {
+    day: date('day').primaryKey(),
+    spentMicroUsd: bigint('spent_micro_usd', { mode: 'number' })
+      .notNull()
+      .default(0),
+    /** The first call the brake refused that day; null if it never tripped. */
+    firstBlockedAt: timestamp('first_blocked_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check('ai_spend_days_spent_check', sql`${table.spentMicroUsd} >= 0`),
   ]
 );
 

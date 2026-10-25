@@ -49,7 +49,7 @@ export function readLimiterDbTimeoutMs() {
  * nothing we owe the caller: the deadline expired either way, and `reject`
  * below is still what the caller sees.
  */
-async function withDeadline<TRow extends readonly MaybeRow[]>(
+export async function withDeadline<TRow extends readonly MaybeRow[]>(
   pending: PendingQuery<TRow>,
   timeoutMs: number
 ): Promise<RowList<TRow>> {

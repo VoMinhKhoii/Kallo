@@ -1,3 +1,4 @@
+import { createAiSpend } from '@/lib/ai/cost/ai-spend';
 import { Errors } from '@/lib/core/errors/catalog';
 import { db } from '@/lib/infra/db/client';
 import { analysisGuardEvents } from '@/lib/infra/db/schema';
@@ -49,11 +50,6 @@ const OCR_GUARD_LIMITS = {
   concurrentRetryAfterSeconds: 5,
 } as const;
 
-/** The app-wide Gemini-OCR budget, charged for one provider call. */
-function chargeOcrGlobalBudget(): Promise<void> {
-  return assertRateLimit('ocrGlobalDaily', { kind: 'global', value: 'ocr' });
-}
-
 /**
  * Run `work` under the OCR spend guard for `userId`.
  *
@@ -61,8 +57,9 @@ function chargeOcrGlobalBudget(): Promise<void> {
  * Gemini request — see the ordering note above.
  *
  * Throws `RateLimitedError` (429) when the per-user window or concurrency slot
- * is exhausted, and `RateLimitUnavailableError` (503) when the global spend
- * budget's limiter is down — both flow through `mapNutritionLabelError`'s
+ * is exhausted or the app-wide AI brake has tripped, and
+ * `RateLimitUnavailableError` (503) when the global spend budget's limiter or
+ * the brake is down — all flow through `mapNutritionLabelError`'s
  * pass-through default onto the standard envelope.
  *
  * The in-flight slot is released in a `finally` on EVERY exit — a validation
@@ -102,9 +99,19 @@ export async function withOcrGuard<T>(
     throw Errors.rateLimited(undefined, guard.retryAfterSeconds);
   }
 
+  // The scan also spends under the app-wide AI brake. Reserved inside
+  // `chargeGlobal`, so a body that never reaches the provider reserves
+  // nothing; the provider call runs metered and settles in the `finally`.
+  const spend = createAiSpend('labelOcr', { userId });
+  const chargeGlobal = async () => {
+    await assertRateLimit('ocrGlobalDaily', { kind: 'global', value: 'ocr' });
+    await spend.reserve();
+  };
+
   try {
-    return await work(chargeOcrGlobalBudget);
+    return await spend.run(() => work(chargeGlobal));
   } finally {
+    await spend.settle();
     try {
       await guard.release?.();
     } catch (error) {

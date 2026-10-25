@@ -94,7 +94,7 @@ function toReason(value: string | null): RateLimitReason {
  * pool is saturated and we are shedding load; anything else means the database
  * itself is unreachable. Same 503 to the caller, opposite operator response.
  */
-function unavailableReason(error: unknown): RateLimitEventReason {
+export function unavailableReason(error: unknown): RateLimitEventReason {
   return error instanceof RateLimitUnavailableError && error.kind === 'timeout'
     ? 'unavailable_timeout'
     : 'unavailable_error';

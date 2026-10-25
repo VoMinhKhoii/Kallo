@@ -1,3 +1,4 @@
+import { meterAttemptSpend } from '@/lib/ai/cost/spend-meter';
 import { logLlmCall } from '@/lib/ai/pipeline/telemetry/trace';
 import type { PromptBudget } from '@/lib/ai/prompts/budget';
 import type { AttemptTokens, GeminiCallTrace, StreamOptions } from './types';
@@ -68,6 +69,7 @@ export function createAttemptObserver({
     const latencyMs = Date.now() - t0;
     const usage = readAttemptUsage(state.usage);
     const { inputTokens, outputTokens, cachedTokens } = usage;
+    meterAttemptSpend(model, usage);
 
     // Visibility: when Gemini's implicit cache hits (model 2.5+ caches
     // prompts ≥ 1024 tokens automatically), the response carries

@@ -73,7 +73,13 @@ function resolutionFor(status: number, retryable: boolean): string {
 export class RateLimitedError extends AppError {
   constructor(
     userMessage: string,
-    public readonly retryAfterSeconds?: number
+    public readonly retryAfterSeconds?: number,
+    /**
+     * Which limit refused, for a caller that words its own message. Never on
+     * the wire: every refusal stays the same `RATE_LIMITED` 429 the apps
+     * already parse.
+     */
+    public readonly reason?: RateLimitedReason
   ) {
     super('RATE_LIMITED', 429, true, userMessage);
     this.name = 'RateLimitedError';
@@ -126,6 +132,9 @@ export class RateLimitUnavailableError extends AppError {
 }
 
 export type RateLimitUnavailableKind = 'timeout' | 'error';
+
+/** `ai_paused`: the app-wide AI spend brake has tripped for the UTC day. */
+export type RateLimitedReason = 'ai_paused';
 
 // Reasons a gated feature is locked, mirrored from the entitlement service.
 // A union of one: the wire field stays so clients can key on it.
