@@ -2,10 +2,13 @@ import {
   RateLimitedError,
   RateLimitUnavailableError,
 } from '@/lib/core/errors/app-error';
+import { getRequestIp } from '@/lib/infra/security/request-ip';
 import { hasValidRefreshToken, parseAuthBody } from './auth-body';
 import { classifyAuthRequest } from './auth-path-policy';
+import { captchaCheckFor, verifyCaptcha } from './captcha-gate';
 import { enforceAuthProxyLimits } from './enforce-limits';
 import {
+  captchaFailedResponse,
   limiterUnavailableResponse,
   rateLimitedResponse,
   validationFailedResponse,
@@ -33,11 +36,12 @@ export async function guardAuthRequest(
   request: Request,
   input: GuardAuthRequestInput
 ): Promise<Response | null> {
+  const body = parseAuthBody(input.body);
   const classification = classifyAuthRequest({
     method: input.method,
     path: input.path,
     grantType: input.grantType,
-    body: parseAuthBody(input.body),
+    body,
   });
 
   // A refresh we cannot read is a refresh we cannot forward: it would spend the
@@ -52,6 +56,19 @@ export async function guardAuthRequest(
   // mail bomb the per-recipient budget exists to stop.
   if (classification.requiresTarget && !classification.targetKey) {
     return validationFailedResponse('email or phone is required');
+  }
+
+  // A gated email request with no Turnstile token is refused before it costs a
+  // limiter round trip. A token is checked AFTER the limits, so a flood of junk
+  // tokens is throttled per IP instead of each costing a call to Cloudflare.
+  const captcha = captchaCheckFor({
+    method: input.method,
+    path: input.path,
+    body,
+  });
+  if (captcha?.enforced && !captcha.token) {
+    await verifyCaptcha(captcha, request, null);
+    return captchaFailedResponse();
   }
 
   try {
@@ -72,6 +89,21 @@ export async function guardAuthRequest(
       return limiterUnavailableResponse(error.retryAfterSeconds);
     }
     throw error;
+  }
+
+  if (captcha) {
+    const outcome = await verifyCaptcha(
+      captcha,
+      request,
+      getRequestIp(request)
+    );
+    if (captcha.enforced && outcome === 'invalid')
+      return captchaFailedResponse();
+    // Cloudflare could not be asked. Refusing costs a retry; admitting would
+    // let a flood through for as long as siteverify is down.
+    if (captcha.enforced && outcome === 'unavailable') {
+      return limiterUnavailableResponse();
+    }
   }
 
   return null;

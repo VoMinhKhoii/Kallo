@@ -114,14 +114,14 @@ another domain module is a smell worth a second look.
 | `theme/` | the colour themes (light, Graphite `dark`, `aurora`), the four Settings choices, the localStorage key and the per-theme browser-chrome colour; `theme-store.ts` (the stored choice, no in-memory copy) and `paint-theme.ts` (self-contained, also serialised into the before-paint script). The tokens live in `app/globals.css`; `components/providers/theme/` applies them to the app's pages only — the landing page too (it has a theme switch in its header) — docs and legal pages stay light |
 | `types/` | cross-cutting DTOs |
 | `ui/` | the Tailwind class-merge helper plus `loaders/` (the loader pool's SMIL sampling math, painters and registry) — the only `lib/` folder that knows about drawing |
-| `validation/` | Zod request schemas: primitives (incl. the shared gram cap), the password policy mirrored from Supabase Auth (`password.ts`, see `docs/AUTH_SECURITY.md`), plus one file per domain |
+| `validation/` | Zod request schemas: primitives (incl. the shared gram cap), the password policy mirrored from Supabase Auth (`password.ts`, kept for the reset page old iOS builds still reach — see `docs/AUTH_SECURITY.md`), plus one file per domain |
 
 ### `lib/infra/` — edges to the outside world
 
 | Folder | Concern |
 |---|---|
 | `apple-auth/` | Sign in with Apple REST: the per-call ES256 client secret, the authorization-code exchange and refresh-token revocation (`apple-auth.ts`), each returning a typed verdict instead of throwing; `null` config when the `APPLE_*` vars are unset |
-| `auth/` | session/profile guard, redirect and next-param safety |
+| `auth/` | session/profile guard, redirect and next-param safety, and the email-code request + its error copy (`email-code.ts`) |
 | `crypto/` | dependency-free primitives on `node:crypto`: the ES256 JWT signer Apple's APNs and Sign in with Apple both need (`es256-jwt.ts`), and `secret-box.ts` — versioned AES-256-GCM for credentials held at rest |
 | `db/` | Drizzle schema and client |
 | `email/` | transactional send + templates |
@@ -129,7 +129,7 @@ another domain module is a smell worth a second look.
 | `push/` | the native-push transport: the `PushSender` seam, the dependency-free APNs HTTP/2 sender, and the no-op used when the `APNS_*` vars are unset |
 | `route-template/` | the app's route tree as data (`app-route-patterns.ts`, checked against `app/` by a test) and `routeTemplate`, which redacts a URL path by segment position — shared by CSP reports and telemetry |
 | `rate-limit/` | the one rate limiter (`limiter/`: policies, keys, Postgres consume, failMode; `limiter/lease/`: one-at-a-time slots and the app-wide AI spend brake's reserve/settle) plus `ocr-guard.ts`, which orders OCR's per-user slot, global budget and brake |
-| `security/` | webhook signatures, the enforced CSP + violation-report parsing, request IP |
+| `security/` | webhook signatures, the enforced CSP + violation-report parsing, request IP, and Cloudflare Turnstile (`turnstile.ts`: the server-side siteverify + rollout mode; `turnstile-script.ts`: the browser widget loader) |
 | `storage/` | object storage on Cloudflare R2 (`object-storage.ts`: put / list / delete / prefix purge / presigned read over the S3 API; `r2-client.ts` holds the credentials and bucket naming; `usage-cap.ts` is the hard cap at 95% of the R2 free tier) — `docs/STORAGE.md` |
 | `telemetry/` | what leaves the app about how it behaves (`docs/MONITORING.md`): `telemetry-url.ts` (every outgoing URL → origin + route template), `analytics/` (PostHog: EU init, the typed event list, `track`/identify/reset) and `monitoring/` (Sentry: options shared by browser, Node and Edge, the payload scrubbers, `reportError`) |
 | `supabase/` | client factories (browser, server, admin, middleware) and `cookie-options.ts`, the one definition of the session cookie's name, `Secure`, `SameSite` and `Max-Age` that all three session clients share |
@@ -210,7 +210,8 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `brand/` | logo marks | ok |
 | `app/` | application chrome present on every page | split |
 | `auth/` | auth dialog, forms, OAuth edge cases | split |
-| `auth/request-config/` | the auth dialog's request-time inputs (runtime Google client ID, `?auth=`/`?next=` intent) streamed into prerendered pages | ok |
+| `auth/email-code/` | email sign-in, code-only: the email step (asks for a code), the code step (enter it, resend, change address) and the Turnstile slot both share | ok |
+| `auth/request-config/` | the auth dialog's request-time inputs (runtime Google client ID and Turnstile site key, `?auth=`/`?next=` intent) streamed into prerendered pages | ok |
 | `billing/` | the Premium guard (locked features link to `/pricing`), `subscription/` (manage the plan) and `activation/` (what shows while a purchase lands) | ok |
 | `dashboard/` | dashboard sections and charts | split |
 | `design-system/` | style-guide showcase — a dev tool, not product UI | split |

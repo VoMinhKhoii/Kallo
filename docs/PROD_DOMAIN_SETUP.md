@@ -358,7 +358,54 @@ Symptom if this is not done: sign-in and refresh start failing for *everyone at
 once* under ordinary load, with 429s that our own limiter never issued — so the
 `rate_limit_events` table shows nothing and the cause is invisible from our side.
 
-**Deferred structural fix.** Supabase honours a caller-supplied client address
+**Code-only email sign-in makes this a deploy blocker.** Every email sign-in is
+now one code request (`Sign-ins / sign-ups`) plus at least one code check
+(`Token verifications`), and resends and wrong codes count too. Raise both
+**before** that change reaches prod — proposed 300 per 5 minutes each, while our
+own per-IP, per-email and app-wide limits stay in front. Raise **Emails per
+hour** to about 300 as well: it is the project-wide cap on auth email, so the
+spend ceiling if bots ever get past everything else (about $2.50 a day at
+Cloudflare's $0.35 per 1,000).
+
+### Email sign-in codes
+
+Supabase dashboard → **Authentication** → **Providers** → **Email**:
+
+- **Email OTP Expiration** → `600` seconds. The email copy says "10 minutes",
+  and it bounds how long a guessed code is worth guessing. It governs emailed
+  links (old iOS builds' confirmations and resets) too.
+- **Email OTP Length** → `6` (shortest to type). Both apps accept 6–10, so
+  any value works; the dev project was on 8 on 2026-10-25.
+- **Confirm email**: with it off, GoTrue skips its project-wide "Emails per
+  hour" cap for every send. Turning it on changes how an old iOS build's
+  password sign-up behaves (it then waits on a confirmation link), so do it
+  only after the build in App Review is approved.
+
+### Cloudflare Turnstile (auth code requests)
+
+Checked by our auth proxy, never by Supabase — leave Supabase's own CAPTCHA
+setting **off** (`docs/AUTH_SECURITY.md` → "Abuse controls").
+
+1. Cloudflare dashboard → **Turnstile** → **Add widget**: mode **Managed**,
+   hostnames `kallo.fit` and `www.kallo.fit`. (Local dev uses Cloudflare's
+   test keys, which work on any hostname.)
+2. Save the site key as the repo variable `TURNSTILE_SITE_KEY` and the secret
+   key as `kallo-prod-turnstile-secret-key` in Secret Manager. The deploy
+   mounts the secret only when it exists (`.github/workflows/cloud-run-prod.yml`,
+   step "Detect the optional Turnstile secret"), so deploys keep working
+   before this step.
+3. Leave `TURNSTILE_MODE` unset (= `monitor`: check and log, refuse nothing)
+   until the owner says otherwise. Read the `[turnstile] path=… outcome=…
+   client=…` lines in the Cloud Run logs: web (`client=supabase-ssr`) and
+   iOS (`client=supabase-flutter`) code requests should show `outcome=valid`.
+4. Then `TURNSTILE_MODE=codes` refuses code requests without a valid token
+   (only current clients send those). `all` also refuses old-build sign-up,
+   reset and resend; set it only once no supported build depends on them.
+   Each change is a repo-variable edit plus a deploy.
+
+**Deferred structural fix.** (Note it conflicts with Supabase's own CAPTCHA
+setting: a secret-key request skips that check, which is one reason Turnstile
+is checked in the proxy instead.) Supabase honours a caller-supplied client address
 via `Sb-Forwarded-For`, but only when the request also presents a **secret** API
 key. The proxy runs on the anon/publishable key today, so it cannot use it. The
 redesign — hold the secret key server-side in the proxy, forward the real client

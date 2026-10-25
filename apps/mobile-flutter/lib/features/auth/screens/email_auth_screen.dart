@@ -11,8 +11,8 @@ import '../../../theme/kallo_theme.dart';
 import '../../onboarding/widgets/backdrop/step_backdrop.dart';
 import '../providers/auth_form_controller.dart';
 import '../widgets/auth_controls.dart';
-import '../widgets/confirm_email_view.dart';
 import '../widgets/email_auth_form.dart';
+import '../widgets/email_code_view.dart';
 import '../widgets/welcome/apple_button.dart';
 import '../widgets/welcome/auth_legal_links.dart';
 import '../widgets/welcome/google_button.dart';
@@ -33,14 +33,15 @@ import '../widgets/welcome/google_button.dart';
 ///
 /// Apple and Google sit UNDER the form, past an "or" rule, driven by the same
 /// [signInControllerProvider] as the welcome face — so choosing "Continue with
-/// email" and then changing your mind costs no navigation. The post-sign-up
-/// "check your email" state stays here, replacing the form in place.
+/// email" and then changing your mind costs no navigation. Once a code is
+/// sent, the code-entry state replaces the form in place.
 class EmailAuthScreen extends ConsumerStatefulWidget {
   const EmailAuthScreen({super.key, required this.createAccount});
 
-  /// Which mode the form opens in. Comes from the route: `/save-plan/email` is
+  /// Which title the screen wears. Comes from the route: `/save-plan/email` is
   /// reached by someone who just built a plan and has no account yet, so it
-  /// opens on sign-UP; `/sign-in/email` opens on sign-in.
+  /// reads "Create your account"; `/sign-in/email` reads "Welcome back". The
+  /// form is the same either way — the code creates the account if needed.
   final bool createAccount;
 
   @override
@@ -49,8 +50,6 @@ class EmailAuthScreen extends ConsumerStatefulWidget {
 
 class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   static final _provider = signInControllerProvider;
-
-  late bool _createMode = widget.createAccount;
 
   AuthFormController get _controller => ref.read(_provider.notifier);
 
@@ -63,7 +62,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(_provider);
-    final showConfirm = state.pendingEmail != null;
+    final showCode = state.pendingEmail != null;
 
     return Scaffold(
       backgroundColor: KalloColors.surface,
@@ -96,8 +95,8 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 420),
                         child:
-                            showConfirm
-                                ? ConfirmEmailView(
+                            showCode
+                                ? EmailCodeView(
                                   provider: _provider,
                                   onNotice: _toast,
                                 )
@@ -121,24 +120,20 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         // The page title, in the sans page-title token. It was Lora 26 — the
         // serif is the wordmark's voice now, and the wordmark is right above it.
         Text(
-          _createMode
+          widget.createAccount
               ? tr('auth.dialog.signUpTitle')
               : tr('auth.dialog.signInTitle'),
           style: kPageTitle(),
         ),
         const SizedBox(height: KalloSpacing.sp2),
         Text(
-          _createMode
+          widget.createAccount
               ? tr('auth.dialog.signUpSubtitle')
               : tr('auth.dialog.signInSubtitle'),
           style: dashBody(color: kInkMuted),
         ),
         const SizedBox(height: KalloSpacing.sp5),
-        EmailAuthForm(
-          provider: _provider,
-          initialCreateMode: widget.createAccount,
-          onModeChanged: (create) => setState(() => _createMode = create),
-        ),
+        EmailAuthForm(provider: _provider),
         const SizedBox(height: KalloSpacing.sp5),
         const _OrDivider(),
         const SizedBox(height: KalloSpacing.sp5),

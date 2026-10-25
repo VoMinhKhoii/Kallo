@@ -2,6 +2,7 @@ import { connection } from 'next/server';
 import type { AuthTab } from '@/components/auth/auth-provider';
 import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
+import { turnstileSiteKey } from '@/lib/infra/security/turnstile';
 import { ApplyAuthRequestConfig } from './apply-auth-request-config';
 
 export interface AuthSearchParams {
@@ -12,8 +13,8 @@ export interface AuthSearchParams {
 /**
  * The auth dialog's request-time inputs, for a page whose shell is prerendered.
  *
- * `GOOGLE_WEB_CLIENT_ID` is deliberately a runtime env var (see
- * `lib/infra/auth/google-client-id.ts`), and a prerendered page would bake in
+ * `GOOGLE_WEB_CLIENT_ID` and `TURNSTILE_SITE_KEY` are deliberately runtime env
+ * vars (see `lib/infra/auth/google-client-id.ts`), and a prerendered page would bake in
  * whatever the BUILD saw — nothing, in the Docker build. `connection()` defers
  * the read to the request. On the landing page the `?auth=` / `?next=` intent
  * (from an invite link) comes along the same way.
@@ -29,15 +30,22 @@ export async function AuthRequestConfig({
 }) {
   await connection();
   const googleClientId = googleWebClientId();
+  const siteKey = turnstileSiteKey();
 
   if (!searchParams) {
-    return <ApplyAuthRequestConfig googleClientId={googleClientId} />;
+    return (
+      <ApplyAuthRequestConfig
+        googleClientId={googleClientId}
+        turnstileSiteKey={siteKey}
+      />
+    );
   }
 
   const intent = authIntent(await searchParams);
   return (
     <ApplyAuthRequestConfig
       googleClientId={googleClientId}
+      turnstileSiteKey={siteKey}
       next={intent.next}
       openTab={intent.openTab}
     />

@@ -167,6 +167,11 @@ Create or confirm these resources:
     (see "Sign in with Apple token revocation")
   - only for the Haiku trial: `kallo-prod-anthropic-api-key` (see "Meal
     pipeline model")
+  - optional: `kallo-prod-turnstile-secret-key` (`TURNSTILE_SECRET_KEY`) —
+    mounted only when it exists, and then the `TURNSTILE_SITE_KEY` repo
+    variable must be set too. `TURNSTILE_MODE` (repo variable, unset =
+    `monitor`) stages enforcement; see `docs/PROD_DOMAIN_SETUP.md` §8
+    "Cloudflare Turnstile"
 
 The prod workflow creates `kallo-prod` on first deploy, so the service itself
 does not need to be pre-created. All required secrets must exist before merge;

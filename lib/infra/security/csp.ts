@@ -84,6 +84,14 @@ const GOOGLE_IDENTITY_STYLE = 'https://accounts.google.com/gsi/style';
 const GOOGLE_AVATAR_ORIGIN = 'https://*.googleusercontent.com';
 
 /**
+ * Cloudflare Turnstile, the "are you a person" check on the email-code form
+ * (`lib/infra/security/turnstile-script.ts`). Cloudflare documents exactly
+ * these two: its script, and the iframe the challenge runs in. The iframe's
+ * own requests are governed by its own CSP, not ours.
+ */
+const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com';
+
+/**
  * Error reporting (Sentry, US region) and product analytics (PostHog, EU
  * cloud) — see `lib/infra/telemetry/monitoring/` and `lib/infra/telemetry/analytics/`. Sentry's US
  * DSNs name a per-organisation `o<id>.ingest.us.sentry.io` host, hence the
@@ -150,12 +158,12 @@ export function buildCsp(isDev: boolean): string {
 
   return [
     `default-src 'self'`,
-    `script-src ${sources("'self'", "'unsafe-inline'", isDev && "'unsafe-eval'", GOOGLE_IDENTITY_SCRIPT, PADDLE_CDN)}`,
+    `script-src ${sources("'self'", "'unsafe-inline'", isDev && "'unsafe-eval'", GOOGLE_IDENTITY_SCRIPT, PADDLE_CDN, TURNSTILE_ORIGIN)}`,
     `style-src ${sources("'self'", "'unsafe-inline'", GOOGLE_IDENTITY_STYLE, PADDLE_CDN)}`,
     `img-src ${sources("'self'", 'data:', 'blob:', ...storageImageOrigins(), GOOGLE_AVATAR_ORIGIN, REVENUECAT_ASSETS)}`,
     `font-src ${sources("'self'", REVENUECAT_ASSETS)}`,
     `connect-src ${sources("'self'", supabase?.https, supabase?.wss, ...BILLING_CONNECT_ORIGINS, GOOGLE_IDENTITY_ORIGIN, ...MONITORING_CONNECT_ORIGINS)}`,
-    `frame-src ${sources("'self'", ...BILLING_FRAME_ORIGINS, GOOGLE_IDENTITY_ORIGIN)}`,
+    `frame-src ${sources("'self'", ...BILLING_FRAME_ORIGINS, GOOGLE_IDENTITY_ORIGIN, TURNSTILE_ORIGIN)}`,
     `manifest-src 'self'`,
     `worker-src 'self'`,
     `object-src 'none'`,

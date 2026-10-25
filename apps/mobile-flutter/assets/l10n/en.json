@@ -762,32 +762,9 @@
   },
   "auth": {
     "signIn": {
-      "title": "Welcome back",
       "email": "Email",
-      "password": "Password",
-      "submit": "Sign In",
-      "noAccount": "Don't have an account?",
-      "signUpLink": "Sign up",
-      "forgotPassword": "Forgot password?",
-      "success": "Signed in successfully",
       "emailPlaceholder": "you@example.com",
-      "passwordPlaceholder": "Enter your password",
-      "emailError": "Enter a valid email address",
-      "passwordError": "Please enter your password"
-    },
-    "signUp": {
-      "title": "Create your account",
-      "email": "Email",
-      "password": "Password",
-      "confirmPassword": "Confirm password",
-      "submit": "Create Account",
-      "hasAccount": "Already have an account?",
-      "signInLink": "Sign in",
-      "successSignedIn": "Account created. Welcome!",
-      "emailPlaceholder": "you@example.com",
-      "passwordPlaceholder": "Create a password",
-      "emailError": "Enter a valid email address",
-      "passwordError": "Use at least 8 characters (accented letters count as 2–3), including a letter and a number."
+      "emailError": "Enter a valid email address"
     },
     "dialog": {
       "signInTitle": "Welcome back",
@@ -803,54 +780,33 @@
       "googleError": "Google sign-in failed. Please try again."
     },
     "email": {
-      "or": "or"
+      "or": "or",
+      "sendCode": "Send code"
     },
-    "forgot": {
-      "title": "Reset your password",
-      "description": "Enter the email you signed up with and we'll send a reset link.",
-      "email": "Email",
-      "emailPlaceholder": "you@example.com",
-      "emailError": "Enter a valid email address",
-      "submit": "Send reset link",
-      "back": "Back to sign in",
-      "sentTitle": "Check your email",
-      "sentDescription": "We sent a password reset link to",
-      "backToSignIn": "Back to sign in"
-    },
-    "otp": {
+    "code": {
       "title": "Check your email",
-      "subtitle": "We sent a verification code to {email}",
-      "submit": "Verify",
-      "resend": "Resend code",
-      "error": "Invalid code"
+      "sentTo": "We sent a code to",
+      "label": "Code",
+      "submit": "Continue",
+      "resend": "Send a new code",
+      "resendIn": "Send a new code in {seconds}s",
+      "resent": "New code sent — it replaces the last one.",
+      "back": "Use a different email"
     },
     "welcome": {
       "tagline": "Log meals the way you say them",
       "continueWithEmail": "Continue with email",
       "terms": "By continuing you agree to our terms and privacy policy."
     },
-    "confirm": {
-      "title": "Check your email",
-      "description": "We sent a confirmation link to",
-      "hint": "Tap the link to finish creating your account.",
-      "resend": "Resend email",
-      "resendIn": "Resend in {seconds}s",
-      "resent": "Email sent again",
-      "back": "Back"
-    },
     "errors": {
-      "invalidCredentials": "That email and password don't match — try again or reset your password.",
-      "emailNotConfirmed": "That email hasn't been confirmed yet — check your inbox for the link.",
       "network": "Couldn't reach the server — check your connection and try again.",
       "rateLimited": "Too many attempts — give it a moment, then try again.",
       "accountExists": "You already have an account with this email. Sign in with the method you used originally.",
-      "weakPassword": "That password is too weak. Use at least 8 characters (accented letters count as 2–3), including a letter and a number.",
-      "pwnedPassword": "This password has shown up in a known data breach. Please choose a different one.",
-      "passwordTooLong": "That password is too long. Keep it to 72 characters or fewer, and accented letters count as 2–3.",
-      "generic": "Something went wrong — please try again."
-    },
-    "showPassword": "Show password",
-    "hidePassword": "Hide password"
+      "generic": "Something went wrong — please try again.",
+      "captcha": "We couldn't confirm you're a person — try again, or continue with Apple or Google.",
+      "tooSoon": "Give it a minute before asking for another code.",
+      "invalidCode": "That code is wrong or has expired — check the latest email, or send a new code."
+    }
   },
   "landing": {
     "localeSwitcher": {

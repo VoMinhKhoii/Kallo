@@ -17,12 +17,7 @@ import {
  * `email_action_type` (see lib/email/auth-email.ts) — the template never sees
  * GoTrue vocabulary.
  */
-export type AuthLinkKind =
-  | 'confirm'
-  | 'signin'
-  | 'invite'
-  | 'recovery'
-  | 'email_change';
+export type AuthLinkKind = 'confirm' | 'invite' | 'recovery' | 'email_change';
 
 interface Copy {
   subject: string;
@@ -39,14 +34,7 @@ const EN: Record<AuthLinkKind, Copy> = {
     heading: 'Confirm your email',
     body: "You're one tap from tracking Vietnamese meals without the guesswork. Confirm this address to finish setting up your account.",
     cta: 'Confirm my email',
-    note: 'This link expires in an hour and can only be used once.',
-  },
-  signin: {
-    subject: 'Your Kallo sign-in link',
-    heading: 'Sign in to Kallo',
-    body: 'Use the link below to sign in. No password needed.',
-    cta: 'Sign in',
-    note: 'This link expires in an hour and can only be used once.',
+    note: 'This link expires in 10 minutes and can only be used once.',
   },
   invite: {
     subject: "You've been invited to Kallo",
@@ -60,14 +48,14 @@ const EN: Record<AuthLinkKind, Copy> = {
     heading: 'Reset your password',
     body: 'We got a request to reset the password on this account. Choose a new one using the link below.',
     cta: 'Choose a new password',
-    note: "This link expires in an hour. If you didn't ask for it, you can ignore this email — nothing changes.",
+    note: "This link expires in 10 minutes. If you didn't ask for it, you can ignore this email — nothing changes.",
   },
   email_change: {
     subject: 'Confirm your new Kallo email',
     heading: 'Confirm this change',
     body: 'Confirm that you want this address used for your Kallo account.',
     cta: 'Confirm the change',
-    note: 'This link expires in an hour and can only be used once.',
+    note: 'This link expires in 10 minutes and can only be used once.',
   },
 };
 
@@ -77,14 +65,7 @@ const VI: Record<AuthLinkKind, Copy> = {
     heading: 'Xác nhận email của bạn',
     body: 'Chỉ một bước nữa là bạn có thể theo dõi bữa ăn Việt mà không phải đoán. Xác nhận địa chỉ này để hoàn tất tài khoản.',
     cta: 'Xác nhận email',
-    note: 'Liên kết hết hạn sau một giờ và chỉ dùng được một lần.',
-  },
-  signin: {
-    subject: 'Liên kết đăng nhập Kallo',
-    heading: 'Đăng nhập Kallo',
-    body: 'Dùng liên kết bên dưới để đăng nhập. Không cần mật khẩu.',
-    cta: 'Đăng nhập',
-    note: 'Liên kết hết hạn sau một giờ và chỉ dùng được một lần.',
+    note: 'Liên kết hết hạn sau 10 phút và chỉ dùng được một lần.',
   },
   invite: {
     subject: 'Bạn được mời dùng Kallo',
@@ -98,14 +79,14 @@ const VI: Record<AuthLinkKind, Copy> = {
     heading: 'Đặt lại mật khẩu',
     body: 'Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản này. Chọn mật khẩu mới bằng liên kết bên dưới.',
     cta: 'Chọn mật khẩu mới',
-    note: 'Liên kết hết hạn sau một giờ. Nếu bạn không yêu cầu, hãy bỏ qua email này — không có gì thay đổi.',
+    note: 'Liên kết hết hạn sau 10 phút. Nếu bạn không yêu cầu, hãy bỏ qua email này — không có gì thay đổi.',
   },
   email_change: {
     subject: 'Xác nhận email Kallo mới',
     heading: 'Xác nhận thay đổi này',
     body: 'Xác nhận rằng bạn muốn dùng địa chỉ này cho tài khoản Kallo.',
     cta: 'Xác nhận thay đổi',
-    note: 'Liên kết hết hạn sau một giờ và chỉ dùng được một lần.',
+    note: 'Liên kết hết hạn sau 10 phút và chỉ dùng được một lần.',
   },
 };
 
@@ -127,9 +108,12 @@ export interface AuthLinkEmailInput {
 }
 
 /**
- * Deliberately link-only: GoTrue also hands us a 6-digit OTP for these actions,
- * but neither the web app nor the Flutter app has a code-entry screen, so
- * printing it would just be a number the reader can't use anywhere.
+ * Link-only. Sign-in codes have their own template (`auth-otp.ts`); a link is
+ * still sent where the reader has nowhere to type a code: an iOS build
+ * released before code sign-in (its sign-up confirmation, and its "forgot
+ * password", which still lands on the web `/reset-password` page), an invite,
+ * and an email change. The expiry in each `note` must
+ * match Supabase's `otp_expiry` (600 s), which governs links too.
  */
 export function authLinkEmail({
   locale,

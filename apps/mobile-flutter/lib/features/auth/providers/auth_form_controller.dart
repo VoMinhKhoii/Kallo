@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../services/auth/session_provider.dart';
 import '../../../services/auth/supabase_service.dart';
+import '../../../services/env/env.dart';
 import '../../../services/http/api_client.dart';
 import 'apple_sign_in_flow.dart';
 import 'google_sign_in_flow.dart';
@@ -24,9 +25,7 @@ enum AuthAction { email, google, apple }
 const String kDuplicateEmailMarker = 'already exists for this email';
 
 /// Maps a Supabase [AuthException] to warm, localized copy — the raw English
-/// `e.message` never reaches the UI. Wrong-password and no-account are
-/// deliberately indistinguishable (Supabase anti-enumeration returns the same
-/// `invalid_credentials` for both), so they share one neutral line.
+/// `e.message` never reaches the UI.
 String authErrorMessage(AuthException e) {
   if (e is AuthRetryableFetchException) return tr('auth.errors.network');
   // The `before_user_created` hook rejects a duplicate-email signup with this
@@ -35,27 +34,32 @@ String authErrorMessage(AuthException e) {
   if (e.message.toLowerCase().contains(kDuplicateEmailMarker)) {
     return tr('auth.errors.accountExists');
   }
-  // A refused NEW password. `pwned` comes from Supabase's "Leaked password
-  // protection" (a HaveIBeenPwned check) — the form cannot know it, and "pick a
-  // different one" is advice where a generic error is a dead end.
-  if (e is AuthWeakPasswordException && e.reasons.contains('pwned')) {
-    return tr('auth.errors.pwnedPassword');
-  }
   switch (e.code) {
-    case 'weak_password':
-      return tr('auth.errors.weakPassword');
-    case 'invalid_credentials':
-      return tr('auth.errors.invalidCredentials');
-    case 'email_not_confirmed':
-      return tr('auth.errors.emailNotConfirmed');
-    case 'over_request_rate_limit':
+    // Our auth proxy refused the request's Turnstile token.
+    case 'captcha_failed':
+      return tr('auth.errors.captcha');
+    // GoTrue's one answer for a wrong code and an expired one.
+    case 'otp_expired':
+      return tr('auth.errors.invalidCode');
+    // Supabase's per-address cooldown between two codes.
     case 'over_email_send_rate_limit':
+      return tr('auth.errors.tooSoon');
+    case 'over_request_rate_limit':
       return tr('auth.errors.rateLimited');
     default:
       if (e.statusCode == '429') return tr('auth.errors.rateLimited');
       return tr('auth.errors.generic');
   }
 }
+
+/// The `emailRedirectTo` every code request carries. No link is mailed, but
+/// the Send Email hook writes the email in the locale of its `next`, and a
+/// request WITH a `next` is how the hook knows this client can type a code
+/// (iOS builds released before code sign-in sent none, and get a link).
+/// Mirrors `emailCodeRedirect` in the web app's `lib/infra/auth/email-code.ts`.
+String emailCodeRedirect(String locale) =>
+    '${Env.apiBaseUrl}/auth/callback?next='
+    '${Uri.encodeComponent('/$locale/logging')}';
 
 /// Immutable view-state for an auth screen, mirroring the RN screens'
 /// `busy` / `error` / `notice` `useState` triplet — except `busy` is now an
@@ -75,11 +79,11 @@ class AuthFormState {
   /// `error` — Supabase error message (terracotta), or `null`.
   final String? error;
 
-  /// `notice` — success notice (sage), used by sign-up's confirm-email path.
+  /// `notice` — success notice, e.g. "new code sent".
   final String? notice;
 
-  /// The address a confirmation email was sent to. Non-null drives the
-  /// "Check your email" cross-fade state (replacing the old vanishing toast).
+  /// The address the sign-in code went to. Non-null drives the code-entry
+  /// state that replaces the email form.
   final String? pendingEmail;
 
   /// Any request in flight — disables inputs and the tab toggle.
@@ -114,8 +118,8 @@ class AuthFormState {
   }
 }
 
-/// Drives one auth screen's submit flows (email + Google), porting the RN
-/// `signInWithEmail` / `signUp` / `signInWithGoogle` handlers verbatim.
+/// Drives one auth screen's flows: the email code (send, verify, resend) and
+/// native Google / Apple sign-in.
 class AuthFormController extends StateNotifier<AuthFormState> {
   AuthFormController(this._ref) : super(const AuthFormState());
 
@@ -123,28 +127,30 @@ class AuthFormController extends StateNotifier<AuthFormState> {
 
   GoTrueClient get _auth => SupabaseService.client.auth;
 
-  /// RN `signInWithEmail`: trims email, calls `signInWithPassword`, surfaces
-  /// the Supabase error message, else lets the router redirect to the app.
-  Future<void> signInWithEmail({
+  /// Mail a sign-in code to [email] — creating the account if it is new —
+  /// then move to the code-entry state. [captchaToken] is the Turnstile token
+  /// (null when the check is off or could not run; the server decides).
+  Future<void> sendCode({
     required String email,
-    required String password,
+    required String locale,
+    String? captchaToken,
   }) async {
-    state = state.copyWith(action: AuthAction.email, clearError: true);
+    final address = email.trim();
+    state = state.copyWith(
+      action: AuthAction.email,
+      clearError: true,
+      clearNotice: true,
+    );
     try {
       await _ref
           .read(authControllerProvider)
-          .signInWithPassword(email: email.trim(), password: password);
-      // Success: the sessionProvider stream fires and the router redirect
-      // routes into the app (RN did `router.replace('/logging')`).
-      state = state.copyWith(clearAction: true);
+          .sendEmailCode(
+            email: address,
+            emailRedirectTo: emailCodeRedirect(locale),
+            captchaToken: captchaToken,
+          );
+      state = state.copyWith(clearAction: true, pendingEmail: address);
     } on AuthException catch (e) {
-      if (e.code == 'email_not_confirmed') {
-        // The account exists but was never confirmed — surface the real
-        // confirm-email state (with its resend affordance) instead of a
-        // dead-end error line.
-        state = state.copyWith(clearAction: true, pendingEmail: email.trim());
-        return;
-      }
       state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (_) {
       state = state.copyWith(
@@ -154,27 +160,21 @@ class AuthFormController extends StateNotifier<AuthFormState> {
     }
   }
 
-  /// RN `signUp`: trims email, calls `signUp`. If a session comes back the
-  /// router routes in; otherwise show the "check your email" notice.
-  Future<void> signUp({required String email, required String password}) async {
+  /// Sign in with the code typed for [pendingEmail]. On success the
+  /// sessionProvider stream fires and the router redirect routes in.
+  Future<void> verifyCode(String code) async {
+    final email = state.pendingEmail;
+    if (email == null || state.busy) return;
     state = state.copyWith(
       action: AuthAction.email,
       clearError: true,
       clearNotice: true,
     );
     try {
-      final res = await _ref
+      await _ref
           .read(authControllerProvider)
-          .signUpWithPassword(email: email.trim(), password: password);
-      if (res.session != null) {
-        // Signed in immediately — router redirect takes over.
-        state = state.copyWith(clearAction: true);
-        return;
-      }
-      // No session: a confirmation email is on its way. Hold the address so the
-      // UI can cross-fade to a real "Check your email" state (not a toast that
-      // vanishes before the user reads it).
-      state = state.copyWith(clearAction: true, pendingEmail: email.trim());
+          .verifyEmailCode(email: email, code: code);
+      state = state.copyWith(clearAction: true);
     } on AuthException catch (e) {
       state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (_) {
@@ -183,6 +183,40 @@ class AuthFormController extends StateNotifier<AuthFormState> {
         error: tr('auth.errors.generic'),
       );
     }
+  }
+
+  /// Mail a fresh code to [pendingEmail]; it replaces the previous one.
+  /// Returns whether it was sent, so the view restarts its cooldown only then.
+  Future<bool> resendCode({required String locale, String? captchaToken}) async {
+    final email = state.pendingEmail;
+    if (email == null) return false;
+    state = state.copyWith(
+      action: AuthAction.email,
+      clearError: true,
+      clearNotice: true,
+    );
+    try {
+      await _ref
+          .read(authControllerProvider)
+          .sendEmailCode(
+            email: email,
+            emailRedirectTo: emailCodeRedirect(locale),
+            captchaToken: captchaToken,
+          );
+      state = state.copyWith(
+        clearAction: true,
+        notice: tr('auth.code.resent'),
+      );
+      return true;
+    } on AuthException catch (e) {
+      state = state.copyWith(clearAction: true, error: authErrorMessage(e));
+    } catch (_) {
+      state = state.copyWith(
+        clearAction: true,
+        error: tr('auth.errors.generic'),
+      );
+    }
+    return false;
   }
 
   /// Native Google sign-in — the credential flow is [runGoogleSignIn].
@@ -223,30 +257,7 @@ class AuthFormController extends StateNotifier<AuthFormState> {
     }
   }
 
-  /// Re-send the sign-up confirmation email to the pending address. Drives the
-  /// "Resend email" affordance on the confirm-email state; the UI owns the
-  /// cooldown so a tap can't spam Supabase's own rate limit.
-  Future<void> resendConfirmation() async {
-    final email = state.pendingEmail;
-    if (email == null) return;
-    state = state.copyWith(action: AuthAction.email, clearError: true);
-    try {
-      await _auth.resend(type: OtpType.signup, email: email);
-      state = state.copyWith(
-        clearAction: true,
-        notice: tr('auth.confirm.resent'),
-      );
-    } on AuthException catch (e) {
-      state = state.copyWith(clearAction: true, error: authErrorMessage(e));
-    } catch (e) {
-      state = state.copyWith(
-        clearAction: true,
-        error: tr('auth.errors.generic'),
-      );
-    }
-  }
-
-  /// Leave the confirm-email state (the "Back" affordance).
+  /// Leave the code-entry state (the "Use a different email" affordance).
   void clearPendingEmail() {
     state = state.copyWith(
       clearPendingEmail: true,
@@ -263,7 +274,7 @@ class AuthFormController extends StateNotifier<AuthFormState> {
   }
 }
 
-/// The auth controller. The welcome → email → confirm-email path is one flow,
+/// The auth controller. The welcome → email → code path is one flow,
 /// so a single instance backs the whole surface (the old split sign-in/sign-up
 /// providers collapsed with the split UI).
 final signInControllerProvider =

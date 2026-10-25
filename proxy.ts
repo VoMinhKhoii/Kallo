@@ -20,6 +20,8 @@ const SKIP_INTL_PREFIXES = [
   '/api',
   '/auth/callback',
   '/auth/verify',
+  // The page the iOS app loads in a web view to get a Turnstile token.
+  '/auth/turnstile',
   // Machine-readable metadata at fixed root paths. These must NOT be locale
   // rewritten — an agent asks for /openapi.json, and /en/openapi.json does not
   // exist. They stay inside the matcher (unlike robots.txt / sitemap.xml, which

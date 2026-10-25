@@ -153,7 +153,11 @@ enabled = true
 # in emails.
 site_url = "http://127.0.0.1:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+# `localhost` too: email sign-in passes `<origin>/auth/callback?next=…`, and a
+# redirect GoTrue refuses is replaced by site_url — which drops the `next` the
+# Send Email hook reads the language (and "this client can type a code") from.
+# Prod allows `https://kallo.fit/**` and `https://www.kallo.fit/**`.
+additional_redirect_urls = ["https://127.0.0.1:3000", "http://localhost:3000/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
@@ -222,8 +226,11 @@ secure_password_change = true
 max_frequency = "1s"
 # Number of characters used in the email OTP.
 otp_length = 6
-# Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
+# Number of seconds before the email OTP expires. 10 minutes: email sign-in is
+# code-only, so this is how long a guessed code stays worth guessing. Governs
+# emailed links too. The email copy says "10 minutes"
+# (lib/infra/email/templates/), and prod's dashboard must match.
+otp_expiry = 600
 
 # Send Email hook — the app composes and delivers every auth email itself.
 #

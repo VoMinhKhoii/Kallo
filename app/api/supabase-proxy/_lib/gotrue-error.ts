@@ -26,8 +26,8 @@
  * (`apps/mobile-flutter/lib/features/auth/providers/auth_form_controller.dart`
  * — it also falls back on `statusCode == '429'`). The web forms did not: they
  * showed "Invalid email or password" / "Could not create account" for a
- * throttled request until `components/auth/sign-{in,up}-form.tsx` grew the
- * same branch. Speaking this dialect is what makes both of those possible;
+ * throttled request until the web forms grew the same branch (today
+ * `emailCodeErrorKey` in `lib/infra/auth/email-code.ts`). Speaking this dialect is what makes both of those possible;
  * it does not by itself make the copy correct on either client.
  */
 
@@ -117,5 +117,20 @@ export function payloadTooLargeResponse(): Response {
     status: 413,
     errorCode: 'payload_too_large',
     message: 'Request body is too large',
+  });
+}
+
+/**
+ * 400: a gated email-sending request had no valid Turnstile token.
+ *
+ * `captcha_failed` is the code GoTrue itself uses when its own captcha check
+ * fails, so both clients can map it to "verify you're human" copy — and they
+ * would keep working unchanged if the check ever moved to Supabase.
+ */
+export function captchaFailedResponse(): Response {
+  return gotrueErrorResponse({
+    status: 400,
+    errorCode: 'captcha_failed',
+    message: 'captcha verification failed',
   });
 }

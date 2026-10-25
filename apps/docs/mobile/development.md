@@ -141,6 +141,12 @@ On a **physical device** (not the sim) point `API_BASE_URL` at your machine's LA
 `http://192.168.1.20:3000`. The Info.plist already allows local cleartext via
 `NSAllowsLocalNetworking`.
 
+Email sign-in is by code, and the email form loads `<API_BASE_URL>/auth/turnstile` in a web
+view for its Turnstile token. With no `TURNSTILE_SITE_KEY` in the dev server's env the page
+tells the app to send without one. To exercise the widget, set Cloudflare's test keys in
+`.env.local` (see `.env.example`); they work on `localhost` and a LAN IP alike. The code arrives
+by email only when the dev server can send mail (`docs/EMAIL.md` → "Local development").
+
 ## Gotchas
 
 ### Gotcha: blank white/black screen on the simulator

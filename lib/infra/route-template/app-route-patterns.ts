@@ -122,6 +122,7 @@ export const APP_ROUTE_PATTERNS = [
   '/api/v1/weight/summary',
   '/api/webhooks/revenuecat',
   '/auth/callback',
+  '/auth/turnstile',
   '/auth/verify',
   '/llms.txt',
   '/md/[locale]/[...slug]',

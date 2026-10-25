@@ -74,9 +74,32 @@ Three constraints the handler exists to satisfy:
    above), and the email-change flow sends its two emails in parallel so both
    fit.
 
+### Codes, not links
+
+Email sign-in is code-only (`docs/AUTH_SECURITY.md`), so the emails that sign
+someone in carry the 6-digit code and no link (`templates/auth-otp.ts`, kind
+`signin`, the code also in the subject): GoTrue's `magiclink`/`email` actions,
+and `signup` from a code-capable client. A link tapped on a phone would sign
+the reader in to Safari, not to the app.
+
+A `signup` confirmation is still a **link** when it comes from an iOS build
+released before code sign-in: those sign up with a password, pass no
+`emailRedirectTo`, and have nowhere to type a code. Every code-capable client
+(web, current iOS) sends `emailRedirectTo` with a locale-prefixed `next`, so its
+absence is the marker (`wantsLink` in `auth-email.ts`). That only works while
+GoTrue keeps the redirect, i.e. while it is on the Redirect URLs allow-list
+(`https://kallo.fit/**`, `https://www.kallo.fit/**`; `localhost` in
+`supabase/config.toml`) — a refused redirect becomes `site_url` and loses the
+`next`. Old builds' password resets still get the reset link to
+`/reset-password`, and invites and email changes stay links.
+
+Every note says the code or link expires in **10 minutes**: Supabase's
+`otp_expiry` must be 600 s (dashboard → Authentication → Providers → Email).
+
 Locale comes from the `next` parameter the app embeds in `emailRedirectTo`,
 resolved through the same `localeFromNext` / `safeNextPath` helpers the auth
-routes use. A caller that passes no locale-prefixed `next` gets English.
+routes use. A caller that passes no locale-prefixed `next` gets English. Both
+apps pass one on every code request (`emailCodeRedirect`, web and Flutter).
 
 ### Rollback
 

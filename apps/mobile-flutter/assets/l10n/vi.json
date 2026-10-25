@@ -762,32 +762,9 @@
   },
   "auth": {
     "signIn": {
-      "title": "Chào mừng trở lại",
       "email": "Email",
-      "password": "Mật khẩu",
-      "submit": "Đăng nhập",
-      "noAccount": "Chưa có tài khoản?",
-      "signUpLink": "Đăng ký",
-      "forgotPassword": "Quên mật khẩu?",
-      "success": "Đăng nhập thành công",
       "emailPlaceholder": "ban@example.com",
-      "passwordPlaceholder": "Nhập mật khẩu",
-      "emailError": "Nhập địa chỉ email hợp lệ",
-      "passwordError": "Vui lòng nhập mật khẩu"
-    },
-    "signUp": {
-      "title": "Tạo tài khoản",
-      "email": "Email",
-      "password": "Mật khẩu",
-      "confirmPassword": "Xác nhận mật khẩu",
-      "submit": "Tạo tài khoản",
-      "hasAccount": "Đã có tài khoản?",
-      "signInLink": "Đăng nhập",
-      "successSignedIn": "Đã tạo tài khoản. Chào mừng!",
-      "emailPlaceholder": "ban@example.com",
-      "passwordPlaceholder": "Tạo mật khẩu",
-      "emailError": "Nhập địa chỉ email hợp lệ",
-      "passwordError": "Mật khẩu cần ít nhất 8 ký tự (mỗi chữ có dấu tính là 2–3 ký tự), gồm cả chữ cái và chữ số."
+      "emailError": "Nhập địa chỉ email hợp lệ"
     },
     "dialog": {
       "signInTitle": "Chào mừng trở lại",
@@ -803,54 +780,33 @@
       "googleError": "Đăng nhập bằng Google thất bại. Vui lòng thử lại."
     },
     "email": {
-      "or": "hoặc"
+      "or": "hoặc",
+      "sendCode": "Gửi mã"
     },
-    "forgot": {
-      "title": "Đặt lại mật khẩu",
-      "description": "Nhập email bạn đã đăng ký, chúng tôi sẽ gửi liên kết đặt lại.",
-      "email": "Email",
-      "emailPlaceholder": "ban@example.com",
-      "emailError": "Nhập địa chỉ email hợp lệ",
-      "submit": "Gửi liên kết",
-      "back": "Quay lại đăng nhập",
-      "sentTitle": "Kiểm tra email",
-      "sentDescription": "Chúng tôi đã gửi liên kết đặt lại mật khẩu đến",
-      "backToSignIn": "Quay lại đăng nhập"
-    },
-    "otp": {
-      "title": "Kiểm tra email",
-      "subtitle": "Chúng tôi đã gửi mã xác nhận đến {email}",
-      "submit": "Xác nhận",
-      "resend": "Gửi lại mã",
-      "error": "Mã không hợp lệ"
+    "code": {
+      "title": "Kiểm tra email của bạn",
+      "sentTo": "Chúng tôi đã gửi mã đến",
+      "label": "Mã",
+      "submit": "Tiếp tục",
+      "resend": "Gửi mã mới",
+      "resendIn": "Gửi mã mới sau {seconds}s",
+      "resent": "Đã gửi mã mới — mã cũ không còn dùng được.",
+      "back": "Dùng email khác"
     },
     "welcome": {
       "tagline": "Ghi bữa ăn đúng như cách bạn nói",
       "continueWithEmail": "Tiếp tục với email",
       "terms": "Khi tiếp tục, bạn đồng ý với điều khoản và chính sách bảo mật của chúng tôi."
     },
-    "confirm": {
-      "title": "Kiểm tra email của bạn",
-      "description": "Chúng tôi đã gửi liên kết xác nhận đến",
-      "hint": "Nhấn vào liên kết để hoàn tất tạo tài khoản.",
-      "resend": "Gửi lại email",
-      "resendIn": "Gửi lại sau {seconds}s",
-      "resent": "Đã gửi lại email",
-      "back": "Quay lại"
-    },
     "errors": {
-      "invalidCredentials": "Email và mật khẩu không khớp — thử lại hoặc đặt lại mật khẩu nhé.",
-      "emailNotConfirmed": "Email này chưa được xác nhận — kiểm tra hộp thư để tìm liên kết nhé.",
       "network": "Không kết nối được máy chủ — kiểm tra mạng rồi thử lại nhé.",
       "rateLimited": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
       "accountExists": "Bạn đã có tài khoản với email này. Hãy đăng nhập bằng phương thức bạn đã dùng ban đầu.",
-      "weakPassword": "Mật khẩu này chưa đủ mạnh. Hãy dùng ít nhất 8 ký tự (mỗi chữ có dấu tính là 2–3 ký tự), gồm cả chữ cái và chữ số nhé.",
-      "pwnedPassword": "Mật khẩu này đã xuất hiện trong một vụ lộ dữ liệu. Bạn chọn mật khẩu khác nhé.",
-      "passwordTooLong": "Mật khẩu quá dài. Vui lòng dùng tối đa 72 ký tự, và mỗi chữ có dấu tính là 2–3 ký tự.",
-      "generic": "Đã có lỗi xảy ra — bạn thử lại nhé."
-    },
-    "showPassword": "Hiện mật khẩu",
-    "hidePassword": "Ẩn mật khẩu"
+      "generic": "Đã có lỗi xảy ra — bạn thử lại nhé.",
+      "captcha": "Chưa xác nhận được bạn là người thật — thử lại, hoặc tiếp tục với Apple hay Google nhé.",
+      "tooSoon": "Đợi một phút rồi hãy yêu cầu mã mới nhé.",
+      "invalidCode": "Mã không đúng hoặc đã hết hạn — kiểm tra email mới nhất, hoặc gửi mã mới nhé."
+    }
   },
   "landing": {
     "localeSwitcher": {

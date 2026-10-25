@@ -5,22 +5,17 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { AuthDialogHeader } from '@/components/auth/auth-dialog-header';
 import { useAuthDialog } from '@/components/auth/auth-provider';
-import { CheckEmailPanel } from '@/components/auth/check-email-panel';
-import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
+import { CodeStep } from '@/components/auth/email-code/code-step';
+import { EmailStep } from '@/components/auth/email-code/email-step';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
-import { SignInForm } from '@/components/auth/sign-in-form';
-import { SignUpForm } from '@/components/auth/sign-up-form';
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function AuthDialog() {
   const tDialog = useTranslations('auth.dialog');
-  const tSignIn = useTranslations('auth.signIn');
-  const tSignUp = useTranslations('auth.signUp');
-  const tForgot = useTranslations('auth.forgot');
-  const tCheck = useTranslations('auth.checkEmail');
-  const { open, tab, panel, closeDialog, setTab } = useAuthDialog();
+  const tCode = useTranslations('auth.emailCode');
+  const { open, tab, panel, closeDialog } = useAuthDialog();
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Focus management: trap Tab inside the dialog, close on Escape, and
@@ -70,23 +65,21 @@ export function AuthDialog() {
 
   if (!open) return null;
 
+  // The tab only picks the words: email sign-in is one code flow, so
+  // "Create your account" and "Welcome back" lead to the same form.
   const title =
-    panel === 'forgot'
-      ? tForgot('title')
-      : panel === 'check-email'
-        ? tCheck('title')
-        : tab === 'sign-in'
-          ? tDialog('signInTitle')
-          : tDialog('signUpTitle');
+    panel === 'code'
+      ? tCode('codeTitle')
+      : tab === 'sign-in'
+        ? tDialog('signInTitle')
+        : tDialog('signUpTitle');
 
   const subtitle =
-    panel === 'forgot'
-      ? tForgot('subtitle')
-      : panel === 'check-email'
-        ? tCheck('subtitle')
-        : tab === 'sign-in'
-          ? tDialog('signInSubtitle')
-          : tDialog('signUpSubtitle');
+    panel === 'code'
+      ? tCode('codeSubtitle')
+      : tab === 'sign-in'
+        ? tDialog('signInSubtitle')
+        : tDialog('signUpSubtitle');
 
   return (
     <AnimatePresence>
@@ -124,9 +117,8 @@ export function AuthDialog() {
             <div className="overflow-hidden rounded-2xl border border-kallo-border/40 bg-card shadow-[0_25px_60px_-12px_rgba(44,36,22,0.25),0_0_0_1px_rgba(201,168,124,0.08)]">
               <AuthDialogHeader title={title} subtitle={subtitle} />
 
-              {/* Credentials screen: Google first, then email form. The mode
-                  (sign in vs create account) is carried by the title + the one
-                  bottom toggle link — the redundant segmented tabs are gone. */}
+              {/* Credentials screen: Google first, then the email field that
+                  asks for a code. One form for signing in and signing up. */}
               {panel === 'auth' && (
                 <>
                   {/* Google leads — the fastest path */}
@@ -141,46 +133,14 @@ export function AuthDialog() {
                     </div>
                   </div>
 
-                  {/* Form */}
-                  <div className="px-8 pt-4 pb-6">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={tab}
-                        initial={{
-                          opacity: 0,
-                          x: tab === 'sign-in' ? -10 : 10,
-                        }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: tab === 'sign-in' ? 10 : -10 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        {tab === 'sign-in' ? <SignInForm /> : <SignUpForm />}
-                      </motion.div>
-                    </AnimatePresence>
-
-                    {/* Toggle Link */}
-                    <p className="mt-5 text-center font-sans-display text-kallo-text-muted text-sm">
-                      {tab === 'sign-in'
-                        ? tSignIn('noAccount')
-                        : tSignUp('hasAccount')}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setTab(tab === 'sign-in' ? 'sign-up' : 'sign-in')
-                        }
-                        className="font-semibold text-kallo-text underline-offset-2 hover:underline"
-                      >
-                        {tab === 'sign-in'
-                          ? tSignIn('signUpLink')
-                          : tSignUp('signInLink')}
-                      </button>
-                    </p>
+                  <div className="px-8 pt-4 pb-7">
+                    <EmailStep />
                   </div>
                 </>
               )}
 
-              {/* Recovery screens */}
-              {panel !== 'auth' && (
+              {/* The code the email carries */}
+              {panel === 'code' && (
                 <div className="px-8 pt-4 pb-7">
                   <AnimatePresence mode="wait">
                     <motion.div
@@ -190,11 +150,7 @@ export function AuthDialog() {
                       exit={{ opacity: 0, x: -10 }}
                       transition={{ duration: 0.15 }}
                     >
-                      {panel === 'forgot' ? (
-                        <ForgotPasswordForm />
-                      ) : (
-                        <CheckEmailPanel />
-                      )}
+                      <CodeStep />
                     </motion.div>
                   </AnimatePresence>
                 </div>

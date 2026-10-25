@@ -178,6 +178,14 @@ is easy to get wrong — **what a refusal looks like to the client that made it*
 | `GET /api/healthz` | — | `healthzIp` | `ip` | same (never health JSON — a throttled probe learned nothing about the service) |
 | `POST /api/csp-report` | — | `cspReportIp` (skipped when the IP is null) | `ip` | app envelope + `Retry-After`; browsers ignore it. Memory-only: a violation report never costs a DB round trip |
 
+**Turnstile runs alongside these limits** on the email-sending POSTs
+(`_lib/captcha-gate.ts`, staged by `TURNSTILE_MODE` — `docs/AUTH_SECURITY.md`).
+A request that owes a token and has none is refused (`400 captcha_failed`)
+before any limiter round trip; a token is checked with Cloudflare only after
+the limits pass, so a flood of junk tokens is throttled per IP instead of each
+costing a siteverify call. Cloudflare unreachable while enforcing → `503`
+(retryable). The password grant and `/verify` are never gated.
+
 Classification lives in `app/api/supabase-proxy/_lib/auth-path-policy.ts` and is
 covered by an exhaustive test table; body reading in `_lib/auth-body.ts`, target
 extraction in `_lib/auth-target.ts`, enforcement order in `_lib/enforce-limits.ts`,
@@ -262,9 +270,9 @@ surface as the generic "something went wrong" line in both apps — the wrong
 copy for the one failure a user most needs to understand. `over_request_rate_limit`
 is the code the clients map to their localized "too many attempts" string —
 supabase-flutter has since launch (`auth_form_controller.dart`), and the web
-forms were taught to (`lib/infra/auth/rate-limited.ts`, used by
-`components/auth/sign-{in,up}-form.tsx`, copy at `auth.sign*.errors.rateLimited`
-in both locales). Speaking the dialect is what makes the right copy POSSIBLE on
+forms were taught to (`lib/infra/auth/rate-limited.ts`, read by
+`emailCodeErrorKey` in `lib/infra/auth/email-code.ts` for the email-code forms,
+copy at `auth.emailCode.errors.rateLimited` in both locales). Speaking the dialect is what makes the right copy POSSIBLE on
 each client; it does not by itself make it correct there. Builder + test:
 `_lib/gotrue-error.ts`.
 
@@ -342,6 +350,13 @@ they apply to the entire user base at once:
 | `sign_in_sign_ups` | 30 / 5 min **per IP** | every proxied sign-in and sign-up, together |
 | `token_verifications` | 30 / 5 min **per IP** | every OTP / magic-link verification, together |
 | `token_refresh` | 150 / 5 min **per IP** | every session refresh, together |
+
+**Email sign-in is code-only now, which spends both buckets.** Every email
+sign-in is one `/otp` (`sign_in_sign_ups`) plus at least one `/verify`
+(`token_verifications`), and resends and wrong codes count too. At the
+defaults, about 30 people signing in within five minutes would lock the whole
+app out. **Raise both in the dashboard before code-only sign-in is deployed**
+(`docs/PROD_DOMAIN_SETUP.md` §8); the structural fix can follow.
 
 The hosted project's dashboard values are what actually run — `config.toml` is
 the local-dev source and the documented default shape, not the deployed

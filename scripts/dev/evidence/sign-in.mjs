@@ -2,6 +2,9 @@
 // magic link, verified by the app's own /auth/verify route, as an emailed link
 // would be. Run directly, it prints the link path for Playwright MCP:
 //   node --env-file=.env.local scripts/dev/evidence/sign-in.mjs /en/logging
+// With --code it prints a fresh 6-digit sign-in code instead, for the iOS
+// email form (tap "Send code" first; this one replaces the code it sent):
+//   node --env-file=.env.local scripts/dev/evidence/sign-in.mjs --code
 
 import { pathToFileURL } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
@@ -48,12 +51,11 @@ export async function accountExists(listUsers, email) {
 }
 
 /**
- * A one-time `/auth/verify` path that signs the evidence account in and then
- * opens `next`. Generating it sends no email.
- * @param {string} next
- * @param {Record<string, string | undefined>} [env]
+ * Mints a one-time sign-in token for the evidence account (sending no email),
+ * after checking the account exists.
+ * @param {Record<string, string | undefined>} env
  */
-export async function signInPath(next, env = process.env) {
+async function mintSignIn(env) {
   const { url, serviceKey, email } = signInEnv(env);
   const admin = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -72,15 +74,39 @@ export async function signInPath(next, env = process.env) {
   });
   if (error)
     throw new Error(`Could not create a sign-in link: ${error.message}`);
+  return data.properties;
+}
+
+/**
+ * A one-time `/auth/verify` path that signs the evidence account in and then
+ * opens `next`. Generating it sends no email.
+ * @param {string} next
+ * @param {Record<string, string | undefined>} [env]
+ */
+export async function signInPath(next, env = process.env) {
+  const properties = await mintSignIn(env);
   const params = new URLSearchParams({
-    token_hash: data.properties.hashed_token,
+    token_hash: properties.hashed_token,
     type: 'email',
     next,
   });
   return `/auth/verify?${params}`;
 }
 
+/**
+ * A fresh 6-digit code for the evidence account — what the app's email form
+ * would have mailed. It replaces any code already sent. Sends no email.
+ * @param {Record<string, string | undefined>} [env]
+ */
+export async function signInCode(env = process.env) {
+  return (await mintSignIn(env)).email_otp;
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const next = process.argv[2] ?? '/en/logging';
-  process.stdout.write(`${await signInPath(next)}\n`);
+  const arg = process.argv[2];
+  const out =
+    arg === '--code'
+      ? await signInCode()
+      : await signInPath(arg ?? '/en/logging');
+  process.stdout.write(`${out}\n`);
 }

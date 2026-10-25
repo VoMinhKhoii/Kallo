@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:kallo_mobile/features/auth/providers/turnstile_controller.dart';
 import 'package:kallo_mobile/features/auth/screens/email_auth_screen.dart';
 import 'package:kallo_mobile/features/auth/widgets/auth_page.dart';
 import 'package:kallo_mobile/features/auth/widgets/email_auth_form.dart';
@@ -21,7 +22,8 @@ import '../../l10n_test_loader.dart';
 /// `/sign-in/email` from the welcome screen, `/save-plan/email` from the
 /// post-onboarding step. That buys two things this file guards — a real back
 /// stack (the chevron pops to whichever screen pushed it) and a per-entry
-/// default mode (someone who just built a plan has no account yet).
+/// title (someone who just built a plan has no account yet). The form under
+/// the title is the same code form either way.
 ///
 /// The routes mirror `router.dart`'s nesting; the real one is unreachable in a
 /// test because it wants a Supabase client.
@@ -57,6 +59,8 @@ GoRouter _router(String initialLocation) => GoRouter(
 Widget _app(String initialLocation) {
   final router = _router(initialLocation);
   return ProviderScope(
+    // A web view needs a platform the test runner does not have.
+    overrides: [turnstileEnabledProvider.overrideWithValue(false)],
     child: EasyLocalization(
       supportedLocales: const [Locale('en')],
       path: 'assets/l10n',
@@ -85,8 +89,8 @@ void main() {
           (call) async => call.method == 'getAll' ? <String, Object>{} : null,
         );
     await EasyLocalization.ensureInitialized();
-    // The real font, or every glyph measures ~1em and the mode toggle "wraps"
-    // at a width it never wraps at on device.
+    // The real font, or every glyph measures ~1em and the layout "wraps" at a
+    // width it never wraps at on device.
     await loadAppFonts();
   });
 
@@ -121,21 +125,26 @@ void main() {
     expect(tester.getRect(find.byType(StepBackdrop)), screen);
   });
 
-  testWidgets('/sign-in/email opens in sign-in mode', (tester) async {
+  testWidgets('/sign-in/email greets a returning user, with the code form', (
+    tester,
+  ) async {
     await tester.pumpWidget(_app('/sign-in/email'));
     await tester.pumpAndSettle();
 
     expect(find.text('Welcome back'), findsOneWidget);
-    expect(find.text('Sign In'), findsOneWidget);
+    expect(find.text('Send code'), findsOneWidget);
   });
 
-  testWidgets('/save-plan/email opens in sign-UP mode — whoever just built a '
-      'plan has no account yet', (tester) async {
+  testWidgets('/save-plan/email reads "Create your account" — whoever just '
+      'built a plan has no account yet — over the same code form', (
+    tester,
+  ) async {
     await tester.pumpWidget(_app('/save-plan/email'));
     await tester.pumpAndSettle();
 
     expect(find.text('Create your account'), findsOneWidget);
-    expect(find.text('Create Account'), findsOneWidget);
+    expect(find.text('Send code'), findsOneWidget);
+    expect(find.text('Password'), findsNothing);
   });
 
   testWidgets('back from /save-plan/email returns to /save-plan, not to the '
