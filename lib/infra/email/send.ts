@@ -1,5 +1,6 @@
 import { withDeadline } from '@/lib/core/async/with-deadline';
 import { Errors } from '@/lib/core/errors/catalog';
+import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 import { type CloudflareSendResponse, postEmail } from './client';
 import {
   EMAIL_SEND_TIMEOUT_MS,
@@ -100,6 +101,8 @@ export async function sendEmail({
       console.warn(
         `[email] "${message.subject}" not answered within ${EMAIL_SEND_TIMEOUT_MS} ms; counting it as sent`
       );
+      // The caller already reported success, so this is the only trace of a
+      // late failure: log it and send it to Sentry.
       pending.then(
         (late) => {
           const failure = failureOf(late);
@@ -107,13 +110,19 @@ export async function sendEmail({
             console.error(
               `[email] "${message.subject}" failed after the deadline: ${failure}`
             );
+            reportError(
+              new Error(`send failed after the deadline: ${failure}`),
+              '[email]'
+            );
           }
         },
-        (error: unknown) =>
+        (error: unknown) => {
           console.error(
             `[email] "${message.subject}" failed after the deadline:`,
             error
-          )
+          );
+          reportError(error, '[email]');
+        }
       );
       return { id: null, skipped: false };
     }

@@ -2,6 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppError } from '@/lib/core/errors/app-error';
 import { EMAIL_SEND_TIMEOUT_MS } from '@/lib/infra/email/config';
 import { sendEmail } from '@/lib/infra/email/send';
+import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
+
+vi.mock('@/lib/infra/telemetry/monitoring/report-error', () => ({
+  reportError: vi.fn(),
+}));
 
 const ACCOUNT_ID = '0123456789abcdef0123456789abcdef';
 const MESSAGE = { subject: 'Hi', html: '<p>Hi</p>', text: 'Hi' };
@@ -54,6 +59,7 @@ describe('sendEmail', () => {
 
   beforeEach(() => {
     fetchMock.mockReset();
+    vi.mocked(reportError).mockClear();
     vi.stubGlobal('fetch', fetchMock);
     vi.stubEnv('CLOUDFLARE_EMAIL_API_TOKEN', 'test-token');
     vi.stubEnv('CLOUDFLARE_ACCOUNT_ID', ACCOUNT_ID);
@@ -202,6 +208,20 @@ describe('sendEmail', () => {
     ).resolves.toEqual({ id: null, skipped: false });
   });
 
+  it('counts a success whose result has an unexpected shape as sent', async () => {
+    fetchMock.mockResolvedValue(
+      apiResponse(200, {
+        success: true,
+        errors: 'none',
+        result: { message_id: 42, permanent_bounces: [{ address: 'x' }] },
+      })
+    );
+
+    await expect(
+      sendEmail({ to: 'a@b.co', message: MESSAGE })
+    ).resolves.toEqual({ id: null, skipped: false });
+  });
+
   it('wraps a transport failure rather than leaking it', async () => {
     fetchMock.mockRejectedValue(new TypeError('fetch failed'));
 
@@ -237,6 +257,7 @@ describe('sendEmail', () => {
 
       await vi.advanceTimersByTimeAsync(3000);
       expect(errorLog).not.toHaveBeenCalled();
+      expect(reportError).not.toHaveBeenCalled();
     });
 
     it('logs a send that fails after the deadline', async () => {
@@ -251,6 +272,29 @@ describe('sendEmail', () => {
       await vi.advanceTimersByTimeAsync(3000);
       expect(errorLog).toHaveBeenCalledWith(
         expect.stringContaining('failed after the deadline')
+      );
+      expect(reportError).toHaveBeenCalledWith(expect.any(Error), '[email]');
+    });
+
+    it('reports a request that errors after the deadline', async () => {
+      fetchMock.mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            setTimeout(
+              () => reject(new TypeError('socket hang up')),
+              EMAIL_SEND_TIMEOUT_MS + 3000
+            );
+          })
+      );
+
+      const result = sendEmail({ to: 'a@b.co', message: MESSAGE });
+      await vi.advanceTimersByTimeAsync(EMAIL_SEND_TIMEOUT_MS);
+      await expect(result).resolves.toEqual({ id: null, skipped: false });
+
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(reportError).toHaveBeenCalledWith(
+        expect.any(TypeError),
+        '[email]'
       );
     });
 

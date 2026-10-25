@@ -19,20 +19,23 @@ export interface OutboundEmail {
   text: string;
 }
 
-// Lenient past `success` on purpose: a field the API sends as null or drops
-// must not turn an accepted send into a failure.
+// Strict on `success` only. Every other field falls back to null when the
+// (beta) API sends it null, drops it or changes its shape, so drift there can
+// never turn an accepted send into a failure.
 const responseSchema = z.object({
   success: z.boolean(),
   errors: z
     .array(z.object({ code: z.number(), message: z.string() }))
-    .nullish(),
+    .nullish()
+    .catch(null),
   result: z
     .object({
-      message_id: z.string().nullish(),
-      permanent_bounces: z.array(z.string()).nullish(),
-      suppressed_recipients: z.array(z.string()).nullish(),
+      message_id: z.string().nullish().catch(null),
+      permanent_bounces: z.array(z.string()).nullish().catch(null),
+      suppressed_recipients: z.array(z.string()).nullish().catch(null),
     })
-    .nullish(),
+    .nullish()
+    .catch(null),
 });
 
 export interface CloudflareSendResponse {
