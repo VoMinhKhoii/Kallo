@@ -2,18 +2,16 @@
 
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { TurnstileField } from '@/components/auth/email-code/turnstile-field';
+import { useResendCode } from '@/hooks/auth/use-resend-code';
 import { useTurnstile } from '@/hooks/auth/use-turnstile';
 import { useRouter } from '@/i18n/navigation';
 import {
   EMAIL_CODE_MAX_LENGTH,
   EMAIL_CODE_MIN_LENGTH,
   emailCodeErrorKey,
-  emailCodeRedirect,
-  RESEND_COOLDOWN_SECONDS,
-  sendEmailCode,
 } from '@/lib/infra/auth/email-code';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
 import { createClient } from '@/lib/infra/supabase/client';
@@ -23,8 +21,7 @@ import { createClient } from '@/lib/infra/supabase/client';
  * — pasted, or filled from the browser's one-time-code suggestion — submits by
  * itself; a typed one submits with Continue, because the length is the
  * project's setting (6–10), not something the field can count to. "Send a new
- * code" waits out Supabase's per-address cooldown and carries its own
- * Turnstile token.
+ * code" is `useResendCode`.
  */
 export function CodeStep() {
   const t = useTranslations('auth.emailCode');
@@ -35,16 +32,14 @@ export function CodeStep() {
   const turnstile = useTurnstile(turnstileSiteKey, locale);
   const [code, setCode] = useState('');
   const [verifying, setVerifying] = useState(false);
-  const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
-
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const id = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
-    return () => clearInterval(id);
-  }, [cooldown]);
+  const resendCode = useResendCode({
+    email: codeEmail,
+    next,
+    locale,
+    turnstile,
+  });
 
   if (!codeEmail) return null;
 
@@ -90,33 +85,16 @@ export function CodeStep() {
   const complete = code.length >= EMAIL_CODE_MIN_LENGTH;
 
   const resend = async () => {
-    // A Turnstile token is single-use: a second click while the first send is
-    // in flight would spend it twice.
-    setResending(true);
     setError(null);
     setNotice(null);
-    const sendError = await sendEmailCode(createClient(), {
-      email: codeEmail,
-      emailRedirectTo: emailCodeRedirect(window.location.origin, next, locale),
-      captchaToken: turnstile.token,
-    });
-    turnstile.reset();
-    setResending(false);
+    const sendError = await resendCode.resend();
     if (sendError) {
       setError(t(`errors.${emailCodeErrorKey(sendError)}`));
       return;
     }
     setCode('');
-    setCooldown(RESEND_COOLDOWN_SECONDS);
     setNotice(t('resent'));
   };
-
-  // As on the email step, a check that could not run leaves it to the server.
-  const canResend =
-    cooldown === 0 &&
-    !verifying &&
-    !resending &&
-    (!turnstile.required || !!turnstile.token || turnstile.failed);
 
   return (
     <form
@@ -183,10 +161,12 @@ export function CodeStep() {
         <button
           type="button"
           onClick={resend}
-          disabled={!canResend}
+          disabled={!resendCode.ready || verifying}
           className="font-sans-display text-kallo-text-muted text-sm transition-colors hover:text-kallo-text disabled:text-kallo-text-muted/60 disabled:hover:text-kallo-text-muted/60"
         >
-          {cooldown > 0 ? t('resendIn', { seconds: cooldown }) : t('resend')}
+          {resendCode.cooldown > 0
+            ? t('resendIn', { seconds: resendCode.cooldown })
+            : t('resend')}
         </button>
         <button
           type="button"
