@@ -178,6 +178,8 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261015143620_budget_events_cost_backfill_and_view.sql` | B (Manual) | Prices pre-existing attempt rows' `cost_usd` from a 2026-10-15 snapshot of the rate card (reservation rows, unpriced models and zero-token attempts stay NULL); appends the cost inputs and new columns to `analytics.v_budget_events` for the admin dashboard |
 | `20261025133838_add_ai_spend_brake.sql` | A + deny boundary | `ai_spend_days` (one row per UTC day, AI spend in micro-USD) + `rate_limit_counters.slot_count` / `slot_expires_at`; RLS/REVOKE/GRANT appended under the failure-boundary exception |
 | `20261025133900_rate_limit_spend_and_slots.sql` | B (Manual) | 11-arg `rate_limit_consume()` (spend brake → windows + slot → reservation, one call) and `rate_limit_release()` (free a slot, settle spend by a signed delta); the 7-arg consume is kept until deployed code stops calling it |
+| `20261025185300_drop_analysis_guard_reapers.sql` | B (Manual) | Unschedules and drops the merged analysis guard's three reapers and drops the 7-arg `rate_limit_consume()`. **Push only after the analysis-guard merge is deployed** |
+| `20261025185310_drop_analysis_guard_tables.sql` | A (Drizzle) | Drops `analysis_guard_events`, `analysis_in_flight_limits` and `analysis_rate_limit_windows`. Same push rule as the row above |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
@@ -506,7 +508,6 @@ badges compare against, plus 1; the spend cap reads only today's budget rows):
 | --- | ---: | --- | --- |
 | `analysis_model_budget_events` | 61 | `reap_analysis_model_budget_events()` | 04:01 |
 | `pipeline_runs` | 61 | `reap_pipeline_runs()` | 04:04 |
-| `analysis_guard_events` | 30 | `reap_analysis_guard_events()` | 04:07 |
 | `unmatched_ingredients` | 61 | `reap_unmatched_ingredients()` | 04:10 |
 | `synonym_candidates` | 61 | `reap_synonym_candidates()` | 04:13 |
 | `pipeline_request_replay_audit_logs` | 61 | `reap_pipeline_request_replay_audit_logs()` | 04:16 |
@@ -562,13 +563,11 @@ session `TimeZone`, which under a transaction pooler is not a session we own.
 
 **Reapers** (`20260901194715`, all on the fail-loud pg_cron schedule):
 `reap_rate_limit_counters()` (2 days, deleted in 50k `ctid` batches),
-`reap_rate_limit_events()` (30 days), plus retention for the two *legacy*
-analysis-guard tables that shipped without any:
-`reap_analysis_rate_limit_windows()` (2 days) and
-`reap_analysis_in_flight_limits()` (1 day, **including rows with `count > 0`** —
-those are crash-abandoned concurrency leases). No code uses those two tables
-or `analysis_guard_events` since the analysis guard was merged into the
-limiter; a follow-up migration drops them once that deploy is live.
+`reap_rate_limit_events()` (30 days). The legacy analysis guard's tables
+(`analysis_rate_limit_windows`, `analysis_in_flight_limits`,
+`analysis_guard_events`), their reapers and the 7-argument consume were dropped
+by `20261025185300` + `20261025185310` once the guard had been merged into the
+limiter and deployed.
 
 **Slots and the AI spend brake** (`20261025133838` + `20261025133900`).
 `rate_limit_counters` gained `slot_count` / `slot_expires_at` (a one-at-a-time
@@ -585,13 +584,8 @@ holder before it expires (the release passes back the `slot_expires_at` the
 consume returned), so a request that outlived its slot cannot free a later
 holder's. Both functions take the day's spend row before the key's counter
 row; the opposite order in either one deadlocks against the other. The
-7-argument consume stays until no deployed code calls it (the code switched to
-the 11-argument one with the analysis-guard merge), then a later migration
-drops it.
-
-If the legacy tables are large on first deploy, run
-`SELECT public.reap_analysis_rate_limit_windows();` once by hand rather than
-waiting for the nightly job.
+11-argument consume is the only one: the generic limiter calls it with no slot
+and no spend.
 
 ### Local pooler
 

@@ -659,6 +659,13 @@
       "when": 1792935518203,
       "tag": "20261025133838_add_ai_spend_brake",
       "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1792954390614,
+      "tag": "20261025185310_drop_analysis_guard_tables",
+      "breakpoints": true
     }
   ]
 }

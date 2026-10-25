@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import {
-  analysisGuardEvents,
   analysisModelBudgetEvents,
   pipelineLlmCalls,
   pipelineRequestReplayAuditLogs,
@@ -39,8 +38,8 @@ describe('trace storage expand contract (no database connection)', () => {
   });
 
   it('provides a created_at-leading index for every new reaper that needs one', () => {
+    // (analysis_guard_events had one too; the table was dropped since.)
     for (const table of [
-      analysisGuardEvents,
       analysisModelBudgetEvents,
       pipelineRequestReplayAuditLogs,
       synonymCandidates,
