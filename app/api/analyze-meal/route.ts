@@ -92,7 +92,9 @@ async function startAnalysis(
     requestLocale: locale,
     profileLocale: profile.preferredLocale,
   });
-  const guard = await acquireAnalysisGuard(request, userId, responseLocale);
+  const guard = await acquireAnalysisGuard(userId, responseLocale, {
+    isClarifyAnswer: mode === 'cheat' && !!clarifyAnswer,
+  });
   if (!guard.allowed) return guard.error;
   const releaseGuard = createGuardRelease(guard.release);
   pending.release = releaseGuard;

@@ -19,7 +19,7 @@ import type { RateLimitKey } from './types';
  */
 const KEY_VERSION = 'v1';
 
-// Same fallback as the analysis guard: unit tests must be able to hash without
+// Unit tests must be able to hash without
 // a real pepper, and every other environment must fail loudly without one.
 const testHashSecret = 'analysis-guard-event-test-secret';
 
@@ -148,8 +148,8 @@ export function canonicalizeRateLimitIp(value: string): string {
  * The HMAC payload is `rl.v1:<kind>:<value>`, so the kinds are domain-separated
  * — an email used as an `account` key and the same email used as a `recipient`
  * key hash differently and cannot share a counter — and the whole namespace is
- * separated from the analysis guard's `user:`/`ip:` payloads even though both
- * read the same pepper.
+ * separated from the other hashes under the same pepper (pipeline telemetry's
+ * user hashes, the waitlist's IP hash).
  */
 export function hashRateLimitKey(key: RateLimitKey): string {
   const value =

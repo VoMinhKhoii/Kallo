@@ -313,6 +313,16 @@ describe('no usable key (policy misuse)', () => {
     expect(consumer.consume).not.toHaveBeenCalled();
   });
 
+  it('refuses a policy with a slot, which only acquireRateLimit can take', async () => {
+    // Counting its windows alone would leave the one-at-a-time slot unenforced.
+    const consumer = alwaysAllows();
+
+    await expect(
+      consumeRateLimit('analyzeMeal', userKey, options(consumer))
+    ).rejects.toThrow(/acquireRateLimit/);
+    expect(consumer.consume).not.toHaveBeenCalled();
+  });
+
   it('fails fast when the key kind is wrong for the policy', async () => {
     // healthzIp accepts `ip`; a `user` key leaves it with nothing to count.
     await expect(
@@ -419,6 +429,19 @@ describe('prefilter refill', () => {
 });
 
 describe('policy registry', () => {
+  it('defines every policy name in exactly one policy set', async () => {
+    const sets = await Promise.all([
+      import('../policy-sets/auth').then((m) => m.authPolicies),
+      import('../policy-sets/surfaces').then((m) => m.surfacePolicies),
+      import('../policy-sets/spend').then((m) => m.spendPolicies),
+    ]);
+    const names = sets.flatMap((set) => Object.keys(set));
+
+    // A name in two sets would silently replace one with the other.
+    expect(new Set(names).size).toBe(names.length);
+    expect(names.length).toBe(Object.keys(rateLimitPolicies).length);
+  });
+
   it('gives every policy a unique route', () => {
     const routes = Object.values(rateLimitPolicies).map(
       (policy) => policy.route
@@ -433,11 +456,19 @@ describe('policy registry', () => {
       .map(([name]) => name)
       .sort();
 
-    // Both of these spend Gemini quota per admitted request, which is the only
-    // reason to fail closed: admitting with the guard down means spending money
-    // with no ceiling. Every auth or read surface must stay `degraded` —
+    // Every one of these spends AI money per admitted request, which is the
+    // only reason to fail closed: admitting with the guard down means spending
+    // money with no ceiling. Every auth or read surface must stay `degraded` —
     // failing THOSE closed hands an attacker a denial of service against
     // sign-in by attacking the limiter instead.
-    expect(closed).toEqual(['adminDebugAnalysis', 'ocrGlobalDaily']);
+    expect(closed).toEqual([
+      'adminDebugAnalysis',
+      'adminReplay',
+      'analyzeMeal',
+      'analyzeMealClarify',
+      'labelOcr',
+      'ocrGlobalDaily',
+      'shadowDaily',
+    ]);
   });
 });

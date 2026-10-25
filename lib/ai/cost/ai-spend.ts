@@ -1,5 +1,6 @@
 import { isBillingSandboxUser } from '@/lib/domain/billing/revenuecat/identity';
 import {
+  type AcquireSpendLeaseOptions,
   type AiSpendKind,
   acquireSpendLease,
   aiSpendEstimatesUsd,
@@ -36,6 +37,11 @@ export interface AiSpendOptions {
    * app-wide limit — but what they spend still counts.
    */
   userId?: string | null;
+  /**
+   * A per-user policy (windows and one-at-a-time slot) taken in the same
+   * database call as the reservation; `settle` frees its slot.
+   */
+  rateLimit?: AcquireSpendLeaseOptions['rateLimit'];
 }
 
 export function createAiSpend(
@@ -66,6 +72,7 @@ export function createAiSpend(
       if (lease) return;
       lease = await acquireSpendLease(kind, {
         enforce: !(options.userId && isBillingSandboxUser(options.userId)),
+        rateLimit: options.rateLimit,
       });
     },
     run: (work) => runMetered(meter, work),
@@ -75,7 +82,7 @@ export function createAiSpend(
       // An unpriced attempt cost something unknown on top of what was
       // priced: book at least the estimate, and never less than the priced
       // part.
-      await lease?.settle(
+      await lease?.release(
         unpriced ? Math.max(knownUsd, aiSpendEstimatesUsd[kind]) : knownUsd
       );
     },

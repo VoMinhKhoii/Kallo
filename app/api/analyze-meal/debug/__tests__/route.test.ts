@@ -64,7 +64,7 @@ beforeEach(() => {
     data: { user: { id: 'admin-1', email: 'admin@kallo.fit' } },
   });
   assertRateLimit.mockResolvedValue(undefined);
-  acquireSpendLease.mockResolvedValue({ settle, addLate: vi.fn() });
+  acquireSpendLease.mockResolvedValue({ release: settle, addLate: vi.fn() });
   runDecompositionDebugStep.mockImplementation(async () => {
     meterAttemptSpend('gemini-3.1-flash-lite', {
       inputTokens: 1000,

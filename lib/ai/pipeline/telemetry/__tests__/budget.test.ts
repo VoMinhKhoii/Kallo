@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cloudTrace } from '@/lib/ai/pipeline/telemetry/cloud-trace/cloud-trace';
 import type { GeminiAttemptMetadata } from '@/lib/ai/provider/types';
-import type { RecordAnalysisModelBudgetEventInput } from '@/lib/infra/rate-limit/analysis-guard-types';
+import type { RecordAnalysisModelBudgetEventInput } from '../model-budget-events';
 
 const { mockRecord } = vi.hoisted(() => ({
   mockRecord: vi.fn((_input: RecordAnalysisModelBudgetEventInput) =>
@@ -9,7 +9,7 @@ const { mockRecord } = vi.hoisted(() => ({
   ),
 }));
 
-vi.mock('@/lib/infra/rate-limit/analysis-model-budget', () => ({
+vi.mock('../model-budget-events', () => ({
   recordAnalysisModelBudgetEvent: mockRecord,
 }));
 

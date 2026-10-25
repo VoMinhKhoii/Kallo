@@ -11,7 +11,6 @@ import { getTableName } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { analysisGuardEvents } from '@/lib/infra/db/schema';
 
 class MockImageResponse {
   static calls: { element: React.ReactElement; options: MockOptions }[] = [];
@@ -30,10 +29,7 @@ interface MockOptions {
 vi.mock('@vercel/og', () => ({ ImageResponse: MockImageResponse }));
 
 const mockGetUser = vi.fn();
-const mockCheckAnalysisGuards = vi.fn();
-const mockBuildAnalysisGuardEvent = vi.fn((input: unknown) => ({
-  built: input,
-}));
+const mockAssertRateLimit = vi.fn();
 const mockDbInsert = vi.fn();
 const mockDbInsertValues = vi.fn();
 
@@ -71,10 +67,8 @@ function selectStub() {
   return query;
 }
 
-vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
-  buildAnalysisGuardEvent: (input: unknown) =>
-    mockBuildAnalysisGuardEvent(input),
-  checkAnalysisGuards: (...args: unknown[]) => mockCheckAnalysisGuards(...args),
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
+  assertRateLimit: (...args: unknown[]) => mockAssertRateLimit(...args),
 }));
 
 vi.mock('@/lib/infra/db/client', () => {
@@ -142,9 +136,8 @@ beforeEach(() => {
 
   mockGetUser.mockReset();
   mockGetUser.mockResolvedValue({ data: { user: { id: 'viewer-1' } } });
-  mockCheckAnalysisGuards.mockReset();
-  mockCheckAnalysisGuards.mockResolvedValue({ allowed: true });
-  mockBuildAnalysisGuardEvent.mockClear();
+  mockAssertRateLimit.mockReset();
+  mockAssertRateLimit.mockResolvedValue(undefined);
   mockDbInsert.mockClear();
   mockDbInsertValues.mockClear();
 });
@@ -174,7 +167,7 @@ describe('GET /api/og/macro-card/[shareId]', () => {
     expect(res.status).toBe(401);
     const json = await res.json();
     expect(json.error.code).toBe('NOT_AUTHENTICATED');
-    expect(mockCheckAnalysisGuards).not.toHaveBeenCalled();
+    expect(mockAssertRateLimit).not.toHaveBeenCalled();
   });
 
   it('401s when Supabase reports an auth error', async () => {
@@ -187,44 +180,18 @@ describe('GET /api/og/macro-card/[shareId]', () => {
     expect(res.status).toBe(401);
   });
 
-  it('applies the OG-specific rate-limit window keyed on the viewer', async () => {
+  it('applies the OG card policy keyed on the viewer', async () => {
     await call(SHARE_ID, { 'x-forwarded-for': '203.0.113.9, 10.0.0.1' });
 
-    expect(mockCheckAnalysisGuards).toHaveBeenCalledWith({
-      userId: 'viewer-1',
-      ip: '203.0.113.9',
-      route: '/api/og/macro-card',
-      limits: {
-        perUserMinute: 10,
-        perUserHour: 60,
-        perUserDay: 200,
-        concurrentUser: Number.MAX_SAFE_INTEGER,
-      },
+    expect(mockAssertRateLimit).toHaveBeenCalledExactlyOnceWith('ogMacroCard', {
+      kind: 'user',
+      value: 'viewer-1',
     });
   });
 
-  it('falls back to x-real-ip when x-forwarded-for is absent', async () => {
-    await call(SHARE_ID, { 'x-real-ip': '198.51.100.4' });
-
-    expect(mockCheckAnalysisGuards.mock.calls[0]?.[0]).toMatchObject({
-      ip: '198.51.100.4',
-    });
-  });
-
-  it('reports a null ip when neither proxy header is present', async () => {
-    await call();
-
-    expect(mockCheckAnalysisGuards.mock.calls[0]?.[0]).toMatchObject({
-      ip: null,
-    });
-  });
-
-  it('429s with Retry-After and logs a guard event when throttled', async () => {
-    mockCheckAnalysisGuards.mockResolvedValue({
-      allowed: false,
-      reason: 'per_user_minute',
-      retryAfterSeconds: 42,
-    });
+  it('429s with Retry-After and renders nothing when throttled', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    mockAssertRateLimit.mockRejectedValue(Errors.rateLimited(undefined, 42));
 
     const res = await call(SHARE_ID, { 'x-real-ip': '198.51.100.4' });
 
@@ -232,31 +199,7 @@ describe('GET /api/og/macro-card/[shareId]', () => {
     expect(res.headers.get('Retry-After')).toBe('42');
     const json = await res.json();
     expect(json.error.code).toBe('RATE_LIMITED');
-
-    expect(mockDbInsert).toHaveBeenCalledWith(analysisGuardEvents);
-    expect(mockBuildAnalysisGuardEvent).toHaveBeenCalledWith({
-      userId: 'viewer-1',
-      ip: '198.51.100.4',
-      route: '/api/og/macro-card',
-      reason: 'per_user_minute',
-      retryAfterSeconds: 42,
-    });
     expect(MockImageResponse.calls).toHaveLength(0);
-  });
-
-  it('still 429s when the guard-event insert throws', async () => {
-    mockCheckAnalysisGuards.mockResolvedValue({
-      allowed: false,
-      reason: 'per_user_hour',
-      retryAfterSeconds: 7,
-    });
-    mockDbInsertValues.mockImplementationOnce(() => {
-      throw new Error('telemetry down');
-    });
-
-    const res = await call();
-    expect(res.status).toBe(429);
-    expect(res.headers.get('Retry-After')).toBe('7');
   });
 
   it('renders the card for the share owner', async () => {

@@ -3,17 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const stageRelogAnalysisAction = vi.fn();
 const requireAuthAndProfile = vi.fn();
-const checkAnalysisGuards = vi.fn();
 
 vi.mock('@/lib/actions/meals/relog/stage-relog-analysis', () => ({
   stageRelogAnalysisAction,
 }));
 
 vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
-
-vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
-  checkAnalysisGuards,
-}));
 
 const { POST } = await import('@/app/api/v1/meals/relog/stage/route');
 
@@ -44,19 +39,14 @@ const staged = {
   loggedAt: '2026-07-02T03:00:00.000Z',
 };
 
-const release = vi.fn();
-
 beforeEach(() => {
   stageRelogAnalysisAction.mockReset();
   requireAuthAndProfile.mockReset();
-  checkAnalysisGuards.mockReset();
-  release.mockReset();
   stageRelogAnalysisAction.mockResolvedValue(staged);
   requireAuthAndProfile.mockResolvedValue({
     user: { id: 'user-123' },
     profile: {},
   });
-  checkAnalysisGuards.mockResolvedValue({ allowed: true, release });
 });
 
 describe('POST /api/v1/meals/relog/stage', () => {
@@ -174,7 +164,6 @@ describe('POST /api/v1/meals/relog/stage', () => {
 
     const res = await POST(makeRequest(validBody));
     expect(res.status).toBe(401);
-    expect(checkAnalysisGuards).not.toHaveBeenCalled();
     expect(stageRelogAnalysisAction).not.toHaveBeenCalled();
   });
   it('propagates a dead-reference validation error as 400', async () => {

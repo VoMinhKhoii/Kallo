@@ -4,6 +4,8 @@
   "pipelineTimeout": "Phân tích mất quá lâu. Vui lòng thử lại.",
   "rateLimited": "Hệ thống đang bận. Vui lòng đợi một chút rồi thử lại.",
   "aiPaused": "Tính năng ghi bữa ăn bằng AI đang tạm dừng cho mọi người đến ngày mai. Bạn vẫn quét mã vạch và ghi lại món cũ được.",
+  "analysisDailyLimit": "Bạn đã dùng hết 30 lượt ghi bữa ăn bằng AI hôm nay. Ngày mai sẽ có lượt mới; bạn vẫn quét mã vạch và ghi lại món cũ được.",
+  "analysisInFlight": "Bữa ăn trước của bạn vẫn đang được phân tích. Hãy thử lại khi xong nhé.",
   "featureLockedNotEntitled": "Nâng cấp lên Kallo Premium để phân tích bữa ăn bằng AI.",
   "aiConsentRequired": "Hãy cho phép Kallo gửi bữa ăn của bạn đến nhà cung cấp AI trước khi phân tích. Bạn có thể bật khi ghi bữa ăn hoặc trong Cài đặt.",
   "internal": "Đã xảy ra lỗi. Vui lòng thử lại.",

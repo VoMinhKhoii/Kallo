@@ -65,6 +65,9 @@ const entries = Object.entries(routeInventory) as [
   readonly [string, boolean, string, string?],
 ][];
 
+const LIMITER_CALL =
+  /\b(assertRateLimit|consumeRateLimit|acquireRateLimit|withRateLimit|createAiSpend)\(/;
+
 function readSource(repoRelativePath: string): string {
   return readFileSync(path.join(REPO_ROOT, repoRelativePath), 'utf8');
 }
@@ -143,12 +146,16 @@ describe('the declarations agree with the route source', () => {
   it('applies every policy it names, at the route or in the file it delegates to', () => {
     const missing = entries
       .filter(([, [, , rateLimit]]) => rateLimit in rateLimitPolicies)
-      .filter(
-        ([file, [, , , guardedIn]]) =>
-          // `guardedIn` names the action that carries the guard for the routes
-          // that delegate; without it, the call must be in the route itself.
-          !/assertRateLimit\(/.test(readSource(guardedIn ?? `app/${file}`))
-      )
+      .filter(([file, [, , rateLimit, guardedIn]]) => {
+        // `guardedIn` names the action that carries the guard for the routes
+        // that delegate; without it, the call must be in the route itself.
+        // The file must call the limiter AND name this policy, so a route
+        // cannot borrow another policy's call.
+        const source = readSource(guardedIn ?? `app/${file}`);
+        return !(
+          LIMITER_CALL.test(source) && source.includes(`'${rateLimit}'`)
+        );
+      })
       .map(([file, [, , rateLimit, guardedIn]]) =>
         guardedIn
           ? `${file} -> ${guardedIn} (${rateLimit})`

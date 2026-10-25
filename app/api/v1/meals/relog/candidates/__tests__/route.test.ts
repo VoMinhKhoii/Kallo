@@ -3,17 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const loadRelogCandidatesAction = vi.fn();
 const requireAuthAndProfile = vi.fn();
-const checkAnalysisGuards = vi.fn();
 
 vi.mock('@/lib/actions/meals/relog/load-candidates', () => ({
   loadRelogCandidatesAction,
 }));
 
 vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
-
-vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
-  checkAnalysisGuards,
-}));
 
 const { GET } = await import('@/app/api/v1/meals/relog/candidates/route');
 
@@ -26,19 +21,15 @@ function makeRequest(query: string): NextRequest {
 }
 
 const candidates = { dishes: [], meals: [] };
-const release = vi.fn();
 
 beforeEach(() => {
   loadRelogCandidatesAction.mockReset();
   requireAuthAndProfile.mockReset();
-  checkAnalysisGuards.mockReset();
-  release.mockReset();
   loadRelogCandidatesAction.mockResolvedValue(candidates);
   requireAuthAndProfile.mockResolvedValue({
     user: { id: 'user-123' },
     profile: {},
   });
-  checkAnalysisGuards.mockResolvedValue({ allowed: true, release });
 });
 
 describe('GET /api/v1/meals/relog/candidates', () => {
@@ -79,7 +70,6 @@ describe('GET /api/v1/meals/relog/candidates', () => {
       const res = await GET(makeRequest('?limit=999'));
 
       expect(res.status).toBe(401);
-      expect(checkAnalysisGuards).not.toHaveBeenCalled();
       expect(loadRelogCandidatesAction).not.toHaveBeenCalled();
     });
   });

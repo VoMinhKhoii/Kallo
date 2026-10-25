@@ -17,17 +17,14 @@ import {
   relogRefsOf,
 } from '@/lib/domain/logging/relog/relog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import {
-  RELOG_WRITE_ROUTE,
-  withRelogGuard,
-} from '@/lib/infra/rate-limit/relog-guard';
+import { withRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
 /**
  * Pure PICKS: stage what the composer staged — past dishes, scanned products,
  * or both — as a `pending_analyses` row so they
  * land in the SAME editable review card AI meals use, then let the ordinary
  * confirm path save them. Deterministic — no AI pipeline, no provider spend, so
- * no analysis guard in the AI-cost sense. It IS billing-gated: relog is a
+ * nothing under the AI spend brake. It IS billing-gated: relog is a
  * Premium-card feature, so `assertFeatureAccess(..., 'relog')` runs right after
  * auth and BEFORE the rate guard — a locked user must not spend rate budget on
  * a call that can only end in 402. Mirrors `stageCheatRepeatAction`, which
@@ -71,44 +68,48 @@ export async function stageRelogAnalysisAction(
   // meals and writes a fat `pending_analyses` row, so an unthrottled caller
   // starves the pool for every other surface.
   //
-  // The SAME key as `relogMealItemsAction`, deliberately. `checkAnalysisGuards`
-  // keys its window and in-flight counters on this string, so a distinct one
-  // would give a user an independent `concurrentUser: 1` budget per write
+  // The SAME policy as `relogMealItemsAction`, deliberately. The limiter keys
+  // its windows and slot on the policy, so a distinct one would give a user
+  // an independent one-at-a-time slot per write
   // action — two simultaneous transactions, each holding `FOR UPDATE` on its
   // source meals. `DB_POOL_MAX` defaults to 2, so that is the whole pool, which
   // is precisely the starvation the guard exists to prevent.
-  return withRelogGuard('write', RELOG_WRITE_ROUTE, user.id, async () => {
-    const picks = await resolveComposerPicks(user.id, parsed.items);
+  return withRateLimit(
+    'relogWrite',
+    { kind: 'user', value: user.id },
+    async () => {
+      const picks = await resolveComposerPicks(user.id, parsed.items);
 
-    const pipelineResult = buildPickPipelineResult(
-      picks.items,
-      picks.confidence
-    );
-    // The composer's own sentence when the client sent it: joining the resolved
-    // names puts every scanned product after every relogged dish, whatever
-    // order they were typed in.
-    const rawInput = parsed.displayText
-      ? capRawInput(parsed.displayText)
-      : buildRelogRawInput(picks.names);
-    const loggedAt = getUtcInstantForLocalDate(
-      parsed.loggedDate,
-      parsed.timezoneOffset
-    );
+      const pipelineResult = buildPickPipelineResult(
+        picks.items,
+        picks.confidence
+      );
+      // The composer's own sentence when the client sent it: joining the resolved
+      // names puts every scanned product after every relogged dish, whatever
+      // order they were typed in.
+      const rawInput = parsed.displayText
+        ? capRawInput(parsed.displayText)
+        : buildRelogRawInput(picks.names);
+      const loggedAt = getUtcInstantForLocalDate(
+        parsed.loggedDate,
+        parsed.timezoneOffset
+      );
 
-    const [inserted] = await upsertPendingAnalysis({
-      userId: user.id,
-      pipelineResult,
-      rawInput,
-      entryMode: 'precise',
-      loggedAt,
-      attemptId: parsed.attemptId,
-    });
+      const [inserted] = await upsertPendingAnalysis({
+        userId: user.id,
+        pipelineResult,
+        rawInput,
+        entryMode: 'precise',
+        loggedAt,
+        attemptId: parsed.attemptId,
+      });
 
-    return {
-      analysisId: inserted.id,
-      parsedMeal: toParsedMeal(pipelineResult),
-      rawInput,
-      loggedAt: loggedAt.toISOString(),
-    };
-  });
+      return {
+        analysisId: inserted.id,
+        parsedMeal: toParsedMeal(pipelineResult),
+        rawInput,
+        loggedAt: loggedAt.toISOString(),
+      };
+    }
+  );
 }

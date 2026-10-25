@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const settle = vi.fn(async (_cost: number | null) => undefined);
 const addLate = vi.fn();
 const acquireSpendLease = vi.fn(async (..._args: unknown[]) => ({
-  settle,
+  release: settle,
   addLate,
 }));
 
@@ -159,6 +159,21 @@ describe('createAiSpend', () => {
     expect(addLate).toHaveBeenCalledWith(0.03);
   });
 
+  it('takes a per-user policy in the same reservation', async () => {
+    const rateLimit = {
+      policy: 'analyzeMeal',
+      key: { kind: 'user', value: 'user-1' },
+      countWindows: false,
+    } as const;
+    const spend = createAiSpend('meal', { userId: 'user-1', rateLimit });
+    await spend.reserve();
+
+    expect(acquireSpendLease).toHaveBeenCalledWith('meal', {
+      enforce: true,
+      rateLimit,
+    });
+  });
+
   it('settles once', async () => {
     const spend = createAiSpend('meal');
     await spend.reserve();
@@ -217,7 +232,7 @@ describe('withAiSpend', () => {
     const order: string[] = [];
     acquireSpendLease.mockImplementationOnce(async () => {
       order.push('reserve');
-      return { settle, addLate };
+      return { release: settle, addLate };
     });
 
     await expect(

@@ -5,34 +5,13 @@ import { Errors } from '@/lib/core/errors/catalog';
 import { serializeError } from '@/lib/core/errors/serialize';
 import { canViewShareOwnedBy } from '@/lib/domain/social/shares/share-visibility';
 import { db } from '@/lib/infra/db/client';
-import {
-  analysisGuardEvents,
-  mealShares,
-  meals,
-  publicProfiles,
-} from '@/lib/infra/db/schema';
-import {
-  buildAnalysisGuardEvent,
-  checkAnalysisGuards,
-} from '@/lib/infra/rate-limit/analysis-guards';
-import { getRequestIp } from '@/lib/infra/security/request-ip';
+import { mealShares, meals, publicProfiles } from '@/lib/infra/db/schema';
+import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { createClient } from '@/lib/infra/supabase/server';
 import { CARD_HEIGHT, CARD_WIDTH } from '@/lib/seo/og/card-geometry';
 import { loadOgFonts } from '@/lib/seo/og/fonts';
 import { dishColorFromSeed, OG_COLORS } from '@/lib/seo/og/palette';
 import { type MacroBar, MacroCard } from './_components/macro-card';
-
-const ogRoute = '/api/og/macro-card';
-
-// Per-user OG render guard. The card is CPU-heavy, so reuse the existing
-// analysis rate-limit windows/table with a generous-but-bounded cap.
-const OG_RATE_LIMIT = {
-  perUserMinute: 10,
-  perUserHour: 60,
-  perUserDay: 200,
-  // The render itself is stateless — no in-flight slot to hold.
-  concurrentUser: Number.MAX_SAFE_INTEGER,
-} as const;
 
 function toNumber(value: unknown): number | null {
   if (value == null) return null;
@@ -41,7 +20,7 @@ function toNumber(value: unknown): number | null {
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
@@ -62,31 +41,8 @@ export async function GET(
       throw Errors.notAuthenticated();
     }
 
-    const guard = await checkAnalysisGuards({
-      userId: user.id,
-      ip: getRequestIp(request),
-      route: ogRoute,
-      limits: OG_RATE_LIMIT,
-    });
-    if (!guard.allowed) {
-      // Best-effort guard event log (non-fatal).
-      try {
-        await db.insert(analysisGuardEvents).values(
-          buildAnalysisGuardEvent({
-            userId: user.id,
-            ip: getRequestIp(request),
-            route: ogRoute,
-            reason: guard.reason,
-            retryAfterSeconds: guard.retryAfterSeconds,
-          })
-        );
-      } catch {
-        // ignore logging failures
-      }
-      return serializeError(
-        Errors.rateLimited(undefined, guard.retryAfterSeconds)
-      );
-    }
+    // The card is a CPU-heavy render: a generous per-user cap.
+    await assertRateLimit('ogMacroCard', { kind: 'user', value: user.id });
 
     const [share] = await db
       .select({

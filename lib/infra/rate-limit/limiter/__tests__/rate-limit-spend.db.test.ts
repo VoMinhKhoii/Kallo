@@ -21,6 +21,7 @@ import {
   it,
 } from 'vitest';
 import { encodeDbUrl } from '@/lib/infra/db/client';
+import { createSqlLeaseStore } from '../lease/lease-sql';
 
 interface ConsumeRow {
   allowed: boolean;
@@ -482,6 +483,45 @@ describe('rate_limit_release — lock order', () => {
 
     expect((await counterOf(keyHash))?.slot_count).toBe(0);
     expect((await spentOn(day))?.spent).toBe(4800);
+  });
+});
+
+describe('the SQL lease store', () => {
+  it('takes a slot and frees it with the expiry the consume handed back', async () => {
+    const store = createSqlLeaseStore({
+      $client: sql,
+    } as unknown as Parameters<typeof createSqlLeaseStore>[0]);
+    const keyHash = freshKey();
+    const now = new Date('2026-09-01T10:00:00Z');
+    const take = () =>
+      store.consume({
+        keyKind: 'user',
+        keyHash,
+        route,
+        limits: { perDay: 30 },
+        slot: { limit: 1, ttlSeconds: 90 },
+        spendMicroUsd: null,
+        spendLimitMicroUsd: null,
+        now,
+        timeoutMs: 5000,
+      });
+
+    const held = await take();
+    expect(held.allowed).toBe(true);
+    expect(held.slot_expires_at).toEqual(expect.any(String));
+    expect((await take()).reason).toBe('concurrent');
+
+    await store.release({
+      keyKind: 'user',
+      keyHash,
+      slotExpiresAt: held.slot_expires_at,
+      route,
+      spendDay: null,
+      deltaMicroUsd: null,
+      now: new Date('2026-09-01T10:00:20Z'),
+      timeoutMs: 5000,
+    });
+    expect((await counterOf(keyHash))?.slot_count).toBe(0);
   });
 });
 

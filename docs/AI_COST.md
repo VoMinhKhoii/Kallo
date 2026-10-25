@@ -21,7 +21,7 @@ when `PIPELINE_TRACE_ENABLED=true`.
 | `cost_usd` | what the attempt cost, priced from `lib/ai/cost/pricing.ts` when the row is written. `NULL` (unknown, never zero) on the reservation row, an attempt that reported no usage, or a model not on the rate card. Rows before 2026-10-15 were backfilled from their tokens at that day's rates |
 | `latency_ms` | wall time of that one attempt; `NULL` on reservation rows and rows before 2026-10-15 |
 | `fallback_from` | on a Gemini attempt that re-ran a failed Claude call, the Claude model it stood in for. A Claude model run on Gemini because there is no `ANTHROPIC_API_KEY`, or because the call carries an image, is not a fallback and leaves it `NULL` |
-| `error_category` | set on failed attempts (retries are separate rows). A failure no provider category fits (a schema slip, a refusal) is `unknown`; the provider-pressure guard ignores those |
+| `error_category` | set on failed attempts (retries are separate rows). A failure no provider category fits (a schema slip, a refusal) is `unknown` |
 
 Count model calls with `request_count = 0`: the reservation row is not a call.
 Every finished attempt is a row, including one whose provider sent no usage.

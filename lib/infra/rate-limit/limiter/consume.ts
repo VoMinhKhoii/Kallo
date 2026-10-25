@@ -85,7 +85,13 @@ function getSqlConsumer() {
 }
 
 function toReason(value: string | null): RateLimitReason {
-  if (value === 'hour' || value === 'day' || value === 'flood') return value;
+  if (
+    value === 'hour' ||
+    value === 'day' ||
+    value === 'flood' ||
+    value === 'concurrent'
+  )
+    return value;
   return 'minute';
 }
 
@@ -247,6 +253,14 @@ export async function consumeRateLimit(
   options: ConsumeRateLimitOptions = {}
 ): Promise<RateLimitResult> {
   const policy = getRateLimitPolicy(policyName);
+  if (policy.failMode !== 'memory' && policy.concurrency) {
+    // Counting the windows alone would leave the slot unenforced while the
+    // registry says it is.
+    throw new RateLimitPolicyMisuseError(
+      policy.route,
+      `[rate-limit] ${policy.route} has a one-at-a-time slot; take it with acquireRateLimit`
+    );
+  }
   const recordEvent = options.recordEvent ?? recordRateLimitEvent;
   const keys = orderRateLimitKeys(
     policy,

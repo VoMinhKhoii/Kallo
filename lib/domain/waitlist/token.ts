@@ -41,7 +41,7 @@ const TEST_PEPPER = 'waitlist-test-pepper';
 
 /**
  * Pepper for the IP hash. Reuses `ANALYSIS_GUARD_HASH_SECRET` — the same
- * secret already peppers IPs elsewhere (lib/rate-limit/analysis-guards.ts), and
+ * secret already peppers IPs elsewhere (lib/infra/rate-limit/limiter/key-hash.ts), and
  * a second secret to rotate would be one more thing to get wrong.
  */
 function ipPepper(): string {
