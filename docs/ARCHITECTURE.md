@@ -40,7 +40,7 @@ together give Instant Navigations. The rules the build enforces, and the choices
   first on every matched request: origin lock, markdown negotiation, next-intl, and the Supabase
   session refresh. The session step (`lib/infra/supabase/middleware.ts`) also routes: a signed-in
   visitor on the landing page goes into the app (or to its `?next=`), and a signed-out page load
-  of a private surface (`lib/seo/private-paths.ts`, `/admin` excepted) gets a 307 to
+  of a private surface (`lib/seo/private-paths.ts`) gets a 307 to
   `/{locale}?auth=sign-in&next=<path>` before anything renders. A new `(app)` route must join
   `PRIVATE_PATH_PREFIXES` to get that redirect.
 - **Content-Security-Policy — enforced, static, no nonce.** Set in `next.config.ts` `headers()`
@@ -79,8 +79,7 @@ together give Instant Navigations. The rules the build enforces, and the choices
   route handler prerenders when it reads nothing from the request; read the request, or call a
   `'use cache'` helper, to choose.
 - **`instant = false`** marks a segment that is allowed to block. Used only where that is the
-  point, each with a comment: `app/page.tsx` (a pure locale redirect, kept a real HTTP redirect)
-  and the admin layout (gated on `requireAdmin()`).
+  point, with a comment: `app/page.tsx` (a pure locale redirect, kept a real HTTP redirect).
 - **Locale.** `[locale]` is the root param. `i18n/request.ts` reads it through `next/root-params`,
   so there is no `setRequestLocale`; Server Actions and Route Handlers, where root params are not
   supported yet, fall back to next-intl's header or pass `{ locale }` explicitly. `proxy.ts` imports
@@ -198,12 +197,9 @@ another domain module is a smell worth a second look.
 
 | Folder | Concern | Status |
 |---|---|---|
-| `authz/` | who counts as an admin, and the guard that enforces it | ok |
-| `queries/` | the admin read side: requests, feedback, prompts, health | ok |
-| `diagnostics/` | reading a pipeline trace — stage schemas, derived diagnostics, compare | ok |
-| `replay/` | re-running a captured request, live or against captured responses | ok |
-| `triage/` | moving a feedback row through its statuses | ok |
-| `premium/` | the free-Premium console: welcome offer, give/end by account, group or everyone, account lookup, undoable activity log (subfolders `targets/`, `grants/`, `offer/`, `accounts/`, `activity/`, `actions/`) | ok |
+| `authz/` | who counts as an admin (`ADMIN_EMAILS`): the analyze-meal debug route and moderation report alerts | ok |
+
+The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analytics`); Kallo has no in-app admin pages.
 
 ## `components/` — presentation
 
@@ -211,7 +207,6 @@ another domain module is a smell worth a second look.
 |---|---|---|
 | `ui/` | shadcn primitives — CLI-managed, never hand-edited | exempt |
 | `activity/` | the Activity page — the notification feed, its sections, rows and the mobile heart entry point | ok |
-| `admin/` | the admin surface — `requests/` `pipeline-summary/` `feedback/` `health/` `prompts/` | ok |
 | `brand/` | logo marks | ok |
 | `app/` | application chrome present on every page | split |
 | `auth/` | auth dialog, forms, OAuth edge cases | split |
@@ -263,7 +258,6 @@ proved to be one hook.
 | Folder | Concern | Status |
 |---|---|---|
 | `[locale]/(app)/` | authenticated pages, thin compositions | ok |
-| `[locale]/(app)/admin/` | admin pages — thin compositions over `components/admin/` and `lib/admin/` | ok |
 | `api/v1/` | public REST surface — thin delegators to `lib/` | ok |
 | `api/analyze-meal/` | SSE meal-analysis stream — the machine is `lib/ai/pipeline/stream/`; `_lib/` holds the pre-stream guards | ok |
 | `api/webhooks/` | inbound provider webhooks — thin delegators to `lib/` | ok |

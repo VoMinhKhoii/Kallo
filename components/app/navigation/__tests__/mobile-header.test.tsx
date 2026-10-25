@@ -94,9 +94,9 @@ describe('MobileHeader', () => {
     ).toHaveLength(1);
   });
 
-  it('opens the account sheet with Settings, and Admin only for admins', async () => {
+  it('opens the account sheet with Settings', async () => {
     const u = userEvent.setup();
-    const { unmount } = render(<MobileHeader user={user} />);
+    render(<MobileHeader user={user} />);
     await u.click(screen.getByRole('button', { name: 'openMenu' }));
 
     const sheet = await screen.findByRole('dialog');
@@ -104,18 +104,6 @@ describe('MobileHeader', () => {
     expect(
       within(sheet).getByRole('link', { name: 'settings' })
     ).toHaveAttribute('href', '/settings');
-    expect(
-      within(sheet).queryByRole('link', { name: 'admin' })
-    ).not.toBeInTheDocument();
-    unmount();
-
-    render(<MobileHeader user={user} isAdmin />);
-    await u.click(screen.getByRole('button', { name: 'openMenu' }));
-    expect(
-      within(await screen.findByRole('dialog')).getByRole('link', {
-        name: 'admin',
-      })
-    ).toHaveAttribute('href', '/admin');
   });
 
   it('offers Appearance in the account sheet and saves a tapped choice', async () => {

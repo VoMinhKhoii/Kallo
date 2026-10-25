@@ -7,7 +7,6 @@ const Set<String> _shellRoots = {
   '/dashboard',
   '/nutrition',
   '/circle',
-  '/admin',
 };
 
 /// Opens the logging feed FULL-SCREEN over whatever the user is looking at

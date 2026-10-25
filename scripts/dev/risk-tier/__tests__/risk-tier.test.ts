@@ -23,7 +23,6 @@ describe('tierFor', () => {
     ['apps/mobile-flutter/lib/router_redirect.dart'],
     ['components/landing-page/pricing/checkout/pricing-checkout-provider.tsx'],
     ['components/settings/account/use-account-actions.ts'],
-    ['lib/admin/premium/accounts/lookup.ts'],
     ['lib/domain/privacy/consent-gate.ts'],
     ['lib/infra/db/client.ts'],
     ['lib/infra/rate-limit/limiter/limiter.ts'],

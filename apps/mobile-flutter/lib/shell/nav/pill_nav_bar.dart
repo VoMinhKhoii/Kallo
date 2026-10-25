@@ -35,8 +35,7 @@ class PillNavBar extends ConsumerWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  // Branch indices after the shell reorder: dashboard, nutrition, circle,
-  // admin (admin stays off-bar).
+  // Branch indices after the shell reorder: dashboard, nutrition, circle.
   static const int _dashboardBranch = 0;
   static const int _nutritionBranch = 1;
   static const int _circleBranch = 2;

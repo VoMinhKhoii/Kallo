@@ -11,8 +11,6 @@ import { SITE_URL } from '@/lib/seo/site';
 // The list itself lives in lib/seo/private-paths.ts because markdown content
 // negotiation needs the same set (it must let these fall through to HTML rather
 // than answering with a markdown 404), and two hand-kept copies would drift.
-// `/admin` is filtered out there: listing it in robots.txt would publicly
-// advertise that an admin surface exists.
 
 export default function robots(): MetadataRoute.Robots {
   return {

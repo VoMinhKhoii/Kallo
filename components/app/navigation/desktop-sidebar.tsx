@@ -8,7 +8,7 @@ import { useNavBadgeCounts } from '@/hooks/ui/use-nav-badges';
 import { useSidebarState } from '@/hooks/ui/use-sidebar-state';
 import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
-import { isActiveRoute, visibleNavItems } from './nav-items';
+import { isActiveRoute, NAV_ITEMS } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
 import { SidebarNavLink } from './sidebar/sidebar-nav-link';
 import { SidebarBrandHeader } from './sidebar-brand-header';
@@ -16,7 +16,6 @@ import { UserMenu, type UserMenuUser } from './user-menu';
 
 export interface DesktopSidebarProps {
   user: UserMenuUser;
-  isAdmin?: boolean;
   onboardingIncomplete?: boolean;
   onboardingStep?: number;
   onResumeOnboarding?: () => void;
@@ -75,7 +74,6 @@ function SectionHeader({
  */
 export function DesktopSidebar({
   user,
-  isAdmin = false,
   onboardingIncomplete = false,
   onboardingStep = 0,
   onResumeOnboarding,
@@ -152,7 +150,7 @@ export function DesktopSidebar({
     onFocusLeave();
   };
 
-  const navItems = visibleNavItems(isAdmin).map((item) => {
+  const navItems = NAV_ITEMS.map((item) => {
     const Icon = item.icon;
     return {
       id: item.id,

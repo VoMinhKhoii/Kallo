@@ -27,7 +27,6 @@ import 'features/onboarding/screens/welcome_setup_screen.dart';
 import 'features/paywall/screens/paywall_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'router_redirect.dart';
-import 'shell/placeholder_screen.dart';
 import 'shell/route_error_screen.dart';
 import 'shell/splash_screen.dart';
 import 'shell/tab_scaffold.dart';
@@ -39,7 +38,7 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 ///
 /// Routing model (native pass, 2026-08-31):
 ///   • A [StatefulShellRoute] hosts the pill-nav destinations (`/dashboard`,
-///     `/nutrition`, `/circle`) plus the off-bar `/admin`. Each is its own
+///     `/nutrition`, `/circle`). Each is its own
 ///     branch so state/scroll persist across tab switches.
 ///   • `/logging` is a ROOT route pushed full-screen over the shell (the
 ///     pill nav's Log item; swipe-back returns to the tab the user came from —
@@ -225,7 +224,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // The pill-nav destinations — each its own branch so state/scroll
       // persist across tab switches. Order matches the bar: dashboard,
-      // nutrition, circle; admin stays off-bar (reachable by route only).
+      // nutrition, circle.
       StatefulShellRoute.indexedStack(
         parentNavigatorKey: _rootKey,
         builder:
@@ -249,24 +248,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Circle (the social surface, formerly "Groups"). Admin remains a
-          // placeholder until its Flutter screen is ported.
+          // Circle (the social surface, formerly "Groups").
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/circle',
                 builder: (context, state) => const CircleScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/admin',
-                builder:
-                    (context, state) => const PlaceholderScreen(
-                      titleKey: 'app.mainSidebar.admin',
-                    ),
               ),
             ],
           ),

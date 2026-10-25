@@ -139,7 +139,7 @@ Premium, written as an ordinary `entitlement_grants` row (`source = 'promo'`,
   longer promo never reads "ends <date>" while the store keeps charging. The
   web ending-soon banner uses free-Premium copy when the winner is a promo.
 
-To stop granting new signups, switch the welcome offer off in `/admin/premium`
+To stop granting new signups, switch the welcome offer off on admin.kallo.fit → Premium
 (or give it an auto-off date); its length is set there too.
 
 Store-side introductory offers (App Store intro offer, Paddle
@@ -147,9 +147,10 @@ Store-side introductory offers (App Store intro offer, Paddle
 and are independent of this — the paywall discloses whatever the store says the
 customer is still eligible for.
 
-### Admin console (`/admin/premium`)
+### Admin console (admin.kallo.fit → Premium)
 
-Admins (`ADMIN_EMAILS`) manage free Premium from four tabs. Paying accounts
+The founder manages free Premium from four tabs on admin.kallo.fit (the
+`kallo-aws-analytics` repo; Kallo has no in-app admin). Paying accounts
 (any active non-promo premium grant or store subscription) are excluded from
 every selection, so nothing here ever changes a subscriber.
 
@@ -173,10 +174,9 @@ every selection, so nothing here ever changes a subscriber.
   (`entitlement_grants.canceled_by_action = <action id>`) come back, an offer
   change restores the previous settings. An action is undone at most once.
 
-Every server action (`lib/admin/premium/actions/`) goes through
-`runAdminAction`: `requireAdmin()` first (a server action is a public POST
-endpoint), then the zod schema, then one transaction that writes the change
-and its `premium_grant_audit` row. Grants are written for both billing
+Every write goes through the dashboard's `POST /api/admin/premium`: founder
+session and same-origin check first, then the zod schema, then one transaction
+that writes the change and its `premium_grant_audit` row. Grants are written for both billing
 environments. `premium_settings` and `premium_grant_audit` are server-only
 (RLS on, no policies, revoked from `anon`/`authenticated`).
 
@@ -642,7 +642,7 @@ Apply the data boundary first, then ship dark and flip switches:
    (`supabase db push`), so **the first prod deploy carrying this migration
    starts the clock** — deploy it at launch, not days before. Re-running never
    resets or extends the window (`ON CONFLICT DO NOTHING`); to give a later
-   launch window, use `/admin/premium` → Everyone.
+   launch window, use admin.kallo.fit → Premium → Everyone.
 6. **Announce** the launch to users.
 7. **Open commerce**: set `BILLING_PURCHASES_ENABLED=true`, verify offerings,
    prices, and purchase activation, then set `BILLING_ENFORCEMENT_ENABLED=true`.

@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   type LucideIcon,
   NotebookPen,
-  ShieldCheck,
   Users2,
 } from 'lucide-react';
 
@@ -15,15 +14,13 @@ export type NavItemId =
   | 'nutrition'
   | 'logging'
   | 'groups'
-  | 'activity'
-  | 'admin';
+  | 'activity';
 
 export interface NavItemConfig {
   id: NavItemId;
   href: string;
   labelKey: string;
   icon: LucideIcon;
-  adminOnly?: boolean;
 }
 
 export const NAV_ITEMS: readonly NavItemConfig[] = [
@@ -58,23 +55,11 @@ export const NAV_ITEMS: readonly NavItemConfig[] = [
     labelKey: 'activity',
     icon: Heart,
   },
-  {
-    id: 'admin',
-    href: '/admin',
-    labelKey: 'admin',
-    icon: ShieldCheck,
-    adminOnly: true,
-  },
 ] as const;
 
 export function isActiveRoute(pathname: string, href: string): boolean {
   if (pathname === href) return true;
   return pathname.startsWith(`${href}/`);
-}
-
-export function visibleNavItems(isAdmin: boolean): readonly NavItemConfig[] {
-  if (isAdmin) return NAV_ITEMS;
-  return NAV_ITEMS.filter((item) => !item.adminOnly);
 }
 
 /** Phone pages that take the whole screen: no tab bar, a back chevron in the
