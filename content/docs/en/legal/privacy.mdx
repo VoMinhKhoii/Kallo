@@ -1,7 +1,7 @@
 ---
 title: Privacy policy
 description: What Kallo collects, what actually reaches the AI model, how long it is kept, and the control you have over it.
-lastUpdated: '2026-09-25'
+lastUpdated: '2026-10-25'
 ---
 
 This policy describes how VÕ MINH KHÔI ("Kallo", "we") collects, uses,
@@ -236,7 +236,7 @@ advertising.
 | Google Cloud (Vertex AI, Gemini) | AI meal analysis, label reading, ingredient search | Meal text, country, cooking habits, language; nutrition label photos; ingredient search text |
 | Google Cloud Run | Application hosting | Request traffic, server logs |
 | Google Cloud Translate | Translating ingredient data | Ingredient names |
-| Cloudflare | Content delivery, attack protection | Request metadata, IP address |
+| Cloudflare | Content delivery, attack protection; diagnostic records of AI meal analyses, kept 14 days | Request metadata, IP address; meal text and the AI's answers, stored without your account identifier |
 | Resend | Authentication and notification email; content-report alerts to our team | Email address, message content; the details of reports you file |
 | RevenueCat | Cross-platform subscription state | Account identifier, purchase metadata |
 | Apple App Store, Google Play | In-app payments | Your payment details, held by the store |
@@ -342,6 +342,8 @@ you live. Specifically:
 - **AI meal analysis** goes through Vertex AI's global endpoint, so it may be
   processed in any region Google operates in, including outside Vietnam. Only
   the data listed in section 3 travels this path.
+- **Diagnostic records of AI meal analyses** are stored by Cloudflare in its
+  Asia-Pacific region for 14 days.
 - **Error reports** (Sentry) are stored in the United States, and **usage
   events** (PostHog) in the European Union.
 - **Every other provider** processes data in the regions it operates.
