@@ -187,7 +187,10 @@ class AuthFormController extends StateNotifier<AuthFormState> {
 
   /// Mail a fresh code to [pendingEmail]; it replaces the previous one.
   /// Returns whether it was sent, so the view restarts its cooldown only then.
-  Future<bool> resendCode({required String locale, String? captchaToken}) async {
+  Future<bool> resendCode({
+    required String locale,
+    String? captchaToken,
+  }) async {
     final email = state.pendingEmail;
     if (email == null) return false;
     state = state.copyWith(
@@ -203,10 +206,7 @@ class AuthFormController extends StateNotifier<AuthFormState> {
             emailRedirectTo: emailCodeRedirect(locale),
             captchaToken: captchaToken,
           );
-      state = state.copyWith(
-        clearAction: true,
-        notice: tr('auth.code.resent'),
-      );
+      state = state.copyWith(clearAction: true, notice: tr('auth.code.resent'));
       return true;
     } on AuthException catch (e) {
       state = state.copyWith(clearAction: true, error: authErrorMessage(e));

@@ -171,6 +171,35 @@ describe('CodeStep', () => {
     expect(screen.getByText('resent')).toBeInTheDocument();
   });
 
+  it('takes one resend at a time, so a token is never spent twice', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let finish: (value: { data: object; error: null }) => void = () => {};
+    signInWithOtp.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      })
+    );
+    render(<CodeStep />);
+    await act(async () => {
+      vi.advanceTimersByTime(60_000);
+    });
+    const ready = screen.getByRole('button', { name: 'resend' });
+
+    await act(async () => {
+      ready.click();
+    });
+    expect(ready).toBeDisabled();
+    await act(async () => {
+      ready.click();
+    });
+    expect(signInWithOtp).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      finish({ data: {}, error: null });
+    });
+    expect(screen.getByText('resent')).toBeInTheDocument();
+  });
+
   it('goes back to the email step', () => {
     render(<CodeStep />);
 

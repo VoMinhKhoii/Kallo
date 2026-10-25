@@ -129,7 +129,10 @@ class _EmailCodeViewState extends ConsumerState<EmailCodeView> {
         const SizedBox(height: KalloSpacing.sp2),
         Text(tr('auth.code.sentTo'), style: dashBody(color: kInkMuted)),
         const SizedBox(height: KalloSpacing.sp0_5),
-        Text(state.pendingEmail ?? '', style: dashBody(weight: FontWeight.w500)),
+        Text(
+          state.pendingEmail ?? '',
+          style: dashBody(weight: FontWeight.w500),
+        ),
         const SizedBox(height: KalloSpacing.sp5),
         AuthTextField(
           controller: _code,

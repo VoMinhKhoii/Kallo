@@ -35,6 +35,7 @@ export function CodeStep() {
   const turnstile = useTurnstile(turnstileSiteKey, locale);
   const [code, setCode] = useState('');
   const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
@@ -89,6 +90,9 @@ export function CodeStep() {
   const complete = code.length >= EMAIL_CODE_MIN_LENGTH;
 
   const resend = async () => {
+    // A Turnstile token is single-use: a second click while the first send is
+    // in flight would spend it twice.
+    setResending(true);
     setError(null);
     setNotice(null);
     const sendError = await sendEmailCode(createClient(), {
@@ -97,6 +101,7 @@ export function CodeStep() {
       captchaToken: turnstile.token,
     });
     turnstile.reset();
+    setResending(false);
     if (sendError) {
       setError(t(`errors.${emailCodeErrorKey(sendError)}`));
       return;
@@ -110,6 +115,7 @@ export function CodeStep() {
   const canResend =
     cooldown === 0 &&
     !verifying &&
+    !resending &&
     (!turnstile.required || !!turnstile.token || turnstile.failed);
 
   return (

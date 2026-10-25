@@ -5,6 +5,16 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../../services/env/env.dart';
 import '../providers/turnstile_controller.dart';
 
+/// Whether an HTTP error response ends the check: one for our own page (or
+/// one WebKit cannot attribute) means the page will never post a token; one
+/// from Cloudflare's challenge iframe is the widget's own business.
+@visibleForTesting
+bool httpErrorEndsTurnstileCheck(Uri? failed, Uri page) =>
+    failed == null || _isPage(failed, page);
+
+bool _isPage(Uri uri, Uri page) =>
+    uri.host == page.host && uri.path == page.path;
+
 /// Cloudflare Turnstile for the email forms, in a web view.
 ///
 /// Cloudflare: "For native mobile applications, Turnstile does not run
@@ -53,7 +63,8 @@ class _TurnstileViewState extends State<TurnstileView> {
           ..setBackgroundColor(Colors.transparent)
           ..addJavaScriptChannel(
             'KalloTurnstile',
-            onMessageReceived: (m) => widget.controller.handleMessage(m.message),
+            onMessageReceived:
+                (m) => widget.controller.handleMessage(m.message),
           )
           ..setNavigationDelegate(
             NavigationDelegate(
@@ -63,7 +74,17 @@ class _TurnstileViewState extends State<TurnstileView> {
                           ? NavigationDecision.navigate
                           : NavigationDecision.prevent,
               onWebResourceError: (error) {
-                if (error.isForMainFrame ?? true) widget.controller.markFailed();
+                if (error.isForMainFrame ?? true) {
+                  widget.controller.markFailed();
+                }
+              },
+              // A 403/503 from our own page is a loaded error document, not a
+              // resource error: it never posts a token, so without this the
+              // forms would wait on it forever.
+              onHttpError: (error) {
+                if (httpErrorEndsTurnstileCheck(error.request?.uri, page)) {
+                  widget.controller.markFailed();
+                }
               },
             ),
           )
@@ -79,9 +100,7 @@ class _TurnstileViewState extends State<TurnstileView> {
   static bool _allowed(NavigationRequest request, Uri page) {
     final uri = Uri.tryParse(request.url);
     if (uri == null) return false;
-    if (request.isMainFrame) {
-      return uri.host == page.host && uri.path == page.path;
-    }
+    if (request.isMainFrame) return _isPage(uri, page);
     return uri.host == _challengeHost || uri.scheme == 'about';
   }
 

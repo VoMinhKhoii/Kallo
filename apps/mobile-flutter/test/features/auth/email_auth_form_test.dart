@@ -158,7 +158,10 @@ void main() {
     await _sendCode(tester, 'khoi@example.com');
 
     expect(find.byType(EmailCodeView), findsNothing);
-    expect(find.textContaining("couldn't confirm you're a person"), findsOneWidget);
+    expect(
+      find.textContaining("couldn't confirm you're a person"),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a code that arrives whole verifies by itself; a wrong one says '
@@ -178,7 +181,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(auth.verifies, ['khoi@example.com:305805']);
-    expect(find.textContaining('That code is wrong or has expired'), findsOneWidget);
+    expect(
+      find.textContaining('That code is wrong or has expired'),
+      findsOneWidget,
+    );
     await tester.pumpWidget(const SizedBox());
   });
 

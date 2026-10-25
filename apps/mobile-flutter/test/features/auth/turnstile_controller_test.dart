@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/auth/providers/turnstile_controller.dart';
+import 'package:kallo_mobile/features/auth/widgets/turnstile_view.dart';
 
 /// The controller reads the messages `app/auth/turnstile/route.ts` posts, and
 /// decides when a send may go. A check that could not run never holds the
@@ -24,17 +25,19 @@ void main() {
   });
 
   test('an expired token is dropped; the widget refreshes it by itself', () {
-    final c = TurnstileController()
-      ..handleMessage('{"type":"token","token":"tok-1"}')
-      ..handleMessage('{"type":"expired"}');
+    final c =
+        TurnstileController()
+          ..handleMessage('{"type":"token","token":"tok-1"}')
+          ..handleMessage('{"type":"expired"}');
 
     expect(c.token, isNull);
     expect(c.ready, isFalse);
   });
 
   test('a check that cannot run lets the server decide', () {
-    final errored = TurnstileController()
-      ..handleMessage('{"type":"error","code":"script"}');
+    final errored =
+        TurnstileController()
+          ..handleMessage('{"type":"error","code":"script"}');
     final unreachable = TurnstileController()..markFailed();
 
     expect(errored.ready, isTrue);
@@ -50,8 +53,9 @@ void main() {
   });
 
   test('tracks when Cloudflare shows its checkbox', () {
-    final c = TurnstileController()
-      ..handleMessage('{"type":"interactive","on":true}');
+    final c =
+        TurnstileController()
+          ..handleMessage('{"type":"interactive","on":true}');
     expect(c.interactive, isTrue);
 
     c.handleMessage('{"type":"interactive","on":false}');
@@ -76,4 +80,28 @@ void main() {
   test('disabled in tests: never required', () {
     expect(TurnstileController(enabled: false).ready, isTrue);
   });
+
+  test(
+    'an HTTP error on our page ends the check; one in the widget does not',
+    () {
+      final page = Uri.parse('https://kallo.fit/auth/turnstile?lang=en');
+
+      // A 403/503 error document never posts a token.
+      expect(
+        httpErrorEndsTurnstileCheck(
+          Uri.parse('https://kallo.fit/auth/turnstile?lang=en&theme=dark'),
+          page,
+        ),
+        isTrue,
+      );
+      expect(httpErrorEndsTurnstileCheck(null, page), isTrue);
+      expect(
+        httpErrorEndsTurnstileCheck(
+          Uri.parse('https://challenges.cloudflare.com/cdn-cgi/challenge'),
+          page,
+        ),
+        isFalse,
+      );
+    },
+  );
 }
