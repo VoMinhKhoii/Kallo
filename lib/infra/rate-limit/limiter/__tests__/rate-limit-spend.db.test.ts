@@ -437,6 +437,54 @@ describe('rate_limit_consume — one-at-a-time slot', () => {
   });
 });
 
+describe('rate_limit_release — lock order', () => {
+  it("takes the day's spend row before the key's counter, as consume does", async () => {
+    // consume locks the spend row, then the counter. A release that took
+    // them the other way round could deadlock against an overlapping
+    // consume from the same person: this transaction plays that consume,
+    // holding the spend row and then reaching for the counter.
+    const keyHash = freshKey();
+    const day = freshDay();
+    const held = await consume({
+      keyHash,
+      slot: 1,
+      slotTtl: 90,
+      spend: 30_000,
+      spendLimit: 10_000_000,
+      now: `${day}T10:00:00Z`,
+    });
+
+    const consumer = await sql.reserve();
+    try {
+      await consumer`BEGIN`;
+      await consumer`
+        SELECT 1 FROM public.ai_spend_days WHERE day = ${day}::date FOR UPDATE
+      `;
+      // `.then` sends it: a postgres.js query is lazy until awaited.
+      const releasing = release({
+        keyHash,
+        slotExpiresAt: held.slot_expires_at,
+        spendDay: day,
+        delta: 4800 - 30_000,
+        now: `${day}T10:00:10Z`,
+      }).then(() => undefined);
+      // Let the release reach its first lock wait.
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await consumer`
+        UPDATE public.rate_limit_counters SET updated_at = updated_at
+        WHERE key_hash = ${keyHash} AND route = ${route}
+      `;
+      await consumer`COMMIT`;
+      await releasing;
+    } finally {
+      consumer.release();
+    }
+
+    expect((await counterOf(keyHash))?.slot_count).toBe(0);
+    expect((await spentOn(day))?.spent).toBe(4800);
+  });
+});
+
 describe('rate_limit_consume / rate_limit_release — grants', () => {
   it("refuses both functions executed with anon's privileges", async () => {
     // Inheriting probe role, never `anon` itself — see the file docblock.

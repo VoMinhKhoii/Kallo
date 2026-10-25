@@ -431,6 +431,20 @@ DECLARE
 BEGIN
   v_now := coalesce(p_now, now());
 
+  -- Spend first, then the slot: the same order rate_limit_consume locks
+  -- them in (the day's row, then the key's counter). The other way round, a
+  -- release and an overlapping consume from the same person deadlock.
+  IF p_spend_day IS NOT NULL
+     AND p_spend_delta_micro_usd IS NOT NULL
+     AND p_spend_delta_micro_usd <> 0 THEN
+    INSERT INTO public.ai_spend_days AS s (day, spent_micro_usd, updated_at)
+    VALUES (p_spend_day, greatest(p_spend_delta_micro_usd, 0), v_now)
+    ON CONFLICT (day) DO UPDATE
+    SET
+      spent_micro_usd = greatest(s.spent_micro_usd + p_spend_delta_micro_usd, 0),
+      updated_at = v_now;
+  END IF;
+
   IF p_key_hash IS NOT NULL
      AND p_slot_expires_at IS NOT NULL
      AND p_slot_expires_at > v_now THEN
@@ -445,17 +459,6 @@ BEGIN
       AND t.key_hash = p_key_hash
       AND t.route = p_route
       AND t.slot_count > 0;
-  END IF;
-
-  IF p_spend_day IS NOT NULL
-     AND p_spend_delta_micro_usd IS NOT NULL
-     AND p_spend_delta_micro_usd <> 0 THEN
-    INSERT INTO public.ai_spend_days AS s (day, spent_micro_usd, updated_at)
-    VALUES (p_spend_day, greatest(p_spend_delta_micro_usd, 0), v_now)
-    ON CONFLICT (day) DO UPDATE
-    SET
-      spent_micro_usd = greatest(s.spent_micro_usd + p_spend_delta_micro_usd, 0),
-      updated_at = v_now;
   END IF;
 END;
 $$;

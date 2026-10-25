@@ -582,7 +582,8 @@ books the reservation only once both admitted; `rate_limit_release(...)` frees
 a slot and settles spend by a signed delta. A slot is freed only by its own
 holder before it expires (the release passes back the `slot_expires_at` the
 consume returned), so a request that outlived its slot cannot free a later
-holder's. The 7-argument consume stays until
+holder's. Both functions take the day's spend row before the key's counter
+row; the opposite order in either one deadlocks against the other. The 7-argument consume stays until
 no deployed code calls it, then a later migration drops it.
 
 If the legacy tables are large on first deploy, run
