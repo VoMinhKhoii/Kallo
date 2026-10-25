@@ -284,6 +284,19 @@ describe('replayRequest', () => {
     expect(spendSettleSpy).toHaveBeenCalledOnce();
   });
 
+  it('frees the reservation when setup fails before any model call', async () => {
+    createGeminiClientSpy.mockImplementationOnce(() => {
+      throw new Error('no key');
+    });
+
+    await expect(
+      replayRequest('11111111-1111-4111-a111-111111111111')
+    ).rejects.toThrow('AI provider is not configured for replay');
+
+    expect(spendSettleSpy).toHaveBeenCalledExactlyOnceWith(0);
+    expect(analyzeMealSpy).not.toHaveBeenCalled();
+  });
+
   it('refuses a live replay once the AI brake trips, before any model call', async () => {
     const { Errors } = await import('@/lib/core/errors/catalog');
     acquireSpendLeaseSpy.mockRejectedValueOnce(Errors.aiPaused(3600));

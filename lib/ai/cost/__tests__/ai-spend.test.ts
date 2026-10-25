@@ -10,6 +10,7 @@ const acquireSpendLease = vi.fn(async (..._args: unknown[]) => ({
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
   acquireSpendLease: (...args: unknown[]) => acquireSpendLease(...args),
+  aiSpendEstimatesUsd: { meal: 0.03 },
 }));
 
 const { createAiSpend, withAiSpend } = await import('../ai-spend');
@@ -112,6 +113,31 @@ describe('createAiSpend', () => {
     await vi.waitFor(() => expect(addLate).toHaveBeenCalledOnce());
 
     expect(addLate.mock.calls[0][0]).toBeCloseTo(0.0004, 10);
+  });
+
+  it('books the estimate for an unpriced attempt that finishes after settle', async () => {
+    const spend = createAiSpend('meal');
+    await spend.reserve();
+    let finishLate: () => void = () => undefined;
+    const late = new Promise<void>((resolve) => {
+      finishLate = resolve;
+    });
+
+    void spend.run(async () => {
+      await late;
+      meterAttemptSpend('gemini-3.1-flash-lite', {
+        inputTokens: null,
+        outputTokens: null,
+        cachedTokens: null,
+        cacheWriteTokens: null,
+        thoughtTokens: null,
+      });
+    });
+    await spend.settle();
+    finishLate();
+    await vi.waitFor(() => expect(addLate).toHaveBeenCalledOnce());
+
+    expect(addLate).toHaveBeenCalledWith(0.03);
   });
 
   it('settles once', async () => {

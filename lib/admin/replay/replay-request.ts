@@ -146,53 +146,61 @@ export async function replayRequest(
     throw error;
   }
 
-  // Pick the Gemini client BEFORE creating replay rows. For real replays
-  // this also validates the AI provider config after the admin replay quota passes.
   let gemini: GeminiClient;
-  if (dryRun) {
-    gemini = await buildDryRunGeminiClient(originalId);
-  } else {
-    try {
-      gemini = createPipelineLlm(resolveGeminiProvider(), {
-        fallbackModel: CLAUDE_FALLBACK_MODEL,
-      });
-    } catch (error) {
-      console.error('[admin] AI provider misconfigured:', error);
-      throw new Error('AI provider is not configured for replay');
-    }
-  }
-
   const replayId = crypto.randomUUID();
   const t0 = Date.now();
+  // Setup that fails before any model call frees the reservation: a live
+  // replay that never ran must not count against everyone's AI budget.
+  try {
+    // Pick the Gemini client BEFORE creating replay rows. For real replays
+    // this also validates the AI provider config after the admin replay quota passes.
+    if (dryRun) {
+      gemini = await buildDryRunGeminiClient(originalId);
+    } else {
+      try {
+        gemini = createPipelineLlm(resolveGeminiProvider(), {
+          fallbackModel: CLAUDE_FALLBACK_MODEL,
+        });
+      } catch (error) {
+        console.error('[admin] AI provider misconfigured:', error);
+        throw new Error('AI provider is not configured for replay');
+      }
+    }
 
-  // Reuse original userId — FK to auth.users + correct attribution.
-  // Awaited so child trace inserts have a parent row to FK against.
-  // The audit-log insert below references replayId via FK, so we have to
-  // create the pipeline_requests row FIRST: writing the audit row before
-  // logPipelineStart leaves an orphaned audit entry whenever pipeline-start
-  // throws (no FK target).
-  const startResult = await logPipelineStart({
-    userId: orig.userId,
-    rawInput: orig.rawInput,
-    userContext: orig.userContextJson as unknown as UserContext,
-    db,
-    requestId: replayId,
-    replayOfRequestId: originalId,
-    dryRun,
-  });
-  if (startResult === null) {
-    throw new Error('[admin] Failed to create pipeline request log for replay');
+    // Reuse original userId — FK to auth.users + correct attribution.
+    // Awaited so child trace inserts have a parent row to FK against.
+    // The audit-log insert below references replayId via FK, so we have to
+    // create the pipeline_requests row FIRST: writing the audit row before
+    // logPipelineStart leaves an orphaned audit entry whenever pipeline-start
+    // throws (no FK target).
+    const startResult = await logPipelineStart({
+      userId: orig.userId,
+      rawInput: orig.rawInput,
+      userContext: orig.userContextJson as unknown as UserContext,
+      db,
+      requestId: replayId,
+      replayOfRequestId: originalId,
+      dryRun,
+    });
+    if (startResult === null) {
+      throw new Error(
+        '[admin] Failed to create pipeline request log for replay'
+      );
+    }
+
+    await db.insert(pipelineRequestReplayAuditLogs).values({
+      adminUserIdHash: hashUserId(admin.id),
+      originalRequestId: originalId,
+      replayRequestId: replayId,
+      dryRun,
+    });
+    console.info(
+      `[admin] ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
+    );
+  } catch (error) {
+    await spend?.settle();
+    throw error;
   }
-
-  await db.insert(pipelineRequestReplayAuditLogs).values({
-    adminUserIdHash: hashUserId(admin.id),
-    originalRequestId: originalId,
-    replayRequestId: replayId,
-    dryRun,
-  });
-  console.info(
-    `[admin] ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
-  );
 
   const promptVersionsUsed = new Map<string, string>();
   let finalStatus: 'success' | 'error' = 'success';
