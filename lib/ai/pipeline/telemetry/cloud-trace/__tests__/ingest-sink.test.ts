@@ -91,6 +91,22 @@ describe('trace ingest sink', () => {
     expect(f.calls.map((c) => c.body.events.length)).toEqual([1, 64, 35]);
   });
 
+  it('keeps every POST under the Worker body limit, counting JSON escaping', async () => {
+    const f = gatedFetch();
+    const sink = createIngestSink({
+      url: URL,
+      secret: SECRET,
+      fetchImpl: f.fetchImpl,
+    });
+    // Quote-heavy lines double when encoded as JSON strings.
+    const heavy = JSON.stringify({ response: '"'.repeat(90_000) });
+    for (let i = 0; i < 40; i++) sink.send('req-1', heavy);
+    for (let i = 0; i < 40 && f.calls.length < 40; i++) await f.release();
+    const sizes = f.calls.map((c) => Buffer.byteLength(String(c.init.body)));
+    expect(sizes.reduce((n, s) => n + s, 0)).toBeGreaterThan(5_000_000);
+    expect(Math.max(...sizes)).toBeLessThanOrEqual(2_500_000);
+  });
+
   it('a failed send logs once and drops the rest of that trace', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const f = gatedFetch(503);

@@ -118,7 +118,9 @@ export function createIngestSink(options: IngestSinkOptions) {
         if ((failed.get(requestId) ?? 0) > now) return;
         let queue = queues.get(requestId);
         const trimmed = line.endsWith('\n') ? line.slice(0, -1) : line;
-        const bytes = Buffer.byteLength(trimmed);
+        // The line travels as a JSON string inside JSON: count it encoded
+        // (quotes and backslashes double) plus its {"at":…,"line":…} wrapper.
+        const bytes = Buffer.byteLength(JSON.stringify(trimmed)) + 48;
         if (queuedBytes + bytes > MAX_QUEUED_BYTES) {
           fail(
             requestId,
