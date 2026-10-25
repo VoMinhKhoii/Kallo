@@ -10,7 +10,7 @@ const acquireSpendLease = vi.fn(async (..._args: unknown[]) => ({
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
   acquireSpendLease: (...args: unknown[]) => acquireSpendLease(...args),
-  aiSpendEstimatesUsd: { meal: 0.03 },
+  aiSpendEstimatesUsd: { meal: 0.03, labelOcr: 0.01 },
 }));
 
 const { createAiSpend, withAiSpend } = await import('../ai-spend');
@@ -61,7 +61,7 @@ describe('createAiSpend', () => {
     expect(settle.mock.calls[0][0]).toBeCloseTo(0.0008, 10);
   });
 
-  it('keeps the estimate when any attempt could not be priced', async () => {
+  it('books the estimate when any attempt could not be priced', async () => {
     const spend = createAiSpend('meal');
     await spend.reserve();
     await spend.run(async () => {
@@ -76,7 +76,26 @@ describe('createAiSpend', () => {
     });
     await spend.settle();
 
-    expect(settle).toHaveBeenCalledWith(null);
+    expect(settle).toHaveBeenCalledWith(0.03);
+  });
+
+  it('never books an unpriced run below what was already priced', async () => {
+    const spend = createAiSpend('meal');
+    await spend.reserve();
+    await spend.run(async () => {
+      // $0.04 priced, past the $0.03 estimate, then an unpriced attempt.
+      for (let i = 0; i < 100; i++) pricedAttempt();
+      meterAttemptSpend('some-unpriced-model', {
+        inputTokens: 10,
+        outputTokens: 10,
+        cachedTokens: null,
+        cacheWriteTokens: null,
+        thoughtTokens: null,
+      });
+    });
+    await spend.settle();
+
+    expect(settle.mock.calls[0][0]).toBeCloseTo(0.04, 10);
   });
 
   it('treats an attempt with no usage at all as an unknown cost', async () => {
@@ -93,7 +112,7 @@ describe('createAiSpend', () => {
     });
     await spend.settle();
 
-    expect(settle).toHaveBeenCalledWith(null);
+    expect(settle).toHaveBeenCalledWith(0.01);
   });
 
   it('adds an attempt that finishes after settle as a late cost', async () => {

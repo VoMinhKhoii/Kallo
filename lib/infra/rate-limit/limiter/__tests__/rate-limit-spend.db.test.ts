@@ -30,12 +30,13 @@ interface ConsumeRow {
   remaining_hour: number | null;
   remaining_day: number | null;
   spend_day: string | Date | null;
+  slot_expires_at: string | Date | null;
 }
 
 const CONSUME_SIGNATURE =
   'public.rate_limit_consume(text,text,text,int,int,int,int,int,bigint,bigint,timestamptz)';
 const RELEASE_SIGNATURE =
-  'public.rate_limit_release(text,text,text,date,bigint,timestamptz)';
+  'public.rate_limit_release(text,text,text,date,bigint,timestamptz,timestamptz)';
 
 const databaseUrl = process.env.DATABASE_URL;
 const describe = databaseUrl ? describeBase : describeBase.skip;
@@ -112,10 +113,16 @@ function consume(args: ConsumeArgs, connection: postgres.Sql = sql) {
 
 function release(args: {
   keyHash?: string | null;
+  /** The expiry `consume` returned to this holder. */
+  slotExpiresAt?: string | Date | null;
   spendDay?: string | null;
   delta?: number | null;
   now: string;
 }) {
+  const slotExpiresAt =
+    args.slotExpiresAt instanceof Date
+      ? args.slotExpiresAt.toISOString()
+      : (args.slotExpiresAt ?? null);
   return sql`
     SELECT public.rate_limit_release(
       ${'user'}::text,
@@ -123,6 +130,7 @@ function release(args: {
       ${route}::text,
       ${args.spendDay ?? null}::date,
       ${args.delta ?? null}::bigint,
+      ${slotExpiresAt}::timestamptz,
       ${args.now}::timestamptz
     )
   `;
@@ -296,7 +304,14 @@ describe('rate_limit_consume — one-at-a-time slot', () => {
     // The slot's lifetime is what is left of it.
     expect(second.retry_after_seconds).toBe(90);
 
-    await release({ keyHash, now: '2026-09-01T10:00:20Z' });
+    expect(new Date(first.slot_expires_at as string | Date).toISOString()).toBe(
+      '2026-09-01T10:01:30.000Z'
+    );
+    await release({
+      keyHash,
+      slotExpiresAt: first.slot_expires_at,
+      now: '2026-09-01T10:00:20Z',
+    });
     const third = await consume({
       keyHash,
       slot: 1,
@@ -359,10 +374,60 @@ describe('rate_limit_consume — one-at-a-time slot', () => {
   it('releasing more than was taken never goes below zero', async () => {
     const keyHash = freshKey();
     const now = '2026-09-01T10:00:00Z';
-    await consume({ keyHash, slot: 2, slotTtl: 90, now });
-    await release({ keyHash, now });
-    await release({ keyHash, now });
+    const held = await consume({ keyHash, slot: 2, slotTtl: 90, now });
+    await release({ keyHash, slotExpiresAt: held.slot_expires_at, now });
+    await release({ keyHash, slotExpiresAt: held.slot_expires_at, now });
     expect((await counterOf(keyHash))?.slot_count).toBe(0);
+  });
+
+  it("a release after its own slot expired never frees a later holder's", async () => {
+    // A outlives its 90 s slot; B takes the expired slot; A's late release
+    // must not free B's, or C would run alongside B.
+    const keyHash = freshKey();
+    const a = await consume({
+      keyHash,
+      slot: 1,
+      slotTtl: 90,
+      now: '2026-09-01T10:00:00Z',
+    });
+    const b = await consume({
+      keyHash,
+      slot: 1,
+      slotTtl: 90,
+      now: '2026-09-01T10:01:31Z',
+    });
+    expect(b.allowed).toBe(true);
+
+    await release({
+      keyHash,
+      slotExpiresAt: a.slot_expires_at,
+      now: '2026-09-01T10:01:32Z',
+    });
+    const c = await consume({
+      keyHash,
+      slot: 1,
+      slotTtl: 90,
+      now: '2026-09-01T10:01:33Z',
+    });
+
+    expect(c).toMatchObject({ allowed: false, reason: 'concurrent' });
+  });
+
+  it('a release without the holder expiry frees no slot', async () => {
+    const keyHash = freshKey();
+    const now = '2026-09-01T10:00:00Z';
+    await consume({ keyHash, slot: 1, slotTtl: 90, now });
+    await release({ keyHash, now });
+    expect((await counterOf(keyHash))?.slot_count).toBe(1);
+  });
+
+  it('hands back no slot expiry when no slot was asked for', async () => {
+    const row = await consume({
+      keyHash: freshKey(),
+      day: 30,
+      now: '2026-09-01T10:00:00Z',
+    });
+    expect(row.slot_expires_at).toBeNull();
   });
 
   it('refuses a slot with no lifetime', async () => {
@@ -389,7 +454,7 @@ describe('rate_limit_consume / rate_limit_release — grants', () => {
            NULL::integer, NULL::integer, NULL::integer, NULL::integer,
            NULL::integer, 1::bigint, 10::bigint, NULL::timestamptz)`,
         `SELECT public.rate_limit_release('user'::text, NULL::text, 'x'::text,
-           NULL::date, NULL::bigint, NULL::timestamptz)`,
+           NULL::date, NULL::bigint, NULL::timestamptz, NULL::timestamptz)`,
       ]) {
         const attempt = sql.begin(async (tx) => {
           await tx.unsafe(`SET LOCAL ROLE "${probeRole}"`);

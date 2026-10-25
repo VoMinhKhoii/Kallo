@@ -72,7 +72,12 @@ export function createAiSpend(
     async settle() {
       if (settled) return;
       settled = true;
-      await lease?.settle(unpriced ? null : knownUsd);
+      // An unpriced attempt cost something unknown on top of what was
+      // priced: book at least the estimate, and never less than the priced
+      // part.
+      await lease?.settle(
+        unpriced ? Math.max(knownUsd, aiSpendEstimatesUsd[kind]) : knownUsd
+      );
     },
   };
 }

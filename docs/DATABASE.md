@@ -579,7 +579,10 @@ reaped (one row a day). Same server-only boundary as the other limiter tables.
 An 11-argument `rate_limit_consume(...)` overload checks the brake (locking the
 day row `FOR UPDATE`), then the key's windows and slot in the same upsert, and
 books the reservation only once both admitted; `rate_limit_release(...)` frees
-a slot and settles spend by a signed delta. The 7-argument consume stays until
+a slot and settles spend by a signed delta. A slot is freed only by its own
+holder before it expires (the release passes back the `slot_expires_at` the
+consume returned), so a request that outlived its slot cannot free a later
+holder's. The 7-argument consume stays until
 no deployed code calls it, then a later migration drops it.
 
 If the legacy tables are large on first deploy, run

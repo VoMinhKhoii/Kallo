@@ -28,6 +28,7 @@ const CONSUME_SQL = `
   )
 `;
 
+/** The spend lease holds no slot, so it never sends a slot expiry. */
 const RELEASE_SQL = `
   select public.rate_limit_release(
     $1::text,
@@ -35,6 +36,7 @@ const RELEASE_SQL = `
     $3::text,
     $4::date,
     $5::bigint,
+    null::timestamptz,
     $6::timestamptz
   )
 `;

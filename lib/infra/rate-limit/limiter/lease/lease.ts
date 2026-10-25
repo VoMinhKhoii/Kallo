@@ -92,6 +92,8 @@ function createLease(args: {
   route: string;
   spendDay: string;
   reservedMicroUsd: number;
+  /** What an unknown cost is booked at: the kind's estimate. */
+  estimateMicroUsd: number;
 }): SpendLease {
   let settled: Promise<void> | undefined;
 
@@ -114,10 +116,13 @@ function createLease(args: {
 
   return {
     settle(actualCostUsd) {
+      // An unknown cost books the estimate — already reserved on an enforced
+      // lease (delta 0), booked here on an App Review one, which reserved
+      // nothing.
       settled ??= send(
-        actualCostUsd == null
-          ? 0
-          : toMicroUsd(actualCostUsd) - args.reservedMicroUsd
+        (actualCostUsd == null
+          ? args.estimateMicroUsd
+          : toMicroUsd(actualCostUsd)) - args.reservedMicroUsd
       );
       return settled;
     },
@@ -144,16 +149,18 @@ export async function acquireSpendLease(
   const store = options.store ?? getStore();
   const recordEvent = options.recordEvent ?? recordRateLimitEvent;
 
+  const estimateMicroUsd = toMicroUsd(aiSpendEstimatesUsd[kind]);
   if (options.enforce === false) {
     return createLease({
       store,
       route,
       spendDay: utcDay(now),
       reservedMicroUsd: 0,
+      estimateMicroUsd,
     });
   }
 
-  const reservedMicroUsd = toMicroUsd(aiSpendEstimatesUsd[kind]);
+  const reservedMicroUsd = estimateMicroUsd;
   let row: Awaited<ReturnType<LeaseStore['reserve']>>;
 
   try {
@@ -199,5 +206,6 @@ export async function acquireSpendLease(
     route,
     spendDay: row.spend_day ?? utcDay(now),
     reservedMicroUsd,
+    estimateMicroUsd,
   });
 }

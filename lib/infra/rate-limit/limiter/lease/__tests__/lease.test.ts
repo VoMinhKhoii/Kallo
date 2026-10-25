@@ -211,6 +211,25 @@ describe('acquireSpendLease', () => {
   });
 });
 
+describe('an App Review lease', () => {
+  it('books the estimate for an unknown cost, since it reserved nothing', async () => {
+    const store = fakeStore();
+    const lease = await acquireSpendLease('meal', {
+      store,
+      now,
+      recordEvent,
+      enforce: false,
+    });
+    await lease.settle(null);
+
+    expect(store.settle).toHaveBeenCalledWith({
+      route: 'ai:spend:meal',
+      spendDay: '2026-10-25',
+      deltaMicroUsd: 30_000,
+    });
+  });
+});
+
 describe('toMicroUsd', () => {
   it('rounds to whole micro-dollars', () => {
     expect(toMicroUsd(10)).toBe(10_000_000);

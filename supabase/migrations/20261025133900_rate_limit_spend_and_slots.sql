@@ -52,7 +52,8 @@ RETURNS TABLE (
   remaining_minute int,
   remaining_hour int,
   remaining_day int,
-  spend_day date
+  spend_day date,
+  slot_expires_at timestamptz
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -162,7 +163,8 @@ BEGIN
         NULL::int,
         NULL::int,
         NULL::int,
-        NULL::date;
+        NULL::date,
+        NULL::timestamptz;
       RETURN;
     END IF;
   END IF;
@@ -355,7 +357,8 @@ BEGIN
              ELSE greatest(0, v_hour_limit - v_hour_count) END,
         CASE WHEN v_day_limit IS NULL THEN NULL
              ELSE greatest(0, v_day_limit - v_day_count) END,
-        NULL::date;
+        NULL::date,
+        NULL::timestamptz;
       RETURN;
     END IF;
   END IF;
@@ -377,7 +380,10 @@ BEGIN
          ELSE v_hour_limit - v_hour_count END,
     CASE WHEN v_day_limit IS NULL THEN NULL
          ELSE v_day_limit - v_day_count END,
-    CASE WHEN v_spend IS NULL THEN NULL ELSE v_day END;
+    CASE WHEN v_spend IS NULL THEN NULL ELSE v_day END,
+    -- The holder's own expiry, handed back to rate_limit_release so a release
+    -- can tell its slot from a later holder's.
+    CASE WHEN v_slot_limit IS NULL THEN NULL ELSE v_now + v_slot_ttl END;
 END;
 $$;
 
@@ -392,16 +398,26 @@ GRANT EXECUTE ON FUNCTION public.rate_limit_consume(
 ) TO service_role;
 
 -- Free one slot on a key and/or settle spend on the day it was reserved on.
+-- `p_slot_expires_at` is the expiry `rate_limit_consume` returned to this
+-- holder. A holder whose slot already expired frees nothing: once expired its
+-- slot read as free and may since have been taken by someone else, whose
+-- slot a late release must not free. (A lingering count then expires with
+-- the row's latest holder, the safe side.)
 -- `p_spend_delta_micro_usd` is signed: real cost minus the estimate (negative
 -- when the call cost less), or a late attempt's whole cost with no
 -- reservation behind it. The day is the one `rate_limit_consume` returned,
 -- so a call that straddles UTC midnight settles where it reserved.
+DROP FUNCTION IF EXISTS public.rate_limit_release(
+  text, text, text, date, bigint, timestamptz
+);
+
 CREATE OR REPLACE FUNCTION public.rate_limit_release(
   p_key_kind text,
   p_key_hash text,
   p_route text,
   p_spend_day date,
   p_spend_delta_micro_usd bigint,
+  p_slot_expires_at timestamptz DEFAULT NULL,
   p_now timestamptz DEFAULT NULL
 )
 RETURNS void
@@ -415,7 +431,9 @@ DECLARE
 BEGIN
   v_now := coalesce(p_now, now());
 
-  IF p_key_hash IS NOT NULL THEN
+  IF p_key_hash IS NOT NULL
+     AND p_slot_expires_at IS NOT NULL
+     AND p_slot_expires_at > v_now THEN
     UPDATE public.rate_limit_counters t
     SET
       slot_count = CASE
@@ -443,11 +461,11 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.rate_limit_release(
-  text, text, text, date, bigint, timestamptz
+  text, text, text, date, bigint, timestamptz, timestamptz
 ) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.rate_limit_release(
-  text, text, text, date, bigint, timestamptz
+  text, text, text, date, bigint, timestamptz, timestamptz
 ) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.rate_limit_release(
-  text, text, text, date, bigint, timestamptz
+  text, text, text, date, bigint, timestamptz, timestamptz
 ) TO service_role;
