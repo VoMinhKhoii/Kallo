@@ -13,7 +13,7 @@ _dmarc.kallo.fit  TXT  "v=DMARC1; p=none; rua=mailto:..."
 marks unknown senders as a soft fail. Together they leave the domain easy to
 spoof for fake password-reset or billing mail. Nothing here is code — every
 change is a DNS record the owner edits in Cloudflare (**DNS → Records**), or a
-setting in the Cloudflare, Resend or Supabase dashboard. Where a value depends
+setting in the Cloudflare or Supabase dashboard. Where a value depends
 on a vendor's live configuration, this page says **copy from dashboard**
 rather than guessing it.
 
@@ -48,8 +48,14 @@ showing `From: billing@kallo.fit`:
 
 | From: domain | Who sends | Envelope (`Return-Path`) | DKIM `d=` | DMARC result |
 |---|---|---|---|---|
-| `mail.kallo.fit` | Resend: every app email, auth mail via the Supabase Send Email hook, waitlist (`lib/infra/email/config.ts`, default `notifications@mail.kallo.fit`) | `send.mail.kallo.fit` (Resend's default Return-Path) | `mail.kallo.fit` (`resend._domainkey.mail`) | DKIM aligned even under strict; SPF aligned under relaxed only |
+| `mail.kallo.fit` | Cloudflare Email Sending: every app email, auth mail via the Supabase Send Email hook, waitlist (`lib/infra/email/config.ts`, default `notifications@mail.kallo.fit`) | `bounces@cf-bounce.mail.kallo.fit` | `mail.kallo.fit` (`cf-bounce._domainkey.mail`) | DKIM aligned even under strict; SPF aligned under relaxed only. Gmail showed `dmarc=pass` on 2026-10-25 |
 | `kallo.fit` | **Nothing we know of** | — | — | — |
+
+The apex is onboarded for Cloudflare Email Sending too (since 2026-08-04), so
+our API token can send as any `@*.kallo.fit` address, not just
+`mail.kallo.fit`: on 2026-10-25 a send from `@not-onboarded.kallo.fit` was
+accepted, signed `d=kallo.fit` (`cf2024-1`) and passed DMARC. No code does
+this; `EMAIL_FROM` is what keeps us on `mail.kallo.fit`.
 
 Not senders for our domain, so DMARC on `kallo.fit` does not touch them:
 
@@ -97,9 +103,13 @@ how you find a sender you forgot.
    (`kallo.fit._report._dmarc.<their-domain>`); report services do this for
    you. Check the current value: `dig +short TXT _dmarc.kallo.fit`.
 3. Check whether a separate record exists for the sending subdomain:
-   `dig +short TXT _dmarc.mail.kallo.fit`. If Resend setup added one, **it
+   `dig +short TXT _dmarc.mail.kallo.fit`. If a provider's setup added one, **it
    overrides** the apex `sp=` for `mail.kallo.fit`, so stage that record too
    (same steps as §4, its own `p=`).
+   **It exists:** onboarding `mail.kallo.fit` for Cloudflare Email Sending on
+   2026-10-25 published `v=DMARC1; p=reject;` there, as a record Email Sending
+   manages. So `mail.kallo.fit` is already at reject (our mail passes: DKIM
+   aligned), and with no `rua=` receivers send no reports for it.
 4. Wait **1–2 weeks** (long enough to see weekly or monthly mail). Pass
    criteria: every source you recognize shows DMARC pass (aligned SPF or DKIM);
    every failing source is either unknown (spoofing, fine to block) or on the
@@ -124,16 +134,19 @@ If the Email Routing page flags the record as wrong after the edit, restore
 Cloudflare's exact value — DMARC is what enforces; `-all` is a secondary
 signal.
 
-### Sending subdomain — Resend records
+### Sending subdomain — Cloudflare Email Sending records
 
-Leave these exactly as Resend's **Domains → mail.kallo.fit → Records** tab
-shows them (**copy from dashboard**; the Resend Cloudflare guide shows the
-typical shape: `MX send.mail` → `feedback-smtp.<region>.amazonses.com`,
-`TXT send.mail` → `v=spf1 include:amazonses.com ~all`, `TXT
-resend._domainkey.mail` → the DKIM key; some accounts get CNAMEs instead)
-([Resend on Cloudflare][resend-cf], [add a domain][resend-domain]). All must be
-**DNS only** (grey cloud). Do not tighten Resend's SPF — it is not what makes
-DMARC pass here; the aligned DKIM signature is.
+Cloudflare published and manages these when `mail.kallo.fit` was onboarded
+(`bunx wrangler email sending dns get mail.kallo.fit` lists them; they stay
+locked while sending is enabled) ([sending domains][cf-sending-domains]):
+`MX` + `TXT cf-bounce.mail` → `v=spf1 include:_spf.mx.cloudflare.net ~all`,
+DKIM at `cf-bounce._domainkey.mail`, and `_dmarc.mail` (§3 step 3). Do not
+tighten that SPF — it is not what makes DMARC pass here; the aligned DKIM
+signature is.
+
+Resend's old records (`MX`/`TXT send.mail`, `TXT resend._domainkey.mail`) are
+still published so a rollback works; delete them once the Cloudflare sender has
+run in prod for a couple of weeks.
 
 ### DMARC — `_dmarc.kallo.fit` TXT
 
@@ -168,9 +181,9 @@ Notes on the tags:
   own, including `mail.kallo.fit` (unless §3 step 3 found one). **`np=`**
   (RFC 9989) covers subdomains that don't exist at all, e.g.
   `billing.kallo.fit`; receivers that don't know it fall back to `sp=`.
-- **`adkim=r; aspf=r`** are the defaults, written out for clarity. Resend's
-  SPF envelope is `send.mail.kallo.fit`, which aligns only under relaxed, so do
-  not set `aspf=s`. `adkim=s` would still pass for our `mail.kallo.fit` mail,
+- **`adkim=r; aspf=r`** are the defaults, written out for clarity. Our SPF
+  envelope is `cf-bounce.mail.kallo.fit`, which aligns only under relaxed, so
+  do not set `aspf=s`. `adkim=s` would still pass for our `mail.kallo.fit` mail,
   but buys nothing and breaks any future `From: @kallo.fit` signed by a
   subdomain key.
 - **`ruf=`** (per-message failure reports) is omitted on purpose: few receivers
@@ -207,9 +220,9 @@ After every stage:
 ```bash
 dig +short TXT kallo.fit                  # exactly one "v=spf1 ..." record
 dig +short TXT _dmarc.kallo.fit           # the stage you just applied
-dig +short TXT _dmarc.mail.kallo.fit      # empty, or staged in step with the apex
-dig +short TXT send.mail.kallo.fit        # Resend SPF, as the dashboard shows
-dig +short TXT resend._domainkey.mail.kallo.fit   # DKIM key present
+dig +short TXT _dmarc.mail.kallo.fit      # v=DMARC1; p=reject; (Email Sending's)
+dig +short TXT cf-bounce.mail.kallo.fit   # Cloudflare sending SPF
+dig +short TXT cf-bounce._domainkey.mail.kallo.fit   # DKIM key present
 dig +short MX kallo.fit                   # route1-3.mx.cloudflare.net unchanged
 ```
 
@@ -232,9 +245,10 @@ DNS edits in Cloudflare take effect within minutes (record TTL `Auto`).
   `_dmarc.kallo.fit` back one stage (worst case to stage 0, `p=none`), and put
   the SPF qualifier back to `~all`. Then find the failing source in the reports and fix *it* (add its
   DKIM, or move it onto `mail.kallo.fit`) before re-tightening.
-- **Resend mail failing only**: check the Resend dashboard shows the domain as
-  **Verified** and every record green; a proxied (orange) record or a changed
-  value is the usual cause.
+- **App mail failing only**: `bunx wrangler email sending settings
+  mail.kallo.fit` must say enabled, and `... dns get mail.kallo.fit` must
+  match what `dig` returns; then check the Email Sending activity log in the
+  dashboard for the refusal reason.
 - **Inbound support mail stops**: MX or apex SPF was changed; restore the
   values Email Routing → Settings lists.
 
@@ -246,8 +260,8 @@ DNS edits in Cloudflare take effect within minutes (record TTL `Auto`).
 | `_dmarc.kallo.fit` | `p=none` | `p=reject; sp=reject; np=reject; adkim=r; aspf=r` |
 | `rua` reports | set, destination unknown | read in DMARC Management, reviewed each stage |
 | `ruf` reports | — | omitted |
-| `mail.kallo.fit` SPF/DKIM | Resend-verified | unchanged (copy from dashboard) |
-| `_dmarc.mail.kallo.fit` | unknown | absent, or staged to `p=reject` |
+| `mail.kallo.fit` SPF/DKIM | Cloudflare Email Sending, managed (2026-10-25) | unchanged |
+| `_dmarc.mail.kallo.fit` | `p=reject`, no `rua` (Email Sending, 2026-10-25) | `p=reject` |
 | MTA-STS / TLS-RPT | absent | optional |
 | CAA / DNSSEC | absent | optional |
 
@@ -257,8 +271,7 @@ DNS edits in Cloudflare take effect within minutes (record TTL `Auto`).
   [postmaster (SRS, ARC, DKIM)][cf-postmaster]
 - Cloudflare, [Enable DMARC Management][cf-dmarc], [CAA records][cf-caa],
   [DNSSEC][cf-dnssec]
-- Resend, [Add and verify a domain][resend-domain],
-  [Cloudflare DNS guide][resend-cf], [Implementing DMARC][resend-dmarc]
+- Cloudflare, [Email Sending domains][cf-sending-domains]
 - IETF, [RFC 9989 — DMARC][rfc9989] (replaces RFC 7489; removes `pct`, adds
   `t` and `np`)
 
@@ -267,8 +280,6 @@ DNS edits in Cloudflare take effect within minutes (record TTL `Auto`).
 [cf-dmarc]: https://developers.cloudflare.com/dmarc-management/enable/
 [cf-caa]: https://developers.cloudflare.com/ssl/edge-certificates/caa-records/
 [cf-dnssec]: https://developers.cloudflare.com/dns/dnssec/
-[resend-domain]: https://resend.com/docs/add-a-domain
-[resend-cf]: https://resend.com/docs/knowledge-base/cloudflare
-[resend-dmarc]: https://resend.com/docs/dashboard/domains/dmarc
+[cf-sending-domains]: https://developers.cloudflare.com/email-service/configuration/domains/
 [resend-analyzer]: https://resend.com/docs/dmarc-analyzer
 [rfc9989]: https://www.rfc-editor.org/rfc/rfc9989.html
