@@ -21,7 +21,7 @@ Report only vulnerabilities a real attacker could exploit:
   metadata reaches an LLM call that then drives a privileged action.
 - **AuthN / AuthZ** — missing or bypassable session checks, IDOR (a user reading or
   mutating another user's meals, groups, invites, or admin records), privilege
-  escalation into `/admin` surfaces, unsafe redirects.
+  escalation into admin-only routes (`ADMIN_EMAILS`), unsafe redirects.
 - **Data exposure** — secrets or tokens in client bundles, service-role keys
   reaching the browser, PII in logs or error responses, over-broad API responses.
 - **Missing RLS** — new tables in `supabase/migrations/` with no row-level security
@@ -38,8 +38,7 @@ Report only vulnerabilities a real attacker could exploit:
 `lib/infra/security/csp.ts` · `proxy.ts` (auth/session + origin lock) ·
 `lib/infra/auth/session.ts`, `lib/infra/auth/safe-next.ts`, `lib/infra/auth/redirects.ts` ·
 `app/api/**` route handlers · `app/auth/**` ·
-`'use server'` actions in `lib/actions/**` and
-`app/[locale]/(app)/admin/**/actions.ts` ·
+`'use server'` actions in `lib/actions/**` ·
 `lib/db/**` (query scoping, raw SQL) · `supabase/migrations/**` (RLS coverage) ·
 `lib/rate-limit/**` (abuse guards) · `lib/uploads/**` ·
 `lib/ai/**` (untrusted meal text reaching model calls) · `lib/api/**`

@@ -26,7 +26,6 @@ interface AppShellProps {
   onboardingStep: number;
   initialProfile: ProfileRow | null;
   isFirstSession: boolean;
-  isAdmin?: boolean;
   user?: UserMenuUser;
   initialSidebarState?: 'closed' | 'open';
   initialSidebarExpandMode?: 'click' | 'hover';
@@ -47,7 +46,6 @@ export function AppShell({
   onboardingStep,
   initialProfile,
   isFirstSession,
-  isAdmin = false,
   user = FALLBACK_USER,
   initialSidebarState,
   initialSidebarExpandMode,
@@ -159,7 +157,6 @@ export function AppShell({
         <div className="hidden md:block">
           <DesktopSidebar
             user={user}
-            isAdmin={isAdmin}
             {...onboarding}
             initialState={initialSidebarState}
             initialExpandMode={initialSidebarExpandMode}
@@ -168,7 +165,7 @@ export function AppShell({
 
         {/* Page content (mobile gets a slim header row above it) */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip">
-          <MobileHeader user={user} isAdmin={isAdmin} {...onboarding} />
+          <MobileHeader user={user} {...onboarding} />
           {children}
         </div>
       </div>

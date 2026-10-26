@@ -29,9 +29,4 @@ describe('needsSignIn', () => {
     expect(needsSignIn('/dashboards')).toBe(false);
     expect(needsSignIn('/pricing')).toBe(false);
   });
-
-  it('leaves /admin out so the redirect never names it', () => {
-    expect(needsSignIn('/admin')).toBe(false);
-    expect(needsSignIn('/admin/prompts')).toBe(false);
-  });
 });

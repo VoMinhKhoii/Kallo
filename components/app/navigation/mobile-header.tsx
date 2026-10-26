@@ -18,7 +18,6 @@ import type { UserMenuUser } from './user-menu';
 
 interface MobileHeaderProps extends MobileOnboardingProps {
   user: UserMenuUser;
-  isAdmin?: boolean;
 }
 
 const SIDE = 'flex flex-1 basis-0 items-center';
@@ -30,20 +29,15 @@ const STRIP_HIDDEN = 'group-has-[[data-strip-mode=true]]/mobileheader:hidden';
  * `AppHeader`: the Kallo wordmark on Today, a back chevron on a full-screen
  * page (the logging feed, which hides the tab bar), a centered slot pages
  * portal into (the logging date chip), and on the right the activity heart and
- * the account avatar, which opens the account sheet (Settings, Admin, sign-out).
+ * the account avatar, which opens the account sheet (Settings, sign-out).
  * Navigation itself lives on the bottom tab bar. Hidden on `md` and up, where
  * the desktop sidebar takes over.
  */
-export function MobileHeader({
-  user,
-  isAdmin = false,
-  ...onboarding
-}: MobileHeaderProps) {
+export function MobileHeader({ user, ...onboarding }: MobileHeaderProps) {
   const pathname = usePathname();
   const tMenu = useTranslations('app.userMenu');
   const isFullScreen = isFullScreenRoute(pathname);
-  const accountActive =
-    isActiveRoute(pathname, '/settings') || isActiveRoute(pathname, '/admin');
+  const accountActive = isActiveRoute(pathname, '/settings');
 
   return (
     <header className="group/mobileheader flex h-12 shrink-0 items-center gap-2 px-3 md:hidden">
@@ -68,7 +62,6 @@ export function MobileHeader({
         <MobileActivityButton />
         <MobileAccountSheet
           user={user}
-          isAdmin={isAdmin}
           {...onboarding}
           trigger={
             <button

@@ -1786,7 +1786,7 @@ export const chatGroupMessages = pgTable(
 
 // ---------------------------------------------------------------------------
 // User feedback — in-app bug reports, ingredient requests, and ideas.
-// Submitted from web + mobile; triaged by admins via /admin/feedback.
+// Submitted from web + mobile; triaged by admins on admin.kallo.fit.
 // ---------------------------------------------------------------------------
 
 export const userFeedback = pgTable(
@@ -2020,7 +2020,7 @@ export const entitlementGrants = pgTable(
     // Provider-owned subscription management URL. RevenueCat chooses the
     // correct App Store / Play / Paddle portal, including cross-platform cases.
     managementUrl: text('management_url'),
-    // Set when an /admin/premium "end" canceled this grant: the audit row's
+    // Set when an admin.kallo.fit Premium "end" canceled this grant: the audit row's
     // id, so undoing that action can restore exactly these grants.
     canceledByAction: uuid('canceled_by_action'),
     createdAt: timestamp('created_at', { withTimezone: true })
@@ -2178,7 +2178,7 @@ export const billingWebhookEvents = pgTable(
   ]
 );
 
-// Every change made from /admin/premium: grants, ends, welcome-offer edits
+// Every change made from admin.kallo.fit Premium: grants, ends, welcome-offer edits
 // and undos, with who did it and why. Grants themselves are ordinary
 // `entitlement_grants` rows (source 'promo', external_ref
 // 'admin:<this id>:<user id>'); grants an 'end' cancels carry this id in
@@ -2236,7 +2236,7 @@ export const premiumGrantAudit = pgTable(
   ]
 );
 
-// The welcome offer new signups get, edited from /admin/premium. One row
+// The welcome offer new signups get, edited from admin.kallo.fit Premium. One row
 // (id = 1, seeded by the creating migration); the signup trigger reads it, so
 // switching the offer off or changing its length needs no deploy. Changing it
 // never touches grants that already exist.

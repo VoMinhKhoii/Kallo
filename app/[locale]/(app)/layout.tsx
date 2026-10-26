@@ -8,7 +8,6 @@ import { PremiumGuardProvider } from '@/components/billing/premium-guard-provide
 import { AiConsentProvider } from '@/components/privacy/ai-consent-provider';
 import { AppThemeProvider } from '@/components/providers/theme/app-theme-provider';
 import { getMyPublicProfile } from '@/lib/actions/groups/profile';
-import { isAdminEmail } from '@/lib/admin/authz/is-admin';
 import { getBillingConfig } from '@/lib/domain/billing/billing';
 import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 import { createClient } from '@/lib/infra/supabase/server';
@@ -34,7 +33,7 @@ interface AppLayoutProps {
  *
  * A signed-out page load normally never gets here: `updateSession` (proxy)
  * answers it with an HTTP 307 to the sign-in dialog. What the proxy lets
- * through (a Supabase outage, a session ending mid-request, `/admin`) still
+ * through (a Supabase outage, a session ending mid-request) still
  * reaches the `redirect('/')` below — but a page rendering beside it may throw
  * its own "sign in" error first, which `error.tsx` catches.
  */
@@ -72,7 +71,6 @@ async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
     console.error('Failed to load onboarding profile:', error);
   }
   const onboardingStep = profile?.onboardingStep ?? 0;
-  const isAdmin = isAdminEmail(user.email);
 
   // The editable profile ("what should we call you" + avatar) is the source of
   // truth for identity; OAuth metadata is only the pre-rename fallback.
@@ -123,7 +121,6 @@ async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
       onboardingStep={onboardingStep}
       initialProfile={profile}
       isFirstSession={isFirstSession}
-      isAdmin={isAdmin}
       user={{ email: user.email ?? null, displayName, avatarUrl }}
       initialSidebarState={initialSidebarState}
       initialSidebarExpandMode={initialSidebarExpandMode}

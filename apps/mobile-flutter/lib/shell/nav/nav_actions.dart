@@ -3,12 +3,7 @@ import 'package:go_router/go_router.dart';
 
 /// The shell's branch roots — the locations that HAVE a tab to come back to.
 /// Kept in step with the [StatefulShellRoute] branches in `router.dart`.
-const Set<String> _shellRoots = {
-  '/dashboard',
-  '/nutrition',
-  '/circle',
-  '/admin',
-};
+const Set<String> _shellRoots = {'/dashboard', '/nutrition', '/circle'};
 
 /// Opens the logging feed FULL-SCREEN over whatever the user is looking at
 /// (native pass, 2026-08-31): Log is a pill-nav item but not a shell branch —

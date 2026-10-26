@@ -129,10 +129,6 @@ describe('signed-out visitor', () => {
     expect(response.headers.get('expires')).toBe('0');
   });
 
-  it('leaves /admin to its 404 rather than naming it', async () => {
-    expect(await location('/en/admin/prompts')).toBeNull();
-  });
-
   it('leaves a Server Action POST to the action', async () => {
     const response = await run('/en/logging', {
       method: 'POST',

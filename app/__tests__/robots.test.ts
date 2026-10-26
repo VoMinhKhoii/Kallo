@@ -12,7 +12,6 @@ const { default: robots } = await import('@/app/robots');
 
 import {
   isKnownNonMarkdownPath,
-  PRIVATE_PATH_PREFIXES,
   ROBOTS_DISALLOWED_PREFIXES,
 } from '@/lib/seo/private-paths';
 
@@ -29,21 +28,6 @@ describe('robots.txt', () => {
     }
     expect(rules.disallow).toContain('/api/');
     expect(rules.disallow).toContain('/auth/');
-  });
-
-  it('does not advertise the admin surface', () => {
-    // Listing /admin would tell an attacker it exists. It is gated by
-    // ADMIN_EMAILS; a robots entry only helps enumeration.
-    expect(rules.disallow.join(' ')).not.toContain('admin');
-  });
-
-  it('keeps /admin in the negotiation list even though robots omits it', () => {
-    // The two lists diverge on exactly one entry, and on purpose. If they ever
-    // silently converge, markdown negotiation would start answering /admin
-    // paths with a 404 instead of letting them render.
-    expect(PRIVATE_PATH_PREFIXES).toContain('/admin');
-    expect(ROBOTS_DISALLOWED_PREFIXES).not.toContain('/admin');
-    expect(isKnownNonMarkdownPath('/admin/health')).toBe(true);
   });
 
   it('points at the sitemap', () => {

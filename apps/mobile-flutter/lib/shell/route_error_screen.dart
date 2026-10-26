@@ -14,9 +14,8 @@ import 'nav/nav_actions.dart';
 /// message: an address with no screen behind it ([notFound], the seal with its
 /// telescope) and a route that threw on the way in (the seal sweeping up).
 ///
-/// Its chrome mirrors `placeholder_screen.dart`, because the same thing is
-/// true of both: a deep link can land here directly, so the header must always
-/// offer a way out.
+/// A deep link can land here directly, so the header must always offer a way
+/// out.
 class RouteErrorScreen extends StatelessWidget {
   const RouteErrorScreen({required this.notFound, super.key});
 

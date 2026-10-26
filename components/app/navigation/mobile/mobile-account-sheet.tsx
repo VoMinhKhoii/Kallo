@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Settings, ShieldCheck, SunMoon } from 'lucide-react';
+import { LogOut, Settings, SunMoon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { ThemeSegments } from '@/components/settings/appearance/theme-segments';
@@ -28,20 +28,18 @@ interface MobileAccountSheetProps extends MobileOnboardingProps {
    *  focus returns to it on close. */
   trigger: ReactNode;
   user: UserMenuUser;
-  isAdmin?: boolean;
 }
 
 /**
  * The account surface behind the header avatar — a bottom sheet in the
  * shape of an iOS grouped settings list: who you are, the off-bar
- * destinations (Settings, Admin), and sign-out on its own row. It replaces the
+ * destination (Settings), and sign-out on its own row. It replaces the
  * retired left drawer, which carried these alongside the primary destinations
  * that now live on the tab bar.
  */
 export function MobileAccountSheet({
   trigger,
   user,
-  isAdmin = false,
   onboardingIncomplete = false,
   onboardingStep = 0,
   onResumeOnboarding,
@@ -120,14 +118,6 @@ export function MobileAccountSheet({
             label={tNav('settings')}
             onNavigate={close}
           />
-          {isAdmin ? (
-            <AccountSheetRow
-              href="/admin"
-              icon={<ShieldCheck className="size-[18px]" aria-hidden="true" />}
-              label={tNav('admin')}
-              onNavigate={close}
-            />
-          ) : null}
         </ul>
 
         <div className="overflow-hidden rounded-2xl bg-card">
