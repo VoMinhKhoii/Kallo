@@ -21,8 +21,20 @@ import { TURNSTILE_ACTION } from '@/lib/infra/security/turnstile-script';
  * carries a copy of its own.
  */
 
-const LANGS = new Set(['en', 'vi']);
-const THEMES = new Set(['light', 'dark', 'auto']);
+const LANGS = ['en', 'vi'] as const;
+const THEMES = ['light', 'dark', 'auto'] as const;
+
+/**
+ * The listed constant equal to `value`, else `fallback`. Returns OUR string,
+ * never the caller's, so nothing from the query string reaches the HTML.
+ */
+function pick<T extends string>(
+  allowed: readonly T[],
+  value: string | null,
+  fallback: T
+): T {
+  return allowed.find((item) => item === value) ?? fallback;
+}
 
 /** JSON for an inline <script>: no `<` can close the element early. */
 function scriptJson(value: unknown): string {
@@ -31,10 +43,8 @@ function scriptJson(value: unknown): string {
 
 export function GET(request: NextRequest): Response {
   const params = request.nextUrl.searchParams;
-  const lang = LANGS.has(params.get('lang') ?? '') ? params.get('lang') : 'en';
-  const theme = THEMES.has(params.get('theme') ?? '')
-    ? params.get('theme')
-    : 'auto';
+  const lang = pick(LANGS, params.get('lang'), 'en');
+  const theme = pick(THEMES, params.get('theme'), 'auto');
   const config = {
     sitekey: turnstileSiteKey(),
     action: TURNSTILE_ACTION,
