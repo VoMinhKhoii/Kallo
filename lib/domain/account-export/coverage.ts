@@ -267,9 +267,6 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
   prompt_versions: { excluded: 'Prompt template registry; no user data.' },
 
   // --- Abuse and spend controls --------------------------------------------
-  analysis_guard_events: { excluded: ABUSE_CONTROL },
-  analysis_rate_limit_windows: { excluded: ABUSE_CONTROL },
-  analysis_in_flight_limits: { excluded: ABUSE_CONTROL },
   analysis_model_budget_events: {
     excluded: 'Global model spend ledger; no user id or hash.',
   },

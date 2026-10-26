@@ -77,8 +77,9 @@ interface ConsumeRow {
   remaining_day: number | null;
 }
 
+// The 11-argument consume: windows here, with no slot and no spend.
 const CONSUME_SIGNATURE =
-  'public.rate_limit_consume(text,text,text,int,int,int,timestamptz)';
+  'public.rate_limit_consume(text,text,text,int,int,int,int,int,bigint,bigint,timestamptz)';
 
 const databaseUrl = process.env.DATABASE_URL;
 // The cancellation case needs to saturate the pool the consumer itself uses,
@@ -143,6 +144,10 @@ function consume(
       ${limits.minute ?? null}::integer,
       ${limits.hour ?? null}::integer,
       ${limits.day ?? null}::integer,
+      ${null}::integer,
+      ${null}::integer,
+      ${null}::bigint,
+      ${null}::bigint,
       ${now ?? null}::timestamptz
     )
   `.then((rows) => rows[0]);
@@ -456,7 +461,8 @@ describe('public.rate_limit_consume', () => {
         await tx.unsafe(
           `SELECT * FROM public.rate_limit_consume(
              $1::text, $2::text, $3::text, $4::integer, NULL::integer,
-             NULL::integer, NULL::timestamptz
+             NULL::integer, NULL::integer, NULL::integer, NULL::bigint,
+             NULL::bigint, NULL::timestamptz
            )`,
           ['user', keyHash, `${route}:anon`, 1]
         );

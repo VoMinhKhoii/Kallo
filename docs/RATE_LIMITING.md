@@ -738,20 +738,17 @@ FROM public.rate_limit_counters;
 
 ### Retention
 
-Four nightly `pg_cron` jobs, all installed by
+Two nightly `pg_cron` jobs, installed by
 `20260901194715_rate_limit_retention.sql`:
 
 | Job | Function | Horizon |
 |---|---|---|
 | `reap-rate-limit-counters-daily` (03:53) | `reap_rate_limit_counters()` | `updated_at` older than 2 days, deleted in 50k batches |
 | `reap-rate-limit-events-daily` (03:54) | `reap_rate_limit_events()` | `created_at` older than 30 days |
-| `reap-analysis-rate-limit-windows-daily` (03:55) | `reap_analysis_rate_limit_windows()` | `updated_at` older than 2 days |
-| `reap-analysis-in-flight-limits-daily` (03:57) | `reap_analysis_in_flight_limits()` | `updated_at` older than 1 day, **including rows with `count > 0`** (crash-abandoned leases) |
 
-The last two clean up the *legacy* analysis-guard tables, which shipped in
-May 2026 with no retention at all. No code reads or writes those tables since
-the analysis guard was merged into this limiter; a follow-up migration drops
-them, their reapers and `analysis_guard_events` once that deploy is live.
+The same migration also reaped the legacy analysis guard's tables; those tables,
+their reapers and `analysis_guard_events` were dropped by `20261025185300` +
+`20261025185310` after the guard was merged into this limiter.
 
 ## Testing
 
