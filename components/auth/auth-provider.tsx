@@ -12,22 +12,20 @@ export type AuthTab = 'sign-in' | 'sign-up';
 
 /**
  * Which screen the dialog is showing:
- * - `auth`        — credentials (sign-in / sign-up tabs + Google)
- * - `forgot`      — request a password-reset link
- * - `check-email` — persistent "we sent you a link" state (after sign-up
- *                   confirmation OR a reset request), with resend
+ * - `auth` — Google, then the email field that asks for a code
+ * - `code` — type the 6-digit code sent to `codeEmail`, with resend
+ *
+ * Email sign-in is code-only, so there is no sign-up form and no password
+ * reset; the tab only picks the title ("Welcome back" / "Create your account").
  */
-export type AuthPanel = 'auth' | 'forgot' | 'check-email';
-
-/** What the check-email panel is confirming, so "resend" calls the right API. */
-export type CheckEmailMode = 'confirm' | 'reset';
+export type AuthPanel = 'auth' | 'code';
 
 interface AuthDialogContextValue {
   open: boolean;
   tab: AuthTab;
   panel: AuthPanel;
-  /** The address shown on the check-email panel, and what resend targets. */
-  checkEmail: { email: string; mode: CheckEmailMode } | null;
+  /** The address the code went to, shown on the code panel; resend targets it. */
+  codeEmail: string | null;
   /** In-app path to return to after auth (e.g. an invite link), or null. */
   next: string | null;
   /**
@@ -38,12 +36,15 @@ interface AuthDialogContextValue {
    * the ID-token flow and leaves Google sign-in on the redirect fallback.
    */
   googleClientId: string | null;
+  /**
+   * Cloudflare Turnstile site key, a runtime env var passed down like the
+   * Google client ID. Null (local dev) sends code requests without a token.
+   */
+  turnstileSiteKey: string | null;
   openDialog: (tab?: AuthTab) => void;
   closeDialog: () => void;
-  setTab: (tab: AuthTab) => void;
   showAuth: () => void;
-  showForgot: () => void;
-  showCheckEmail: (email: string, mode: CheckEmailMode) => void;
+  showCode: (email: string) => void;
   /** Applies the request-time values; see `AuthRequestConfig`. */
   applyRequestConfig: (config: AuthRequestValues) => void;
 }
@@ -56,6 +57,7 @@ interface AuthDialogContextValue {
  */
 export interface AuthRequestValues {
   googleClientId: string | null;
+  turnstileSiteKey: string | null;
   next?: string | null;
   /** Open the dialog on this tab, e.g. arriving from an invite link. */
   openTab?: AuthTab | null;
@@ -75,6 +77,7 @@ export function AuthProvider({
   children,
   next = null,
   googleClientId = null,
+  turnstileSiteKey = null,
   initialOpen = false,
   initialTab = 'sign-in',
 }: {
@@ -83,6 +86,8 @@ export function AuthProvider({
   next?: string | null;
   /** `process.env.GOOGLE_WEB_CLIENT_ID`, resolved by the server page. */
   googleClientId?: string | null;
+  /** `process.env.TURNSTILE_SITE_KEY`, resolved by the server page. */
+  turnstileSiteKey?: string | null;
   initialOpen?: boolean;
   initialTab?: AuthTab;
 }) {
@@ -90,11 +95,9 @@ export function AuthProvider({
   const [tab, setTab] = useState<AuthTab>(initialTab);
   const [nextPath, setNextPath] = useState(next);
   const [clientId, setClientId] = useState(googleClientId);
+  const [siteKey, setSiteKey] = useState(turnstileSiteKey);
   const [panel, setPanel] = useState<AuthPanel>('auth');
-  const [checkEmail, setCheckEmail] = useState<{
-    email: string;
-    mode: CheckEmailMode;
-  } | null>(null);
+  const [codeEmail, setCodeEmail] = useState<string | null>(null);
 
   // Whether the dialog is open because the URL asked for it (`?auth=` /
   // `?next=`), as opposed to the reader pressing a button. Only a URL-driven
@@ -120,19 +123,24 @@ export function AuthProvider({
     setOpen(false);
     // Reset the flow so the next open starts on the credentials screen.
     setPanel('auth');
-    setCheckEmail(null);
+    setCodeEmail(null);
   }, []);
 
   const showAuth = useCallback(() => setPanel('auth'), []);
-  const showForgot = useCallback(() => setPanel('forgot'), []);
-  const showCheckEmail = useCallback((email: string, mode: CheckEmailMode) => {
-    setCheckEmail({ email, mode });
-    setPanel('check-email');
+  const showCode = useCallback((email: string) => {
+    setCodeEmail(email);
+    setPanel('code');
   }, []);
 
   const applyRequestConfig = useCallback(
-    ({ googleClientId: id, next: path, openTab }: AuthRequestValues) => {
+    ({
+      googleClientId: id,
+      turnstileSiteKey: key,
+      next: path,
+      openTab,
+    }: AuthRequestValues) => {
       setClientId(id);
+      setSiteKey(key);
       if (path !== undefined) setNextPath(path);
       if (openTab) {
         openedByRequest.current = true;
@@ -154,15 +162,14 @@ export function AuthProvider({
         open,
         tab,
         panel,
-        checkEmail,
+        codeEmail,
         next: nextPath,
         googleClientId: clientId,
+        turnstileSiteKey: siteKey,
         openDialog,
         closeDialog,
-        setTab,
         showAuth,
-        showForgot,
-        showCheckEmail,
+        showCode,
         applyRequestConfig,
       }}
     >

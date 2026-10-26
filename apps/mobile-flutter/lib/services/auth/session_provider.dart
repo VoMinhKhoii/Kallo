@@ -121,31 +121,41 @@ void requireSignedInAs(Ref<Object?> ref, String userId) {
   throw ApiError('NOT_AUTHENTICATED', 401, false, 'Not signed in as $userId');
 }
 
-/// Imperative auth actions for the auth surface (sign-in / sign-up / sign-out).
+/// Imperative auth actions for the auth surface (email code / sign-out /
+/// linked identities).
 ///
-/// The RN `SessionProvider` exposed only `signOut`; the sign-in/up screens
-/// called `supabase.auth.signInWithPassword` / `signUp` directly. This wraps
-/// all three so the Flutter auth screens depend on one injectable seam.
-/// Errors surface as Supabase's [AuthException] (UI can show `.message`).
+/// Email sign-in is code-only: [sendEmailCode] mails a 6-digit code (creating
+/// the account if the address is new) and [verifyEmailCode] signs in with it.
+/// The auth screens depend on this one injectable seam. Errors surface as
+/// Supabase's [AuthException].
 class AuthController {
   const AuthController(this._auth);
 
   final GoTrueClient _auth;
 
-  /// Sign in with email + password. Throws [AuthException] on failure.
-  Future<AuthResponse> signInWithPassword({
+  /// Mail a sign-in code to [email]. [emailRedirectTo] carries the locale the
+  /// email is written in (no link is sent); [captchaToken] is the Turnstile
+  /// token our auth proxy checks. Throws [AuthException] on failure.
+  Future<void> sendEmailCode({
     required String email,
-    required String password,
+    required String emailRedirectTo,
+    String? captchaToken,
   }) {
-    return _auth.signInWithPassword(email: email, password: password);
+    return _auth.signInWithOtp(
+      email: email,
+      shouldCreateUser: true,
+      emailRedirectTo: emailRedirectTo,
+      captchaToken: captchaToken,
+    );
   }
 
-  /// Sign up with email + password. Throws [AuthException] on failure.
-  Future<AuthResponse> signUpWithPassword({
+  /// Sign in with the code mailed to [email]. Throws [AuthException] on a wrong
+  /// or expired code (`otp_expired`).
+  Future<AuthResponse> verifyEmailCode({
     required String email,
-    required String password,
+    required String code,
   }) {
-    return _auth.signUp(email: email, password: password);
+    return _auth.verifyOTP(email: email, token: code, type: OtpType.email);
   }
 
   /// Sign out, clearing the persisted session. Mirrors the RN `signOut` helper.

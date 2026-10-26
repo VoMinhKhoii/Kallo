@@ -68,7 +68,6 @@ SDK is Flutter 3.44.1, which ships `showCupertinoSheet` / `CupertinoSheetRoute`,
 | `nutrition/widgets/scope/scope_switch.dart:11` | Text link, not a toggle | n/a | 1 | — | **keep** (rename candidate) |
 | `logging/widgets/timeline/timeline_strip.dart` `DateMorph` | In-place morph to a week strip | n/a | 1 | `CupertinoDatePicker` | **keep** |
 | `portion_ruler_strip.dart:21` | Horizontal ruler | n/a | 1 | `CupertinoPicker` | **keep** |
-| `features/auth/widgets/email_auth_form.dart:182` | `MaterialPageRoute` (Forgot password) | Last one left in the app | 1 | `CupertinoPageRoute` | **swap** — one-word change, restores edge-swipe back |
 | `shared/widgets/surface/kallo_screen.dart:47` | `Material(type: transparency)` shim, every screen | n/a | app-wide | `CupertinoPageScaffold` | **keep** until the `TextField`/spinner/ink rows above are retired |
 | `shared/widgets/feedback/skeleton.dart:23` `SkeletonPulse` | Loading skeleton | n/a | multiple | none | **keep** |
 | `theme/kallo_theme.dart:286` `snackBarTheme` | `SnackBarThemeData` | n/a | 0 `SnackBar(` uses in `lib/` | — | **dead code** |

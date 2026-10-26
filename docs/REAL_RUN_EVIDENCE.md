@@ -18,12 +18,14 @@ shows a real person's data: the repo is public.
 
 ```bash
 EVIDENCE_ACCOUNT_EMAIL=   # a dev account with realistic meal history
-EVIDENCE_ACCOUNT_PASSWORD= # only the iOS sign-in uses it
+EVIDENCE_ACCOUNT_PASSWORD= # only for an iOS build released before code sign-in
 ```
 
-The web capture needs no password: it signs in with an admin magic link, which
-sends no email. Give the account a password once, on the dev project only, with
-the Supabase admin API (`auth.admin.updateUserById`) or the dev dashboard.
+Neither capture needs a password: the web capture signs in with an admin magic
+link and the iOS one with an admin-minted sign-in code (`sign-in.mjs --code`),
+and neither sends email. A build released before code sign-in still signs in
+by password; give the account one once, on the dev project only, with the
+Supabase admin API (`auth.admin.updateUserById`) or the dev dashboard.
 
 The iOS steps need Xcode with an iPhone simulator, and `idb` plus
 `idb_companion` on PATH (`pip install fb-idb`, `brew install
@@ -103,9 +105,13 @@ facebook/fb/idb-companion`) to tap and type.
    D() { node --env-file=.env.local scripts/dev/evidence/drive-ios.mjs "$@"; }
    D tap 'I already have an account'; D tap 'Continue with email'
    D type 'you@example.com' --env EVIDENCE_ACCOUNT_EMAIL
-   D type 'Enter your password' --env EVIDENCE_ACCOUNT_PASSWORD
-   D tap 'Sign In'
+   D tap 'Send code'
+   # A fresh code minted by the admin API replaces the one just sent:
+   EVIDENCE_CODE=$(node --env-file=.env.local scripts/dev/evidence/sign-in.mjs --code) \
+     D type '000000' --env EVIDENCE_CODE
    ```
+
+   A full code signs in by itself.
 
    Already signed in as someone else, or seeing "This didn't load" with 401s
    in the server log (a reset password ends the old session): Settings →

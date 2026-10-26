@@ -37,13 +37,14 @@ describe('buildCsp (enforced policy)', () => {
     );
   });
 
-  it('allows scripts only from self plus the two third parties that inject one', async () => {
+  it('allows scripts only from self plus the three third parties that inject one', async () => {
     const scriptSrc = directive(await build(), 'script-src');
     expect(scriptSrc).toEqual([
       "'self'",
       "'unsafe-inline'",
       'https://accounts.google.com/gsi/client',
       'https://cdn.paddle.com',
+      'https://challenges.cloudflare.com',
     ]);
   });
 
@@ -120,6 +121,21 @@ describe('buildCsp (enforced policy)', () => {
     );
     expect(directive(csp, 'img-src')).toContain(
       'https://*.googleusercontent.com'
+    );
+  });
+
+  it('lets the Turnstile script load and its challenge iframe run', async () => {
+    // Without these the email-code form can never get a token, and once the
+    // check is enforced nobody could ask for a code.
+    const csp = await build();
+    expect(directive(csp, 'script-src')).toContain(
+      'https://challenges.cloudflare.com'
+    );
+    expect(directive(csp, 'frame-src')).toContain(
+      'https://challenges.cloudflare.com'
+    );
+    expect(directive(csp, 'connect-src')).not.toContain(
+      'https://challenges.cloudflare.com'
     );
   });
 

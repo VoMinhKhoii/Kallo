@@ -237,6 +237,8 @@ export const routeInventory = {
     'none-cheap',
   ],
   'auth/callback/route.ts': ['none', false, 'authLinkIp'],
+  // Static HTML with the public Turnstile site key: no DB, no upstream call.
+  'auth/turnstile/route.ts': ['none', false, 'none-cheap'],
   'auth/verify/route.ts': ['none', false, 'authLinkIp'],
   'llms.txt/route.ts': ['none', false, 'none-cheap'],
   'md/[locale]/[...slug]/route.ts': ['none', false, 'none-cheap'],

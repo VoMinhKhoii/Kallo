@@ -64,7 +64,10 @@ shapes it covers.
 privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `data/` or `providers/`, and
 `logic/`:
 
-- **auth** — sign in / sign up, Google button, Supabase auth.
+- **auth** — email sign-in by code (`EmailAuthForm` → `EmailCodeView`; one form signs in and
+  signs up, no passwords), Apple + Google buttons, Supabase auth. The code request carries a
+  Cloudflare Turnstile token from `TurnstileView`, a web view on `<API_BASE_URL>/auth/turnstile`
+  (Turnstile does not run natively); our auth proxy checks it (`docs/AUTH_SECURITY.md`).
 - **onboarding** — 3-step profile (origin, body metrics, cooking) + TDEE calc.
 - **dashboard** — calorie-remaining ring, macro bars, adherence heatmap, weight chart, recent meals.
 - **logging** — date timeline, calorie ring, streaming meal analysis (SSE), meal input/cards.

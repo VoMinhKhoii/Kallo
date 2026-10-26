@@ -12,13 +12,7 @@ import {
 } from '@/lib/infra/email/templates/waitlist';
 
 const LOCALES: EmailLocale[] = ['en', 'vi'];
-const KINDS: AuthLinkKind[] = [
-  'confirm',
-  'signin',
-  'invite',
-  'recovery',
-  'email_change',
-];
+const KINDS: AuthLinkKind[] = ['confirm', 'invite', 'recovery', 'email_change'];
 const URL = 'https://kallo.fit/auth/verify?token_hash=abc123&type=email';
 
 /** Every template must produce all three parts, with nothing left unfilled. */
@@ -47,7 +41,7 @@ describe('auth link emails', () => {
     expect(message.html).toContain(`<html lang="${locale}"`);
   });
 
-  it('offers the link only — the app has no code-entry screen', () => {
+  it('offers the link only — its reader has nowhere to type a code', () => {
     const message = authLinkEmail({ locale: 'en', kind: 'confirm', url: URL });
     // No monospace code block, and no stray digit run outside a hex colour.
     expect(message.html).not.toContain('Menlo,monospace');
@@ -73,11 +67,32 @@ describe('auth link emails', () => {
 });
 
 describe('auth otp email', () => {
-  it.each(LOCALES)('renders the code for %s', (locale) => {
-    const message = authOtpEmail(locale, '123456');
+  it.each(
+    LOCALES.flatMap((locale) =>
+      (['signin', 'reauthentication'] as const).map(
+        (kind) => [locale, kind] as const
+      )
+    )
+  )('renders the code for %s/%s', (locale, kind) => {
+    const message = authOtpEmail(locale, '123456', kind);
     expectWellFormed(message);
     expect(message.html).toContain('123456');
     expect(message.text).toContain('123456');
+    expect(message.html).toContain(`<html lang="${locale}"`);
+  });
+
+  it('puts a sign-in code in the subject, so each code reads off the notification', () => {
+    expect(authOtpEmail('en', '123456', 'signin').subject).toBe(
+      'Your Kallo code: 123456'
+    );
+    expect(
+      authOtpEmail('en', '123456', 'reauthentication').subject
+    ).not.toContain('123456');
+  });
+
+  it('states the 10-minute expiry Supabase is configured with', () => {
+    expect(authOtpEmail('en', '123456', 'signin').text).toContain('10 minutes');
+    expect(authOtpEmail('vi', '123456', 'signin').text).toContain('10 phút');
   });
 });
 

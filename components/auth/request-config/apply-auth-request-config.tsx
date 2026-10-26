@@ -12,14 +12,15 @@ import {
  */
 export function ApplyAuthRequestConfig({
   googleClientId,
+  turnstileSiteKey,
   next,
   openTab,
 }: AuthRequestValues) {
   const { applyRequestConfig } = useAuthDialog();
 
   useEffect(() => {
-    applyRequestConfig({ googleClientId, next, openTab });
-  }, [applyRequestConfig, googleClientId, next, openTab]);
+    applyRequestConfig({ googleClientId, turnstileSiteKey, next, openTab });
+  }, [applyRequestConfig, googleClientId, turnstileSiteKey, next, openTab]);
 
   return null;
 }

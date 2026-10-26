@@ -1,12 +1,11 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 
-/// The auth email/password field (native pass, 2026-08-31): a 52pt full-round
+/// The auth email / code field (native pass, 2026-08-31): a 52pt full-round
 /// pill on the app's field metrics — white fill, hairline border, 18 left
 /// inset, 17pt input text, and a 2px warm-accent border when focused. Above it
 /// sits a 12/500 muted label; below it, the validation message.
@@ -22,10 +21,11 @@ class AuthTextField extends StatefulWidget {
     required this.controller,
     required this.label,
     required this.placeholder,
-    this.obscureText = false,
     this.keyboardType,
     this.textInputAction,
     this.autofillHints,
+    this.inputFormatters,
+    this.autofocus = false,
     this.onSubmitted,
     this.onChanged,
     this.enabled = true,
@@ -36,11 +36,11 @@ class AuthTextField extends StatefulWidget {
   final String label;
   final String placeholder;
 
-  /// Whether this is a password field (drives the reveal toggle).
-  final bool obscureText;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final Iterable<String>? autofillHints;
+  final List<TextInputFormatter>? inputFormatters;
+  final bool autofocus;
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
   final bool enabled;
@@ -55,9 +55,8 @@ class AuthTextField extends StatefulWidget {
 class _AuthTextFieldState extends State<AuthTextField> {
   final _focusNode = FocusNode();
   bool _focused = false;
-  bool _reveal = false;
 
-  /// Field height and the reveal toggle's target — the app's pill metrics.
+  /// Field height — the app's pill metrics.
   static const double _height = 52;
 
   @override
@@ -94,7 +93,6 @@ class _AuthTextFieldState extends State<AuthTextField> {
       borderWidth = 1;
     }
 
-    final isPassword = widget.obscureText;
     final inputStyle = dashBody();
 
     return Column(
@@ -105,53 +103,39 @@ class _AuthTextFieldState extends State<AuthTextField> {
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           constraints: const BoxConstraints(minHeight: _height),
-          // The reveal toggle needs a 44pt box of its own, so a password field
-          // trades the right inset for it rather than padding both.
-          padding: EdgeInsets.only(right: isPassword ? KalloSpacing.sp1 : 0),
           decoration: BoxDecoration(
             color: kFieldFill,
             borderRadius: BorderRadius.circular(KalloRadii.input),
             border: Border.all(color: borderColor, width: borderWidth),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: widget.controller,
-                  focusNode: _focusNode,
-                  enabled: widget.enabled,
-                  obscureText: isPassword && !_reveal,
-                  keyboardType: widget.keyboardType,
-                  textInputAction: widget.textInputAction,
-                  autofillHints: widget.autofillHints,
-                  onSubmitted: widget.onSubmitted,
-                  onChanged: widget.onChanged,
-                  autocorrect: false,
-                  enableSuggestions: !isPassword,
-                  cursorColor: KalloColors.text,
-                  style: inputStyle,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: widget.placeholder,
-                    hintStyle: inputStyle.copyWith(color: kInkMuted),
-                    filled: false,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: KalloSpacing.sp3_5,
-                    ),
-                  ),
-                ),
+          child: TextField(
+            controller: widget.controller,
+            focusNode: _focusNode,
+            enabled: widget.enabled,
+            autofocus: widget.autofocus,
+            keyboardType: widget.keyboardType,
+            textInputAction: widget.textInputAction,
+            autofillHints: widget.autofillHints,
+            inputFormatters: widget.inputFormatters,
+            onSubmitted: widget.onSubmitted,
+            onChanged: widget.onChanged,
+            autocorrect: false,
+            cursorColor: KalloColors.text,
+            style: inputStyle,
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: widget.placeholder,
+              hintStyle: inputStyle.copyWith(color: kInkMuted),
+              filled: false,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: KalloSpacing.sp3_5,
               ),
-              if (isPassword)
-                _RevealToggle(
-                  revealed: _reveal,
-                  onTap: () => setState(() => _reveal = !_reveal),
-                ),
-            ],
+            ),
           ),
         ),
         if (hasError) ...[
@@ -159,46 +143,6 @@ class _AuthTextFieldState extends State<AuthTextField> {
           Text(widget.errorText!, style: dashMeta(color: KalloColors.danger)),
         ],
       ],
-    );
-  }
-}
-
-/// Eye / EyeOff reveal toggle — the app-wide 24pt glyph in a 44pt target,
-/// sitting inside the pill's right edge.
-class _RevealToggle extends StatefulWidget {
-  const _RevealToggle({required this.revealed, required this.onTap});
-
-  final bool revealed;
-  final VoidCallback onTap;
-
-  @override
-  State<_RevealToggle> createState() => _RevealToggleState();
-}
-
-class _RevealToggleState extends State<_RevealToggle> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      toggled: widget.revealed,
-      label: tr(widget.revealed ? 'auth.hidePassword' : 'auth.showPassword'),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: SizedBox.square(
-          dimension: KalloIcons.hit,
-          child: Icon(
-            widget.revealed ? LucideIcons.eyeOff300 : LucideIcons.eye300,
-            size: KalloIcons.size,
-            color: _pressed ? kInk : kInkMuted,
-          ),
-        ),
-      ),
     );
   }
 }

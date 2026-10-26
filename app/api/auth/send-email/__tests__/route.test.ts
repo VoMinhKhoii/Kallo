@@ -134,30 +134,73 @@ describe('handleSendEmailHook', () => {
     });
   });
 
-  describe('link shape', () => {
-    it('maps signup to type=email and preserves the locale-prefixed next', async () => {
+  describe('sign-in codes', () => {
+    it('sends a code-capable sign-up the code, not a link', async () => {
       const res = await run(payload());
 
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toContain('application/json');
       await expect(res.json()).resolves.toEqual({});
+      const { to, message } = sendEmail.mock.calls[0][0];
+      expect(to).toBe('nguyen@example.com');
+      expect(message.text).toContain('305805');
+      expect(message.subject).toContain('305805');
+      expect(message.text).not.toContain('/auth/verify');
+      expect(message.html).toContain('<html lang="vi"');
+    });
+
+    it.each([
+      'magiclink',
+      'email',
+    ])('sends %s as a code even with no redirect', async (action) => {
+      await run(
+        payload({
+          email_data: {
+            email_action_type: action,
+            redirect_to: 'https://kallo.fit',
+          },
+        })
+      );
+
+      const { message } = sendEmail.mock.calls[0][0];
+      expect(message.text).toContain('305805');
+      expect(message.text).not.toContain('/auth/verify');
+    });
+
+    it('sends nothing when GoTrue gave no code', async () => {
+      const res = await run(
+        payload({ email_data: { email_action_type: 'magiclink', token: '' } })
+      );
+
+      expect(res.status).toBe(200);
+      expect(sendEmail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('link shape', () => {
+    // An iOS build released before code sign-in signs up with a password and
+    // no emailRedirectTo, so GoTrue falls back to the site URL.
+    const oldBuildSignup = payload({
+      email_data: { redirect_to: 'https://kallo.fit' },
+    });
+
+    it('links an old iOS build sign-up to type=email', async () => {
+      await run(oldBuildSignup);
+
       const { to, url } = sentLink();
       expect(to).toBe('nguyen@example.com');
       expect(url.pathname).toBe('/auth/verify');
       expect(url.searchParams.get('type')).toBe('email');
       expect(url.searchParams.get('token_hash')).toBe('hash_abc');
-      expect(url.searchParams.get('next')).toBe('/vi/logging');
     });
 
     it('does not leak the OTP into a link email', async () => {
-      await run(payload());
+      await run(oldBuildSignup);
 
       expect(sendEmail.mock.calls[0][0].message.text).not.toContain('305805');
     });
 
     it.each([
-      ['magiclink', 'email'],
-      ['email', 'email'],
       ['invite', 'email'],
       ['recovery', 'recovery'],
     ])('maps %s to type=%s', async (action, expected) => {
@@ -167,24 +210,19 @@ describe('handleSendEmailHook', () => {
     });
 
     it('never emits a type app/auth/verify would reject', async () => {
-      for (const action of [
-        'signup',
-        'magiclink',
-        'email',
-        'invite',
-        'recovery',
-        'email_change',
-      ]) {
+      for (const action of ['signup', 'invite', 'recovery', 'email_change']) {
         sendEmail.mockClear();
         await run(
           payload({
             user: { email: 'a@b.co', new_email: 'c@d.co' },
             email_data: {
               email_action_type: action,
+              redirect_to: 'https://kallo.fit',
               token_hash_new: 'hash_current',
             },
           })
         );
+        expect(sendEmail).toHaveBeenCalled();
         for (let i = 0; i < sendEmail.mock.calls.length; i++) {
           expect(['email', 'recovery', 'email_change']).toContain(
             sentLink(i).url.searchParams.get('type')
@@ -197,6 +235,7 @@ describe('handleSendEmailHook', () => {
       await run(
         payload({
           email_data: {
+            email_action_type: 'recovery',
             redirect_to:
               'https://kallo.fit/auth/callback?next=https%3A%2F%2Fevil.example',
           },
@@ -204,6 +243,12 @@ describe('handleSendEmailHook', () => {
       );
 
       expect(sentLink().url.searchParams.get('next')).toBeNull();
+    });
+
+    it('keeps the locale-prefixed next on a link', async () => {
+      await run(payload({ email_data: { email_action_type: 'recovery' } }));
+
+      expect(sentLink().url.searchParams.get('next')).toBe('/vi/logging');
     });
   });
 
@@ -387,7 +432,7 @@ describe('handleSendEmailHook', () => {
 
       expect(res.status).toBe(200);
       expect(sendEmail).toHaveBeenCalledTimes(1);
-      expect(sentLink().to).toBe('nguyen@example.com');
+      expect(sendEmail.mock.calls[0][0].to).toBe('nguyen@example.com');
     });
 
     it('rejects a payload missing email_data', async () => {

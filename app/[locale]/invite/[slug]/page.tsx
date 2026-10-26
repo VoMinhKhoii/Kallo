@@ -11,6 +11,7 @@ import {
 } from '@/lib/actions/groups/profile';
 import type { PublicProfile } from '@/lib/actions/groups/types';
 import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
+import { turnstileSiteKey } from '@/lib/infra/security/turnstile';
 import { createClient } from '@/lib/infra/supabase/server';
 
 /** Centered cream card shared by every invite state. */
@@ -119,7 +120,11 @@ async function InviteContent({ params }: InvitePageProps) {
         title={t('signedOutTitle', { name })}
         body={t('signedOutBody')}
       >
-        <InviteAuthCta next={invitePath} googleClientId={googleWebClientId()} />
+        <InviteAuthCta
+          next={invitePath}
+          googleClientId={googleWebClientId()}
+          turnstileSiteKey={turnstileSiteKey()}
+        />
       </Shell>
     );
   }

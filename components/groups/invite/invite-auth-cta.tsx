@@ -29,15 +29,18 @@ function InviteAuthButton() {
 export function InviteAuthCta({
   next,
   googleClientId,
+  turnstileSiteKey,
 }: {
   next: string;
   /** Resolved server-side by the invite page; see `AuthProvider`. */
   googleClientId: string | null;
+  turnstileSiteKey: string | null;
 }) {
   return (
     <AuthProvider
       next={next}
       googleClientId={googleClientId}
+      turnstileSiteKey={turnstileSiteKey}
       initialTab="sign-up"
     >
       <InviteAuthButton />

@@ -63,15 +63,32 @@ export interface ResolvedAuthEmail {
   kind: string;
 }
 
+/**
+ * GoTrue actions that sign someone in or create their account. The web app
+ * and the iOS app sign in with a code (`signInWithOtp` → `/otp`), so these
+ * get the code email — see `wantsLink` for the one case that still links.
+ */
+const CODE_ACTIONS = new Set(['signup', 'magiclink', 'email']);
+
 /** GoTrue action → (our verify type, our template intent). */
 const LINK_ACTIONS: Record<string, { type: VerifyType; kind: AuthLinkKind }> = {
   signup: { type: 'email', kind: 'confirm' },
-  // GoTrue's non-deprecated alias for the signup/magic-link confirmation.
-  email: { type: 'email', kind: 'signin' },
-  magiclink: { type: 'email', kind: 'signin' },
   invite: { type: 'email', kind: 'invite' },
+  // Only iOS builds released before code sign-in still ask for a reset; the
+  // link lands on the web `/reset-password` page, as it always has.
   recovery: { type: 'recovery', kind: 'recovery' },
 };
+
+/**
+ * A `signup` confirmation is sent as a LINK only when it came from an iOS
+ * build released before code sign-in: those sign up with a password, pass no
+ * `emailRedirectTo`, and have no screen to type a code into. Every
+ * code-capable client (web, current iOS) sends a redirect carrying the
+ * locale-prefixed `next`, so its absence is what marks the old build.
+ */
+function wantsLink(action: string, redirectTo: string): boolean {
+  return action === 'signup' && nextPathFromRedirect(redirectTo) === null;
+}
 
 /**
  * The locale the user was last seen in, recovered from the `next` parameter the
@@ -134,7 +151,18 @@ export function resolveAuthEmails(
     return [
       {
         to: user.email,
-        message: authOtpEmail(locale, data.token),
+        message: authOtpEmail(locale, data.token, 'reauthentication'),
+        kind: action,
+      },
+    ];
+  }
+
+  if (CODE_ACTIONS.has(action) && !wantsLink(action, data.redirect_to)) {
+    if (!user.email || !data.token) return [];
+    return [
+      {
+        to: user.email,
+        message: authOtpEmail(locale, data.token, 'signin'),
         kind: action,
       },
     ];

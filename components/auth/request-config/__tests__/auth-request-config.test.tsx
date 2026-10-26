@@ -35,9 +35,14 @@ describe('authIntent', () => {
 let openByHand: (() => void) | undefined;
 
 function Probe() {
-  const { open, tab, next, googleClientId, openDialog } = useAuthDialog();
+  const { open, tab, next, googleClientId, turnstileSiteKey, openDialog } =
+    useAuthDialog();
   openByHand = () => openDialog('sign-in');
-  return <output>{JSON.stringify({ open, tab, next, googleClientId })}</output>;
+  return (
+    <output>
+      {JSON.stringify({ open, tab, next, googleClientId, turnstileSiteKey })}
+    </output>
+  );
 }
 
 function state() {
@@ -46,16 +51,20 @@ function state() {
 
 // The prerendered page knows none of these; they stream in after the shell.
 describe('ApplyAuthRequestConfig', () => {
-  it('hands the runtime Google client ID to the provider', () => {
+  it('hands the runtime Google client ID and Turnstile site key to the provider', () => {
     render(
       <AuthProvider>
-        <ApplyAuthRequestConfig googleClientId="web-client-id" />
+        <ApplyAuthRequestConfig
+          googleClientId="web-client-id"
+          turnstileSiteKey="site-key"
+        />
         <Probe />
       </AuthProvider>
     );
 
     expect(state()).toMatchObject({
       googleClientId: 'web-client-id',
+      turnstileSiteKey: 'site-key',
       open: false,
       next: null,
     });
@@ -66,6 +75,7 @@ describe('ApplyAuthRequestConfig', () => {
       <AuthProvider>
         <ApplyAuthRequestConfig
           googleClientId={null}
+          turnstileSiteKey={null}
           next="/en/invite/khoi"
           openTab="sign-up"
         />
@@ -83,7 +93,7 @@ describe('ApplyAuthRequestConfig', () => {
   it('keeps a return path the provider was created with', () => {
     render(
       <AuthProvider next="/en/invite/khoi">
-        <ApplyAuthRequestConfig googleClientId="id" />
+        <ApplyAuthRequestConfig googleClientId="id" turnstileSiteKey={null} />
         <Probe />
       </AuthProvider>
     );
@@ -96,7 +106,11 @@ describe('ApplyAuthRequestConfig', () => {
   it('closes a dialog the URL opened once the URL drops the intent', () => {
     const page = (openTab: 'sign-in' | null) => (
       <AuthProvider>
-        <ApplyAuthRequestConfig googleClientId="id" openTab={openTab} />
+        <ApplyAuthRequestConfig
+          googleClientId="id"
+          turnstileSiteKey={null}
+          openTab={openTab}
+        />
         <Probe />
       </AuthProvider>
     );
@@ -113,6 +127,7 @@ describe('ApplyAuthRequestConfig', () => {
       <AuthProvider>
         <ApplyAuthRequestConfig
           googleClientId={googleClientId}
+          turnstileSiteKey={null}
           openTab={null}
         />
         <Probe />
