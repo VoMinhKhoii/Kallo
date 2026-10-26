@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
+import { ingestSinkFromEnv } from '@/lib/ai/pipeline/telemetry/cloud-trace/ingest-sink';
 import { serializeTrace } from '@/lib/ai/pipeline/telemetry/cloud-trace/serialize';
 import type { PipelineResult } from '@/lib/ai/types/result';
 
@@ -33,9 +34,20 @@ export function createTraceCapture(
     if (process.stdout.listenerCount('error') === 0)
       process.stdout.on('error', () => {});
     return process.stdout.write(line, () => {});
-  }
+  },
+  /** A second copy of every line written, e.g. to the D1 ingest Worker. */
+  forward?: (requestId: string, line: string) => void
 ) {
   const traces = new Map<string, TraceState>();
+  const out = (requestId: string, line: string): boolean => {
+    const written = write(line);
+    try {
+      forward?.(requestId, line);
+    } catch {
+      // The copy is best-effort; stdout capture carries on.
+    }
+    return written;
+  };
   function emit(
     requestId: string | null | undefined,
     type: TraceType,
@@ -100,11 +112,11 @@ export function createTraceCapture(
           size = Buffer.byteLength(line) + 1;
           if (state.bytes + size > TRACE_TOTAL_BYTES) return;
           state.bytes += size;
-          write(`${line}\n`);
+          out(requestId, `${line}\n`);
           return;
         }
         state.bytes += size;
-        if (!write(`${line}\n`)) {
+        if (!out(requestId, `${line}\n`)) {
           state.truncated = true;
           state.enabled = false;
           return;
@@ -164,7 +176,12 @@ export function createTraceCapture(
   };
 }
 
-export const cloudTrace = createTraceCapture();
+// Read from env until both TRACE_INGEST_* values are set, then kept.
+let sink: ReturnType<typeof ingestSinkFromEnv> | undefined;
+export const cloudTrace = createTraceCapture(undefined, (requestId, line) => {
+  sink ??= ingestSinkFromEnv();
+  sink?.send(requestId, line);
+});
 
 /** Small final facts, independent of whether the analysis is saved as a meal. */
 export function traceResultSummary(result?: PipelineResult) {

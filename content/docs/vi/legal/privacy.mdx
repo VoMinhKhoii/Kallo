@@ -1,7 +1,7 @@
 ---
 title: Chính sách quyền riêng tư
 description: Kallo thu thập dữ liệu gì, gửi những gì tới mô hình AI, giữ trong bao lâu, và bạn kiểm soát ra sao.
-lastUpdated: '2026-09-25'
+lastUpdated: '2026-10-25'
 ---
 
 Chính sách này giải thích VÕ MINH KHÔI ("Kallo", "chúng tôi") thu thập, sử
@@ -248,7 +248,7 @@ thứ ba làm quảng cáo.
 | Google Cloud (Vertex AI, Gemini) | Phân tích bữa ăn bằng AI, đọc nhãn dinh dưỡng, tìm nguyên liệu | Mô tả bữa ăn, quốc gia, thói quen nấu, ngôn ngữ; ảnh nhãn dinh dưỡng; chữ tìm nguyên liệu |
 | Google Cloud Run | Hạ tầng vận hành ứng dụng | Lưu lượng truy cập, nhật ký máy chủ |
 | Google Cloud Translate | Dịch dữ liệu nguyên liệu | Tên nguyên liệu |
-| Cloudflare | Phân phối nội dung, chống tấn công | Siêu dữ liệu yêu cầu, địa chỉ IP |
+| Cloudflare | Phân phối nội dung, chống tấn công; lưu bản ghi chẩn đoán của các lần phân tích bữa ăn bằng AI trong 14 ngày | Siêu dữ liệu yêu cầu, địa chỉ IP; nội dung bữa ăn và câu trả lời của AI, lưu không kèm mã định danh tài khoản của bạn |
 | Resend | Gửi email xác thực và thông báo; báo cáo nội dung gửi tới đội ngũ | Địa chỉ email, nội dung email; chi tiết báo cáo bạn gửi |
 | RevenueCat | Quản lý quyền đăng ký đa nền tảng | Mã tài khoản, siêu dữ liệu giao dịch |
 | Apple App Store, Google Play | Thanh toán trong ứng dụng | Thông tin thanh toán của bạn với cửa hàng |
@@ -360,6 +360,8 @@ Cụ thể:
 - **Phân tích bữa ăn bằng AI** đi qua điểm cuối toàn cầu của Vertex AI, nên có
   thể chạy ở bất kỳ vùng nào Google vận hành, kể cả ngoài Việt Nam. Chỉ những
   dữ liệu nêu ở mục 3 đi theo đường này.
+- **Bản ghi chẩn đoán của các lần phân tích bữa ăn bằng AI** được Cloudflare lưu
+  tại khu vực châu Á - Thái Bình Dương trong 14 ngày.
 - **Báo cáo lỗi** (Sentry) được lưu tại Hoa Kỳ, còn **sự kiện sử dụng**
   (PostHog) được lưu tại Liên minh châu Âu.
 - **Các nhà cung cấp còn lại** xử lý dữ liệu ở những vùng họ vận hành.

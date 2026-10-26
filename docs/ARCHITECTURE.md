@@ -192,7 +192,7 @@ another domain module is a smell worth a second look.
 | `pipeline/resolve/estimate-scale.ts` | scales one Call 2 ingredient estimate (mass, plate mass, every macro bound) by one factor; shared by the served-mass step and the dish rescue | ok |
 | `pipeline/resolve/served-mass.ts` | a dish the user weighed (Call 1 `servedMassG`) has its unpinned parts scaled so their plate grams (Call 2's `servedG` for a part on a raw or dry row) add up to the typed weight; a soup or braise with no listed liquid only shrinks | ok |
 | `pipeline/stream/` | the analyze-meal SSE state machine: cheat vs precise outcome, gates, staging | ok |
-| `pipeline/telemetry/cloud-trace/` | bounded structured stdout trace capture, privacy filtering and final result summaries; request counters/model names are held for at most 1,024 concurrent traces, swept after two minutes on the next start | ok |
+| `pipeline/telemetry/cloud-trace/` | bounded structured stdout trace capture, privacy filtering and final result summaries; request counters/model names are held for at most 1,024 concurrent traces, swept after two minutes on the next start. `ingest-sink.ts` copies each line, fire-and-forget, to the kallo-trace-ingest Worker (Cloudflare D1) | ok |
 
 ### `lib/admin/`
 

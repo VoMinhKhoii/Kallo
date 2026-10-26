@@ -978,6 +978,27 @@ not create or verify those resources and emits even when they are absent.
 Account deletion cascades the Postgres request row; Logging entries have no
 user ID and expire under the bucket policy, without per-entry deletion.
 
+### Copy to Cloudflare D1
+
+Every line written to stdout is also sent to the `kallo-trace-ingest` Worker
+(kallo-aws-analytics repo, `trace-ingest/`), which keeps it in the
+`kallo-traces` D1 database for admin.kallo.fit: traces 14 days, flattened
+ingredient decisions 30 days. Same lines, same redaction, no user ID. It is on
+when both `TRACE_INGEST_URL` (repo variable, the Worker's `/v1/events` URL) and
+`TRACE_INGEST_SECRET` (Secret Manager `kallo-prod-trace-ingest-secret`, the
+same value as the Worker's `wrangler secret`) are set; the prod workflow mounts
+the secret only when the variable is set, and fails the deploy if the secret is
+then unreadable.
+
+The sender (`lib/ai/pipeline/telemetry/cloud-trace/ingest-sink.ts`) never
+blocks or fails an analysis: it queues, keeps one POST per request in flight
+with later lines batched behind it, bounds each POST at 3 s, and on any failure
+logs `[trace-ingest] dropped trace <id>` once and drops the rest of that trace.
+No retries. In prod, CPU is throttled once a response ends, so lines still
+queued then (usually only the `final` event) can stall until the next request
+or be lost. The dashboard then falls back to the stdout copy, and the final
+status lives in `pipeline_requests` anyway.
+
 Nutrition reads no longer start a full-table warm automatically. A cold
 candidate-ID batch performs one scoped nutrition query and primes those rows;
 repeat IDs need no nutrition query. New candidate sets still cost a scoped
