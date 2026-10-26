@@ -121,6 +121,12 @@ Left sidebar **Rules** → **Origin Rules** → **Create rule**:
 
 ## 5. Transform Rule — inject the origin-lock secret
 
+> **Live setup (as of October 2026):** the forwarding and the origin-lock headers
+> are done by the `kallo-proxy` Worker, now in this repo at `apps/kallo-proxy/`
+> (`X-Origin-Verify`, `X-Forwarded-Host`, `X-Forwarded-Proto`; secret in the
+> Worker's `ORIGIN_SECRET`). The Transform Rule steps below describe the
+> original no-Worker setup and are kept for reference.
+
 This is the header `proxy.ts` checks so the raw run.app URL stays sealed.
 
 Left sidebar **Rules** → **Transform Rules** → **Modify Request Header** →
@@ -178,7 +184,10 @@ Left sidebar **Security**:
   The app enforces its own global / per-IP / per-mailbox budgets behind this —
   see `docs/RATE_LIMITING.md` — so the edge rule is a coarse flood breaker, not
   the security boundary.
-- **Bots** → turn on **Bot Fight Mode**.
+- **Bots** → **Bot Fight Mode**: leave it **off**. On the Free plan it cannot be
+  skipped by any rule, and it can challenge the iOS app's API calls and the
+  server-to-server webhooks. See `apps/kallo-proxy/README.md` "Bot Fight Mode".
+  The per-IP flood breakers live in the `kallo-proxy` Worker instead.
 
 > **`cf-connecting-ip` is what the app trusts.** In production
 > (`ORIGIN_SHARED_SECRET` set) `lib/infra/security/request-ip.ts` reads that
@@ -277,10 +286,11 @@ itself and the dashboard's own email templates are no longer used.
 Raise **Authentication → Rate Limits → Emails per hour** from the default 2 at
 the same time; it now only guards the hook, not delivery.
 
-**4. Let Supabase through the WAF.** §6 turned on Bot Fight Mode and a rate
-limiting rule. Supabase's hook POSTs come from its servers, not a browser, so
-add a **WAF → Custom rule** that **skips** managed rules, bot fight mode and
-rate limiting when `http.request.uri.path eq "/api/auth/send-email"`. The
+**4. Let Supabase through the WAF.** Supabase's hook POSTs come from its
+servers, not a browser, so add a **WAF → Custom rule** that **skips** managed
+rules and rate limiting when `http.request.uri.path eq "/api/auth/send-email"`.
+A custom rule **cannot** skip Bot Fight Mode on the Free plan, which is one
+reason it stays off (§6). The
 route authenticates itself with a Standard Webhooks signature, so skipping the
 edge checks does not open it up. Without this the hook is silently blocked and
 nobody can confirm an account.

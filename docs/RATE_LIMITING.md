@@ -17,7 +17,7 @@ SQL: `public.rate_limit_consume()`, tables `rate_limit_counters` /
 
 | Layer | Where | Scope | What it is for |
 |---|---|---|---|
-| 1. Cloudflare edge | Cloudflare dashboard (not in this repo) | Global | Coarse per-IP flood rule. Ops-managed; see `docs/PROD_DOMAIN_SETUP.md`. |
+| 1. Cloudflare edge | `apps/kallo-proxy/` (the `kallo-proxy` Worker) | Per Cloudflare location | Coarse per-IP flood breaker (100/min per surface; 600/min on token refresh) on the anonymous surfaces, refusing in the same shapes the app uses before a request costs Cloud Run anything. See `apps/kallo-proxy/README.md`. |
 | 2. In-process token bucket | `memory-bucket.ts` | One Cloud Run instance | Burst breaker. Stops one client's spike from costing one DB round trip per request. **Never a security boundary** — an attacker spread across instances walks past it. |
 | 3. Postgres | `rate_limit_consume()` | Global, authoritative | The actual ceiling. One row per `(key_kind, key_hash, route)` holding minute/hour/day counters, updated by a single `INSERT … ON CONFLICT DO UPDATE … WHERE <headroom>`. |
 

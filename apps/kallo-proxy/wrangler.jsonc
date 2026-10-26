@@ -1,0 +1,42 @@
+// kallo-proxy: the Worker in front of Cloud Run on kallo.fit. Deploy by hand,
+// from this folder: `bunx wrangler deploy` (see README.md first).
+{
+  "name": "kallo-proxy",
+  "main": "src/worker.ts",
+  // The date the live Worker ran on when it was brought into the repo.
+  "compatibility_date": "2026-07-07",
+  "routes": [
+    { "pattern": "kallo.fit/*", "zone_name": "kallo.fit" },
+    { "pattern": "*.kallo.fit/*", "zone_name": "kallo.fit" }
+  ],
+  // The public routes are the only way in: a workers.dev URL would reach the
+  // origin with the origin-lock secret attached, around the zone's WAF.
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {
+    "ORIGIN": "kallo-prod-714321235532.asia-southeast1.run.app"
+  },
+  // ORIGIN_SECRET is set in the dashboard (or `wrangler secret put`), never
+  // here. keep_vars stops a deploy from deleting it while it is still a
+  // dashboard text variable; see README.md "Make ORIGIN_SECRET a secret".
+  "keep_vars": true,
+  // Workers Rate Limiting: counted per Cloudflare location, approximately.
+  // A breaker in front of the app's own limiter, never the real limit.
+  "ratelimits": [
+    {
+      "name": "ANON_FLOOD",
+      "namespace_id": "1001",
+      "simple": { "limit": 100, "period": 60 }
+    },
+    {
+      "name": "REFRESH_FLOOD",
+      "namespace_id": "1002",
+      "simple": { "limit": 600, "period": 60 }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": { "enabled": true, "invocation_logs": true, "persist": true }
+  }
+}
