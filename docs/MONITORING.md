@@ -108,6 +108,18 @@ reject anything else) and `services/analytics/analytics_events.dart` (Flutter) w
 **same name**, then call `track(...)` / `analytics.capture(...)`. Properties must be
 enums, counts or ids of *our* catalogue (package ids): never free text the user typed.
 
+## Alerts
+
+- **AI spend brake tripped** (`docs/RATE_LIMITING.md` → "The AI spend brake"). The first
+  refused AI call of a UTC day on each instance sends a Sentry exception named
+  `AiSpendBrakeTripped` with the fingerprint `['ai-spend-brake', <day>]`, so every trip
+  is a **new issue** in `kallo-web`. What reaches the owner is the project's issue
+  alert rule: check **Alerts → kallo-web** has a rule that notifies on new issues (the
+  rule Sentry creates by default notifies on new high-priority issues; an error-level
+  exception like this one qualifies). The same text is logged as
+  `[ai-spend-brake] AI spend brake tripped …` in Cloud Run, if a log-based alert is
+  ever preferred.
+
 ## Cost
 
 Free tiers at the time of writing (check the pricing pages; they change): Sentry

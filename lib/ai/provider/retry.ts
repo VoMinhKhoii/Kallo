@@ -167,12 +167,14 @@ export function createWithRetry(retry: RetryOptions) {
         return result;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
+        // Before the abort check: an aborted request was still sent, and the
+        // AI spend meter must count it (no usage = the estimate stays).
+        opts?.onAttempt?.(attempt, t0, null, err);
         if (opts?.abortSignal?.aborted) {
           throw abortError(opts.abortSignal);
         }
         const elapsed = Date.now() - t0;
         const status = getErrorStatus(lastError);
-        opts?.onAttempt?.(attempt, t0, null, err);
 
         if (
           !isRetryableGeminiError(lastError) ||

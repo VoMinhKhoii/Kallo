@@ -336,6 +336,38 @@ describe('generateStructuredOutputStream with trace', () => {
     });
   });
 
+  it('reports every attempt to the AI spend meter in scope', async () => {
+    const { runMetered } = await import('@/lib/ai/cost/spend-meter');
+    mockGenerateContentStream.mockResolvedValueOnce(
+      streamChunks([
+        { text: '{"items":["d"]}' },
+        {
+          usageMetadata: {
+            promptTokenCount: 1000,
+            candidatesTokenCount: 100,
+          },
+        },
+      ])
+    );
+    const client = createGeminiClient({
+      provider: 'ai-studio',
+      apiKey: 'test-key',
+    });
+    const record = vi.fn();
+
+    await runMetered({ record }, () =>
+      client.generateStructuredOutputStream({
+        schema: traceSchema,
+        systemPrompt: 'sys',
+        userMessage: 'user',
+        model: 'gemini-3.1-flash-lite',
+      })
+    );
+
+    expect(record).toHaveBeenCalledOnce();
+    expect(record.mock.calls[0][0]).toBeCloseTo(0.0004, 10);
+  });
+
   it('emits retryable attempt errors even when a later attempt succeeds', async () => {
     const retryableError = Object.assign(new Error('503 UNAVAILABLE'), {
       status: 503,

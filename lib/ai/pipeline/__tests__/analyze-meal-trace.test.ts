@@ -28,6 +28,15 @@ const {
 
 vi.mock('server-only', () => ({}));
 
+const mockAcquireSpendLease = vi.fn(async (..._args: unknown[]) => ({
+  settle: vi.fn(async () => undefined),
+  addLate: vi.fn(),
+}));
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  acquireSpendLease: (...args: unknown[]) => mockAcquireSpendLease(...args),
+}));
+
 vi.mock('@/lib/ai/pipeline/telemetry/trace', () => ({
   logStage: mockLogStage,
   logLlmCall: mockLogLlmCall,
@@ -1379,6 +1388,10 @@ describe('shadow-runner integration', () => {
     await vi.waitFor(() => expect(persistShadowRun).toHaveBeenCalledOnce());
     expect(mockMatchIngredients.mock.calls[1]?.[4]).toMatchObject({
       concurrency: 1,
+    });
+    // The candidate run spends under the AI brake as a shadow, not a meal.
+    expect(mockAcquireSpendLease).toHaveBeenCalledWith('shadow', {
+      enforce: true,
     });
   });
 

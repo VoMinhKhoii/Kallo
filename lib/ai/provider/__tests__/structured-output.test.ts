@@ -65,6 +65,59 @@ describe('generateStructuredOutput', () => {
     expect(mockGenerateContent).toHaveBeenCalledOnce();
   });
 
+  it('reports every attempt to the AI spend meter in scope', async () => {
+    const { runMetered } = await import('@/lib/ai/cost/spend-meter');
+    mockGenerateContent.mockResolvedValueOnce({
+      text: JSON.stringify({ name: 'test', value: 42 }),
+      usageMetadata: { promptTokenCount: 1000, candidatesTokenCount: 100 },
+    });
+    const client = createGeminiClient({
+      provider: 'ai-studio',
+      apiKey: 'test-key',
+    });
+    const record = vi.fn();
+
+    await runMetered({ record }, () =>
+      client.generateStructuredOutput({
+        schema: testSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3.1-flash-lite',
+      })
+    );
+
+    expect(record).toHaveBeenCalledOnce();
+    expect(record.mock.calls[0][0]).toBeCloseTo(0.0004, 10);
+  });
+
+  it('reports an attempt the caller aborted mid-call as an unknown cost', async () => {
+    const { runMetered } = await import('@/lib/ai/cost/spend-meter');
+    const controller = new AbortController();
+    mockGenerateContent.mockImplementationOnce(async () => {
+      controller.abort(new Error('deadline'));
+      throw new Error('aborted');
+    });
+    const client = createGeminiClient({
+      provider: 'ai-studio',
+      apiKey: 'test-key',
+    });
+    const record = vi.fn();
+
+    await expect(
+      runMetered({ record }, () =>
+        client.generateStructuredOutput({
+          schema: testSchema,
+          systemPrompt: 'test',
+          userMessage: 'test',
+          model: 'gemini-3.1-flash-lite',
+          abortSignal: controller.signal,
+        })
+      )
+    ).rejects.toThrow();
+
+    expect(record).toHaveBeenCalledExactlyOnceWith(null);
+  });
+
   it('throws on null response text', async () => {
     mockGenerateContent.mockResolvedValueOnce({ text: null });
 

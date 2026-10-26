@@ -378,6 +378,90 @@ from every user for the rest of the UTC day.** The order is now
 whose DB failure is a 503 for everybody. 60/min is far above real OCR traffic
 and caps what one instance can push at the limiter.
 
+## The AI spend brake
+
+A **$10 per UTC day** ceiling on what the whole app spends on AI, across every
+paid path. A normal day costs well under $1 (about $0.005 a meal), so it only
+trips on an attack or a bug; when it does, every AI call is refused until the
+next UTC day and the owner is alerted. Code: `lib/infra/rate-limit/limiter/lease/`
+(`acquireSpendLease`, limits in `spend-limits.ts`) and `lib/ai/cost/ai-spend.ts`
+(`createAiSpend` / `withAiSpend`). SQL: the 11-argument `rate_limit_consume`,
+`rate_limit_release`, table `ai_spend_days` (`docs/DATABASE.md`).
+
+**Reserve, run metered, settle.** Before a call, `rate_limit_consume` books the
+kind's estimate against the day's spend, refusing if the booking would cross
+$10. The work then runs inside an `AsyncLocalStorage` meter
+(`lib/ai/cost/spend-meter.ts`) that the provider layer feeds on **every** model
+attempt — Gemini streaming and non-streaming, Claude, retries, Claude's Gemini
+fallback — so no pipeline stage can spend money the brake does not see. When the
+work ends, `rate_limit_release` swaps the estimate for the metered cost.
+
+| Kind | Path | Reserved | Settled by |
+|---|---|---|---|
+| `meal` | `POST /api/analyze-meal` (typed meals, cheat mode; dish rescue and chunked Call 2 run inside it) | $0.03 | the stream's guard release (close or client abort) |
+| `labelOcr` | `withOcrGuard` (REST scan + web action), reserved inside `chargeGlobal` right before the provider call | $0.01 | `withOcrGuard`'s `finally` |
+| `shadow` | the legacy shadow candidate run | $0.03 | `withAiSpend` |
+| `debug` | `POST /api/analyze-meal/debug` | $0.05 | the route's `finally` |
+| `replay` | admin live replay (dry runs spend nothing and reserve nothing) | $0.05 | `replayRequest`'s `finally` |
+
+Rules that keep the count honest:
+
+- **An attempt that cannot be priced keeps the whole estimate counted** (no
+  usage reported, or a model missing from `lib/ai/cost/pricing.ts`). A call
+  that dies before settling also keeps its estimate. Both err toward stopping
+  early, never late.
+- **A cost that lands after the settle is added on its own.** A client abort
+  settles the meal at once, but dish rescue can still finish a model call a few
+  seconds later; the meter sends that cost as a separate positive delta.
+- **A nested run bills to itself.** The shadow candidate starts inside a meal's
+  meter and runs in its own, so a meal is never charged for its shadow.
+- **Embeddings are not metered.** Query embeddings cost a fraction of a cent
+  per thousand meals and do not go through the attempt hooks.
+- **The day is the reservation's UTC day**, returned by the SQL, so a call
+  straddling midnight settles where it reserved.
+
+**What callers see.** A tripped brake is the same **429 `RATE_LIMITED`** every
+other limit uses, with `Retry-After` set to the next UTC midnight — so the iOS
+build in review and every older client handle it with no change. Only the
+message differs: analyze-meal sends `errors.aiPaused` in the request's locale
+("AI logging is paused for everyone until tomorrow. Barcode scans and
+relogging still work." — scan-only and relog-only submits go through
+`stageRelogAnalysisAction`, not the AI). OCR keeps its own client copy for
+`RATE_LIMITED`. The admin replay returns `reason: 'ai_paused'`. The brake
+**fails closed**: when its row cannot be read within 2 s, the call is a **503
+`RATE_LIMITER_UNAVAILABLE`** + `Retry-After: 10` — admitting would be spending
+with no ceiling. (The deadline is longer than the counters' 400 ms because the
+reservation waits on the same pool the analysis's own queries use.)
+
+**Order.** On analyze-meal the per-user guard runs first, so a request the user
+may not make never touches the brake; a brake refusal then frees the per-user
+slot it was holding. On OCR the per-user slot and `ocrGlobalDaily` come first
+and the brake reservation last.
+
+**App Review accounts are never refused.** Users in `BILLING_SANDBOX_USER_IDS`
+are booked with `enforce: false`: no check, but their real cost still counts
+toward everyone else's limit.
+
+**The alert.** The first refusal of a UTC day on each instance logs
+`[ai-spend-brake] AI spend brake tripped …` and sends a Sentry exception with
+the fingerprint `['ai-spend-brake', <day>]` — a new Sentry issue per day, so
+the project's new-issue alert fires every time, not once ever. Every refusal is
+also a `rate_limit_events` row (`route = 'ai:spend:<kind>'`, `reason =
+'budget'`), and `ai_spend_days.first_blocked_at` records the first one.
+
+```sql
+-- Today's spend, and whether the brake has tripped.
+SELECT day, spent_micro_usd / 1e6 AS spent_usd, first_blocked_at
+FROM public.ai_spend_days ORDER BY day DESC LIMIT 7;
+
+-- Lift the brake for today (e.g. a false trip from a pricing bug).
+UPDATE public.ai_spend_days SET spent_micro_usd = 0
+WHERE day = (now() AT TIME ZONE 'UTC')::date;
+```
+
+The limit and the estimates are constants in `spend-limits.ts`, deliberately
+not environment variables.
+
 ## Route inventory
 
 `lib/api/route-inventory.ts` is the checked-in map of how every route handler in
@@ -433,7 +517,7 @@ works even when the pool is the exhausted resource.
 
 | failMode | On DB error or timeout | Used by |
 |---|---|---|
-| `closed` | Throw `RateLimitUnavailableError` → **503 + `Retry-After: 10`** | Spend routes only (`ocrGlobalDaily`, `adminDebugAnalysis`) |
+| `closed` | Throw `RateLimitUnavailableError` → **503 + `Retry-After: 10`** | Spend routes only (`ocrGlobalDaily`, `adminDebugAnalysis`, and the AI spend brake) |
 | `degraded` | Fall back to a per-instance bucket at the policy's raw `perMinute` (no burst) and keep serving; result `source: 'degraded'` | Auth proxy, cheap IP routes, authenticated surfaces |
 | `memory` | Never touches the DB at all; the bucket *is* the policy (`perMinute` only, per instance) | healthz, invite lookup, auth refresh |
 

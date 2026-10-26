@@ -134,7 +134,7 @@ jobs:
       - name: Assert rate_limit_consume exists (fail-loud gate)
         env:
           DATABASE_URL: postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres
-          QUERY: "select to_regprocedure('public.rate_limit_consume(text,text,text,integer,integer,integer,timestamptz)') is not null"
+          QUERY: "select to_regprocedure('public.rate_limit_consume(text,text,text,integer,integer,integer,timestamptz)') is not null and to_regprocedure('public.rate_limit_consume(text,text,text,integer,integer,integer,integer,integer,bigint,bigint,timestamptz)') is not null and to_regprocedure('public.rate_limit_release(text,text,text,date,bigint,timestamptz,timestamptz)') is not null"
         run: |
           set -euo pipefail
           if command -v psql >/dev/null 2>&1; then
@@ -150,7 +150,7 @@ jobs:
       - name: Rate limiter DB test (via transaction pooler)
         env:
           DATABASE_URL: postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres
-        run: bun run test -- lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts
+        run: bun run test -- lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts lib/infra/rate-limit/limiter/__tests__/rate-limit-spend.db.test.ts
       - name: Stop Supabase
         if: always()
         run: supabase stop --no-backup

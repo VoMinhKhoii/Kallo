@@ -4,6 +4,7 @@ import { isAdminEmail } from '@/lib/admin/authz/is-admin';
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import { buildUserContext } from '@/lib/ai/adapters/user-context';
 import { getMemoryCacheStats } from '@/lib/ai/cache/embedding-cache';
+import { createAiSpend } from '@/lib/ai/cost/ai-spend';
 import {
   CLAUDE_FALLBACK_MODEL,
   resolveModelProfile,
@@ -121,32 +122,46 @@ export async function POST(request: NextRequest) {
     },
   };
 
-  // ── Step 1: Decomposition ──────────────────────────
-  const { step1, decomposition } = await runDecompositionDebugStep({
-    gemini,
-    modelProfile,
-    userContext,
-    input,
-  });
-  trace.step1_decomposition = step1;
+  // The live calls below spend under the app-wide AI brake, like a meal.
+  const spend = createAiSpend('debug', { userId });
+  try {
+    await spend.reserve();
+  } catch (error) {
+    return serializeError(error);
+  }
 
-  // ── Step 2: DB Lookup ──────────────────────────────
-  const { step2, matched, unmatched } = await runDbLookupDebugStep({
-    gemini,
-    decomposition,
-  });
-  trace.step2_dbLookup = step2;
+  const { decomposition, matched, unmatched, nutritionAdj } = await spend
+    .run(async () => {
+      // ── Step 1: Decomposition ──────────────────────────
+      const { step1, decomposition } = await runDecompositionDebugStep({
+        gemini,
+        modelProfile,
+        userContext,
+        input,
+      });
+      trace.step1_decomposition = step1;
 
-  // ── Step 3: Nutrition Adjustment ───────────────────
-  const { step3, nutritionAdj } = await runNutritionDebugStep({
-    gemini,
-    modelProfile,
-    userContext,
-    decomposition,
-    matched,
-    unmatched,
-  });
-  trace.step3_adjustment = step3;
+      // ── Step 2: DB Lookup ──────────────────────────────
+      const { step2, matched, unmatched } = await runDbLookupDebugStep({
+        gemini,
+        decomposition,
+      });
+      trace.step2_dbLookup = step2;
+
+      // ── Step 3: Nutrition Adjustment ───────────────────
+      const { step3, nutritionAdj } = await runNutritionDebugStep({
+        gemini,
+        modelProfile,
+        userContext,
+        decomposition,
+        matched,
+        unmatched,
+      });
+      trace.step3_adjustment = step3;
+
+      return { decomposition, matched, unmatched, nutritionAdj };
+    })
+    .finally(() => spend.settle());
 
   // ── Step 4: Assembly ───────────────────────────────
   const step4 = runAssemblyDebugStep({

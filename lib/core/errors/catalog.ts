@@ -28,6 +28,8 @@ const DEFAULT_MESSAGES = {
   rateLimited: 'The service is busy. Please wait a moment and try again.',
   rateLimiterUnavailable:
     'The service is temporarily unavailable. Please try again shortly.',
+  aiPaused:
+    'AI logging is paused for everyone until tomorrow. Barcode scans and relogging still work.',
   featureLocked: 'Upgrade to keep using this feature.',
   aiConsentRequired:
     'Allow Kallo to send this to its AI provider before using AI features.',
@@ -96,6 +98,15 @@ export const Errors = {
     new RateLimitedError(
       message ?? DEFAULT_MESSAGES.rateLimited,
       retryAfterSeconds
+    ),
+
+  // The app-wide AI spend brake tripped: every paid AI call is refused until
+  // the next UTC day. Still a `RATE_LIMITED` 429, so clients need nothing new.
+  aiPaused: (retryAfterSeconds: number, message?: string) =>
+    new RateLimitedError(
+      message ?? DEFAULT_MESSAGES.aiPaused,
+      retryAfterSeconds,
+      'ai_paused'
     ),
 
   // The limiter could not decide, on a route whose policy fails closed.

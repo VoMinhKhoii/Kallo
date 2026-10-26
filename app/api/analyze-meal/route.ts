@@ -123,27 +123,29 @@ async function startAnalysis(
       request.signal.addEventListener('abort', releaseOnAbort, { once: true });
 
       try {
-        await runAnalysisStream({
-          emit,
-          ctx: {
-            signal: request.signal,
-            db,
-            requestId,
-            userId,
-            message,
-            userContext,
-            loggedAt,
-            attemptId,
-            geminiConfig: providerConfig.config,
-            mode,
-            cheatType,
-            clarifyAnswer,
-            cheatIntensity,
-            refs,
-            displayText,
-            mergePicks: applyRelogRefs,
-          },
-        });
+        await guard.spend.run(() =>
+          runAnalysisStream({
+            emit,
+            ctx: {
+              signal: request.signal,
+              db,
+              requestId,
+              userId,
+              message,
+              userContext,
+              loggedAt,
+              attemptId,
+              geminiConfig: providerConfig.config,
+              mode,
+              cheatType,
+              clarifyAnswer,
+              cheatIntensity,
+              refs,
+              displayText,
+              mergePicks: applyRelogRefs,
+            },
+          })
+        );
       } finally {
         request.signal.removeEventListener('abort', releaseOnAbort);
         // The guard release is a DB write; bound it so a stalled pool can't

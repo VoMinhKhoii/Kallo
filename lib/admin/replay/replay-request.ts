@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { redirect } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin/authz/require-admin';
 import { buildDryRunGeminiClient } from '@/lib/admin/replay/dry-run-client';
+import { createAiSpend } from '@/lib/ai/cost/ai-spend';
 import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
 import { CLAUDE_FALLBACK_MODEL } from '@/lib/ai/pipeline/config/model-profile';
 import {
@@ -18,6 +19,7 @@ import {
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
 import type { UserContext } from '@/lib/ai/types/user-context';
+import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { hasAiConsent } from '@/lib/domain/privacy/ai-consent';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -40,14 +42,15 @@ type ReplayRequestResult =
         status: 429;
         retryable: true;
         message: string;
-        reason: 'admin_replay';
+        reason: 'admin_replay' | 'ai_paused';
         retryAfterSeconds: number;
       };
     }
   | undefined;
 
 function adminReplayRateLimitResult(
-  retryAfterSeconds: number
+  retryAfterSeconds: number,
+  reason: 'admin_replay' | 'ai_paused' = 'admin_replay'
 ): ReplayRequestResult {
   return {
     ok: false,
@@ -56,8 +59,10 @@ function adminReplayRateLimitResult(
       status: 429,
       retryable: true,
       message:
-        'Admin replay quota exhausted. Please wait before replaying again.',
-      reason: 'admin_replay',
+        reason === 'ai_paused'
+          ? 'The app-wide AI spend brake has tripped; live replays resume at the next UTC day.'
+          : 'Admin replay quota exhausted. Please wait before replaying again.',
+      reason,
       retryAfterSeconds,
     },
   };
@@ -125,53 +130,77 @@ export async function replayRequest(
     }
   }
 
-  // Pick the Gemini client BEFORE creating replay rows. For real replays
-  // this also validates the AI provider config after the admin replay quota passes.
-  let gemini: GeminiClient;
-  if (dryRun) {
-    gemini = await buildDryRunGeminiClient(originalId);
-  } else {
-    try {
-      gemini = createPipelineLlm(resolveGeminiProvider(), {
-        fallbackModel: CLAUDE_FALLBACK_MODEL,
-      });
-    } catch (error) {
-      console.error('[admin] AI provider misconfigured:', error);
-      throw new Error('AI provider is not configured for replay');
+  // A live replay calls the models again, so it spends under the app-wide AI
+  // brake like any meal; a dry run re-reads captured responses and spends
+  // nothing.
+  const spend = dryRun ? null : createAiSpend('replay', { userId: admin.id });
+  try {
+    await spend?.reserve();
+  } catch (error) {
+    if (error instanceof RateLimitedError) {
+      return adminReplayRateLimitResult(
+        error.retryAfterSeconds ?? 1,
+        'ai_paused'
+      );
     }
+    throw error;
   }
 
+  let gemini: GeminiClient;
   const replayId = crypto.randomUUID();
   const t0 = Date.now();
+  // Setup that fails before any model call frees the reservation: a live
+  // replay that never ran must not count against everyone's AI budget.
+  try {
+    // Pick the Gemini client BEFORE creating replay rows. For real replays
+    // this also validates the AI provider config after the admin replay quota passes.
+    if (dryRun) {
+      gemini = await buildDryRunGeminiClient(originalId);
+    } else {
+      try {
+        gemini = createPipelineLlm(resolveGeminiProvider(), {
+          fallbackModel: CLAUDE_FALLBACK_MODEL,
+        });
+      } catch (error) {
+        console.error('[admin] AI provider misconfigured:', error);
+        throw new Error('AI provider is not configured for replay');
+      }
+    }
 
-  // Reuse original userId — FK to auth.users + correct attribution.
-  // Awaited so child trace inserts have a parent row to FK against.
-  // The audit-log insert below references replayId via FK, so we have to
-  // create the pipeline_requests row FIRST: writing the audit row before
-  // logPipelineStart leaves an orphaned audit entry whenever pipeline-start
-  // throws (no FK target).
-  const startResult = await logPipelineStart({
-    userId: orig.userId,
-    rawInput: orig.rawInput,
-    userContext: orig.userContextJson as unknown as UserContext,
-    db,
-    requestId: replayId,
-    replayOfRequestId: originalId,
-    dryRun,
-  });
-  if (startResult === null) {
-    throw new Error('[admin] Failed to create pipeline request log for replay');
+    // Reuse original userId — FK to auth.users + correct attribution.
+    // Awaited so child trace inserts have a parent row to FK against.
+    // The audit-log insert below references replayId via FK, so we have to
+    // create the pipeline_requests row FIRST: writing the audit row before
+    // logPipelineStart leaves an orphaned audit entry whenever pipeline-start
+    // throws (no FK target).
+    const startResult = await logPipelineStart({
+      userId: orig.userId,
+      rawInput: orig.rawInput,
+      userContext: orig.userContextJson as unknown as UserContext,
+      db,
+      requestId: replayId,
+      replayOfRequestId: originalId,
+      dryRun,
+    });
+    if (startResult === null) {
+      throw new Error(
+        '[admin] Failed to create pipeline request log for replay'
+      );
+    }
+
+    await db.insert(pipelineRequestReplayAuditLogs).values({
+      adminUserIdHash: hashUserId(admin.id),
+      originalRequestId: originalId,
+      replayRequestId: replayId,
+      dryRun,
+    });
+    console.info(
+      `[admin] ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
+    );
+  } catch (error) {
+    await spend?.settle();
+    throw error;
   }
-
-  await db.insert(pipelineRequestReplayAuditLogs).values({
-    adminUserIdHash: hashUserId(admin.id),
-    originalRequestId: originalId,
-    replayRequestId: replayId,
-    dryRun,
-  });
-  console.info(
-    `[admin] ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
-  );
 
   const promptVersionsUsed = new Map<string, string>();
   let finalStatus: 'success' | 'error' = 'success';
@@ -179,14 +208,16 @@ export async function replayRequest(
   let finalResult: import('@/lib/ai/types/result').PipelineResult | undefined;
   let errorCode: string | undefined;
   try {
-    const result = await analyzeMeal(
-      orig.rawInput,
-      orig.userContextJson as unknown as UserContext,
-      db,
-      gemini,
-      () => {},
-      { requestId: replayId, db, userId: orig.userId, promptVersionsUsed }
-    );
+    const runReplay = () =>
+      analyzeMeal(
+        orig.rawInput,
+        orig.userContextJson as unknown as UserContext,
+        db,
+        gemini,
+        () => {},
+        { requestId: replayId, db, userId: orig.userId, promptVersionsUsed }
+      );
+    const result = spend ? await spend.run(runReplay) : await runReplay();
     if (!result.success) {
       finalStatus = 'error';
       errorMessage = result.error.message;
@@ -197,6 +228,8 @@ export async function replayRequest(
   } catch (e) {
     finalStatus = 'error';
     errorMessage = e instanceof Error ? e.message : String(e);
+  } finally {
+    await spend?.settle();
   }
 
   // AWAITED so the redirect lands on a row in its terminal state,

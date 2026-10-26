@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { GoogleGenAI } from '@google/genai';
+import { meterAttemptSpend } from '@/lib/ai/cost/spend-meter';
 import { readAttemptUsage, type StreamUsageMetadata } from './attempt-trace';
 import { buildContents, prepareRequest } from './request';
 import type { RetryOptions, WithRetry } from './retry';
@@ -67,18 +68,21 @@ export function createStructuredOutput({
       {
         label: params.model,
         abortSignal: params.abortSignal,
-        onAttempt: (attempt, t0, _result, err) =>
+        onAttempt: (attempt, t0, _result, err) => {
+          const tokens = readAttemptUsage(usage);
+          meterAttemptSpend(params.model, tokens);
           opts?.onAttemptComplete?.({
             attempt,
             model: params.model,
-            ...readAttemptUsage(usage),
+            ...tokens,
             latencyMs: Date.now() - t0,
             error: err,
             response: responseText,
             promptHash: createHash('sha256')
               .update(params.systemPrompt)
               .digest('hex'),
-          }),
+          });
+        },
       }
     );
   };

@@ -55,12 +55,14 @@ export type RateLimitReason = 'minute' | 'hour' | 'day' | 'flood';
  *  - `unavailable_timeout` — the DB deadline fired (pool saturation / shedding)
  *  - `unavailable_error`   — the DB round trip failed outright (DB down)
  *  - `misuse`              — the call resolved no usable key (see `'none'`)
+ *  - `budget`              — the app-wide AI spend brake refused a call
  *
  * Timeout and error are separate values because they demand different
  * responses: one is a capacity problem, the other is an outage.
  */
 export type RateLimitEventReason =
   | RateLimitReason
+  | 'budget'
   | 'unavailable_timeout'
   | 'unavailable_error'
   | 'misuse';

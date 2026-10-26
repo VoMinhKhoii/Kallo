@@ -29,4 +29,15 @@ describe('reportError', () => {
     expect(sent.stack).not.toContain('hai tô');
     expect(sent.stack).toMatch(/\n\s+at /);
   });
+
+  it('passes a fingerprint through, so each value is its own Sentry issue', () => {
+    const error = new Error('brake tripped');
+    reportError(error, '[ai-spend-brake]', {
+      fingerprint: ['ai-spend-brake', '2026-10-25'],
+    });
+    expect(captureException).toHaveBeenCalledWith(error, {
+      tags: { scope: '[ai-spend-brake]' },
+      fingerprint: ['ai-spend-brake', '2026-10-25'],
+    });
+  });
 });
