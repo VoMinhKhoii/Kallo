@@ -566,8 +566,9 @@ session `TimeZone`, which under a transaction pooler is not a session we own.
 analysis-guard tables that shipped without any:
 `reap_analysis_rate_limit_windows()` (2 days) and
 `reap_analysis_in_flight_limits()` (1 day, **including rows with `count > 0`** —
-those are crash-abandoned concurrency leases; the live path is covered by the
-90-second stale reset in `analysis-guard-counters.ts`).
+those are crash-abandoned concurrency leases). No code uses those two tables
+or `analysis_guard_events` since the analysis guard was merged into the
+limiter; a follow-up migration drops them once that deploy is live.
 
 **Slots and the AI spend brake** (`20261025133838` + `20261025133900`).
 `rate_limit_counters` gained `slot_count` / `slot_expires_at` (a one-at-a-time
@@ -583,8 +584,10 @@ a slot and settles spend by a signed delta. A slot is freed only by its own
 holder before it expires (the release passes back the `slot_expires_at` the
 consume returned), so a request that outlived its slot cannot free a later
 holder's. Both functions take the day's spend row before the key's counter
-row; the opposite order in either one deadlocks against the other. The 7-argument consume stays until
-no deployed code calls it, then a later migration drops it.
+row; the opposite order in either one deadlocks against the other. The
+7-argument consume stays until no deployed code calls it (the code switched to
+the 11-argument one with the analysis-guard merge), then a later migration
+drops it.
 
 If the legacy tables are large on first deploy, run
 `SELECT public.reap_analysis_rate_limit_windows();` once by hand rather than

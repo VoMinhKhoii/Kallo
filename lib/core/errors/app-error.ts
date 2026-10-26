@@ -133,8 +133,13 @@ export class RateLimitUnavailableError extends AppError {
 
 export type RateLimitUnavailableKind = 'timeout' | 'error';
 
-/** `ai_paused`: the app-wide AI spend brake has tripped for the UTC day. */
-export type RateLimitedReason = 'ai_paused';
+/**
+ * Which limit refused, for a caller that words its own message:
+ *  - `ai_paused`: the app-wide AI spend brake has tripped for the UTC day;
+ *  - `daily_limit`: the key's day window is used up;
+ *  - `in_flight`: the key's one-at-a-time slot is held.
+ */
+export type RateLimitedReason = 'ai_paused' | 'daily_limit' | 'in_flight';
 
 // Reasons a gated feature is locked, mirrored from the entitlement service.
 // A union of one: the wire field stays so clients can key on it.

@@ -7,11 +7,12 @@ Code: `lib/infra/rate-limit/limiter/` (public entry `limiter.ts`).
 SQL: `public.rate_limit_consume()`, tables `rate_limit_counters` /
 `rate_limit_events` (see `docs/DATABASE.md`).
 
-> This is NOT the analysis guard. `lib/infra/rate-limit/analysis-guards.ts`
-> stays in place for analyze-meal, relog, entitlement reconcile, OG cards and
-> OCR, because it also models **concurrency** (an in-flight slot with a
-> release) which this limiter has no concept of. The two share only the HMAC
-> pepper.
+> This is the only limiter. The separate analysis guard (its own tables,
+> window maths, event trail and `ANALYSIS_*` env overrides) was merged into it
+> in October 2026: a policy can now hold a **one-at-a-time slot**
+> (`concurrency`, taken with `acquireRateLimit`), and the app-wide AI spend
+> brake reserves through the same SQL call. See "One at a time" and "The AI
+> spend brake".
 
 ## The three layers
 
@@ -85,6 +86,14 @@ code.
 | `labelImageView` | user | 30 / 300 / — | degraded |
 | `nutritionCandidates` | user | 30 / 300 / — | degraded |
 | `adminDebugAnalysis` | user | 3 / 20 / — | **closed** |
+| `analyzeMeal` (typed meals + cheat mode; **one at a time**) | user | — / — / 30 | **closed** |
+| `analyzeMealClarify` (a cheat-mode clarify answer, not one of the 30) | user | — / — / 30 | **closed** |
+| `labelOcr` (**one at a time**) | user | 5 / 30 / 100 | **closed** |
+| `relogCandidates` (**two at a time**) | user | 60 / 900 / 5000 | degraded |
+| `relogWrite` (stage + instant save share it; **one at a time**) | user | 12 / 120 / 500 | degraded |
+| `entitlementsReconcile` (**one at a time**) | user | 3 / 20 / 100 | degraded |
+| `ogMacroCard` | user | 10 / 60 / 200 | degraded |
+| `shadowDaily` (legacy shadow runs; a refusal skips the run) | global | — / — / 100 | **closed** |
 | `ocrGlobalDaily` | global | 60 / — / 5000 | **closed** |
 | `pushGlobalHourly` | global | — / 20000 / — | degraded |
 
@@ -106,6 +115,50 @@ Shape of the numbers:
 When a caller applies several policies to one request, the order is
 `global → ip → account/recipient`: cheapest rejection first, and a block
 short-circuits so a refused request never charges the narrower counters.
+
+## One at a time: slots and leases
+
+A policy with `concurrency: { limit, ttlSeconds, retryAfterSeconds }` also
+holds a **slot** on the key's counter row (`slot_count`, `slot_expires_at`).
+It is taken with `acquireRateLimit(policy, key)` — or `withRateLimit`, which
+releases on every exit — in the same `rate_limit_consume` call that counts the
+windows, and freed by the returned lease's `release()` (`rate_limit_release`).
+`assertRateLimit` refuses such a policy outright: counting its windows alone
+would leave the slot unenforced while the registry says it is.
+
+- **A crashed request frees its slot on its own.** The slot reads as free once
+  `slot_expires_at` passes (`ttlSeconds`, 90 s everywhere: past analyze-meal's
+  60 s `maxDuration`). No reaper, no stale-counter reset.
+- **A held slot answers with the policy's `retryAfterSeconds`** (15 s for a
+  meal), not the slot's remaining lifetime: a request normally frees its slot
+  long before the crash bound.
+- **A window outranks the slot** in the refusal reason: waiting for the slot is
+  pointless while a window is out.
+- **`degraded` policies hold no slot while the database is down** — they fall
+  back to the per-instance bucket like any degraded policy. `closed` policies
+  answer 503.
+- `release()` never throws and runs once; a failed release leaves the slot to
+  its lifetime.
+
+**Meal analysis (`analyzeMeal`): 30 a UTC day per person, one at a time.** No
+minute or hour window — logging a day's meals in one sitting is normal, and the
+slot already caps one account at one analysis running. Premium gets the same
+30. The day cap, the slot and the AI spend brake are checked in **one** call
+(`createAiSpend('meal', { rateLimit })` → `acquireSpendLease`), and freed and
+settled in one call when the stream closes or the client aborts.
+
+- A **cheat-mode clarify answer** (`mode: 'cheat'` + `clarifyAnswer`) is the
+  reply to the estimator's question, not a new meal: it takes the slot but is
+  not one of the 30. It counts against `analyzeMealClarify` instead, because
+  nothing ties the field to a question that was asked — without its own cap,
+  sending it on every request would escape the meal cap. A typed meal carrying
+  `clarifyAnswer` still counts as one of the 30.
+- **App Review accounts** (`BILLING_SANDBOX_USER_IDS`) take the slot but are
+  never counted against the day cap, the clarify cap or the brake.
+- Every refusal is the **429 `RATE_LIMITED`** + `Retry-After` the apps already
+  parse, worded for what refused (`errors.analysisDailyLimit`,
+  `errors.analysisInFlight`, `errors.aiPaused`, else `errors.rateLimited`).
+  The reason travels on `RateLimitedError.reason`, never on the wire.
 
 ## Wired surfaces (PR 2)
 
@@ -306,7 +359,7 @@ except invite lookup (IP) and the two global budgets.
 
 | Route / action | Policies | Key | Refusal, and what the client sees |
 |---|---|---|---|
-| `POST /api/v1/nutrition-label/scan` + `scanNutritionLabelAction` (via `withOcrGuard`) | `checkAnalysisGuards` (5/min, 30/hr, 100/day, 1 concurrent) **then**, immediately before the Gemini call, `ocrGlobalDaily` | `user`, then `global:'ocr'` | Per-user/concurrency block → **429** + `Retry-After`, and it spends nothing app-wide. Global budget exhausted → **429**; its limiter down (fail-closed) → **503** `RATE_LIMITER_UNAVAILABLE` + `Retry-After: 10`. An oversized body → **413** `PAYLOAD_TOO_LARGE`. All pass through `mapNutritionLabelError` untouched; the web action folds them to the `rate_limited` / `server_error` codes. |
+| `POST /api/v1/nutrition-label/scan` + `scanNutritionLabelAction` (via `withOcrGuard`) | `labelOcr` (5/min, 30/hr, 100/day, one at a time) **then**, immediately before the Gemini call, `ocrGlobalDaily` and the AI spend brake | `user`, then `global:'ocr'` | Per-user/concurrency block → **429** + `Retry-After`, and it spends nothing app-wide. Global budget exhausted → **429**; its limiter down (fail-closed) → **503** `RATE_LIMITER_UNAVAILABLE` + `Retry-After: 10`. An oversized body → **413** `PAYLOAD_TOO_LARGE`. All pass through `mapNutritionLabelError` untouched; the web action folds them to the `rate_limited` / `server_error` codes. |
 | `sendChatGroupMessage` (`POST /api/v1/chat-groups/{groupId}/messages`) | `chatMessageSend`, charged before any database read | `user` (actor) | Route → **429** + `Retry-After` via `handleRouteError`. Placed after `requireGroupAccess` it bounded neither the membership lookup nor the circle-quota read, so bogus group ids drove unlimited reads on a two-connection pool. |
 | `createShareReplyAction` (`POST /api/v1/groups/shares/reply`) | `shareReply` | `user` (actor) | same |
 | `toggleShareReactionAction` (`POST /api/v1/groups/shares/reaction`) | `shareReaction` | `user` (actor) | same |
@@ -357,19 +410,17 @@ guard was about to refuse still burned one unit of the app-wide 5000/day
 budget: **one trial account posting 5000 empty bodies took label scanning away
 from every user for the rest of the UTC day.** The order is now
 
-1. `checkAnalysisGuards` — the per-user window and the single in-flight slot.
-   A block throws the 429 and consumes nothing app-wide; it also writes an
-   `analysis_guard_events` row (fire-and-forget) so OCR blocks are visible in
-   the same trail every other guarded surface uses.
+1. `labelOcr` via `acquireRateLimit` — the per-user windows and the single
+   slot. A block throws the 429 and consumes nothing app-wide; like every
+   refusal it is a `rate_limit_events` row.
 2. `work`, running INSIDE that slot: the bounded body read, the schema, and the
-   `sharp` decode. All of it is metered by the per-user window and by
-   `concurrentUser`, which is the reason the slot wraps it rather than only the
-   provider call.
+   `sharp` decode. All of it is metered by the per-user windows and the slot,
+   which is the reason the slot wraps it rather than only the provider call.
 3. `chargeGlobal()` — handed to `work` and called immediately before the Gemini
    request, so the app-wide budget counts provider calls and nothing else.
 4. The slot is released in an outer `finally` on **every** exit — validation
-   throw, global 429/503, work failure, success — and the release is itself
-   wrapped, so a failed release can never turn an already-paid-for result into
+   throw, global 429/503, work failure, success — and the release never
+   throws, so a failed release can never turn an already-paid-for result into
    a client error.
 
 `ocrGlobalDaily` also carries a `perMinute` now. A policy that declares only
@@ -402,7 +453,6 @@ work ends, `rate_limit_release` swaps the estimate for the metered cost.
 | `labelOcr` | `withOcrGuard` (REST scan + web action), reserved inside `chargeGlobal` right before the provider call | $0.01 | `withOcrGuard`'s `finally` |
 | `shadow` | the legacy shadow candidate run | $0.03 | `withAiSpend` |
 | `debug` | `POST /api/analyze-meal/debug` | $0.05 | the route's `finally` |
-| `replay` | admin live replay (dry runs spend nothing and reserve nothing) | $0.05 | `replayRequest`'s `finally` |
 
 Rules that keep the count honest:
 
@@ -433,10 +483,11 @@ relogging still work." — scan-only and relog-only submits go through
 with no ceiling. (The deadline is longer than the counters' 400 ms because the
 reservation waits on the same pool the analysis's own queries use.)
 
-**Order.** On analyze-meal the per-user guard runs first, so a request the user
-may not make never touches the brake; a brake refusal then frees the per-user
-slot it was holding. On OCR the per-user slot and `ocrGlobalDaily` come first
-and the brake reservation last.
+**Order.** On analyze-meal the brake is checked in the same call as the
+user's day cap and slot: the brake row is locked and checked first, then the
+user's counters, and the reservation is booked only when both admit — a
+refusal of either writes nothing. On OCR the per-user slot and
+`ocrGlobalDaily` come first and the brake reservation last.
 
 **App Review accounts are never refused.** Users in `BILLING_SANDBOX_USER_IDS`
 are booked with `enforce: false`: no check, but their real cost still counts
@@ -481,7 +532,7 @@ What the test actually proves:
 | Coverage | A `route.ts(x)` on disk with no entry, or an entry with no file. |
 | `bodyBound: true` | The file reads a body (`req.json()`, `formData()`, `text()`, `arrayBuffer()`) with no cap in sight (`readBounded*`, `readJsonBody()`, or an explicit `content-length` guard). |
 | `bodyBound: false` | The file DOES bound its body — the map claims a hole that is not there. |
-| A named policy | Neither the route nor its `guardedIn` file contains an `assertRateLimit(` call. |
+| A named policy | Neither the route nor its `guardedIn` file both calls the limiter (`assertRateLimit(`, `consumeRateLimit(`, `acquireRateLimit(`, `withRateLimit(` or `createAiSpend(`) and names the policy in quotes. |
 
 `auth` and `none-cheap` are **not** machine-verified, and cannot be: both are
 judgements about who may call a route and what it costs. `none-cheap` means a
@@ -698,7 +749,9 @@ Four nightly `pg_cron` jobs, all installed by
 | `reap-analysis-in-flight-limits-daily` (03:57) | `reap_analysis_in_flight_limits()` | `updated_at` older than 1 day, **including rows with `count > 0`** (crash-abandoned leases) |
 
 The last two clean up the *legacy* analysis-guard tables, which shipped in
-May 2026 with no retention at all.
+May 2026 with no retention at all. No code reads or writes those tables since
+the analysis guard was merged into this limiter; a follow-up migration drops
+them, their reapers and `analysis_guard_events` once that deploy is live.
 
 ## Testing
 

@@ -14,6 +14,7 @@ import {
   type FeatureLockedReason,
   PayloadTooLargeError,
   RateLimitedError,
+  type RateLimitedReason,
   RateLimitUnavailableError,
   type RateLimitUnavailableKind,
 } from '@/lib/core/errors/app-error';
@@ -94,10 +95,15 @@ export const Errors = {
   circleLimitReached: (detail: string) =>
     new AppError('CIRCLE_LIMIT_REACHED', 409, false, detail),
 
-  rateLimited: (message?: string, retryAfterSeconds?: number) =>
+  rateLimited: (
+    message?: string,
+    retryAfterSeconds?: number,
+    reason?: RateLimitedReason
+  ) =>
     new RateLimitedError(
       message ?? DEFAULT_MESSAGES.rateLimited,
-      retryAfterSeconds
+      retryAfterSeconds,
+      reason
     ),
 
   // The app-wide AI spend brake tripped: every paid AI call is refused until

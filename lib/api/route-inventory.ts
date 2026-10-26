@@ -29,8 +29,7 @@ import type { RateLimitPolicyName } from '@/lib/infra/rate-limit/limiter/limiter
  *    `readBoundedWebhookBody`) or an explicit content-length guard, rather
  *    than an unbounded `req.json()` / `formData()`.
  *  - `rateLimit`: a `RateLimitPolicyName` (the generic-limiter policy the
- *    mutating method carries), `analysis-guard` (the legacy per-user
- *    concurrency guard), `ocr-guard` (`withOcrGuard`), `auth-proxy` (the
+ *    mutating method carries), `auth-proxy` (the
  *    Supabase proxy's per-path policies), `webhook-sig` (guarded by signature,
  *    not a limit), or `none-cheap` (deliberately unlimited -- a cheap read or
  *    mutation; a new EXPENSIVE route here is what the review gate must catch).
@@ -42,8 +41,6 @@ export type RouteAuth = 'none' | 'session' | 'admin' | 'webhook-sig';
 
 export type RouteRateLimit =
   | RateLimitPolicyName
-  | 'analysis-guard'
-  | 'ocr-guard'
   | 'auth-proxy'
   | 'webhook-sig'
   | 'none-cheap';
@@ -57,18 +54,23 @@ export type RouteInventoryEntry =
 export const routeInventory = {
   'api/[...unmatched]/route.ts': ['none', false, 'none-cheap'],
   'api/analyze-meal/debug/route.ts': ['admin', false, 'adminDebugAnalysis'],
-  'api/analyze-meal/route.ts': ['session', true, 'analysis-guard'],
+  'api/analyze-meal/route.ts': [
+    'session',
+    true,
+    'analyzeMeal',
+    'app/api/analyze-meal/_lib/analysis-guard.ts',
+  ],
   'api/auth/send-email/route.ts': ['webhook-sig', true, 'webhook-sig'],
   'api/csp-report/route.ts': ['none', true, 'cspReportIp'],
   'api/healthz/route.ts': ['none', false, 'healthzIp'],
-  'api/og/macro-card/[shareId]/route.tsx': ['session', false, 'analysis-guard'],
+  'api/og/macro-card/[shareId]/route.tsx': ['session', false, 'ogMacroCard'],
   'api/startupz/route.ts': ['none', false, 'none-cheap'],
   'api/supabase-proxy/[...path]/route.ts': ['none', true, 'auth-proxy'],
   'api/v1/account/billing-config/route.ts': ['session', false, 'none-cheap'],
   'api/v1/account/entitlements/reconcile/route.ts': [
     'session',
     false,
-    'analysis-guard',
+    'entitlementsReconcile',
   ],
   'api/v1/account/entitlements/route.ts': ['session', false, 'none-cheap'],
   'api/v1/account/route.ts': ['session', false, 'none-cheap'],
@@ -172,10 +174,21 @@ export const routeInventory = {
   'api/v1/meals/relog/candidates/route.ts': [
     'session',
     false,
-    'analysis-guard',
+    'relogCandidates',
+    'lib/actions/meals/relog/load-candidates.ts',
   ],
-  'api/v1/meals/relog/route.ts': ['session', true, 'analysis-guard'],
-  'api/v1/meals/relog/stage/route.ts': ['session', true, 'analysis-guard'],
+  'api/v1/meals/relog/route.ts': [
+    'session',
+    true,
+    'relogWrite',
+    'lib/actions/meals/relog/relog-items.ts',
+  ],
+  'api/v1/meals/relog/stage/route.ts': [
+    'session',
+    true,
+    'relogWrite',
+    'lib/actions/meals/relog/stage-relog-analysis.ts',
+  ],
   'api/v1/meals/route.ts': ['session', false, 'none-cheap'],
   'api/v1/notifications/badge/route.ts': ['session', false, 'none-cheap'],
   'api/v1/notifications/push-tokens/route.ts': ['session', true, 'none-cheap'],
@@ -188,7 +201,12 @@ export const routeInventory = {
     'labelImageView',
   ],
   'api/v1/nutrition-label/log/route.ts': ['session', true, 'none-cheap'],
-  'api/v1/nutrition-label/scan/route.ts': ['session', true, 'ocr-guard'],
+  'api/v1/nutrition-label/scan/route.ts': [
+    'session',
+    true,
+    'labelOcr',
+    'lib/infra/rate-limit/ocr-guard.ts',
+  ],
   'api/v1/nutrition/candidates/route.ts': [
     'session',
     true,

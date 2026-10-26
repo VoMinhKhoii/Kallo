@@ -1,5 +1,4 @@
 import { handleRouteError } from '@/lib/api/respond';
-import { Errors } from '@/lib/core/errors/catalog';
 import {
   fetchRevenueCatSnapshot,
   getBillingConfig,
@@ -9,7 +8,10 @@ import {
   reconcileRevenueCatGrants,
 } from '@/lib/domain/billing/billing';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
-import { checkAnalysisGuards } from '@/lib/infra/rate-limit/analysis-guards';
+import {
+  acquireRateLimit,
+  type RateLimitLease,
+} from '@/lib/infra/rate-limit/limiter/limiter';
 
 /**
  * Authenticated recovery path for delayed/missed webhooks. Clients call this
@@ -17,27 +19,14 @@ import { checkAnalysisGuards } from '@/lib/infra/rate-limit/analysis-guards';
  * client purchase data and projects RevenueCat's current CustomerInfo only.
  */
 export async function POST() {
-  let releaseGuard: (() => Promise<void> | void) | undefined;
+  let lease: RateLimitLease | undefined;
   try {
     const { profile } = await requireAuthAndProfile();
-    const guard = await checkAnalysisGuards({
-      userId: profile.userId,
-      route: 'billing-entitlements-reconcile',
-      limits: {
-        perUserMinute: 3,
-        perUserHour: 20,
-        perUserDay: 100,
-        concurrentUser: 1,
-        concurrentRetryAfterSeconds: 5,
-      },
+    // A refusal throws the RATE_LIMITED 429 + Retry-After the apps parse.
+    lease = await acquireRateLimit('entitlementsReconcile', {
+      kind: 'user',
+      value: profile.userId,
     });
-    if (!guard.allowed) {
-      return Response.json(Errors.rateLimited().toJSON(), {
-        status: guard.status,
-        headers: { 'Retry-After': String(guard.retryAfterSeconds) },
-      });
-    }
-    releaseGuard = guard.release;
 
     const billingEnvironment = getBillingEnvironmentForUser(profile.userId);
     const snapshot = await fetchRevenueCatSnapshot(profile.userId, {
@@ -74,6 +63,6 @@ export async function POST() {
   } catch (error) {
     return handleRouteError(error);
   } finally {
-    await releaseGuard?.();
+    await lease?.release();
   }
 }

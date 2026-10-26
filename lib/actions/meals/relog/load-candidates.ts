@@ -6,7 +6,7 @@ import { loadRelogMealCandidates } from '@/lib/domain/logging/relog/meal-query';
 import type { RelogCandidatesResponse } from '@/lib/domain/logging/relog/relog';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
-import { withRelogGuard } from '@/lib/infra/rate-limit/relog-guard';
+import { withRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
 // `relogCandidatesQuerySchema` lives in the meals contract so the route can
 // reuse it; imported here since this 'use server' module may only export async
@@ -43,10 +43,9 @@ export async function loadRelogCandidatesAction(input: {
   // directly, so a route-level guard would leave that caller unlimited. The
   // scan is `lower(unaccent(col)) LIKE '%…%'` — no index applies — and both
   // arms run in parallel against a pool that defaults to 2 connections.
-  return withRelogGuard(
-    'candidates',
-    'meals-relog-candidates',
-    user.id,
+  return withRateLimit(
+    'relogCandidates',
+    { kind: 'user', value: user.id },
     async () => {
       const [dishes, meals] = await Promise.all([
         loadRelogDishCandidates(db, { userId: user.id, query: q, limit }),

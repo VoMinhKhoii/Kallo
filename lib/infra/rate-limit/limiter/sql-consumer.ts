@@ -85,7 +85,9 @@ export async function withDeadline<TRow extends readonly MaybeRow[]>(
 }
 
 /**
- * `$1..$7`, one per argument, with an explicit `::cast` on each.
+ * `$1..$7`, one per argument, with an explicit `::cast` on each — the
+ * 11-argument function with no slot and no spend (the two NULLs between the
+ * windows and `p_now`), so the old 7-argument one can be dropped.
  *
  * The client runs with `prepare: false` (PgBouncer transaction mode), so
  * Postgres resolves the overload from the literal text of the statement — and
@@ -108,6 +110,10 @@ const CONSUME_SQL = `
     $4::integer,
     $5::integer,
     $6::integer,
+    null::integer,
+    null::integer,
+    null::bigint,
+    null::bigint,
     $7::timestamptz
   )
 `;

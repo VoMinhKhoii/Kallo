@@ -1,107 +1,89 @@
-import type { NextRequest } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { type AiSpend, createAiSpend } from '@/lib/ai/cost/ai-spend';
-import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
-import { RateLimitedError } from '@/lib/core/errors/app-error';
-import { Errors } from '@/lib/core/errors/catalog';
-import { db } from '@/lib/infra/db/client';
-import { analysisGuardEvents } from '@/lib/infra/db/schema';
-import type { AnalysisGuardAllowedResult } from '@/lib/infra/rate-limit/analysis-guard-types';
 import {
-  buildAnalysisGuardEvent,
-  checkAnalysisGuards,
-} from '@/lib/infra/rate-limit/analysis-guards';
-import { getRequestIp } from '@/lib/infra/security/request-ip';
-
-const analyzeMealRoute = '/api/analyze-meal';
+  RateLimitedError,
+  type RateLimitedReason,
+} from '@/lib/core/errors/app-error';
+import { Errors } from '@/lib/core/errors/catalog';
+import { isBillingSandboxUser } from '@/lib/domain/billing/revenuecat/identity';
+import { consumeRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
 type AnalysisGuardResult =
   | {
       allowed: true;
-      /** Frees the in-flight slot and settles the AI spend. */
-      release: AnalysisGuardAllowedResult['release'];
+      /** Frees the one-at-a-time slot and settles the AI spend. */
+      release: () => Promise<void>;
       /** Runs the analysis with its model calls metered for the brake. */
       spend: AiSpend;
     }
   | { allowed: false; error: Response };
 
+/** The `errors` message each refusal is worded with. */
+const refusalMessageKey = {
+  ai_paused: 'aiPaused',
+  daily_limit: 'analysisDailyLimit',
+  in_flight: 'analysisInFlight',
+} as const satisfies Record<RateLimitedReason, string>;
+
+/**
+ * Admit one analysis: the user's 30-a-day cap and one-at-a-time slot
+ * (`analyzeMeal`) and the app-wide AI spend brake, in one database call.
+ *
+ * A cheat-mode clarify answer is the reply to the estimator's question, not a
+ * new meal: it takes the slot but not one of the 30, and counts against its
+ * own cap instead (`analyzeMealClarify`). App Review accounts are never
+ * refused by the day cap or the brake; they still run one at a time.
+ *
+ * Every refusal is the `RATE_LIMITED` 429 + `Retry-After` the apps already
+ * parse, worded for what refused. A limiter that cannot answer throws
+ * (503 via the route's pre-stream handler): every analysis spends money.
+ */
 export async function acquireAnalysisGuard(
-  request: NextRequest,
   userId: string,
-  locale: string
+  locale: string,
+  request: { isClarifyAnswer: boolean }
 ): Promise<AnalysisGuardResult> {
-  const ip = getRequestIp(request);
-  const guard = await checkAnalysisGuards({
+  const reviewer = isBillingSandboxUser(userId);
+  const key = { kind: 'user', value: userId } as const;
+  const spend = createAiSpend('meal', {
     userId,
-    ip,
-    route: analyzeMealRoute,
-    db,
+    rateLimit: {
+      policy: 'analyzeMeal',
+      key,
+      countWindows: !request.isClarifyAnswer && !reviewer,
+    },
   });
 
-  if (guard.allowed) {
-    // Per-user first: a request this user may not make never touches the
-    // app-wide brake. The brake refuses everyone once today's AI spend would
-    // pass its limit — with its own message, still a RATE_LIMITED 429.
-    const spend = createAiSpend('meal', { userId });
-    try {
-      await spend.reserve();
-    } catch (error) {
-      await Promise.resolve(guard.release?.()).catch((releaseError) => {
-        console.error(
-          '[analyze-meal] Failed to release analysis guard:',
-          releaseError
+  try {
+    if (request.isClarifyAnswer && !reviewer) {
+      const clarify = await consumeRateLimit('analyzeMealClarify', key);
+      if (!clarify.allowed) {
+        throw Errors.rateLimited(
+          undefined,
+          clarify.retryAfterSeconds,
+          clarify.reason === 'day' ? 'daily_limit' : undefined
         );
-      });
-      if (!(error instanceof RateLimitedError)) throw error;
-      const retryAfterSeconds = error.retryAfterSeconds ?? 1;
-      const t = await getTranslations({ locale, namespace: 'errors' });
-      return {
-        allowed: false,
-        error: Response.json(
-          Errors.aiPaused(retryAfterSeconds, t('aiPaused')).toJSON(),
-          {
-            status: 429,
-            headers: { 'Retry-After': String(retryAfterSeconds) },
-          }
-        ),
-      };
+      }
     }
-
+    await spend.reserve();
+  } catch (error) {
+    if (!(error instanceof RateLimitedError)) throw error;
+    const retryAfterSeconds = error.retryAfterSeconds ?? 1;
+    const t = await getTranslations({ locale, namespace: 'errors' });
+    const message = t(
+      error.reason ? refusalMessageKey[error.reason] : 'rateLimited'
+    );
     return {
-      allowed: true,
-      spend,
-      release: async () => {
-        await spend.settle();
-        await guard.release?.();
-      },
+      allowed: false,
+      error: Response.json(
+        Errors.rateLimited(message, retryAfterSeconds).toJSON(),
+        {
+          status: 429,
+          headers: { 'Retry-After': String(retryAfterSeconds) },
+        }
+      ),
     };
   }
 
-  if (readBooleanEnv('ANALYSIS_GUARD_EVENT_LOGGING_ENABLED', true)) {
-    try {
-      await db.insert(analysisGuardEvents).values(
-        buildAnalysisGuardEvent({
-          userId,
-          ip,
-          route: analyzeMealRoute,
-          reason: guard.reason,
-          retryAfterSeconds: guard.retryAfterSeconds,
-        })
-      );
-    } catch (error) {
-      console.error(
-        '[analyze-meal] Failed to log analysis guard event:',
-        error
-      );
-    }
-  }
-
-  const t = await getTranslations({ locale, namespace: 'errors' });
-  return {
-    allowed: false,
-    error: Response.json(Errors.rateLimited(t('rateLimited')).toJSON(), {
-      status: guard.status,
-      headers: { 'Retry-After': String(guard.retryAfterSeconds) },
-    }),
-  };
+  return { allowed: true, spend, release: () => spend.settle() };
 }

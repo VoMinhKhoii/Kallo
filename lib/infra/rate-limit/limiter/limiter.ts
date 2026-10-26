@@ -18,14 +18,11 @@
  * `rate_limit_consume` statement in Postgres, and the policy's `failMode` for
  * when Postgres cannot answer. See docs/RATE_LIMITING.md.
  *
- * `acquireSpendLease` is the app-wide AI spend brake: it reserves a call's
- * estimated cost against the day's $10 before the call and settles the real
- * cost after (`lease/`).
- *
- * This module is NOT the analysis guard. `checkAnalysisGuards` stays where it
- * is for analyze-meal / relog / reconcile / OG / OCR, because it also models
- * CONCURRENCY (an in-flight slot with a release), which this limiter has no
- * concept of.
+ * `acquireRateLimit` / `withRateLimit` are for a policy with a one-at-a-time
+ * slot (`concurrency`): the lease they hand back frees it. `acquireSpendLease`
+ * is the app-wide AI spend brake: it reserves a call's estimated cost against
+ * the day's $10 before the call and settles the real cost after, optionally
+ * taking a policy's windows and slot in the same call (`lease/`).
  */
 
 export { RateLimitUnavailableError } from '@/lib/core/errors/app-error';
@@ -38,10 +35,14 @@ export {
 } from './consume';
 export { RateLimitKeyError } from './key-hash';
 export {
+  type AcquireRateLimitOptions,
   type AcquireSpendLeaseOptions,
+  acquireRateLimit,
   acquireSpendLease,
+  type RateLimitLease,
   resetSpendLeaseForTests,
   type SpendLease,
+  withRateLimit,
 } from './lease/lease';
 export {
   AI_SPEND_DAILY_LIMIT_USD,

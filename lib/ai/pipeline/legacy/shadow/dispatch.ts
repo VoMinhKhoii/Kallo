@@ -5,14 +5,16 @@ import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import {
   ANALYSIS_MODEL_BUDGET_ROUTE,
   ANALYSIS_MODEL_PROVIDER,
+  recordAnalysisModelBudgetEventBestEffort,
 } from '@/lib/ai/pipeline/telemetry/budget';
 import type { PipelineResponse } from '@/lib/ai/types/result';
 import type { AppDb } from '@/lib/infra/db/client';
-import { checkNonessentialAnalysisGuards } from '@/lib/infra/rate-limit/analysis-guards';
+import { consumeRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import {
   createShadowGuard,
   getPrimaryP95Ms,
   isEmbeddingRateLimited,
+  type NonessentialShadowGuardDecision,
 } from './guards';
 import {
   runShadowAsync,
@@ -130,17 +132,47 @@ function defaultShadowGuard(args: {
     dbPoolWaitMs: () => 0,
     dbPoolWaitThresholdMs: SHADOW_DB_POOL_WAIT_THRESHOLD_MS,
     embeddingRateLimited: isEmbeddingRateLimited,
-    nonessentialGuard: () =>
-      checkNonessentialAnalysisGuards({
-        db: args.db,
-        requestId: args.requestId,
-        route: ANALYSIS_MODEL_BUDGET_ROUTE,
-        workKind: 'shadow',
-        provider: ANALYSIS_MODEL_PROVIDER,
-        model: args.candidateModel,
-        reserve: true,
-      }),
+    nonessentialGuard: () => checkShadowQuota(args),
   });
+}
+
+/**
+ * 100 shadow runs a UTC day, app-wide (`shadowDaily`); the AI spend brake
+ * covers the money. A shadow is a sampled comparison nobody waits on, so a
+ * limiter that cannot answer skips it rather than failing anything.
+ */
+async function checkShadowQuota(args: {
+  db: AppDb;
+  requestId: string;
+  candidateModel: string;
+}): Promise<NonessentialShadowGuardDecision> {
+  try {
+    const quota = await consumeRateLimit('shadowDaily', {
+      kind: 'global',
+      value: 'shadow',
+    });
+    if (!quota.allowed) {
+      return {
+        allowed: false,
+        reason: 'shadow_quota',
+        retryAfterSeconds: quota.retryAfterSeconds,
+      };
+    }
+  } catch (error) {
+    console.error('[shadow] quota check failed; skipping the run:', error);
+    return { allowed: false, reason: 'shadow_quota', retryAfterSeconds: 60 };
+  }
+  // The run's request row in the cost telemetry, as before.
+  recordAnalysisModelBudgetEventBestEffort({
+    db: args.db,
+    requestId: args.requestId,
+    route: ANALYSIS_MODEL_BUDGET_ROUTE,
+    workKind: 'shadow',
+    provider: ANALYSIS_MODEL_PROVIDER,
+    model: args.candidateModel,
+    requestCount: 1,
+  });
+  return { allowed: true };
 }
 
 function persistShadowRunDefault(

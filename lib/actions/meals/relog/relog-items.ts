@@ -26,10 +26,7 @@ import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
 import { guardClientMealId } from '@/lib/infra/db/unique-violation';
-import {
-  RELOG_WRITE_ROUTE,
-  withRelogGuard,
-} from '@/lib/infra/rate-limit/relog-guard';
+import { withRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { insertDefaultCircleShare } from '../insert-default-share';
 
 // `relogItemsSchema` lives in the meals contract so the route can reuse it;
@@ -70,119 +67,123 @@ export async function relogMealItemsAction(
   // Throttled HERE, not at the route: the web composer calls this action
   // directly, so a route-level guard left that caller unlimited on a path that
   // holds `FOR UPDATE` on the source meals and inserts their rows.
-  return withRelogGuard('write', RELOG_WRITE_ROUTE, user.id, async () => {
-    const loggedAt = getUtcInstantForLocalDate(
-      parsed.loggedDate,
-      parsed.timezoneOffset
-    );
-    // A relog is a new eating event now, so the slot comes from the new instant
-    // rather than being copied — same as duplicate/manual.
-    const mealSlot = inferMealSlot(loggedAt);
-
-    return await db.transaction(async (tx) => {
-      // Lock the sources (FOR UPDATE) so a concurrent delete can't land between
-      // this read and the copy below (mirrors duplicateMealAction).
-      const { dishes, sourceConfidences } = await resolveRelogSources(
-        tx,
-        user.id,
-        parsed.items,
-        { lock: true }
+  return withRateLimit(
+    'relogWrite',
+    { kind: 'user', value: user.id },
+    async () => {
+      const loggedAt = getUtcInstantForLocalDate(
+        parsed.loggedDate,
+        parsed.timezoneOffset
       );
+      // A relog is a new eating event now, so the slot comes from the new instant
+      // rather than being copied — same as duplicate/manual.
+      const mealSlot = inferMealSlot(loggedAt);
 
-      // Re-sequence to the flattened dish index. MANDATORY, not cosmetic:
-      // buildMealItemGroupsFromRows keys groups on `${order}:${name}`, so two
-      // picks of the same dish (each at source order 0) would otherwise merge
-      // into a single group and silently halve what the user logged.
-      const copies = dishes.flatMap((dish, order) =>
-        dish.rows.map((row) => ({
-          id: randomUUID(),
-          row,
-          order,
-          nutrition: extractNutritionValues(row),
-        }))
-      );
+      return await db.transaction(async (tx) => {
+        // Lock the sources (FOR UPDATE) so a concurrent delete can't land between
+        // this read and the copy below (mirrors duplicateMealAction).
+        const { dishes, sourceConfidences } = await resolveRelogSources(
+          tx,
+          user.id,
+          parsed.items,
+          { lock: true }
+        );
 
-      // Meal nutrition is the SUM of the copied rows — never a source meal's
-      // stored total, which describes a different set of items.
-      const mealNutrition = sumDisplayedNutrition(
-        copies.map((c) => c.nutrition)
-      );
-      const alcoholG = sumAlcoholG(copies.map((c) => c.row.alcoholG));
-      // Same derivation the optimistic client card uses — one source of truth.
-      const rawInput = buildRelogRawInput(dishes.map((d) => d.name));
-      // A composed meal is no more confident than its least confident part.
-      const confidenceOverall = weakestConfidence(sourceConfidences);
+        // Re-sequence to the flattened dish index. MANDATORY, not cosmetic:
+        // buildMealItemGroupsFromRows keys groups on `${order}:${name}`, so two
+        // picks of the same dish (each at source order 0) would otherwise merge
+        // into a single group and silently halve what the user logged.
+        const copies = dishes.flatMap((dish, order) =>
+          dish.rows.map((row) => ({
+            id: randomUUID(),
+            row,
+            order,
+            nutrition: extractNutritionValues(row),
+          }))
+        );
 
-      const [meal] = await guardClientMealId(() =>
-        tx
-          .insert(meals)
-          .values({
-            ...(parsed.newMealId ? { id: parsed.newMealId } : {}),
-            userId: user.id,
+        // Meal nutrition is the SUM of the copied rows — never a source meal's
+        // stored total, which describes a different set of items.
+        const mealNutrition = sumDisplayedNutrition(
+          copies.map((c) => c.nutrition)
+        );
+        const alcoholG = sumAlcoholG(copies.map((c) => c.row.alcoholG));
+        // Same derivation the optimistic client card uses — one source of truth.
+        const rawInput = buildRelogRawInput(dishes.map((d) => d.name));
+        // A composed meal is no more confident than its least confident part.
+        const confidenceOverall = weakestConfidence(sourceConfidences);
+
+        const [meal] = await guardClientMealId(() =>
+          tx
+            .insert(meals)
+            .values({
+              ...(parsed.newMealId ? { id: parsed.newMealId } : {}),
+              userId: user.id,
+              rawInput,
+              mealSlot,
+              confidenceOverall,
+              loggedAt,
+              entryMode: 'precise',
+              alcoholG,
+              portionFactor: 1,
+              ...nutritionValuesToRow(mealNutrition),
+            })
+            .returning({ id: meals.id })
+        );
+
+        const share = await insertDefaultCircleShare(tx, {
+          mealId: meal.id,
+          actorId: user.id,
+          rawInput,
+        });
+
+        await tx.insert(mealItems).values(
+          copies.map(({ id, row, order, nutrition }) => ({
+            id,
+            mealId: meal.id,
+            ingredientName: row.ingredientName,
+            mealItemName: row.mealItemName,
+            mealItemOrder: order,
+            foodCompositionId: row.foodCompositionId,
+            estimatedGrams: row.estimatedGrams,
+            // Copied, not overwritten: matchConfidence/userFacingUnit describe how
+            // the ORIGINAL estimate was produced. Stamping manual-mode values here
+            // ('g', 1) would claim a precision this meal never had.
+            userFacingUnit: row.userFacingUnit,
+            cookingMethod: row.cookingMethod,
+            matchConfidence: row.matchConfidence,
+            ...nutritionValuesToRow(nutrition),
+            alcoholG: row.alcoholG,
+          }))
+        );
+
+        const mealItemGroups = buildMealItemGroupsFromRows(
+          copies.map(({ id, row, order, nutrition }) => ({
+            ...row,
+            id,
+            mealItemOrder: order,
+            nutrition,
+          }))
+        );
+
+        return {
+          mealId: meal.id,
+          meal: buildPersistedMeal({
+            id: meal.id,
             rawInput,
             mealSlot,
             confidenceOverall,
-            loggedAt,
+            loggedAt: loggedAt.toISOString(),
+            nutrition: mealNutrition,
+            mealItemGroups,
             entryMode: 'precise',
             alcoholG,
+            cheatSliders: null,
+            share,
             portionFactor: 1,
-            ...nutritionValuesToRow(mealNutrition),
-          })
-          .returning({ id: meals.id })
-      );
-
-      const share = await insertDefaultCircleShare(tx, {
-        mealId: meal.id,
-        actorId: user.id,
-        rawInput,
+          }),
+        };
       });
-
-      await tx.insert(mealItems).values(
-        copies.map(({ id, row, order, nutrition }) => ({
-          id,
-          mealId: meal.id,
-          ingredientName: row.ingredientName,
-          mealItemName: row.mealItemName,
-          mealItemOrder: order,
-          foodCompositionId: row.foodCompositionId,
-          estimatedGrams: row.estimatedGrams,
-          // Copied, not overwritten: matchConfidence/userFacingUnit describe how
-          // the ORIGINAL estimate was produced. Stamping manual-mode values here
-          // ('g', 1) would claim a precision this meal never had.
-          userFacingUnit: row.userFacingUnit,
-          cookingMethod: row.cookingMethod,
-          matchConfidence: row.matchConfidence,
-          ...nutritionValuesToRow(nutrition),
-          alcoholG: row.alcoholG,
-        }))
-      );
-
-      const mealItemGroups = buildMealItemGroupsFromRows(
-        copies.map(({ id, row, order, nutrition }) => ({
-          ...row,
-          id,
-          mealItemOrder: order,
-          nutrition,
-        }))
-      );
-
-      return {
-        mealId: meal.id,
-        meal: buildPersistedMeal({
-          id: meal.id,
-          rawInput,
-          mealSlot,
-          confidenceOverall,
-          loggedAt: loggedAt.toISOString(),
-          nutrition: mealNutrition,
-          mealItemGroups,
-          entryMode: 'precise',
-          alcoholG,
-          cheatSliders: null,
-          share,
-          portionFactor: 1,
-        }),
-      };
-    });
-  });
+    }
+  );
 }

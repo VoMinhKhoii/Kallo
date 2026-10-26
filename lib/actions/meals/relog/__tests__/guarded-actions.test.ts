@@ -12,7 +12,10 @@ import { FeatureLockedError } from '@/lib/core/errors/app-error';
  * regression that moves it back out fails here rather than in production.
  */
 
-const checkAnalysisGuards = vi.fn();
+// `withRateLimit` stand-in: `acquire` takes the lease (or refuses), `release`
+// frees it — the real one's contract, without a database.
+const acquire = vi.fn();
+const release = vi.fn();
 const requireAuthAndProfile = vi.fn();
 const loadRelogDishCandidates = vi.fn();
 const loadRelogMealCandidates = vi.fn();
@@ -20,8 +23,19 @@ const resolveRelogSources = vi.fn();
 const assertFeatureAccess = vi.fn();
 const findCachedRows = vi.fn();
 
-vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
-  checkAnalysisGuards,
+vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
+  withRateLimit: async (
+    policy: string,
+    key: unknown,
+    work: () => Promise<unknown>
+  ) => {
+    await acquire(policy, key);
+    try {
+      return await work();
+    } finally {
+      release();
+    }
+  },
 }));
 vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
 vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
@@ -53,15 +67,12 @@ const { stageRelogAnalysisAction } = await import(
 const { relogMealItemsAction } = await import(
   '@/lib/actions/meals/relog/relog-items'
 );
-const { RELOG_WRITE_ROUTE } = await import(
-  '@/lib/infra/rate-limit/relog-guard'
-);
 
-const release = vi.fn();
+const user = { kind: 'user', value: 'user-123' };
 const PROFILE_CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
 
 beforeEach(() => {
-  checkAnalysisGuards.mockReset();
+  acquire.mockReset();
   requireAuthAndProfile.mockReset();
   loadRelogDishCandidates.mockReset();
   loadRelogMealCandidates.mockReset();
@@ -73,7 +84,7 @@ beforeEach(() => {
     user: { id: 'user-123' },
     profile: { createdAt: PROFILE_CREATED_AT },
   });
-  checkAnalysisGuards.mockResolvedValue({ allowed: true, release });
+  acquire.mockResolvedValue(undefined);
   loadRelogDishCandidates.mockResolvedValue([]);
   loadRelogMealCandidates.mockResolvedValue([]);
 });
@@ -82,20 +93,12 @@ describe('loadRelogCandidatesAction', () => {
   it('throttles on the authenticated user, not anything client-supplied', async () => {
     await loadRelogCandidatesAction({ q: 'pho', limit: 8 });
 
-    expect(checkAnalysisGuards).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'user-123',
-        route: 'meals-relog-candidates',
-      })
-    );
+    expect(acquire).toHaveBeenCalledWith('relogCandidates', user);
   });
 
   it('runs no query at all when throttled', async () => {
-    checkAnalysisGuards.mockResolvedValue({
-      allowed: false,
-      status: 429,
-      retryAfterSeconds: 2,
-    });
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    acquire.mockRejectedValue(Errors.rateLimited(undefined, 2));
 
     await expect(loadRelogCandidatesAction({ q: 'pho' })).rejects.toMatchObject(
       { status: 429 }
@@ -118,16 +121,14 @@ describe('loadRelogCandidatesAction', () => {
 });
 
 describe('the write actions share one counter', () => {
-  // `checkAnalysisGuards` keys its window and in-flight counters on the route
-  // string. A distinct key per write action hands a user an independent
-  // `concurrentUser: 1` budget for each — two simultaneous transactions, both
+  // The limiter keys its windows and slot on the policy. A distinct policy per
+  // write action hands a user an independent one-at-a-time slot for each —
+  // two simultaneous transactions, both
   // holding `FOR UPDATE` on their source meals, against a pool that defaults
   // to 2. That is the starvation the guard exists to prevent.
   //
-  // Asserted at the CALL SITES, not on the exported constant. Checking
-  // `RELOG_WRITE_ROUTE === 'meals-relog-write'` only restates the constant —
-  // either action could switch to a literal of its own and that assertion would
-  // still pass, which is exactly the regression this needs to catch.
+  // Asserted at the CALL SITES: either action could switch to a policy of its
+  // own, which is exactly the regression this needs to catch.
   //
   // Both actions are driven until they reach the guard and then fail inside it
   // (`resolveRelogSources` rejects), because what is under test is the key they
@@ -148,9 +149,7 @@ describe('the write actions share one counter', () => {
       })
     ).rejects.toThrow('stop here');
 
-    expect(checkAnalysisGuards).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'user-123', route: RELOG_WRITE_ROUTE })
-    );
+    expect(acquire).toHaveBeenCalledWith('relogWrite', user);
   });
 
   it('instant-save keys the SAME route, not one of its own', async () => {
@@ -158,15 +157,13 @@ describe('the write actions share one counter', () => {
 
     await expect(relogMealItemsAction(relogInput)).rejects.toThrow('stop here');
 
-    expect(checkAnalysisGuards).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'user-123', route: RELOG_WRITE_ROUTE })
-    );
+    expect(acquire).toHaveBeenCalledWith('relogWrite', user);
   });
 });
 
 describe('the write actions are premium-gated ahead of the rate guard', () => {
   // Relog is a Premium-card feature. The gate has to sit BEFORE
-  // `withRelogGuard`, not inside it: a locked user's call can only end in 402,
+  // `withRateLimit`, not inside it: a locked user's call can only end in 402,
   // so charging it against the shared relog write window would let a free
   // account drain the budget the paying surfaces share.
   const relogInput = {
@@ -195,7 +192,7 @@ describe('the write actions are premium-gated ahead of the rate guard', () => {
       { userId: 'user-123' },
       'relog'
     );
-    expect(checkAnalysisGuards).not.toHaveBeenCalled();
+    expect(acquire).not.toHaveBeenCalled();
     expect(resolveRelogSources).not.toHaveBeenCalled();
   });
 
@@ -228,9 +225,7 @@ describe('the write actions are premium-gated ahead of the rate guard', () => {
     // Open the paywall, not the throttle: this path still opens a transaction
     // and writes a fat `pending_analyses` row, so it stays on the SHARED relog
     // write counter like every other write action.
-    expect(checkAnalysisGuards).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'user-123', route: RELOG_WRITE_ROUTE })
-    );
+    expect(acquire).toHaveBeenCalledWith('relogWrite', user);
   });
 
   it('instant-save refuses a locked user without spending rate budget', async () => {
@@ -244,7 +239,7 @@ describe('the write actions are premium-gated ahead of the rate guard', () => {
       { userId: 'user-123' },
       'relog'
     );
-    expect(checkAnalysisGuards).not.toHaveBeenCalled();
+    expect(acquire).not.toHaveBeenCalled();
     expect(resolveRelogSources).not.toHaveBeenCalled();
   });
 
@@ -253,9 +248,7 @@ describe('the write actions are premium-gated ahead of the rate guard', () => {
 
     await expect(relogMealItemsAction(relogInput)).rejects.toThrow('stop here');
 
-    expect(checkAnalysisGuards).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'user-123', route: RELOG_WRITE_ROUTE })
-    );
+    expect(acquire).toHaveBeenCalledWith('relogWrite', user);
   });
 
   it('reads stay open — candidates never consults the gate', async () => {

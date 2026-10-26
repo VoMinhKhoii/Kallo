@@ -46,8 +46,14 @@ export type RateLimitSource = 'db' | 'memory-prefilter' | 'degraded' | 'none';
 /**
  * Which window ran out. `flood` is the in-process token bucket, which has no
  * calendar window of its own — it is a burst breaker, not a quota.
+ * `concurrent` is the one-at-a-time slot of a policy with `concurrency`.
  */
-export type RateLimitReason = 'minute' | 'hour' | 'day' | 'flood';
+export type RateLimitReason =
+  | 'minute'
+  | 'hour'
+  | 'day'
+  | 'flood'
+  | 'concurrent';
 
 /**
  * What an event row records. The window/flood reasons come from a real block;
@@ -121,6 +127,26 @@ export interface RateLimitConsumer {
  */
 export type RateLimitFailMode = 'closed' | 'degraded' | 'memory';
 
+/**
+ * How many of a key's requests may run at once. Held as a slot on the key's
+ * counter row, taken by `acquireRateLimit` and freed by its lease's
+ * `release`.
+ */
+export interface RateLimitConcurrency {
+  limit: number;
+  /**
+   * How long a slot outlives a request that never released it (a crashed
+   * instance, a frozen container). Longer than the slowest request.
+   */
+  ttlSeconds: number;
+  /**
+   * The Retry-After a refusal on the slot answers with. Not the slot's
+   * remaining lifetime: that is the crash-recovery bound, and a request
+   * normally frees its slot long before it.
+   */
+  retryAfterSeconds: number;
+}
+
 interface RateLimitPolicyBase {
   /** Stable counter identity. Changing it resets everyone's quota. */
   route: string;
@@ -145,9 +171,12 @@ export type RateLimitPolicy =
   | (RateLimitPolicyBase & {
       failMode: 'closed' | 'degraded';
       limits: RateLimitLimits;
+      /** Only through `acquireRateLimit`; `assertRateLimit` refuses it. */
+      concurrency?: RateLimitConcurrency;
     })
   | (RateLimitPolicyBase & {
       failMode: 'memory';
       /** Per instance, per minute. The ONLY window a memory policy has. */
       limits: { perMinute?: number; perHour?: never; perDay?: never };
+      concurrency?: never;
     });

@@ -17,11 +17,10 @@ import { barcodeNotCachedError } from '@/lib/domain/barcode/errors';
 import { barcodeRefsOf } from '@/lib/domain/logging/relog/relog';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
-import type { AnalysisGuardAllowedResult } from '@/lib/infra/rate-limit/analysis-guard-types';
 import { createClient } from '@/lib/infra/supabase/server';
 
 export function createGuardRelease(
-  release: AnalysisGuardAllowedResult['release']
+  release: (() => Promise<void> | void) | undefined
 ) {
   let releasePromise: Promise<void> | undefined;
 
@@ -33,7 +32,7 @@ export function createGuardRelease(
         await release();
       } catch (error) {
         console.error(
-          '[analyze-meal] Failed to release analysis guard:',
+          '[analyze-meal] Failed to release the rate-limit lease:',
           error
         );
       }

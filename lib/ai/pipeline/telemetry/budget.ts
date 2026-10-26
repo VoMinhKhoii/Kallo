@@ -3,12 +3,12 @@ import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import { cloudTrace } from '@/lib/ai/pipeline/telemetry/cloud-trace/cloud-trace';
 import { isClaudeModel, type StreamOptions } from '@/lib/ai/provider/provider';
 import type { AppDb } from '@/lib/infra/db/client';
-import type {
-  AnalysisModelBudgetWorkKind,
-  AnalysisModelProviderErrorCategory,
-  RecordAnalysisModelBudgetEventInput,
-} from '@/lib/infra/rate-limit/analysis-guard-types';
-import { recordAnalysisModelBudgetEvent } from '@/lib/infra/rate-limit/analysis-model-budget';
+import {
+  type AnalysisModelBudgetWorkKind,
+  type AnalysisModelProviderErrorCategory,
+  type RecordAnalysisModelBudgetEventInput,
+  recordAnalysisModelBudgetEvent,
+} from './model-budget-events';
 
 export const ANALYSIS_MODEL_BUDGET_ROUTE = '/api/analyze-meal';
 /** Cheat mode shares the analyze-meal endpoint; split it out for cost. */
@@ -72,7 +72,7 @@ export function createBudgetAttemptRecorder(args: {
   }) => {
     // Every finished attempt is a row, so call counts, error rates and
     // latency see all of them. A failure no provider category fits (a schema
-    // slip, a refusal) is `unknown`; the provider-pressure guard skips those.
+    // slip, a refusal) is `unknown`.
     const errorCategory =
       error == null ? null : (classifyProviderError(error) ?? 'unknown');
 
@@ -200,8 +200,8 @@ export function classifyProviderError(
 }
 
 /**
- * The one `requestCount: 1` row per analysis — what the daily request limit
- * counts. Attempt rows (`requestCount: 0`) carry the tokens.
+ * The one `requestCount: 1` row per analysis, for the cost telemetry.
+ * Attempt rows (`requestCount: 0`) carry the tokens.
  */
 function recordAnalysisReservation(args: {
   db: AppDb;
@@ -238,8 +238,7 @@ export function initCheatBudgetAccounting(args: {
  * One-call budget accounting setup for the v2 orchestrator: records the
  * primary request-count event immediately and returns per-stage attempt
  * recorders plus a catch-path error recorder. Parity with v1's inline wiring
- * in orchestrator.ts — without it the daily budget + provider-pressure guards
- * in lib/rate-limit/analysis-guards.ts are blind to v2 traffic.
+ * in orchestrator.ts — without it the cost telemetry is blind to v2 traffic.
  */
 export function initV2BudgetAccounting(args: {
   db: AppDb;

@@ -1,23 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const assertRateLimit = vi.fn();
-const checkAnalysisGuards = vi.fn();
-const buildAnalysisGuardEvent = vi.fn((input: unknown) => input);
-const insertValues = vi.fn();
-const insert = vi.fn(() => ({ values: insertValues }));
+const acquireRateLimit = vi.fn();
 
 const settle = vi.fn();
 const acquireSpendLease = vi.fn();
 
 vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
+  acquireRateLimit,
   acquireSpendLease,
   assertRateLimit,
 }));
-vi.mock('@/lib/infra/rate-limit/analysis-guards', () => ({
-  buildAnalysisGuardEvent,
-  checkAnalysisGuards,
-}));
-vi.mock('@/lib/infra/db/client', () => ({ db: { insert } }));
 
 const { withOcrGuard } = await import('@/lib/infra/rate-limit/ocr-guard');
 const { Errors } = await import('@/lib/core/errors/catalog');
@@ -37,18 +30,15 @@ const chargingWork = (
 
 beforeEach(() => {
   assertRateLimit.mockReset();
-  checkAnalysisGuards.mockReset();
+  acquireRateLimit.mockReset();
   release.mockReset();
-  insert.mockClear();
-  insertValues.mockReset();
-  buildAnalysisGuardEvent.mockClear();
+  release.mockResolvedValue(undefined);
   assertRateLimit.mockResolvedValue(undefined);
   settle.mockReset();
   settle.mockResolvedValue(undefined);
   acquireSpendLease.mockReset();
-  acquireSpendLease.mockResolvedValue({ settle, addLate: vi.fn() });
-  checkAnalysisGuards.mockResolvedValue({ allowed: true, release });
-  insertValues.mockResolvedValue(undefined);
+  acquireSpendLease.mockResolvedValue({ release: settle, addLate: vi.fn() });
+  acquireRateLimit.mockResolvedValue({ release, addLate: vi.fn() });
 });
 
 describe('withOcrGuard', () => {
@@ -57,9 +47,9 @@ describe('withOcrGuard', () => {
     assertRateLimit.mockImplementation(async () => {
       order.push('global');
     });
-    checkAnalysisGuards.mockImplementation(async () => {
+    acquireRateLimit.mockImplementation(async () => {
       order.push('per-user');
-      return { allowed: true, release };
+      return { release, addLate: vi.fn() };
     });
     const work = vi.fn(async (charge: () => Promise<void>) => {
       // Stands in for the caller's bounded body read + schema + sharp decode,
@@ -77,16 +67,10 @@ describe('withOcrGuard', () => {
       kind: 'global',
       value: 'ocr',
     });
-    expect(checkAnalysisGuards).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'user-1',
-        route: 'nutrition-label-scan',
-        limits: expect.objectContaining({
-          perUserDay: 100,
-          concurrentUser: 1,
-        }),
-      })
-    );
+    expect(acquireRateLimit).toHaveBeenCalledWith('labelOcr', {
+      kind: 'user',
+      value: 'user-1',
+    });
     expect(order).toEqual(['per-user', 'validate', 'global', 'work']);
   });
 
@@ -94,12 +78,7 @@ describe('withOcrGuard', () => {
     // The recorded defect: the global daily counter was consumed first and is
     // never refunded, so 5000 blocked requests from one account exhausted OCR
     // for every user for the rest of the UTC day.
-    checkAnalysisGuards.mockResolvedValue({
-      allowed: false,
-      status: 429,
-      reason: 'per_user_minute',
-      retryAfterSeconds: 5,
-    });
+    acquireRateLimit.mockRejectedValue(Errors.rateLimited(undefined, 5));
     const work = vi.fn();
 
     await expect(withOcrGuard('user-1', work)).rejects.toMatchObject({
@@ -110,43 +89,6 @@ describe('withOcrGuard', () => {
     expect(assertRateLimit).not.toHaveBeenCalled();
     expect(work).not.toHaveBeenCalled();
     expect(release).not.toHaveBeenCalled();
-  });
-
-  it('records the per-user block in the guard-event trail', async () => {
-    checkAnalysisGuards.mockResolvedValue({
-      allowed: false,
-      status: 429,
-      reason: 'concurrent_user',
-      retryAfterSeconds: 5,
-    });
-
-    await expect(withOcrGuard('user-1', vi.fn())).rejects.toMatchObject({
-      code: 'RATE_LIMITED',
-    });
-    expect(buildAnalysisGuardEvent).toHaveBeenCalledWith({
-      userId: 'user-1',
-      route: 'nutrition-label-scan',
-      reason: 'concurrent_user',
-      retryAfterSeconds: 5,
-    });
-    expect(insert).toHaveBeenCalledOnce();
-  });
-
-  it('never lets a failed telemetry write swallow the 429', async () => {
-    checkAnalysisGuards.mockResolvedValue({
-      allowed: false,
-      status: 429,
-      reason: 'per_user_day',
-      retryAfterSeconds: 60,
-    });
-    insertValues.mockRejectedValue(new Error('events table is gone'));
-    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    await expect(withOcrGuard('user-1', vi.fn())).rejects.toMatchObject({
-      code: 'RATE_LIMITED',
-      retryAfterSeconds: 60,
-    });
-    errors.mockRestore();
   });
 
   it('releases the slot when the global budget refuses the charge', async () => {
@@ -188,17 +130,6 @@ describe('withOcrGuard', () => {
     expect(release).toHaveBeenCalledOnce();
   });
 
-  it('never lets a failed release turn a paid, successful result into an error', async () => {
-    // The Gemini call already spent money and returned; a release failure must
-    // be swallowed (logged) so the caller keeps the result and does not retry.
-    release.mockRejectedValue(new Error('release lost the connection'));
-    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    await expect(withOcrGuard('user-1', chargingWork())).resolves.toBe('label');
-    expect(errors).toHaveBeenCalled();
-    errors.mockRestore();
-  });
-
   describe('the app-wide AI spend brake', () => {
     it('reserves a label scan only once the global budget has been charged', async () => {
       const order: string[] = [];
@@ -207,7 +138,7 @@ describe('withOcrGuard', () => {
       });
       acquireSpendLease.mockImplementation(async () => {
         order.push('brake');
-        return { settle, addLate: vi.fn() };
+        return { release: settle, addLate: vi.fn() };
       });
 
       await withOcrGuard(

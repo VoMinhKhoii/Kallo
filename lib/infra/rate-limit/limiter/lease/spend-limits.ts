@@ -24,8 +24,6 @@ export const aiSpendEstimatesUsd = {
   shadow: 0.03,
   /** `/api/analyze-meal/debug`. */
   debug: 0.05,
-  /** The admin pipeline replay's live run. */
-  replay: 0.05,
 } as const;
 
 export type AiSpendKind = keyof typeof aiSpendEstimatesUsd;
