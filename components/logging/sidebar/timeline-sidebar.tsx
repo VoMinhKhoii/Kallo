@@ -197,9 +197,6 @@ export function TimelineSidebar({
                   id={`month-${month.key}`}
                   className="flex w-full flex-col gap-2"
                 >
-                  {/* Month separator */}
-                  <div className="ml-3 h-0.5 rounded-sm bg-neutral-100" />
-
                   {/* Weeks */}
                   {month.weeks.map((week) => {
                     const isWeekExpanded = expandedWeeks.has(week.key);

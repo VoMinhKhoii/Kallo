@@ -112,7 +112,7 @@ another domain module is a smell worth a second look.
 | `date/` | local-day and timezone math — the only place it may live, including `time-of-day.ts`, the morning→late-night buckets the empty-day prompt and the surface-state illustrations both read |
 | `errors/` | the error taxonomy and its two edges: HTTP response, browser parse |
 | `text/` | string shaping for display and input parsing |
-| `theme/` | the colour themes (light, Graphite `dark`, `aurora`), the four Settings choices, the localStorage key and the per-theme browser-chrome colour; `theme-store.ts` (the stored choice, no in-memory copy) and `paint-theme.ts` (self-contained, also serialised into the before-paint script). The tokens live in `app/globals.css`; `components/providers/theme/` applies them to the app's pages only — the marketing site, docs and legal pages stay light |
+| `theme/` | the colour themes (light, Graphite `dark`, `aurora`), the four Settings choices, the localStorage key and the per-theme browser-chrome colour; `theme-store.ts` (the stored choice, no in-memory copy) and `paint-theme.ts` (self-contained, also serialised into the before-paint script). The tokens live in `app/globals.css`; `components/providers/theme/` applies them to the app's pages only — the landing page too (it has a theme switch in its header) — docs and legal pages stay light |
 | `types/` | cross-cutting DTOs |
 | `ui/` | the Tailwind class-merge helper plus `loaders/` (the loader pool's SMIL sampling math, painters and registry) — the only `lib/` folder that knows about drawing |
 | `validation/` | Zod request schemas: primitives (incl. the shared gram cap), the password policy mirrored from Supabase Auth (`password.ts`, see `docs/AUTH_SECURITY.md`), plus one file per domain |

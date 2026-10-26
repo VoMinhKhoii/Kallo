@@ -16,4 +16,4 @@
 
 /** Marker pen, for a run of text or a number sitting inside a line. */
 export const HIGHLIGHT_MARK =
-  'rounded-[0.25rem] bg-kallo-highlight px-1 text-kallo-text';
+  'rounded-[0.25rem] bg-kallo-highlight px-1 text-kallo-ink-fixed';
