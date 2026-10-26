@@ -83,7 +83,6 @@ describe('acquireSpendLease', () => {
     ['labelOcr', 10_000],
     ['shadow', 30_000],
     ['debug', 50_000],
-    ['replay', 50_000],
   ] as const)('reserves %s at its own estimate', async (kind, micro) => {
     const store = fakeStore();
     await acquireSpendLease(kind, { store, now, recordEvent });

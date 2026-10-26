@@ -93,7 +93,6 @@ code.
 | `relogWrite` (stage + instant save share it; **one at a time**) | user | 12 / 120 / 500 | degraded |
 | `entitlementsReconcile` (**one at a time**) | user | 3 / 20 / 100 | degraded |
 | `ogMacroCard` | user | 10 / 60 / 200 | degraded |
-| `adminReplay` (live replays) | user | — / 5 / — | **closed** |
 | `shadowDaily` (legacy shadow runs; a refusal skips the run) | global | — / — / 100 | **closed** |
 | `ocrGlobalDaily` | global | 60 / — / 5000 | **closed** |
 | `pushGlobalHourly` | global | — / 20000 / — | degraded |
@@ -454,7 +453,6 @@ work ends, `rate_limit_release` swaps the estimate for the metered cost.
 | `labelOcr` | `withOcrGuard` (REST scan + web action), reserved inside `chargeGlobal` right before the provider call | $0.01 | `withOcrGuard`'s `finally` |
 | `shadow` | the legacy shadow candidate run | $0.03 | `withAiSpend` |
 | `debug` | `POST /api/analyze-meal/debug` | $0.05 | the route's `finally` |
-| `replay` | admin live replay (dry runs spend nothing and reserve nothing) | $0.05 | `replayRequest`'s `finally` |
 
 Rules that keep the count honest:
 

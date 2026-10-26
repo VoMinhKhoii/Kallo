@@ -463,7 +463,6 @@ describe('policy registry', () => {
     // sign-in by attacking the limiter instead.
     expect(closed).toEqual([
       'adminDebugAnalysis',
-      'adminReplay',
       'analyzeMeal',
       'analyzeMealClarify',
       'labelOcr',

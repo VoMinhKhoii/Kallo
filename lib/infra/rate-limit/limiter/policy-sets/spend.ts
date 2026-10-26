@@ -98,17 +98,6 @@ export const spendPolicies = {
     failMode: 'degraded',
   },
 
-  /**
-   * The admin pipeline replay's live run: it calls the models again on a
-   * stored meal. Fail-closed for the same reason as `adminDebugAnalysis`.
-   */
-  adminReplay: {
-    route: 'admin:replay:live',
-    limits: { perHour: 5 },
-    keyKinds: ['user'],
-    failMode: 'closed',
-  },
-
   // ---------------------------------------------------------------------
   // Global spend budgets
   // ---------------------------------------------------------------------

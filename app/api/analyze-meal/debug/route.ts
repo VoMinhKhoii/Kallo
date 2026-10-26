@@ -51,9 +51,7 @@ export async function POST(request: NextRequest) {
 
   // Admin auth is a gate, not a budget. This route runs the live pipeline —
   // two Gemini calls plus embeddings — against arbitrary input, so a stolen
-  // admin session (or an admin with a loop) spends real money. `checkAdminReplayGuard`
-  // could not be reused: its counter key is the fixed `adminReplayGuardRoute`,
-  // so sharing it would make a debug run eat the replay quota and vice versa.
+  // admin session (or an admin with a loop) spends real money.
   // Fail-CLOSED for the same reason `ocrGlobalDaily` is.
   try {
     await assertRateLimit('adminDebugAnalysis', {
