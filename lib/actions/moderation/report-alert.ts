@@ -27,15 +27,7 @@ export async function alertAdminsOfReport(
 
     const message = contentReportEmail(input);
     const results = await Promise.allSettled(
-      recipients.map((to, index) =>
-        sendEmail({
-          to,
-          message,
-          tags: [{ name: 'kind', value: 'content_report' }],
-          // A retried alert for the same report and recipient is one email.
-          idempotencyKey: `content-report-${input.reportId}-${index}`,
-        })
-      )
+      recipients.map((to) => sendEmail({ to, message }))
     );
     for (const result of results) {
       if (result.status === 'rejected') {

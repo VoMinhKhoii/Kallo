@@ -12,7 +12,7 @@ import { SITE_URL } from '@/lib/seo/site';
 
 /**
  * Translates a Supabase "Send Email" auth-hook payload into the concrete
- * emails we send through Resend.
+ * emails we send.
  *
  * The hard requirement is the link shape. `app/auth/verify/route.ts` exists
  * because `*.supabase.co` is blackholed on Vietnamese networks, so emails must
@@ -59,7 +59,7 @@ export type AuthEmailPayload = z.infer<typeof authEmailPayloadSchema>;
 export interface ResolvedAuthEmail {
   to: string;
   message: EmailMessage;
-  /** Resend tag value; also the log label. */
+  /** The log label. */
   kind: string;
 }
 

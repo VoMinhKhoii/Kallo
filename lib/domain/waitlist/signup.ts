@@ -145,7 +145,6 @@ export async function signUpForWaitlist(
     await send({
       to: email,
       message: waitlistConfirmEmail(locale, confirmationUrl(token.token)),
-      tags: [{ name: 'kind', value: 'waitlist_confirm' }],
     });
   } catch (error) {
     await db

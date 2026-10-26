@@ -13,10 +13,9 @@ const DEFAULT_FROM = 'Kallo <notifications@mail.kallo.fit>';
 const DEFAULT_REPLY_TO = 'support@kallo.fit';
 
 /**
- * Wall-clock budget for a single provider call. Supabase runs auth hooks
- * inside the sign-up transaction and gives them only a few seconds, so a
- * stalled Resend request must surface as a retryable error rather than
- * wedging the user's sign-up.
+ * How long `sendEmail` waits for the provider's answer. Supabase gives the
+ * auth hook 5 s for the whole invocation, so past this point the send is
+ * left running and counted as sent rather than wedging the user's sign-up.
  */
 export const EMAIL_SEND_TIMEOUT_MS = 4000;
 
@@ -30,5 +29,5 @@ export function replyToAddress(): string {
 
 /** True when a real provider call can be made; false in local dev / tests. */
 export function emailSendingConfigured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY);
+  return Boolean(process.env.CLOUDFLARE_EMAIL_API_TOKEN);
 }

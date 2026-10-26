@@ -84,7 +84,7 @@ function sentLink(call = 0) {
   const match = arg.message.text.match(
     /https:\/\/kallo\.fit\/auth\/verify\?[^\s]*/
   );
-  return { to: arg.to, url: new URL(match?.[0] ?? ''), tags: arg.tags };
+  return { to: arg.to, url: new URL(match?.[0] ?? '') };
 }
 
 describe('handleSendEmailHook', () => {
@@ -141,13 +141,12 @@ describe('handleSendEmailHook', () => {
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toContain('application/json');
       await expect(res.json()).resolves.toEqual({});
-      const { to, url, tags } = sentLink();
+      const { to, url } = sentLink();
       expect(to).toBe('nguyen@example.com');
       expect(url.pathname).toBe('/auth/verify');
       expect(url.searchParams.get('type')).toBe('email');
       expect(url.searchParams.get('token_hash')).toBe('hash_abc');
       expect(url.searchParams.get('next')).toBe('/vi/logging');
-      expect(tags).toEqual([{ name: 'kind', value: 'signup' }]);
     });
 
     it('does not leak the OTP into a link email', async () => {
@@ -254,6 +253,52 @@ describe('handleSendEmailHook', () => {
       );
     });
 
+    it('sends both emails at once, so two slow sends fit the 5 s budget', async () => {
+      let inFlight = 0;
+      let peak = 0;
+      sendEmail.mockImplementation(async () => {
+        inFlight += 1;
+        peak = Math.max(peak, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        inFlight -= 1;
+        return { id: null, skipped: false };
+      });
+
+      const res = await run(
+        payload({
+          user: { email: 'old@example.com', new_email: 'new@example.com' },
+          email_data: {
+            email_action_type: 'email_change',
+            token_hash: 'hash_for_new',
+            token_hash_new: 'hash_for_current',
+          },
+        })
+      );
+
+      expect(res.status).toBe(200);
+      expect(peak).toBe(2);
+    });
+
+    it('fails the hook when either email-change send fails', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      sendEmail
+        .mockResolvedValueOnce({ id: 'email_1', skipped: false })
+        .mockRejectedValueOnce(Errors.rateLimited());
+
+      const res = await run(
+        payload({
+          user: { email: 'old@example.com', new_email: 'new@example.com' },
+          email_data: {
+            email_action_type: 'email_change',
+            token_hash: 'hash_for_new',
+            token_hash_new: 'hash_for_current',
+          },
+        })
+      );
+
+      expect(res.status).toBe(503);
+    });
+
     it.each([
       'email_change_new',
       'email_change_current',
@@ -285,23 +330,6 @@ describe('handleSendEmailHook', () => {
 
       expect(sendEmail).toHaveBeenCalledTimes(1);
       expect(sentLink().to).toBe('new@example.com');
-    });
-
-    it('gives each of the two emails its own idempotency key', async () => {
-      await run(
-        payload({
-          user: { email: 'old@example.com', new_email: 'new@example.com' },
-          email_data: {
-            email_action_type: 'email_change',
-            token_hash: 'a',
-            token_hash_new: 'b',
-          },
-        })
-      );
-
-      const keys = sendEmail.mock.calls.map((c) => c[0].idempotencyKey);
-      expect(new Set(keys).size).toBe(2);
-      expect(keys[0]).toContain(WEBHOOK_ID);
     });
   });
 

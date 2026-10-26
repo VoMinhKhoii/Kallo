@@ -92,11 +92,7 @@ export async function confirmWaitlistSignup(
   // Best-effort: the person is confirmed either way, so a mail failure must not
   // turn a successful confirmation into an error page.
   try {
-    await send({
-      to: row.email,
-      message: waitlistWelcomeEmail(locale),
-      tags: [{ name: 'kind', value: 'waitlist_welcome' }],
-    });
+    await send({ to: row.email, message: waitlistWelcomeEmail(locale) });
   } catch (error) {
     console.error(
       '[waitlist] welcome email failed:',

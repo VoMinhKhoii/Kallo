@@ -183,7 +183,7 @@ password_requirements = "letters_digits"
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. This gates GoTrue's own sender;
-# with [auth.hook.send_email] enabled, delivery goes through Resend instead and
+# with [auth.hook.send_email] enabled, delivery goes through the app instead and
 # this is just a guard against a runaway loop hammering the hook.
 email_sent = 30
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
@@ -229,8 +229,8 @@ otp_expiry = 3600
 #
 # With this enabled GoTrue stops sending (and stops using SMTP entirely): it
 # POSTs the payload to the URI below, which renders a branded bilingual message
-# and hands it to Resend. Templates live in `lib/email/templates/`, the handler
-# in `app/api/auth/send-email/route.ts`.
+# and hands it to Cloudflare Email Sending. Templates live in
+# `lib/infra/email/templates/`, the handler in `app/api/auth/send-email/route.ts`.
 #
 # `host.docker.internal` lets the Auth container reach `next dev` on the host.
 # Deployed projects set this in the dashboard (Authentication → Hooks) pointing
@@ -242,13 +242,13 @@ uri = "http://host.docker.internal:3000/api/auth/send-email"
 secrets = "env(SEND_EMAIL_HOOK_SECRET)"
 
 # SMTP fallback, intentionally left off. It only takes effect if the hook above
-# is disabled — which is also the one-switch rollback if Resend ever fails.
+# is disabled — which is also the one-switch rollback if sending ever fails.
 # [auth.email.smtp]
 # enabled = true
-# host = "smtp.resend.com"
-# port = 587
-# user = "resend"
-# pass = "env(RESEND_API_KEY)"
+# host = "smtp.mx.cloudflare.net"
+# port = 465
+# user = "api_token"
+# pass = "env(CLOUDFLARE_EMAIL_API_TOKEN)"
 # admin_email = "notifications@mail.kallo.fit"
 # sender_name = "Kallo"
 

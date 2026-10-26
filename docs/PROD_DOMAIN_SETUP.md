@@ -236,21 +236,36 @@ This is **receiving only**. Outbound is §7b.
 
 ---
 
-## 7b. Email — outbound via Resend
+## 7b. Email — outbound via Cloudflare Email Sending
 
 Every email the app sends — auth confirmations, password resets, email-change
 confirmations, and the landing-page waitlist — is composed in this repo
-(`lib/email/templates/`) and delivered by Resend.
+(`lib/infra/email/templates/`) and delivered by Cloudflare Email Sending
+(needs the Workers Paid plan). How the code uses it: `docs/EMAIL.md`.
 
-**1. Verify a sending subdomain.** In Resend → **Domains** → **Add Domain** →
-`mail.kallo.fit`. Use the **subdomain**, not the apex: §7 already put an SPF
-record on `kallo.fit` for Cloudflare Email Routing, and stacking a second
-`include:` on it is the classic way to break inbound and outbound at once.
-Add the SPF/DKIM/DMARC records Resend shows to Cloudflare DNS as **DNS-only**
-(grey cloud), then click **Verify**.
+**1. Onboard the sending subdomain.** Use `mail.kallo.fit`, not the apex: §7
+already put an SPF record on `kallo.fit` for Cloudflare Email Routing, and
+stacking a second `include:` on it is the classic way to break inbound and
+outbound at once. With wrangler logged in to the account:
 
-**2. Create the API key** (Resend → **API Keys**, sending permission only).
-That value becomes `RESEND_API_KEY` / the `kallo-prod-resend-api-key` secret.
+```bash
+bunx wrangler email sending enable mail.kallo.fit
+bunx wrangler email sending dns get mail.kallo.fit   # what it published
+```
+
+Because the zone is on Cloudflare, enabling it publishes the records itself
+(locked; they live as long as sending stays enabled): `MX` + SPF `TXT` on
+`cf-bounce.mail.kallo.fit` (the envelope sender), DKIM at
+`cf-bounce._domainkey.mail.kallo.fit`, and **`_dmarc.mail.kallo.fit` =
+`v=DMARC1; p=reject;`** (see `docs/EMAIL_AUTHENTICATION.md` §3). Done for prod
+on 2026-10-25.
+
+**2. Create the API token.** Cloudflare dashboard → **Manage Account** →
+**Account API Tokens** → **Create Token** → custom token with one permission,
+**Account · Email Sending · Edit**, on the Kallo account, no IP filter (Cloud
+Run's egress IPs are not fixed). That value becomes
+`CLOUDFLARE_EMAIL_API_TOKEN` / the `kallo-prod-cloudflare-email-api-token`
+secret. Anyone holding it can send as any onboarded domain on the account.
 
 **3. Enable the Supabase hook.** Supabase dashboard → **Authentication** →
 **Hooks** → **Send Email** → type **HTTPS** → URI
@@ -282,8 +297,8 @@ reverts auth email to Supabase's own sender — no deploy required.
 `@kallo.fit` mail but still deliver it (pentest finding KALLO-04). Moving to
 enforcement is DNS-only and staged over a few weeks:
 
-1. Confirm the sender inventory — only Resend sends, as `mail.kallo.fit`; the
-   apex sends nothing.
+1. Confirm the sender inventory — only Cloudflare Email Sending sends, as
+   `mail.kallo.fit`; the apex sends nothing.
 2. **Email** → **DMARC Management** → enable, then read 1–2 weeks of aggregate
    reports.
 3. Apex SPF `~all` → `-all`; DMARC `p=none` → `quarantine` → `reject`, with

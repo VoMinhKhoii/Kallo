@@ -22,16 +22,16 @@ import {
  * With this hook enabled, GoTrue stops sending auth email entirely and posts
  * the payload here instead, so every confirmation, magic link, recovery and
  * email-change message is composed by us (bilingual, branded, versioned in this
- * repo) and delivered by Resend.
+ * repo) and delivered by Cloudflare Email Sending.
  *
  * Three things make this route unusual:
  *
- * 1. **It runs inside the sign-up transaction.** Supabase gives HTTP hooks only
- *    a few seconds; a slow send must fail *retryably* rather than hang, hence
- *    the deadline inside `sendEmail`.
+ * 1. **It runs inside the sign-up transaction.** Supabase gives HTTP hooks 5 s
+ *    in total, so a slow send must not hang: past the deadline inside
+ *    `sendEmail` it is left running and counted as sent.
  * 2. **Status codes are an API.** Supabase treats 429/503 as retryable and
- *    converts 400/403 into a 500 that is not retried — so a transient Resend
- *    problem must surface as 503, never as a 4xx.
+ *    converts 400/403 into a 500 that is not retried — so a transient
+ *    provider problem must surface as 503, never as a 4xx.
  * 3. **It authenticates itself.** No session exists yet, so the only proof of
  *    origin is the Standard Webhooks signature. The Cloudflare origin-lock in
  *    `proxy.ts` still applies on top (Supabase reaches us through the
@@ -108,28 +108,22 @@ export async function handleSendEmailHook(
     return NextResponse.json({}, { status: 200 });
   }
 
-  // Scope the idempotency key per email so the two-message email-change flow
-  // doesn't collapse into one send on a Supabase retry.
-  const webhookId = request.headers.get('webhook-id');
-
-  for (const email of emails) {
-    try {
-      await send({
-        to: email.to,
-        message: email.message,
-        tags: [{ name: 'kind', value: email.kind }],
-        ...(webhookId ? { idempotencyKey: `${webhookId}:${email.kind}` } : {}),
-      });
-    } catch (error) {
-      const retryable = isAppError(error) && error.retryable;
-      console.error(
-        `[auth/send-email] failed to send "${email.kind}":`,
-        error instanceof Error ? error.message : error
-      );
-      return retryable
-        ? hookError(503, 'Email provider is unavailable. Please retry.')
-        : hookError(500, 'Could not send the email.');
-    }
+  // In parallel: the email-change flow sends two, each may wait up to the send
+  // deadline, and Supabase's 5 s budget covers the whole invocation.
+  const results = await Promise.allSettled(
+    emails.map((email) => send({ to: email.to, message: email.message }))
+  );
+  for (const [index, result] of results.entries()) {
+    if (result.status === 'fulfilled') continue;
+    const error = result.reason;
+    const retryable = isAppError(error) && error.retryable;
+    console.error(
+      `[auth/send-email] failed to send "${emails[index].kind}":`,
+      error instanceof Error ? error.message : error
+    );
+    return retryable
+      ? hookError(503, 'Email provider is unavailable. Please retry.')
+      : hookError(500, 'Could not send the email.');
   }
 
   return NextResponse.json({}, { status: 200 });

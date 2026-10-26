@@ -1,7 +1,7 @@
 import { withDeadline } from '@/lib/core/async/with-deadline';
-import { AppError } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
-import { resendClient } from './client';
+import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
+import { type CloudflareSendResponse, postEmail } from './client';
 import {
   EMAIL_SEND_TIMEOUT_MS,
   emailSendingConfigured,
@@ -21,85 +21,123 @@ export interface EmailMessage {
 export interface SendEmailInput {
   to: string;
   message: EmailMessage;
-  /** Resend tags for dashboard filtering (e.g. `[{name:'kind',value:'signup'}]`).
-   *  Resend only accepts ASCII letters, digits, `_` and `-` in tag values. */
-  tags?: { name: string; value: string }[];
-  /** Dedupe key. The auth hook passes the Standard Webhooks `webhook-id` so a
-   *  Supabase retry after a slow-but-successful send doesn't double-deliver. */
-  idempotencyKey?: string;
 }
 
 export interface SendEmailResult {
-  /** Provider message id, or null when sending was skipped. */
+  /** Provider message id; null when sending was skipped, or when the
+   *  provider had not answered by the deadline. */
   id: string | null;
-  /** True when no API key was configured and nothing was actually sent. */
+  /** True when no API token was configured and nothing was actually sent. */
   skipped: boolean;
 }
 
-/** Resend statuses worth retrying: throttling and provider-side failures. */
-function isRetryableStatus(status: number | null): boolean {
-  return status === 429 || status === 408 || (status !== null && status >= 500);
+class SendDeadline extends Error {}
+
+/** Statuses worth retrying: throttling and provider-side failures. */
+function isRetryableStatus(status: number): boolean {
+  return status === 429 || status === 408 || status >= 500;
+}
+
+/** Why a send failed, or null when Cloudflare took it. */
+function failureOf(response: CloudflareSendResponse): string | null {
+  if (!response.success) {
+    const detail = response.errors.map((e) => `${e.code} ${e.message}`);
+    return `HTTP ${response.status}: ${detail.join('; ') || 'no error body'}`;
+  }
+  if (response.undeliverable.length > 0) {
+    return 'refused by the recipient, or the address is on the suppression list';
+  }
+  return null;
 }
 
 /**
- * Send one transactional email through Resend.
+ * Send one transactional email through Cloudflare Email Sending.
  *
- * Deliberately forgiving about configuration: with no `RESEND_API_KEY` the
- * call is a logged no-op rather than a throw, so local dev and the test suite
- * exercise the surrounding flow (sign-up, waitlist) without a provider account
- * or a network round-trip. Every deployed environment sets the key.
+ * Deliberately forgiving about configuration: with no
+ * `CLOUDFLARE_EMAIL_API_TOKEN` the call is a logged no-op rather than a throw,
+ * so local dev and the test suite exercise the surrounding flow (sign-up,
+ * waitlist) without a provider account or a network round-trip. Every
+ * deployed environment sets the token.
  *
  * Failures surface as `AppError`s so `handleRouteError` renders them with the
  * right status, and so the auth hook can tell Supabase which failures are
  * worth retrying.
+ *
+ * Cloudflare answers only after trying the recipient's mail server: 1–3 s
+ * measured, 7 s at worst, against the auth hook's 5 s budget. So at the
+ * deadline the email counts as handed over: the request keeps running (the
+ * deadline stops waiting, it does not abort, and an aborted request is a
+ * cancelled send) and its outcome is logged when it lands.
  */
 export async function sendEmail({
   to,
   message,
-  tags,
-  idempotencyKey,
 }: SendEmailInput): Promise<SendEmailResult> {
   if (!emailSendingConfigured()) {
     console.warn(
-      `[email] RESEND_API_KEY unset — skipping "${message.subject}" to ${to}`
+      `[email] CLOUDFLARE_EMAIL_API_TOKEN unset — skipping "${message.subject}" to ${to}`
     );
     return { id: null, skipped: true };
   }
 
-  const send = () =>
-    resendClient().emails.send(
-      {
-        from: fromAddress(),
-        to,
-        replyTo: replyToAddress(),
-        subject: message.subject,
-        html: message.html,
-        text: message.text,
-        ...(tags ? { tags } : {}),
-      },
-      idempotencyKey ? { idempotencyKey } : undefined
-    );
+  const pending = postEmail({
+    from: fromAddress(),
+    to,
+    replyTo: replyToAddress(),
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+  });
 
-  let response: Awaited<ReturnType<typeof send>>;
+  let response: CloudflareSendResponse;
   try {
-    response = await withDeadline(send(), EMAIL_SEND_TIMEOUT_MS, () =>
-      Errors.rateLimited('Email provider timed out. Please try again.')
+    response = await withDeadline(
+      pending,
+      EMAIL_SEND_TIMEOUT_MS,
+      () => new SendDeadline()
     );
   } catch (cause) {
-    // The deadline error is already an AppError; anything else (DNS, socket)
-    // is a transport failure, which is worth a retry.
-    if (cause instanceof AppError) throw cause;
+    if (cause instanceof SendDeadline) {
+      console.warn(
+        `[email] "${message.subject}" not answered within ${EMAIL_SEND_TIMEOUT_MS} ms; counting it as sent`
+      );
+      // The caller already reported success, so this is the only trace of a
+      // late failure: log it and send it to Sentry.
+      pending.then(
+        (late) => {
+          const failure = failureOf(late);
+          if (failure) {
+            console.error(
+              `[email] "${message.subject}" failed after the deadline: ${failure}`
+            );
+            reportError(
+              new Error(`send failed after the deadline: ${failure}`),
+              '[email]'
+            );
+          }
+        },
+        (error: unknown) => {
+          console.error(
+            `[email] "${message.subject}" failed after the deadline:`,
+            error
+          );
+          reportError(error, '[email]');
+        }
+      );
+      return { id: null, skipped: false };
+    }
+    // Anything else (DNS, socket, missing account id) is a transport failure.
     throw Errors.internal(cause, 'Could not reach the email provider.');
   }
 
-  if (response.error) {
-    const { name, message: detail, statusCode } = response.error;
-    console.error(`[email] send failed (${name}): ${detail}`);
-    if (isRetryableStatus(statusCode)) {
+  const failure = failureOf(response);
+  if (failure) {
+    console.error(`[email] "${message.subject}" failed: ${failure}`);
+    if (!response.success && isRetryableStatus(response.status)) {
       throw Errors.rateLimited('Email provider is busy. Please try again.');
     }
-    throw Errors.internal(response.error, 'Could not send the email.');
+    throw Errors.internal(new Error(failure), 'Could not send the email.');
   }
 
-  return { id: response.data?.id ?? null, skipped: false };
+  return { id: response.messageId, skipped: false };
 }
