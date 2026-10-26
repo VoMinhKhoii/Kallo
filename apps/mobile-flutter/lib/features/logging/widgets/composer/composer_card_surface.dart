@@ -52,6 +52,10 @@ class ComposerCardSurface extends StatelessWidget {
         return Container(
           // No padding here — the notice sets its own inset, so the field and
           // controls carry theirs on the column below.
+          // Clipped to the radius: the theme fills every TextField, and the
+          // field sits flush with the card's top edge inside a corner wider
+          // than its inset, so its square fill showed past both top corners.
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             // Opaque: the feed reads through the DOCK, never through the field.
             color: KalloColors.elev,
