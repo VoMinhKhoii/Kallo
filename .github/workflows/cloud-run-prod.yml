@@ -75,7 +75,7 @@ jobs:
       # Where the card search artifact builder publishes (one bucket per env).
       CARD_INDEX_BUCKET: kallo-prod-card-search
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.DEPLOY_SHA }}
       # The lease script comes from this workflow's own commit, never from
@@ -84,7 +84,7 @@ jobs:
       # deploys could run at once. The lease is what serializes prod deploys
       # (a second one fails at once rather than queueing) and what the card
       # index refresh's serving-commit check relies on.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           path: .deploy-tools

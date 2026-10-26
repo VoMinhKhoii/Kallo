@@ -30,7 +30,7 @@ jobs:
       run:
         working-directory: apps/mobile-flutter
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Runs from the repo root (job default cwd is apps/mobile-flutter).
       - name: Structure gate (size, folders, test placement, barrels)
