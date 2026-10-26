@@ -427,7 +427,7 @@ message differs: analyze-meal sends `errors.aiPaused` in the request's locale
 ("AI logging is paused for everyone until tomorrow. Barcode scans and
 relogging still work." — scan-only and relog-only submits go through
 `stageRelogAnalysisAction`, not the AI). OCR keeps its own client copy for
-`RATE_LIMITED`. The admin replay returns `reason: 'ai_paused'`. The brake
+`RATE_LIMITED`. The brake
 **fails closed**: when its row cannot be read within 2 s, the call is a **503
 `RATE_LIMITER_UNAVAILABLE`** + `Retry-After: 10` — admitting would be spending
 with no ceiling. (The deadline is longer than the counters' 400 ms because the
