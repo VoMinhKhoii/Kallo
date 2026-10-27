@@ -19,6 +19,9 @@ export function encodeDbUrl(raw: string): string {
   );
 }
 
+/** Seconds to establish a new connection, unless DB_CONNECT_TIMEOUT_S says otherwise. */
+export const DB_CONNECT_TIMEOUT_DEFAULT_S = 10;
+
 // Lazy-initialise the DB client so the module can be imported at
 // build time even when DATABASE_URL is not set (e.g. CI builds,
 // static page generation).
@@ -43,7 +46,9 @@ function getClient() {
       max: Number(process.env.DB_POOL_MAX) || 2,
       // Bound establishing a *new* connection so a dead pooler fails fast
       // instead of hanging the acquiring query indefinitely.
-      connect_timeout: Number(process.env.DB_CONNECT_TIMEOUT_S) || 10,
+      connect_timeout:
+        Number(process.env.DB_CONNECT_TIMEOUT_S) ||
+        DB_CONNECT_TIMEOUT_DEFAULT_S,
       // Prepared statements are unsupported in PgBouncer transaction mode.
       prepare: false,
     });

@@ -135,8 +135,10 @@ would leave the slot unenforced while the registry says it is.
   call that aborts at 20 s); relog search 20 s and relog writes 30 s (queries
   of milliseconds, plus up to 10 s waiting for a pooled connection);
   entitlement reconcile 30 s (an 8 s RevenueCat call). Raising a request's
-  deadline means raising its lifetime: `slot-lifetimes.test.ts` fails until
-  you do.
+  deadline means raising its lifetime. `slot-lifetimes.test.ts` imports the
+  OCR, RevenueCat and DB connect deadlines, so raising one of those fails it;
+  analyze-meal's 60 s `maxDuration` must stay a literal in the route (Next
+  reads it statically), so the test restates it and cannot catch a change.
 - **A held slot answers with the policy's `retryAfterSeconds`** (15 s for a
   meal), not the slot's remaining lifetime: a request normally frees its slot
   long before the crash bound.

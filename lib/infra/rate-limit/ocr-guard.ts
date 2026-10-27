@@ -52,7 +52,8 @@ import {
  * throw, a global-budget 429/503, a `work` failure and a success alike — and
  * the release never throws: a failed release must NEVER convert an
  * already-successful (already paid-for) Gemini result into a client error. A
- * leaked slot frees itself when its 45 s lifetime runs out, so logging and
+ * leaked slot frees itself when `labelOcr`'s slot lifetime
+ * (`limiter/policy-sets/spend.ts`) runs out, so logging and
  * moving on is strictly better than surfacing a retry the caller would spend
  * Gemini quota on again.
  */
