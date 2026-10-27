@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +11,7 @@ import 'package:kallo_mobile/features/dashboard/data/logging_day.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/heatmap/adherence_heatmap.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/heatmap/heatmap_grid_painter.dart';
 import 'package:kallo_mobile/models/profile/heatmap.dart';
+import 'package:kallo_mobile/services/http/api_client.dart';
 
 import '../../../l10n_test_loader.dart';
 
@@ -53,17 +56,31 @@ PersistedMeal _meal(String id, String name, String at, double kcal) =>
       nutrition: MealNutrition(caloriesKcal: kcal),
     );
 
-Widget _app() => ProviderScope(
+/// Holds every POST open until the test completes [reply].
+class _SlowApi extends ApiClient {
+  final reply = Completer<Map<String, dynamic>>();
+  final posts = <String>[];
+
+  @override
+  Future<T> post<T>(String path, [Object? body]) async {
+    posts.add(path);
+    return await reply.future as T;
+  }
+}
+
+Widget _app({ApiClient? api, void Function()? onHeatmapBuild}) => ProviderScope(
   overrides: [
-    heatmapProvider.overrideWith(
-      (ref, args) async => HeatmapData(
+    if (api != null) apiClientProvider.overrideWithValue(api),
+    heatmapProvider.overrideWith((ref, args) async {
+      onHeatmapBuild?.call();
+      return HeatmapData(
         cells: [
           for (var d = 0; d < 7; d++)
             [for (var w = 0; w < _weeks; w++) _cell(d, w)],
         ],
         monthHeaders: const [],
-      ),
-    ),
+      );
+    }),
     dashboardBundleProvider.overrideWith(
       (ref, args) => Future.error(StateError('no bundle in this test')),
     ),
@@ -150,5 +167,35 @@ void main() {
     final second = tester.getTopLeft(find.text('Cơm tấm')).dy;
     expect(first, lessThan(second), reason: 'oldest meal first');
     expect(find.text("That's everything I ate"), findsOneWidget);
+  });
+
+  testWidgets('a mark that lands after the sheet is swiped away still '
+      'refreshes the heatmap', (tester) async {
+    final api = _SlowApi();
+    var heatmapBuilds = 0;
+    await tester.pumpWidget(
+      _app(api: api, onHeatmapBuild: () => heatmapBuilds++),
+    );
+    await tester.pumpAndSettle();
+    await _tapCell(tester, 1, 1);
+
+    await tester.tap(find.text("That's everything I ate"));
+    await tester.pump();
+    expect(api.posts, ['/api/v1/logging/day/complete']);
+
+    // Dismiss through the backdrop while the request is still in flight.
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(find.text('Tuesday, October 20'), findsNothing);
+    final buildsBefore = heatmapBuilds;
+
+    api.reply.complete(<String, dynamic>{'success': true});
+    await tester.pumpAndSettle();
+
+    expect(heatmapBuilds, greaterThan(buildsBefore));
+    expect(
+      find.text("Couldn't confirm this day. Please try again."),
+      findsNothing,
+    );
   });
 }

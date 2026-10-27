@@ -21,18 +21,23 @@ import '../logging_providers.dart';
 /// showing the day as set aside until something else refetched it.
 ///
 /// True once the server stored the mark; a failure has already been toasted.
+///
+/// Reads through the [ProviderContainer], not the caller's `WidgetRef`: the
+/// caller may be a sheet the user swipes away mid-request, and a disposed ref
+/// would throw on the invalidation AFTER the mark was stored — leaving every
+/// surface stale and toasting a failure that did not happen.
 Future<bool> markDayComplete(
-  BuildContext context,
-  WidgetRef ref, {
+  BuildContext context, {
   required String userId,
   required String date,
 }) async {
+  final scope = ProviderScope.containerOf(context, listen: false);
   try {
-    await ref.read(apiClientProvider).post<Map<String, dynamic>>(
+    await scope.read(apiClientProvider).post<Map<String, dynamic>>(
       '/api/v1/logging/day/complete',
       {'date': date, 'timezoneOffset': timezoneOffsetMinutes()},
     );
-    invalidateMealSurfaces(ref.invalidate, userId, date);
+    invalidateMealSurfaces(scope.invalidate, userId, date);
     if (context.mounted) {
       HapticFeedback.mediumImpact();
     }

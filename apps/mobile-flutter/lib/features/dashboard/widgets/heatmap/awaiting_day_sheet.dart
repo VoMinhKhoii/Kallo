@@ -56,22 +56,26 @@ class _AwaitingDaySheetState extends ConsumerState<_AwaitingDaySheet> {
 
   Future<void> _confirm() async {
     setState(() => _pending = true);
+    // Captured before the await: the user can swipe the sheet away while the
+    // request is in flight, and the heatmap must still refresh after.
+    final scope = ProviderScope.containerOf(context, listen: false);
     final ok = await markDayComplete(
       context,
-      ref,
       userId: widget.args.userId,
       date: widget.cell.date,
     );
+    if (ok) {
+      // markDayComplete refreshes the surfaces keyed on the MARKED day; the
+      // heatmap is keyed on today, so it is refreshed here or the cell keeps
+      // its ring.
+      scope.invalidate(dashboardBundleProvider(widget.args));
+      scope.invalidate(heatmapProvider(widget.args));
+    }
     if (!mounted) return;
     if (!ok) {
       setState(() => _pending = false);
       return;
     }
-    // markDayComplete refreshes the surfaces keyed on the MARKED day; the
-    // heatmap is keyed on today, so it is refreshed here or the cell keeps
-    // its ring.
-    ref.invalidate(dashboardBundleProvider(widget.args));
-    ref.invalidate(heatmapProvider(widget.args));
     Navigator.of(context).pop();
   }
 
