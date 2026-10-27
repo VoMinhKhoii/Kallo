@@ -151,10 +151,15 @@ pass found 8 defects the GitHub Codex loop had missed.
 
 1. **Write the brief now**, the three parts listed under Phase 5 (what changed and
    why, where it could break, out of scope), to `<scratchpad>/codex-brief.md`. If
-   writing "where it could break" surfaces a bug, fix it first.
+   writing "where it could break" surfaces a bug, fix it first. This file keeps
+   only those three parts: each later pass puts its own lines (Scope, Already
+   answered, Step back) in its own `<scratchpad>/pass-<name>.md`, so the brief
+   still means the whole branch when Phase 6c reuses it.
 2. **Round 1 reviews the whole branch**, from the branch's checkout, in the
    background (3-15 minutes; wait for the task notification, never a foreground
-   `sleep`):
+   `sleep`). Before launching any pass, record `git rev-parse HEAD` as the commit
+   it reviews (`<round-1-sha>`, `<round-2-sha>`, ...); fixes committed after the
+   launch are what the next pass reviews.
 
    ```bash
    # The prompt names the diff range: `codex review` rejects --base together
@@ -173,25 +178,35 @@ pass found 8 defects the GitHub Codex loop had missed.
    with explicit paths.
 4. **Rounds 2 and 3 are diff-only.** Each runs only when the round before found a
    real bug (a finding we fixed, not one we rejected); a round with none ends the
-   Sol rounds. Before each, append to the brief:
-   - `Scope: git diff <last-reviewed-sha>..HEAD and the callers of what it changed.`
-   - an "Already answered" list (finding, `Fixed in <sha>` or `Not changing:
-     <reason>`) so Codex does not raise them again.
+   Sol rounds. Before round `<n>`, write `<scratchpad>/pass-<n>.md` with:
+   - `Scope: git diff <round-(n-1)-sha>..HEAD and the callers of what it changed.`
+     (the commit the previous round reviewed, not the head after its fixes)
+   - an "Already answered" list of every earlier round's findings (finding,
+     `Fixed in <sha>` or `Not changing: <reason>`) so Codex does not raise them
+     again.
 
-   Same command as round 1, written to `<scratchpad>/local-review-<n>.md`; judge
-   and commit as in step 3.
+   Then run the round-1 command with that file added after the brief, and judge
+   and commit as in step 3:
+
+   ```bash
+   cat .claude/skills/ship/local-review.md <scratchpad>/codex-brief.md \
+     <scratchpad>/pass-<n>.md \
+     | codex review -c 'model="gpt-6.1-sol"' -c 'sandbox_mode="read-only"' - \
+     > <scratchpad>/local-review-<n>.md 2>&1
+   ```
 5. **After round 3, step back; do not run a round 4.** If round 3 still found a
    real bug, first ask whether the findings across all three rounds share one cause
    (the same class reappearing at new sites, or an approach that keeps leaking).
    If they do, change the approach, not the cases. Then fix, commit, and run **one
-   Astra pass** on what changed since round 3 only, the same step-4 brief with Scope
-   set to `git diff <round-3-sha>..HEAD`, plus a "Step back" section for Astra: the
-   classes the three rounds found, the shared cause, and the approach change made
-   for it (or why none was needed), so Astra judges the new approach, not just the
-   new lines:
+   Astra pass** on what changed since round 3 only. Its `<scratchpad>/pass-astra.md`
+   is a step-4 pass file with Scope `git diff <round-3-sha>..HEAD`, plus a "Step
+   back" section for Astra: the classes the three rounds found, the shared cause,
+   and the approach change made for it (or why none was needed), so Astra judges
+   the new approach, not just the new lines:
 
    ```bash
    cat .claude/skills/ship/local-review.md <scratchpad>/codex-brief.md \
+     <scratchpad>/pass-astra.md \
      | codex review -c 'model="gpt-6-astra"' -c 'sandbox_mode="read-only"' - \
      > <scratchpad>/local-review-astra.md 2>&1
    ```
@@ -206,13 +221,14 @@ pass found 8 defects the GitHub Codex loop had missed.
    restructuring proposed, then the count. Save its report to
    `<scratchpad>/local-thermo.md`. Apply a finding when the restructuring keeps
    behavior the same and the gates stay green; reject it with the reason otherwise.
-   Commit the structure fixes separately (`refactor: ...`) and note the commit
-   before them as `<pre-thermo-sha>`.
+   Record `git rev-parse HEAD` as `<pre-thermo-sha>`, then commit the structure
+   fixes separately (`refactor: ...`).
 7. **One Sol regression check** on the structure fixes only, skipped when step 6
-   changed nothing. Append to the brief `Scope: git diff <pre-thermo-sha>..HEAD and
-   the callers of what it changed.` and the line "These commits are meant to change
-   structure only; report any behavior they change.", then run the round-1 command,
-   written to `<scratchpad>/local-review-regression.md`.
+   changed nothing. Write `<scratchpad>/pass-regression.md` with `Scope: git diff
+   <pre-thermo-sha>..HEAD and the callers of what it changed.` and the line "These
+   commits are meant to change structure only; report any behavior they change.",
+   then run the step-4 command with that file, written to
+   `<scratchpad>/local-review-regression.md`.
    - **No findings** → push and open the PR (Phase 4 onward).
    - **A real regression** → revert the restructuring that caused it unless the fix
      is a few lines, then run this check once more on that fix. Push after that;
@@ -594,7 +610,7 @@ every later `@codex review`:
    its callers (step 3 above), so this round fixes classes, not sites.
 2. Run one local adversarial Codex round (the Phase 3b Sol command; never Astra
    here) and handle its findings before asking GitHub again. At round 3 it reviews
-   the whole branch. In later rounds the brief
+   the whole branch. In later rounds a pass file (Phase 3b step 4)
    scopes it to `git diff <last-reviewed-sha>..HEAD` and the callers of what that
    changed, and a whole-branch pass runs again only when the approach changed. On
    a low or medium tier PR, skip it when the fixes since the last round are a few

@@ -2,7 +2,6 @@ You are reviewing a Kallo change before its pull request is opened. Be adversari
 assume the change has a bug and try to find it. The change is the current branch:
 `git diff origin/main...HEAD` in the working directory, unless the brief has a
 `Scope:` line naming a narrower range; then review only that range and its callers.
-If it has several, the last one applies.
 The author's brief follows these instructions; read it, then that diff, then
 whatever code the diff calls or is called by. Do not raise anything on the brief's
 "Already answered" list again. If the brief has a "Step back" section, also judge
