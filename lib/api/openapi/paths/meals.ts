@@ -114,6 +114,29 @@ export const MEAL_PATHS: Record<string, PathItem> = {
     }),
   },
 
+  '/api/v1/meals/dates/summaries': {
+    get: authed({
+      operationId: 'listLoggedDateSummaries',
+      summary: 'Logged days with their calorie totals',
+      description:
+        'The web timeline: each day that has any meal, with its total kcal (null when a day has only unsaved analyses). Mobile reads the bare `/api/v1/meals/dates` list.',
+      tags: TAGS,
+      parameters: [tzParam],
+      ok: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['date', 'kcal'],
+          properties: {
+            date: { type: 'string', format: 'date' },
+            kcal: { type: ['number', 'null'] },
+          },
+        },
+        description: 'One entry per logged day.',
+      },
+    }),
+  },
+
   '/api/v1/meals/pending': {
     get: authed({
       operationId: 'listPendingMeals',

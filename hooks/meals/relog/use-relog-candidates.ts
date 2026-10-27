@@ -3,12 +3,12 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useDebouncedValue } from '@/hooks/ui/use-debounced-value';
-import { loadRelogCandidatesAction } from '@/lib/actions/meals/relog/load-candidates';
 import {
   RELOG_SEARCH_LIMIT,
   type RelogCandidate,
   type RelogCandidatesResponse,
 } from '@/lib/domain/logging/relog/relog';
+import { fetchRelogCandidates } from '@/lib/domain/meals/meals-client';
 import { relogCandidatesKeys } from '@/lib/domain/meals/query-keys';
 
 const DEBOUNCE_MS = 300;
@@ -44,7 +44,7 @@ export function useRelogCandidates(
   const { data, isLoading, isFetching } = useQuery<RelogCandidatesResponse>({
     queryKey: relogCandidatesKeys.byQuery(debounced),
     queryFn: () =>
-      loadRelogCandidatesAction({
+      fetchRelogCandidates({
         q: debounced,
         limit: RELOG_SEARCH_LIMIT,
       }),
