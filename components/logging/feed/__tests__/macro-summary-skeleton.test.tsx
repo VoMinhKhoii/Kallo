@@ -1,8 +1,15 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { MacroSummarySkeleton } from '@/components/logging/feed/feed-day-states';
+import {
+  MacroSummarySkeleton,
+  macroSummarySteps,
+} from '@/components/logging/feed/feed-day-states';
 import { FEED_MACRO_CAP } from '@/lib/core/ui/gauge-strip-layout';
-import { sizeAtCap, stripHeight } from '@/lib/core/ui/gauge-strip-metrics';
+import {
+  sizeAtCap,
+  sizeStrip,
+  stripHeight,
+} from '@/lib/core/ui/gauge-strip-metrics';
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 
@@ -11,13 +18,37 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 // placeholder drew the dial silhouettes only, shorter than the strip that
 // replaces it. It must hold the strip's own height — the number GaugeStrip
 // reserves for itself before it measures.
-describe('MacroSummarySkeleton', () => {
-  it('reserves exactly the gauge strip height at the feed cap', () => {
-    const { container } = render(<MacroSummarySkeleton />);
-    const root = container.firstElementChild as HTMLElement;
+/** What the placeholder's container-query rules resolve to at this width. */
+function reservedAt(width: number) {
+  let height = stripHeight(sizeAtCap(FEED_MACRO_CAP));
+  for (const step of macroSummarySteps()) {
+    if (width < step.maxWidth + 1) height = step.height;
+  }
+  return height;
+}
 
-    expect(root.style.height).toBe(
-      `${stripHeight(sizeAtCap(FEED_MACRO_CAP))}px`
+describe('MacroSummarySkeleton', () => {
+  it('reserves the strip height for every column width (phones, the narrow column, desktop)', () => {
+    for (let width = 240; width <= 800; width++) {
+      expect(reservedAt(width), `at ${width}px`).toBe(
+        stripHeight(sizeStrip(width, FEED_MACRO_CAP))
+      );
+    }
+  });
+
+  it('ships those heights as container-query rules on its own class', () => {
+    render(<MacroSummarySkeleton />);
+    const css = [...document.querySelectorAll('style')]
+      .map((style) => style.textContent)
+      .join('');
+
+    expect(css).toContain(
+      `.macro-summary-skeleton{height:${stripHeight(sizeAtCap(FEED_MACRO_CAP))}px}`
     );
+    for (const { maxWidth, height } of macroSummarySteps()) {
+      expect(css).toContain(
+        `@container (width < ${maxWidth + 1}px){.macro-summary-skeleton{height:${height}px}}`
+      );
+    }
   });
 });

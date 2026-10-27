@@ -8,7 +8,45 @@ import {
   FEED_MACRO_CAP,
   gaugeStripSizes,
 } from '@/lib/core/ui/gauge-strip-layout';
-import { sizeAtCap, stripHeight } from '@/lib/core/ui/gauge-strip-metrics';
+import {
+  sizeAtCap,
+  sizeStrip,
+  stripHeight,
+} from '@/lib/core/ui/gauge-strip-metrics';
+
+/**
+ * The height the feed's gauge strip takes at each column width, as steps from
+ * the widest down: `{ maxWidth, height }` applies at or below `maxWidth`, the
+ * last matching step wins, and above the first step the strip is at its cap.
+ * Read off `sizeStrip` itself, so it cannot drift from the strip it reserves
+ * for — the dials shrink in ~3 px steps below ~400 px and stack into two rows
+ * below ~324 px (prod, 2026-10-27: 101 px at a 360 px phone, 115 px on
+ * desktop, 110 px in the column beside the timeline at 1024).
+ */
+export function macroSummarySteps() {
+  const steps: { maxWidth: number; height: number }[] = [];
+  let previous = stripHeight(sizeAtCap(FEED_MACRO_CAP));
+  for (let width = 800; width >= 200; width--) {
+    const height = stripHeight(sizeStrip(width, FEED_MACRO_CAP));
+    if (height !== previous) {
+      steps.push({ maxWidth: width, height });
+      previous = height;
+    }
+  }
+  return steps;
+}
+
+const SKELETON_CLASS = 'macro-summary-skeleton';
+
+/** Container-query rules: the placeholder takes the strip's height for the
+ *  width its column actually has, on the server-rendered first paint too. */
+const SKELETON_CSS = [
+  `.${SKELETON_CLASS}{height:${stripHeight(sizeAtCap(FEED_MACRO_CAP))}px}`,
+  ...macroSummarySteps().map(
+    ({ maxWidth, height }) =>
+      `@container (width < ${maxWidth + 1}px){.${SKELETON_CLASS}{height:${height}px}}`
+  ),
+].join('');
 
 /**
  * The dial row's own silhouette — one wide mark for the day, three narrow ones
@@ -27,14 +65,17 @@ export function MacroSummarySkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="flex animate-pulse items-start justify-center"
       // The silhouette alone came out 17 px shorter than the strip it stands
       // for (it leaves out the readouts under each dial), so every load of the
       // logging page pushed the feed down when the day arrived (layout shift
-      // 0.095 on 5 of 5 prod loads). Reserve the strip's own height, the same
-      // number GaugeStrip reserves before it measures.
-      style={{ gap, height: stripHeight(sizeAtCap(FEED_MACRO_CAP)) }}
+      // 0.095 on 5 of 5 prod loads). It holds the strip's own height for the
+      // column's width instead (SKELETON_CSS; the column is the container).
+      className={`${SKELETON_CLASS} flex animate-pulse items-start justify-center`}
+      style={{ gap }}
     >
+      <style href={SKELETON_CLASS} precedence="default">
+        {SKELETON_CSS}
+      </style>
       <div
         className="shrink-0 rounded-full bg-kallo-track"
         style={{
