@@ -6,6 +6,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -22,7 +23,23 @@ class DashboardCache {
     : _directory = directory ?? getApplicationSupportDirectory;
 
   final Future<Directory> Function() _directory;
-  final Set<String> _served = {};
+
+  // Session state, for the whole app process (not per instance): the meal and
+  // profile write paths that call [forget] have no Riverpod ref to reach one.
+  static final Set<String> _served = {};
+  static final Set<String> _forgotten = {};
+
+  /// A write this session (a meal, a profile change) made [userId]'s saved day
+  /// older than the server's: never show it again until the app restarts. A
+  /// read right after the write (the first-run welcome's target) must see the
+  /// write, and the saved copy cannot.
+  static void forget(String userId) => _forgotten.add(userId);
+
+  @visibleForTesting
+  static void resetSession() {
+    _served.clear();
+    _forgotten.clear();
+  }
 
   /// The saved bundle JSON for [userId] on [date] in zone [tz], the first time
   /// it is asked for this session; null after that, or when none matches.
@@ -31,6 +48,7 @@ class DashboardCache {
     String date,
     int tz,
   ) async {
+    if (_forgotten.contains(userId)) return null;
     if (!_served.add('$userId|$date|$tz')) return null;
     try {
       final file = await _file(userId);

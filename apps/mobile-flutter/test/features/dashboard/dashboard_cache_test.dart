@@ -49,6 +49,8 @@ Map<String, dynamic> _bundleJson(double weight) => {
   'heatmap': {'cells': <dynamic>[], 'monthHeaders': <dynamic>[]},
 };
 
+DashboardBundle _bundleJsonBundle() => DashboardBundle.fromJson(_bundleJson(0));
+
 class _Api extends ApiClient {
   _Api(this.weight);
   double weight;
@@ -67,6 +69,7 @@ void main() {
   final tz = localTimezoneOffsetMinutes();
 
   setUp(() async {
+    DashboardCache.resetSession();
     dir = await Directory.systemTemp.createTemp('dashboard-cache-test');
     cache = DashboardCache(directory: () async => dir);
   });
@@ -138,8 +141,8 @@ void main() {
     await container.read(dashboardBundleProvider(_args).future);
     await pumpEventQueue();
 
-    final next = DashboardCache(directory: () async => dir);
-    final saved = await next.takeOnce(_userId, _date, tz);
+    DashboardCache.resetSession();
+    final saved = await cache.takeOnce(_userId, _date, tz);
     expect(saved?['weightSummary']['currentWeight'], 71);
   });
 
@@ -159,8 +162,45 @@ void main() {
   test('clear removes the account\'s saved day', () async {
     await cache.save(_userId, _date, tz, _bundleJson(70));
     await cache.clear(_userId);
-    final next = DashboardCache(directory: () async => dir);
-    expect(await next.takeOnce(_userId, _date, tz), isNull);
+    expect(await cache.takeOnce(_userId, _date, tz), isNull);
+  });
+
+  test('a write this session (a meal, the onboarding finish) skips the saved '
+      'day, so the read right after it sees the write', () async {
+    await cache.save(_userId, _date, tz, _bundleJson(70));
+    DashboardCache.forget(_userId);
+    final api = _Api(75);
+    final container = containerWith(api);
+
+    final bundle = await container.read(dashboardBundleProvider(_args).future);
+
+    expect(bundle.weightSummary.currentWeight, 75);
+    expect(api.calls, 1);
+  });
+
+  test('a build superseded by an account change saves nothing', () async {
+    final session = StateProvider<Session?>((ref) => _session());
+    final api = _Api(80);
+    final container = ProviderContainer(
+      overrides: [
+        apiClientProvider.overrideWithValue(api),
+        currentSessionProvider.overrideWith((ref) => ref.watch(session)),
+        dashboardCacheProvider.overrideWithValue(cache),
+      ],
+    );
+    addTearDown(container.dispose);
+    final sub = container.listen(dashboardBundleProvider(_args), (_, __) {});
+    addTearDown(sub.close);
+    final pending = container.read(dashboardBundleProvider(_args).future);
+
+    // Signed out while the request is in flight.
+    container.read(session.notifier).state = null;
+    await container.pump();
+    await pending.catchError((_) => _bundleJsonBundle());
+    await pumpEventQueue();
+
+    DashboardCache.resetSession();
+    expect(await cache.takeOnce(_userId, _date, tz), isNull);
   });
 
   test('an unreadable disk reads as nothing saved', () async {

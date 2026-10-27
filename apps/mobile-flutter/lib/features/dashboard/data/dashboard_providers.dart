@@ -85,6 +85,13 @@ final dashboardBundleProvider =
       final api = ref.watch(apiClientProvider);
       final cache = ref.watch(dashboardCacheProvider);
       final tz = localTimezoneOffsetMinutes();
+      // Set when this build is superseded (another account signed in, the
+      // entry was invalidated, the app left it). Riverpod drops a superseded
+      // build's result but keeps running its body, which would otherwise
+      // save whatever the request returned (fetched with the NEXT account's
+      // token) under this account's id.
+      var superseded = false;
+      ref.onDispose(() => superseded = true);
 
       // First build this session: show the last saved answer for today at
       // once, and rebuild straight away to fetch the real one. The screen
@@ -93,7 +100,9 @@ final dashboardBundleProvider =
       if (saved != null) {
         try {
           final bundle = DashboardBundle.fromJson(saved);
-          Future.microtask(ref.invalidateSelf);
+          Future.microtask(() {
+            if (!superseded) ref.invalidateSelf();
+          });
           return bundle;
         } catch (_) {
           // Saved by a build with another shape: fetch as usual.
@@ -107,7 +116,9 @@ final dashboardBundleProvider =
         );
         final bundle = DashboardBundle.fromJson(json);
         refreshInvitesAfterRelease(ref, released: bundle.day.releasedInvites);
-        unawaited(cache.save(args.userId, args.date, tz, json));
+        if (!superseded) {
+          unawaited(cache.save(args.userId, args.date, tz, json));
+        }
         return bundle;
       });
     });
