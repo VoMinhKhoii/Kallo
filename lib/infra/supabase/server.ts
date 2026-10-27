@@ -17,10 +17,10 @@ export async function createClient() {
 
   // Bearer-token path (mobile / REST API clients). When an `Authorization:
   // Bearer <jwt>` header is present we build a stateless client configured
-  // with that token — no cookies. `supabase.auth.getUser()` then validates
-  // the JWT against the auth server, so `requireAuthAndProfile()` and every
-  // action work unchanged. Web requests never carry this header and fall
-  // through to the existing cookie flow below.
+  // with that token — no cookies. `verifyUser()` (lib/infra/auth) checks that
+  // token, passed in from `requestBearerToken()`, so `requireAuthAndProfile()`
+  // and every action work unchanged. Web requests never carry this header and
+  // fall through to the existing cookie flow below.
   const requestHeaders = await headers();
   const authHeader = requestHeaders.get('authorization');
 
@@ -65,4 +65,13 @@ export async function createClient() {
       },
     }
   );
+}
+
+/** The access token of a Bearer request (the mobile app), or undefined for a
+ *  cookie (web) request. */
+export async function requestBearerToken(): Promise<string | undefined> {
+  const authHeader = (await headers()).get('authorization');
+  return authHeader?.startsWith('Bearer ')
+    ? authHeader.slice('Bearer '.length)
+    : undefined;
 }

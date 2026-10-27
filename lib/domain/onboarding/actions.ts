@@ -7,15 +7,12 @@ import {
   type ScreenUpdateOptions,
 } from '@/lib/domain/onboarding/screen-update';
 import { floorSubmittedTarget } from '@/lib/domain/onboarding/tdee';
+import { getRequestUser } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
-import { createClient } from '@/lib/infra/supabase/server';
 
 async function getAuthUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getRequestUser();
   if (!user) throw Errors.notAuthenticated();
   return user;
 }

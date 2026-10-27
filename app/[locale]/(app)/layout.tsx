@@ -10,7 +10,7 @@ import { AppThemeProvider } from '@/components/providers/theme/app-theme-provide
 import { getMyPublicProfile } from '@/lib/actions/groups/profile';
 import { getBillingConfig } from '@/lib/domain/billing/billing';
 import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
-import { createClient } from '@/lib/infra/supabase/server';
+import { getRequestUser } from '@/lib/infra/auth/session';
 import {
   parseSidebarExpandMode,
   parseSidebarState,
@@ -48,19 +48,16 @@ export default function AppLayout({ children }: Readonly<AppLayoutProps>) {
 }
 
 async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getRequestUser();
 
   if (!user) {
     redirect('/');
   }
 
   // Detect first session: last_sign_in_at ≈ created_at (within 1 minute)
-  const createdMs = new Date(user.created_at).getTime();
-  const signInMs = user.last_sign_in_at
-    ? new Date(user.last_sign_in_at).getTime()
+  const createdMs = new Date(user.createdAt).getTime();
+  const signInMs = user.lastSignInAt
+    ? new Date(user.lastSignInAt).getTime()
     : createdMs;
   const isFirstSession = Math.abs(signInMs - createdMs) < 60_000;
 
@@ -82,17 +79,17 @@ async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
   }
 
   const metadataName =
-    typeof user.user_metadata?.display_name === 'string'
-      ? user.user_metadata.display_name
-      : typeof user.user_metadata?.full_name === 'string'
-        ? user.user_metadata.full_name
+    typeof user.userMetadata.display_name === 'string'
+      ? user.userMetadata.display_name
+      : typeof user.userMetadata.full_name === 'string'
+        ? user.userMetadata.full_name
         : null;
   const displayName = publicProfile?.displayName ?? metadataName;
 
   // Effective avatar: uploaded photo / synced OAuth picture from the profile
   // row, else the raw OAuth metadata picture (pre-provision fallback).
   const avatarSource =
-    user.user_metadata?.avatar_url ?? user.user_metadata?.picture;
+    user.userMetadata.avatar_url ?? user.userMetadata.picture;
   const avatarUrl =
     publicProfile?.avatarUrl ??
     (typeof avatarSource === 'string' && avatarSource.length > 0

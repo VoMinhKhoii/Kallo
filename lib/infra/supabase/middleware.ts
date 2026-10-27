@@ -1,12 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
-import {
-  type AuthError,
-  isAuthApiError,
-  isAuthSessionMissingError,
-} from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
 import { locales } from '@/i18n/config';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
+import { type VerifiedUser, verifyUser } from '@/lib/infra/auth/verified-user';
+import { db } from '@/lib/infra/db/client';
 import {
   sessionCookieOptions,
   sessionCookieWriteOptions,
@@ -51,10 +48,17 @@ export async function updateSession(
     }
   );
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  // `user` is null both when signed out and when the check could not finish;
+  // only `signedOut` tells them apart (an outage must not send a signed-in
+  // reader to the sign-in dialog).
+  let user: VerifiedUser | null = null;
+  let signedOut = false;
+  try {
+    user = await verifyUser(supabase, db);
+    signedOut = !user;
+  } catch (error) {
+    console.warn('[proxy] session check failed', error);
+  }
 
   // Extract locale from URL path (e.g., /en/logging → en). A path with no
   // locale is left alone: next-intl is already redirecting it to one (from the
@@ -93,7 +97,7 @@ export async function updateSession(
   // entry past the app page). Left to render, the page's own session read
   // threw "You need to sign in" (KALLO-WEB-2) before the layout's redirect.
   if (
-    isSignedOut(user, error) &&
+    signedOut &&
     isPageLoad(request) &&
     needsSignIn(decodedPath(pathWithoutLocale))
   ) {
@@ -133,32 +137,4 @@ function decodedPath(path: string) {
   } catch {
     return path;
   }
-}
-
-/**
- * The auth-js error codes that mean this visitor's session is gone: the token
- * was rejected, or the session or user behind it no longer exists. A reused
- * refresh token is on the list because GoTrue revokes the session for it.
- */
-const SESSION_GONE_CODES = new Set<string>([
-  'bad_jwt',
-  'session_not_found',
-  'session_expired',
-  'refresh_token_not_found',
-  'refresh_token_already_used',
-  'user_not_found',
-  'user_banned',
-]);
-
-/**
- * True only when Supabase positively says there is no session: no cookie at
- * all, or a session it rejected. Anything else — a network failure, a 5xx, a
- * 429, a bad API key, an unparseable response — is an outage, not a
- * signed-out visitor, and sending a signed-in reader to the sign-in dialog
- * would strand them there.
- */
-function isSignedOut(user: unknown, error: AuthError | null) {
-  if (user) return false;
-  if (!error || isAuthSessionMissingError(error)) return true;
-  return isAuthApiError(error) && SESSION_GONE_CODES.has(error.code ?? '');
 }
