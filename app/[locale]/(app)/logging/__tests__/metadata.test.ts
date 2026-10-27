@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 // Only `generateMetadata` is under test; keep the page's data layer out.
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 vi.mock('@/components/app/timezone-cookie', () => ({
-  TIMEZONE_COOKIE: 'tz',
   TimezoneCookie: () => null,
 }));
 vi.mock('@/components/logging/logging-shell', () => ({
