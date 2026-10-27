@@ -2,6 +2,7 @@ import {
   AuthApiError,
   AuthInvalidJwtError,
   AuthRetryableFetchError,
+  createClient,
 } from '@supabase/supabase-js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { verifyUser } from '@/lib/infra/auth/verified-user';
@@ -97,6 +98,35 @@ describe('verifyUser', () => {
   ])('throws on an outage ($name), never reporting a sign-out', async (error) => {
     getClaims.mockResolvedValue({ data: null, error });
     await expect(verifyUser(supabase, createFakeDb().db)).rejects.toBe(error);
+  });
+
+  // The real auth-js decoder: none of these reach the network. `eA.eA.eA`
+  // makes it throw a plain SyntaxError (Codex, local review).
+  it.each([
+    'eA.eA.eA',
+    'bnVsbA.bnVsbA.eA',
+    'a!b.c.d',
+    'bad',
+  ])('is signed out for the malformed Bearer token %s', async (bad) => {
+    const real = createClient('https://example.supabase.co', 'key', {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }) as unknown as Parameters<typeof verifyUser>[0];
+    const fake = createFakeDb();
+
+    expect(await verifyUser(real, fake.db, bad)).toBeNull();
+    expect(fake.execute).not.toHaveBeenCalled();
+  });
+
+  it('rethrows a decoder-time failure on a well-formed token', async () => {
+    const wellFormed = [{ alg: 'ES256' }, { sub: 'u1' }]
+      .map((part) => Buffer.from(JSON.stringify(part)).toString('base64url'))
+      .concat('c2ln')
+      .join('.');
+    const failure = new Error('importKey failed');
+    getClaims.mockRejectedValue(failure);
+    await expect(
+      verifyUser(supabase, createFakeDb().db, wellFormed)
+    ).rejects.toBe(failure);
   });
 
   it('throws when the session query fails', async () => {

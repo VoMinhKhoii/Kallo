@@ -50,7 +50,16 @@ export async function verifyUser(
   database: Database,
   accessToken?: string
 ): Promise<VerifiedUser | null> {
-  const { data, error } = await supabase.auth.getClaims(accessToken);
+  let result: Awaited<ReturnType<typeof supabase.auth.getClaims>>;
+  try {
+    result = await supabase.auth.getClaims(accessToken);
+  } catch (error) {
+    // auth-js throws a plain error (not an AuthError) on a token whose parts
+    // are not base64url JSON. That is a bad credential, not an outage.
+    if (accessToken !== undefined && isMalformedJwt(accessToken)) return null;
+    throw error;
+  }
+  const { data, error } = result;
   if (error) {
     if (isSessionGone(error)) return null;
     throw error;
@@ -87,6 +96,25 @@ export async function verifyUser(
       ? new Date(row.last_sign_in_at).toISOString()
       : null,
   };
+}
+
+const BASE64URL = /^[A-Za-z0-9_-]+$/;
+
+/** True when the token is not three base64url parts with a JSON object header
+ *  and payload — what auth-js's decoder needs before it can check anything. */
+function isMalformedJwt(token: string) {
+  const parts = token.split('.');
+  if (parts.length !== 3 || !parts.every((part) => BASE64URL.test(part))) {
+    return true;
+  }
+  try {
+    return parts.slice(0, 2).some((part) => {
+      const value = JSON.parse(Buffer.from(part, 'base64url').toString());
+      return typeof value !== 'object' || value === null;
+    });
+  } catch {
+    return true;
+  }
 }
 
 /**
