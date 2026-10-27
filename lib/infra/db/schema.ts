@@ -2451,12 +2451,17 @@ export const rateLimitCounters = pgTable(
     dayStart: timestamp('day_start', { withTimezone: true }).notNull(),
     dayCount: integer('day_count').notNull().default(0),
     /**
-     * Requests holding a one-at-a-time slot on this key right now. Reads as 0
-     * once `slot_expires_at` has passed, so a crashed request frees its slot
-     * without anyone releasing it.
+     * One expiry per request holding a one-at-a-time slot on this key. An
+     * entry past its time is a request that crashed or never released, and
+     * reads as free; each holder's lifetime is its own, so later holders
+     * never extend a leaked one. (It replaced one count with one shared
+     * expiry, which every new holder pushed forward, so a leaked slot never
+     * freed while its owner kept trying.)
      */
-    slotCount: integer('slot_count').notNull().default(0),
-    slotExpiresAt: timestamp('slot_expires_at', { withTimezone: true }),
+    slotExpiries: timestamp('slot_expiries', { withTimezone: true })
+      .array()
+      .notNull()
+      .default(sql`'{}'::timestamptz[]`),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -2478,7 +2483,6 @@ export const rateLimitCounters = pgTable(
     ),
     check('rate_limit_counters_hour_count_check', sql`${table.hourCount} >= 0`),
     check('rate_limit_counters_day_count_check', sql`${table.dayCount} >= 0`),
-    check('rate_limit_counters_slot_count_check', sql`${table.slotCount} >= 0`),
   ]
 );
 

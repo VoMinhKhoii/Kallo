@@ -180,6 +180,9 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261025133900_rate_limit_spend_and_slots.sql` | B (Manual) | 11-arg `rate_limit_consume()` (spend brake → windows + slot → reservation, one call) and `rate_limit_release()` (free a slot, settle spend by a signed delta); the 7-arg consume is kept until deployed code stops calling it |
 | `20261025185300_drop_analysis_guard_reapers.sql` | B (Manual) | Unschedules and drops the merged analysis guard's three reapers and drops the 7-arg `rate_limit_consume()`. **Push only after the analysis-guard merge is deployed** |
 | `20261025185310_drop_analysis_guard_tables.sql` | A (Drizzle) | Drops `analysis_guard_events`, `analysis_in_flight_limits` and `analysis_rate_limit_windows`. Same push rule as the row above |
+| `20261027110720_rate_limit_slot_expiries.sql` | A (Drizzle) | `rate_limit_counters.slot_expiries timestamptz[]` (default `{}`): one expiry per slot holder |
+| `20261027110730_rate_limit_slot_holders.sql` | B (Manual) | Replaces `rate_limit_consume()` (11-arg) and `rate_limit_release()`, same signatures: the slot counts only live `slot_expiries` entries and each holder keeps its own expiry, so a leaked slot frees on time. Push together with the rows above and below, in order |
+| `20261027110836_drop_rate_limit_slot_count.sql` | A (Drizzle) | Drops `slot_count` / `slot_expires_at` and their CHECK, unread since the row above |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
@@ -569,9 +572,13 @@ session `TimeZone`, which under a transaction pooler is not a session we own.
 by `20261025185300` + `20261025185310` once the guard had been merged into the
 limiter and deployed.
 
-**Slots and the AI spend brake** (`20261025133838` + `20261025133900`).
-`rate_limit_counters` gained `slot_count` / `slot_expires_at` (a one-at-a-time
-slot that reads as free once its lifetime passes), and **`ai_spend_days`** holds
+**Slots and the AI spend brake** (`20261025133838` + `20261025133900`, slots
+reworked by `20261027110720` → `20261027110730` → `20261027110836`).
+`rate_limit_counters.slot_expiries` holds one expiry per request holding a
+one-at-a-time slot; an entry past its time reads as free. (The first version
+kept one `slot_count` with one shared `slot_expires_at` that every new holder
+pushed forward, so a slot whose release never arrived never expired while its
+owner kept trying — the Oct 2026 relog lockout.) **`ai_spend_days`** holds
 one row per UTC day with the app-wide AI spend in micro-USD
 (`spent_micro_usd`, `first_blocked_at`). `ai_spend_days` is LOGGED on purpose —
 it is money, and a crash must not hand out a fresh budget — and is never
@@ -581,8 +588,8 @@ day row `FOR UPDATE`), then the key's windows and slot in the same upsert, and
 books the reservation only once both admitted; `rate_limit_release(...)` frees
 a slot and settles spend by a signed delta. A slot is freed only by its own
 holder before it expires (the release passes back the `slot_expires_at` the
-consume returned), so a request that outlived its slot cannot free a later
-holder's. Both functions take the day's spend row before the key's counter
+consume returned and removes that one entry), so a request that outlived its
+slot cannot free a later holder's. Both functions take the day's spend row before the key's counter
 row; the opposite order in either one deadlocks against the other. The
 11-argument consume is the only one: the generic limiter calls it with no slot
 and no spend.

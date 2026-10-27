@@ -45,7 +45,7 @@ async function main() {
   } else {
     const rows = await db
       .update(rateLimitCounters)
-      .set({ slotCount: 0, slotExpiresAt: null, updatedAt: new Date() })
+      .set({ slotExpiries: [], updatedAt: new Date() })
       .where(eq(rateLimitCounters.route, route))
       .returning({ keyHash: rateLimitCounters.keyHash });
     console.log(
