@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { goalSchema } from '@/lib/domain/onboarding/schemas';
 import {
   calcBMR,
+  calcCalorieFloor,
   calcDailyTargets,
   calcMacroGrams,
   calcTDEE,
+  floorSubmittedTarget,
 } from '@/lib/domain/onboarding/tdee';
 
 describe('calcBMR', () => {
@@ -65,7 +67,13 @@ describe('calcMacroGrams', () => {
 
 describe('calcDailyTargets', () => {
   it('cutting with 0.5 kg/week aggression reduces by 550', () => {
-    const result = calcDailyTargets(2000, 'cutting', 0.5, 'moderate_carb');
+    const result = calcDailyTargets(
+      2000,
+      'cutting',
+      0.5,
+      'moderate_carb',
+      'female'
+    );
     expect(result.calories).toBe(1450);
     // Verify macros at 1450 cal, moderate_carb (30/35/35)
     expect(result.proteinG).toBe(109); // (1450*0.30)/4 = 108.75 → 109
@@ -74,7 +82,13 @@ describe('calcDailyTargets', () => {
   });
 
   it('bulking with 0.25 kg/week aggression increases by 275', () => {
-    const result = calcDailyTargets(2000, 'bulking', 0.25, 'moderate_carb');
+    const result = calcDailyTargets(
+      2000,
+      'bulking',
+      0.25,
+      'moderate_carb',
+      'female'
+    );
     expect(result.calories).toBe(2275);
     // Verify macros at 2275 cal, moderate_carb (30/35/35)
     expect(result.proteinG).toBe(171); // (2275*0.30)/4 = 170.625 → 171
@@ -83,7 +97,13 @@ describe('calcDailyTargets', () => {
   });
 
   it('maintaining ignores aggression and uses TDEE directly', () => {
-    const result = calcDailyTargets(2000, 'maintaining', null, 'moderate_carb');
+    const result = calcDailyTargets(
+      2000,
+      'maintaining',
+      null,
+      'moderate_carb',
+      'female'
+    );
     expect(result.calories).toBe(2000);
     expect(result.proteinG).toBe(150);
     expect(result.fatG).toBe(78);
@@ -91,7 +111,14 @@ describe('calcDailyTargets', () => {
   });
 
   it('deficitOverride=400 overrides 0.5 (550) aggression', () => {
-    const result = calcDailyTargets(2000, 'cutting', 0.5, 'moderate_carb', 400);
+    const result = calcDailyTargets(
+      2000,
+      'cutting',
+      0.5,
+      'moderate_carb',
+      'female',
+      400
+    );
     // 2000 - 400 = 1600
     expect(result.calories).toBe(1600);
   });
@@ -102,10 +129,111 @@ describe('calcDailyTargets', () => {
       'cutting',
       0.5,
       'moderate_carb',
+      'female',
       null
     );
     // null ?? 550 = 550 → 2000 - 550 = 1450
     expect(result.calories).toBe(1450);
+  });
+});
+
+describe('calorie floor', () => {
+  it('holds a female cut at 1,200 kcal and re-derives the macros', () => {
+    // 1600 - 0.8 × 1100 = 720 → 1200
+    const result = calcDailyTargets(
+      1600,
+      'cutting',
+      0.8,
+      'moderate_carb',
+      'female'
+    );
+    expect(result).toEqual(calcMacroGrams(1200, 'moderate_carb'));
+  });
+
+  it('holds a male cut at 1,500 kcal', () => {
+    // 2000 - 550 = 1450 → 1500
+    const result = calcDailyTargets(
+      2000,
+      'cutting',
+      0.5,
+      'moderate_carb',
+      'male'
+    );
+    expect(result.calories).toBe(1500);
+  });
+
+  it('never sets a cut above maintenance when TDEE is under the floor', () => {
+    const result = calcDailyTargets(
+      1100,
+      'cutting',
+      0.5,
+      'moderate_carb',
+      'female'
+    );
+    expect(result.calories).toBe(1100);
+    expect(calcCalorieFloor('female', 1100)).toBe(1100);
+  });
+
+  it('keeps the 500 kcal backstop under a tiny TDEE', () => {
+    expect(calcCalorieFloor('female', 320)).toBe(500);
+  });
+
+  it('a deficitOverride cannot cut through the floor', () => {
+    const result = calcDailyTargets(
+      1800,
+      'cutting',
+      null,
+      'moderate_carb',
+      'female',
+      1500
+    );
+    expect(result.calories).toBe(1200);
+  });
+});
+
+describe('floorSubmittedTarget', () => {
+  const base = {
+    tdeeKcal: 1600,
+    biologicalSex: 'female',
+    carbSplit: 'moderate_carb',
+  };
+
+  it('passes a target at or above the floor through without macros', () => {
+    expect(floorSubmittedTarget({ ...base, calorieTarget: 1328 })).toEqual({
+      calorieTarget: 1328,
+      macros: null,
+    });
+  });
+
+  it('raises an old build’s 500-floored target and re-derives its macros', () => {
+    expect(floorSubmittedTarget({ ...base, calorieTarget: 720 })).toEqual({
+      calorieTarget: 1200,
+      macros: calcMacroGrams(1200, 'moderate_carb'),
+    });
+  });
+
+  it('falls back to 500 when the sex or TDEE is unknown', () => {
+    expect(
+      floorSubmittedTarget({
+        calorieTarget: 300,
+        tdeeKcal: null,
+        biologicalSex: 'female',
+        carbSplit: 'moderate_carb',
+      }).calorieTarget
+    ).toBe(500);
+    expect(
+      floorSubmittedTarget({
+        ...base,
+        biologicalSex: undefined,
+        calorieTarget: 900,
+      })
+    ).toEqual({ calorieTarget: 900, macros: null });
+  });
+
+  it('raises the target but leaves macros alone when the split is unknown', () => {
+    expect(
+      floorSubmittedTarget({ ...base, carbSplit: 'keto', calorieTarget: 720 })
+    ).toEqual({ calorieTarget: 1200, macros: null });
   });
 });
 

@@ -1,10 +1,14 @@
 import {
   ACTIVITY_MULTIPLIERS,
   AGGRESSION_KCAL_PER_KG,
+  CALORIE_FLOOR_KCAL,
   CARB_SPLIT_RATIOS,
+  MIN_CALORIE_TARGET_KCAL,
 } from './constants';
+import { biologicalSexSchema, carbSplitSchema } from './schemas';
 import type {
   ActivityLevel,
+  BiologicalSex,
   BodyMetrics,
   CarbSplit,
   Goal,
@@ -48,14 +52,28 @@ export function calcMacroGrams(
 }
 
 /**
+ * Lowest target a cut may reach: 1,200 kcal for women, 1,500 for men, or the
+ * TDEE itself when maintenance is already below that, so a cut holds at
+ * maintenance instead of turning into a surplus. Never under 500.
+ */
+export function calcCalorieFloor(sex: BiologicalSex, tdee: number): number {
+  return Math.max(
+    Math.min(tdee, CALORIE_FLOOR_KCAL[sex]),
+    MIN_CALORIE_TARGET_KCAL
+  );
+}
+
+/**
  * Compute daily calorie/macro targets based on goal and aggression.
  * aggression is kg/week (0.1–0.8). deficitOverride overrides when provided.
+ * Calories never go below calcCalorieFloor.
  */
 export function calcDailyTargets(
   tdee: number,
   goal: Goal,
   aggression: number | null,
   carbSplit: CarbSplit,
+  biologicalSex: BiologicalSex,
   deficitOverride?: number | null
 ): MacroTargets {
   let calories: number;
@@ -69,7 +87,35 @@ export function calcDailyTargets(
     calories = goal === 'cutting' ? tdee - adjustment : tdee + adjustment;
   }
 
-  // NOTE: calories may go negative if deficitOverride > tdee.
-  // Caller (Server Action) must clamp: Math.max(result.calories, 500) before persisting.
-  return calcMacroGrams(calories, carbSplit);
+  return calcMacroGrams(
+    Math.max(calories, calcCalorieFloor(biologicalSex, tdee)),
+    carbSplit
+  );
+}
+
+/**
+ * Server backstop for a target the client computed: an older app build (which
+ * floored at 500 kcal) or a hand-made request can send one under the floor.
+ * Returns the target to store and, when it had to be raised, macro grams
+ * re-derived for it so they still add up to the stored number.
+ */
+export function floorSubmittedTarget(input: {
+  calorieTarget?: unknown;
+  tdeeKcal?: unknown;
+  biologicalSex?: unknown;
+  carbSplit?: unknown;
+}): { calorieTarget: number; macros: MacroTargets | null } {
+  const target = Number(input.calorieTarget) || 0;
+  const sex = biologicalSexSchema.safeParse(input.biologicalSex);
+  const tdee = Number(input.tdeeKcal);
+  const floor =
+    sex.success && tdee > 0
+      ? calcCalorieFloor(sex.data, tdee)
+      : MIN_CALORIE_TARGET_KCAL;
+  if (target >= floor) return { calorieTarget: target, macros: null };
+  const split = carbSplitSchema.safeParse(input.carbSplit);
+  return {
+    calorieTarget: floor,
+    macros: split.success ? calcMacroGrams(floor, split.data) : null,
+  };
 }

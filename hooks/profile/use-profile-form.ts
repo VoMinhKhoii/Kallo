@@ -15,7 +15,6 @@ import {
 import {
   calcBMR,
   calcDailyTargets,
-  calcMacroGrams,
   calcTDEE,
 } from '@/lib/domain/onboarding/tdee';
 import { SUBSECTION_ANCHOR } from '@/lib/domain/settings/anchors';
@@ -87,15 +86,12 @@ export function useProfileForm(profile: ProfileInput) {
       activityLevel: values.activityLevel,
     });
     const tdee = calcTDEE(bmr, values.activityLevel);
-    const targets = calcDailyTargets(
+    const macros = calcDailyTargets(
       tdee,
       values.goal,
       values.aggression,
-      values.carbSplit
-    );
-    const macros = calcMacroGrams(
-      Math.max(targets.calories, 500),
-      values.carbSplit
+      values.carbSplit,
+      values.biologicalSex
     );
 
     startTransition(async () => {
@@ -110,7 +106,7 @@ export function useProfileForm(profile: ProfileInput) {
           goal: values.goal,
           aggression: values.aggression,
           carbSplit: values.carbSplit,
-          calorieTarget: Math.max(targets.calories, 500),
+          calorieTarget: macros.calories,
           proteinTargetG: macros.proteinG,
           carbsTargetG: macros.carbsG,
           fatTargetG: macros.fatG,
