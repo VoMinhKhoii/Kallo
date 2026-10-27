@@ -19,7 +19,9 @@ import '../logging_providers.dart';
 /// The dashboard and nutrition surfaces read completeness off their own
 /// bundles, so they are invalidated too — otherwise the heatmap would keep
 /// showing the day as set aside until something else refetched it.
-Future<void> markDayComplete(
+///
+/// True once the server stored the mark; a failure has already been toasted.
+Future<bool> markDayComplete(
   BuildContext context,
   WidgetRef ref, {
   required String userId,
@@ -34,6 +36,7 @@ Future<void> markDayComplete(
     if (context.mounted) {
       HapticFeedback.mediumImpact();
     }
+    return true;
   } catch (_) {
     if (context.mounted) {
       showTopToast(
@@ -42,5 +45,6 @@ Future<void> markDayComplete(
         variant: TopToastVariant.error,
       );
     }
+    return false;
   }
 }

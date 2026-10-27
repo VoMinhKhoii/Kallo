@@ -24,6 +24,8 @@ export interface HeatmapCell {
    * day has no logged calories (or no target).
    */
   consumedRatio: number | null;
+  /** Kcal logged that day. Null when nothing was logged. */
+  calories: number | null;
   status: HeatmapCellStatus;
   /** A cheat meal was logged this day — rendered with a calm, distinct mark. */
   hasCheatMeal?: boolean;

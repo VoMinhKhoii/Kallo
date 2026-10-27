@@ -1033,6 +1033,10 @@
         "d30": "30 days",
         "d90": "90 days",
         "year": "1 year"
+      },
+      "dayDialog": {
+        "todayNote": "You can confirm today once it's over.",
+        "loadError": "Couldn't load this day's meals."
       }
     },
     "caloriesLogged": "Kcal eaten",

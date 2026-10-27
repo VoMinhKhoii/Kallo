@@ -69,7 +69,12 @@
     "overTarget": "Vượt mục tiêu",
     "nearlyFull": "Gần đủ",
     "light": "Ăn nhẹ",
-    "veryLight": "Ăn rất ít"
+    "veryLight": "Ăn rất ít",
+    "kcal": "{calories, number} kcal",
+    "dayDialog": {
+      "todayNote": "Bạn có thể xác nhận hôm nay khi ngày kết thúc.",
+      "loadError": "Chưa tải được bữa ăn của ngày này."
+    }
   },
   "caloriesLogged": "Kcal đã ghi",
   "kcalRemaining": "Kcal còn lại",

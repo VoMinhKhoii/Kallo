@@ -158,7 +158,13 @@ export function buildCalorieAdherenceHeatmapData({
             ? 'future'
             : 'unlogged';
 
-      return { date: dateKey, ratio: null, consumedRatio: null, status };
+      return {
+        date: dateKey,
+        ratio: null,
+        consumedRatio: null,
+        calories: null,
+        status,
+      };
     })
   );
 
@@ -209,6 +215,7 @@ export function buildCalorieAdherenceHeatmapData({
       cells[dayIndex][weekIndex] = {
         ...cells[dayIndex][weekIndex],
         consumedRatio,
+        calories,
         status: 'logged',
       };
       continue;
@@ -219,6 +226,7 @@ export function buildCalorieAdherenceHeatmapData({
       date: key,
       ratio: isPartial ? null : calories / calorieTarget,
       consumedRatio,
+      calories,
       status: isPartial ? 'partial' : 'logged',
       hasCheatMeal: cheatByDate.get(key) ?? false,
     };

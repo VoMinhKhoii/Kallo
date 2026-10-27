@@ -1033,6 +1033,10 @@
         "d30": "30 ngày",
         "d90": "90 ngày",
         "year": "1 năm"
+      },
+      "dayDialog": {
+        "todayNote": "Bạn có thể xác nhận hôm nay khi ngày kết thúc.",
+        "loadError": "Chưa tải được bữa ăn của ngày này."
       }
     },
     "caloriesLogged": "Kcal đã ghi",

@@ -14,9 +14,8 @@ import type {
 } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
 import { chooseRenderedHeatmapRange } from '@/lib/domain/dashboard/heatmap-range';
+import { ConsistencyBody } from './consistency-body';
 import { DashboardSectionState } from './dashboard-section-state';
-import { AdherenceHeatmap } from './progress/adherence-heatmap';
-import { HeatmapSkeleton } from './progress/progress-section-skeleton';
 import { ProgressStory } from './progress/progress-story';
 import { InlineMealTrigger } from './today/meal-trigger';
 import { TodayDock } from './today/today-dock';
@@ -57,9 +56,7 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
     : '30d';
   const {
     dailyMealsQuery,
-    heatmapData,
     heatmapQuery,
-    resolvedHeatmapData,
     todayMeals,
     todayNutrition,
     weightSummary,
@@ -177,24 +174,13 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
                 ref={heatmapContainerRef}
                 className="min-h-[310px] rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-kallo-accent/50 hover:shadow-kallo-text/[0.06] hover:shadow-md sm:min-h-[340px] md:min-h-[360px] xl:min-h-0"
               >
-                {!hasMeasuredHeatmap || heatmapQuery.isPending ? (
-                  <HeatmapSkeleton range={renderedHeatmapRange} />
-                ) : heatmapQuery.isError ? (
-                  <DashboardSectionState
-                    bare
-                    message={t('heatmapLoadError')}
-                    actionLabel={t('retry')}
-                    onAction={() => void heatmapQuery.refetch()}
-                    variant="error"
-                  />
-                ) : !heatmapData ? (
-                  <HeatmapSkeleton range={renderedHeatmapRange} />
-                ) : (
-                  <AdherenceHeatmap
-                    data={resolvedHeatmapData}
-                    range={renderedHeatmapRange}
-                  />
-                )}
+                <ConsistencyBody
+                  isMeasured={hasMeasuredHeatmap}
+                  query={heatmapQuery}
+                  range={renderedHeatmapRange}
+                  profile={profile}
+                  todayDate={todayDate}
+                />
               </div>
             </section>
           </div>
