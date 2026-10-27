@@ -15,9 +15,9 @@ import {
 import { findCachedRows } from '@/lib/domain/barcode/cache';
 import { barcodeNotCachedError } from '@/lib/domain/barcode/errors';
 import { barcodeRefsOf } from '@/lib/domain/logging/relog/relog';
+import { getRequestUser } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
-import { createClient } from '@/lib/infra/supabase/server';
 
 export function createGuardRelease(
   release: (() => Promise<void> | void) | undefined
@@ -85,26 +85,24 @@ async function assertScannedPicksAreCached(
  */
 export async function validateRequest(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
     // Parallelize auth and body parsing — independent operations. The body
     // read is byte-capped so an anonymous caller cannot make the server buffer
-    // an arbitrarily large payload while `getUser()` is in flight, and the auth
-    // verdict below is still checked first: a stranger only ever sees a 401.
+    // an arbitrarily large payload while the auth check is in flight, and the
+    // auth verdict below is still checked first: a stranger only ever sees a
+    // 401.
     const [authResult, bodyResult] = await Promise.allSettled([
-      supabase.auth.getUser(),
+      getRequestUser(),
       readJsonBody(request),
     ]);
 
-    // Validate auth — getUser() can resolve with { data: { user: null }, error: AuthError }
-    if (
-      authResult.status === 'rejected' ||
-      authResult.value.error ||
-      !authResult.value.data.user
-    ) {
+    // A failed check (an outage) is rethrown as-is, not reported as a 401.
+    if (authResult.status === 'rejected') {
+      throw authResult.reason;
+    }
+    const user = authResult.value;
+    if (!user) {
       throw Errors.notAuthenticated();
     }
-    const user = authResult.value.data.user;
 
     // Validate body parse: a malformed body is a 400, an oversized one the
     // reader's 413.

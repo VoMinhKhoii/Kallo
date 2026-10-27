@@ -1,31 +1,42 @@
 import { eq } from 'drizzle-orm';
 import { cache } from 'react';
 import { Errors } from '@/lib/core/errors/catalog';
+import { type VerifiedUser, verifyUser } from '@/lib/infra/auth/verified-user';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
-import { createClient } from '@/lib/infra/supabase/server';
+import { createClient, requestBearerToken } from '@/lib/infra/supabase/server';
 
 interface AuthResult {
   user: { id: string; email?: string };
   profile: typeof userProfiles.$inferSelect;
 }
 
+/**
+ * The verified user behind this request, or null when signed out (see
+ * `verifyUser`). Memoized per request: a layout, its page and the actions they
+ * call share one token check and one session query.
+ */
+export const getRequestUser = cache(
+  async (): Promise<VerifiedUser | null> =>
+    verifyUser(await createClient(), db, await requestBearerToken())
+);
+
 async function resolveAuthAndProfile(deps?: {
   supabase?: Awaited<ReturnType<typeof createClient>>;
   database?: typeof db;
 }): Promise<AuthResult> {
-  const supabase = deps?.supabase ?? (await createClient());
   const database = deps?.database ?? db;
-
-  const { data, error: authError } = await supabase.auth.getUser();
-  if (authError || !data.user) {
+  const user = deps?.supabase
+    ? await verifyUser(deps.supabase, database)
+    : await getRequestUser();
+  if (!user) {
     throw Errors.notAuthenticated();
   }
 
   const rows = await database
     .select()
     .from(userProfiles)
-    .where(eq(userProfiles.userId, data.user.id))
+    .where(eq(userProfiles.userId, user.id))
     .limit(1);
 
   const profile = rows[0];
@@ -33,13 +44,13 @@ async function resolveAuthAndProfile(deps?: {
     throw Errors.profileNotFound();
   }
 
-  return { user: data.user, profile };
+  return { user: { id: user.id, email: user.email ?? undefined }, profile };
 }
 
 // Per-request memoization for the production (no-DI) path: routes/actions that
 // fan out (e.g. the aggregate dashboard endpoint's four parallel loaders) share
-// ONE `getUser()` JWT check + ONE profile query instead of repeating both per
-// loader. React.cache is scoped to a single request in the App Router.
+// ONE token check + ONE profile query instead of repeating both per loader.
+// React.cache is scoped to a single request in the App Router.
 const cachedResolveAuthAndProfile = cache(() => resolveAuthAndProfile());
 
 /**

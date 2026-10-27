@@ -44,6 +44,11 @@ vi.mock('@/lib/infra/supabase/server', () => ({
     }),
 }));
 
+// The route's auth check, fed from the same `mockGetUser` answers.
+vi.mock('@/lib/infra/auth/session', () => ({
+  getRequestUser: async () => (await mockGetUser())?.data?.user ?? null,
+}));
+
 vi.mock('@/lib/infra/db/client', () => {
   const selectChain = {
     select: () => selectChain,

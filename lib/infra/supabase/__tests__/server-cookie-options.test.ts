@@ -50,7 +50,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockHeaders.mockResolvedValue(new Headers());
   createServerClient.mockReturnValue({
-    auth: { getUser: async () => ({ data: { user: null } }) },
+    auth: { getClaims: async () => ({ data: null, error: null }) },
   });
 });
 
@@ -95,9 +95,9 @@ describe('middleware session cookie', () => {
       setAll = options.cookies.setAll;
       return {
         auth: {
-          getUser: async () => {
+          getClaims: async () => {
             setAll?.([refreshedChunk]);
-            return { data: { user: null } };
+            return { data: null, error: null };
           },
         },
       };
