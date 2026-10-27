@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -202,6 +203,28 @@ void main() {
     DashboardCache.resetSession();
     expect(await cache.takeOnce(_userId, _date, tz), isNull);
   });
+
+  test(
+    'a save already under way at sign-out cannot outlive the clear',
+    () async {
+      // The directory lookup stalls, as a slow disk would, so the save is still
+      // in flight when sign-out clears the file.
+      final gate = Completer<void>();
+      final slow = DashboardCache(
+        directory: () async {
+          await gate.future;
+          return dir;
+        },
+      );
+      final saving = slow.save(_userId, _date, tz, _bundleJson(70));
+      final clearing = slow.clear(_userId);
+      gate.complete();
+      await Future.wait([saving, clearing]);
+
+      DashboardCache.resetSession();
+      expect(await cache.takeOnce(_userId, _date, tz), isNull);
+    },
+  );
 
   test('an unreadable disk reads as nothing saved', () async {
     final broken = DashboardCache(

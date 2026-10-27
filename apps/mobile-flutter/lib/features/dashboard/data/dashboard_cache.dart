@@ -29,6 +29,21 @@ class DashboardCache {
   static final Set<String> _served = {};
   static final Set<String> _forgotten = {};
 
+  /// Each user's disk writes and deletes, run one after another: a save that
+  /// started just before sign-out must not land after [clear] and bring the
+  /// signed-out user's file back.
+  static final Map<String, Future<void>> _pending = {};
+
+  static Future<void> _inOrder(String userId, Future<void> Function() op) {
+    final next = (_pending[userId] ?? Future<void>.value()).then((_) async {
+      try {
+        await op();
+      } catch (_) {}
+    });
+    _pending[userId] = next;
+    return next;
+  }
+
   /// A write this session (a meal, a profile change) made [userId]'s saved day
   /// older than the server's: never show it again until the app restarts. A
   /// read right after the write (the first-run welcome's target) must see the
@@ -39,6 +54,7 @@ class DashboardCache {
   static void resetSession() {
     _served.clear();
     _forgotten.clear();
+    _pending.clear();
   }
 
   /// The saved bundle JSON for [userId] on [date] in zone [tz], the first time
@@ -69,23 +85,20 @@ class DashboardCache {
     String date,
     int tz,
     Map<String, dynamic> bundle,
-  ) async {
-    try {
-      final file = await _file(userId);
-      await file.parent.create(recursive: true);
-      await file.writeAsString(
-        jsonEncode({'date': date, 'tz': tz, 'bundle': bundle}),
-      );
-    } catch (_) {}
-  }
+  ) => _inOrder(userId, () async {
+    final file = await _file(userId);
+    await file.parent.create(recursive: true);
+    await file.writeAsString(
+      jsonEncode({'date': date, 'tz': tz, 'bundle': bundle}),
+    );
+  });
 
-  /// Deletes [userId]'s saved bundle (signed out, or another account in).
-  Future<void> clear(String userId) async {
-    try {
-      final file = await _file(userId);
-      if (await file.exists()) await file.delete();
-    } catch (_) {}
-  }
+  /// Deletes [userId]'s saved bundle (signed out, or another account in),
+  /// after any save already under way.
+  Future<void> clear(String userId) => _inOrder(userId, () async {
+    final file = await _file(userId);
+    if (await file.exists()) await file.delete();
+  });
 
   Future<File> _file(String userId) async {
     final dir = await _directory();
