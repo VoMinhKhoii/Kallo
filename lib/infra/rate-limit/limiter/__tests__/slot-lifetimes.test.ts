@@ -18,7 +18,11 @@ import { REVENUECAT_TIMEOUT_MS } from '@/lib/domain/billing/revenuecat/client';
 import { DB_CONNECT_TIMEOUT_DEFAULT_S } from '@/lib/infra/db/client';
 import { rateLimitPolicies } from '../policies';
 
-/** `app/api/analyze-meal/route.ts` `maxDuration`, and Cloud Run's `--timeout`. */
+/**
+ * `app/api/analyze-meal/route.ts` `maxDuration`, and Cloud Run's `--timeout`:
+ * the longest any request runs, so the bound for a slot held across work
+ * with no deadline of its own (the OCR upload read).
+ */
 const ANALYZE_MEAL_MAX_DURATION_S = 60;
 
 const {
@@ -34,9 +38,11 @@ describe('slot lifetimes', () => {
     expect(analyzeMeal.concurrency.ttlSeconds).toBeGreaterThan(
       ANALYZE_MEAL_MAX_DURATION_S
     );
-    // The provider call, plus one wait for a pooled connection (the global
-    // budget charge before it). The upload read is bounded by the body size
-    // cap, not by a deadline, so it is left to the margin.
+    // The slot is taken before the upload is read, and that read has no
+    // deadline (a size cap only), so the request timeout is the bound.
+    expect(labelOcr.concurrency.ttlSeconds).toBeGreaterThan(
+      ANALYZE_MEAL_MAX_DURATION_S
+    );
     expect(labelOcr.concurrency.ttlSeconds).toBeGreaterThan(
       NUTRITION_LABEL_OCR_DEADLINE_MS / 1000 + DB_CONNECT_TIMEOUT_DEFAULT_S
     );

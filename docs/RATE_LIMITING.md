@@ -131,8 +131,9 @@ would leave the slot unenforced while the registry says it is.
 - **Each lifetime is sized to its request**: just past the longest the
   request can run, because the lifetime is also how long a lost release
   refuses its holder. Meal analysis 90 s (the route's 60 s `maxDuration` and
-  Cloud Run's 60 s timeout); label OCR 45 s (upload decode, then a provider
-  call that aborts at 20 s); relog search 20 s and relog writes 30 s (queries
+  Cloud Run's 60 s timeout); label OCR 90 s (the slot covers the upload
+  read, which has a size cap but no deadline, so Cloud Run's 60 s timeout is
+  its bound); relog search 20 s and relog writes 30 s (queries
   of milliseconds, plus up to 10 s waiting for a pooled connection);
   entitlement reconcile 30 s (an 8 s RevenueCat call). Raising a request's
   deadline means raising its lifetime. `slot-lifetimes.test.ts` imports the

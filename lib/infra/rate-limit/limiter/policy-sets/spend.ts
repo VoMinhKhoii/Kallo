@@ -48,13 +48,16 @@ export const spendPolicies = {
    * pool; `ocrGlobalDaily` and the AI spend brake are charged only right
    * before the provider call (`lib/infra/rate-limit/ocr-guard.ts`).
    *
-   * Slot lifetime 45 s: the upload read and decode, then the provider call,
-   * which aborts at 20 s (`NUTRITION_LABEL_OCR_DEADLINE_MS`).
+   * Slot lifetime 90 s, the same bound as meal analysis: the slot is taken
+   * before the upload is read, and that read has a size cap but no deadline,
+   * so a slow mobile upload is bounded only by Cloud Run's 60 s request
+   * timeout. The provider call after it aborts at 20 s
+   * (`NUTRITION_LABEL_OCR_DEADLINE_MS`).
    */
   labelOcr: {
     route: 'ocr:scan',
     limits: { perMinute: 5, perHour: 30, perDay: 100 },
-    concurrency: { limit: 1, ttlSeconds: 45, retryAfterSeconds: 5 },
+    concurrency: { limit: 1, ttlSeconds: 90, retryAfterSeconds: 5 },
     keyKinds: ['user'],
     failMode: 'closed',
   },
