@@ -198,4 +198,27 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets('a mark that lands mid-dismissal pops only the sheet', (
+    tester,
+  ) async {
+    final api = _SlowApi();
+    await tester.pumpWidget(_app(api: api));
+    await tester.pumpAndSettle();
+    await _tapCell(tester, 1, 1);
+
+    await tester.tap(find.text("That's everything I ate"));
+    await tester.pump();
+
+    // The request lands while the swipe-away is still animating: the sheet's
+    // state is mounted but its route is no longer current.
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pump(const Duration(milliseconds: 50));
+    api.reply.complete(<String, dynamic>{'success': true});
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(AdherenceHeatmap), findsOneWidget);
+    expect(find.text('Tuesday, October 20'), findsNothing);
+  });
 }

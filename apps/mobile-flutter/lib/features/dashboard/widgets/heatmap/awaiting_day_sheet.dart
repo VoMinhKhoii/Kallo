@@ -76,7 +76,11 @@ class _AwaitingDaySheetState extends ConsumerState<_AwaitingDaySheet> {
       setState(() => _pending = false);
       return;
     }
-    Navigator.of(context).pop();
+    // A swipe-away still animating leaves this state mounted with its route
+    // already popped; popping again would take the screen beneath with it.
+    if (ModalRoute.of(context)?.isCurrent ?? false) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
