@@ -308,11 +308,12 @@ void main() {
 
   test('a fresh sign-in is not mistaken for an account change', () async {
     // onAuthStateChange replays its last event (here signedIn) to a new
-    // listener. The first refresh, a proactive one on an expiring token, must
-    // not count that replay as a sign-in that happened while it ran.
+    // listener. The first refresh, a proactive one on a token about to expire
+    // (inside the minute the request waits for), must not count that replay
+    // as a sign-in that happened while it ran.
     final server = _AuthServer(
       _refreshed,
-      signInToken: _jwt('expiring', ttl: const Duration(minutes: 2)),
+      signInToken: _jwt('expiring', ttl: const Duration(seconds: 30)),
       signInUser: 'user-1',
     );
     final api = _Api();
@@ -330,6 +331,34 @@ void main() {
     expect(api.tokens, [_newToken]);
     expect(gotrue.currentSession?.accessToken, _newToken);
   });
+
+  test(
+    'a token with minutes left goes out at once, refreshed behind it',
+    () async {
+      // A launch used to wait the whole refresh before its first request.
+      final held = _jwt('held', ttl: const Duration(minutes: 3));
+      final server = _AuthServer(
+        _refreshed,
+        signInToken: held,
+        signInUser: 'user-1',
+      );
+      final api = _Api(status: 200);
+      final gotrue = GoTrueClient(
+        url: 'https://auth.test/auth/v1',
+        httpClient: server.client,
+        autoRefreshToken: false,
+      );
+      await gotrue.signInWithPassword(email: 'a@test.dev', password: 'pw');
+
+      final body = await _client(api, gotrue).get<Map<String, dynamic>>('/x');
+
+      expect(body['ok'], isTrue);
+      expect(api.tokens, [held], reason: 'sent with the held token');
+      await pumpEventQueue();
+      expect(server.refreshes, 1);
+      expect(gotrue.currentSession?.accessToken, _newToken);
+    },
+  );
 
   test(
     'an account switched during the refresh never gets the resend',

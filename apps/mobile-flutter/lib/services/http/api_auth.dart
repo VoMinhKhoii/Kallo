@@ -8,7 +8,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../auth/supabase_service.dart';
 
+/// Inside this window a token is refreshed ahead of time, in the background:
+/// the request still goes out at once with the token held, which the server
+/// accepts until it actually expires (it checks the signature and expiry
+/// locally since #499).
 const _refreshSkew = Duration(minutes: 5);
+
+/// Inside this window the request waits for the refresh: the held token could
+/// expire before the server reads it. A minute covers the flight and a phone
+/// clock somewhat behind the server's; a clock further off is caught by the
+/// 401 → [ApiAuth.recover] path.
+const _mustRefreshSkew = Duration(minutes: 1);
 
 /// A session revoked on the server (the password changed on another device,
 /// "sign out everywhere") leaves a well-formed access token on this device.
@@ -62,14 +72,23 @@ class ApiAuth {
         await Future<void>.delayed(Duration.zero);
       }();
 
-  /// The session to send with the next request, refreshed first when its
-  /// token expires within five minutes; `null` while signed out.
+  /// The session to send with the next request; `null` while signed out.
+  ///
+  /// Waits for a refresh only when the token expires within a minute. Within
+  /// five minutes it starts one in the background and sends the held token:
+  /// a launch used to wait the whole refresh (0.9 s p50, 4.8 s p95 on the
+  /// auth server) before its first request, for a token still good for
+  /// minutes.
   Future<Session?> session() async {
     final auth = _client();
     final session = auth.currentSession;
-    if (session != null && _expiresSoon(session)) {
-      // Send what is held if it fails; a 401 brings the request back here.
-      await _refreshOnce(session.user.id);
+    if (session != null) {
+      if (_expiresWithin(session, _mustRefreshSkew)) {
+        // Send what is held if it fails; a 401 brings the request back here.
+        await _refreshOnce(session.user.id);
+      } else if (_expiresWithin(session, _refreshSkew)) {
+        unawaited(_refreshOnce(session.user.id));
+      }
     }
     return auth.currentSession;
   }
@@ -130,10 +149,10 @@ class ApiAuth {
     } catch (_) {}
   }
 
-  bool _expiresSoon(Session session) {
+  bool _expiresWithin(Session session, Duration window) {
     final expiresAt = session.expiresAt;
     if (expiresAt == null) return false;
     final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
-    return DateTime.now().add(_refreshSkew).isAfter(expiry);
+    return DateTime.now().add(window).isAfter(expiry);
   }
 }

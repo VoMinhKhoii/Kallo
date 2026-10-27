@@ -16,6 +16,7 @@ import '../../../services/auth/session_provider.dart';
 import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';
 import '../../../models/social/circle.dart';
+import '../../dashboard/data/dashboard_cache.dart';
 import '../../dashboard/data/dashboard_providers.dart'
     show
         dashboardBundleProvider,
@@ -363,6 +364,7 @@ Future<void> shareMealWithFriends(
   container.invalidate(loggingDayProvider);
   // The dashboard reads its ring off a separate bundle/day cache — invalidate
   // it too or the Today card + week-strip ring keep the pre-split total.
+  DashboardCache.forgetAll();
   container.invalidate(dashboardBundleProvider);
   container.invalidate(dashboardDayProvider);
   container.invalidate(circleFeedProvider);
