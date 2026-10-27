@@ -80,4 +80,25 @@ describe('buildScreenUpdate', () => {
       calorieTarget: 500,
     });
   });
+
+  it('floors a low target by the saved sex and TDEE and re-derives macros', () => {
+    // An older build floored at 500 kcal; the server raises it to 1,200.
+    const update = buildScreenUpdate(
+      { biologicalSex: 'female', tdeeKcal: 1600, carbSplit: 'moderate_carb' },
+      2,
+      {
+        calorieTarget: 720,
+        proteinTargetG: 54,
+        carbsTargetG: 63,
+        fatTargetG: 28,
+      },
+      { advance: false }
+    );
+    expect(update).toEqual({
+      calorieTarget: 1200,
+      proteinTargetG: 90,
+      carbsTargetG: 105,
+      fatTargetG: 47,
+    });
+  });
 });

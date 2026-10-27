@@ -6,6 +6,7 @@ import {
   buildScreenUpdate,
   type ScreenUpdateOptions,
 } from '@/lib/domain/onboarding/screen-update';
+import { floorSubmittedTarget } from '@/lib/domain/onboarding/tdee';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
 import { createClient } from '@/lib/infra/supabase/server';
@@ -56,6 +57,7 @@ export async function saveOnboardingScreen(
 
 export async function saveProfileSettings(data: Record<string, unknown>) {
   const user = await getAuthUser();
+  const floored = floorSubmittedTarget(data);
 
   const updateObj = {
     weightKg: String(data.weightKg),
@@ -70,10 +72,10 @@ export async function saveProfileSettings(data: Record<string, unknown>) {
         ? String(data.aggression)
         : (null as string | null),
     carbSplit: data.carbSplit as string,
-    calorieTarget: Math.max(Number(data.calorieTarget) || 0, 500),
-    proteinTargetG: data.proteinTargetG as number,
-    carbsTargetG: data.carbsTargetG as number,
-    fatTargetG: data.fatTargetG as number,
+    calorieTarget: floored.calorieTarget,
+    proteinTargetG: floored.macros?.proteinG ?? (data.proteinTargetG as number),
+    carbsTargetG: floored.macros?.carbsG ?? (data.carbsTargetG as number),
+    fatTargetG: floored.macros?.fatG ?? (data.fatTargetG as number),
     countryOfOrigin: (data.countryOfOrigin as string) ?? null,
     countryOfResidence: (data.countryOfResidence as string) ?? null,
     preferredLocale: (data.preferredLocale as string) ?? 'en',

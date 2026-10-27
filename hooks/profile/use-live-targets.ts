@@ -5,10 +5,12 @@ import { useWatch } from 'react-hook-form';
 import {
   calcBMR,
   calcDailyTargets,
-  calcMacroGrams,
   calcTDEE,
 } from '@/lib/domain/onboarding/tdee';
-import type { ActivityLevel } from '@/lib/domain/onboarding/types';
+import type {
+  ActivityLevel,
+  MacroTargets,
+} from '@/lib/domain/onboarding/types';
 
 export interface LiveTargets {
   goal: string;
@@ -18,11 +20,11 @@ export interface LiveTargets {
   allMetricsFilled: boolean;
   /** Maintenance TDEE, or null until metrics are complete. */
   tdee: number | null;
-  /** Raw (un-floored) daily target calories; 0 until tdee exists. */
+  /** Floored daily target calories (calcCalorieFloor); 0 until tdee exists. */
   targetCalories: number;
   /** Macro grams at the live target/split, or null until tdee exists. */
-  macros: ReturnType<typeof calcMacroGrams> | null;
-  /** The floored (min 500) target the save button names, or null. */
+  macros: MacroTargets | null;
+  /** The target the save button names, or null. */
   pendingTarget: number | null;
 }
 
@@ -63,19 +65,13 @@ export function useLiveTargets(): LiveTargets {
 
   const finalTargets = useMemo(() => {
     if (tdee === null) return null;
-    return calcDailyTargets(tdee, goal, aggression, carbSplit);
-  }, [tdee, goal, aggression, carbSplit]);
+    return calcDailyTargets(tdee, goal, aggression, carbSplit, biologicalSex);
+  }, [tdee, goal, aggression, carbSplit, biologicalSex]);
 
-  // Clamp once so the hero, macro previews, and save-bar label all describe
-  // the same effective target (persistence applies the same 500-kcal floor).
-  const targetCalories = finalTargets
-    ? Math.max(finalTargets.calories, 500)
-    : 0;
-
-  const macros = useMemo(() => {
-    if (!targetCalories) return null;
-    return calcMacroGrams(targetCalories, carbSplit);
-  }, [targetCalories, carbSplit]);
+  // Already floored, so the hero, macro previews, and save-bar label all
+  // describe the target persistence stores.
+  const targetCalories = finalTargets?.calories ?? 0;
+  const macros = finalTargets;
 
   const pendingTarget = tdee === null ? null : Math.round(targetCalories);
 

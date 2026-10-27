@@ -1,5 +1,6 @@
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/domain/onboarding/constants';
 import { hasSavedOnboardingProfileData } from '@/lib/domain/onboarding/progress';
+import { floorSubmittedTarget } from '@/lib/domain/onboarding/tdee';
 
 export interface ScreenUpdateOptions {
   /**
@@ -54,7 +55,14 @@ export function buildScreenUpdate(
         data.aggression != null ? String(data.aggression) : null;
     }
     if (has('calorieTarget')) {
-      updateObj.calorieTarget = Math.max(Number(data.calorieTarget) || 0, 500);
+      // A payload without the sex, TDEE or split floors against the saved ones.
+      const floored = floorSubmittedTarget({ ...existing, ...data });
+      updateObj.calorieTarget = floored.calorieTarget;
+      if (floored.macros) {
+        updateObj.proteinTargetG = floored.macros.proteinG;
+        updateObj.carbsTargetG = floored.macros.carbsG;
+        updateObj.fatTargetG = floored.macros.fatG;
+      }
     }
   } else if (step === 3) {
     copy(

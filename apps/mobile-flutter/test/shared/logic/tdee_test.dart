@@ -68,6 +68,7 @@ void main() {
         Goal.cutting,
         0.5,
         CarbSplit.moderateCarb,
+        BiologicalSex.male,
       );
       expect(targets.calories, 1717); // 2267 − 550
       expect(targets.proteinG, 129);
@@ -111,6 +112,7 @@ void main() {
         Goal.maintaining,
         0.5,
         CarbSplit.moderateCarb,
+        BiologicalSex.male,
       );
       expect(m.calories, 2200);
     });
@@ -122,12 +124,14 @@ void main() {
           Goal.maintaining,
           0.8,
           CarbSplit.moderateCarb,
+          BiologicalSex.male,
         ).calories,
         calcDailyTargets(
           2200,
           Goal.maintaining,
           null,
           CarbSplit.moderateCarb,
+          BiologicalSex.male,
         ).calories,
       );
     });
@@ -140,6 +144,7 @@ void main() {
           Goal.cutting,
           0.5,
           CarbSplit.moderateCarb,
+          BiologicalSex.male,
         ).calories,
         1650,
       );
@@ -152,6 +157,7 @@ void main() {
           Goal.bulking,
           0.5,
           CarbSplit.moderateCarb,
+          BiologicalSex.male,
         ).calories,
         2750,
       );
@@ -164,6 +170,7 @@ void main() {
           Goal.cutting,
           null,
           CarbSplit.moderateCarb,
+          BiologicalSex.male,
         ).calories,
         2200,
       );
@@ -177,6 +184,7 @@ void main() {
           Goal.cutting,
           0.35,
           CarbSplit.moderateCarb,
+          BiologicalSex.male,
         ).calories,
         1815,
       );
@@ -189,6 +197,7 @@ void main() {
           Goal.cutting,
           0.5,
           CarbSplit.moderateCarb,
+          BiologicalSex.male,
           300,
         ).calories,
         1900,
@@ -204,26 +213,59 @@ void main() {
           Goal.cutting,
           0.5,
           CarbSplit.moderateCarb,
+          BiologicalSex.male,
           300.4,
         ).calories,
         1900, // 1899.6 rounded by calcMacroGrams
       );
     });
 
-    test(
-      'lets calories go negative — the server clamps, not this function',
-      () {
-        expect(
-          calcDailyTargets(
-            400,
-            Goal.cutting,
-            0.8,
-            CarbSplit.moderateCarb,
-          ).calories,
-          lessThan(0),
-        );
-      },
-    );
+    test('holds a female cut at 1,200 kcal and re-derives the grams', () {
+      // 1600 − 0.8 × 1100 = 720 → 1200
+      final m = calcDailyTargets(
+        1600,
+        Goal.cutting,
+        0.8,
+        CarbSplit.moderateCarb,
+        BiologicalSex.female,
+      );
+      final floored = calcMacroGrams(1200, CarbSplit.moderateCarb);
+      expect(m.calories, 1200);
+      expect(
+        [m.proteinG, m.carbsG, m.fatG],
+        [floored.proteinG, floored.carbsG, floored.fatG],
+      );
+    });
+
+    test('holds a male cut at 1,500 kcal', () {
+      expect(
+        calcDailyTargets(
+          2000,
+          Goal.cutting,
+          0.5,
+          CarbSplit.moderateCarb,
+          BiologicalSex.male,
+        ).calories,
+        1500,
+      );
+    });
+
+    test('never sets a cut above maintenance under the floor', () {
+      expect(
+        calcDailyTargets(
+          1100,
+          Goal.cutting,
+          0.5,
+          CarbSplit.moderateCarb,
+          BiologicalSex.female,
+        ).calories,
+        1100,
+      );
+    });
+
+    test('keeps the 500 kcal backstop under a tiny TDEE', () {
+      expect(calcCalorieFloor(BiologicalSex.female, 320), 500);
+    });
   });
 
   group('web parity', () {
@@ -294,6 +336,31 @@ void main() {
       ).firstMatch(_webConstants.readAsStringSync());
       expect(match, isNotNull, reason: 'AGGRESSION_KCAL_PER_KG missing');
       expect(int.parse(match!.group(1)!), kAggressionKcalPerKg);
+    });
+
+    test('shares the calorie floors with the web constants', () {
+      if (!_webPresent()) {
+        markTestSkipped('web onboarding sources not present');
+        return;
+      }
+      final source = _webConstants.readAsStringSync();
+      final block = RegExp(
+        r'CALORIE_FLOOR_KCAL[^{]*\{([^}]*)\}',
+      ).firstMatch(source);
+      expect(block, isNotNull, reason: 'CALORIE_FLOOR_KCAL missing from web');
+      for (final sex in BiologicalSex.values) {
+        final match = RegExp(
+          // \b, or `male` matches inside `female`.
+          '\\b${sex.name}:\\s*(\\d+)',
+        ).firstMatch(block!.group(1)!);
+        expect(match, isNotNull, reason: '${sex.name} floor missing from web');
+        expect(int.parse(match!.group(1)!), kCalorieFloorKcal[sex]);
+      }
+      final min = RegExp(
+        r'MIN_CALORIE_TARGET_KCAL\s*=\s*(\d+)',
+      ).firstMatch(source);
+      expect(min, isNotNull, reason: 'MIN_CALORIE_TARGET_KCAL missing');
+      expect(int.parse(min!.group(1)!), kMinCalorieTargetKcal);
     });
 
     test('shares the Mifflin–St Jeor coefficients with the web formula', () {

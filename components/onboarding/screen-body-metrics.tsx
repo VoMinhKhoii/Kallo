@@ -98,6 +98,7 @@ export function ScreenBodyMetrics({
       values.goal,
       values.aggression,
       values.carbSplit,
+      values.biologicalSex,
       values.deficitOverride
     );
   }, [
@@ -105,6 +106,7 @@ export function ScreenBodyMetrics({
     values.goal,
     values.aggression,
     values.carbSplit,
+    values.biologicalSex,
     values.deficitOverride,
   ]);
 

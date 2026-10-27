@@ -18,13 +18,6 @@ const ({num min, num max}) kWeightRange = (min: 30, max: 300);
 const ({num min, num max}) kHeightRange = (min: 100, max: 250);
 const ({num min, num max}) kAgeRange = (min: 13, max: 100);
 
-/// The lowest daily target that may be shown or stored. Mirrors
-/// `settings/logic/profile_payload.dart` and the server's
-/// `calorieTarget = max(., 500)`; without it an IN-RANGE 30 kg / 100 cm /
-/// 100 yr sedentary cut computes a NEGATIVE target, and the server clamps only
-/// the calories, so the negative macro grams would be stored as sent.
-const double kCalorieFloor = 500;
-
 /// One of the four inputs the TDEE maths needs before screen 6 can show a
 /// number. Named rather than counted so the screen that collects a missing one
 /// is looked UP instead of hard-coded — see `screenForMissingTargetInputs`.
@@ -139,17 +132,15 @@ class OnboardingAnswers {
   MacroTargets? get targets {
     final tdee = tdeeKcal;
     if (tdee == null) return null;
-    final raw = calcDailyTargets(
+    // Floored inside, grams re-derived, so the macros add up to the number.
+    return calcDailyTargets(
       tdee,
       goal,
       aggression,
       carbSplit,
+      biologicalSex!,
       deficitOverride,
     );
-    if (raw.calories >= kCalorieFloor) return raw;
-    // Clamp then RE-DERIVE the grams, or the three macro figures no longer
-    // add up to the number above them.
-    return calcMacroGrams(kCalorieFloor, carbSplit);
   }
 
   /// kcal added or removed per day at the current goal + pace — the number the

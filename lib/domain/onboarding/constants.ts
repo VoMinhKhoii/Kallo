@@ -1,6 +1,7 @@
 import type {
   ActivityLevel,
   Aggression,
+  BiologicalSex,
   CarbSplit,
   CookingHabits,
   Goal,
@@ -32,6 +33,16 @@ export const CARB_SPLIT_RATIOS: Record<
 
 // 1 kg fat ≈ 7,700 kcal → daily kcal = kg/week × 1100
 export const AGGRESSION_KCAL_PER_KG = 1100;
+
+// Lowest daily target a cut may set: the common 1,200 kcal (women) /
+// 1,500 kcal (men) minimum, capped at maintenance (calcCalorieFloor).
+export const CALORIE_FLOOR_KCAL: Record<BiologicalSex, number> = {
+  female: 1200,
+  male: 1500,
+};
+
+// Absolute backstop when the server cannot tell the sex or TDEE behind a target.
+export const MIN_CALORIE_TARGET_KCAL = 500;
 
 // Neutral cooking habit defaults — used when no profile data is available
 export const NEUTRAL_COOKING_DEFAULTS: CookingHabits = {
