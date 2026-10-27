@@ -100,33 +100,69 @@ describe('verifyUser', () => {
     await expect(verifyUser(supabase, createFakeDb().db)).rejects.toBe(error);
   });
 
-  // The real auth-js decoder: none of these reach the network. `eA.eA.eA`
-  // makes it throw a plain SyntaxError (Codex, local review).
+  // The real auth-js client, its network stubbed. `eA.eA.eA` makes the decoder
+  // throw a SyntaxError and an `alg` that is not a string a TypeError (Codex);
+  // both fall back to the Auth server, which rejects them.
+  const b64 = (value: unknown) =>
+    Buffer.from(JSON.stringify(value)).toString('base64url');
+  const future = Math.floor(Date.now() / 1000) + 3600;
+
+  function realClient(fetchImpl: typeof fetch) {
+    return createClient('https://example.supabase.co', 'key', {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: fetchImpl },
+    }) as unknown as Parameters<typeof verifyUser>[0];
+  }
+
+  const rejectsToken = vi.fn(
+    async () =>
+      new Response(
+        JSON.stringify({ code: 403, error_code: 'bad_jwt', msg: 'bad JWT' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      )
+  );
+
   it.each([
     'eA.eA.eA',
     'bnVsbA.bnVsbA.eA',
     'a!b.c.d',
     'bad',
+    `${b64({ alg: 7 })}.${b64({ sub: 'u1', exp: future })}.c2ln`,
   ])('is signed out for the malformed Bearer token %s', async (bad) => {
-    const real = createClient('https://example.supabase.co', 'key', {
-      auth: { persistSession: false, autoRefreshToken: false },
-    }) as unknown as Parameters<typeof verifyUser>[0];
     const fake = createFakeDb();
 
-    expect(await verifyUser(real, fake.db, bad)).toBeNull();
+    expect(
+      await verifyUser(realClient(rejectsToken as typeof fetch), fake.db, bad)
+    ).toBeNull();
     expect(fake.execute).not.toHaveBeenCalled();
   });
 
-  it('rethrows a decoder-time failure on a well-formed token', async () => {
-    const wellFormed = [{ alg: 'ES256' }, { sub: 'u1' }]
-      .map((part) => Buffer.from(JSON.stringify(part)).toString('base64url'))
-      .concat('c2ln')
-      .join('.');
-    const failure = new Error('importKey failed');
-    getClaims.mockRejectedValue(failure);
+  it('throws when the Auth server cannot be reached for an undecodable token', async () => {
+    const offline = vi.fn(async () => {
+      throw new TypeError('fetch failed');
+    });
     await expect(
-      verifyUser(supabase, createFakeDb().db, wellFormed)
-    ).rejects.toBe(failure);
+      verifyUser(
+        realClient(offline as unknown as typeof fetch),
+        createFakeDb().db,
+        'eA.eA.eA'
+      )
+    ).rejects.toThrow();
+  });
+
+  it('drops a cookie session whose token the decoder throws on', async () => {
+    getClaims.mockRejectedValue(new SyntaxError('JSON Parse error'));
+    const getUser = vi.fn().mockResolvedValue({
+      data: { user: null },
+      error: new AuthApiError('bad jwt', 403, 'bad_jwt'),
+    });
+    const cookieClient = {
+      auth: { getClaims, getUser, signOut },
+    } as unknown as Parameters<typeof verifyUser>[0];
+
+    expect(await verifyUser(cookieClient, createFakeDb().db)).toBeNull();
+    expect(getUser).toHaveBeenCalledWith(undefined);
+    expect(signOut).toHaveBeenCalledWith({ scope: 'local' });
   });
 
   it('throws when the session query fails', async () => {

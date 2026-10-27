@@ -53,11 +53,13 @@ export async function verifyUser(
   let result: Awaited<ReturnType<typeof supabase.auth.getClaims>>;
   try {
     result = await supabase.auth.getClaims(accessToken);
-  } catch (error) {
-    // auth-js throws a plain error (not an AuthError) on a token whose parts
-    // are not base64url JSON. That is a bad credential, not an outage.
-    if (accessToken !== undefined && isMalformedJwt(accessToken)) return null;
-    throw error;
+  } catch {
+    // auth-js throws a plain error (SyntaxError, TypeError) on token content it
+    // cannot decode, e.g. `eA.eA.eA` or a header whose `alg` is not a string,
+    // whether the token came in a header or a cookie. Rather than list every
+    // such shape, ask the Auth server, as `getUser()` always did: it rejects a
+    // bad token, and an outage still throws.
+    return verifyWithAuthServer(supabase, accessToken);
   }
   const { data, error } = result;
   if (error) {
@@ -98,23 +100,29 @@ export async function verifyUser(
   };
 }
 
-const BASE64URL = /^[A-Za-z0-9_-]+$/;
-
-/** True when the token is not three base64url parts with a JSON object header
- *  and payload — what auth-js's decoder needs before it can check anything. */
-function isMalformedJwt(token: string) {
-  const parts = token.split('.');
-  if (parts.length !== 3 || !parts.every((part) => BASE64URL.test(part))) {
-    return true;
+/** The old path, kept for tokens auth-js cannot decode locally (rare). */
+async function verifyWithAuthServer(
+  supabase: ServerSupabase,
+  accessToken: string | undefined
+): Promise<VerifiedUser | null> {
+  const { data, error } = await supabase.auth.getUser(accessToken);
+  if (error || !data.user) {
+    if (error && !isSessionGone(error)) throw error;
+    // Drop a cookie session holding the bad token, so the next request does
+    // not trip on it again; a Bearer client stores none.
+    await supabase.auth.signOut({ scope: 'local' });
+    return null;
   }
-  try {
-    return parts.slice(0, 2).some((part) => {
-      const value = JSON.parse(Buffer.from(part, 'base64url').toString());
-      return typeof value !== 'object' || value === null;
-    });
-  } catch {
-    return true;
-  }
+  const user = data.user;
+  return {
+    id: user.id,
+    email: user.email ?? null,
+    userMetadata: user.user_metadata ?? {},
+    createdAt: new Date(user.created_at).toISOString(),
+    lastSignInAt: user.last_sign_in_at
+      ? new Date(user.last_sign_in_at).toISOString()
+      : null,
+  };
 }
 
 /**
