@@ -22,17 +22,27 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 function reservedAt(width: number) {
   let height = stripHeight(sizeAtCap(FEED_MACRO_CAP));
   for (const step of macroSummarySteps()) {
-    if (width < step.maxWidth + 1) height = step.height;
+    if (width < step.maxWidth) height = step.height;
   }
   return height;
 }
 
+const actual = (width: number) => stripHeight(sizeStrip(width, FEED_MACRO_CAP));
+
 describe('MacroSummarySkeleton', () => {
   it('reserves the strip height for every column width (phones, the narrow column, desktop)', () => {
-    for (let width = 240; width <= 800; width++) {
-      expect(reservedAt(width), `at ${width}px`).toBe(
-        stripHeight(sizeStrip(width, FEED_MACRO_CAP))
-      );
+    // Quarter-pixel steps: the strip measures fractional widths (Codex, local
+    // review: 320.5 px reserved the stacked 204.5 px for a 98 px strip).
+    for (let width = 240; width <= 800; width += 0.25) {
+      expect(reservedAt(width), `at ${width}px`).toBe(actual(width));
+    }
+  });
+
+  it('switches exactly where the strip does, on both sides of every step', () => {
+    for (const { maxWidth } of macroSummarySteps()) {
+      for (const width of [maxWidth - 0.001, maxWidth + 0.001]) {
+        expect(reservedAt(width), `at ${width}px`).toBe(actual(width));
+      }
     }
   });
 
@@ -47,7 +57,7 @@ describe('MacroSummarySkeleton', () => {
     );
     for (const { maxWidth, height } of macroSummarySteps()) {
       expect(css).toContain(
-        `@container (width < ${maxWidth + 1}px){.macro-summary-skeleton{height:${height}px}}`
+        `@container (width < ${maxWidth}px){.macro-summary-skeleton{height:${height}px}}`
       );
     }
   });

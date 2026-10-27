@@ -16,22 +16,33 @@ import {
 
 /**
  * The height the feed's gauge strip takes at each column width, as steps from
- * the widest down: `{ maxWidth, height }` applies at or below `maxWidth`, the
- * last matching step wins, and above the first step the strip is at its cap.
+ * the widest down: `{ maxWidth, height }` applies below `maxWidth` (the exact,
+ * fractional width where the strip changes), the last matching step wins, and
+ * above the first step the strip is at its cap.
  * Read off `sizeStrip` itself, so it cannot drift from the strip it reserves
  * for — the dials shrink in ~3 px steps below ~400 px and stack into two rows
  * below ~324 px (prod, 2026-10-27: 101 px at a 360 px phone, 115 px on
  * desktop, 110 px in the column beside the timeline at 1024).
  */
 export function macroSummarySteps() {
+  const heightAt = (width: number) =>
+    stripHeight(sizeStrip(width, FEED_MACRO_CAP));
   const steps: { maxWidth: number; height: number }[] = [];
   let previous = stripHeight(sizeAtCap(FEED_MACRO_CAP));
   for (let width = 800; width >= 200; width--) {
-    const height = stripHeight(sizeStrip(width, FEED_MACRO_CAP));
-    if (height !== previous) {
-      steps.push({ maxWidth: width, height });
-      previous = height;
+    const height = heightAt(width);
+    if (height === previous) continue;
+    // The strip measures fractional widths, so find where in (width, width+1]
+    // it changes: the first width that already gives the wider height.
+    let low = width;
+    let high = width + 1;
+    while (high - low > 1e-4) {
+      const mid = (low + high) / 2;
+      if (heightAt(mid) === previous) high = mid;
+      else low = mid;
     }
+    steps.push({ maxWidth: Math.round(high * 1e4) / 1e4, height });
+    previous = height;
   }
   return steps;
 }
@@ -44,7 +55,7 @@ const SKELETON_CSS = [
   `.${SKELETON_CLASS}{height:${stripHeight(sizeAtCap(FEED_MACRO_CAP))}px}`,
   ...macroSummarySteps().map(
     ({ maxWidth, height }) =>
-      `@container (width < ${maxWidth + 1}px){.${SKELETON_CLASS}{height:${height}px}}`
+      `@container (width < ${maxWidth}px){.${SKELETON_CLASS}{height:${height}px}}`
   ),
 ].join('');
 
