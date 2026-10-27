@@ -18,10 +18,15 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 // placeholder drew the dial silhouettes only, shorter than the strip that
 // replaces it. It must hold the strip's own height — the number GaugeStrip
 // reserves for itself before it measures.
+// Built once: the bisection behind it is what the sweep below would otherwise
+// redo for each of its ~2,000 widths (Codex: 6.4 s, past the 5 s timeout).
+const STEPS = macroSummarySteps();
+const CAP_HEIGHT = stripHeight(sizeAtCap(FEED_MACRO_CAP));
+
 /** What the placeholder's container-query rules resolve to at this width. */
 function reservedAt(width: number) {
-  let height = stripHeight(sizeAtCap(FEED_MACRO_CAP));
-  for (const step of macroSummarySteps()) {
+  let height = CAP_HEIGHT;
+  for (const step of STEPS) {
     if (width < step.maxWidth) height = step.height;
   }
   return height;
@@ -39,7 +44,7 @@ describe('MacroSummarySkeleton', () => {
   });
 
   it('switches exactly where the strip does, on both sides of every step', () => {
-    for (const { maxWidth } of macroSummarySteps()) {
+    for (const { maxWidth } of STEPS) {
       for (const width of [maxWidth - 0.001, maxWidth + 0.001]) {
         expect(reservedAt(width), `at ${width}px`).toBe(actual(width));
       }
@@ -55,7 +60,7 @@ describe('MacroSummarySkeleton', () => {
     expect(css).toContain(
       `.macro-summary-skeleton{height:${stripHeight(sizeAtCap(FEED_MACRO_CAP))}px}`
     );
-    for (const { maxWidth, height } of macroSummarySteps()) {
+    for (const { maxWidth, height } of STEPS) {
       expect(css).toContain(
         `@container (width < ${maxWidth}px){.macro-summary-skeleton{height:${height}px}}`
       );
