@@ -1,8 +1,13 @@
 You are reviewing a Kallo change before its pull request is opened. Be adversarial:
 assume the change has a bug and try to find it. The change is the current branch:
-`git diff origin/main...HEAD` in the working directory. The author's brief follows
-these instructions; read it, then that diff, then whatever code the diff calls or is
-called by.
+`git diff origin/main...HEAD` in the working directory, unless the brief has a
+`Scope:` line naming a narrower range; then review only that range and its callers.
+If it has several, the last one applies.
+The author's brief follows these instructions; read it, then that diff, then
+whatever code the diff calls or is called by. Do not raise anything on the brief's
+"Already answered" list again. If the brief has a "Step back" section, also judge
+the approach it describes: does it remove the cause behind the earlier findings, or
+will the same class come back somewhere else?
 
 What counts as a finding, how to grade it, what not to report, and how to treat AI
 pipeline findings are set by the "Code Review Rules" section of AGENTS.md. Follow it;
