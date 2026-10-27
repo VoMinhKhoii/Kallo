@@ -15,8 +15,9 @@ export const spendPolicies = {
    * person logging a day's meals in one sitting is normal, and the slot
    * already caps one account at one analysis running.
    *
-   * The slot's lifetime is past the route's 60 s `maxDuration`, so a request
-   * that died without releasing frees it on its own. Fail-closed: every
+   * The slot's lifetime (90 s) is past the route's 60 s `maxDuration` and
+   * Cloud Run's 60 s request timeout, so a request that died without
+   * releasing frees it on its own. Fail-closed: every
    * analysis spends AI money. App Review accounts take the slot but are not
    * counted against the day (`app/api/analyze-meal/_lib/analysis-guard.ts`).
    */
@@ -46,11 +47,14 @@ export const spendPolicies = {
    * decoded, so one account cannot fan out parallel `sharp` decodes on a small
    * pool; `ocrGlobalDaily` and the AI spend brake are charged only right
    * before the provider call (`lib/infra/rate-limit/ocr-guard.ts`).
+   *
+   * Slot lifetime 45 s: the upload read and decode, then the provider call,
+   * which aborts at 20 s (`NUTRITION_LABEL_OCR_DEADLINE_MS`).
    */
   labelOcr: {
     route: 'ocr:scan',
     limits: { perMinute: 5, perHour: 30, perDay: 100 },
-    concurrency: { limit: 1, ttlSeconds: 90, retryAfterSeconds: 5 },
+    concurrency: { limit: 1, ttlSeconds: 45, retryAfterSeconds: 5 },
     keyKinds: ['user'],
     failMode: 'closed',
   },
@@ -60,11 +64,17 @@ export const spendPolicies = {
    * call, fired on a 300 ms debounce while the user types, so the minute
    * ceiling clears fast typing. Two slots because one search already runs its
    * two arms in parallel.
+   *
+   * Slot lifetime 20 s. A search takes tens of milliseconds (both arms ran in
+   * 5-36 ms for a year of four meals a day, 11k items), so the lifetime only
+   * has to outlast waiting for a pooled connection, which postgres.js bounds
+   * at 10 s (`connect_timeout`). It is also how long a lost release keeps
+   * refusing the picker, so it stays short.
    */
   relogCandidates: {
     route: 'relog:candidates',
     limits: { perMinute: 60, perHour: 900, perDay: 5000 },
-    concurrency: { limit: 2, ttlSeconds: 90, retryAfterSeconds: 2 },
+    concurrency: { limit: 2, ttlSeconds: 20, retryAfterSeconds: 2 },
     keyKinds: ['user'],
     failMode: 'degraded',
   },
@@ -72,20 +82,26 @@ export const spendPolicies = {
   /**
    * Every relog write (staging and the instant save share it): each holds
    * `FOR UPDATE` on the source meals, so one at a time per user.
+   *
+   * Slot lifetime 30 s: one short transaction, plus the same 10 s wait for a
+   * pooled connection as the search, plus a wait on the meals' row locks.
    */
   relogWrite: {
     route: 'relog:write',
     limits: { perMinute: 12, perHour: 120, perDay: 500 },
-    concurrency: { limit: 1, ttlSeconds: 90, retryAfterSeconds: 5 },
+    concurrency: { limit: 1, ttlSeconds: 30, retryAfterSeconds: 5 },
     keyKinds: ['user'],
     failMode: 'degraded',
   },
 
-  /** Entitlement reconcile: one RevenueCat round trip per call. */
+  /**
+   * Entitlement reconcile: one RevenueCat round trip per call. Slot lifetime
+   * 30 s: that call aborts at 8 s (`revenuecat/client.ts`), then a few writes.
+   */
   entitlementsReconcile: {
     route: 'billing:reconcile',
     limits: { perMinute: 3, perHour: 20, perDay: 100 },
-    concurrency: { limit: 1, ttlSeconds: 90, retryAfterSeconds: 5 },
+    concurrency: { limit: 1, ttlSeconds: 30, retryAfterSeconds: 5 },
     keyKinds: ['user'],
     failMode: 'degraded',
   },
