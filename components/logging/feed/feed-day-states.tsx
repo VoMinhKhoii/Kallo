@@ -8,6 +8,7 @@ import {
   FEED_MACRO_CAP,
   gaugeStripSizes,
 } from '@/lib/core/ui/gauge-strip-layout';
+import { sizeAtCap, stripHeight } from '@/lib/core/ui/gauge-strip-metrics';
 
 /**
  * The dial row's own silhouette — one wide mark for the day, three narrow ones
@@ -27,7 +28,12 @@ export function MacroSummarySkeleton() {
     <div
       aria-hidden="true"
       className="flex animate-pulse items-start justify-center"
-      style={{ gap }}
+      // The silhouette alone came out 17 px shorter than the strip it stands
+      // for (it leaves out the readouts under each dial), so every load of the
+      // logging page pushed the feed down when the day arrived (layout shift
+      // 0.095 on 5 of 5 prod loads). Reserve the strip's own height, the same
+      // number GaugeStrip reserves before it measures.
+      style={{ gap, height: stripHeight(sizeAtCap(FEED_MACRO_CAP)) }}
     >
       <div
         className="shrink-0 rounded-full bg-kallo-track"
