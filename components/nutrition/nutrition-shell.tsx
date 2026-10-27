@@ -4,9 +4,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { MotionConfig } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
-import { getNutritionOverview } from '@/lib/domain/nutrition/actions/overview/get-overview';
 import { buildNutritionView } from '@/lib/domain/nutrition/bucket-detail';
-import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
+import { nutritionOverviewQueryOptions } from '@/lib/domain/nutrition/nutrition-client';
 import type {
   NutritionDayScope,
   NutritionRangeInput,
@@ -37,14 +36,8 @@ export function NutritionShell() {
   const today = useMemo(() => localIsoDate(), []);
 
   const overviewQuery = useQuery({
-    queryKey: nutritionKeys.overview(range, dayScope, timezoneOffset ?? 'utc'),
-    queryFn: () =>
-      getNutritionOverview({ range, timezoneOffset, days: dayScope }),
+    ...nutritionOverviewQueryOptions(range, dayScope, timezoneOffset),
     retry: false,
-    // 5 minutes — overview is computed from the user's logged meals which
-    // change at most once per logging action; a longer staleTime avoids
-    // refetching on every focus/visibility change.
-    staleTime: 5 * 60_000,
     // Render the previous range's data while a new range fetches so the
     // layout stays in place rather than collapsing to skeleton.
     placeholderData: keepPreviousData,

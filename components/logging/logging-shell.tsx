@@ -18,9 +18,9 @@ import {
 } from '@/components/logging/sidebar/mobile-timeline-picker';
 import { TimelineSidebar } from '@/components/logging/sidebar/timeline-sidebar';
 import { todayDateString } from '@/components/logging/sidebar/timeline-utils';
+import { mealDatesQueryOptions } from '@/hooks/meals/queries/meal-dates-query';
 import { usePrefetchDates } from '@/hooks/meals/queries/use-prefetch-dates';
 import { usePathname, useRouter } from '@/i18n/navigation';
-import { loadMealDates } from '@/lib/actions/meals/meal-dates';
 import { buildMealDateIndex } from '@/lib/domain/logging/meal-date-index';
 import type { LoggingProfile } from '@/lib/domain/logging/types';
 
@@ -67,11 +67,7 @@ export function LoggingShell({
     isError,
     isFetching,
     refetch,
-  } = useQuery({
-    queryKey: ['meal-dates', profile.userId, timezoneOffset],
-    queryFn: () => loadMealDates({ timezoneOffset }),
-    staleTime: 60_000,
-  });
+  } = useQuery(mealDatesQueryOptions(profile.userId, timezoneOffset));
 
   // One index, built once, for both surfaces. This used to be two derivations
   // over the same rows — a `dates` array for the mobile strip and a

@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { useNavIntent } from '@/hooks/navigation/route-prefetch';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 
@@ -21,10 +22,12 @@ export function MobileTabLink({
   active,
   badged,
 }: MobileTabLinkProps) {
+  const intent = useNavIntent(href);
   return (
     <li className="flex h-full flex-1">
       <Link
         href={href}
+        {...intent}
         aria-label={label}
         aria-current={active ? 'page' : undefined}
         className={cn(

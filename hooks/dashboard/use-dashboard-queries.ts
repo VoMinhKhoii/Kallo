@@ -5,13 +5,13 @@ import { useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { useDailyMeals } from '@/hooks/meals/queries/use-daily-meals';
 import { useWeightSummary } from '@/hooks/weight/use-weight-summary';
-import { loadCalorieAdherenceHeatmap } from '@/lib/actions/tracking/dashboard';
 import type {
   DashboardProfile,
   HeatmapRange,
   TimeRange,
 } from '@/lib/core/types/dashboard';
 import { buildCalorieAdherenceHeatmapData } from '@/lib/domain/dashboard/adherence';
+import { fetchCalorieAdherenceHeatmap } from '@/lib/domain/dashboard/dashboard-client';
 import {
   buildTodayNutritionData,
   mapPersistedMealsToMealEntries,
@@ -22,7 +22,6 @@ interface UseDashboardQueriesInput {
   profile: DashboardProfile;
   weightRange: TimeRange;
   heatmapRange: HeatmapRange;
-  hasMeasuredProgress: boolean;
   hasMeasuredHeatmap: boolean;
   heatmapLoadErrorMessage: string;
 }
@@ -32,20 +31,19 @@ export function useDashboardQueries({
   profile,
   weightRange,
   heatmapRange,
-  hasMeasuredProgress,
   hasMeasuredHeatmap,
   heatmapLoadErrorMessage,
 }: UseDashboardQueriesInput) {
   const heatmapErrorShown = useRef(false);
-  const weightSummaryQuery = useWeightSummary(weightRange, {
-    enabled: hasMeasuredProgress,
-  });
+  // Not gated on the progress card's layout: the range is fixed, so the read
+  // starts with the page instead of a render later.
+  const weightSummaryQuery = useWeightSummary(weightRange);
   const heatmapQuery = useQuery({
     queryKey: ['dashboard', 'heatmapData', heatmapRange],
     queryFn: () => {
       const timezoneOffset = new Date().getTimezoneOffset();
 
-      return loadCalorieAdherenceHeatmap({
+      return fetchCalorieAdherenceHeatmap({
         range: heatmapRange,
         timezoneOffset,
       });

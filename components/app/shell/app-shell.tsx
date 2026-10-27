@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { WizardShell } from '@/components/onboarding/wizard-shell';
+import { RoutePrefetchProvider } from '@/hooks/navigation/route-prefetch';
 import { useRouter } from '@/i18n/navigation';
 import {
   type getOnboardingProfile,
@@ -148,38 +149,40 @@ export function AppShell({
   // margin (the desktop's p-3 frame stacked on top of it read as a web page in
   // a box). The top edge clears the notch via the safe-area inset.
   return (
-    <div
-      data-app-shell=""
-      className="fixed inset-0 flex min-w-0 flex-col overflow-clip bg-kallo-surface md:flex-row"
-    >
-      <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-clip pt-[env(safe-area-inset-top)] md:p-3">
-        {/* Desktop sidebar — hidden on mobile */}
-        <div className="hidden md:block">
-          <DesktopSidebar
-            user={user}
-            {...onboarding}
-            initialState={initialSidebarState}
-            initialExpandMode={initialSidebarExpandMode}
+    <RoutePrefetchProvider userId={initialProfile?.userId}>
+      <div
+        data-app-shell=""
+        className="fixed inset-0 flex min-w-0 flex-col overflow-clip bg-kallo-surface md:flex-row"
+      >
+        <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-clip pt-[env(safe-area-inset-top)] md:p-3">
+          {/* Desktop sidebar — hidden on mobile */}
+          <div className="hidden md:block">
+            <DesktopSidebar
+              user={user}
+              {...onboarding}
+              initialState={initialSidebarState}
+              initialExpandMode={initialSidebarExpandMode}
+            />
+          </div>
+
+          {/* Page content (mobile gets a slim header row above it) */}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip">
+            <MobileHeader user={user} {...onboarding} />
+            {children}
+          </div>
+        </div>
+
+        <MobileTabBar />
+
+        {onboardingOpen && (
+          <WizardShell
+            initialStep={hasStepOneLocaleDraft ? 1 : resumeStep}
+            initialProfile={initialProfile}
+            onClose={handleClose}
+            onComplete={handleComplete}
           />
-        </div>
-
-        {/* Page content (mobile gets a slim header row above it) */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip">
-          <MobileHeader user={user} {...onboarding} />
-          {children}
-        </div>
+        )}
       </div>
-
-      <MobileTabBar />
-
-      {onboardingOpen && (
-        <WizardShell
-          initialStep={hasStepOneLocaleDraft ? 1 : resumeStep}
-          initialProfile={initialProfile}
-          onClose={handleClose}
-          onComplete={handleComplete}
-        />
-      )}
-    </div>
+    </RoutePrefetchProvider>
   );
 }
