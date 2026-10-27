@@ -473,7 +473,7 @@
   --kallo-hover: #2c272d;
   --kallo-track: #2c282d;
   --kallo-segment: #1e1b1f;
-  --kallo-thumb: #3b353c;
+  --kallo-thumb: #4a434b;
   /* The flat stand-in for the brand sweep (the button paints the gradient
      itself, below); ink on it, never white. */
   --kallo-btn: #ecc9c3;

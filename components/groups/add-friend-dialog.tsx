@@ -66,13 +66,13 @@ export function AddFriendDialog({
         <TabsList className="w-full rounded-xl bg-kallo-border/60 p-1">
           <TabsTrigger
             value="friend"
-            className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[13px] text-kallo-text-muted transition-colors data-[state=active]:bg-kallo-thumb data-[state=active]:text-kallo-text data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-kallo-border"
+            className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[13px] text-kallo-text-muted transition-colors data-[state=active]:text-kallo-text data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-kallo-border"
           >
             {t('tabAddFriend')}
           </TabsTrigger>
           <TabsTrigger
             value="group"
-            className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[13px] text-kallo-text-muted transition-colors data-[state=active]:bg-kallo-thumb data-[state=active]:text-kallo-text data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-kallo-border"
+            className="flex-1 rounded-lg py-1.5 font-medium font-sans-display text-[13px] text-kallo-text-muted transition-colors data-[state=active]:text-kallo-text data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-kallo-border"
           >
             {t('tabCreateGroup')}
           </TabsTrigger>
