@@ -50,11 +50,17 @@ class DashboardCache {
   /// write, and the saved copy cannot.
   static void forget(String userId) => _forgotten.add(userId);
 
+  /// [forget] for every account, for a write path that invalidates the whole
+  /// bundle family and has no single user id to hand (the Circle meal writes).
+  static void forgetAll() => _forgetAll = true;
+  static bool _forgetAll = false;
+
   @visibleForTesting
   static void resetSession() {
     _served.clear();
     _forgotten.clear();
     _pending.clear();
+    _forgetAll = false;
   }
 
   /// The saved bundle JSON for [userId] on [date] in zone [tz], the first time
@@ -64,7 +70,7 @@ class DashboardCache {
     String date,
     int tz,
   ) async {
-    if (_forgotten.contains(userId)) return null;
+    if (_forgetAll || _forgotten.contains(userId)) return null;
     if (!_served.add('$userId|$date|$tz')) return null;
     try {
       final file = await _file(userId);

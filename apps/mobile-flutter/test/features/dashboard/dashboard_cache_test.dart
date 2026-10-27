@@ -179,6 +179,13 @@ void main() {
     expect(api.calls, 1);
   });
 
+  test('a write that refreshes every account (a Circle meal) skips the saved '
+      'day too', () async {
+    await cache.save(_userId, _date, tz, _bundleJson(70));
+    DashboardCache.forgetAll();
+    expect(await cache.takeOnce(_userId, _date, tz), isNull);
+  });
+
   test('a build superseded by an account change saves nothing', () async {
     final session = StateProvider<Session?>((ref) => _session());
     final api = _Api(80);

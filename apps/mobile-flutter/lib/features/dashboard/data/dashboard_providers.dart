@@ -77,6 +77,11 @@ typedef DashboardArgs = ({String userId, String date});
 int localTimezoneOffsetMinutes() => -DateTime.now().timeZoneOffset.inMinutes;
 
 /// `useDashboard` → one aggregate fetch for the whole screen.
+///
+/// A WRITE that invalidates this provider must also call
+/// [DashboardCache.forget] (or [DashboardCache.forgetAll]): invalidating a
+/// family entry nobody has read yet does nothing, so the first read after the
+/// write would otherwise get the copy saved for a fast launch.
 final dashboardBundleProvider =
     FutureProvider.family<DashboardBundle, DashboardArgs>((ref, args) async {
       // Not autoDispose, so an error outlives the session that caused it —
@@ -222,5 +227,6 @@ Future<void> logWeight(
     'loggedDate': loggedDate,
     'weightKg': weightKg,
   });
+  DashboardCache.forget(args.userId);
   ref.invalidate(dashboardBundleProvider(args));
 }
