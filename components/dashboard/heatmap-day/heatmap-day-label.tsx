@@ -9,7 +9,11 @@ import type { HeatmapCell } from '@/lib/core/types/dashboard';
 export interface HeatmapDayLabel {
   /** "Tue, Oct 20 · 1,240 kcal" — kcal only when something was logged. */
   heading: string;
+  /** The full status, for the cell's accessible name. */
   status: string;
+  /** The tooltip's second line. Only an awaiting day has one: every other
+   *  day's colour already says its status. */
+  note: string | null;
 }
 
 /** What a heatmap day says about itself: its date and kcal, then its status. */
@@ -38,7 +42,12 @@ export function useHeatmapDayLabel() {
       cell.calories === null
         ? day
         : `${day} · ${t('kcal', { calories: Math.round(cell.calories) })}`;
-    return { heading, status: statusOf(cell) };
+    const status = statusOf(cell);
+    return {
+      heading,
+      status,
+      note: cell.status === 'partial' ? status : null,
+    };
   };
 }
 
@@ -49,7 +58,7 @@ export function HeatmapDayTooltip({ label }: { label: HeatmapDayLabel }) {
       className="flex flex-col items-center bg-kallo-text text-kallo-surface text-xs"
     >
       <span className="font-medium tabular-nums">{label.heading}</span>
-      <span className="opacity-70">{label.status}</span>
+      {label.note ? <span className="opacity-70">{label.note}</span> : null}
     </TooltipContent>
   );
 }
