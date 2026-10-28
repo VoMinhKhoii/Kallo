@@ -11,10 +11,8 @@ import type { LoggingDayData } from '@/lib/api/contracts/meals';
 import type { getOnboardingProfile } from '@/lib/api/contracts/onboarding';
 import type { WeightSummaryData } from '@/lib/api/contracts/weight';
 import type { HeatmapData } from '@/lib/core/types/dashboard';
-import {
-  heatmapRangeSchema,
-  timezoneOffsetSchema,
-} from '@/lib/core/validation/primitives';
+import { heatmapRangeSchema } from '@/lib/core/validation/dashboard';
+import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 
 /**
  * Query schema for `GET /api/v1/dashboard/heatmap`. The heatmap range is

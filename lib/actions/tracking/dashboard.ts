@@ -10,10 +10,8 @@ import type {
   HeatmapRange,
   VerdictData,
 } from '@/lib/core/types/dashboard';
-import {
-  heatmapRangeSchema,
-  timezoneOffsetSchema,
-} from '@/lib/core/validation/primitives';
+import { heatmapRangeSchema } from '@/lib/core/validation/dashboard';
+import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 import {
   buildCalorieAdherenceHeatmapData,
   getLocalDateKey,

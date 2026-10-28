@@ -1,6 +1,6 @@
-import { dayKeyToUtcDate } from '@/lib/core/date/day-key';
+import { dayKeyToUtcDate, mondayIndex } from '@/lib/core/date/day-key';
 import type { HeatmapRange } from '@/lib/core/types/dashboard';
-import { MAX_HEATMAP_DAYS } from '@/lib/core/validation/primitives';
+import { MAX_HEATMAP_DAYS } from '@/lib/core/validation/dashboard';
 
 interface ChooseRenderedHeatmapRangeInput {
   preferredRange: HeatmapRange;
@@ -46,11 +46,12 @@ export function heatmapRangeDays(range: HeatmapRange): number | null {
 
 /** Week columns a range draws — what the skeleton holds before data. */
 export function heatmapWeekCount(range: HeatmapRange): number {
-  if (range === 'year') return 53;
-  if (range === '30d') return 5;
+  const days = heatmapRangeDays(range);
+  if (days === null) return 53;
+  // 90 days rarely starts on a Monday, so it usually spills into a 14th
+  // column; a fitted span starts on one and fills its weeks exactly.
   if (range === '90d') return RANGE_90_WEEKS;
-  // A fitted span starts on a Monday, so it fills its columns exactly.
-  return Math.ceil(Number.parseInt(range, 10) / 7);
+  return Math.ceil(days / 7);
 }
 
 function cellSizeFor(width: number, columns: number, gap: number): number {
@@ -71,7 +72,7 @@ function fittedRange(width: number, todayDate: string): HeatmapRange {
     Math.floor(MAX_HEATMAP_DAYS / 7)
   );
   if (weeks <= RANGE_90_WEEKS) return '90d';
-  const todayIndex = (dayKeyToUtcDate(todayDate).getUTCDay() + 6) % 7;
+  const todayIndex = mondayIndex(dayKeyToUtcDate(todayDate));
   return `${(weeks - 1) * 7 + todayIndex + 1}d`;
 }
 

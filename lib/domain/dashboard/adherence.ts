@@ -1,5 +1,6 @@
 import {
   dayKeyToUtcDate,
+  mondayIndex,
   toLocalDayKey,
   toUtcDayKey,
 } from '@/lib/core/date/day-key';
@@ -12,8 +13,6 @@ import type {
 } from '@/lib/core/types/dashboard';
 import { classifyDayCompleteness } from '@/lib/domain/nutrition/pattern/completeness';
 
-export type DashboardTimeRange = HeatmapRange;
-
 export interface DailyCalories {
   date: string;
   calories: number;
@@ -22,7 +21,7 @@ export interface DailyCalories {
 }
 
 interface BuildCalorieAdherenceHeatmapInput {
-  range: DashboardTimeRange;
+  range: HeatmapRange;
   dailyCalories: DailyCalories[];
   calorieTarget: number | null;
   timezoneOffset: number;
@@ -52,10 +51,6 @@ function startOfMondayWeek(date: Date): Date {
   return addDays(date, diffToMonday);
 }
 
-function getMondayDayIndex(date: Date): number {
-  return (date.getUTCDay() + 6) % 7;
-}
-
 function startOfLocalYear(endKey: string): Date {
   return new Date(Date.UTC(Number(endKey.slice(0, 4)), 0, 1));
 }
@@ -65,7 +60,7 @@ function endOfLocalYear(endKey: string): Date {
 }
 
 function getRangeBounds(
-  range: DashboardTimeRange,
+  range: HeatmapRange,
   endDate: Date,
   endKey: string
 ): { startDate: Date; rangeEndDate: Date } {
@@ -203,7 +198,7 @@ export function buildCalorieAdherenceHeatmapData({
     if (calories === undefined) continue;
 
     const weekIndex = Math.floor(daysBetween(startWeek, current) / 7);
-    const dayIndex = getMondayDayIndex(current);
+    const dayIndex = mondayIndex(current);
     // Raw progress (consumed ÷ effective target), ungated — drives the ring.
     const consumedRatio = calories / ringTarget;
 
