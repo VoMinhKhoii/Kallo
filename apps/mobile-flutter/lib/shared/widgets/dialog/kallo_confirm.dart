@@ -48,6 +48,13 @@ import 'kallo_confirm_actions.dart';
 /// dimmed the page less than every other modal in the app; it now passes the
 /// theme's value explicitly.
 ///
+/// **2026-10-28 (user decision): the iOS 26 in-app alert, minus Liquid
+/// Glass.** Measured off a real `UIAlertController` on the iOS 26.3 simulator:
+/// a 318pt card with a 28pt corner, the title and a muted message
+/// left-aligned 30pt in, then pills (see [KalloConfirmActions]). It comes in
+/// as the system's does — a fade from 1.08x — and leaves with no shrink. The
+/// solid card above stays: only the anatomy is the system's.
+///
 /// Returns false for every way out that is not the affirmative — cancel, the
 /// barrier, and the system back gesture alike.
 Future<bool> showKalloConfirm(
@@ -61,10 +68,21 @@ Future<bool> showKalloConfirm(
   // The cue that a decision is being asked for. The two Cupertino sheets this
   // replaced already fired it; now every confirm does.
   HapticFeedback.lightImpact();
-  final confirmed = await showCupertinoDialog<bool>(
+  final confirmed = await showGeneralDialog<bool>(
     context: context,
     barrierDismissible: true,
-    // Explicit, because showCupertinoDialog does NOT read
+    barrierLabel: CupertinoLocalizations.of(context).modalBarrierDismissLabel,
+    transitionDuration: kKalloAlertFade,
+    transitionBuilder: kalloAlertTransition,
+    pageBuilder:
+        (dialogContext, _, __) => _KalloConfirmDialog(
+          title: title,
+          description: description,
+          confirmLabel: confirmLabel,
+          cancelLabel: cancelLabel,
+          destructive: destructive,
+        ),
+    // Explicit, because a raw dialog route does NOT read
     // `dialogTheme.barrierColor`. Same black/50 the nav drawer, the sheets and
     // the web dialog use.
     barrierColor: kKalloAlertBarrier,
@@ -73,14 +91,6 @@ Future<bool> showKalloConfirm(
     // rooted means it is never owned by a surface that can be dismissed out
     // from under it.
     useRootNavigator: true,
-    builder:
-        (dialogContext) => _KalloConfirmDialog(
-          title: title,
-          description: description,
-          confirmLabel: confirmLabel,
-          cancelLabel: cancelLabel,
-          destructive: destructive,
-        ),
   );
   return confirmed ?? false;
 }
@@ -103,85 +113,81 @@ class _KalloConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = description;
-    // Without the theme override the surface renders SF Pro and system blue —
-    // the only two things on screen that would not be the app's.
-    return CupertinoTheme(
-      data: CupertinoThemeData(
-        brightness: Brightness.light,
-        primaryColor: kInk,
-        textTheme: CupertinoTextThemeData(
-          textStyle: dashBody(),
-          actionTextStyle: dashBody(),
-        ),
-      ),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp6),
-          child: SizedBox(
-            width: kKalloAlertWidth,
-            child: KalloAlertSurface(
-              // Outside any Material, `WidgetsApp`'s fallback DefaultTextStyle
-              // is the red/double-yellow-underline error style, and every
-              // `Text(style: …)` here MERGES onto it — which is where the
-              // yellow underline under the title came from. Naming the default
-              // (with an explicit `decoration: none`) is the fix.
-              child: DefaultTextStyle(
-                style: dashBody().copyWith(decoration: TextDecoration.none),
-                // Two long verbs at the 1.3x Dynamic Type cap outgrow a short
-                // phone; the card scrolls rather than overflowing.
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        // The system alert's own content inset: 20 top/bottom,
-                        // 16 sides. The actions below run full-bleed so their
-                        // hairlines reach both edges.
-                        padding: const EdgeInsets.fromLTRB(
-                          KalloSpacing.sp4,
-                          KalloSpacing.sp5,
-                          KalloSpacing.sp4,
-                          KalloSpacing.sp5,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              title,
-                              textAlign: TextAlign.center,
-                              style: kSectionHeader(),
+    // The route hands its page the whole screen, so the card's width is
+    // read from that, not from MediaQuery — which a caller (or a test) may
+    // have narrowed to text settings only.
+    return LayoutBuilder(
+      builder:
+          (context, screen) => Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp6),
+              child: SizedBox(
+                width: kalloAlertWidth(screen.maxWidth),
+                child: KalloAlertSurface(
+                  // Outside any Material, `WidgetsApp`'s fallback DefaultTextStyle
+                  // is the red/double-yellow-underline error style, and every
+                  // `Text(style: …)` here MERGES onto it — which is where the
+                  // yellow underline under the title came from. Naming the default
+                  // (with an explicit `decoration: none`) is the fix.
+                  child: DefaultTextStyle(
+                    style: dashBody().copyWith(decoration: TextDecoration.none),
+                    // Two long verbs at the 1.3x Dynamic Type cap outgrow a short
+                    // phone; the card scrolls rather than overflowing.
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            // The iOS 26 alert's text inset: 30pt at the
+                            // sides, the title's cap ~22pt below the top.
+                            padding: const EdgeInsets.fromLTRB(
+                              kKalloAlertTextInset,
+                              KalloSpacing.sp5,
+                              kKalloAlertTextInset,
+                              KalloSpacing.sp6,
                             ),
-                            if (message != null) ...[
-                              const SizedBox(height: KalloSpacing.sp1),
-                              Text(
-                                message,
-                                textAlign: TextAlign.center,
-                                // Ink, not muted: an alert's message is the
-                                // consequence being consented to, and iOS
-                                // paints it near-black under the title.
-                                style: dashMeta(color: kInk),
-                              ),
-                            ],
-                          ],
-                        ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(title, style: kSheetTitle()),
+                                if (message != null) ...[
+                                  const SizedBox(height: KalloSpacing.sp2),
+                                  // Muted under the title, as the system
+                                  // sets it; Body, not Meta, because 14
+                                  // read as fine print.
+                                  Text(
+                                    message,
+                                    style: dashBody(color: kInkMuted),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              kKalloAlertActionInset,
+                              0,
+                              kKalloAlertActionInset,
+                              kKalloAlertActionInset,
+                            ),
+                            child: KalloConfirmActions(
+                              confirmLabel: confirmLabel,
+                              cancelLabel: cancelLabel,
+                              destructive: destructive,
+                              onConfirm: () => Navigator.of(context).pop(true),
+                              onCancel: () => Navigator.of(context).pop(false),
+                            ),
+                          ),
+                        ],
                       ),
-                      KalloConfirmActions(
-                        confirmLabel: confirmLabel,
-                        cancelLabel: cancelLabel,
-                        destructive: destructive,
-                        onConfirm: () => Navigator.of(context).pop(true),
-                        onCancel: () => Navigator.of(context).pop(false),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 }

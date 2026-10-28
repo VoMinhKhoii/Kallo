@@ -67,7 +67,11 @@ describe('buildCalorieAdherenceHeatmap', () => {
       date: '2026-04-23',
       status: 'partial',
       ratio: null,
+      calories: 400,
     });
+    expect(data.cells[2][4].calories).toBe(2000);
+    // An empty day carries no kcal at all, not a zero.
+    expect(data.cells[0][4].calories).toBeNull();
   });
 
   it('flags a cheat day on its logged cell so the UI can decorate it', () => {

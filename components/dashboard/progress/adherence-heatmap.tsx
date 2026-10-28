@@ -2,9 +2,14 @@
 
 import { motion, useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
+import { useRef, useState } from 'react';
+import { AwaitingDayDialog } from '@/components/dashboard/heatmap-day/awaiting-day-dialog';
+import {
+  HeatmapDayTooltip,
+  useHeatmapDayLabel,
+} from '@/components/dashboard/heatmap-day/heatmap-day-label';
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
@@ -35,6 +40,9 @@ const MAX_SQ: Record<HeatmapRange, number> = { '30d': 32, '90d': 24, year: 28 };
 interface AdherenceHeatmapProps {
   data: HeatmapData;
   range: HeatmapRange;
+  userId: string;
+  /** Today's local day key — today can be reviewed but not yet confirmed. */
+  todayDate: string;
 }
 
 /**
@@ -43,8 +51,20 @@ interface AdherenceHeatmapProps {
  * spans the card's width (sidebar collapsed or not) and the `aspect-square`
  * cells keep themselves square, sizing the rows. No measurement code.
  */
-export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
+export function AdherenceHeatmap({
+  data,
+  range,
+  userId,
+  todayDate,
+}: AdherenceHeatmapProps) {
   const t = useTranslations('dashboard.adherenceHeatmap');
+  const labelOf = useHeatmapDayLabel();
+  // The open awaiting day. Kept after close so the dialog's exit animation
+  // still has its content.
+  const [awaitingCell, setAwaitingCell] = useState<HeatmapCell | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // The cell the dialog opened from, where focus returns on close.
+  const openerRef = useRef<HTMLButtonElement | null>(null);
   // The 'year' range stagger fires up to 371 cells. Honour the OS-level
   // reduced-motion preference so users with vestibular-motion sensitivity
   // don't get a wall of moving cells. They still see the final state.
@@ -52,16 +72,6 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
 
   const gap = GAP[range];
   const numWeeks = data.cells[0]?.length ?? 0;
-
-  const getTooltipText = (cell: HeatmapCell) => {
-    if (cell.status === 'future') return t('future');
-    if (cell.status === 'outside') return t('outside');
-    if (cell.status === 'partial') return t('partial');
-    if (cell.status !== 'logged' || cell.ratio === null) return t('notLogged');
-
-    if (cell.hasCheatMeal) return t('cheatDay');
-    return `${t(heatmapTierFor(cell.ratio))} · ${Math.round(cell.ratio * 100)}%`;
-  };
 
   if (numWeeks === 0) return null;
 
@@ -110,16 +120,30 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
               const isMuted =
                 cell?.status === 'future' || cell?.status === 'outside';
               const isFocusable = (isLogged || isPartial) && !isMuted;
-              const tooltipText = cell ? getTooltipText(cell) : t('notLogged');
+              const label = cell ? labelOf(cell) : null;
+              const opensDialog = isPartial && !isMuted;
 
               return (
                 <Tooltip key={`${di}-${wi}`}>
                   <TooltipTrigger asChild>
                     <motion.button
                       type="button"
-                      aria-label={tooltipText}
+                      aria-label={
+                        label
+                          ? `${label.heading}, ${label.status}`
+                          : t('notLogged')
+                      }
                       aria-disabled={!isFocusable}
                       tabIndex={isFocusable ? 0 : -1}
+                      onClick={
+                        opensDialog && cell
+                          ? (event) => {
+                              openerRef.current = event.currentTarget;
+                              setAwaitingCell(cell);
+                              setIsDialogOpen(true);
+                            }
+                          : undefined
+                      }
                       initial={
                         prefersReducedMotion
                           ? false
@@ -135,7 +159,8 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                             }
                       }
                       className={cn(
-                        'relative aspect-square w-full cursor-default transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60',
+                        'relative aspect-square w-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60',
+                        opensDialog ? 'cursor-pointer' : 'cursor-default',
                         HEATMAP_CELL_RADIUS_CLASS,
                         // The ring rides on the paint record, so the one
                         // actionable cell cannot grow or lose it on only one
@@ -150,12 +175,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                       }}
                     ></motion.button>
                   </TooltipTrigger>
-                  <TooltipContent
-                    side="top"
-                    className="bg-kallo-text text-kallo-surface text-xs"
-                  >
-                    {tooltipText}
-                  </TooltipContent>
+                  {label ? <HeatmapDayTooltip label={label} /> : null}
                 </Tooltip>
               );
             })
@@ -164,6 +184,17 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
           <HeatmapLegend numWeeks={numWeeks} />
         </div>
       </div>
+      {awaitingCell ? (
+        <AwaitingDayDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          returnFocusRef={openerRef}
+          userId={userId}
+          date={awaitingCell.date}
+          calories={awaitingCell.calories ?? 0}
+          isToday={awaitingCell.date === todayDate}
+        />
+      ) : null}
     </TooltipProvider>
   );
 }
