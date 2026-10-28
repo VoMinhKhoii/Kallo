@@ -13,19 +13,16 @@ import type {
   TimeRange,
 } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
-import { chooseRenderedHeatmapRange } from '@/lib/domain/dashboard/heatmap-range';
+import {
+  chooseRenderedHeatmapRange,
+  heatmapRangeDays,
+} from '@/lib/domain/dashboard/heatmap-range';
 import { ConsistencyBody } from './consistency-body';
 import { DashboardSectionState } from './dashboard-section-state';
 import { ProgressStory } from './progress/progress-story';
 import { InlineMealTrigger } from './today/meal-trigger';
 import { TodayDock } from './today/today-dock';
 import { TodayDockPending } from './today/today-dock-pending';
-
-const RANGE_LABEL_KEYS: Record<HeatmapRange, string> = {
-  '30d': 'ranges.thirtyDays',
-  '90d': 'ranges.ninetyDays',
-  year: 'ranges.year',
-};
 
 /** Section titles: Flutter's sentence case on phones, the eyebrow from md. */
 const SECTION_TITLE =
@@ -45,13 +42,17 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
   // Progress always covers a fixed 30-day window (matching the Flutter
   // dashboard's passive 30d range), regardless of viewport width.
   const weightRange: TimeRange = '30d';
+  const rangeLabel = (range: HeatmapRange) => {
+    const days = heatmapRangeDays(range);
+    return days === null ? t('ranges.year') : t('ranges.days', { count: days });
+  };
   // Width alone picks the range: the consistency card is content-sized (its
   // row is `auto` at xl), so height never constrains the grid.
   const renderedHeatmapRange = heatmapSize
     ? chooseRenderedHeatmapRange({
         preferredRange: 'year',
         availableWidth: heatmapSize.width,
-        weekCount: { '30d': 5, '90d': 14, year: 53 },
+        todayDate,
       })
     : '30d';
   const {
@@ -135,7 +136,7 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
               <div className="flex items-center justify-between gap-3">
                 <span className={SECTION_TITLE}>{t('progress')}</span>
                 <span className="font-medium text-kallo-text-muted text-xs">
-                  {t(RANGE_LABEL_KEYS[weightRange])}
+                  {rangeLabel(weightRange)}
                 </span>
               </div>
               <div className="xl:min-h-0 xl:flex-1">
@@ -166,7 +167,7 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
               <div className="flex items-center justify-between gap-3">
                 <span className={SECTION_TITLE}>{t('consistency')}</span>
                 <span className="font-medium text-kallo-text-muted text-xs">
-                  {t(RANGE_LABEL_KEYS[renderedHeatmapRange])}
+                  {rangeLabel(renderedHeatmapRange)}
                 </span>
               </div>
               <div

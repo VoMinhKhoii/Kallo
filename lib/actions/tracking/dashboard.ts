@@ -10,7 +10,10 @@ import type {
   HeatmapRange,
   VerdictData,
 } from '@/lib/core/types/dashboard';
-import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
+import {
+  heatmapRangeSchema,
+  timezoneOffsetSchema,
+} from '@/lib/core/validation/primitives';
 import {
   buildCalorieAdherenceHeatmapData,
   getLocalDateKey,
@@ -25,18 +28,13 @@ import {
 import { loadWeightSummaryAction } from './weight';
 
 const loadCalorieAdherenceHeatmapSchema = z.object({
-  range: z.enum(['30d', '90d', 'year']),
+  range: heatmapRangeSchema,
   timezoneOffset: timezoneOffsetSchema,
 });
 
 const loadVerdictSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
-
-const RANGE_DAYS = {
-  '30d': 30,
-  '90d': 90,
-} as const;
 
 function addDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * MS_PER_DAY);
@@ -67,7 +65,7 @@ export async function loadCalorieAdherenceHeatmap(input: {
   const startDate =
     parsed.range === 'year'
       ? new Date(Date.UTC(Number(endKey.slice(0, 4)), 0, 1))
-      : addDays(endDate, -(RANGE_DAYS[parsed.range] - 1));
+      : addDays(endDate, -(Number.parseInt(parsed.range, 10) - 1));
   const rangeEndDate =
     parsed.range === 'year'
       ? new Date(Date.UTC(Number(endKey.slice(0, 4)) + 1, 0, 1))

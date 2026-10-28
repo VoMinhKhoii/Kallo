@@ -31,8 +31,7 @@
   "offTrack": "Off track",
   "mealsLogged": "{count} logged",
   "ranges": {
-    "thirtyDays": "30 days",
-    "ninetyDays": "90 days",
+    "days": "{count} days",
     "year": "Year"
   },
   "units": {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   beforeCursorSchema,
   dateStringSchema,
+  heatmapRangeSchema,
   isValidCalendarDateString,
   timezoneOffsetSchema,
   uuidSchema,
@@ -52,6 +53,31 @@ describe('timezoneOffsetSchema', () => {
 
   it('rejects non-integer minutes', () => {
     expect(timezoneOffsetSchema.safeParse(-419.5).success).toBe(false);
+  });
+});
+
+describe('heatmapRangeSchema', () => {
+  it.each([
+    'year',
+    '30d',
+    '90d',
+    '143d',
+    '1d',
+    '371d',
+  ])('accepts %s', (range) => {
+    expect(heatmapRangeSchema.safeParse(range).success).toBe(true);
+  });
+
+  it.each([
+    '0d',
+    '372d',
+    '1.5d',
+    '-7d',
+    '90',
+    'week',
+    ' 90d',
+  ])('rejects %s', (range) => {
+    expect(heatmapRangeSchema.safeParse(range).success).toBe(false);
   });
 });
 

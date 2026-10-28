@@ -31,11 +31,6 @@ interface BuildCalorieAdherenceHeatmapInput {
   now?: Date;
 }
 
-const RANGE_DAYS: Record<Exclude<DashboardTimeRange, 'year'>, number> = {
-  '30d': 30,
-  '90d': 90,
-};
-
 /**
  * Fallback calorie target for the per-day ring's progress fill when the profile
  * has none yet (onboarding incomplete). Mirrors the dashboard client's
@@ -82,7 +77,7 @@ function getRangeBounds(
   }
 
   return {
-    startDate: addDays(endDate, -(RANGE_DAYS[range] - 1)),
+    startDate: addDays(endDate, -(Number.parseInt(range, 10) - 1)),
     rangeEndDate: endDate,
   };
 }

@@ -1,8 +1,9 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HeatmapRange } from '@/lib/core/types/dashboard';
+import { heatmapWeekCount } from '@/lib/domain/dashboard/heatmap-range';
 
 export function HeatmapSkeleton({ range }: { range: HeatmapRange }) {
-  const cols = range === '30d' ? 5 : range === '90d' ? 14 : 53;
+  const cols = heatmapWeekCount(range);
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -42,7 +43,7 @@ export function HeatmapSkeleton({ range }: { range: HeatmapRange }) {
 }
 
 export function ProgressSectionSkeleton({ range }: { range: HeatmapRange }) {
-  const cols = range === '30d' ? 5 : range === '90d' ? 14 : 53;
+  const cols = heatmapWeekCount(range);
 
   return (
     <div className="flex h-full gap-3">
