@@ -11,10 +11,7 @@ import 'heatmap_colors.dart';
 
 /// "Tue, Oct 20 · 1,240 kcal" — kcal only when something was logged.
 String heatmapDayHeading(HeatmapCell cell, String locale) {
-  final day = DateFormat(
-    'EEE, MMM d',
-    locale,
-  ).format(DateTime.parse(cell.date));
+  final day = DateFormat.MMMEd(locale).format(DateTime.parse(cell.date));
   final calories = cell.calories;
   if (calories == null) return day;
   return '$day · ${fmtKcal(calories, locale: locale)}';

@@ -2,11 +2,15 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 import { ResponsiveModal } from '@/components/shared/responsive-modal';
 import { Button } from '@/components/ui/button';
 import { useMarkDayComplete } from '@/hooks/meals/mutations/use-mark-day-complete';
+import { useRouter } from '@/i18n/navigation';
 import { dayKeyToUtcDate } from '@/lib/core/date/day-key';
 import { AwaitingDayMeals } from './awaiting-day-meals';
+import { AwaitingDayTotal } from './awaiting-day-total';
 
 interface AwaitingDayDialogProps {
   open: boolean;
@@ -16,17 +20,15 @@ interface AwaitingDayDialogProps {
   date: string;
   /** The day's logged kcal — what the trends will count it at. */
   calories: number;
-  calorieTarget: number;
   /** Today is still accruing meals, so it can be reviewed but not confirmed. */
   isToday: boolean;
 }
 
 /**
  * An awaiting (under-logged) heatmap day, opened from its cell: the day's
- * meals for the user to recall, and the same one-way "That's everything I ate"
- * the logging feed offers. The dialog itself is the confirmation step — the
- * user has the meals in front of them, and the footer carries the
- * can't-be-undone line the feed's second dialog would.
+ * meals for the user to recall, then the two honest answers — something is
+ * missing (open that day's logging to add it) or that's everything (the same
+ * one-way mark, behind the same "are you sure?" the logging feed asks).
  */
 export function AwaitingDayDialog({
   open,
@@ -34,14 +36,15 @@ export function AwaitingDayDialog({
   userId,
   date,
   calories,
-  calorieTarget,
   isToday,
 }: AwaitingDayDialogProps) {
   const t = useTranslations('dashboard.adherenceHeatmap.dayDialog');
   const tNotice = useTranslations('logging.feedArea.partialDayNotice');
   const locale = useLocale();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const markDay = useMarkDayComplete(userId, date);
+  const [isConfirming, setIsConfirming] = useState(false);
   const roundedCalories = Math.round(calories);
 
   const title = dayKeyToUtcDate(date).toLocaleDateString(locale, {
@@ -73,37 +76,47 @@ export function AwaitingDayDialog({
       bodyClassName="px-4 md:px-[22px]"
     >
       <p className="pt-2 text-[13px] text-kallo-text-muted leading-relaxed">
-        {tNotice('body', { calories: roundedCalories, target: calorieTarget })}
+        {isToday
+          ? t('todayNote')
+          : tNotice('confirmBody', { calories: roundedCalories })}
       </p>
 
       <AwaitingDayMeals date={date} />
 
       <div className="sticky bottom-0 mt-auto flex flex-col gap-3 border-kallo-border/50 border-t bg-card py-4">
-        <p className="text-[13px] text-kallo-text-muted leading-relaxed">
-          {isToday
-            ? t('todayNote')
-            : tNotice('confirmBody', { calories: roundedCalories })}
-        </p>
-        {isToday ? null : (
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              className="rounded-xl font-sans-display hover:bg-kallo-hover hover:text-kallo-text dark:hover:bg-kallo-hover"
-              disabled={markDay.isPending}
-              onClick={() => onOpenChange(false)}
-            >
-              {tNotice('confirmCancel')}
-            </Button>
+        <AwaitingDayTotal date={date} />
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            className="rounded-xl font-sans-display hover:bg-kallo-hover hover:text-kallo-text dark:hover:bg-kallo-hover"
+            disabled={markDay.isPending}
+            onClick={() => {
+              onOpenChange(false);
+              router.push(`/logging?date=${date}`);
+            }}
+          >
+            {t('addMissed')}
+          </Button>
+          {isToday ? null : (
             <Button
               className="rounded-xl font-sans-display"
               disabled={markDay.isPending}
-              onClick={confirm}
+              onClick={() => setIsConfirming(true)}
             >
               {tNotice('confirmAccept')}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+      <ConfirmDialog
+        open={isConfirming}
+        onOpenChange={setIsConfirming}
+        title={tNotice('confirmTitle')}
+        description={tNotice('confirmBody', { calories: roundedCalories })}
+        confirmLabel={tNotice('confirmAccept')}
+        cancelLabel={tNotice('confirmCancel')}
+        onConfirm={confirm}
+      />
     </ResponsiveModal>
   );
 }

@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:kallo_mobile/features/dashboard/data/dashboard_providers.dart';
 import 'package:kallo_mobile/features/dashboard/data/logging_day.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/heatmap/adherence_heatmap.dart';
 import 'package:kallo_mobile/features/dashboard/widgets/heatmap/heatmap_grid_painter.dart';
+import 'package:kallo_mobile/features/logging/data/handoff_slots.dart';
 import 'package:kallo_mobile/models/profile/heatmap.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
@@ -48,13 +50,20 @@ HeatmapCell _cell(int day, int week) {
   };
 }
 
-PersistedMeal _meal(String id, String name, String at, double kcal) =>
-    PersistedMeal(
-      id: id,
-      rawInput: name,
-      loggedAt: at,
-      nutrition: MealNutrition(caloriesKcal: kcal),
-    );
+PersistedMeal _meal(
+  String id,
+  String name,
+  String at,
+  double kcal, {
+  required double protein,
+  required double fat,
+}) => PersistedMeal(
+  id: id,
+  rawInput: name,
+  loggedAt: at,
+  // Carbs never measured: the total says so rather than a confident zero.
+  nutrition: MealNutrition(caloriesKcal: kcal, proteinG: protein, fatG: fat),
+);
 
 /// Holds every POST open until the test completes [reply].
 class _SlowApi extends ApiClient {
@@ -68,7 +77,12 @@ class _SlowApi extends ApiClient {
   }
 }
 
-Widget _app({ApiClient? api, void Function()? onHeatmapBuild}) => ProviderScope(
+Widget _app({
+  ApiClient? api,
+  void Function()? onHeatmapBuild,
+  List<PersistedMeal>? meals,
+  bool withRouter = false,
+}) => ProviderScope(
   overrides: [
     if (api != null) apiClientProvider.overrideWithValue(api),
     heatmapProvider.overrideWith((ref, args) async {
@@ -87,10 +101,26 @@ Widget _app({ApiClient? api, void Function()? onHeatmapBuild}) => ProviderScope(
     // The server answers newest first.
     dashboardDayProvider.overrideWith(
       (ref, args) async => LoggingDayData(
-        persistedMeals: [
-          _meal('m2', 'Cơm tấm', '2026-10-20T12:00:00Z', 600),
-          _meal('m1', 'Phở bò', '2026-10-20T01:00:00Z', 300),
-        ],
+        persistedMeals:
+            meals ??
+            [
+              _meal(
+                'm2',
+                'Cơm tấm',
+                '2026-10-20T12:00:00Z',
+                600,
+                protein: 20.4,
+                fat: 10,
+              ),
+              _meal(
+                'm1',
+                'Phở bò',
+                '2026-10-20T01:00:00Z',
+                300,
+                protein: 15.3,
+                fat: 4.4,
+              ),
+            ],
       ),
     ),
   ],
@@ -101,15 +131,47 @@ Widget _app({ApiClient? api, void Function()? onHeatmapBuild}) => ProviderScope(
     assetLoader: const FsL10nLoader(),
     child: Builder(
       builder:
-          (context) => MaterialApp(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            home: const Scaffold(body: AdherenceHeatmap(args: _args)),
-          ),
+          (context) =>
+              withRouter
+                  ? MaterialApp.router(
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                    locale: context.locale,
+                    routerConfig: GoRouter(
+                      initialLocation: '/dashboard',
+                      routes: [
+                        GoRoute(
+                          path: '/dashboard',
+                          builder:
+                              (_, __) => const Scaffold(
+                                body: AdherenceHeatmap(args: _args),
+                              ),
+                        ),
+                        GoRoute(
+                          path: '/logging',
+                          builder: (_, __) => const Text('LOGGING'),
+                        ),
+                      ],
+                    ),
+                  )
+                  : MaterialApp(
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                    locale: context.locale,
+                    home: const Scaffold(body: AdherenceHeatmap(args: _args)),
+                  ),
     ),
   ),
 );
+
+/// Taps the sheet's confirm, then answers the "are you sure?" yes.
+Future<void> _confirmDay(WidgetTester tester) async {
+  await tester.tap(find.text("That's everything I ate"));
+  await tester.pumpAndSettle();
+  expect(find.text('Mark this day as fully logged?'), findsOneWidget);
+  await tester.tap(find.text("That's everything I ate").last);
+  await tester.pump();
+}
 
 Future<void> _tapCell(WidgetTester tester, int day, int week) async {
   final finder = find.byWidgetPredicate(
@@ -166,7 +228,94 @@ void main() {
     final first = tester.getTopLeft(find.text('Phở bò')).dy;
     final second = tester.getTopLeft(find.text('Cơm tấm')).dy;
     expect(first, lessThan(second), reason: 'oldest meal first');
+    // Each meal sits under a rule carrying its time.
+    expect(
+      find.text(
+        DateFormat.jm(
+          'en',
+        ).format(DateTime.parse('2026-10-20T01:00:00Z').toLocal()),
+      ),
+      findsOneWidget,
+    );
+    // The total is one line: label, macros, then kcal. No meal measured carbs,
+    // so the total has none rather than a confident zero.
+    expect(find.text('Total'), findsOneWidget);
+    expect(find.text('P 36g'), findsOneWidget);
+    expect(find.text('F 14g'), findsOneWidget);
+    expect(find.text('900 kcal'), findsOneWidget);
+    expect(find.textContaining('C '), findsNothing);
     expect(find.text("That's everything I ate"), findsOneWidget);
+  });
+
+  testWidgets('on a long day the total and the confirm stay on screen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        meals: [
+          for (var i = 0; i < 12; i++)
+            _meal(
+              'm$i',
+              'Meal $i',
+              // Newest first, as the server sends them.
+              '2026-10-20T${(23 - i).toString().padLeft(2, '0')}:00:00Z',
+              100,
+              protein: 5,
+              fat: 2,
+            ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _tapCell(tester, 1, 1);
+
+    final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+    expect(
+      tester.getBottomLeft(find.text('Total')).dy,
+      lessThan(screen.height),
+    );
+    expect(
+      tester.getBottomLeft(find.text("That's everything I ate")).dy,
+      lessThan(screen.height),
+    );
+    expect(find.text('1,200 kcal'), findsOneWidget);
+    // The meals scroll under them: the oldest (Meal 11) leads, and the newest
+    // is past the fold.
+    expect(find.text('Meal 11'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Meal 0')).dy,
+      greaterThan(tester.getTopLeft(find.text('Total')).dy),
+    );
+  });
+
+  testWidgets('cancelling the ask marks nothing', (tester) async {
+    final api = _SlowApi();
+    await tester.pumpWidget(_app(api: api));
+    await tester.pumpAndSettle();
+    await _tapCell(tester, 1, 1);
+
+    await tester.tap(find.text("That's everything I ate"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+
+    expect(api.posts, isEmpty);
+    expect(find.text('Tuesday, October 20'), findsOneWidget);
+  });
+
+  testWidgets('"Add a missed meal" opens logging on that day', (tester) async {
+    await tester.pumpWidget(_app(withRouter: true));
+    await tester.pumpAndSettle();
+    await _tapCell(tester, 1, 1);
+
+    await tester.tap(find.text('Add a missed meal'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('LOGGING'), findsOneWidget);
+    final scope = ProviderScope.containerOf(
+      tester.element(find.text('LOGGING')),
+    );
+    expect(scope.read(pendingLoggingDayProvider), '2026-10-20');
   });
 
   testWidgets('a mark that lands after the sheet is swiped away still '
@@ -179,8 +328,7 @@ void main() {
     await tester.pumpAndSettle();
     await _tapCell(tester, 1, 1);
 
-    await tester.tap(find.text("That's everything I ate"));
-    await tester.pump();
+    await _confirmDay(tester);
     expect(api.posts, ['/api/v1/logging/day/complete']);
 
     // Dismiss through the backdrop while the request is still in flight.
@@ -207,8 +355,7 @@ void main() {
     await tester.pumpAndSettle();
     await _tapCell(tester, 1, 1);
 
-    await tester.tap(find.text("That's everything I ate"));
-    await tester.pump();
+    await _confirmDay(tester);
 
     // The request lands while the swipe-away is still animating: the sheet's
     // state is mounted but its route is no longer current.

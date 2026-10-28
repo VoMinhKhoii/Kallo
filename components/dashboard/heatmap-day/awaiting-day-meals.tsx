@@ -2,16 +2,16 @@
 
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { MealRow } from '@/components/dashboard/today/meal-list';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDailyMeals } from '@/hooks/meals/queries/use-daily-meals';
 import { mapPersistedMealsToMealEntries } from '@/lib/domain/dashboard/today';
+import { DayMealBlock, TimeDivider } from './day-meal-block';
 
 /**
  * The meals logged on one day, oldest first — the order the day was eaten in,
- * which is how a user checks it for a missing meal. Reuses the dashboard dock's
- * row so a meal reads the same here as under Today.
+ * which is how a user checks it for a missing meal. Each reads as it does on
+ * the logging card, under a rule carrying its time.
  */
 export function AwaitingDayMeals({ date }: { date: string }) {
   const t = useTranslations('dashboard');
@@ -50,9 +50,20 @@ export function AwaitingDayMeals({ date }: { date: string }) {
   }
 
   return (
-    <div className="flex flex-col divide-y divide-kallo-border/50">
+    <div className="flex flex-col gap-3 py-3">
       {meals.map((meal) => (
-        <MealRow key={meal.id} meal={meal} />
+        <div key={meal.id} className="flex flex-col gap-3">
+          <TimeDivider loggedAt={meal.loggedAt} />
+          <DayMealBlock
+            label={meal.label}
+            calories={meal.calories}
+            grams={{
+              protein: meal.proteinG,
+              carbohydrate: meal.carbsG,
+              fat: meal.fatG,
+            }}
+          />
+        </div>
       ))}
     </div>
   );

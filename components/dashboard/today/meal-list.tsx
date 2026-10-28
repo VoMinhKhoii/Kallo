@@ -65,7 +65,7 @@ export function MealList({ meals }: MealListProps) {
 }
 
 /** One meal: capitalised label, time, composition bar and macro figures. */
-export function MealRow({ meal }: { meal: MealEntry }) {
+function MealRow({ meal }: { meal: MealEntry }) {
   const locale = useLocale();
   // Spelled once: the bar and the figures under it read the same record.
   const grams = {

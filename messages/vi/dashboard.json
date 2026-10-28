@@ -72,6 +72,8 @@
     "veryLight": "Ăn rất ít",
     "kcal": "{calories, number} kcal",
     "dayDialog": {
+      "addMissed": "Thêm bữa còn thiếu",
+      "total": "Tổng",
       "todayNote": "Bạn có thể xác nhận hôm nay khi ngày kết thúc.",
       "loadError": "Chưa tải được bữa ăn của ngày này."
     }

@@ -49,7 +49,6 @@ export function ConsistencyBody({
       data={query.data}
       range={range}
       userId={profile.userId}
-      calorieTarget={profile.calorieTarget}
       todayDate={todayDate}
     />
   );

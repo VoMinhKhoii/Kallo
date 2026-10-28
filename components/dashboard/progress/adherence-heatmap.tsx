@@ -41,7 +41,6 @@ interface AdherenceHeatmapProps {
   data: HeatmapData;
   range: HeatmapRange;
   userId: string;
-  calorieTarget: number;
   /** Today's local day key — today can be reviewed but not yet confirmed. */
   todayDate: string;
 }
@@ -56,7 +55,6 @@ export function AdherenceHeatmap({
   data,
   range,
   userId,
-  calorieTarget,
   todayDate,
 }: AdherenceHeatmapProps) {
   const t = useTranslations('dashboard.adherenceHeatmap');
@@ -190,7 +188,6 @@ export function AdherenceHeatmap({
           userId={userId}
           date={awaitingCell.date}
           calories={awaitingCell.calories ?? 0}
-          calorieTarget={calorieTarget}
           isToday={awaitingCell.date === todayDate}
         />
       ) : null}

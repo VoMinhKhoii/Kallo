@@ -3,9 +3,9 @@
 /// logging feed offers. Twin of web
 /// `components/dashboard/heatmap-day/awaiting-day-dialog.tsx`.
 ///
-/// The sheet is itself the confirmation step — the meals are in front of the
-/// user, and the line above the button says it can't be undone — so there is
-/// no second dialog, and the header's close is the way out.
+/// Two honest answers sit under the meals: something is missing (open that
+/// day's logging to add it), or that's everything — the same one-way mark,
+/// behind the same "are you sure?" the logging feed asks.
 library;
 
 import 'dart:math' as math;
@@ -14,6 +14,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../models/profile/heatmap.dart';
 import '../../../../shared/logic/display_format.dart';
@@ -22,9 +23,13 @@ import '../../../../shared/widgets/sheet/kallo_sheet_header.dart';
 import '../../../../shared/widgets/surface/kallo_button.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
+import '../../../../shell/nav/nav_actions.dart' show openLogging;
+import '../../../logging/data/handoff_slots.dart';
 import '../../../logging/data/mutations/day_completion_mutation.dart';
+import '../../../logging/widgets/actions/confirm_day_complete.dart';
 import '../../data/dashboard_providers.dart';
-import '../today/today_meal_list.dart';
+import '../../data/logging_day.dart';
+import 'awaiting_day_meals.dart';
 
 const _notice = 'logging.feedArea.partialDayNotice';
 
@@ -55,6 +60,11 @@ class _AwaitingDaySheetState extends ConsumerState<_AwaitingDaySheet> {
   bool _pending = false;
 
   Future<void> _confirm() async {
+    final confirmed = await confirmDayComplete(
+      context,
+      calories: (widget.cell.calories ?? 0).round(),
+    );
+    if (!confirmed || !mounted) return;
     setState(() => _pending = true);
     // Captured before the await: the user can swipe the sheet away while the
     // request is in flight, and the heatmap must still refresh after.
@@ -83,28 +93,36 @@ class _AwaitingDaySheetState extends ConsumerState<_AwaitingDaySheet> {
     }
   }
 
+  /// Parks the day for the logging screen to claim, then opens it — the
+  /// handshake `goToLoggingDay` uses, since the feed may be parked elsewhere.
+  void _addMissed() {
+    ref.read(pendingLoggingDayProvider.notifier).state = widget.cell.date;
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop();
+    openLogging(router);
+  }
+
   @override
   Widget build(BuildContext context) {
     final locale = localeOf(context);
     final cell = widget.cell;
     final calories = formatCount((cell.calories ?? 0).round(), locale);
-    final target =
-        ref
-            .watch(dashboardBundleProvider(widget.args))
-            .valueOrNull
-            ?.profile
-            ?.calorieTarget;
     final isToday = cell.date == widget.args.date;
     final day = ref.watch(
       dashboardDayProvider((userId: widget.args.userId, date: cell.date)),
     );
-    final title = DateFormat(
-      'EEEE, MMMM d',
+    final title = DateFormat.MMMMEEEEd(
       locale,
     ).format(DateTime.parse(cell.date));
 
+    final meals = day.valueOrNull?.persistedMeals ?? const <PersistedMeal>[];
+
+    // Only the meals scroll: the total and the button stay pinned under them,
+    // so a long day never hides what the user is confirming.
     return KalloSheetSurface(
-      scrollable: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+      ),
       padding: EdgeInsets.only(
         left: KalloSpacing.sp4,
         right: KalloSpacing.sp4,
@@ -118,52 +136,61 @@ class _AwaitingDaySheetState extends ConsumerState<_AwaitingDaySheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           KalloSheetHeader(title: title, closeEnabled: !_pending),
-          if (target != null)
-            Text(
-              '$_notice.body'.tr(
-                namedArgs: {
-                  'calories': calories,
-                  'target': formatCount(target.round(), locale),
-                },
-              ),
-              style: dashMeta(color: kInkMuted),
-            ),
-          day.when(
-            skipLoadingOnReload: true,
-            loading:
-                () => const Padding(
-                  padding: EdgeInsets.all(KalloSpacing.sp6),
-                  child: Center(child: CircularProgressIndicator.adaptive()),
-                ),
-            error:
-                (_, __) => Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: KalloSpacing.sp4,
-                  ),
-                  child: Text(
-                    tr('dashboard.adherenceHeatmap.dayDialog.loadError'),
+          Flexible(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    isToday
+                        ? tr('dashboard.adherenceHeatmap.dayDialog.todayNote')
+                        : '$_notice.confirmBody'.tr(
+                          namedArgs: {'calories': calories},
+                        ),
                     style: dashMeta(color: kInkMuted),
                   ),
-                ),
-            // Oldest first: the order the day was eaten in, which is how a
-            // user checks it for a missing meal.
-            data: (d) => MealList(meals: d.persistedMeals.reversed.toList()),
+                  day.when(
+                    skipLoadingOnReload: true,
+                    loading:
+                        () => const Padding(
+                          padding: EdgeInsets.all(KalloSpacing.sp6),
+                          child: Center(
+                            child: CircularProgressIndicator.adaptive(),
+                          ),
+                        ),
+                    error:
+                        (_, __) => Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: KalloSpacing.sp4,
+                          ),
+                          child: Text(
+                            tr(
+                              'dashboard.adherenceHeatmap.dayDialog.loadError',
+                            ),
+                            style: dashMeta(color: kInkMuted),
+                          ),
+                        ),
+                    data: (d) => AwaitingDayMeals(meals: d.persistedMeals),
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: KalloSpacing.sp2),
-          Text(
-            isToday
-                ? tr('dashboard.adherenceHeatmap.dayDialog.todayNote')
-                : '$_notice.confirmBody'.tr(namedArgs: {'calories': calories}),
-            style: dashMeta(color: kInkMuted),
-          ),
-          if (!isToday) ...[
-            const SizedBox(height: KalloSpacing.sp4),
+          AwaitingDayTotal(meals: meals),
+          const SizedBox(height: KalloSpacing.sp4),
+          if (!isToday)
             KalloButton(
               title: '$_notice.confirmAccept'.tr(),
               loading: _pending,
               onPressed: _pending ? null : _confirm,
             ),
-          ],
+          KalloButton(
+            title: tr('dashboard.adherenceHeatmap.dayDialog.addMissed'),
+            variant: KalloButtonVariant.ghost,
+            disabled: _pending,
+            onPressed: _addMissed,
+          ),
         ],
       ),
     );
