@@ -127,8 +127,19 @@ windows, and freed by the returned lease's `release()` (`rate_limit_release`).
 would leave the slot unenforced while the registry says it is.
 
 - **A crashed request frees its slot on its own.** The slot reads as free once
-  `slot_expires_at` passes (`ttlSeconds`, 90 s everywhere: past analyze-meal's
-  60 s `maxDuration`). No reaper, no stale-counter reset.
+  `slot_expires_at` passes (`ttlSeconds`). No reaper, no stale-counter reset.
+- **Each lifetime is sized to its request**: just past the longest the
+  request can run, because the lifetime is also how long a lost release
+  refuses its holder. Meal analysis 90 s (the route's 60 s `maxDuration` and
+  Cloud Run's 60 s timeout); label OCR 90 s (the slot covers the upload
+  read, which has a size cap but no deadline, so Cloud Run's 60 s timeout is
+  its bound); relog search 20 s and relog writes 30 s (queries
+  of milliseconds, plus up to 10 s waiting for a pooled connection);
+  entitlement reconcile 30 s (an 8 s RevenueCat call). Raising a request's
+  deadline means raising its lifetime. `slot-lifetimes.test.ts` imports the
+  OCR, RevenueCat and DB connect deadlines, so raising one of those fails it;
+  analyze-meal's 60 s `maxDuration` must stay a literal in the route (Next
+  reads it statically), so the test restates it and cannot catch a change.
 - **A held slot answers with the policy's `retryAfterSeconds`** (15 s for a
   meal), not the slot's remaining lifetime: a request normally frees its slot
   long before the crash bound.
