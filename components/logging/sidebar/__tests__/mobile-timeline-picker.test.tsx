@@ -30,6 +30,19 @@ describe('MobileTimelinePicker', () => {
     });
   }
 
+  it('keeps the inline chip row off phones, where the header slot holds it', () => {
+    // Before the header slot resolves (the server render, the first client
+    // render) a phone used to show this 40 px row and then drop it, jumping
+    // the whole page up. It shows only from md to lg, where there is no
+    // mobile header.
+    const { container } = render(<MobileTimelinePicker {...defaultProps} />);
+    const row = container.firstElementChild as HTMLElement;
+
+    expect(row.className.split(' ')).toEqual(
+      expect.arrayContaining(['hidden', 'md:flex', 'lg:hidden'])
+    );
+  });
+
   it('renders selected date chip with meal indicator when date has saved meal', () => {
     render(<MobileTimelinePicker {...defaultProps} />);
 

@@ -16,9 +16,9 @@ const { mockLoadLoggingDay, mockLoadMealsByDate, mockConfirm } = vi.hoisted(
   })
 );
 
-vi.mock('@/lib/actions/meals/load-meals', () => ({
-  loadLoggingDay: mockLoadLoggingDay,
-  loadMealsByDate: mockLoadMealsByDate,
+vi.mock('@/lib/domain/meals/meals-client', () => ({
+  fetchLoggingDay: mockLoadLoggingDay,
+  fetchMealsByDate: mockLoadMealsByDate,
 }));
 
 vi.mock('@/lib/actions/meals/confirm-and-save', () => ({

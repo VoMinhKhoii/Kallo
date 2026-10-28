@@ -5,8 +5,8 @@ import type { ReactNode } from 'react';
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLoggingDay } from '@/hooks/meals/queries/use-logging-day';
-import { loadLoggingDay } from '@/lib/actions/meals/load-meals';
 import type { LoggingDayData } from '@/lib/actions/meals/types';
+import { fetchLoggingDay as loadLoggingDay } from '@/lib/domain/meals/meals-client';
 import { mealShareInvitesKeys } from '@/lib/domain/social/query-keys';
 
 // Loading a day sweeps the user's week-abandoned staging cards, and a card
@@ -16,8 +16,8 @@ import { mealShareInvitesKeys } from '@/lib/domain/social/query-keys';
 // continuously by the nav badge, so it never goes stale on its own and keeps
 // serving the empty list it cached before the offer came back.
 
-vi.mock('@/lib/actions/meals/load-meals', () => ({
-  loadLoggingDay: vi.fn(),
+vi.mock('@/lib/domain/meals/meals-client', () => ({
+  fetchLoggingDay: vi.fn(),
 }));
 
 const USER_ID = 'user-1';

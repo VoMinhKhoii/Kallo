@@ -77,7 +77,7 @@ const SPEND_DB_TIMEOUT_MS = 2000;
 /**
  * How long a release is awaited. Longer than the 400 ms counter default
  * because a release that gives up costs a slot: a key's slot stays held until
- * its own lifetime runs out (90 s on every policy), refusing that person
+ * its own lifetime runs out (the policy's `ttlSeconds`), refusing that person
  * meanwhile. A release past this deadline is not cancelled; it still frees
  * the slot when it lands (`lease-sql.ts`).
  */

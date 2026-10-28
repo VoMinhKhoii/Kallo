@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { loadMealsByDate } from '@/lib/actions/meals/load-meals';
+import { fetchMealsByDate } from '@/lib/domain/meals/meals-client';
 import { dailyMealsKeys } from '@/lib/domain/meals/query-keys';
 
 function addDays(dateStr: string, days: number): string {
@@ -29,7 +29,7 @@ export function usePrefetchDates(selectedDate: string) {
       for (const date of adjacent) {
         queryClient.prefetchQuery({
           queryKey: dailyMealsKeys.byDate(date),
-          queryFn: () => loadMealsByDate({ date, timezoneOffset }),
+          queryFn: () => fetchMealsByDate({ date, timezoneOffset }),
           staleTime: 5 * 60_000,
         });
       }

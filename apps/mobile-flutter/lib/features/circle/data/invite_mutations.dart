@@ -10,6 +10,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/http/api_client.dart';
+import '../../dashboard/data/dashboard_cache.dart';
 import '../../dashboard/data/dashboard_providers.dart'
     show
         dashboardBundleProvider,
@@ -44,6 +45,7 @@ Future<String> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
   ref.invalidate(mealDatesProvider);
   // A newly-logged meal must also heal the dashboard's Today + week-strip ring,
   // which read off a separate bundle/day cache.
+  DashboardCache.forgetAll();
   ref.invalidate(dashboardBundleProvider);
   ref.invalidate(dashboardDayProvider);
   ref.invalidate(circleFeedProvider);

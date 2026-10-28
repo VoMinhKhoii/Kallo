@@ -19,6 +19,8 @@
 /// resolve synchronously from cache with no second round-trip.
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/auth/session_provider.dart';
@@ -28,6 +30,7 @@ import '../../circle/data/circle_providers.dart'
 import '../../../services/http/query.dart';
 import '../../../models/profile/dashboard.dart';
 import '../../../models/profile/weight.dart';
+import 'dashboard_cache.dart';
 import 'logging_day.dart';
 import '../../../models/http/api_error.dart';
 
@@ -74,13 +77,43 @@ typedef DashboardArgs = ({String userId, String date});
 int localTimezoneOffsetMinutes() => -DateTime.now().timeZoneOffset.inMinutes;
 
 /// `useDashboard` → one aggregate fetch for the whole screen.
+///
+/// A WRITE that invalidates this provider must also call
+/// [DashboardCache.forget] (or [DashboardCache.forgetAll]): invalidating a
+/// family entry nobody has read yet does nothing, so the first read after the
+/// write would otherwise get the copy saved for a fast launch.
 final dashboardBundleProvider =
     FutureProvider.family<DashboardBundle, DashboardArgs>((ref, args) async {
       // Not autoDispose, so an error outlives the session that caused it —
       // see [signedInUserIdProvider].
       requireSignedInAs(ref, args.userId);
       final api = ref.watch(apiClientProvider);
+      final cache = ref.watch(dashboardCacheProvider);
       final tz = localTimezoneOffsetMinutes();
+      // Set when this build is superseded (another account signed in, the
+      // entry was invalidated, the app left it). Riverpod drops a superseded
+      // build's result but keeps running its body, which would otherwise
+      // save whatever the request returned (fetched with the NEXT account's
+      // token) under this account's id.
+      var superseded = false;
+      ref.onDispose(() => superseded = true);
+
+      // First build this session: show the last saved answer for today at
+      // once, and rebuild straight away to fetch the real one. The screen
+      // keeps the saved data on screen during that refresh.
+      final saved = await cache.takeOnce(args.userId, args.date, tz);
+      if (saved != null) {
+        try {
+          final bundle = DashboardBundle.fromJson(saved);
+          Future.microtask(() {
+            if (!superseded) ref.invalidateSelf();
+          });
+          return bundle;
+        } catch (_) {
+          // Saved by a build with another shape: fetch as usual.
+        }
+      }
+
       final date = Uri.encodeComponent(args.date);
       return runWithRetry(() async {
         final json = await api.get<Map<String, dynamic>>(
@@ -88,6 +121,9 @@ final dashboardBundleProvider =
         );
         final bundle = DashboardBundle.fromJson(json);
         refreshInvitesAfterRelease(ref, released: bundle.day.releasedInvites);
+        if (!superseded) {
+          unawaited(cache.save(args.userId, args.date, tz, json));
+        }
         return bundle;
       });
     });
@@ -191,5 +227,6 @@ Future<void> logWeight(
     'loggedDate': loggedDate,
     'weightKg': weightKg,
   });
+  DashboardCache.forget(args.userId);
   ref.invalidate(dashboardBundleProvider(args));
 }

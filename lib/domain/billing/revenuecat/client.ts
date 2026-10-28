@@ -19,6 +19,9 @@ export interface RevenueCatClientDeps {
   billingEnvironment?: BillingEnvironment;
 }
 
+/** How long one CustomerInfo read may take before it aborts. */
+export const REVENUECAT_TIMEOUT_MS = 8_000;
+
 export async function fetchRevenueCatSnapshot(
   appUserId: string,
   deps: RevenueCatClientDeps = {}
@@ -45,7 +48,7 @@ export async function fetchRevenueCatSnapshot(
         accept: 'application/json',
         authorization: `Bearer ${apiKey}`,
       },
-      signal: AbortSignal.timeout(8_000),
+      signal: AbortSignal.timeout(REVENUECAT_TIMEOUT_MS),
       cache: 'no-store',
     }
   );

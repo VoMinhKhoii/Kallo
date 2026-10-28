@@ -34,6 +34,12 @@ vi.mock('@/components/onboarding/wizard-shell', () => ({
   },
 }));
 
+// The nav's data prefetch needs a QueryClient; the shell's own behaviour does
+// not, so it renders as a passthrough here.
+vi.mock('@/hooks/navigation/route-prefetch', () => ({
+  RoutePrefetchProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+}));
 vi.mock('@/components/app/navigation/desktop-sidebar', () => ({
   DesktopSidebar: ({
     onboardingIncomplete,

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useNavIntent } from '@/hooks/navigation/route-prefetch';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import { SidebarTooltip } from '../sidebar-tooltip';
@@ -24,10 +25,12 @@ export function SidebarNavLink({
   isActive,
   showBadge = false,
 }: SidebarNavLinkProps) {
+  const intent = useNavIntent(item.href);
   return (
     <SidebarTooltip enabled={collapsed} label={item.label}>
       <Link
         href={item.href}
+        {...intent}
         aria-current={isActive ? 'page' : undefined}
         aria-label={collapsed ? item.label : undefined}
         className={cn(
