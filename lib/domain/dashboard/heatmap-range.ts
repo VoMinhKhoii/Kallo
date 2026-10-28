@@ -10,7 +10,9 @@ interface ChooseRenderedHeatmapRangeInput {
   todayDate: string;
 }
 
-const YEAR_MIN_CELL = 10;
+// The year only once its squares reach the floor 90 days already uses: below
+// that, ~10px squares lost to the bigger recent-days squares either side.
+const YEAR_MIN_CELL = 14;
 const RANGE_90_MIN_CELL = 14;
 const DAY_LABEL_WIDTH = 18;
 const YEAR_GAP = 1;
@@ -37,6 +39,23 @@ export function heatmapGap(range: HeatmapRange): number {
 export function heatmapMaxSquare(range: HeatmapRange): number {
   if (range === 'year') return 28;
   return range === '30d' ? 32 : 24;
+}
+
+/** The day-label gutter's width in the rendered grid. */
+export const HEATMAP_DAY_LABEL_COL = 20;
+
+/**
+ * The grid the heatmap and its skeleton share: a day-label gutter, then week
+ * columns that split the width, capped so squares stop at
+ * [heatmapMaxSquare].
+ */
+export function heatmapGridStyle(range: HeatmapRange, weeks: number) {
+  const gap = heatmapGap(range);
+  return {
+    gridTemplateColumns: `${HEATMAP_DAY_LABEL_COL}px repeat(${weeks}, minmax(0, 1fr))`,
+    gap: `${gap}px`,
+    maxWidth: `${HEATMAP_DAY_LABEL_COL + weeks * (heatmapMaxSquare(range) + gap)}px`,
+  };
 }
 
 /** Days in a trailing range ('90d' → 90); null for the calendar year. */

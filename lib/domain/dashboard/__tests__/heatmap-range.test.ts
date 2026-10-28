@@ -40,6 +40,12 @@ describe('chooseRenderedHeatmapRange', () => {
     expect(heatmapWeekCount(range)).toBe(21);
   });
 
+  it('waits for 14px squares before switching to the year', () => {
+    // 680px of card would draw the year at ~11px; recent days stay at ~20px.
+    expect(heatmapWeekCount(choose(680))).toBe(30);
+    expect(choose(830)).toBe('year');
+  });
+
   it('starts a fitted span on a Monday, so its first column is full', () => {
     for (const width of [400, 494, 590]) {
       const days = heatmapRangeDays(choose(width)) ?? 0;

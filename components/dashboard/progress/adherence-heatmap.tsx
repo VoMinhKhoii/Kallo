@@ -19,10 +19,7 @@ import type {
   HeatmapRange,
 } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
-import {
-  heatmapGap,
-  heatmapMaxSquare,
-} from '@/lib/domain/dashboard/heatmap-range';
+import { heatmapGridStyle } from '@/lib/domain/dashboard/heatmap-range';
 import {
   HEATMAP_CELL_PAINTS,
   HEATMAP_CELL_RADIUS_CLASS,
@@ -33,8 +30,6 @@ import { HeatmapLegend } from './heatmap-legend';
 import { HeatmapMonthHeaderRow } from './heatmap-month-headers';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-const DAY_LABEL_COL = 20;
 
 interface AdherenceHeatmapProps {
   data: HeatmapData;
@@ -69,7 +64,6 @@ export function AdherenceHeatmap({
   // don't get a wall of moving cells. They still see the final state.
   const prefersReducedMotion = useReducedMotion();
 
-  const gap = heatmapGap(range);
   const numWeeks = data.cells[0]?.length ?? 0;
 
   if (numWeeks === 0) return null;
@@ -77,14 +71,7 @@ export function AdherenceHeatmap({
   return (
     <TooltipProvider delayDuration={100}>
       <div className="flex h-full flex-col justify-center">
-        <div
-          className="grid w-full"
-          style={{
-            gridTemplateColumns: `${DAY_LABEL_COL}px repeat(${numWeeks}, minmax(0, 1fr))`,
-            gap: `${gap}px`,
-            maxWidth: `${DAY_LABEL_COL + numWeeks * heatmapMaxSquare(range) + numWeeks * gap}px`,
-          }}
-        >
+        <div className="grid w-full" style={heatmapGridStyle(range, numWeeks)}>
           {/* Row 1 — month headers, de-overlapped onto the columns they span. */}
           <HeatmapMonthHeaderRow headers={data.monthHeaders} />
 

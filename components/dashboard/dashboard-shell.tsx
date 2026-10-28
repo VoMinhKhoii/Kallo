@@ -172,7 +172,7 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
               </div>
               <div
                 ref={heatmapContainerRef}
-                className="min-h-[310px] rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-kallo-accent/50 hover:shadow-kallo-text/[0.06] hover:shadow-md sm:min-h-[340px] md:min-h-[360px] xl:min-h-0"
+                className="rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-kallo-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-kallo-accent/50 hover:shadow-kallo-text/[0.06] hover:shadow-md"
               >
                 <ConsistencyBody
                   isMeasured={hasMeasuredHeatmap}
