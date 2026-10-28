@@ -1,5 +1,78 @@
 # Changelog
 
+## [1.21.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.20.0...v1.21.0) (2026-10-28)
+
+
+### Features
+
+* add a $10/day app-wide AI spend brake ([#491](https://github.com/VoMinhKhoii/Kallo/issues/491)) ([c8a1d1a](https://github.com/VoMinhKhoii/Kallo/commit/c8a1d1af3d945f51341dd40cf0217459a5766208))
+* **ai:** build and publish the card search artifact on each prod deploy ([#455](https://github.com/VoMinhKhoii/Kallo/issues/455)) ([53693fc](https://github.com/VoMinhKhoii/Kallo/commit/53693fc02add1b49a8546bb7546eac90ec20e57b))
+* **ai:** copy meal traces to Cloudflare D1 for the admin dashboard ([#488](https://github.com/VoMinhKhoii/Kallo/issues/488)) ([1d76cfb](https://github.com/VoMinhKhoii/Kallo/commit/1d76cfb0f94f0bc382e59dea901141ba357c7e89))
+* **ai:** record cost, latency and fallback on every model call ([#460](https://github.com/VoMinhKhoii/Kallo/issues/460)) ([1c2db0c](https://github.com/VoMinhKhoii/Kallo/commit/1c2db0caaae70c04cd38ad773015d713ac9ac1c0))
+* **ai:** search food cards in the container from the deploy's artifact ([#456](https://github.com/VoMinhKhoii/Kallo/issues/456)) ([5ccae9e](https://github.com/VoMinhKhoii/Kallo/commit/5ccae9e6b6827e67bbff9739674694f7050d9b55))
+* **auth:** sign in by email code and check Turnstile in the auth proxy ([#489](https://github.com/VoMinhKhoii/Kallo/issues/489)) ([b0afd16](https://github.com/VoMinhKhoii/Kallo/commit/b0afd16ee70f95d905839aec815bd8f3396da123))
+* bring the kallo-proxy Worker into the repo with per-IP flood limits ([#493](https://github.com/VoMinhKhoii/Kallo/issues/493)) ([22045dd](https://github.com/VoMinhKhoii/Kallo/commit/22045ddfd65c2643a6b08b727e4491485e0d7e42))
+* **ci:** refresh prod's card search index nightly when the card data changes ([#459](https://github.com/VoMinhKhoii/Kallo/issues/459)) ([4e57544](https://github.com/VoMinhKhoii/Kallo/commit/4e57544efde18ceb8c2b602d40645e1bb6bbf65d))
+* **dashboard:** fit more recent days to the heatmap's width, not bigger squares ([#507](https://github.com/VoMinhKhoii/Kallo/issues/507)) ([348a6b6](https://github.com/VoMinhKhoii/Kallo/commit/348a6b69fdff7c758b3c1a7e3fd5c22f368b04c5))
+* **dashboard:** review and confirm awaiting heatmap days in place; iOS 26-style confirm dialog ([#498](https://github.com/VoMinhKhoii/Kallo/issues/498)) ([7276027](https://github.com/VoMinhKhoii/Kallo/commit/7276027f2a7efd4bb7309b5addbf9a13a9743396))
+* **email:** send through Cloudflare Email Sending instead of Resend ([#487](https://github.com/VoMinhKhoii/Kallo/issues/487)) ([2e7aeb5](https://github.com/VoMinhKhoii/Kallo/commit/2e7aeb5a1f80da81897f1b7b802b612a5d06483e))
+* **logging:** discard unsaved meals on web and iOS ([#447](https://github.com/VoMinhKhoii/Kallo/issues/447)) ([507bbeb](https://github.com/VoMinhKhoii/Kallo/commit/507bbeba356c158e12ef19917391ea5ce52c7ae2))
+* **mobile:** dark mode — Graphite and Aurora themes ([#479](https://github.com/VoMinhKhoii/Kallo/issues/479)) ([09d328d](https://github.com/VoMinhKhoii/Kallo/commit/09d328db1d050e1f121afd38029270ad5b6ba47d))
+* **mobile:** draw and move segmented controls like iOS 26's own ([#449](https://github.com/VoMinhKhoii/Kallo/issues/449)) ([932577e](https://github.com/VoMinhKhoii/Kallo/commit/932577eef9658b46d413a3acd7374e79f37e3ba2))
+* **mobile:** edit a meal's servings, amount and size from one sheet ([#482](https://github.com/VoMinhKhoii/Kallo/issues/482)) ([976f4f1](https://github.com/VoMinhKhoii/Kallo/commit/976f4f185cfbdf2e4569b49add665905f708ec77))
+* **mobile:** show the theme icons in the Appearance sheet ([#484](https://github.com/VoMinhKhoii/Kallo/issues/484)) ([d33750c](https://github.com/VoMinhKhoii/Kallo/commit/d33750c3308ccc35b2a947c3959b7d0c5351ee77))
+* **web:** dark mode — Graphite and Aurora themes ([#478](https://github.com/VoMinhKhoii/Kallo/issues/478)) ([8fa176c](https://github.com/VoMinhKhoii/Kallo/commit/8fa176c60b13068065b7bf07aeb8828c52f40800))
+* **web:** edit a meal's servings, amount and size from one dialog ([#483](https://github.com/VoMinhKhoii/Kallo/issues/483)) ([c112609](https://github.com/VoMinhKhoii/Kallo/commit/c1126098a246da59c9ed749a1fd79807b9ed4dea))
+* **web:** pick the theme from the account menu, with icons ([#481](https://github.com/VoMinhKhoii/Kallo/issues/481)) ([a5776ed](https://github.com/VoMinhKhoii/Kallo/commit/a5776edba0bd5a98c9310ad4c520e4704fcf8342))
+* **web:** theme the landing page with a header theme switch ([#486](https://github.com/VoMinhKhoii/Kallo/issues/486)) ([7824ca6](https://github.com/VoMinhKhoii/Kallo/commit/7824ca6abdb3770b9f77a3225755d18725de903f))
+
+
+### Bug Fixes
+
+* **ai:** load the card search index before a container takes traffic ([#458](https://github.com/VoMinhKhoii/Kallo/issues/458)) ([42f1874](https://github.com/VoMinhKhoii/Kallo/commit/42f1874ab93e486f7cea27e0e9999e92f3bda979))
+* **ai:** ship Call 2's refuse share as emitted and name the refuse kind first ([#465](https://github.com/VoMinhKhoii/Kallo/issues/465)) ([889f945](https://github.com/VoMinhKhoii/Kallo/commit/889f94581fc3add145e11d6d3ad5f1cd32e36bdc))
+* **ai:** size a bowl of rice by the user's country ([#480](https://github.com/VoMinhKhoii/Kallo/issues/480)) ([58b030d](https://github.com/VoMinhKhoii/Kallo/commit/58b030d10a95722796be373c7b3aa687d0d3af2e))
+* **ai:** size weighed and shared dishes to the weight the user typed ([#441](https://github.com/VoMinhKhoii/Kallo/issues/441)) ([38b45b4](https://github.com/VoMinhKhoii/Kallo/commit/38b45b450f779fb15a046473f1e6f82ded03c685))
+* **ai:** stop cold-start matching timeouts and Haiku's dropped dishes ([#443](https://github.com/VoMinhKhoii/Kallo/issues/443)) ([d4cc66b](https://github.com/VoMinhKhoii/Kallo/commit/d4cc66bd740b7adbf6b746dd7536cde1c90d111b))
+* **auth:** sign in on the onboarding gradient, with a global line and no demo ([#476](https://github.com/VoMinhKhoii/Kallo/issues/476)) ([c826ad3](https://github.com/VoMinhKhoii/Kallo/commit/c826ad323eb88e1b79cdbd7174caba3adf02738c))
+* **auth:** wait for io() before building the server Supabase client ([#474](https://github.com/VoMinhKhoii/Kallo/issues/474)) ([0bd9f47](https://github.com/VoMinhKhoii/Kallo/commit/0bd9f47e25ea16caa1fdf556f6c09c0742e586ec))
+* **deps:** patch security advisories and land the worthwhile dependency upgrades ([#450](https://github.com/VoMinhKhoii/Kallo/issues/450)) ([a00a123](https://github.com/VoMinhKhoii/Kallo/commit/a00a1239e17ee9e08ee080352ef0c914434f5dd2))
+* **groups:** add the missing share/unshare toast copy on web ([#453](https://github.com/VoMinhKhoii/Kallo/issues/453)) ([6eec178](https://github.com/VoMinhKhoii/Kallo/commit/6eec1780555f28f5d547cbf7a7ccf0964eef6c64))
+* **logging:** show the saved total on a day that holds an unsaved card ([#451](https://github.com/VoMinhKhoii/Kallo/issues/451)) ([4cb12db](https://github.com/VoMinhKhoii/Kallo/commit/4cb12dbfe9b78b93a32a6e307f0244ea25ea6300))
+* **mobile:** clip the composer card so its top corners stay round ([#495](https://github.com/VoMinhKhoii/Kallo/issues/495)) ([d9479a1](https://github.com/VoMinhKhoii/Kallo/commit/d9479a1d6159546817bc7f4155abbd113d7ea19a))
+* **mobile:** hold a launch notification tap until the first screen ([#448](https://github.com/VoMinhKhoii/Kallo/issues/448)) ([978c21d](https://github.com/VoMinhKhoii/Kallo/commit/978c21d91951aec0998bacb08a9d5e40f91c4ae2))
+* **mobile:** sign out when the server revokes the session ([#475](https://github.com/VoMinhKhoii/Kallo/issues/475)) ([ca9c5f9](https://github.com/VoMinhKhoii/Kallo/commit/ca9c5f98bf7668ab08bc32c81a0d6267f3e7d9e3))
+* **onboarding:** floor cut targets at 1,200 kcal (women) / 1,500 (men) ([#496](https://github.com/VoMinhKhoii/Kallo/issues/496)) ([a780022](https://github.com/VoMinhKhoii/Kallo/commit/a780022276bb113063e34a7e96173ecb31d8d531))
+* **pipeline:** keep alcohol calories from matched drink rows ([#440](https://github.com/VoMinhKhoii/Kallo/issues/440)) ([830dc79](https://github.com/VoMinhKhoii/Kallo/commit/830dc793a7f6f33d466b6a82c78e3d4a3161d363))
+* **rate-limit:** size each slot's lifetime to the request it guards ([#506](https://github.com/VoMinhKhoii/Kallo/issues/506)) ([ff9061a](https://github.com/VoMinhKhoii/Kallo/commit/ff9061ac89e8bdb6189dc3ec2df5446fbb7d21bc))
+* **seo:** give search engines the site name, page subjects and links they lacked ([#452](https://github.com/VoMinhKhoii/Kallo/issues/452)) ([69ed627](https://github.com/VoMinhKhoii/Kallo/commit/69ed627cda523af2b4f9a1b816db604720ef73a9))
+* **web:** make the selected tab visible in Graphite and Aurora ([#497](https://github.com/VoMinhKhoii/Kallo/issues/497)) ([ccf8627](https://github.com/VoMinhKhoii/Kallo/commit/ccf86274534a0213c6c39ed178d103651cf84c20))
+* **web:** stop the dashboard and logging header boxing out the Aurora glow ([#485](https://github.com/VoMinhKhoii/Kallo/issues/485)) ([04c6d6b](https://github.com/VoMinhKhoii/Kallo/commit/04c6d6bcb682336171ae3eaf25f6a2347bb5d17a))
+* **web:** stop the logging page shifting while it loads, and ratchet the latency wins ([#503](https://github.com/VoMinhKhoii/Kallo/issues/503)) ([cdd166d](https://github.com/VoMinhKhoii/Kallo/commit/cdd166de5eb42aacfb1b33219181bb0fd9098cd2))
+
+
+### Performance
+
+* **ai:** log meal traces to Cloud Logging, add request summaries and retention ([#461](https://github.com/VoMinhKhoii/Kallo/issues/461)) ([d9a31c4](https://github.com/VoMinhKhoii/Kallo/commit/d9a31c4ea0f3a1a88c1e794c00668dcc25558712))
+* **ai:** make the boot catalog warm reach the meal route; drop the nutrition preload ([#454](https://github.com/VoMinhKhoii/Kallo/issues/454)) ([fdde485](https://github.com/VoMinhKhoii/Kallo/commit/fdde4850d1581b8ea6100e2f85b58f01587a51f7))
+* **ai:** start loading the card catalog when a container boots ([#445](https://github.com/VoMinhKhoii/Kallo/issues/445)) ([d462ffe](https://github.com/VoMinhKhoii/Kallo/commit/d462ffe512d3260e406c507defd5671b13920574))
+* **auth:** check sign-ins locally instead of asking the Auth server ([#499](https://github.com/VoMinhKhoii/Kallo/issues/499)) ([d1e5976](https://github.com/VoMinhKhoii/Kallo/commit/d1e597606903937887f8cc4cc89527df3386160b))
+* **db:** keep ingredient decisions view to 30 days and add exact request time ([#463](https://github.com/VoMinhKhoii/Kallo/issues/463)) ([1c9bb38](https://github.com/VoMinhKhoii/Kallo/commit/1c9bb3889e85c7e7c45de5620e9308b467bd3504))
+* **db:** keep telemetry 61 days instead of 181/90 ([#462](https://github.com/VoMinhKhoii/Kallo/issues/462)) ([40c2e7c](https://github.com/VoMinhKhoii/Kallo/commit/40c2e7cd66a00adf7c917f8b3f519bbd0fb35e73))
+* **matching:** store each food-card string once and prune duplicate names ([#444](https://github.com/VoMinhKhoii/Kallo/issues/444)) ([76519f8](https://github.com/VoMinhKhoii/Kallo/commit/76519f85268b2ffebc91de7007acb67f32559847))
+* **mobile:** open on the last saved dashboard and stop waiting on early refreshes ([#501](https://github.com/VoMinhKhoii/Kallo/issues/501)) ([133e787](https://github.com/VoMinhKhoii/Kallo/commit/133e787f0fe2d440ccc241083dbe54fb6209a2ba))
+* **web:** load page data with parallel GETs and prefetch on nav intent ([#500](https://github.com/VoMinhKhoii/Kallo/issues/500)) ([749507f](https://github.com/VoMinhKhoii/Kallo/commit/749507fb1495a8d776031feeb081090f0a3f5240))
+
+
+### Refactor
+
+* merge the analysis guard into the one rate limiter ([#492](https://github.com/VoMinhKhoii/Kallo/issues/492)) ([a576b13](https://github.com/VoMinhKhoii/Kallo/commit/a576b13aa27d5e6bfefe74901111998e10701d96))
+
+
+### Documentation
+
+* **ship:** review locally in Sol rounds, then Fable structure, before PR ([#504](https://github.com/VoMinhKhoii/Kallo/issues/504)) ([05ec948](https://github.com/VoMinhKhoii/Kallo/commit/05ec9489ee3e6e0fd46e11dd344098685e786b7d))
+
 ## [1.20.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.19.0...v1.20.0) (2026-10-12)
 
 
