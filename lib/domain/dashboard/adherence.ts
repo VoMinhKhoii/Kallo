@@ -110,10 +110,13 @@ function buildMonthHeaders(
     // its own i18n and reads the string.
     const monthIndex = current.getUTCMonth() + 1;
     const column = Math.floor(daysBetween(startWeek, current) / 7);
-    const existing = headers.get(month);
+    // Keyed by year too: a span past ~11 months holds the same month twice
+    // (Oct 2025 and Oct 2026), which must stay two headers.
+    const key = `${current.getUTCFullYear()}-${monthIndex}`;
+    const existing = headers.get(key);
 
     if (!existing) {
-      headers.set(month, { month, monthIndex, startColumn: column, span: 1 });
+      headers.set(key, { month, monthIndex, startColumn: column, span: 1 });
       continue;
     }
 

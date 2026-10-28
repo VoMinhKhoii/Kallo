@@ -143,4 +143,22 @@ describe('buildCalorieAdherenceHeatmap', () => {
       heatmap.cells.flat().filter((cell) => cell.status === 'outside')
     ).toHaveLength(0);
   });
+
+  it('keeps a month that appears in two years as two headers', () => {
+    const heatmap = buildCalorieAdherenceHeatmapData({
+      range: '371d',
+      timezoneOffset: 0,
+      calorieTarget: 2000,
+      now: new Date('2026-10-28T12:00:00.000Z'),
+      dailyCalories: [],
+    });
+
+    const months = heatmap.monthHeaders.map((header) => header.month);
+    expect(months.filter((month) => month === 'Oct')).toHaveLength(2);
+    expect(months.at(0)).toBe('Oct');
+    expect(months).toContain('Mar');
+    expect(heatmap.monthHeaders.at(-1)?.startColumn).toBeGreaterThan(
+      heatmap.monthHeaders.at(0)?.startColumn ?? 0
+    );
+  });
 });
