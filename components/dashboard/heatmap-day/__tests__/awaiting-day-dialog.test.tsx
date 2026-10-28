@@ -5,14 +5,14 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  loadMealsByDate: vi.fn(),
+  fetchMealsByDate: vi.fn(),
   markDayComplete: vi.fn(),
   push: vi.fn(),
 }));
 
 vi.mock('@/hooks/ui/use-mobile', () => ({ useIsMobile: () => false }));
-vi.mock('@/lib/actions/meals/load-meals', () => ({
-  loadMealsByDate: mocks.loadMealsByDate,
+vi.mock('@/lib/domain/meals/meals-client', () => ({
+  fetchMealsByDate: mocks.fetchMealsByDate,
 }));
 vi.mock('@/lib/actions/meals/day/mark-day-complete', () => ({
   markDayCompleteAction: mocks.markDayComplete,
@@ -73,7 +73,7 @@ describe('AwaitingDayDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // The server answers newest first.
-    mocks.loadMealsByDate.mockResolvedValue([
+    mocks.fetchMealsByDate.mockResolvedValue([
       meal('m2', 'cơm tấm', '2026-10-20T12:00:00.000Z', 600, {
         protein: 20.4,
         fat: 10,
@@ -98,7 +98,7 @@ describe('AwaitingDayDialog', () => {
     expect(
       first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
-    expect(mocks.loadMealsByDate).toHaveBeenCalledWith(
+    expect(mocks.fetchMealsByDate).toHaveBeenCalledWith(
       expect.objectContaining({ date: DATE })
     );
   });
