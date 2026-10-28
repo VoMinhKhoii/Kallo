@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AwaitingDayDialog } from '@/components/dashboard/heatmap-day/awaiting-day-dialog';
 import {
   HeatmapDayTooltip,
@@ -63,6 +63,9 @@ export function AdherenceHeatmap({
   // still has its content.
   const [awaitingCell, setAwaitingCell] = useState<HeatmapCell | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // The cell the dialog opened from: the cells are not its trigger, so this
+  // is where focus goes back to on close.
+  const openerRef = useRef<HTMLButtonElement | null>(null);
   // The 'year' range stagger fires up to 371 cells. Honour the OS-level
   // reduced-motion preference so users with vestibular-motion sensitivity
   // don't get a wall of moving cells. They still see the final state.
@@ -135,7 +138,8 @@ export function AdherenceHeatmap({
                       tabIndex={isFocusable ? 0 : -1}
                       onClick={
                         opensDialog && cell
-                          ? () => {
+                          ? (event) => {
+                              openerRef.current = event.currentTarget;
                               setAwaitingCell(cell);
                               setIsDialogOpen(true);
                             }
@@ -185,6 +189,7 @@ export function AdherenceHeatmap({
         <AwaitingDayDialog
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
+          returnFocusRef={openerRef}
           userId={userId}
           date={awaitingCell.date}
           calories={awaitingCell.calories ?? 0}

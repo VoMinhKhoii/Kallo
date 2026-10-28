@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import type { RefObject } from 'react';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 import { ResponsiveModal } from '@/components/shared/responsive-modal';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ import { AwaitingDayTotal } from './awaiting-day-total';
 interface AwaitingDayDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** The heatmap cell it opened from, where focus returns on close. */
+  returnFocusRef: RefObject<HTMLElement | null>;
   userId: string;
   /** Local day key of the awaiting cell. */
   date: string;
@@ -33,6 +35,7 @@ interface AwaitingDayDialogProps {
 export function AwaitingDayDialog({
   open,
   onOpenChange,
+  returnFocusRef,
   userId,
   date,
   calories,
@@ -44,7 +47,6 @@ export function AwaitingDayDialog({
   const queryClient = useQueryClient();
   const router = useRouter();
   const markDay = useMarkDayComplete(userId, date);
-  const [isConfirming, setIsConfirming] = useState(false);
   const roundedCalories = Math.round(calories);
 
   const title = dayKeyToUtcDate(date).toLocaleDateString(locale, {
@@ -70,6 +72,7 @@ export function AwaitingDayDialog({
     <ResponsiveModal
       open={open}
       onOpenChange={onOpenChange}
+      returnFocusRef={returnFocusRef}
       dismissible={!markDay.isPending}
       title={title}
       dialogClassName="sm:max-w-md"
@@ -98,25 +101,28 @@ export function AwaitingDayDialog({
             {t('addMissed')}
           </Button>
           {isToday ? null : (
-            <Button
-              className="rounded-xl font-sans-display"
-              disabled={markDay.isPending}
-              onClick={() => setIsConfirming(true)}
-            >
-              {tNotice('confirmAccept')}
-            </Button>
+            // The button is the ask's own trigger, so cancelling it puts
+            // focus back here rather than on the page.
+            <ConfirmDialog
+              trigger={
+                <Button
+                  className="rounded-xl font-sans-display"
+                  disabled={markDay.isPending}
+                >
+                  {tNotice('confirmAccept')}
+                </Button>
+              }
+              title={tNotice('confirmTitle')}
+              description={tNotice('confirmBody', {
+                calories: roundedCalories,
+              })}
+              confirmLabel={tNotice('confirmAccept')}
+              cancelLabel={tNotice('confirmCancel')}
+              onConfirm={confirm}
+            />
           )}
         </div>
       </div>
-      <ConfirmDialog
-        open={isConfirming}
-        onOpenChange={setIsConfirming}
-        title={tNotice('confirmTitle')}
-        description={tNotice('confirmBody', { calories: roundedCalories })}
-        confirmLabel={tNotice('confirmAccept')}
-        cancelLabel={tNotice('confirmCancel')}
-        onConfirm={confirm}
-      />
     </ResponsiveModal>
   );
 }

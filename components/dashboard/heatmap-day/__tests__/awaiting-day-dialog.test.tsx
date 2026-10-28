@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -59,6 +59,7 @@ function renderDialog(isToday = false) {
     <AwaitingDayDialog
       open
       onOpenChange={onOpenChange}
+      returnFocusRef={{ current: null }}
       userId="user-1"
       date={DATE}
       calories={900}
@@ -67,6 +68,28 @@ function renderDialog(isToday = false) {
     { wrapper }
   );
   return { onOpenChange };
+}
+
+/** Opened from a cell outside the dialog, the way the heatmap opens it. */
+function OpenedFromCell() {
+  const [open, setOpen] = useState(true);
+  const cellRef = useRef<HTMLButtonElement>(null);
+  return (
+    <>
+      <button ref={cellRef} type="button">
+        cell
+      </button>
+      <AwaitingDayDialog
+        open={open}
+        onOpenChange={setOpen}
+        returnFocusRef={cellRef}
+        userId="user-1"
+        date={DATE}
+        calories={900}
+        isToday={false}
+      />
+    </>
+  );
 }
 
 describe('AwaitingDayDialog', () => {
@@ -149,6 +172,30 @@ describe('AwaitingDayDialog', () => {
     );
 
     expect(mocks.markDayComplete).not.toHaveBeenCalled();
+    // Back on the button that asked, not dropped on the page.
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'confirmAccept' })
+      ).toHaveFocus()
+    );
+  });
+
+  it('gives focus back to the cell it opened from on close', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <OpenedFromCell />
+      </QueryClientProvider>
+    );
+    await screen.findByText('Phở bò');
+
+    await userEvent.keyboard('{Escape}');
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'cell' })).toHaveFocus()
+    );
   });
 
   it('opens the logging page on that day to add a missed meal', async () => {
