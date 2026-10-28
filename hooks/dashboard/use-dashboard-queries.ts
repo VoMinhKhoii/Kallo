@@ -10,7 +10,6 @@ import type {
   HeatmapRange,
   TimeRange,
 } from '@/lib/core/types/dashboard';
-import { buildCalorieAdherenceHeatmapData } from '@/lib/domain/dashboard/adherence';
 import { fetchCalorieAdherenceHeatmap } from '@/lib/domain/dashboard/dashboard-client';
 import {
   buildTodayNutritionData,
@@ -67,16 +66,6 @@ export function useDashboardQueries({
     toast.error(heatmapLoadErrorMessage);
   }, [heatmapLoadErrorMessage, heatmapQuery.error, heatmapQuery.isError]);
 
-  const emptyHeatmapData = useMemo(() => {
-    const timezoneOffset = new Date().getTimezoneOffset();
-
-    return buildCalorieAdherenceHeatmapData({
-      range: heatmapRange,
-      dailyCalories: [],
-      calorieTarget: null,
-      timezoneOffset,
-    });
-  }, [heatmapRange]);
   const todayMeals = useMemo(
     () => mapPersistedMealsToMealEntries(persistedMeals),
     [persistedMeals]
@@ -88,9 +77,7 @@ export function useDashboardQueries({
 
   return {
     dailyMealsQuery,
-    heatmapData: heatmapQuery.data,
     heatmapQuery,
-    resolvedHeatmapData: heatmapQuery.data ?? emptyHeatmapData,
     todayMeals,
     todayNutrition,
     weightSummary: weightSummaryQuery.data,

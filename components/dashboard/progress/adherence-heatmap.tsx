@@ -63,8 +63,7 @@ export function AdherenceHeatmap({
   // still has its content.
   const [awaitingCell, setAwaitingCell] = useState<HeatmapCell | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  // The cell the dialog opened from: the cells are not its trigger, so this
-  // is where focus goes back to on close.
+  // The cell the dialog opened from, where focus returns on close.
   const openerRef = useRef<HTMLButtonElement | null>(null);
   // The 'year' range stagger fires up to 371 cells. Honour the OS-level
   // reduced-motion preference so users with vestibular-motion sensitivity

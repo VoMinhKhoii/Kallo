@@ -150,29 +150,7 @@ class _AwaitingDaySheetState extends ConsumerState<_AwaitingDaySheet> {
                         ),
                     style: dashMeta(color: kInkMuted),
                   ),
-                  day.when(
-                    skipLoadingOnReload: true,
-                    loading:
-                        () => const Padding(
-                          padding: EdgeInsets.all(KalloSpacing.sp6),
-                          child: Center(
-                            child: CircularProgressIndicator.adaptive(),
-                          ),
-                        ),
-                    error:
-                        (_, __) => Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: KalloSpacing.sp4,
-                          ),
-                          child: Text(
-                            tr(
-                              'dashboard.adherenceHeatmap.dayDialog.loadError',
-                            ),
-                            style: dashMeta(color: kInkMuted),
-                          ),
-                        ),
-                    data: (d) => AwaitingDayMeals(meals: d.persistedMeals),
-                  ),
+                  AwaitingDayMealsBody(day: day),
                 ],
               ),
             ),

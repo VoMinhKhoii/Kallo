@@ -41,6 +41,7 @@ class KalloPalette {
     required this.bandSurface,
     required this.bandForeground,
     required this.mention,
+    required this.alertAction,
     required this.seatYou,
     required this.premiumChipFill,
     required this.premiumChipBorder,
@@ -150,6 +151,7 @@ class KalloPalette {
   final Color hover, track, track50, thumb;
   final Color text, textMuted, textSoft, accent, accentDark;
   final Color bandSurface, bandForeground, bandForeground70, mention, seatYou;
+  final Color alertAction;
   final Color premiumChipFill, premiumChipBorder, premiumChipText, premiumDot;
   final Color border, borderSoft, borderHalf, borderFaint, borderBiscotti40;
   final Color border70, border15;

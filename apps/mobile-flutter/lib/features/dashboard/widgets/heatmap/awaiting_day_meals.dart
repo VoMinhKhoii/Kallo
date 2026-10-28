@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/logic/display_format.dart';
 import '../../../../shared/logic/macro_composition.dart';
@@ -8,6 +9,34 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../../logging/logic/format.dart';
 import '../../data/logging_day.dart';
+
+/// The meals area of the awaiting-day sheet: a spinner while the day loads,
+/// a quiet line if it fails, then [AwaitingDayMeals].
+class AwaitingDayMealsBody extends StatelessWidget {
+  const AwaitingDayMealsBody({super.key, required this.day});
+  final AsyncValue<LoggingDayData> day;
+
+  @override
+  Widget build(BuildContext context) {
+    return day.when(
+      skipLoadingOnReload: true,
+      loading:
+          () => const Padding(
+            padding: EdgeInsets.all(KalloSpacing.sp6),
+            child: Center(child: CircularProgressIndicator.adaptive()),
+          ),
+      error:
+          (_, __) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp4),
+            child: Text(
+              tr('dashboard.adherenceHeatmap.dayDialog.loadError'),
+              style: dashMeta(color: kInkMuted),
+            ),
+          ),
+      data: (d) => AwaitingDayMeals(meals: d.persistedMeals),
+    );
+  }
+}
 
 /// An awaiting day's meals, oldest first — the order the day was eaten in,
 /// which is how a user checks it for a missing meal.

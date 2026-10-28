@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
-import '../../../theme/kallo_palette.dart';
 import '../../../theme/kallo_theme.dart';
 import '../surface/kallo_pressable.dart';
 import 'kallo_alert_surface.dart';
@@ -48,7 +47,7 @@ class KalloConfirmActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final confirm = KalloAlertAction(
       label: confirmLabel,
-      fill: destructive ? kAlertPillFill : kAlertActionBlue,
+      fill: destructive ? kAlertPillFill : KalloColors.alertAction,
       color: destructive ? KalloColors.danger : const Color(0xFFFFFFFF),
       // The one moment worth a firmer tap than a selection click.
       onTap: () {
@@ -93,15 +92,6 @@ class KalloConfirmActions extends StatelessWidget {
     );
   }
 }
-
-/// The system alert's tint, the blue its answer pill is filled with: iOS 26's
-/// `systemBlue` (#0088FF light, #0091FF dark — sampled off the simulator),
-/// resolved against the app's palette rather than the platform brightness,
-/// since the palette owns light and dark.
-Color get kAlertActionBlue =>
-    KalloPalette.current.isDark
-        ? const Color(0xFF0091FF)
-        : const Color(0xFF0088FF);
 
 /// The grey pill behind the cancel and a destructive answer: ink at 10% over
 /// the card — the step the system's grey pill sits below its card (239→210).
