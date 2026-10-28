@@ -455,8 +455,9 @@ class _HeatmapBodyState extends State<_HeatmapBody>
       return;
     }
 
-    // Date and kcal only: the cell's colour already says how the day went.
-    final text = heatmapDayHeading(cell, context.locale.toString());
+    final text =
+        '${heatmapDayHeading(cell, context.locale.toString())}\n'
+        '${heatmapDayStatus(cell)}';
     final x = wi * step + sq / 2;
     final y = di * step;
     setState(() {

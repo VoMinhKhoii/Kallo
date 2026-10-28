@@ -17,25 +17,23 @@ function labelOf(cell: HeatmapCell) {
 }
 
 describe('useHeatmapDayLabel', () => {
-  it('heads an awaiting day with its date and kcal, then says it waits', () => {
+  it('heads an awaiting day with its date and kcal', () => {
     expect(labelOf({ ...BASE, status: 'partial', calories: 1240.4 })).toEqual({
       heading: 'Tue, Oct 20 · kcal',
       status: 'partial',
-      note: 'partial',
     });
   });
 
-  it('gives a logged day no second line: its colour is the status', () => {
+  it('names a logged day by its tier, with no percentage', () => {
     expect(
       labelOf({ ...BASE, status: 'logged', ratio: 0.43, calories: 828 })
-    ).toMatchObject({ heading: 'Tue, Oct 20 · kcal', note: null });
+    ).toEqual({ heading: 'Tue, Oct 20 · kcal', status: 'light' });
   });
 
   it('shows only the date on a day with nothing logged', () => {
     expect(labelOf(BASE)).toEqual({
       heading: 'Tue, Oct 20',
       status: 'notLogged',
-      note: null,
     });
   });
 });

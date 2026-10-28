@@ -210,7 +210,7 @@ void main() {
 
     await _tapCell(tester, 0, 0);
 
-    expect(find.text('Mon, Oct 12 · 2,000 kcal'), findsOneWidget);
+    expect(find.text('Mon, Oct 12 · 2,000 kcal\nOn target'), findsOneWidget);
   });
 
   testWidgets('an awaiting day opens a sheet recalling its meals', (

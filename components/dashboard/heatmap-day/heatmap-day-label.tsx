@@ -9,11 +9,8 @@ import type { HeatmapCell } from '@/lib/core/types/dashboard';
 export interface HeatmapDayLabel {
   /** "Tue, Oct 20 · 1,240 kcal" — kcal only when something was logged. */
   heading: string;
-  /** The full status, for the cell's accessible name. */
+  /** "On target", "Cheat day", "Awaiting confirmation" — a name, no %. */
   status: string;
-  /** The tooltip's second line. Only an awaiting day has one: every other
-   *  day's colour already says its status. */
-  note: string | null;
 }
 
 /** What a heatmap day says about itself: its date and kcal, then its status. */
@@ -28,7 +25,7 @@ export function useHeatmapDayLabel() {
     if (cell.status !== 'logged' || cell.ratio === null) return t('notLogged');
 
     if (cell.hasCheatMeal) return t('cheatDay');
-    return `${t(heatmapTierFor(cell.ratio))} · ${Math.round(cell.ratio * 100)}%`;
+    return t(heatmapTierFor(cell.ratio));
   };
 
   return (cell: HeatmapCell): HeatmapDayLabel => {
@@ -42,12 +39,7 @@ export function useHeatmapDayLabel() {
       cell.calories === null
         ? day
         : `${day} · ${t('kcal', { calories: Math.round(cell.calories) })}`;
-    const status = statusOf(cell);
-    return {
-      heading,
-      status,
-      note: cell.status === 'partial' ? status : null,
-    };
+    return { heading, status: statusOf(cell) };
   };
 }
 
@@ -58,7 +50,7 @@ export function HeatmapDayTooltip({ label }: { label: HeatmapDayLabel }) {
       className="flex flex-col items-center bg-kallo-text text-kallo-surface text-xs"
     >
       <span className="font-medium tabular-nums">{label.heading}</span>
-      {label.note ? <span className="opacity-70">{label.note}</span> : null}
+      <span className="opacity-70">{label.status}</span>
     </TooltipContent>
   );
 }
