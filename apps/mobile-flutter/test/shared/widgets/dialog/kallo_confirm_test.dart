@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/widgets/actions/confirm_meal_removal.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
+import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm_actions.dart';
 import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 
@@ -80,14 +81,26 @@ TextStyle _painted(WidgetTester tester, String label) =>
         .text
         .style!;
 
-/// Every 0.5pt rule currently on screen, read off the render tree.
-List<Container> _hairlines() =>
-    find
-        .byType(Container)
-        .evaluate()
-        .where((e) => (e.renderObject! as RenderBox).size.height == 0.5)
-        .map((e) => e.widget as Container)
-        .toList();
+/// An iPhone 17 Pro sized screen (402pt), or [width] wide.
+void _phone(WidgetTester tester, {double width = 402}) {
+  tester.view.physicalSize = Size(width, 874);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+}
+
+/// The pill carrying [label].
+Finder _pill(String label) =>
+    find.ancestor(of: find.text(label), matching: find.byType(ClipRRect));
+
+/// The colour [label]'s pill is filled with.
+Color _fill(WidgetTester tester, String label) =>
+    tester
+        .widget<ColoredBox>(
+          find
+              .ancestor(of: find.text(label), matching: find.byType(ColoredBox))
+              .first,
+        )
+        .color;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -102,11 +115,56 @@ void main() {
     await loadAppFonts();
   });
 
-  testWidgets('opens on the native iOS alert surface', (tester) async {
+  testWidgets('opens on the iOS 26 alert card: 318pt, centred', (tester) async {
+    // iPhone 17 Pro, where the iOS 26.3 system alert measured 318pt.
+    _phone(tester);
     await _open(tester, _host(onResult: (_) {}));
-    expect(find.byKey(kKalloConfirmSurface), findsOneWidget);
-    // A system alert is 270 wide; a lookalike that is not reads as a lookalike.
-    expect(tester.getSize(find.byKey(kKalloConfirmSurface)).width, 270);
+    final card = tester.getRect(find.byKey(kKalloConfirmSurface));
+    expect(card.width, kKalloAlertMaxWidth);
+    expect(card.center.dx, closeTo(201, 0.5));
+  });
+
+  testWidgets('on a narrow phone the card keeps 20pt either side', (
+    tester,
+  ) async {
+    _phone(tester, width: 320);
+    await _open(tester, _host(onResult: (_) {}));
+    expect(tester.getSize(find.byKey(kKalloConfirmSurface)).width, 280);
+  });
+
+  testWidgets('comes in from 1.08x as it fades, leaves without shrinking', (
+    tester,
+  ) async {
+    _phone(tester);
+    await tester.pumpWidget(_host(onResult: (_) {}));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+
+    final card = find.byKey(kKalloConfirmSurface);
+    FadeTransition fade() => tester.widget<FadeTransition>(
+      find.ancestor(of: card, matching: find.byType(FadeTransition)).first,
+    );
+    ScaleTransition scale() => tester.widget<ScaleTransition>(
+      find.ancestor(of: card, matching: find.byType(ScaleTransition)).first,
+    );
+    // Mid-entrance: still a little large, partly opaque.
+    expect(scale().scale.value, inExclusiveRange(1, kKalloAlertEnterScale));
+    expect(fade().opacity.value, inExclusiveRange(0, 1));
+
+    await tester.pump(kKalloAlertFade);
+    expect(scale().scale.value, 1);
+    expect(fade().opacity.value, 1);
+
+    // Out: no shrink, and the card is gone well before the dim is.
+    await tester.tap(find.text('Giữ lại'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 110));
+    expect(scale().scale.value, 1);
+    expect(fade().opacity.value, 0);
+    await tester.pump(kKalloAlertFade);
+    expect(card, findsNothing);
   });
 
   testWidgets('the card is SOLID white, never a frosted surface', (
@@ -140,90 +198,62 @@ void main() {
     expect(find.text('Huỷ'), findsNothing);
   });
 
-  testWidgets('stacks the affirmative above the safe option', (tester) async {
-    await _open(tester, _host(onResult: (_) {}));
-    final confirm = tester.getRect(find.text('Xoá'));
-    final cancel = tester.getRect(find.text('Giữ lại'));
-    expect(
-      confirm.bottom,
-      lessThanOrEqualTo(cancel.top),
-      reason: 'the two actions must stack, not sit on one line',
-    );
-    expect(confirm.center.dx, closeTo(cancel.center.dx, 0.5));
-  });
-
-  testWidgets('the action rows are full-width and share their edges', (
+  testWidgets('two short verbs sit side by side, the cancel on the left', (
     tester,
   ) async {
+    _phone(tester);
     await _open(tester, _host(onResult: (_) {}));
-    Rect row(String label) => tester.getRect(
-      find
-          .ancestor(
-            of: find.text(label),
-            matching: find.byType(AnimatedContainer),
-          )
-          .first,
+    final confirm = tester.getRect(_pill('Xoá'));
+    final cancel = tester.getRect(_pill('Giữ lại'));
+    expect(confirm.top, closeTo(cancel.top, 0.01));
+    expect(cancel.right, lessThan(confirm.left));
+    expect(confirm.width, closeTo(cancel.width, 0.01));
+    expect(confirm.height, kKalloAlertActionHeight);
+  });
+
+  testWidgets('a verb too long for half the row stacks them, answer on top', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _open(
+      tester,
+      _host(
+        onResult: (_) {},
+        confirmLabel: "That's everything I ate",
+        cancelLabel: 'Not now',
+      ),
     );
-    final confirm = row('Xoá');
-    final cancel = row('Giữ lại');
-    expect(confirm.left, closeTo(cancel.left, 0.01));
-    expect(confirm.right, closeTo(cancel.right, 0.01));
-    // Full-bleed: the hairlines reach both edges of the 270pt card.
-    expect(confirm.width, 270);
-    // The iOS action row floor, which is also the tap-target floor.
-    expect(confirm.height, greaterThanOrEqualTo(44));
-    expect(cancel.height, greaterThanOrEqualTo(44));
+    final card = tester.getRect(find.byKey(kKalloConfirmSurface));
+    final confirm = tester.getRect(_pill("That's everything I ate"));
+    final cancel = tester.getRect(_pill('Not now'));
+    expect(confirm.bottom + kKalloAlertActionGap, closeTo(cancel.top, 0.01));
+    // Full width inside the card's 15pt pill inset.
+    expect(confirm.left - card.left, kKalloAlertActionInset);
+    expect(card.right - confirm.right, kKalloAlertActionInset);
+    expect(card.bottom - cancel.bottom, kKalloAlertActionInset);
   });
 
-  testWidgets('divides the anatomy with 0.5pt hairlines', (tester) async {
-    await _open(tester, _host(onResult: (_) {}));
-    final rules = _hairlines();
-    expect(
-      rules.length,
-      greaterThanOrEqualTo(2),
-      reason: 'one above each action row',
-    );
-    expect(rules.first.color, kHairline);
-  });
-
-  testWidgets('paints the destructive verb red and medium', (tester) async {
-    await _open(tester, _host(onResult: (_) {}, destructive: true));
-    final confirm = _painted(tester, 'Xoá');
-    expect(confirm.color, KalloColors.danger);
-    // The button-label step (`kButtonLabel`), one over the cancel's 400.
-    expect(confirm.fontWeight, FontWeight.w500);
-    // No fill anywhere behind it — the pills are retired.
-    final wash =
-        tester
-            .widget<AnimatedContainer>(
-              find
-                  .ancestor(
-                    of: find.text('Xoá'),
-                    matching: find.byType(AnimatedContainer),
-                  )
-                  .first,
-            )
-            .decoration;
-    expect((wash! as BoxDecoration).color, const Color(0x00000000));
-  });
-
-  testWidgets('the safe option is regular ink', (tester) async {
-    await _open(tester, _host(onResult: (_) {}, destructive: true));
-    final cancel = _painted(tester, 'Giữ lại');
-    expect(cancel.color, kInk);
-    expect(cancel.fontWeight, FontWeight.w400);
-  });
-
-  testWidgets('a non-destructive affirmative is ink, not red', (tester) async {
+  testWidgets('a non-destructive answer is a filled blue pill, white label', (
+    tester,
+  ) async {
     await _open(
       tester,
       _host(onResult: (_) {}, confirmLabel: 'Lưu', cancelLabel: 'Bỏ qua'),
     );
-    final confirm = _painted(tester, 'Lưu');
-    expect(confirm.color, isNot(KalloColors.danger));
-    expect(confirm.color, kInk);
-    // The button-label step (`kButtonLabel`), one over the cancel's 400.
-    expect(confirm.fontWeight, FontWeight.w500);
+    expect(_fill(tester, 'Lưu'), const Color(0xFF0088FF));
+    expect(_painted(tester, 'Lưu').color, const Color(0xFFFFFFFF));
+    // The cancel: ink on the grey pill.
+    expect(_fill(tester, 'Bỏ qua'), kAlertPillFill);
+    expect(_painted(tester, 'Bỏ qua').color, kInk);
+  });
+
+  testWidgets('a destructive answer is red on grey, never a red fill', (
+    tester,
+  ) async {
+    await _open(tester, _host(onResult: (_) {}, destructive: true));
+    expect(_fill(tester, 'Xoá'), kAlertPillFill);
+    expect(_painted(tester, 'Xoá').color, KalloColors.danger);
+    expect(_painted(tester, 'Giữ lại').color, kInk);
   });
 
   testWidgets('no yellow error underline leaks onto the text', (tester) async {
@@ -239,17 +269,17 @@ void main() {
     }
   });
 
-  testWidgets('centres the title and the description', (tester) async {
+  testWidgets('left-aligns the title and the message, 30pt in', (tester) async {
+    _phone(tester);
     await _open(tester, _host(onResult: (_) {}));
     final card = tester.getRect(find.byKey(kKalloConfirmSurface));
-    expect(
-      tester.getRect(find.text('Xoá bữa ăn này?')).center.dx,
-      closeTo(card.center.dx, 0.5),
-    );
-    expect(
-      tester.getRect(find.text('Bữa ăn sẽ biến mất.')).center.dx,
-      closeTo(card.center.dx, 0.5),
-    );
+    for (final text in ['Xoá bữa ăn này?', 'Bữa ăn sẽ biến mất.']) {
+      expect(
+        tester.getRect(find.text(text)).left - card.left,
+        kKalloAlertTextInset,
+      );
+    }
+    expect(_painted(tester, 'Bữa ăn sẽ biến mất.').color, kInkMuted);
   });
 
   testWidgets('answers true only for the affirmative', (tester) async {
@@ -271,7 +301,7 @@ void main() {
   testWidgets('answers false when the barrier is tapped', (tester) async {
     bool? answer;
     await _open(tester, _host(onResult: (v) => answer = v));
-    // Top-left corner is scrim, never the 270pt card.
+    // Top-left corner is scrim, never the card (20pt in from every edge).
     await tester.tapAt(const Offset(4, 4));
     await tester.pumpAndSettle();
     expect(answer, isFalse, reason: 'dismissing must never read as consent');

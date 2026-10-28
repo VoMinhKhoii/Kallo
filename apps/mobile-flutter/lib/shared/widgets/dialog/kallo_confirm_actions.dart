@@ -3,24 +3,27 @@ import 'package:flutter/services.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_palette.dart';
 import '../../../theme/kallo_theme.dart';
 import '../surface/kallo_pressable.dart';
+import 'kallo_alert_surface.dart';
 
-/// The confirm dialog's actions: full-width 44pt TEXT rows, stacked, each one
-/// separated from the content above it by a 0.5pt hairline.
+/// The confirm dialog's actions: the iOS 26 alert's pills.
 ///
-/// **2026-09-03, second pass (user reference: Instagram's iOS "Delete post?"
-/// alert): the filled pills are retired.** The first pass answered "which one
-/// is safe" with a red-filled affirmative over a ghost cancel, which read as an
-/// app card wearing an alert's chrome — no iOS alert on the phone this dialog
-/// opens over paints a fill behind an action. The anatomy is the platform's
-/// now: hairline, destructive verb in red, hairline, safe verb in ink. What
-/// carries over unchanged is the STACK — [CupertinoAlertDialog] would sit two
-/// short verbs side by side across a vertical hairline, and two short
-/// Vietnamese words on one line is exactly the ambiguity the stack fixed.
+/// **2026-10-28 (user decision): the iOS 26 in-app alert, minus Liquid
+/// Glass**, measured off a real `UIAlertController` on the iOS 26.3 simulator.
+/// It replaces the pre-26 anatomy (hairline-divided text rows) this dialog
+/// took from Instagram's alert on 2026-09-03. What the system does, and so
+/// what this does:
 ///
-/// The labels stay explicit verbs ("Xoá" / "Giữ lại"), so the safe option is
-/// something the user reads to ACT: ink, never muted (mobile.md).
+/// - A non-destructive answer is a FILLED blue pill with a white label — the
+///   one filled shape in the alert, so the answer is never in doubt.
+/// - A destructive answer is NOT filled: red label on the same grey pill the
+///   cancel wears. Red means "this destroys something" (the palette's rule),
+///   and the system keeps it to the label.
+/// - The cancel is ink on grey.
+/// - Two labels that both fit half the row sit side by side, cancel on the
+///   left. Either one too long stacks them full width, the answer on top.
 class KalloConfirmActions extends StatelessWidget {
   const KalloConfirmActions({
     super.key,
@@ -34,8 +37,8 @@ class KalloConfirmActions extends StatelessWidget {
   final String confirmLabel;
   final String cancelLabel;
 
-  /// Paints the affirmative red. Reserved for what the palette reserves it for:
-  /// "this destroys something", never "your numbers are off".
+  /// Paints the affirmative's label red. Reserved for what the palette
+  /// reserves it for: "this destroys something", never "your numbers are off".
   final bool destructive;
 
   final VoidCallback onConfirm;
@@ -43,106 +46,130 @@ class KalloConfirmActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const KalloAlertHairline(),
-        KalloAlertAction(
-          label: confirmLabel,
-          // Instagram's "Delete" is red AND bold: emphasis is the default
-          // action's, colour is the destructive one's. A non-destructive
-          // affirmative keeps the weight and drops the red.
-          color: destructive ? KalloColors.danger : kInk,
-          // Medium, not semibold: the button-label step (`kButtonLabel`),
-          // still one step over the cancel's regular.
-          weight: FontWeight.w500,
-          // The one moment worth a firmer tap than a selection click: past this
-          // point something is gone.
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            onConfirm();
-          },
-        ),
-        const KalloAlertHairline(),
-        KalloAlertAction(
-          label: cancelLabel,
-          color: kInk,
-          weight: FontWeight.w400,
-          onTap: onCancel,
-        ),
-      ],
+    final confirm = KalloAlertAction(
+      label: confirmLabel,
+      fill: destructive ? kAlertPillFill : kAlertActionBlue,
+      color: destructive ? KalloColors.danger : const Color(0xFFFFFFFF),
+      // The one moment worth a firmer tap than a selection click.
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onConfirm();
+      },
+    );
+    final cancel = KalloAlertAction(
+      label: cancelLabel,
+      fill: kAlertPillFill,
+      color: kInk,
+      onTap: onCancel,
+    );
+
+    return LayoutBuilder(
+      builder: (context, box) {
+        final half = (box.maxWidth - kKalloAlertActionGap) / 2;
+        final scaler = MediaQuery.textScalerOf(context);
+        final fits = [
+          confirmLabel,
+          cancelLabel,
+        ].every((label) => KalloAlertAction.widthOf(label, scaler) <= half);
+        if (fits) {
+          return Row(
+            children: [
+              Expanded(child: cancel),
+              const SizedBox(width: kKalloAlertActionGap),
+              Expanded(child: confirm),
+            ],
+          );
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            confirm,
+            const SizedBox(height: kKalloAlertActionGap),
+            cancel,
+          ],
+        );
+      },
     );
   }
 }
 
-/// The 0.5pt rule an iOS alert draws between its content and every action, and
-/// between one action and the next. Half a logical pixel, not one: at 3x it is
-/// the same 1.5 device pixels the system draws.
-class KalloAlertHairline extends StatelessWidget {
-  const KalloAlertHairline({super.key});
+/// The system alert's tint, the blue its answer pill is filled with: iOS 26's
+/// `systemBlue` (#0088FF light, #0091FF dark — sampled off the simulator),
+/// resolved against the app's palette rather than the platform brightness,
+/// since the palette owns light and dark.
+Color get kAlertActionBlue =>
+    KalloPalette.current.isDark
+        ? const Color(0xFF0091FF)
+        : const Color(0xFF0088FF);
 
-  @override
-  Widget build(BuildContext context) =>
-      Container(height: 0.5, color: kHairline);
-}
+/// The grey pill behind the cancel and a destructive answer: ink at 10% over
+/// the card — the step the system's grey pill sits below its card (239→210).
+Color get kAlertPillFill => kInk.withValues(alpha: 0.10);
 
-/// One alert action: a full-width, centred, 44pt-minimum text row that washes
-/// on press. No fill, no radius — the row IS the button, which is why the
-/// hairlines above and below it are what separate it from its neighbours.
+/// One alert action: a stadium pill, 48pt tall, that washes on press.
 ///
-/// The full width comes from the stacking [Column]'s
-/// [CrossAxisAlignment.stretch] above, which hands this row a TIGHT width —
-/// not from [KalloPressable], which shrink-wraps its child.
-///
-/// **The press (2026-09-07).** The wash was [KalloColors.hover] (`#F0EAE0`),
-/// an opaque warm cream — that is the SELECTED token, not the pressed one, and
-/// holding a row turned it into a solid cream slab. It is
-/// [KalloColors.pressWash] now (ink at 6%), the app's documented press token,
-/// already what `shared/widgets/form/sheet_confirm_button.dart` paints; it
-/// darkens the row instead of repainting it.
-///
-/// **The hold (2026-09-07).** The row behaves exactly as the platform's own
+/// **The hold (2026-09-07).** The pill behaves exactly as the platform's own
 /// alert action does: the wash lasts the ENTIRE hold and the action FIRES on
 /// release (`mobile.md`, *Platform — Cupertino wherever it exists*, boundary
-/// 2: the platform wins on behaviour). An arena-driven wash cannot deliver
-/// that — a long press winning the arena at ~500ms rejects the tap and its
-/// `onTapCancel` drops the wash with the finger still down.
-///
-/// Both are fixed by [KalloPressable], which takes the press state OUT of the
-/// gesture arena so no arena resolution can cancel the wash, and fires on
-/// release like the platform's own action. This row was its first consumer.
+/// 2: the platform wins on behaviour). [KalloPressable] takes the press state
+/// out of the gesture arena so no arena resolution can cancel the wash, and it
+/// paints the wash ([KalloColors.pressWash], ink at 6%) OVER the fill, so a
+/// held pill darkens rather than being repainted.
 class KalloAlertAction extends StatelessWidget {
   const KalloAlertAction({
     super.key,
     required this.label,
+    required this.fill,
     required this.color,
-    required this.weight,
     required this.onTap,
   });
 
   final String label;
+  final Color fill;
   final Color color;
-  final FontWeight weight;
   final VoidCallback onTap;
+
+  static const double _padX = KalloSpacing.sp4;
+
+  /// The width a pill needs to show [label] on one line, padding included.
+  static double widthOf(String label, TextScaler scaler) {
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: kButtonLabel()),
+      textDirection: TextDirection.ltr,
+      textScaler: scaler,
+      maxLines: 1,
+    )..layout();
+    final width = painter.width + 2 * _padX;
+    painter.dispose();
+    return width;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
       label: label,
-      child: KalloPressable(
-        onTap: onTap,
-        alignment: Alignment.center,
-        constraints: const BoxConstraints(minHeight: KalloIcons.hit),
-        padding: const EdgeInsets.symmetric(
-          horizontal: KalloSpacing.sp4,
-          vertical: KalloSpacing.sp2,
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: dashBody(color: color, weight: weight),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(kKalloAlertActionHeight / 2),
+        child: ColoredBox(
+          color: fill,
+          child: KalloPressable(
+            onTap: onTap,
+            alignment: Alignment.center,
+            constraints: const BoxConstraints(
+              minHeight: kKalloAlertActionHeight,
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: _padX,
+              vertical: KalloSpacing.sp2,
+            ),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: kButtonLabel(color: color),
+            ),
+          ),
         ),
       ),
     );
