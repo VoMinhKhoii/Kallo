@@ -20,6 +20,7 @@ import '../../../models/logging/cheat.dart';
 import '../../circle/data/circle_providers.dart'
     show refreshInvitesAfterRelease;
 // Prefixed: dashboard_providers also exports a `loggingDayProvider`.
+import '../../dashboard/data/dashboard_cache.dart';
 import '../../dashboard/data/dashboard_providers.dart' as dash;
 import '../../nutrition/providers/nutrition_overview_provider.dart';
 import '../logic/meal_log_mode.dart';
@@ -259,6 +260,9 @@ void invalidateMealSurfaces(
   invalidate(mealDatesProvider(userId));
   invalidate(recentCheatOccasionsProvider(userId));
   invalidate(dash.dashboardBundleProvider((userId: userId, date: date)));
+  // A meal written before the dashboard first opened this session must not be
+  // hidden behind the copy saved for a fast launch.
+  DashboardCache.forget(userId);
   invalidate(dash.dashboardDayProvider((userId: userId, date: date)));
   // The whole family — every cached (range, day scope) overview is now stale.
   // Without this the nutrition page keeps serving pre-log numbers, and each

@@ -91,6 +91,7 @@ export const APP_ROUTE_PATTERNS = [
   '/api/v1/meals/cheat-repeat',
   '/api/v1/meals/confirm',
   '/api/v1/meals/dates',
+  '/api/v1/meals/dates/summaries',
   '/api/v1/meals/manual',
   '/api/v1/meals/pending',
   '/api/v1/meals/pending/[analysisId]',

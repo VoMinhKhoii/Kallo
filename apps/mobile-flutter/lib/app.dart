@@ -11,6 +11,7 @@ import 'services/monitoring/monitoring.dart';
 import 'services/billing/purchases_service.dart';
 import 'services/auth/session_provider.dart';
 import 'features/circle/logic/circle_deep_links.dart';
+import 'features/dashboard/data/dashboard_cache.dart';
 import 'features/logging/data/logging_providers.dart';
 import 'features/notifications/logic/push_registration.dart';
 import 'router.dart';
@@ -170,4 +171,10 @@ void _syncSession(
     previousUserId: previousUserId,
     nextUserId: session?.user.id,
   );
+
+  // The day saved for a fast launch belongs to the account that left: a
+  // shared phone must not keep (or show) it.
+  if (previousUserId != null && previousUserId != session?.user.id) {
+    unawaited(ref.read(dashboardCacheProvider).clear(previousUserId));
+  }
 }

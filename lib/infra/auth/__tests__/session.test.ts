@@ -1,3 +1,4 @@
+import { AuthInvalidJwtError } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 import { createFakeDb } from '@/lib/infra/db/__fixtures__/fake-db';
 
@@ -22,19 +23,32 @@ function mockSupabase(
 ) {
   return {
     auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: { user },
-        error: error ?? null,
-      }),
+      getClaims: vi.fn().mockResolvedValue(
+        user
+          ? {
+              data: { claims: { sub: user.id, session_id: 'session-1' } },
+              error: null,
+            }
+          : { data: null, error: error ?? null }
+      ),
     },
   } as unknown as Awaited<
     ReturnType<typeof import('@/lib/infra/supabase/server').createClient>
   >;
 }
 
-/** The guard issues exactly one `select(...).from(...).where(...).limit(1)`. */
-function mockDb(rows: Record<string, unknown>[]) {
+/** The guard runs the session query (`execute`), then exactly one
+ *  `select(...).from(...).where(...).limit(1)` for the profile. */
+function mockDb(
+  rows: Record<string, unknown>[],
+  user?: { id: string; email?: string }
+) {
   const fake = createFakeDb();
+  if (user) {
+    fake.queueExecute([
+      { id: user.id, email: user.email ?? null, created_at: '2026-01-01' },
+    ]);
+  }
   fake.queueSelect(rows);
   return fake.db;
 }
@@ -50,7 +64,7 @@ describe('requireAuthAndProfile', () => {
 
     const result = await requireAuthAndProfile({
       supabase: mockSupabase(user),
-      database: mockDb([profile]),
+      database: mockDb([profile], user),
     });
 
     expect(result.user).toEqual(user);
@@ -60,7 +74,10 @@ describe('requireAuthAndProfile', () => {
   it('throws NOT_AUTHENTICATED when auth returns error', async () => {
     await expect(
       requireAuthAndProfile({
-        supabase: mockSupabase(null, new Error('token expired')),
+        supabase: mockSupabase(
+          null,
+          new AuthInvalidJwtError('JWT has expired')
+        ),
         database: mockDb([]),
       })
     ).rejects.toThrow(expect.objectContaining({ code: 'NOT_AUTHENTICATED' }));
@@ -81,7 +98,7 @@ describe('requireAuthAndProfile', () => {
     await expect(
       requireAuthAndProfile({
         supabase: mockSupabase(user),
-        database: mockDb([]),
+        database: mockDb([], user),
       })
     ).rejects.toThrow(expect.objectContaining({ code: 'PROFILE_NOT_FOUND' }));
   });

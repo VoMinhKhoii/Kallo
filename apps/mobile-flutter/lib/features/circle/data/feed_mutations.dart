@@ -14,6 +14,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../services/http/api_client.dart';
 import '../../../models/social/circle.dart';
+import '../../dashboard/data/dashboard_cache.dart';
 import '../../dashboard/data/dashboard_providers.dart'
     show
         dashboardBundleProvider,
@@ -168,6 +169,7 @@ Future<void> logSharedMeal(WidgetRef ref, String shareId) async {
   ref.invalidate(mealDatesProvider);
   // The dashboard reads its ring off a separate bundle/day cache, so heal it
   // too or the Today + week-strip ring keep the pre-log total.
+  DashboardCache.forgetAll();
   ref.invalidate(dashboardBundleProvider);
   ref.invalidate(dashboardDayProvider);
 }

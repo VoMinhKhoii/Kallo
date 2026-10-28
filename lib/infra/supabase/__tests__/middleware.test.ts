@@ -1,6 +1,7 @@
 import {
   AuthApiError,
   type AuthError,
+  AuthInvalidJwtError,
   AuthRetryableFetchError,
   AuthSessionMissingError,
   AuthUnknownError,
@@ -13,11 +14,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // after signing out reached /en/dashboard with no session, and the page's own
 // session read threw before the layout's redirect could run.
 
-const { createServerClient } = vi.hoisted(() => ({
+const { createServerClient, execute, signOut } = vi.hoisted(() => ({
   createServerClient: vi.fn(),
+  // The session query `verifyUser` runs once the token checks out.
+  execute: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 vi.mock('@supabase/ssr', () => ({ createServerClient }));
+vi.mock('@/lib/infra/db/client', () => ({ db: { execute } }));
 
 vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://project.supabase.co');
 vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_key');
@@ -29,9 +34,14 @@ function session(
   error: AuthError | null = null,
   refreshed: { name: string; value: string; maxAge?: number }[] = []
 ) {
+  // A live session row for the signed-in case, none otherwise.
+  execute.mockResolvedValue(
+    user ? [{ id: user.id, email: null, created_at: '2026-01-01' }] : []
+  );
   createServerClient.mockImplementation((_url, _key, options) => ({
     auth: {
-      getUser: async () => {
+      signOut,
+      getClaims: async () => {
         if (refreshed.length > 0) {
           options.cookies.setAll(
             refreshed.map(({ maxAge, ...c }) => ({
@@ -41,7 +51,12 @@ function session(
             { 'Cache-Control': 'private, no-store', Expires: '0' }
           );
         }
-        return { data: { user }, error };
+        return user
+          ? {
+              data: { claims: { sub: user.id, session_id: 'session-1' } },
+              error: null,
+            }
+          : { data: null, error };
       },
     },
   }));
@@ -158,7 +173,21 @@ describe('signed-out visitor', () => {
     expect(await location('/en/dashboard')).toBeNull();
   });
 
+  it('does not treat a failed session query as signed out', async () => {
+    session({ id: 'user-1' });
+    execute.mockRejectedValue(new Error('connection terminated'));
+    expect(await location('/en/dashboard')).toBeNull();
+  });
+
+  it('treats a valid token whose session was revoked as signed out', async () => {
+    session({ id: 'user-1' });
+    execute.mockResolvedValue([]);
+    expect((await run('/en/dashboard')).status).toBe(307);
+    expect(signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
   it.each([
+    new AuthInvalidJwtError('Invalid JWT signature'),
     new AuthSessionMissingError(),
     new AuthApiError('bad jwt', 403, 'bad_jwt'),
     new AuthApiError('gone', 400, 'refresh_token_not_found'),

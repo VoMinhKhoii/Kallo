@@ -4,7 +4,8 @@ description: |
   MANUAL TRIGGER ONLY: invoke only when user types /ship.
   Full Git shipping workflow — from unstaged changes to a clean, merged-ready PR.
   Handles: git add, branch creation (with meaningful name), conventional commit,
-  a local adversarial Codex review before the first push, push (behind a
+  a local review before the first push (Codex Sol rounds, an Astra pass when
+  needed, a Fable thermo-nuclear structure review, a Sol regression check), push (behind a
   pre-push gate hook), draft PR creation, CI monitoring and fixing, an always-on Codex review
   loop (`@codex review` with a change brief, iterated until Codex approves the
   current head, every finding judged on its merits, not blindly applied),
@@ -20,6 +21,7 @@ allowed-tools:
   - Glob
   - Grep
   - AskUserQuestion
+  - Agent
 ---
 
 # Ship Skill
@@ -133,41 +135,93 @@ git commit -m "<message>"
 
 ---
 
-## Phase 3b: Local Codex Review (default, before the first push)
+## Phase 3b: Local Review (default, before the first push)
 
-A local adversarial Codex pass runs before GitHub ever sees the branch, so the
-GitHub rounds start from a cleaner head. On record, one local pass found 8 defects
-the GitHub Codex loop had missed.
+Before GitHub ever sees the branch, it is reviewed locally in this order:
+**up to three Sol rounds** (bugs), **one Astra pass** only if round 3 still finds
+real bugs, **one Fable structure review** (`thermo-nuclear-code-quality-review`),
+then **one Sol regression check** on the structure fixes. If that check is clean, we
+push and open the PR. The shape follows Anthropic's write-up of its own review loop:
+full review first, diff-only re-review after it, findings reported as classes, no
+repeats, and a step back after three rounds
+(<https://claude.dev/blog/solving-code-review-at-anthropic/>). On record, one local
+pass found 8 defects the GitHub Codex loop had missed.
+
+**How each pass runs.** Every Codex pass runs from the branch's checkout, in the
+background (3-15 minutes; wait for the task notification, never a foreground
+`sleep`), with this command; round 1 has no pass file:
+
+```bash
+# The prompt names the diff range: `codex review` rejects --base together
+# with custom instructions.
+cat .claude/skills/ship/local-review.md <scratchpad>/codex-brief.md \
+  <scratchpad>/pass-<name>.md \
+  | codex review -c 'model="<model>"' -c 'sandbox_mode="read-only"' - \
+  > <scratchpad>/local-review-<name>.md 2>&1
+```
+`<model>` is `gpt-6.1-sol`, except on the Astra pass (`gpt-6-astra`). Check the
+output file is a review, not a CLI error, before reading silence as a clean pass.
+
+- **Pin the commit.** Just before launching any pass (Fable's too), record
+  `git rev-parse HEAD`: the commit that pass reviews. Fixes committed after the
+  launch are what the next pass reviews.
+- **Pass files.** Every pass after round 1 is diff-only and gets its own
+  `<scratchpad>/pass-<name>.md`, never lines appended to `codex-brief.md`, which
+  must still mean the whole branch when Phase 6c reuses it. A pass file holds
+  `Scope: git diff <previous-pass-sha>..HEAD` (the prompt adds the callers), an
+  "Already answered" list of every earlier pass's findings (finding, `Fixed in
+  <sha>` or `Not changing: <reason>`) so Codex does not raise them again, and what
+  that pass's step below adds.
+- **Judge every finding** as in 6c ("Judge every finding ourselves"), with one
+  difference: a finding that needs a product or design call is listed in the PR
+  body as a decision only the owner can make (any tier), not asked mid-review.
+  Commit fixes with explicit paths.
 
 1. **Write the brief now**, the three parts listed under Phase 5 (what changed and
    why, where it could break, out of scope), to `<scratchpad>/codex-brief.md`. If
    writing "where it could break" surfaces a bug, fix it first.
-2. **Run the review** from the branch's checkout, in the background (it takes
-   3-15 minutes; wait for the task notification, never a foreground `sleep`):
+2. **Round 1** (Sol, pass `1`) reviews the whole branch.
+3. **Rounds 2 and 3** (Sol, passes `2` and `3`). Each runs only when the round
+   before found a real bug (a finding we fixed, not one we rejected); a round with
+   none ends the Sol rounds.
+4. **After round 3, step back; do not run a round 4.** If round 3 still found a
+   real bug, first ask whether the findings across all three rounds share one cause
+   (the same class reappearing at new sites, or an approach that keeps leaking).
+   If they do, change the approach, not the cases. Then fix, commit, and run **one
+   Astra pass** (pass `astra`, Scope from round 3's commit). Its pass file adds a
+   "Step back" section: the classes the three rounds found, the shared cause, and
+   the approach change made for it (or why none was needed), so Astra judges the
+   new approach, not just the new lines. Astra is the expensive model: it runs here
+   only, once per `/ship`, never as a routine round.
+5. **One Fable structure review** of the whole branch, once the bug rounds are
+   done. Dispatch one subagent with the Agent tool (`model: "fable"`,
+   `run_in_background: false`) and this brief: invoke the
+   `thermo-nuclear-code-quality-review` skill on `git diff origin/main...HEAD`; read
+   `<scratchpad>/codex-brief.md` for intent and scope; **REPORT ONLY. DO NOT EDIT
+   ANY FILES.**; return each finding as file:line, the structural problem, and the
+   restructuring proposed, then the count. Save its report to
+   `<scratchpad>/local-thermo.md`. Apply a finding when the restructuring keeps
+   behavior the same and the gates stay green; reject it with the reason otherwise.
+   Commit the structure fixes separately (`refactor: ...`).
+6. **One Sol regression check** on the structure fixes only (pass `regression`,
+   Scope from Fable's commit), skipped when step 5 changed nothing. Its pass file
+   adds the line "These commits are meant to change structure only; report any
+   behavior they change."
+   - **No findings** → push and open the PR (Phase 4 onward).
+   - **A real regression** → revert the restructuring that caused it unless the fix
+     is a few lines, then run this check once more on that fix (pass
+     `regression-2`). Push after that; the GitHub loop (6c) covers what remains.
 
-   ```bash
-   # The prompt names the diff range: `codex review` rejects --base together
-   # with custom instructions.
-   cat .claude/skills/ship/local-review.md <scratchpad>/codex-brief.md \
-     | codex review -c 'model="gpt-6.1-sol"' -c 'sandbox_mode="read-only"' - \
-     > <scratchpad>/local-review-<n>.md 2>&1
-   ```
-   Check the output file is a review, not a CLI error, before reading silence as
-   a clean pass.
-3. **Judge every finding** exactly as in 6c ("Judge every finding ourselves"):
-   reproduce, then fix with a test, or reject with the reason. Commit fixes with
-   explicit paths.
-4. If the pass found a P0 or P1, run one more pass on the fixed head. Two local
-   passes at most; then push. Whatever the local passes leave, the GitHub loop
-   (6c) still runs to approval.
+Record each pass's finding count (Sol rounds, Astra if it ran, Fable structure
+review, regression check) under Evidence in the PR body.
 
-A local Codex review that already ran on this exact commit with the same brief
+A local Codex round that already ran on this exact commit with the same brief
 (for example during `grill-your-own-work`), with its findings handled, counts as
-this phase; do not run another.
+round 1; do not repeat it.
 
-If the pass cannot run (`codex` not installed, out of quota, or a CLI error),
-write "Local Codex review did not run: <reason>" under Evidence in the PR body and
-continue. A pass that did not run is never a clean pass.
+If a pass cannot run (`codex` not installed, out of quota, or a CLI error), write
+"Local review did not run: <which pass>: <reason>" under Evidence in the PR body
+and continue. A pass that did not run is never a clean pass.
 
 ---
 
@@ -532,8 +586,9 @@ what evidence the PR carries, never when review stops.
 every later `@codex review`:
 1. List every finding so far by class. Sweep each class across the whole diff and
    its callers (step 3 above), so this round fixes classes, not sites.
-2. Run the local Codex pass (Phase 3b) and handle its findings before asking
-   GitHub again. At round 3 it reviews the whole branch. In later rounds the brief
+2. Run one local adversarial Codex round (the Phase 3b Sol command; never Astra
+   here) and handle its findings before asking GitHub again. At round 3 it reviews
+   the whole branch. In later rounds a pass file (Phase 3b)
    scopes it to `git diff <last-reviewed-sha>..HEAD` and the callers of what that
    changed, and a whole-branch pass runs again only when the approach changed. On
    a low or medium tier PR, skip it when the fixes since the last round are a few

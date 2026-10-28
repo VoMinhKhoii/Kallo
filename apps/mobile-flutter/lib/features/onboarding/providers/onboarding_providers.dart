@@ -34,8 +34,11 @@ abstract final class OnboardingKeys {
 /// `staleTime: 60_000`, with the shared retry policy. Only runs when signed in
 /// (mirrors the RN `enabled: !!userId`); returns `null` when signed out.
 final profileProvider = FutureProvider<ProfileRow?>((ref) async {
-  final session = ref.watch(currentSessionProvider);
-  if (session == null) return null;
+  // The account, not the session: a token refresh emits a new session object,
+  // and watching that refetched the profile on every refresh — twice on a
+  // launch that refreshed.
+  final userId = ref.watch(signedInUserIdProvider);
+  if (userId == null) return null;
 
   final api = ref.read(apiClientProvider);
   return runWithRetry(() async {

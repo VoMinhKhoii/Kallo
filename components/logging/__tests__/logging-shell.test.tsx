@@ -86,8 +86,8 @@ vi.mock('@/components/logging/sidebar/mobile-timeline-picker', () => ({
 }));
 
 // Mock actions
-vi.mock('@/lib/actions/meals/meal-dates', () => ({
-  loadMealDates: vi.fn(),
+vi.mock('@/lib/domain/meals/meals-client', () => ({
+  fetchMealDateSummaries: vi.fn(),
 }));
 
 // Mock hooks
@@ -117,7 +117,9 @@ vi.mock('@/i18n/navigation', () => ({
   usePathname: () => '/logging',
 }));
 
-const { loadMealDates } = await import('@/lib/actions/meals/meal-dates');
+const { fetchMealDateSummaries: loadMealDates } = await import(
+  '@/lib/domain/meals/meals-client'
+);
 const { usePrefetchDates } = await import(
   '@/hooks/meals/queries/use-prefetch-dates'
 );

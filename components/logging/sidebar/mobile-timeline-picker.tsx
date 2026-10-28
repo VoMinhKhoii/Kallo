@@ -302,16 +302,16 @@ export function MobileTimelinePicker({
     [scrollNext, scrollPrev]
   );
 
-  // Below md the chip rides in MobileHeader's row, beside the activity heart.
-  // From md to lg there is no mobile header — the app rail is shown and the
-  // timeline sidebar is not — so the chip gets its own row above the feed.
-  // That inline path is also the test/Storybook contract: do not delete it when
-  // refactoring, the tests render this without an AppShell parent.
+  // Below md the chip rides in MobileHeader's row (portal); md to lg has no
+  // mobile header, so it gets its own row. That row stays hidden below md: the
+  // first render has no slot at any width, and a phone showing it until the
+  // portal took over jumped the page up 40 px (shift 0.095, 3G, 2026-10-27).
+  // Inline is also the test contract: tests render without an AppShell.
   const renderIntoSlot = (node: React.ReactNode) =>
     portalTarget ? (
       createPortal(node, portalTarget)
     ) : (
-      <div className="flex w-full shrink-0 justify-center px-3 pt-1 lg:hidden">
+      <div className="hidden w-full shrink-0 justify-center px-3 pt-1 md:flex lg:hidden">
         {node}
       </div>
     );

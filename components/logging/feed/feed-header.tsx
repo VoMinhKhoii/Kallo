@@ -38,7 +38,9 @@ export function FeedHeader({
         className="shrink-0 bg-kallo-surface px-3 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-3 dark:bg-transparent"
         data-testid="macro-summary-region"
       >
-        <div className="mx-auto max-w-3xl">
+        {/* The size container the loading placeholder reads its height from
+            (feed-day-states), so it matches the strip at this width. */}
+        <div className="@container mx-auto max-w-3xl">
           {isDayLoading ? (
             <MacroSummarySkeleton />
           ) : isDayError ? null : (

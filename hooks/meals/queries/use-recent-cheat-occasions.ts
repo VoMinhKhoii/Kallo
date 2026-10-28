@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { loadRecentCheatOccasionsAction } from '@/lib/actions/meals/cheat/occasions';
 import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
+import { fetchRecentCheatOccasions } from '@/lib/domain/meals/meals-client';
 import { recentCheatOccasionsKeys } from '@/lib/domain/meals/query-keys';
 
 /**
@@ -12,7 +12,7 @@ import { recentCheatOccasionsKeys } from '@/lib/domain/meals/query-keys';
 export function useRecentCheatOccasions(userId: string, enabled: boolean) {
   return useQuery<RecentCheatOccasion[]>({
     queryKey: recentCheatOccasionsKeys.byUser(userId),
-    queryFn: () => loadRecentCheatOccasionsAction({ limit: 5 }),
+    queryFn: () => fetchRecentCheatOccasions({ limit: 5 }),
     enabled,
     staleTime: 60_000,
   });

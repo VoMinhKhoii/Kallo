@@ -66,7 +66,6 @@ export function DashboardShell({ profile }: { profile: DashboardProfile }) {
     profile,
     weightRange,
     heatmapRange: renderedHeatmapRange,
-    hasMeasuredProgress,
     hasMeasuredHeatmap,
     heatmapLoadErrorMessage: t('heatmapLoadError'),
   });

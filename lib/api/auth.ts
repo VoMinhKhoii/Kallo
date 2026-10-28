@@ -2,20 +2,27 @@
 // Shared auth guard for app/api/v1/* routes
 // ---------------------------------------------------------------------------
 // Resolves the authenticated user via the unified Supabase server client
-// (Bearer for mobile, cookie for web). Throws a structured AppError that the
-// route's serializeError() catch turns into the right HTTP status.
+// (Bearer for mobile, cookie for web), checked locally by `getRequestUser`.
+// Throws a structured AppError that the route's serializeError() catch turns
+// into the right HTTP status.
 
 import type { User } from '@supabase/supabase-js';
 import { Errors } from '@/lib/core/errors/catalog';
+import { getRequestUser } from '@/lib/infra/auth/session';
 import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 import { createClient } from '@/lib/infra/supabase/server';
 
 export async function requireUserId(): Promise<string> {
-  return (await requireUser()).id;
+  const user = await getRequestUser();
+  if (!user) {
+    throw Errors.notAuthenticated();
+  }
+  return user.id;
 }
 
 /** The full auth user, for the routes that need more than the id (e.g. its
- *  linked identities). */
+ *  linked identities). Still asks the Auth server: only the rare account
+ *  routes use it. */
 export async function requireUser(): Promise<User> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
@@ -34,15 +41,14 @@ export async function requireUserWithAvatar(): Promise<{
   id: string;
   avatarUrl: string | null;
 }> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) {
+  const user = await getRequestUser();
+  if (!user) {
     throw Errors.notAuthenticated();
   }
-  const meta = data.user.user_metadata as Record<string, unknown> | undefined;
-  const raw = meta?.avatar_url ?? meta?.picture;
+  const meta = user.userMetadata;
+  const raw = meta.avatar_url ?? meta.picture;
   const avatarUrl = typeof raw === 'string' && raw.length > 0 ? raw : null;
-  return { id: data.user.id, avatarUrl };
+  return { id: user.id, avatarUrl };
 }
 
 /**

@@ -164,6 +164,7 @@ export const routeInventory = {
   'api/v1/meals/cheat-repeat/route.ts': ['session', true, 'none-cheap'],
   'api/v1/meals/confirm/route.ts': ['session', true, 'none-cheap'],
   'api/v1/meals/dates/route.ts': ['session', false, 'none-cheap'],
+  'api/v1/meals/dates/summaries/route.ts': ['session', false, 'none-cheap'],
   'api/v1/meals/manual/route.ts': ['session', true, 'none-cheap'],
   'api/v1/meals/pending/[analysisId]/route.ts': [
     'session',

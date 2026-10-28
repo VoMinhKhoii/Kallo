@@ -2,13 +2,11 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import {
-  TIMEZONE_COOKIE,
-  TimezoneCookie,
-} from '@/components/app/timezone-cookie';
+import { TimezoneCookie } from '@/components/app/timezone-cookie';
 import { LoggingShell } from '@/components/logging/logging-shell';
 import { dayHasEntries } from '@/lib/actions/meals/day/day-has-entries';
 import { toLocalDayKey } from '@/lib/core/date/day-key';
+import { TIMEZONE_COOKIE } from '@/lib/core/date/timezone-cookie';
 import type { LoggingProfile } from '@/lib/domain/logging/types';
 import { goalEnumSchema } from '@/lib/domain/onboarding/schemas';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';

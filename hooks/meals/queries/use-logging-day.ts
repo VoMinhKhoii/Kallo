@@ -1,8 +1,13 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { loadLoggingDay } from '@/lib/actions/meals/load-meals';
+import {
+  type QueryClient,
+  queryOptions,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import type { LoggingDayData } from '@/lib/actions/meals/types';
+import { fetchLoggingDay } from '@/lib/domain/meals/meals-client';
 import { loggingDayKeys } from '@/lib/domain/meals/query-keys';
 import { mealShareInvitesKeys } from '@/lib/domain/social/query-keys';
 
@@ -15,13 +20,22 @@ function isToday(dateStr: string): boolean {
 }
 
 export function useLoggingDay(userId: string, date: string) {
-  const timezoneOffset = new Date().getTimezoneOffset();
   const queryClient = useQueryClient();
+  return useQuery(loggingDayQueryOptions(queryClient, userId, date));
+}
 
-  return useQuery<LoggingDayData>({
+/** The query `useLoggingDay` runs, shared with the nav's intent prefetch. */
+export function loggingDayQueryOptions(
+  queryClient: QueryClient,
+  userId: string,
+  date: string
+) {
+  const timezoneOffset = new Date().getTimezoneOffset();
+
+  return queryOptions<LoggingDayData>({
     queryKey: loggingDayKeys.byUserDateOffset(userId, date, timezoneOffset),
     queryFn: async () => {
-      const day = await loadLoggingDay({ date, timezoneOffset });
+      const day = await fetchLoggingDay({ date, timezoneOffset });
       // Loading a day sweeps this user's week-abandoned staging cards, and a
       // card staged from a friend's cheat offer hands that offer back when it
       // goes. So a read can repopulate the invite inbox — and nothing else will

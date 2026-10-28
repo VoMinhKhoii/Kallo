@@ -79,8 +79,8 @@ vi.mock('@/components/billing/premium-guard-provider', () => ({
 const loadCandidates = vi.hoisted(() => vi.fn());
 const stageRelog = vi.hoisted(() => vi.fn());
 
-vi.mock('@/lib/actions/meals/relog/load-candidates', () => ({
-  loadRelogCandidatesAction: loadCandidates,
+vi.mock('@/lib/domain/meals/meals-client', () => ({
+  fetchRelogCandidates: loadCandidates,
 }));
 vi.mock('@/lib/actions/meals/relog/stage-relog-analysis', () => ({
   stageRelogAnalysisAction: stageRelog,
