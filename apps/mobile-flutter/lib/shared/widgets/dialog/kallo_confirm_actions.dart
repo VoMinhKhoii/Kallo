@@ -164,10 +164,14 @@ class KalloAlertAction extends StatelessWidget {
               horizontal: _padX,
               vertical: KalloSpacing.sp2,
             ),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: kButtonLabel(color: color),
+            // The Semantics above already names the pill; reading the Text
+            // too made VoiceOver say every label twice.
+            child: ExcludeSemantics(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: kButtonLabel(color: color),
+              ),
             ),
           ),
         ),

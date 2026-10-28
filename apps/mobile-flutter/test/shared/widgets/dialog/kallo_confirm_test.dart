@@ -198,6 +198,20 @@ void main() {
     expect(find.text('Huỷ'), findsNothing);
   });
 
+  testWidgets('VoiceOver reads each verb once, as a tappable button', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await _open(tester, _host(onResult: (_) {}));
+    for (final verb in ['Xoá', 'Giữ lại']) {
+      expect(
+        tester.getSemantics(find.bySemanticsLabel(verb)),
+        matchesSemantics(label: verb, isButton: true, hasTapAction: true),
+      );
+    }
+    semantics.dispose();
+  });
+
   testWidgets('two short verbs sit side by side, the cancel on the left', (
     tester,
   ) async {
