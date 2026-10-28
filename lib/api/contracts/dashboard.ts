@@ -11,15 +11,16 @@ import type { LoggingDayData } from '@/lib/api/contracts/meals';
 import type { getOnboardingProfile } from '@/lib/api/contracts/onboarding';
 import type { WeightSummaryData } from '@/lib/api/contracts/weight';
 import type { HeatmapData } from '@/lib/core/types/dashboard';
+import { heatmapRangeSchema } from '@/lib/core/validation/dashboard';
 import { timezoneOffsetSchema } from '@/lib/core/validation/primitives';
 
 /**
- * Query schema for `GET /api/v1/dashboard/heatmap`. The heatmap range is the
- * wider `'30d' | '90d' | 'year'` set (distinct from the weight-summary range,
- * which omits `'year'`).
+ * Query schema for `GET /api/v1/dashboard/heatmap`. The heatmap range is
+ * `'year'` or the last N days (`'30d'`, `'90d'`, `'140d'`…), wider than the
+ * weight-summary range, which is `'30d' | '90d'` only.
  */
 export const heatmapQuerySchema = z.object({
-  range: z.enum(['30d', '90d', 'year']),
+  range: heatmapRangeSchema,
   timezoneOffset: timezoneOffsetSchema,
 });
 

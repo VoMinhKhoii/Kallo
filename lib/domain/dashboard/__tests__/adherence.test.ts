@@ -122,4 +122,43 @@ describe('buildCalorieAdherenceHeatmap', () => {
       true
     );
   });
+
+  it('draws a fitted day range as full weeks, Monday to today', () => {
+    // 2026-10-28 is a Wednesday; 143 days back to Monday 2026-06-08.
+    const heatmap = buildCalorieAdherenceHeatmapData({
+      range: '143d',
+      timezoneOffset: 0,
+      calorieTarget: 2000,
+      now: new Date('2026-10-28T12:00:00.000Z'),
+      dailyCalories: [{ date: '2026-06-08', calories: 2000 }],
+    });
+
+    expect(heatmap.cells[0]).toHaveLength(21);
+    expect(heatmap.cells[0][0]).toMatchObject({
+      date: '2026-06-08',
+      status: 'logged',
+    });
+    expect(heatmap.cells[2][20].date).toBe('2026-10-28');
+    expect(
+      heatmap.cells.flat().filter((cell) => cell.status === 'outside')
+    ).toHaveLength(0);
+  });
+
+  it('keeps a month that appears in two years as two headers', () => {
+    const heatmap = buildCalorieAdherenceHeatmapData({
+      range: '371d',
+      timezoneOffset: 0,
+      calorieTarget: 2000,
+      now: new Date('2026-10-28T12:00:00.000Z'),
+      dailyCalories: [],
+    });
+
+    const months = heatmap.monthHeaders.map((header) => header.month);
+    expect(months.filter((month) => month === 'Oct')).toHaveLength(2);
+    expect(months.at(0)).toBe('Oct');
+    expect(months).toContain('Mar');
+    expect(heatmap.monthHeaders.at(-1)?.startColumn).toBeGreaterThan(
+      heatmap.monthHeaders.at(0)?.startColumn ?? 0
+    );
+  });
 });

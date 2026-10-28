@@ -19,6 +19,7 @@ import type {
   HeatmapRange,
 } from '@/lib/core/types/dashboard';
 import { cn } from '@/lib/core/ui/cn';
+import { heatmapGridStyle } from '@/lib/domain/dashboard/heatmap-range';
 import {
   HEATMAP_CELL_PAINTS,
   HEATMAP_CELL_RADIUS_CLASS,
@@ -29,13 +30,6 @@ import { HeatmapLegend } from './heatmap-legend';
 import { HeatmapMonthHeaderRow } from './heatmap-month-headers';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-const GAP: Record<HeatmapRange, number> = { '30d': 3, '90d': 2, year: 1 };
-const DAY_LABEL_COL = 20;
-// Ceiling per range so a wide card can't inflate sparse grids (a 5-column
-// 30d grid at full width would be comically tall). The year grid never hits
-// its cap inside the 1440px-capped dashboard, so it always spans the card.
-const MAX_SQ: Record<HeatmapRange, number> = { '30d': 32, '90d': 24, year: 28 };
 
 interface AdherenceHeatmapProps {
   data: HeatmapData;
@@ -70,7 +64,6 @@ export function AdherenceHeatmap({
   // don't get a wall of moving cells. They still see the final state.
   const prefersReducedMotion = useReducedMotion();
 
-  const gap = GAP[range];
   const numWeeks = data.cells[0]?.length ?? 0;
 
   if (numWeeks === 0) return null;
@@ -78,14 +71,7 @@ export function AdherenceHeatmap({
   return (
     <TooltipProvider delayDuration={100}>
       <div className="flex h-full flex-col justify-center">
-        <div
-          className="grid w-full"
-          style={{
-            gridTemplateColumns: `${DAY_LABEL_COL}px repeat(${numWeeks}, minmax(0, 1fr))`,
-            gap: `${gap}px`,
-            maxWidth: `${DAY_LABEL_COL + numWeeks * MAX_SQ[range] + numWeeks * gap}px`,
-          }}
-        >
+        <div className="grid w-full" style={heatmapGridStyle(range, numWeeks)}>
           {/* Row 1 — month headers, de-overlapped onto the columns they span. */}
           <HeatmapMonthHeaderRow headers={data.monthHeaders} />
 

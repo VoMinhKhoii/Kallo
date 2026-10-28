@@ -3,7 +3,12 @@ import type { Goal } from '@/lib/domain/onboarding/types';
 
 export type WeightRange = '30d' | '90d';
 export type TimeRange = WeightRange;
-export type HeatmapRange = '30d' | '90d' | 'year';
+/**
+ * The heatmap's window: `'year'` is the calendar year; `'<N>d'` is the last N
+ * days ending today. `'30d'` and `'90d'` are the presets every client knows;
+ * the web dashboard asks for longer spans when its card fits more weeks.
+ */
+export type HeatmapRange = 'year' | `${number}d`;
 export type HeatmapCellStatus =
   | 'logged'
   | 'partial'

@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { useDailyMeals } from '@/hooks/meals/queries/use-daily-meals';
@@ -49,6 +49,9 @@ export function useDashboardQueries({
     },
     enabled: hasMeasuredHeatmap,
     staleTime: 60_000,
+    // The range follows the card's width a week at a time, so a resize asks
+    // for a new span; keep the last grid up rather than flashing a skeleton.
+    placeholderData: keepPreviousData,
   });
   const dailyMealsQuery = useDailyMeals(todayDate);
   const persistedMeals = dailyMealsQuery.data ?? [];
