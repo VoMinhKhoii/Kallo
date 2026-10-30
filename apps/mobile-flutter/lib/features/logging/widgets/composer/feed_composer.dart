@@ -157,8 +157,7 @@ class FeedComposer extends ConsumerWidget {
                 calories: view.dailyCalories,
                 target: calorieTarget,
                 onDismiss: onDismissNotice,
-                onMarkComplete:
-                    () => confirmAndMarkDay(context, ref, view, userId),
+                onMarkComplete: () => confirmAndMarkDay(context, view, userId),
               )
               : null,
       modeLabel: mealModeLabel(mode),

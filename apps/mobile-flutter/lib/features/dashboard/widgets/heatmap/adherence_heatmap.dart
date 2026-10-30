@@ -2,8 +2,9 @@
 ///
 /// A server-built grid (read off the dashboard bundle) rendered as a fixed-size
 /// grid of rounded cells, tinted via the vendored heatmap colors. Fixed at the
-/// 90-day window. No hover tooltip: tapping a logged/partial cell shows its
-/// label in a small bubble above the cell. The cell grid is a [CustomPaint]
+/// 90-day window. No hover tooltip: tapping a logged cell shows its date, kcal
+/// and label in a small bubble above the cell; tapping an awaiting (partial)
+/// cell opens [showAwaitingDaySheet]. The cell grid is a [CustomPaint]
 /// ([HeatmapGridPainter]); the legend is a diverging gradient bar. The month
 /// headers are [HeatmapMonthStrip], which also owns the strip's height.
 library;
@@ -21,7 +22,9 @@ import '../../../../theme/kallo_theme.dart';
 import '../../data/dashboard_providers.dart';
 import '../../logic/dashboard_spacing.dart';
 import '../../logic/heatmap_colors.dart';
+import '../../logic/heatmap_day_label.dart';
 import '../../logic/heatmap_range.dart';
+import 'awaiting_day_sheet.dart';
 import 'heatmap_grid_painter.dart';
 import 'heatmap_legend.dart';
 import 'heatmap_month_strip.dart';
@@ -44,7 +47,7 @@ List<String> _weekdayInitials(String locale) {
 /// `T2`…`T7`, `CN`, which wrapped to two lines inside a fixed 16.
 const double _minDayLabelWidth = 16;
 const double _dayLabelPadRight = 4;
-const double _bubbleHalfW = 60;
+const double _bubbleHalfW = 100;
 
 class AdherenceHeatmap extends ConsumerWidget {
   const AdherenceHeatmap({super.key, required this.args});
@@ -62,15 +65,22 @@ class AdherenceHeatmap extends ConsumerWidget {
       ref.read(heatmapRangeProvider.notifier).state = range;
     }
 
+    Widget body(HeatmapData? data) => _HeatmapBody(
+      data: data,
+      onRangeResolved: resolve,
+      onAwaitingTap:
+          (cell) => showAwaitingDaySheet(context, args: args, cell: cell),
+    );
+
     return async.when(
       // A weigh-in invalidates the bundle, so heatmapProvider goes isReloading
       // and .when would drop the drawn grid back to its loading body —
       // skipLoadingOnReload only defaults true on refresh.
       skipLoadingOnReload: true,
-      loading: () => _HeatmapBody(data: null, onRangeResolved: resolve),
+      loading: () => body(null),
       // Empty/loaded both render the grid; the server always returns a full
       // grid for the range (unlogged days are the "not logged" track).
-      data: (data) => _HeatmapBody(data: data, onRangeResolved: resolve),
+      data: body,
       error:
           (_, __) => KalloCard(
             padding: DashboardSpacing.card,
@@ -109,9 +119,14 @@ class _Bubble {
 }
 
 class _HeatmapBody extends StatefulWidget {
-  const _HeatmapBody({required this.data, required this.onRangeResolved});
+  const _HeatmapBody({
+    required this.data,
+    required this.onRangeResolved,
+    required this.onAwaitingTap,
+  });
   final HeatmapData? data;
   final ValueChanged<HeatmapRange> onRangeResolved;
+  final ValueChanged<HeatmapCell> onAwaitingTap;
 
   @override
   State<_HeatmapBody> createState() => _HeatmapBodyState();
@@ -434,8 +449,15 @@ class _HeatmapBodyState extends State<_HeatmapBody>
         cell.status == HeatmapCellStatus.future ||
         cell.status == HeatmapCellStatus.outside;
     if (!((isLogged || isPartial) && !isMuted)) return;
+    if (isPartial) {
+      setState(() => _bubble = null);
+      widget.onAwaitingTap(cell);
+      return;
+    }
 
-    final text = _tooltipText(cell);
+    final text =
+        '${heatmapDayHeading(cell, context.locale.toString())}\n'
+        '${heatmapDayStatus(cell)}';
     final x = wi * step + sq / 2;
     final y = di * step;
     setState(() {
@@ -445,28 +467,5 @@ class _HeatmapBodyState extends State<_HeatmapBody>
               ? null
               : _Bubble(text, x, y);
     });
-  }
-
-  String _tooltipText(HeatmapCell cell) {
-    switch (cell.status) {
-      case HeatmapCellStatus.future:
-        return tr('dashboard.adherenceHeatmap.future');
-      case HeatmapCellStatus.outside:
-        return tr('dashboard.adherenceHeatmap.outside');
-      case HeatmapCellStatus.partial:
-        return tr('dashboard.adherenceHeatmap.partial');
-      case HeatmapCellStatus.unlogged:
-        return tr('dashboard.adherenceHeatmap.notLogged');
-      case HeatmapCellStatus.logged:
-        if (cell.ratio == null) {
-          return tr('dashboard.adherenceHeatmap.notLogged');
-        }
-        if (cell.hasCheatMeal) {
-          return tr('dashboard.adherenceHeatmap.cheatDay');
-        }
-        final labelKey = heatmapTierFor(cell.ratio).name;
-        final pct = (cell.ratio! * 100).round();
-        return '${tr('dashboard.adherenceHeatmap.$labelKey')} · $pct%';
-    }
   }
 }

@@ -31,8 +31,7 @@
   "offTrack": "Lệch kế hoạch",
   "mealsLogged": "Đã ghi {count}",
   "ranges": {
-    "thirtyDays": "30 ngày",
-    "ninetyDays": "90 ngày",
+    "days": "{count} ngày",
     "year": "Năm"
   },
   "units": {
@@ -69,7 +68,14 @@
     "overTarget": "Vượt mục tiêu",
     "nearlyFull": "Gần đủ",
     "light": "Ăn nhẹ",
-    "veryLight": "Ăn rất ít"
+    "veryLight": "Ăn rất ít",
+    "kcal": "{calories, number} kcal",
+    "dayDialog": {
+      "addMissed": "Thêm bữa còn thiếu",
+      "total": "Tổng",
+      "todayNote": "Bạn có thể xác nhận hôm nay khi ngày kết thúc.",
+      "loadError": "Chưa tải được bữa ăn của ngày này."
+    }
   },
   "caloriesLogged": "Kcal đã ghi",
   "kcalRemaining": "Kcal còn lại",

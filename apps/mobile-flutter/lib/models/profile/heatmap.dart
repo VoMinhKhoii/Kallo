@@ -29,6 +29,10 @@ class HeatmapCell {
   /// Raw calories ÷ target, ungated — drives the dashboard's per-day calorie
   /// ring. Null only when the day has no logged calories (or no target).
   final double? consumedRatio;
+
+  /// Kcal logged that day. Null when nothing was logged, or on a server that
+  /// predates the field.
+  final double? calories;
   final HeatmapCellStatus status;
 
   /// Day had a cheat meal — rendered neutrally (neither hit nor miss) and
@@ -39,6 +43,7 @@ class HeatmapCell {
     required this.date,
     required this.ratio,
     required this.consumedRatio,
+    this.calories,
     required this.status,
     this.hasCheatMeal = false,
   });
@@ -47,6 +52,7 @@ class HeatmapCell {
     date: json['date'] as String,
     ratio: (json['ratio'] as num?)?.toDouble(),
     consumedRatio: (json['consumedRatio'] as num?)?.toDouble(),
+    calories: (json['calories'] as num?)?.toDouble(),
     status: HeatmapCellStatus.values.byName(json['status'] as String),
     hasCheatMeal: json['hasCheatMeal'] as bool? ?? false,
   );
@@ -55,6 +61,7 @@ class HeatmapCell {
     'date': date,
     'ratio': ratio,
     'consumedRatio': consumedRatio,
+    'calories': calories,
     'status': status.name,
     'hasCheatMeal': hasCheatMeal,
   };
@@ -63,12 +70,14 @@ class HeatmapCell {
     String? date,
     double? Function()? ratio,
     double? Function()? consumedRatio,
+    double? Function()? calories,
     HeatmapCellStatus? status,
     bool? hasCheatMeal,
   }) => HeatmapCell(
     date: date ?? this.date,
     ratio: ratio != null ? ratio() : this.ratio,
     consumedRatio: consumedRatio != null ? consumedRatio() : this.consumedRatio,
+    calories: calories != null ? calories() : this.calories,
     status: status ?? this.status,
     hasCheatMeal: hasCheatMeal ?? this.hasCheatMeal,
   );

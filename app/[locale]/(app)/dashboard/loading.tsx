@@ -55,8 +55,8 @@ export default function DashboardLoading() {
               </span>
               <div className="h-3 w-16 rounded-full bg-kallo-track motion-safe:animate-pulse" />
             </div>
-            <div className="min-h-[310px] rounded-[1.375rem] border border-kallo-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0 xl:flex-1 xl:p-4">
-              <HeatmapSkeleton range="30d" />
+            <div className="rounded-[1.375rem] border border-kallo-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:flex-1 xl:p-4">
+              <HeatmapSkeleton range="90d" />
             </div>
           </section>
         </div>

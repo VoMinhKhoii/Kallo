@@ -1,5 +1,6 @@
 import {
   dayKeyToUtcDate,
+  mondayIndex,
   toLocalDayKey,
   toUtcDayKey,
 } from '@/lib/core/date/day-key';
@@ -12,8 +13,6 @@ import type {
 } from '@/lib/core/types/dashboard';
 import { classifyDayCompleteness } from '@/lib/domain/nutrition/pattern/completeness';
 
-export type DashboardTimeRange = HeatmapRange;
-
 export interface DailyCalories {
   date: string;
   calories: number;
@@ -22,7 +21,7 @@ export interface DailyCalories {
 }
 
 interface BuildCalorieAdherenceHeatmapInput {
-  range: DashboardTimeRange;
+  range: HeatmapRange;
   dailyCalories: DailyCalories[];
   calorieTarget: number | null;
   timezoneOffset: number;
@@ -30,11 +29,6 @@ interface BuildCalorieAdherenceHeatmapInput {
   markedDates?: ReadonlySet<string>;
   now?: Date;
 }
-
-const RANGE_DAYS: Record<Exclude<DashboardTimeRange, 'year'>, number> = {
-  '30d': 30,
-  '90d': 90,
-};
 
 /**
  * Fallback calorie target for the per-day ring's progress fill when the profile
@@ -57,10 +51,6 @@ function startOfMondayWeek(date: Date): Date {
   return addDays(date, diffToMonday);
 }
 
-function getMondayDayIndex(date: Date): number {
-  return (date.getUTCDay() + 6) % 7;
-}
-
 function startOfLocalYear(endKey: string): Date {
   return new Date(Date.UTC(Number(endKey.slice(0, 4)), 0, 1));
 }
@@ -70,7 +60,7 @@ function endOfLocalYear(endKey: string): Date {
 }
 
 function getRangeBounds(
-  range: DashboardTimeRange,
+  range: HeatmapRange,
   endDate: Date,
   endKey: string
 ): { startDate: Date; rangeEndDate: Date } {
@@ -82,7 +72,7 @@ function getRangeBounds(
   }
 
   return {
-    startDate: addDays(endDate, -(RANGE_DAYS[range] - 1)),
+    startDate: addDays(endDate, -(Number.parseInt(range, 10) - 1)),
     rangeEndDate: endDate,
   };
 }
@@ -115,10 +105,13 @@ function buildMonthHeaders(
     // its own i18n and reads the string.
     const monthIndex = current.getUTCMonth() + 1;
     const column = Math.floor(daysBetween(startWeek, current) / 7);
-    const existing = headers.get(month);
+    // Keyed by year too: a span past ~11 months holds the same month twice
+    // (Oct 2025 and Oct 2026), which must stay two headers.
+    const key = `${current.getUTCFullYear()}-${monthIndex}`;
+    const existing = headers.get(key);
 
     if (!existing) {
-      headers.set(month, { month, monthIndex, startColumn: column, span: 1 });
+      headers.set(key, { month, monthIndex, startColumn: column, span: 1 });
       continue;
     }
 
@@ -158,7 +151,13 @@ export function buildCalorieAdherenceHeatmapData({
             ? 'future'
             : 'unlogged';
 
-      return { date: dateKey, ratio: null, consumedRatio: null, status };
+      return {
+        date: dateKey,
+        ratio: null,
+        consumedRatio: null,
+        calories: null,
+        status,
+      };
     })
   );
 
@@ -199,7 +198,7 @@ export function buildCalorieAdherenceHeatmapData({
     if (calories === undefined) continue;
 
     const weekIndex = Math.floor(daysBetween(startWeek, current) / 7);
-    const dayIndex = getMondayDayIndex(current);
+    const dayIndex = mondayIndex(current);
     // Raw progress (consumed ÷ effective target), ungated — drives the ring.
     const consumedRatio = calories / ringTarget;
 
@@ -209,6 +208,7 @@ export function buildCalorieAdherenceHeatmapData({
       cells[dayIndex][weekIndex] = {
         ...cells[dayIndex][weekIndex],
         consumedRatio,
+        calories,
         status: 'logged',
       };
       continue;
@@ -219,6 +219,7 @@ export function buildCalorieAdherenceHeatmapData({
       date: key,
       ratio: isPartial ? null : calories / calorieTarget,
       consumedRatio,
+      calories,
       status: isPartial ? 'partial' : 'logged',
       hasCheatMeal: cheatByDate.get(key) ?? false,
     };

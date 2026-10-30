@@ -50,7 +50,13 @@ interface MacroScaleProps {
    */
   leading?: ReactNode;
   /**
-   * `columns` (no `leading`): three equal columns, each figure centred in its
+   * A figure that closes the row — the meal's kcal after its macros, as the
+   * logging card reads (mobile's `MealBlockKcal.legendTrailing`). Distributes
+   * the row end to end, as `leading` does.
+   */
+  trailing?: ReactNode;
+  /**
+   * `columns` (no `leading` / `trailing`): three equal columns, each figure centred in its
    * own, so the space either side of every figure is the same and their
    * positions never move with the numbers — the owner's ruling for the meal
    * edit dialog ("left space of P must equal right space of P"). Mirrors
@@ -63,11 +69,13 @@ interface MacroScaleProps {
 export function MacroScale({
   grams,
   leading,
+  trailing,
   spread = 'even',
   className,
 }: MacroScaleProps) {
   const locale = useLocale();
-  const columns = spread === 'columns' && !leading;
+  const edged = leading != null || trailing != null;
+  const columns = spread === 'columns' && !edged;
 
   return (
     <div
@@ -75,7 +83,7 @@ export function MacroScale({
         columns
           ? 'grid grid-cols-3 items-center justify-items-center'
           : 'flex items-center gap-2',
-        !columns && (leading ? 'justify-between' : 'justify-evenly'),
+        !columns && (edged ? 'justify-between' : 'justify-evenly'),
         className
       )}
     >
@@ -99,6 +107,7 @@ export function MacroScale({
           </span>
         );
       })}
+      {trailing}
     </div>
   );
 }
