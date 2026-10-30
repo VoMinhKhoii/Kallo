@@ -74,6 +74,15 @@ export interface AcquireSpendLeaseOptions extends LeaseSeams {
  */
 const SPEND_DB_TIMEOUT_MS = 2000;
 
+/**
+ * How long a release is awaited. Longer than the 400 ms counter default
+ * because a release that gives up costs a slot: a key's slot stays held until
+ * its own lifetime runs out (the policy's `ttlSeconds`), refusing that person
+ * meanwhile. A release past this deadline is not cancelled; it still frees
+ * the slot when it lands (`lease-sql.ts`).
+ */
+const RELEASE_DB_TIMEOUT_MS = 2000;
+
 const BRAKE_KEY = { keyKind: 'global', keyHash: 'ai-spend' } as const;
 
 let cachedStore: LeaseStore | undefined;
@@ -226,7 +235,7 @@ async function acquireLease(request: LeaseRequest): Promise<RateLimitLease> {
       reservedMicroUsd,
       estimateMicroUsd,
       tracksSpend: spend != null,
-      timeoutMs: spend ? SPEND_DB_TIMEOUT_MS : readLimiterDbTimeoutMs(),
+      timeoutMs: RELEASE_DB_TIMEOUT_MS,
     });
 
   // Nothing to ask the database: an App Review spend with no key to check.

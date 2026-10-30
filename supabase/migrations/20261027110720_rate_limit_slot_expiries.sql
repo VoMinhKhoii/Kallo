@@ -1,0 +1,1 @@
+ALTER TABLE "rate_limit_counters" ADD COLUMN "slot_expiries" timestamp with time zone[] DEFAULT '{}'::timestamptz[] NOT NULL;

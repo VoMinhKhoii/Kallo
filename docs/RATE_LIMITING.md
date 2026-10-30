@@ -119,15 +119,19 @@ short-circuits so a refused request never charges the narrower counters.
 ## One at a time: slots and leases
 
 A policy with `concurrency: { limit, ttlSeconds, retryAfterSeconds }` also
-holds a **slot** on the key's counter row (`slot_count`, `slot_expires_at`).
+holds a **slot** on the key's counter row (`slot_expiries`, one expiry per
+holder).
 It is taken with `acquireRateLimit(policy, key)` — or `withRateLimit`, which
 releases on every exit — in the same `rate_limit_consume` call that counts the
 windows, and freed by the returned lease's `release()` (`rate_limit_release`).
 `assertRateLimit` refuses such a policy outright: counting its windows alone
 would leave the slot unenforced while the registry says it is.
 
-- **A crashed request frees its slot on its own.** The slot reads as free once
-  `slot_expires_at` passes (`ttlSeconds`). No reaper, no stale-counter reset.
+- **A crashed request frees its slot on its own.** Its entry reads as free
+  once its own expiry passes (`ttlSeconds`). No reaper, no stale-counter
+  reset. Each holder has its own expiry: later requests never extend a leaked
+  one (they used to, with one shared expiry, and a person who kept retrying
+  stayed refused — the Oct 2026 relog lockout).
 - **Each lifetime is sized to its request**: just past the longest the
   request can run, because the lifetime is also how long a lost release
   refuses its holder. Meal analysis 90 s (the route's 60 s `maxDuration` and
@@ -149,7 +153,10 @@ would leave the slot unenforced while the registry says it is.
   back to the per-instance bucket like any degraded policy. `closed` policies
   answer 503.
 - `release()` never throws and runs once; a failed release leaves the slot to
-  its lifetime.
+  its lifetime. It is awaited for up to 2 s and **never cancelled**: the
+  consume cancels at its 400 ms deadline so an abandoned call charges nothing,
+  but a cancelled release would keep its holder refused for the slot's whole
+  lifetime, while a release that lands late still frees the slot.
 
 **Meal analysis (`analyzeMeal`): 30 a UTC day per person, one at a time.** No
 minute or hour window — logging a day's meals in one sitting is normal, and the

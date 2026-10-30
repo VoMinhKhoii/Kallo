@@ -1,3 +1,4 @@
+import { withDeadline as waitWithDeadline } from '@/lib/core/async/with-deadline';
 import { Errors } from '@/lib/core/errors/catalog';
 import { db as appDb } from '@/lib/infra/db/client';
 import { withDeadline } from '../sql-consumer';
@@ -123,7 +124,13 @@ export function createSqlLeaseStore(database: LeaseDb = appDb): LeaseStore {
       return row;
     },
     async release(input) {
-      await withDeadline(
+      // Waited on, but never cancelled. The consume cancels at its deadline
+      // so an abandoned call cannot charge a request it refused; a cancelled
+      // release has the opposite cost: the slot stays held for its whole
+      // lifetime and refuses its holder's next request. Left running, a slow
+      // release still frees the slot when it lands, and a late one can only
+      // free this holder's own slot (the function checks the expiry).
+      await waitWithDeadline(
         database.$client.unsafe(RELEASE_SQL, [
           input.keyKind,
           input.keyHash,
@@ -133,7 +140,14 @@ export function createSqlLeaseStore(database: LeaseDb = appDb): LeaseStore {
           input.slotExpiresAt,
           input.now?.toISOString() ?? null,
         ]),
-        input.timeoutMs
+        input.timeoutMs,
+        () =>
+          Errors.rateLimiterUnavailable(
+            new Error(
+              `rate limit release still pending after ${input.timeoutMs}ms`
+            ),
+            'timeout'
+          )
       );
     },
   };
