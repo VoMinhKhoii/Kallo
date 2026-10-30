@@ -67,7 +67,7 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 /// the async provider settles it listens to below.
 final routerProvider = Provider<GoRouter>((ref) {
   // Re-run redirects whenever Supabase auth state changes.
-  final refresh = _GoRouterAuthRefresh(ref.read(authEventsProvider));
+  final refresh = GoRouterAuthRefresh(ref.read(authEventsProvider));
   ref.onDispose(refresh.dispose);
 
   // Re-run redirects when the async profile resolves and flips the
@@ -317,8 +317,9 @@ bool _isFirstSession(User? user) {
 /// Re-runs the router's redirect on every auth state change (sign-in,
 /// sign-out, token refresh) — the go_router equivalent of RN's
 /// `onAuthStateChange` re-render.
-class _GoRouterAuthRefresh extends ChangeNotifier {
-  _GoRouterAuthRefresh(Stream<AuthState> events) {
+@visibleForTesting
+class GoRouterAuthRefresh extends ChangeNotifier {
+  GoRouterAuthRefresh(Stream<AuthState> events) {
     notifyListeners();
     _sub = events.listen(
       (_) => notifyListeners(),
@@ -333,12 +334,30 @@ class _GoRouterAuthRefresh extends ChangeNotifier {
 
   late final StreamSubscription<AuthState> _sub;
 
+  bool _pingScheduled = false;
+  bool _disposed = false;
+
   /// Lets external Riverpod listeners (e.g. the onboarding-resume decision)
   /// trigger a redirect re-evaluation.
-  void ping() => notifyListeners();
+  ///
+  /// The redirect runs on the next microtask, never inside the listener: those
+  /// fire while Riverpod is mid-refresh, and go_router runs the redirect
+  /// synchronously, so its `ref.read`s rebuilt a provider in the middle of
+  /// refreshing that provider's own dependencies. On sign-out that threw
+  /// "Concurrent modification during iteration" and wedged Riverpod's
+  /// scheduler. Pings within one refresh share one redirect.
+  void ping() {
+    if (_pingScheduled) return;
+    _pingScheduled = true;
+    scheduleMicrotask(() {
+      _pingScheduled = false;
+      if (!_disposed) notifyListeners();
+    });
+  }
 
   @override
   void dispose() {
+    _disposed = true;
     _sub.cancel();
     super.dispose();
   }
