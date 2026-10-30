@@ -98,7 +98,16 @@ void main() {
     // off here and this read as the plain card.
     final probe = Offset(card.right - 9.5, card.top + 4.5);
 
-    expect(await _pixelAt(tester, probe, ratio: 3), isNot(KalloColors.elev));
+    // The ring over the card, to within 8-bit rounding.
+    final ring = Color.alphaBlend(KalloColors.borderAccent40, KalloColors.elev);
+    final pixel = (await _pixelAt(tester, probe, ratio: 3))!;
+    for (final (got, want) in [
+      (pixel.r, ring.r),
+      (pixel.g, ring.g),
+      (pixel.b, ring.b),
+    ]) {
+      expect(got, closeTo(want, 2 / 255));
+    }
   });
 }
 
