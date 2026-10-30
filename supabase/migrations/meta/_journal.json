@@ -666,6 +666,20 @@
       "when": 1792954390614,
       "tag": "20261025185310_drop_analysis_guard_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1793099240557,
+      "tag": "20261027110720_rate_limit_slot_expiries",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1793099316920,
+      "tag": "20261027110836_drop_rate_limit_slot_count",
+      "breakpoints": true
     }
   ]
 }

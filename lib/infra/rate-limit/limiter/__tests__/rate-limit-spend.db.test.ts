@@ -149,9 +149,11 @@ async function spentOn(day: string) {
     : null;
 }
 
+/** `slot_count` is how many holder entries the row stores, live or not. */
 async function counterOf(keyHash: string) {
   const [row] = await sql<Array<{ day_count: number; slot_count: number }>>`
-    SELECT day_count, slot_count FROM public.rate_limit_counters
+    SELECT day_count, cardinality(slot_expiries) AS slot_count
+    FROM public.rate_limit_counters
     WHERE key_hash = ${keyHash} AND route = ${route}
   `;
   return row ?? null;
@@ -412,6 +414,73 @@ describe('rate_limit_consume — one-at-a-time slot', () => {
     });
 
     expect(c).toMatchObject({ allowed: false, reason: 'concurrent' });
+  });
+
+  it('a slot never released expires on time while later holders come and go', async () => {
+    // The relog lockout (Oct 2026): a leaked slot used to share one expiry
+    // with every later holder, which each pushed it forward, so it never
+    // freed while its owner kept searching.
+    const keyHash = freshKey();
+    const at = (s: number) =>
+      new Date(Date.parse('2026-09-01T10:00:00Z') + s * 1000).toISOString();
+    await consume({ keyHash, slot: 2, slotTtl: 90, now: at(0) }); // leaked
+
+    for (const s of [30, 60, 85]) {
+      const held = await consume({ keyHash, slot: 2, slotTtl: 90, now: at(s) });
+      expect(held.allowed).toBe(true);
+      await release({
+        keyHash,
+        slotExpiresAt: held.slot_expires_at,
+        now: at(s + 1),
+      });
+    }
+
+    // Past the leak's own 90 s: both slots are free again.
+    const a = await consume({ keyHash, slot: 2, slotTtl: 90, now: at(91) });
+    const b = await consume({ keyHash, slot: 2, slotTtl: 90, now: at(91) });
+    expect(a.allowed).toBe(true);
+    expect(b.allowed).toBe(true);
+    // The pruned leak is gone from the row, not merely ignored.
+    expect((await counterOf(keyHash))?.slot_count).toBe(2);
+  });
+
+  it("frees exactly the releasing holder's slot", async () => {
+    const keyHash = freshKey();
+    const a = await consume({
+      keyHash,
+      slot: 2,
+      slotTtl: 90,
+      now: '2026-09-01T10:00:00Z',
+    });
+    await consume({
+      keyHash,
+      slot: 2,
+      slotTtl: 90,
+      now: '2026-09-01T10:00:10Z',
+    });
+    await release({
+      keyHash,
+      slotExpiresAt: a.slot_expires_at,
+      now: '2026-09-01T10:00:20Z',
+    });
+
+    expect((await counterOf(keyHash))?.slot_count).toBe(1);
+    const c = await consume({
+      keyHash,
+      slot: 2,
+      slotTtl: 90,
+      now: '2026-09-01T10:00:21Z',
+    });
+    const d = await consume({
+      keyHash,
+      slot: 2,
+      slotTtl: 90,
+      now: '2026-09-01T10:00:22Z',
+    });
+    expect(c.allowed).toBe(true);
+    // B (until 10:01:40) and C hold both slots; B's frees first.
+    expect(d).toMatchObject({ allowed: false, reason: 'concurrent' });
+    expect(d.retry_after_seconds).toBe(78);
   });
 
   it('a release without the holder expiry frees no slot', async () => {
