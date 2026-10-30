@@ -17,7 +17,7 @@ import 'package:kallo_mobile/router.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
-import 'features/onboarding/onboarding_test_support.dart';
+import '../features/onboarding/onboarding_test_support.dart';
 
 /// A signed-in account with no profile row yet.
 class _NoProfileApi extends ApiClient {
