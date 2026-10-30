@@ -8,11 +8,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/widgets/composer/composer_card_surface.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
 import '../../../l10n_test_loader.dart';
 
-/// The composer card's rounded top corners stay round.
+/// The composer card's rounded top corners stay round, and its focus ring
+/// stays whole round them.
 ///
 /// The app theme fills every TextField with the card colour, and the
 /// composer's field sits flush with the card's top edge, inset 8 on the right
@@ -74,25 +76,49 @@ void main() {
     await tester.pumpWidget(_host());
     await tester.pumpAndSettle();
 
-    final card = tester.getRect(
-      find
-          .descendant(
-            of: find.byType(ComposerCardSurface),
-            matching: find.byType(Container),
-          )
-          .first,
-    );
+    final card = tester.getRect(_card);
     // Inside the field's fill box (8 in from the right, just under the card's
     // 1pt border) yet outside the 22 corner's arc: ~24 from its centre.
     final probe = Offset(card.right - 9.5, card.top + 1.5);
 
-    final pixel = await tester.runAsync(() async {
+    expect(await _pixelAt(tester, probe), _backdrop);
+  });
+
+  testWidgets('the focus ring runs unbroken round the top-right corner', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_host());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+
+    final card = tester.getRect(_card);
+    // On the ring's 1pt arc where it passes over the field's fill box: 12.5
+    // in from the corner's centre, ~4.5 down. Under the fill, the ring broke
+    // off here and this read as the plain card.
+    final probe = Offset(card.right - 9.5, card.top + 4.5);
+
+    expect(await _pixelAt(tester, probe, ratio: 3), isNot(KalloColors.elev));
+  });
+}
+
+final _card =
+    find
+        .descendant(
+          of: find.byType(ComposerCardSurface),
+          matching: find.byType(Container),
+        )
+        .first;
+
+Future<Color?> _pixelAt(WidgetTester tester, Offset at, {double ratio = 1}) =>
+    tester.runAsync(() async {
       final boundary =
           _boundary.currentContext!.findRenderObject()!
               as RenderRepaintBoundary;
-      final image = await boundary.toImage();
+      final image = await boundary.toImage(pixelRatio: ratio);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-      final i = (probe.dy.floor() * image.width + probe.dx.floor()) * 4;
+      final i =
+          ((at.dy * ratio).floor() * image.width + (at.dx * ratio).floor()) * 4;
       return Color.fromARGB(
         bytes!.getUint8(i + 3),
         bytes.getUint8(i),
@@ -100,7 +126,3 @@ void main() {
         bytes.getUint8(i + 2),
       );
     });
-
-    expect(pixel, _backdrop);
-  });
-}
