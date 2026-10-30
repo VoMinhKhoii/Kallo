@@ -10,6 +10,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
+import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
 import 'package:kallo_mobile/router.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
@@ -35,6 +37,9 @@ void main() {
           apiClientProvider.overrideWithValue(_NoProfileApi()),
           authEventsProvider.overrideWithValue(events.stream),
           currentSessionReaderProvider.overrideWithValue(() => session),
+          onboardingDraftStoreProvider.overrideWithValue(
+            OnboardingDraftStore(storage: InMemoryKeyValueStore()),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -45,22 +50,12 @@ void main() {
       FlutterError.onError = (details) => reported.add(details.exception);
       addTearDown(() => FlutterError.onError = previousOnError);
 
-      // The router's wiring: the same listeners, and a redirect that reads the
+      // The router's own refresh wiring, and a redirect that reads the
       // onboarding decision the way `_redirect` does. The redirect joins once
       // the signed-in state has settled, as on a phone that restored its session.
-      final refresh = GoRouterAuthRefresh(events.stream);
-      addTearDown(refresh.dispose);
-      final profile = container.listen(
-        profileProvider,
-        (_, __) => refresh.ping(),
-      );
-      addTearDown(profile.close);
-      final resume = container.listen(
-        onboardingResumeProvider,
-        (_, __) => refresh.ping(),
-      );
-      addTearDown(resume.close);
+      final refresh = container.read(routerRefreshProvider);
       await container.read(profileProvider.future);
+      await container.read(onboardingDraftProvider.future);
       await container.pump();
       var redirects = 0;
       refresh.addListener(() {
