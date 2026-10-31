@@ -66,7 +66,7 @@ describe('SubscriptionSettings', () => {
     expect(screen.queryByRole('link', { name: 'upgradeCta' })).toBeNull();
   });
 
-  it('puts Manage subscription beside a subscriber plan', () => {
+  it('lays out Payment, Invoices and Cancellation for a web subscriber', () => {
     mocks.useEntitlements.mockReturnValue({
       data: entitlements({
         tier: 'premium',
@@ -81,10 +81,37 @@ describe('SubscriptionSettings', () => {
     render(<SubscriptionSettings userId="user-1" locale="en" />);
 
     expect(screen.getByText('premiumPlan')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'manageWeb' })).toHaveAttribute(
-      'href',
-      'https://customer-portal.paddle.com/cpl_1'
-    );
+    // Each row opens the Paddle portal, where the card, receipts and
+    // cancelling live; the plan's head carries no separate Manage button.
+    for (const name of ['billing.update', 'billing.view', 'billing.cancel']) {
+      expect(screen.getByRole('link', { name })).toHaveAttribute(
+        'href',
+        'https://customer-portal.paddle.com/cpl_1'
+      );
+    }
+    expect(
+      screen.queryByRole('link', { name: 'manageWeb' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('drops Invoices for an App Store plan and Cancellation once it ends', () => {
+    mocks.useEntitlements.mockReturnValue({
+      data: entitlements({
+        tier: 'premium',
+        hasActiveSubscription: true,
+        willRenew: false,
+        expiresAt: '2026-10-01T00:00:00Z',
+        managementUrl: 'https://apps.apple.com/account/subscriptions',
+        managementStore: 'app_store',
+      }),
+      isPending: false,
+      isError: false,
+    });
+    render(<SubscriptionSettings userId="user-1" locale="en" />);
+
+    expect(screen.getByText('billing.paymentAppStore')).toBeInTheDocument();
+    expect(screen.queryByText('billing.invoicesTitle')).not.toBeInTheDocument();
+    expect(screen.queryByText('billing.cancelTitle')).not.toBeInTheDocument();
   });
 
   // Premium the user never paid for (welcome or an admin grant) has no

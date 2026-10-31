@@ -10,7 +10,6 @@ import { cn } from '@/lib/core/ui/cn';
 import { isActiveRoute, NAV_ITEMS } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
 import { SidebarNavLink } from './sidebar/sidebar-nav-link';
-import { SidebarSettingsLink } from './sidebar/sidebar-settings-link';
 import { SidebarBrandHeader } from './sidebar-brand-header';
 import { UserMenu, type UserMenuUser } from './user-menu';
 
@@ -158,7 +157,7 @@ export function DesktopSidebar({
       href: item.href,
       icon: <Icon className="h-5 w-5" />,
       // Resolved here, where `item.id` is still the nav-id union: a
-      // SidebarNavItem widens it to string for the settings link below.
+      // SidebarNavItem widens it to string.
       showBadge: (badgeCounts[item.id] ?? 0) > 0,
     };
   });
@@ -185,7 +184,7 @@ export function DesktopSidebar({
         onTogglePinned={togglePinned}
       />
 
-      {/* Scroll region: nav + onboarding + settings */}
+      {/* Scroll region: nav */}
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain p-3">
         <nav className="flex flex-col gap-3">
           <SectionHeader label={t('sectionLabel')} collapsed={collapsed} />
@@ -202,11 +201,6 @@ export function DesktopSidebar({
             ))}
           </ul>
         </nav>
-
-        <div className="flex flex-col gap-3">
-          <SectionHeader label={t('settings')} collapsed={collapsed} />
-          <SidebarSettingsLink label={t('settings')} collapsed={collapsed} />
-        </div>
       </div>
 
       {/* Footer — onboarding nudge + user menu, pinned to bottom.

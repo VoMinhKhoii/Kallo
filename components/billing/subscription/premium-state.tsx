@@ -3,6 +3,7 @@
 import { Crown, ExternalLink } from 'lucide-react';
 import type { useTranslations } from 'next-intl';
 import type { useEntitlements } from '@/hooks/billing/use-entitlements';
+import { BillingSections } from './billing-sections';
 import { PlanFeatures } from './plan-features';
 import { PlanSummary } from './plan-summary';
 import { UpgradeLink } from './upgrade-link';
@@ -36,22 +37,28 @@ export function PremiumState({
 }) {
   const renewalDate = formatDate(data.expiresAt, locale);
   const manageUrl = data.hasActiveSubscription ? data.managementUrl : null;
+  // A paid, renewable plan gets Claude's outline (Payment, Invoices,
+  // Cancellation) under its features; those rows carry the store link, so
+  // the head has no Manage button. A lifetime plan with a stray subscription
+  // keeps Manage in its head, beside the warning to cancel it.
+  const withSections = manageUrl !== null && !data.isLifetime;
 
-  const manage = manageUrl ? (
-    <a
-      href={manageUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-kallo-border bg-card px-3.5 py-1.5 font-medium text-[14px] text-kallo-text transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
-    >
-      <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
-      {data.managementStore === 'app_store'
-        ? t('manageAppStore')
-        : data.managementStore === 'play_store'
-          ? t('managePlayStore')
-          : t('manageWeb')}
-    </a>
-  ) : null;
+  const manage =
+    manageUrl && !withSections ? (
+      <a
+        href={manageUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-kallo-border bg-card px-3.5 py-1.5 font-medium text-[14px] text-kallo-text transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+      >
+        <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+        {data.managementStore === 'app_store'
+          ? t('manageAppStore')
+          : data.managementStore === 'play_store'
+            ? t('managePlayStore')
+            : t('manageWeb')}
+      </a>
+    ) : null;
 
   // The plan's actions sit on its right, the way Upgrade does on Free's.
   // Complimentary Premium can carry both: Upgrade, and Manage for a paid
@@ -91,6 +98,15 @@ export function PremiumState({
         )}
       </PlanSummary>
       <PlanFeatures plan={data.isLifetime ? 'lifetime' : 'premium'} />
+      {withSections && (
+        <BillingSections
+          manageUrl={manageUrl}
+          store={data.managementStore}
+          willRenew={data.willRenew}
+          renewalDate={renewalDate}
+          t={t}
+        />
+      )}
     </div>
   );
 }

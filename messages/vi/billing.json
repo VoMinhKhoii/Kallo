@@ -37,7 +37,21 @@
     "expiryTitle": "Gói của bạn sắp kết thúc",
     "expiryBody": "Quyền truy cập kết thúc sau {days} ngày. Gia hạn để giữ phân tích bữa ăn bằng AI.",
     "promoExpiryTitle": "Premium miễn phí của bạn sắp kết thúc",
-    "promoExpiryBody": "Quyền truy cập kết thúc sau {days} ngày. Nâng cấp để giữ phân tích bữa ăn bằng AI."
+    "promoExpiryBody": "Quyền truy cập kết thúc sau {days} ngày. Nâng cấp để giữ phân tích bữa ăn bằng AI.",
+    "billing": {
+      "paymentTitle": "Thanh toán",
+      "paymentWeb": "Thẻ lưu tại Paddle",
+      "paymentAppStore": "Thanh toán qua App Store",
+      "paymentPlayStore": "Thanh toán qua Google Play",
+      "update": "Cập nhật",
+      "invoicesTitle": "Hóa đơn",
+      "invoicesLabel": "Biên lai cho mỗi lần thanh toán",
+      "view": "Xem",
+      "cancelTitle": "Hủy gói",
+      "cancelLabel": "Hủy gói",
+      "cancelHint": "Bạn vẫn dùng Premium đến {date}.",
+      "cancel": "Hủy"
+    }
   },
   "premium": {
     "chip": "Premium",

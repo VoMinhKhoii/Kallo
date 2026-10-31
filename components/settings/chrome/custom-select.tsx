@@ -2,7 +2,13 @@
 
 import { Check, ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 interface CustomSelectOption {
   value: string;
@@ -21,8 +27,34 @@ interface CustomSelectProps {
 
 export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropUp, setDropUp] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const selectedOption = options.find((o) => o.value === value);
+
+  // Open upward when the list would run past the bottom of the scrolling
+  // pane (and under a footer such as the save bar) but fits above.
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setDropUp(false);
+      return;
+    }
+    const field = containerRef.current;
+    const menu = menuRef.current;
+    if (!field || !menu) return;
+    let pane = field.parentElement;
+    while (pane && !/(auto|scroll)/.test(getComputedStyle(pane).overflowY)) {
+      pane = pane.parentElement;
+    }
+    const bounds = pane?.getBoundingClientRect() ?? {
+      top: 0,
+      bottom: window.innerHeight,
+    };
+    const rect = field.getBoundingClientRect();
+    const below = bounds.bottom - rect.bottom;
+    const above = rect.top - bounds.top;
+    setDropUp(menu.offsetHeight + 8 > below && above > below);
+  }, [isOpen]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -71,11 +103,12 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -5, scale: 0.98 }}
+            ref={menuRef}
+            initial={{ opacity: 0, y: dropUp ? 5 : -5, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -5, scale: 0.98 }}
+            exit={{ opacity: 0, y: dropUp ? 5 : -5, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute top-full right-0 left-0 z-[120] mt-1.5 overflow-hidden rounded-xl border border-kallo-border bg-card py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
+            className={`absolute right-0 left-0 z-[120] ${dropUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'} overflow-hidden rounded-xl border border-kallo-border bg-card py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)]`}
           >
             {options.map((opt) => (
               <button
