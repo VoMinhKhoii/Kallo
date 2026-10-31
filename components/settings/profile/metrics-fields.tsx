@@ -16,6 +16,13 @@ import {
 } from '@/components/ui/form';
 import type { ProfileFormValues } from '@/lib/domain/settings/profile-form';
 
+const ACTIVITY_LEVELS = [
+  'sedentary',
+  'light',
+  'moderate',
+  'very_active',
+] as const;
+
 const inputClass = `${FIELD_CLASS} pr-10 tabular-nums`;
 
 /** Wide controls sit beside the label on a wide page, under it on a phone. */
@@ -85,29 +92,11 @@ export function MetricsFields() {
   const tSettings = useTranslations('settings');
   const form = useFormContext<ProfileFormValues>();
 
-  const activity = {
-    sedentary: {
-      label: tSettings('activity.sedentary.label'),
-      hint: tSettings('activity.sedentary.hint'),
-    },
-    light: {
-      label: tSettings('activity.light.label'),
-      hint: tSettings('activity.light.hint'),
-    },
-    moderate: {
-      label: tSettings('activity.moderate.label'),
-      hint: tSettings('activity.moderate.hint'),
-    },
-    very_active: {
-      label: tSettings('activity.very_active.label'),
-      hint: tSettings('activity.very_active.hint'),
-    },
-  };
   // The hint rides in each option, not under the row's label.
-  const activityOptions = Object.entries(activity).map(([value, a]) => ({
+  const activityOptions = ACTIVITY_LEVELS.map((value) => ({
     value,
-    label: a.label,
-    description: a.hint,
+    label: tSettings(`activity.${value}.label`),
+    description: tSettings(`activity.${value}.hint`),
   }));
 
   return (

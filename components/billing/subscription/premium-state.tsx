@@ -39,13 +39,11 @@ export function PremiumState({
   const renewalDate = formatDate(data.expiresAt, locale);
   const manageUrl = data.hasActiveSubscription ? data.managementUrl : null;
   // A paid, renewable plan gets Claude's outline (Payment, Invoices,
-  // Cancellation) under its features; those rows carry the store link, so
-  // the head has no Manage button. A lifetime plan with a stray subscription
-  // keeps Manage in its head, beside the warning to cancel it.
-  const withSections = manageUrl !== null && !data.isLifetime;
-
+  // Cancellation) under its features, and those rows carry the store link.
+  // Only a lifetime plan with a stray subscription keeps Manage in its head,
+  // beside the warning to cancel it.
   const manage =
-    manageUrl && !withSections ? (
+    manageUrl && data.isLifetime ? (
       <a
         href={manageUrl}
         target="_blank"
@@ -67,7 +65,7 @@ export function PremiumState({
   const action =
     upgradeHref || manage ? (
       <div className="flex shrink-0 gap-2">
-        {upgradeHref && <UpgradeLink href={upgradeHref} t={t} />}
+        {upgradeHref && <UpgradeLink href={upgradeHref} />}
         {manage}
       </div>
     ) : null;
@@ -99,13 +97,12 @@ export function PremiumState({
         )}
       </PlanSummary>
       <PlanFeatures plan={data.isLifetime ? 'lifetime' : 'premium'} />
-      {withSections && (
+      {manageUrl && !data.isLifetime && (
         <BillingSections
           manageUrl={manageUrl}
           store={data.managementStore}
           willRenew={data.willRenew}
           renewalDate={renewalDate}
-          t={t}
         />
       )}
     </div>

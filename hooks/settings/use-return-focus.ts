@@ -3,13 +3,6 @@
 import { useRef } from 'react';
 
 /**
- * Focus handling for the settings dialog, which has no Radix Trigger (it
- * opens from the URL): on open, remember what held focus and focus the
- * dialog itself, not its first control (a deep link's first rail item would
- * wear a ring it has no claim to); on close, hand focus back to what held
- * it, if it is still on the page.
- */
-/**
  * What should get focus back. Settings usually opens from an item in a menu
  * or sheet that closes as the dialog opens, so prefer the control that
  * opened that popup (the one whose `aria-controls` names it).
@@ -37,6 +30,13 @@ export function rememberSettingsOpener(clicked: Element) {
   clickedOpener = openerOf(clicked);
 }
 
+/**
+ * Focus handling for the settings dialog, which has no Radix Trigger (it
+ * opens from the URL): on open, remember what held focus and focus the
+ * dialog itself, not its first control (a deep link's first rail item would
+ * wear a ring it has no claim to); on close, hand focus back to what held
+ * it, if it is still on the page.
+ */
 export function useReturnFocus() {
   const opener = useRef<HTMLElement | null>(null);
 

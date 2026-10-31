@@ -106,7 +106,7 @@ export function SubscriptionSettings({
             icon={Sprout}
             name={t('freePlan')}
             subtitle={tLanding('plans.free.tagline')}
-            action={<UpgradeLink href={backHref} t={t} />}
+            action={<UpgradeLink href={backHref} />}
           />
           <PlanFeatures plan="free" />
         </div>

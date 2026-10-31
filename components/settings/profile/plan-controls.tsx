@@ -2,11 +2,12 @@
 
 import { ArrowDown, ArrowUp, Equal, type LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { OptionStrip } from '@/components/settings/chrome/option-strip';
+import { PlanRow } from '@/components/settings/chrome/plan-row';
 import { StepSlider } from '@/components/settings/chrome/step-slider';
-import { FormControl, FormField, FormItem } from '@/components/ui/form';
+import { FormControl, FormField } from '@/components/ui/form';
+import { useLiveTargets } from '@/hooks/profile/use-live-targets';
 import { CARB_SPLIT_RATIOS } from '@/lib/domain/onboarding/constants';
 import type { CarbSplit, Goal } from '@/lib/domain/onboarding/types';
 import type { ProfileFormValues } from '@/lib/domain/settings/profile-form';
@@ -20,29 +21,16 @@ const CARB_SPLITS: CarbSplit[] = ['lower_carb', 'moderate_carb', 'higher_carb'];
 const PACE_MIN_KG = 0.1;
 const PACE_MAX_KG = 0.8;
 
-/** A control row inside the target card: a short label, then the control. */
-function PlanRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <FormItem className="flex @lg:flex-row flex-col @lg:items-center @lg:gap-4 gap-2 py-3">
-      <p className="@lg:w-20 shrink-0 text-[14px] text-kallo-text">{label}</p>
-      <div className="min-w-0 flex-1">{children}</div>
-    </FormItem>
-  );
-}
-
 /**
  * The three controls that move the daily target — goal, pace (hidden while
  * maintaining) and carb split — as rows inside the target card.
  */
-export function PlanControls({
-  goal,
-  kcalPerDay,
-}: {
-  goal: string;
-  /** The day's actual deficit or surplus (after any calorie floor). */
-  kcalPerDay: number;
-}) {
+export function PlanControls() {
   const t = useTranslations('onboarding.bodyMetrics');
+  const { goal, tdee, targetCalories } = useLiveTargets();
+  // The day's actual deficit or surplus (after any calorie floor).
+  const kcalPerDay =
+    tdee === null ? 0 : Math.abs(Math.round(tdee) - Math.round(targetCalories));
   const tSplit = useTranslations('settings.carbSplit');
   const form = useFormContext<ProfileFormValues>();
 
@@ -133,7 +121,7 @@ export function PlanControls({
                     return {
                       value: cs,
                       label: tSplit(cs),
-                      hint: `${r.protein}/${r.carbs}/${r.fat}`,
+                      description: `${r.protein}/${r.carbs}/${r.fat}`,
                     };
                   })}
                 />

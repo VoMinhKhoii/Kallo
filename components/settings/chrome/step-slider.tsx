@@ -1,6 +1,12 @@
 'use client';
 
-interface StepSliderProps {
+import type { ComponentProps } from 'react';
+
+interface StepSliderProps
+  extends Omit<
+    ComponentProps<'input'>,
+    'type' | 'min' | 'max' | 'step' | 'value' | 'onChange'
+  > {
   min: number;
   max: number;
   step: number;
@@ -8,8 +14,6 @@ interface StepSliderProps {
   tickEvery: number;
   value: number;
   onChange: (value: number) => void;
-  'aria-label': string;
-  'aria-valuetext'?: string;
 }
 
 // The thumb's centre travels from half its width (8px) to the width minus
@@ -29,7 +33,8 @@ export function StepSlider({
   tickEvery,
   value,
   onChange,
-  ...aria
+  // aria-label/-valuetext, and the id/aria FormControl injects.
+  ...rest
 }: StepSliderProps) {
   const span = max - min;
   const ticks = Array.from(
@@ -59,7 +64,7 @@ export function StepSlider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        {...aria}
+        {...rest}
         className="absolute inset-0 h-full w-full appearance-none rounded-full bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-kallo-border [&::-moz-range-thumb]:bg-white [&::-moz-range-track]:bg-transparent [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-kallo-border [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-sm"
       />
     </div>

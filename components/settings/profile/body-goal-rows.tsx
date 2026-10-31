@@ -37,12 +37,7 @@ export function BodyGoalRows({
             goal={live.goal}
             aggression={live.aggression}
           >
-            <PlanControls
-              goal={live.goal}
-              kcalPerDay={Math.abs(
-                Math.round(live.tdee) - Math.round(live.targetCalories)
-              )}
-            />
+            <PlanControls />
           </TargetHero>
         </section>
       )}

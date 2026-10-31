@@ -14,10 +14,9 @@ import { useAccountActions } from './use-account-actions';
  * account deletion — four groups split by space, not titles. Data export
  * lives on the Privacy page.
  *
- * Deletion lives in its own group as an inline, type-to-confirm
- * panel (not a modal-first flow) in the brand's calm "concern" register —
- * terracotta `kallo-danger`, never the cold shadcn `destructive`. Sign out lives
- * here as well as in the user menu so the settings area is self-sufficient.
+ * Deletion lives in its own group: a red button that opens the shared
+ * confirm dialog with a typed check. Sign out lives here as well as in the
+ * user menu so the settings area is self-sufficient.
  */
 export function AccountPanel({
   userId,

@@ -9,6 +9,7 @@ import {
   GHOST_BUTTON,
   SECONDARY_BUTTON,
 } from '@/components/settings/chrome/controls';
+import { SettingsRow } from '@/components/settings/chrome/group';
 import { AppleLogo, GoogleLogo } from '@/components/shared/brand-logos';
 import { createClient } from '@/lib/infra/supabase/client';
 
@@ -122,15 +123,15 @@ export function LinkedAccounts() {
         const isLast = total <= 1;
 
         return (
-          <div
+          <SettingsRow
             key={key}
-            className="flex min-h-[52px] items-center justify-between gap-4 py-2.5"
+            label={
+              <span className="flex items-center gap-2.5">
+                <Logo className="size-4 shrink-0 text-kallo-text" />
+                {label}
+              </span>
+            }
           >
-            <div className="flex min-w-0 items-start gap-2.5">
-              <Logo className="mt-0.5 size-4 shrink-0 text-kallo-text" />
-              <p className="text-[14px] text-kallo-text">{label}</p>
-            </div>
-
             {linked ? (
               <button
                 type="button"
@@ -154,7 +155,7 @@ export function LinkedAccounts() {
                 {t('linkedConnect')}
               </button>
             )}
-          </div>
+          </SettingsRow>
         );
       })}
     </section>

@@ -7,7 +7,7 @@ interface OptionStripItem {
   value: string;
   label: string;
   /** A second, smaller line under the label (e.g. a split's numbers). */
-  hint?: string;
+  description?: string;
   icon?: LucideIcon;
 }
 
@@ -37,9 +37,9 @@ export function OptionStrip({ options, value, onChange }: OptionStripProps) {
             {opt.icon && <opt.icon className="size-3.5" aria-hidden />}
             {opt.label}
           </span>
-          {opt.hint && (
+          {opt.description && (
             <span className="text-[12px] tabular-nums opacity-70">
-              {opt.hint}
+              {opt.description}
             </span>
           )}
         </button>
