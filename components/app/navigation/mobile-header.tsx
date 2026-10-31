@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { MobileActivityButton } from '@/components/activity/mobile-activity-button';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
+import { useSettingsDialog } from '@/hooks/settings/use-settings-dialog';
 import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import {
@@ -37,7 +38,7 @@ export function MobileHeader({ user, ...onboarding }: MobileHeaderProps) {
   const pathname = usePathname();
   const tMenu = useTranslations('app.userMenu');
   const isFullScreen = isFullScreenRoute(pathname);
-  const accountActive = isActiveRoute(pathname, '/settings');
+  const accountActive = useSettingsDialog().isOpen;
 
   return (
     <header className="group/mobileheader flex h-12 shrink-0 items-center gap-2 px-3 md:hidden">

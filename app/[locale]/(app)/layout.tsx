@@ -7,6 +7,7 @@ import { EntitlementLifecycleSync } from '@/components/billing/activation/entitl
 import { PremiumGuardProvider } from '@/components/billing/premium-guard-provider';
 import { AiConsentProvider } from '@/components/privacy/ai-consent-provider';
 import { AppThemeProvider } from '@/components/providers/theme/app-theme-provider';
+import { SettingsDialog } from '@/components/settings/dialog/settings-dialog';
 import { getMyPublicProfile } from '@/lib/actions/groups/profile';
 import { getBillingConfig } from '@/lib/domain/billing/billing';
 import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
@@ -131,6 +132,15 @@ async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
           initialConsented={Boolean(profile?.aiProcessingConsentedAt)}
         >
           {children}
+          {/* Settings opens over any page via `?settings=`; inside the
+              providers because its rows read AI consent and entitlements. */}
+          <Suspense fallback={null}>
+            <SettingsDialog
+              profile={profile}
+              userId={user.id}
+              email={user.email ?? null}
+            />
+          </Suspense>
         </AiConsentProvider>
       </PremiumGuardProvider>
     </AppShell>

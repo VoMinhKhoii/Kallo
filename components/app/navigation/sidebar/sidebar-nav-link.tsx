@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEventHandler, ReactNode } from 'react';
 import { useNavIntent } from '@/hooks/navigation/route-prefetch';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
@@ -17,6 +17,8 @@ interface SidebarNavLinkProps {
   isActive: boolean;
   /** A pending-attention dot (e.g. unaccepted meal-share invites). */
   showBadge?: boolean;
+  /** Opens something in place instead of navigating (the settings dialog). */
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 }
 
 export function SidebarNavLink({
@@ -24,13 +26,14 @@ export function SidebarNavLink({
   collapsed,
   isActive,
   showBadge = false,
+  onClick,
 }: SidebarNavLinkProps) {
   const intent = useNavIntent(item.href);
   return (
     <SidebarTooltip enabled={collapsed} label={item.label}>
       <Link
         href={item.href}
-        {...intent}
+        {...(onClick ? { onClick } : intent)}
         aria-current={isActive ? 'page' : undefined}
         aria-label={collapsed ? item.label : undefined}
         className={cn(
