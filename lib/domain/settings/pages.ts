@@ -16,7 +16,7 @@ export const SETTINGS_PAGES = [
   'preferences',
   'cooking',
   'privacy',
-  'plan',
+  'subscriptions',
   'account',
   'feedback',
 ] as const;
@@ -33,7 +33,7 @@ export const DEFAULT_SETTINGS_PAGE: SettingsPageId = 'profile';
 export const SETTINGS_GROUPS: readonly (readonly SettingsPageId[])[] = [
   ['profile', 'body'],
   ['preferences', 'cooking', 'privacy'],
-  ['plan', 'account'],
+  ['subscriptions', 'account'],
 ];
 export const PINNED_SETTINGS_PAGE: SettingsPageId = 'feedback';
 

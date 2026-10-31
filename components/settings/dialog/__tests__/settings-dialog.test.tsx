@@ -123,18 +123,18 @@ describe('SettingsDialog', () => {
       'pages.preferences.title',
       'pages.cooking.title',
       'pages.privacy.title',
-      'pages.plan.title',
+      'pages.subscriptions.title',
       'pages.account.title',
       'pages.feedback.title',
     ]);
 
-    await userEvent.click(within(rail).getByText('pages.plan.title'));
+    await userEvent.click(within(rail).getByText('pages.subscriptions.title'));
 
     expect(new URLSearchParams(window.location.search).get('settings')).toBe(
-      'plan'
+      'subscriptions'
     );
-    expect(screen.getByText('page:plan')).toBeVisible();
-    expect(within(rail).getByText('pages.plan.title')).toHaveAttribute(
+    expect(screen.getByText('page:subscriptions')).toBeVisible();
+    expect(within(rail).getByText('pages.subscriptions.title')).toHaveAttribute(
       'aria-current',
       'page'
     );
