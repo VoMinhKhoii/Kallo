@@ -1,11 +1,10 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import type { PersistedMeal } from '@/lib/actions/meals/types';
-import { MealDetails } from './meal-details';
+import { type DishRowsMeal, MealDetails } from './meal-details';
 
 interface PersistedMealBodyProps {
-  meal: PersistedMeal;
+  meal: DishRowsMeal;
   isCollapsed: boolean;
   totals: { calories: string; protein: string; carbs: string; fat: string };
 }

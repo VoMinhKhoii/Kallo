@@ -32,6 +32,7 @@ export const PUBLIC_NON_MARKDOWN_PREFIXES = [
   '/invite',
   '/reset-password',
   '/design-system',
+  '/calories',
 ] as const;
 
 /** True when `path` is one of `prefixes` or sits under one of them. */

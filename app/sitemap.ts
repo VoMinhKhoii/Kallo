@@ -4,6 +4,7 @@ import { routing } from '@/i18n/routing';
 import { loadFrontmatter } from '@/lib/domain/docs/loader';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { alternateLanguages } from '@/lib/seo/alternates';
+import { FOOD_PAGES, FOOD_SLUGS } from '@/lib/seo/food-pages/pages';
 import { SITE_URL } from '@/lib/seo/site';
 
 // Only the publicly crawlable, unauthenticated surfaces belong here. Everything
@@ -61,6 +62,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         alternates: { languages: alternateLanguages(path) },
       });
     }
+  }
+
+  // The food pages are English only, so they carry no language alternates.
+  // Their date is the day their meals were captured.
+  for (const slug of FOOD_SLUGS) {
+    entries.push({
+      url: `${SITE_URL}/en/calories/${slug}`,
+      lastModified: new Date(FOOD_PAGES[slug].capture.capturedAt),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    });
   }
 
   return entries;

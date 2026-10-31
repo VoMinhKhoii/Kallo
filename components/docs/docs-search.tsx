@@ -11,7 +11,6 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { Kbd } from '@/components/ui/kbd';
 import { useRouter } from '@/i18n/navigation';
 import { DOCS_SECTIONS } from '@/lib/domain/docs/navigation';
 import type { DocsSearchEntry } from '@/lib/domain/docs/search-index';
@@ -95,16 +94,24 @@ export function DocsSearch({ entries }: DocsSearchProps) {
 
   return (
     <>
+      {/* A filled field one tone below the page, no outline: it sits in the
+          header beside the landing's plain locale switch and black CTA, and
+          shares the CTA's height and radius. The shortcut is plain text, not
+          a boxed key. */}
       <button
-        className="flex h-9 items-center gap-2 rounded-lg border border-kallo-border bg-white px-3 text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+        className="flex h-9 items-center gap-2 rounded-xl bg-kallo-segment px-3 font-sans-display text-kallo-text-muted text-sm transition-colors hover:bg-kallo-border hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent sm:w-56 sm:px-3.5"
+        aria-label={t('trigger')}
         onClick={() => setOpen(true)}
         type="button"
       >
-        <Search className="h-3.5 w-3.5" />
-        <span className="hidden font-sans-display text-caption sm:inline">
-          {t('trigger')}
+        <Search aria-hidden className="h-4 w-4 shrink-0" />
+        <span className="hidden sm:inline">{t('trigger')}</span>
+        <span
+          aria-hidden
+          className="ml-auto hidden text-kallo-text-muted/80 tabular-nums sm:inline"
+        >
+          ⌘K
         </span>
-        <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
       </button>
 
       {used && (

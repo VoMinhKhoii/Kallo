@@ -1,0 +1,242 @@
+{
+  "capturedAt": "2026-10-31T16:53:17.850Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "shop",
+      "text": "Chicken burrito from a burrito shop (large flour tortilla + grilled chicken + white rice + black beans + cheese + sour cream + guacamole)",
+      "kcal": {
+        "low": 934,
+        "mid": 975,
+        "high": 1029
+      },
+      "protein": 62,
+      "carbs": 110,
+      "fat": 32,
+      "ingredients": [
+        {
+          "name": "Flour tortilla",
+          "grams": 85,
+          "kcal": 244,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken",
+          "grams": 120,
+          "kcal": 192,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "White rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Black beans",
+          "grams": 70,
+          "kcal": 96,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 28,
+          "kcal": 110,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sour cream",
+          "grams": 30,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Guacamole",
+          "grams": 40,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken burrito",
+          "calories": 975,
+          "protein": 62,
+          "carbs": 110,
+          "fat": 32
+        }
+      ]
+    },
+    {
+      "key": "shop-lighter",
+      "text": "Chicken burrito from a burrito shop (large flour tortilla + grilled chicken + white rice + black beans + salsa, no cheese, no sour cream)",
+      "kcal": {
+        "low": 617,
+        "mid": 634,
+        "high": 660
+      },
+      "protein": 46,
+      "carbs": 85,
+      "fat": 12,
+      "ingredients": [
+        {
+          "name": "Flour tortilla",
+          "grams": 66,
+          "kcal": 190,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken",
+          "grams": 100,
+          "kcal": 151,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "White rice",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Black beans",
+          "grams": 60,
+          "kcal": 81,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salsa",
+          "grams": 60,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken burrito",
+          "calories": 634,
+          "protein": 46,
+          "carbs": 85,
+          "fat": 12
+        }
+      ]
+    },
+    {
+      "key": "bowl-no-rice",
+      "text": "Chicken burrito bowl (1 tortilla + 1 scoop of grilled chicken + salad and pineapple + a bit of cheese, no rice)",
+      "kcal": {
+        "low": 385,
+        "mid": 400,
+        "high": 414
+      },
+      "protein": 36,
+      "carbs": 32,
+      "fat": 15,
+      "ingredients": [
+        {
+          "name": "Grilled chicken",
+          "grams": 90,
+          "kcal": 136,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tortilla",
+          "grams": 45,
+          "kcal": 134,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salad",
+          "grams": 57,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pineapple",
+          "grams": 56,
+          "kcal": 31,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 15,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 3,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken burrito bowl",
+          "calories": 400,
+          "protein": 36,
+          "carbs": 32,
+          "fat": 15
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade chicken burrito (1 small flour tortilla + 100g grilled chicken breast + lettuce + salsa + a bit of cheese)",
+      "kcal": {
+        "low": 301,
+        "mid": 310,
+        "high": 326
+      },
+      "protein": 38,
+      "carbs": 18,
+      "fat": 10,
+      "ingredients": [
+        {
+          "name": "Small flour tortilla",
+          "grams": 30,
+          "kcal": 86,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken breast",
+          "grams": 100,
+          "kcal": 151,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 30,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salsa",
+          "grams": 30,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 15,
+          "kcal": 57,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken burrito",
+          "calories": 310,
+          "protein": 38,
+          "carbs": 18,
+          "fat": 10
+        }
+      ]
+    }
+  ]
+}

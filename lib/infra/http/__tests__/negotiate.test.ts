@@ -107,6 +107,7 @@ describe('negotiate', () => {
       '/vi/circle/friends',
       '/en/invite/abc',
       '/en/reset-password',
+      '/en/calories/chicken-burrito',
     ]) {
       expect(ask(path)).toEqual({ kind: 'pass' });
     }
