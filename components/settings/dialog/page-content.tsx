@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { useFormState } from 'react-hook-form';
 import { AccountPanel } from '@/components/settings/account/account-panel';
 import { ExportRow } from '@/components/settings/account/export-row';
 import { AppearanceRow } from '@/components/settings/appearance/appearance-row';
@@ -40,17 +41,21 @@ export function PageContent({
 
   // Pages holding profile-form fields sit inside a <form> so Enter submits;
   // the save bar itself sits outside it, because it shows on every page.
-  const profileForm = (rows: ReactNode) => (
-    <form
-      noValidate
-      onSubmit={(event) => {
-        event.preventDefault();
-        onProfileSubmit?.();
-      }}
-    >
-      {rows}
-    </form>
-  );
+  const profileForm = (rows: ReactNode) =>
+    onProfileSubmit ? (
+      <form
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          onProfileSubmit();
+        }}
+      >
+        {rows}
+        <ImplicitSubmit />
+      </form>
+    ) : (
+      rows
+    );
 
   const body = (() => {
     switch (page) {
@@ -112,5 +117,20 @@ export function PageContent({
       />
       {body}
     </>
+  );
+}
+
+/**
+ * A form with several text fields and no submit button ignores Enter, and the
+ * save bar's button lives outside the form. This stand-in gives Enter a
+ * target while there is something to save, as the old page's save bar did.
+ */
+function ImplicitSubmit() {
+  const { isDirty } = useFormState();
+  if (!isDirty) return null;
+  return (
+    <button type="submit" tabIndex={-1} aria-hidden="true" className="sr-only">
+      {/* No label: never reached by focus or a screen reader. */}
+    </button>
   );
 }
