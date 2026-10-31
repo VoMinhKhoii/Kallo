@@ -28,6 +28,10 @@ interface ConfirmDialogProps {
   tone?: 'default' | 'destructive';
   /** Disables the action while the caller's work is in flight. */
   pending?: boolean;
+  /** Disables the action until the caller's own check passes. */
+  confirmDisabled?: boolean;
+  /** Extra content between the description and the buttons (a typed check). */
+  children?: ReactNode;
   /**
    * Runs on the action. The dialog closes after it unless the handler calls
    * `event.preventDefault()` — how a caller keeps it open until its mutation
@@ -52,7 +56,9 @@ export function ConfirmDialog({
   cancelLabel,
   tone = 'default',
   pending = false,
+  confirmDisabled = false,
   onConfirm,
+  children,
 }: ConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -72,6 +78,7 @@ export function ConfirmDialog({
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {children}
         <AlertDialogFooter>
           {/* The Radix parts wrap OUR Button, not the other way round. The
               kit's AlertDialogAction/Cancel put Button outside a Slot, which
@@ -88,7 +95,7 @@ export function ConfirmDialog({
           </AlertDialogPrimitive.Cancel>
           <AlertDialogPrimitive.Action asChild>
             <Button
-              disabled={pending}
+              disabled={pending || confirmDisabled}
               className={cn(
                 'rounded-xl font-sans-display',
                 tone === 'destructive' &&

@@ -23,8 +23,8 @@ export const GHOST_BUTTON =
   'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 font-medium text-[13px] text-kallo-text-muted transition-colors duration-150 hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-40';
 
 /**
- * The one destructive action (Delete account), in conventional error red:
+ * A destructive action (Delete account, Cancel plan), in conventional error red:
  * terracotta reads as a style, not a warning.
  */
 export const DANGER_BUTTON =
-  'inline-flex h-8 shrink-0 items-center rounded-lg bg-kallo-error-fill px-3 font-medium text-[13px] text-white transition-colors duration-150 hover:bg-kallo-error-fill/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-error/40 disabled:opacity-40';
+  'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-kallo-error-fill px-3 font-medium text-[13px] text-white transition-colors duration-150 hover:bg-kallo-error-fill/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-error/40 disabled:opacity-40';

@@ -3,9 +3,11 @@
 import { ExternalLink } from 'lucide-react';
 import type { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { SECONDARY_BUTTON } from '@/components/settings/chrome/controls';
+import {
+  DANGER_BUTTON,
+  SECONDARY_BUTTON,
+} from '@/components/settings/chrome/controls';
 import { SettingsGroup, SettingsRow } from '@/components/settings/chrome/group';
-import { cn } from '@/lib/core/ui/cn';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -30,7 +32,7 @@ function PortalLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(SECONDARY_BUTTON, danger && 'text-kallo-error')}
+      className={danger ? DANGER_BUTTON : SECONDARY_BUTTON}
     >
       {children}
       <ExternalLink aria-hidden="true" className="size-3.5" />
