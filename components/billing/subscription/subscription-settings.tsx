@@ -53,7 +53,7 @@ export function SubscriptionSettings({
     );
   }
 
-  // Nothing to buy yet: say so, rather than leave the Plan page empty.
+  // Nothing to buy yet: say so, rather than leave the Subscriptions page empty.
   if (!data.purchasesEnabled && data.tier !== 'premium') {
     return (
       <div className="rounded-2xl border border-kallo-border/70 bg-card px-4 py-4 font-sans-display">

@@ -21,8 +21,8 @@
       "title": "Privacy",
       "description": "What leaves your account, and where it goes."
     },
-    "plan": {
-      "title": "Plan",
+    "subscriptions": {
+      "title": "Subscriptions",
       "description": "Your plan, renewal, and how to manage it."
     },
     "account": {

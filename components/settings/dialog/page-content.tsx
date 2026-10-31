@@ -101,7 +101,7 @@ function pageBody(
           <ExportRow userId={userId} />
         </SettingsGroup>
       );
-    case 'plan':
+    case 'subscriptions':
       return <SubscriptionSettings userId={userId} locale={locale} />;
     case 'account':
       return <AccountPanel userId={userId} email={email} />;

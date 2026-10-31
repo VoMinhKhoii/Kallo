@@ -52,7 +52,7 @@ describe('SubscriptionSettings', () => {
     );
   });
 
-  // It fills the settings dialog's Plan page, which must not be left empty.
+  // It fills the settings dialog's Subscriptions page, which must not be left empty.
   it('tells a Free user upgrades are not open yet while purchases are off', () => {
     mocks.useEntitlements.mockReturnValue({
       data: entitlements({ purchasesEnabled: false }),

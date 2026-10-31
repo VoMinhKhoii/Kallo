@@ -47,7 +47,7 @@ describe('useSettingsDialog', () => {
   it('steps back on close when it pushed the entry itself', () => {
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
     const { result } = renderHook(() => useSettingsDialog());
-    act(() => result.current.open('plan'));
+    act(() => result.current.open('subscriptions'));
 
     act(() => result.current.close());
 

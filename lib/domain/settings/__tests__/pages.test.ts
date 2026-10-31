@@ -9,7 +9,7 @@ import {
 
 describe('settings pages', () => {
   it('parses known page ids and nothing else', () => {
-    expect(parseSettingsPage('plan')).toBe('plan');
+    expect(parseSettingsPage('subscriptions')).toBe('subscriptions');
     expect(parseSettingsPage('')).toBeNull();
     expect(parseSettingsPage(null)).toBeNull();
     expect(parseSettingsPage('subscription')).toBeNull();
