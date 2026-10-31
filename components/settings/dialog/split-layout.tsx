@@ -56,7 +56,7 @@ export function SplitLayout({
         >
           {renderPage(current)}
           {saveBar}
-          <div aria-hidden="true" className="h-8" />
+          <div aria-hidden="true" className="h-7" />
         </div>
       </div>
     </DialogPrimitive.Content>

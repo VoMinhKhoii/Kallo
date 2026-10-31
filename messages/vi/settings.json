@@ -2,36 +2,28 @@
   "title": "Cài đặt",
   "pages": {
     "profile": {
-      "title": "Hồ sơ",
-      "description": "Cách bạn xuất hiện trên Kallo và với vòng kết nối."
+      "title": "Hồ sơ"
     },
     "body": {
-      "title": "Cơ thể & mục tiêu",
-      "description": "Các chỉ số của bạn quyết định mục tiêu mỗi ngày."
+      "title": "Cơ thể & mục tiêu"
     },
     "preferences": {
-      "title": "Tùy chỉnh",
-      "description": "Ngôn ngữ, giao diện và nơi bạn đến từ."
+      "title": "Tùy chỉnh"
     },
     "cooking": {
-      "title": "Nấu ăn",
-      "description": "Cách bạn thường nấu và ăn — dùng khi ước tính bữa ăn."
+      "title": "Nấu ăn"
     },
     "privacy": {
-      "title": "Quyền riêng tư",
-      "description": "Dữ liệu nào rời khỏi tài khoản, và đi đâu."
+      "title": "Quyền riêng tư"
     },
     "subscriptions": {
-      "title": "Gói đăng ký",
-      "description": "Gói của bạn, kỳ gia hạn và cách quản lý."
+      "title": "Gói đăng ký"
     },
     "account": {
-      "title": "Tài khoản",
-      "description": "Đăng nhập, và cách rời đi của bạn."
+      "title": "Tài khoản"
     },
     "feedback": {
-      "title": "Gửi góp ý",
-      "description": "Gặp lỗi, thiếu nguyên liệu, hay có ý tưởng? Hãy cho chúng tôi biết — góp ý sẽ đến thẳng đội ngũ."
+      "title": "Gửi góp ý"
     }
   },
   "bodyMetrics": "Chỉ số cơ thể",
@@ -160,8 +152,11 @@
     "nameSave": "Lưu tên",
     "nameSaved": "Đã cập nhật tên",
     "nameError": "Không thể cập nhật tên",
-    "linkPreview": "Liên kết mời của bạn:",
-    "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa."
+    "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa.",
+    "inviteLabel": "Liên kết mời",
+    "linkCopy": "Sao chép liên kết mời",
+    "linkCopied": "Đã sao chép liên kết",
+    "linkCopyError": "Không sao chép được liên kết"
   },
   "sharing": {
     "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",

@@ -38,10 +38,7 @@ export function PageContent(props: PageContentProps) {
 
   return (
     <>
-      <SectionHeader
-        title={t(`${props.page}.title`)}
-        description={t(`${props.page}.description`)}
-      />
+      <SectionHeader title={t(`${props.page}.title`)} />
       {pageBody(props, locale)}
     </>
   );

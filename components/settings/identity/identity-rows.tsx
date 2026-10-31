@@ -7,14 +7,15 @@ import { toast } from 'sonner';
 import { SettingsRow } from '@/components/settings/chrome/group';
 import { useMyProfile, useRenameProfile } from '@/hooks/profile/use-profile';
 import { AvatarField } from './avatar-field';
+import { InviteLinkRow } from './invite-link-row';
 
 const DISPLAY_NAME_MAX = 50;
 
 /**
- * Identity rows: avatar photo + "what should we call you", as hairline-divided
- * rows inside the Profile group (no card wrappers of their own). Renaming
- * re-derives the invite handle server-side, so the name row previews the
- * resulting link and warns that old links stop working.
+ * Identity rows: avatar photo, "what should we call you" and the invite link,
+ * as hairline-divided rows inside the Profile group (no card wrappers of their
+ * own). Renaming re-derives the invite handle server-side, so the link row
+ * sits right under the name and warns that old links stop working.
  */
 export function IdentityRows() {
   const t = useTranslations('settings.identity');
@@ -64,17 +65,7 @@ export function IdentityRows() {
         <AvatarField profile={profile} />
       </SettingsRow>
 
-      <SettingsRow
-        label={t('nameLabel')}
-        htmlFor="identity-display-name"
-        description={
-          <>
-            {t('linkPreview')}{' '}
-            <span className="break-all text-kallo-text">{inviteLink}</span>
-            <span className="mt-1 block">{t('linkWarning')}</span>
-          </>
-        }
-      >
+      <SettingsRow label={t('nameLabel')} htmlFor="identity-display-name">
         <div className="flex w-full items-stretch gap-2 sm:w-auto">
           <input
             id="identity-display-name"
@@ -108,6 +99,8 @@ export function IdentityRows() {
           </button>
         </div>
       </SettingsRow>
+
+      <InviteLinkRow link={inviteLink} />
     </>
   );
 }

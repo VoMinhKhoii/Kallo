@@ -2,36 +2,28 @@
   "title": "Settings",
   "pages": {
     "profile": {
-      "title": "Profile",
-      "description": "How you appear across Kallo and to your circle."
+      "title": "Profile"
     },
     "body": {
-      "title": "Body & goal",
-      "description": "Your numbers set your daily target."
+      "title": "Body & goal"
     },
     "preferences": {
-      "title": "Preferences",
-      "description": "Language, look, and where you're from."
+      "title": "Preferences"
     },
     "cooking": {
-      "title": "Cooking",
-      "description": "How you usually cook and eat — used when estimating meals."
+      "title": "Cooking"
     },
     "privacy": {
-      "title": "Privacy",
-      "description": "What leaves your account, and where it goes."
+      "title": "Privacy"
     },
     "subscriptions": {
-      "title": "Subscriptions",
-      "description": "Your plan, renewal, and how to manage it."
+      "title": "Subscriptions"
     },
     "account": {
-      "title": "Account",
-      "description": "Your sign-in, and how to leave."
+      "title": "Account"
     },
     "feedback": {
-      "title": "Send feedback",
-      "description": "Found a bug, missing an ingredient, or have an idea? Tell us — it goes straight to the team."
+      "title": "Send feedback"
     }
   },
   "bodyMetrics": "Body metrics",
@@ -160,8 +152,11 @@
     "nameSave": "Save name",
     "nameSaved": "Name updated",
     "nameError": "Couldn't update your name",
-    "linkPreview": "Your invite link:",
-    "linkWarning": "Changing your name updates your invite link — old links stop working."
+    "linkWarning": "Changing your name updates your invite link — old links stop working.",
+    "inviteLabel": "Invite link",
+    "linkCopy": "Copy invite link",
+    "linkCopied": "Link copied",
+    "linkCopyError": "Couldn't copy the link"
   },
   "sharing": {
     "autoShareLabel": "Share new meals with your circle",

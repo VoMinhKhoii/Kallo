@@ -1,22 +1,16 @@
 interface SectionHeaderProps {
   title: string;
-  description?: string;
 }
 
 /**
- * The heading that opens each settings dialog page — a sans title (Lora is
- * kept for the dialog's own "Settings" title) and an optional muted
- * description — so every page shares one header idiom.
+ * The heading that opens each settings dialog page: a sans title alone (Lora
+ * is kept for the dialog's own "Settings" title). Its 22px/snug line matches
+ * the rail title's, so the two sit on one line across the dialog.
  */
-export function SectionHeader({ title, description }: SectionHeaderProps) {
+export function SectionHeader({ title }: SectionHeaderProps) {
   return (
-    <div className="mb-5">
-      <h2 className="font-semibold text-[22px] text-kallo-text leading-tight tracking-tight">
-        {title}
-      </h2>
-      {description && (
-        <p className="mt-1 text-[14px] text-kallo-text-muted">{description}</p>
-      )}
-    </div>
+    <h2 className="mb-6 font-semibold text-[22px] text-kallo-text leading-snug tracking-tight">
+      {title}
+    </h2>
   );
 }

@@ -3,7 +3,9 @@
 import { Crown, ExternalLink } from 'lucide-react';
 import type { useTranslations } from 'next-intl';
 import type { useEntitlements } from '@/hooks/billing/use-entitlements';
-import { Link } from '@/i18n/navigation';
+import { PlanFeatures } from './plan-features';
+import { PlanSummary } from './plan-summary';
+import { UpgradeLink } from './upgrade-link';
 
 // App-store management deep links for grants that originate from a mobile IAP.
 // The RC webhook records the originating store (event.store lowercased) on the
@@ -35,63 +37,60 @@ export function PremiumState({
   const renewalDate = formatDate(data.expiresAt, locale);
   const manageUrl = data.hasActiveSubscription ? data.managementUrl : null;
 
-  // "Manage subscription" sits on the right of the plan, the way "Upgrade"
-  // does on the Free row, so both states read as one row with one action.
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-[15px] text-kallo-text">
-            <Crown aria-hidden="true" className="h-4 w-4 text-kallo-accent" />
-            {data.isLifetime ? t('lifetimePlan') : t('premiumPlan')}
-          </p>
-          <p className="mt-0.5 text-[13px] text-kallo-text-muted">
-            {data.isLifetime
-              ? t('lifetimeDescription')
-              : data.willRenew && renewalDate
-                ? t('renewsOn', { date: renewalDate })
-                : renewalDate
-                  ? t('expiresOn', { date: renewalDate })
-                  : t('premiumDescription')}
-          </p>
-          {data.isLifetime && data.hasActiveSubscription && (
-            <p className="mt-1 text-[13px] text-kallo-danger">
-              {t('lifetimeSubscriptionWarning')}
-            </p>
-          )}
-        </div>
+  const manage = manageUrl ? (
+    <a
+      href={manageUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-kallo-border bg-card px-3.5 py-1.5 font-medium text-[14px] text-kallo-text transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+    >
+      <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+      {data.managementStore === 'app_store'
+        ? t('manageAppStore')
+        : data.managementStore === 'play_store'
+          ? t('managePlayStore')
+          : t('manageWeb')}
+    </a>
+  ) : null;
 
-        {upgradeHref && (
-          <Link
-            href={upgradeHref}
-            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-kallo-ink px-4 py-2 font-medium text-[14px] text-kallo-surface transition-colors hover:bg-kallo-ink-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
-          >
-            {t('upgradeCta')}
-          </Link>
-        )}
-
-        {manageUrl && (
-          <a
-            href={manageUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-kallo-border bg-kallo-surface px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
-          >
-            <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
-            {data.managementStore === 'app_store'
-              ? t('manageAppStore')
-              : data.managementStore === 'play_store'
-                ? t('managePlayStore')
-                : t('manageWeb')}
-          </a>
-        )}
+  // The plan's actions sit on its right, the way Upgrade does on Free's.
+  // Complimentary Premium can carry both: Upgrade, and Manage for a paid
+  // subscription still running beside it.
+  const action =
+    upgradeHref || manage ? (
+      <div className="flex shrink-0 gap-2">
+        {upgradeHref && <UpgradeLink href={upgradeHref} t={t} />}
+        {manage}
       </div>
-
-      {data.hasActiveSubscription && !manageUrl && (
-        <p className="border-kallo-border/60 border-t pt-3 text-[13px] text-kallo-text-muted leading-relaxed">
-          {t('manageUnavailable')}
-        </p>
-      )}
+    ) : null;
+  return (
+    <div>
+      <PlanSummary
+        icon={Crown}
+        name={data.isLifetime ? t('lifetimePlan') : t('premiumPlan')}
+        subtitle={
+          data.isLifetime
+            ? t('lifetimeDescription')
+            : data.willRenew && renewalDate
+              ? t('renewsOn', { date: renewalDate })
+              : renewalDate
+                ? t('expiresOn', { date: renewalDate })
+                : t('premiumDescription')
+        }
+        action={action}
+      >
+        {data.isLifetime && data.hasActiveSubscription && (
+          <p className="mt-3 text-[13px] text-kallo-danger">
+            {t('lifetimeSubscriptionWarning')}
+          </p>
+        )}
+        {data.hasActiveSubscription && !manageUrl && (
+          <p className="mt-3 text-[13px] text-kallo-text-muted leading-relaxed">
+            {t('manageUnavailable')}
+          </p>
+        )}
+      </PlanSummary>
+      <PlanFeatures plan={data.isLifetime ? 'lifetime' : 'premium'} />
     </div>
   );
 }

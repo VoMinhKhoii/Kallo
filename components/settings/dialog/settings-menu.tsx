@@ -2,6 +2,7 @@
 
 import { ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { SETTINGS_PAGE_ICONS } from '@/components/settings/chrome/page-icons';
 import {
   PINNED_SETTINGS_PAGE,
   type SettingsPageId,
@@ -37,21 +38,31 @@ export function SettingsMenu({ onShow, hasProfile }: SettingsMenuProps) {
             key={group.join()}
             className="divide-y divide-kallo-border overflow-hidden rounded-2xl border border-kallo-border bg-card"
           >
-            {group.map((page) => (
-              <li key={page}>
-                <button
-                  type="button"
-                  onClick={() => onShow(page)}
-                  className="flex min-h-12 w-full items-center justify-between gap-3 px-4 text-left text-[16px] text-kallo-text transition-colors focus-visible:bg-kallo-hover focus-visible:outline-none active:bg-kallo-hover"
-                >
-                  {t(`pages.${page}.title`)}
-                  <ChevronRight
-                    className="size-4 text-kallo-text-muted"
-                    aria-hidden="true"
-                  />
-                </button>
-              </li>
-            ))}
+            {group.map((page) => {
+              const Icon = SETTINGS_PAGE_ICONS[page];
+              return (
+                <li key={page}>
+                  <button
+                    type="button"
+                    onClick={() => onShow(page)}
+                    className="flex min-h-12 w-full items-center justify-between gap-3 px-4 text-left text-[16px] text-kallo-text transition-colors focus-visible:bg-kallo-hover focus-visible:outline-none active:bg-kallo-hover"
+                  >
+                    <span className="flex items-center gap-3">
+                      <Icon
+                        className="size-5 shrink-0 text-kallo-text-muted"
+                        strokeWidth={1.75}
+                        aria-hidden="true"
+                      />
+                      {t(`pages.${page}.title`)}
+                    </span>
+                    <ChevronRight
+                      className="size-4 text-kallo-text-muted"
+                      aria-hidden="true"
+                    />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         ))}
       </div>
