@@ -4,7 +4,12 @@ import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useFormState } from 'react-hook-form';
+import {
+  GHOST_BUTTON,
+  PRIMARY_BUTTON,
+} from '@/components/settings/chrome/controls';
 import { useLiveTargets } from '@/hooks/profile/use-live-targets';
+import { cn } from '@/lib/core/ui/cn';
 
 interface SaveBarProps {
   isPending: boolean;
@@ -40,7 +45,7 @@ export function SaveBar({ isPending, onSave, onCancel }: SaveBarProps) {
               type="button"
               onClick={onCancel}
               disabled={isPending}
-              className="h-9 rounded-lg px-4 font-medium text-[14px] text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40"
+              className={cn(GHOST_BUTTON, 'h-9 px-4 text-[14px]')}
             >
               {tc('cancel')}
             </button>
@@ -48,7 +53,7 @@ export function SaveBar({ isPending, onSave, onCancel }: SaveBarProps) {
               type="button"
               onClick={onSave}
               disabled={isPending}
-              className="flex h-9 items-center gap-2 rounded-lg bg-kallo-btn px-4 font-medium text-[14px] text-kallo-btn-ink transition-colors hover:bg-kallo-btn/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60 disabled:opacity-50"
+              className={PRIMARY_BUTTON}
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {pendingTarget !== null

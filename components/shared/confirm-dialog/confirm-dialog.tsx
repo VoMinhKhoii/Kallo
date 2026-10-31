@@ -92,7 +92,7 @@ export function ConfirmDialog({
               className={cn(
                 'rounded-xl font-sans-display',
                 tone === 'destructive' &&
-                  'bg-kallo-error text-white hover:bg-kallo-error/90'
+                  'bg-kallo-error-fill text-white hover:bg-kallo-error-fill/90'
               )}
               onClick={onConfirm}
             >

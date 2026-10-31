@@ -2,6 +2,7 @@
 
 import { Bug, ImageIcon, ImagePlus, Lightbulb, Sprout, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { PRIMARY_BUTTON } from '@/components/settings/chrome/controls';
 import { OptionStrip } from '@/components/settings/chrome/option-strip';
 import { FEEDBACK_TYPES } from '@/lib/api/contracts/feedback';
 import {
@@ -147,7 +148,7 @@ export function FeedbackForm({
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="h-9 rounded-lg bg-kallo-btn px-4 font-medium text-[14px] text-kallo-btn-ink transition-opacity disabled:opacity-50"
+          className={PRIMARY_BUTTON}
         >
           {pending ? t('submitting') : t('submit')}
         </button>

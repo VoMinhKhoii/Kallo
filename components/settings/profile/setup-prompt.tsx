@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { PRIMARY_BUTTON } from '@/components/settings/chrome/controls';
 import { Link } from '@/i18n/navigation';
 
 /**
@@ -16,10 +17,7 @@ export function SetupPrompt() {
       <p className="max-w-sm text-[14px] text-kallo-text-soft">
         {t('emptyDescription')}
       </p>
-      <Link
-        href="/onboarding"
-        className="rounded-lg bg-kallo-btn px-4 py-2 font-medium text-kallo-btn-ink text-sm"
-      >
+      <Link href="/onboarding" className={PRIMARY_BUTTON}>
         {t('startSetup')}
       </Link>
     </div>

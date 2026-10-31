@@ -193,6 +193,7 @@
   --color-kallo-success-dark: var(--kallo-success-dark);
   --color-kallo-danger: var(--kallo-danger);
   --color-kallo-error: var(--kallo-error);
+  --color-kallo-error-fill: var(--kallo-error-fill);
   /* Heatmap gradient tokens */
   --color-kallo-heatmap-on-target: var(--kallo-heatmap-on-target);
   --color-kallo-heatmap-close: var(--kallo-heatmap-close);
@@ -334,6 +335,10 @@
   /* Conventional error red, for a confirm that deletes. Owner's call
      (2026-10-14): terracotta read as a style, not a warning. */
   --kallo-error: #dc2626;
+  /* The fill of a delete button, under white text. The same red in every
+     theme: dark's lighter --kallo-error suits text, but as a fill it reads
+     as coral (terracotta again) and white on it fails contrast. */
+  --kallo-error-fill: #dc2626;
   /* Heatmap gradient tokens */
   --kallo-heatmap-on-target: #7ca368;
   --kallo-heatmap-close: #a6c495;

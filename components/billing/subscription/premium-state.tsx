@@ -2,6 +2,7 @@
 
 import { Crown, ExternalLink } from 'lucide-react';
 import type { useTranslations } from 'next-intl';
+import { SECONDARY_BUTTON } from '@/components/settings/chrome/controls';
 import type { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { BillingSections } from './billing-sections';
 import { PlanFeatures } from './plan-features';
@@ -49,7 +50,7 @@ export function PremiumState({
         href={manageUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-kallo-border bg-card px-3.5 py-1.5 font-medium text-[14px] text-kallo-text transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+        className={SECONDARY_BUTTON}
       >
         <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
         {data.managementStore === 'app_store'
