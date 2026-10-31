@@ -193,6 +193,7 @@
   --color-kallo-success-dark: var(--kallo-success-dark);
   --color-kallo-danger: var(--kallo-danger);
   --color-kallo-error: var(--kallo-error);
+  --color-kallo-error-fill: var(--kallo-error-fill);
   /* Heatmap gradient tokens */
   --color-kallo-heatmap-on-target: var(--kallo-heatmap-on-target);
   --color-kallo-heatmap-close: var(--kallo-heatmap-close);
@@ -334,6 +335,10 @@
   /* Conventional error red, for a confirm that deletes. Owner's call
      (2026-10-14): terracotta read as a style, not a warning. */
   --kallo-error: #dc2626;
+  /* The fill of a delete button, under white text. The same red in every
+     theme: dark's lighter --kallo-error suits text, but as a fill it reads
+     as coral (terracotta again) and white on it fails contrast. */
+  --kallo-error-fill: #dc2626;
   /* Heatmap gradient tokens */
   --kallo-heatmap-on-target: #7ca368;
   --kallo-heatmap-close: #a6c495;
@@ -550,6 +555,35 @@
        Vietnamese-capable UI face. */
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   }
+  /* Tailwind v4 dropped the pointer cursor on buttons. Everything clickable
+     shows the finger again; disabled controls keep the arrow, and a
+     component's own cursor utility still wins (utilities outrank base).
+     `data-disabled` comes two ways: present-and-empty (Radix) or
+     "true"/"false" (cmdk), so only those two values count as disabled. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"]:not([data-disabled=""]):not([data-disabled="true"]),
+  [role="slider"]:not([aria-disabled="true"]):not([data-disabled=""]):not(
+      [data-disabled="true"]
+    ),
+  [data-slot="slider"]:not([data-disabled=""]):not([data-disabled="true"]),
+  summary,
+  label[for],
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="range"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* The shadcn kit stamps `cursor-default` on menu items and list options, and
+   components/ui is CLI-managed. Unlayered, so it outranks that utility. */
+[role="menuitem"]:not([data-disabled=""]):not([data-disabled="true"]),
+[role="menuitemradio"]:not([data-disabled=""]):not([data-disabled="true"]),
+[role="menuitemcheckbox"]:not([data-disabled=""]):not([data-disabled="true"]),
+[role="option"]:not([data-disabled=""]):not([data-disabled="true"]) {
+  cursor: pointer;
 }
 
 @layer utilities {

@@ -1,35 +1,70 @@
 {
   "title": "Settings",
-  "profile": "Profile",
-  "profileDescription": "How you appear, and what your body needs.",
-  "preferences": "Preferences",
-  "preferencesDescription": "Language, region, how you cook, and sharing.",
-  "bodyMetrics": "Body Metrics",
+  "pages": {
+    "profile": {
+      "title": "Profile"
+    },
+    "body": {
+      "title": "Body & goal"
+    },
+    "preferences": {
+      "title": "Preferences"
+    },
+    "cooking": {
+      "title": "Cooking"
+    },
+    "privacy": {
+      "title": "Privacy"
+    },
+    "subscriptions": {
+      "title": "Subscriptions"
+    },
+    "account": {
+      "title": "Account"
+    },
+    "feedback": {
+      "title": "Send feedback"
+    }
+  },
+  "bodyMetrics": "Body metrics",
+  "activity": {
+    "sedentary": {
+      "label": "Sedentary",
+      "hint": "Desk job, little exercise"
+    },
+    "light": {
+      "label": "Lightly active",
+      "hint": "Light exercise 1–3 days a week"
+    },
+    "moderate": {
+      "label": "Moderately active",
+      "hint": "Exercise 3–5 days a week"
+    },
+    "very_active": {
+      "label": "Very active",
+      "hint": "Hard exercise 6–7 days a week"
+    }
+  },
+  "carbSplit": {
+    "moderate_carb": "Moderate",
+    "lower_carb": "Lower",
+    "higher_carb": "Higher"
+  },
   "save": "Save changes",
   "saveWithTarget": "Save — new target {target} kcal",
   "saved": "Changes saved",
   "targetRitual": {
-    "newLabel": "New target",
-    "unit": "kcal",
+    "heading": "Target",
+    "replaces": "Replaces your current {kcal} kcal",
     "aggressivePace": "{pace} kg/wk — an aggressive pace"
   },
   "language": "Language",
-  "languageHint": "Change the app language",
   "appearance": {
     "label": "Appearance",
-    "hint": "Light, dark, or match your device",
     "system": "System",
     "light": "Light",
     "dark": "Dark",
     "aurora": "Aurora"
-  },
-  "anchorNav": {
-    "label": "On this page",
-    "profile": "Profile",
-    "preferences": "Preferences",
-    "subscription": "Subscription",
-    "feedback": "Feedback",
-    "account": "Account"
   },
   "feedback": {
     "title": "Send feedback",
@@ -120,8 +155,11 @@
     "nameSave": "Save name",
     "nameSaved": "Name updated",
     "nameError": "Couldn't update your name",
-    "linkPreview": "Your invite link:",
-    "linkWarning": "Changing your name updates your invite link — old links stop working."
+    "linkWarning": "Changing your name updates your invite link — old links stop working.",
+    "inviteLabel": "Invite link",
+    "linkCopy": "Copy invite link",
+    "linkCopied": "Link copied",
+    "linkCopyError": "Couldn't copy the link"
   },
   "sharing": {
     "autoShareLabel": "Share new meals with your circle",

@@ -19,7 +19,6 @@
     "loading": "Loading your plan…",
     "loadError": "We couldn't load your subscription. Please refresh.",
     "freePlan": "Free plan",
-    "freeDescription": "Upgrade to unlock AI meal analysis.",
     "premiumPlan": "Kallo Premium",
     "premiumDescription": "AI meal analysis is unlocked.",
     "lifetimePlan": "Kallo Premium — Lifetime",
@@ -37,7 +36,21 @@
     "expiryTitle": "Your subscription is ending soon",
     "expiryBody": "Access ends in {days} {days, plural, one {day} other {days}}. Renew to keep AI meal analysis.",
     "promoExpiryTitle": "Your free Premium is ending soon",
-    "promoExpiryBody": "Access ends in {days} {days, plural, one {day} other {days}}. Upgrade to keep AI meal analysis."
+    "promoExpiryBody": "Access ends in {days} {days, plural, one {day} other {days}}. Upgrade to keep AI meal analysis.",
+    "billing": {
+      "paymentTitle": "Payment",
+      "paymentWeb": "Card on file with Paddle",
+      "paymentAppStore": "Billed through the App Store",
+      "paymentPlayStore": "Billed through Google Play",
+      "update": "Update",
+      "invoicesTitle": "Invoices",
+      "invoicesLabel": "Receipts for every payment",
+      "view": "View",
+      "cancelTitle": "Cancellation",
+      "cancelLabel": "Cancel plan",
+      "cancelHint": "You keep Premium until {date}.",
+      "cancel": "Cancel"
+    }
   },
   "premium": {
     "chip": "Premium",

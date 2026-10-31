@@ -1,22 +1,15 @@
+import { dialogShell } from '@/components/shared/dialog-shell/dialog-shell';
+import { cn } from '@/lib/core/ui/cn';
+
 interface SectionHeaderProps {
   title: string;
-  description?: string;
 }
 
 /**
- * The heading block that sits above each settings section — Lora serif title
- * (never bold), optional muted description. Extracted from the settings page so
- * every section shares one header idiom.
+ * The heading that opens each settings dialog page, in the same Lora title
+ * as the rail's "Settings" (dialogShell.title), so the two sit on one line
+ * across the dialog and read as one family.
  */
-export function SectionHeader({ title, description }: SectionHeaderProps) {
-  return (
-    <div className="mb-4">
-      <h2 className="font-normal font-serif text-kallo-text text-xl">
-        {title}
-      </h2>
-      {description && (
-        <p className="mt-1 text-[14px] text-kallo-text-muted">{description}</p>
-      )}
-    </div>
-  );
+export function SectionHeader({ title }: SectionHeaderProps) {
+  return <h2 className={cn(dialogShell.title, 'mb-6')}>{title}</h2>;
 }

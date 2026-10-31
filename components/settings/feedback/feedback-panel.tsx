@@ -2,6 +2,7 @@
 
 import { CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { SECONDARY_BUTTON } from '@/components/settings/chrome/controls';
 import { SettingsGroup } from '@/components/settings/chrome/group';
 import { FeedbackForm } from './feedback-form';
 import { useFeedbackForm } from './use-feedback-form';
@@ -27,7 +28,7 @@ export function FeedbackPanel() {
       {form.sent ? (
         <div
           role="status"
-          className="flex flex-col items-center gap-4 p-card-sm py-8 text-center"
+          className="flex flex-col items-center gap-4 py-8 text-center"
         >
           <CheckCircle2
             className="size-8 text-[#7A9B76] dark:text-kallo-success-accent"
@@ -37,7 +38,7 @@ export function FeedbackPanel() {
             <h3
               ref={form.sentHeading}
               tabIndex={-1}
-              className="font-serif text-kallo-text text-lg outline-none"
+              className="font-semibold text-[16px] text-kallo-text outline-none"
             >
               {t('successTitle')}
             </h3>
@@ -48,7 +49,7 @@ export function FeedbackPanel() {
           <button
             type="button"
             onClick={form.reset}
-            className="rounded-lg border border-kallo-border bg-card px-4 py-2 font-medium text-kallo-text text-sm transition-colors hover:border-kallo-accent/50"
+            className={SECONDARY_BUTTON}
           >
             {t('sendAnother')}
           </button>

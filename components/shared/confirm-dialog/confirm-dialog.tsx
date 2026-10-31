@@ -26,8 +26,15 @@ interface ConfirmDialogProps {
   cancelLabel: string;
   /** `destructive` fills the action in error red — for a step that deletes. */
   tone?: 'default' | 'destructive';
-  /** Disables the action while the caller's work is in flight. */
+  /**
+   * The caller's work is in flight: the action is disabled, and the dialog
+   * can't be dismissed (Cancel, Escape), since closing can't stop the work.
+   */
   pending?: boolean;
+  /** Disables the action until the caller's own check passes. */
+  confirmDisabled?: boolean;
+  /** Extra content between the description and the buttons (a typed check). */
+  children?: ReactNode;
   /**
    * Runs on the action. The dialog closes after it unless the handler calls
    * `event.preventDefault()` — how a caller keeps it open until its mutation
@@ -52,7 +59,9 @@ export function ConfirmDialog({
   cancelLabel,
   tone = 'default',
   pending = false,
+  confirmDisabled = false,
   onConfirm,
+  children,
 }: ConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -61,6 +70,9 @@ export function ConfirmDialog({
       ) : null}
       <AlertDialogContent
         className={cn(dialogShell.card, 'gap-5 p-[22px] sm:max-w-md')}
+        onEscapeKeyDown={(event) => {
+          if (pending) event.preventDefault();
+        }}
       >
         <AlertDialogHeader>
           <AlertDialogTitle className={dialogShell.title}>
@@ -72,6 +84,7 @@ export function ConfirmDialog({
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {children}
         <AlertDialogFooter>
           {/* The Radix parts wrap OUR Button, not the other way round. The
               kit's AlertDialogAction/Cancel put Button outside a Slot, which
@@ -81,6 +94,7 @@ export function ConfirmDialog({
           <AlertDialogPrimitive.Cancel asChild>
             <Button
               variant="ghost"
+              disabled={pending}
               className="rounded-xl font-sans-display hover:bg-kallo-hover hover:text-kallo-text dark:hover:bg-kallo-hover"
             >
               {cancelLabel}
@@ -88,11 +102,11 @@ export function ConfirmDialog({
           </AlertDialogPrimitive.Cancel>
           <AlertDialogPrimitive.Action asChild>
             <Button
-              disabled={pending}
+              disabled={pending || confirmDisabled}
               className={cn(
                 'rounded-xl font-sans-display',
                 tone === 'destructive' &&
-                  'bg-kallo-error text-white hover:bg-kallo-error/90'
+                  'bg-kallo-error-fill text-white hover:bg-kallo-error-fill/90'
               )}
               onClick={onConfirm}
             >

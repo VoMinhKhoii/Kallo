@@ -4,17 +4,19 @@ import { Check, Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { FIELD_CLASS } from '@/components/settings/chrome/controls';
 import { SettingsRow } from '@/components/settings/chrome/group';
 import { useMyProfile, useRenameProfile } from '@/hooks/profile/use-profile';
 import { AvatarField } from './avatar-field';
+import { InviteLinkRow } from './invite-link-row';
 
 const DISPLAY_NAME_MAX = 50;
 
 /**
- * Identity rows: avatar photo + "what should we call you", as hairline-divided
- * rows inside the Profile group (no card wrappers of their own). Renaming
- * re-derives the invite handle server-side, so the name row previews the
- * resulting link and warns that old links stop working.
+ * Identity rows: avatar photo, "what should we call you" and the invite link,
+ * as hairline-divided rows inside the Profile group (no card wrappers of their
+ * own). Renaming re-derives the invite handle server-side, so the link row
+ * sits right under the name and warns that old links stop working.
  */
 export function IdentityRows() {
   const t = useTranslations('settings.identity');
@@ -27,10 +29,10 @@ export function IdentityRows() {
   if (isPending || !profile) {
     return (
       <>
-        <div className="p-card-sm">
+        <div className="py-4">
           <div className="h-4 w-40 rounded-full bg-kallo-track motion-safe:animate-pulse" />
         </div>
-        <div className="p-card-sm">
+        <div className="py-4">
           <div className="h-4 w-48 rounded-full bg-kallo-track motion-safe:animate-pulse" />
         </div>
       </>
@@ -64,17 +66,7 @@ export function IdentityRows() {
         <AvatarField profile={profile} />
       </SettingsRow>
 
-      <SettingsRow
-        label={t('nameLabel')}
-        htmlFor="identity-display-name"
-        description={
-          <>
-            {t('linkPreview')}{' '}
-            <span className="break-all text-kallo-text">{inviteLink}</span>
-            <span className="mt-1 block">{t('linkWarning')}</span>
-          </>
-        }
-      >
+      <SettingsRow label={t('nameLabel')} htmlFor="identity-display-name">
         <div className="flex w-full items-stretch gap-2 sm:w-auto">
           <input
             id="identity-display-name"
@@ -90,7 +82,7 @@ export function IdentityRows() {
             placeholder={t('namePlaceholder')}
             autoComplete="off"
             maxLength={DISPLAY_NAME_MAX}
-            className="w-full rounded-xl border border-kallo-border bg-card px-3.5 py-2.5 text-[15px] text-kallo-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-kallo-accent/40 sm:w-64"
+            className={`${FIELD_CLASS} sm:w-56`}
           />
           <button
             type="button"
@@ -98,7 +90,7 @@ export function IdentityRows() {
             disabled={!dirty || rename.isPending}
             aria-busy={rename.isPending}
             aria-label={t('nameSave')}
-            className="inline-flex shrink-0 items-center rounded-xl bg-kallo-btn px-3.5 font-medium text-kallo-btn-ink transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-kallo-btn font-medium text-kallo-btn-ink transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {rename.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -108,6 +100,8 @@ export function IdentityRows() {
           </button>
         </div>
       </SettingsRow>
+
+      <InviteLinkRow link={inviteLink} />
     </>
   );
 }

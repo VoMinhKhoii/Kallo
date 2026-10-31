@@ -1,22 +1,22 @@
 'use client';
 
-import { Download, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { SettingsGroup, SettingsRow } from '@/components/settings/chrome/group';
+import { RowButton } from '@/components/settings/chrome/row-button';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { DangerZone } from './danger-zone';
 import { LinkedAccounts } from './linked-accounts';
 import { useAccountActions } from './use-account-actions';
 
 /**
- * Account settings: sign-in identity, linked methods, data export, sign out,
- * and permanent account deletion — as two grouped list-cards (Apple Settings
- * idiom) rather than a stack of individual cards.
+ * Account settings: sign-in identity, linked methods, sign out, and permanent
+ * account deletion — four groups split by space, not titles. Data export
+ * lives on the Privacy page.
  *
- * Deletion lives in its own danger-variant group as an inline, type-to-confirm
- * panel (not a modal-first flow) in the brand's calm "concern" register —
- * terracotta `kallo-danger`, never the cold shadcn `destructive`. Sign out lives
- * here as well as in the user menu so the settings area is self-sufficient.
+ * Deletion lives in its own group: a red button that opens the shared
+ * confirm dialog with a typed check. Sign out lives here as well as in the
+ * user menu so the settings area is self-sufficient.
  */
 export function AccountPanel({
   userId,
@@ -26,56 +26,31 @@ export function AccountPanel({
   email: string | null;
 }) {
   const t = useTranslations('settings.account');
-  const {
-    exportPending,
-    signOutPending,
-    deletePending,
-    handleExport,
-    handleSignOut,
-    handleDelete,
-  } = useAccountActions(userId);
+  const { signOutPending, deletePending, handleSignOut, handleDelete } =
+    useAccountActions(userId);
   const { data: entitlements } = useEntitlements(userId);
 
   return (
-    <div className="font-sans-display">
-      <SettingsGroup>
-        {email && (
+    <div className="flex flex-col gap-6 font-sans-display">
+      {email && (
+        <SettingsGroup>
           <SettingsRow label={t('emailLabel')}>
-            <p className="text-[15px] text-kallo-text-muted">{email}</p>
+            <p className="text-[14px] text-kallo-text-muted">{email}</p>
           </SettingsRow>
-        )}
+        </SettingsGroup>
+      )}
 
-        <SettingsRow label={t('linkedTitle')} layout="stacked">
-          <LinkedAccounts />
-        </SettingsRow>
+      <LinkedAccounts />
 
-        <SettingsRow
-          label={t('exportTitle')}
-          description={t('exportDescription')}
-        >
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={exportPending}
-            aria-busy={exportPending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-card px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
-          >
-            <Download className="h-3.5 w-3.5" />
-            {exportPending ? t('exporting') : t('exportAction')}
-          </button>
-        </SettingsRow>
-
+      <SettingsGroup>
         <SettingsRow label={t('signOutTitle')}>
-          <button
-            type="button"
+          <RowButton
+            pending={signOutPending}
             onClick={handleSignOut}
-            disabled={signOutPending}
-            aria-busy={signOutPending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-card px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
+            icon={<LogOut className="h-3.5 w-3.5" />}
           >
-            <LogOut className="h-3.5 w-3.5" />
             {t('signOutAction')}
-          </button>
+          </RowButton>
         </SettingsRow>
       </SettingsGroup>
 

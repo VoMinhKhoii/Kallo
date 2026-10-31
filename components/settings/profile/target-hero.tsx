@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import type { calcMacroGrams } from '@/lib/domain/onboarding/tdee';
 
 const AGGRESSIVE_PACE_KG = 0.6;
@@ -12,13 +13,17 @@ interface TargetHeroProps {
   savedCalorieTarget: number | null;
   goal: string;
   aggression: number | null;
+  /** The controls that move the target (goal, pace, carb split). */
+  children: ReactNode;
 }
 
 /**
- * The daily-target ritual — the group's last stacked row wrapping a
- * sub-surface. Daily target is the headline; TDEE is the supporting caption.
- * When the recomputed target diverges from the saved one, surface the
- * comparison (muted strikethrough → new), tinting terracotta on aggressive pace.
+ * The daily plan, as one card: the result on the left (the kcal target with
+ * its macros right under it, then the TDEE it rests on) and the controls that
+ * move it on the right, so a change shows up beside the control that made
+ * it. Stacked on a phone. When the recomputed target differs from the saved
+ * one, a line under it names the saved target it would replace; an aggressive
+ * pace tints the number terracotta.
  */
 export function TargetHero({
   tdee,
@@ -27,6 +32,7 @@ export function TargetHero({
   savedCalorieTarget,
   goal,
   aggression,
+  children,
 }: TargetHeroProps) {
   const t = useTranslations('onboarding.bodyMetrics');
   const tSettings = useTranslations('settings');
@@ -40,78 +46,60 @@ export function TargetHero({
     ? 'text-kallo-danger'
     : 'text-kallo-text';
 
+  const macroRows = [
+    { label: t('protein'), grams: macros.proteinG },
+    { label: t('carbs'), grams: macros.carbsG },
+    { label: t('fat'), grams: macros.fatG },
+  ];
+
   return (
-    <div className="p-card-sm">
-      <div className="rounded-xl border border-kallo-accent/40 bg-kallo-surface p-card text-center">
-        <span className="block font-bold text-[11px] text-kallo-text-soft uppercase tracking-widest">
-          {diverged ? tSettings('targetRitual.newLabel') : t('calorieTarget')}
-        </span>
-        {diverged && savedCalorieTarget !== null ? (
-          <p className="mt-1 font-serif text-[#9A8F80] text-sm tabular-nums line-through">
-            {Math.round(savedCalorieTarget).toLocaleString()}{' '}
-            {tSettings('targetRitual.unit')}
-          </p>
-        ) : null}
-        <div
-          className={`mt-1 font-serif text-4xl tabular-nums tracking-tighter sm:text-5xl ${newTargetClass}`}
-          style={{ fontWeight: 400 }}
+    <div className="grid @3xl:grid-cols-[15rem_minmax(0,1fr)] @3xl:gap-x-8 rounded-2xl border border-kallo-border bg-card p-5">
+      <div>
+        <p
+          className={`font-semibold text-[40px] tabular-nums leading-none tracking-tight ${newTargetClass}`}
         >
           {newTarget.toLocaleString()}{' '}
-          <span className="font-sans text-kallo-text-muted text-lg">
+          <span className="font-normal text-[15px] text-kallo-text-muted tracking-normal">
             {t('kcal')}
           </span>
-        </div>
+        </p>
+        {diverged && savedCalorieTarget !== null ? (
+          <p className="mt-2 text-[13px] text-kallo-text-muted tabular-nums">
+            {tSettings('targetRitual.replaces', {
+              kcal: Math.round(savedCalorieTarget).toLocaleString(),
+            })}
+          </p>
+        ) : null}
+        <dl className="mt-4 grid grid-cols-3 gap-3">
+          {macroRows.map((row) => (
+            <div key={row.label}>
+              <dt className="text-[13px] text-kallo-text-muted">{row.label}</dt>
+              <dd className="mt-0.5 font-medium text-[15px] text-kallo-text tabular-nums">
+                {row.grams} {t('grams')}
+              </dd>
+            </div>
+          ))}
+        </dl>
         {aggressivePace ? (
-          <p className="mt-1.5 text-[12px] text-kallo-danger">
+          <p className="mt-4 text-[13px] text-kallo-danger">
             {tSettings('targetRitual.aggressivePace', {
               pace: (aggression ?? 0).toFixed(2),
             })}
           </p>
         ) : null}
-        <p className="mt-1.5 text-[12px] text-kallo-text-muted">
+        {/* The deficit or surplus itself reads on the pace row. */}
+        <p className="mt-4 text-[13px] text-kallo-text-muted">
           {t('basedOnTdee')} ~{Math.round(tdee).toLocaleString()} {t('kcal')}
-          {goal === 'maintaining' ? (
-            <> · {t('maintenance')}</>
-          ) : (
+          {goal === 'maintaining' && (
             <>
-              {' · '}
-              {goal === 'cutting' ? '−' : '+'}
-              {Math.abs(
-                Math.round(tdee) - Math.round(targetCalories)
-              ).toLocaleString()}{' '}
-              {t('perDay')}{' '}
-              {goal === 'cutting'
-                ? t('aggressionDeficit')
-                : t('aggressionSurplus')}
+              <br />
+              {t('maintenance')}
             </>
           )}
         </p>
-        <div className="mt-5 grid grid-cols-3 gap-4 border-kallo-accent/20 border-t pt-4">
-          <div>
-            <div className="font-bold text-[10px] text-kallo-text-soft uppercase tracking-widest">
-              {t('protein')}
-            </div>
-            <div className="font-medium text-kallo-text text-lg">
-              {macros.proteinG}g
-            </div>
-          </div>
-          <div>
-            <div className="font-bold text-[10px] text-kallo-text-soft uppercase tracking-widest">
-              {t('carbs')}
-            </div>
-            <div className="font-medium text-kallo-text text-lg">
-              {macros.carbsG}g
-            </div>
-          </div>
-          <div>
-            <div className="font-bold text-[10px] text-kallo-text-soft uppercase tracking-widest">
-              {t('fat')}
-            </div>
-            <div className="font-medium text-kallo-text text-lg">
-              {macros.fatG}g
-            </div>
-          </div>
-        </div>
+      </div>
+      <div className="@3xl:mt-0 mt-5 divide-y divide-kallo-border border-kallo-border border-t @3xl:border-t-0 @3xl:border-l @3xl:pt-0 pt-1 @3xl:pl-8">
+        {children}
       </div>
     </div>
   );

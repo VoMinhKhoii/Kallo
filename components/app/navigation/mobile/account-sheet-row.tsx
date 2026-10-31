@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { MouseEventHandler, ReactNode } from 'react';
 import { Link } from '@/i18n/navigation';
 
 /** A grouped-list row in the account sheet; the sign-out button wears it too. */
@@ -11,16 +11,16 @@ export function AccountSheetRow({
   href,
   icon,
   label,
-  onNavigate,
+  onClick,
 }: {
   href: string;
   icon: ReactNode;
   label: string;
-  onNavigate: () => void;
+  onClick: MouseEventHandler<HTMLAnchorElement>;
 }) {
   return (
     <li>
-      <Link href={href} onClick={onNavigate} className={ACCOUNT_ROW}>
+      <Link href={href} onClick={onClick} className={ACCOUNT_ROW}>
         <span className="text-kallo-text-muted">{icon}</span>
         <span className="flex-1 font-medium text-[15px] text-kallo-text">
           {label}

@@ -103,7 +103,7 @@ describe('negotiate', () => {
     // a 404 would be a lie about the URL.
     for (const path of [
       '/en/dashboard',
-      '/en/settings',
+      '/en/nutrition',
       '/vi/circle/friends',
       '/en/invite/abc',
       '/en/reset-password',

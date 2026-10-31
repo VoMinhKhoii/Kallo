@@ -93,17 +93,18 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // The routed settings tabs were flattened into one anchored page;
-      // keep old deep links (bookmarks, PWA shortcuts) working forever.
+      // Settings is a dialog over the app (`?settings=<page>`), not a route.
+      // Keep old links (bookmarks, PWA shortcuts, the routed tabs before
+      // that) opening it, over Today. Temporary: the URL contract may move.
       {
-        source: '/:locale(en|vi)/settings/profile',
-        destination: '/:locale/settings',
-        permanent: true,
+        source: '/:locale(en|vi)/settings',
+        destination: '/:locale/dashboard?settings=',
+        permanent: false,
       },
       {
-        source: '/:locale(en|vi)/settings/account',
-        destination: '/:locale/settings#settings-account',
-        permanent: true,
+        source: '/:locale(en|vi)/settings/:page(profile|account)',
+        destination: '/:locale/dashboard?settings=:page',
+        permanent: false,
       },
       // The legal pages moved into the docs site. These redirects are
       // load-bearing, not tidiness: the Flutter About screen and the App Store

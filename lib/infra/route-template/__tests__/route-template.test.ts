@@ -84,7 +84,7 @@ describe('routeTemplate', () => {
   });
 
   it('keeps our locales, static pages, metadata routes and build assets', () => {
-    expect(routeTemplate('/en/settings')).toBe('/en/settings');
+    expect(routeTemplate('/en/nutrition')).toBe('/en/nutrition');
     expect(routeTemplate('/vi')).toBe('/vi');
     expect(routeTemplate('/')).toBe('/');
     expect(routeTemplate('/robots.txt')).toBe('/robots.txt');
@@ -98,7 +98,7 @@ describe('routeTemplate', () => {
       '/en/docs/:param/:param'
     );
     expect(routeTemplate('/en/anything/else')).toBe('/en/:param/:param');
-    expect(routeTemplate('/xx/settings')).toBe('/:param/settings');
+    expect(routeTemplate('/xx/nutrition')).toBe('/:param/nutrition');
   });
 
   it('leaves nothing from an unknown or third-party path but its shape', () => {

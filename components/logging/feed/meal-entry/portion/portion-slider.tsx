@@ -28,7 +28,7 @@ export function PortionSlider({
       value={[grams]}
       onValueChange={(values) => onChange(values[0] ?? min)}
       aria-label={ariaLabel}
-      className="relative flex h-4 w-full touch-none select-none items-center"
+      className="relative flex h-4 w-full cursor-pointer touch-none select-none items-center"
     >
       <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-kallo-border/50">
         <SliderPrimitive.Range className="absolute h-full rounded-full bg-kallo-accent" />

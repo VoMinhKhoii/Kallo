@@ -1,13 +1,15 @@
 'use client';
 
-import { Crown, Loader2 } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { Loader2, Sprout } from 'lucide-react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
-import { Link } from '@/i18n/navigation';
 import { pricingHref } from '@/lib/domain/billing/pricing/pricing-href';
 import { ExpiryReminderBanner } from './expiry-reminder-banner';
+import { PlanFeatures } from './plan-features';
+import { PlanSummary } from './plan-summary';
 import { PremiumState } from './premium-state';
+import { UpgradeLink } from './upgrade-link';
 
 function daysUntil(iso: string | null): number {
   if (!iso) return Number.POSITIVE_INFINITY;
@@ -16,8 +18,9 @@ function daysUntil(iso: string | null): number {
 }
 
 /**
- * Subscription section for the settings page. Reflects the user's current
- * entitlement state and offers the right next action per source:
+ * The settings dialog's Subscriptions page, laid out like Claude's billing
+ * page: the plan with its one action, then what the plan includes. Reflects
+ * the user's current entitlement state and offers the right next action:
  *  - free       → upgrade link to /pricing (the purchase page)
  *  - premium/web→ manage via the Paddle customer portal
  *  - premium/app→ "manage in App Store / Google Play" deep link
@@ -31,28 +34,43 @@ export function SubscriptionSettings({
   locale: string;
 }) {
   const t = useTranslations('billing.settings');
+  const tPremium = useTranslations('billing.premium');
+  const tLanding = useTranslations('landing.pricing');
   const { data, isPending, isError } = useEntitlements(userId);
-  // The full, locale-prefixed path, so /pricing can link back here.
+  // The full, locale-prefixed path with its query, so /pricing links back
+  // here: the open settings page lives in `?settings=`.
   const pathname = usePathname();
+  const query = useSearchParams().toString();
+  const backHref = pricingHref(query ? `${pathname}?${query}` : pathname);
 
   if (isPending) {
     return (
-      <div className="flex items-center gap-2 rounded-2xl border border-kallo-border/70 bg-card px-4 py-5 text-[14px] text-kallo-text-muted">
+      <p className="flex items-center gap-2 text-[14px] text-kallo-text-muted">
         <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
         {t('loading')}
-      </div>
+      </p>
     );
   }
 
   if (isError || !data) {
     return (
-      <div className="rounded-2xl border border-kallo-border/70 bg-card px-4 py-5 text-[14px] text-kallo-text-muted">
-        {t('loadError')}
-      </div>
+      <p className="text-[14px] text-kallo-text-muted">{t('loadError')}</p>
     );
   }
 
-  if (!data.purchasesEnabled && data.tier !== 'premium') return null;
+  // Nothing to buy yet: say so in place of the Upgrade button.
+  if (!data.purchasesEnabled && data.tier !== 'premium') {
+    return (
+      <div className="font-sans-display">
+        <PlanSummary
+          icon={Sprout}
+          name={t('freePlan')}
+          subtitle={tPremium('purchasesUnavailable')}
+        />
+        <PlanFeatures plan="free" />
+      </div>
+    );
+  }
 
   const expiryDays = daysUntil(data.expiresAt);
   const showExpiryBanner =
@@ -62,7 +80,7 @@ export function SubscriptionSettings({
     expiryDays <= 5;
 
   return (
-    <div className="flex flex-col gap-3 font-sans-display">
+    <div className="flex flex-col gap-6 font-sans-display">
       {showExpiryBanner && (
         <ExpiryReminderBanner
           daysRemaining={expiryDays}
@@ -73,50 +91,26 @@ export function SubscriptionSettings({
         />
       )}
 
-      <div className="rounded-2xl border border-kallo-border/70 bg-card px-4 py-4">
-        {data.tier === 'premium' ? (
-          <PremiumState
-            data={data}
-            locale={locale}
-            t={t}
-            upgradeHref={
-              data.complimentary && data.purchasesEnabled
-                ? pricingHref(pathname)
-                : null
-            }
+      {data.tier === 'premium' ? (
+        <PremiumState
+          data={data}
+          locale={locale}
+          t={t}
+          upgradeHref={
+            data.complimentary && data.purchasesEnabled ? backHref : null
+          }
+        />
+      ) : (
+        <div>
+          <PlanSummary
+            icon={Sprout}
+            name={t('freePlan')}
+            subtitle={tLanding('plans.free.tagline')}
+            action={<UpgradeLink href={backHref} />}
           />
-        ) : (
-          <FreeState upgradeHref={pricingHref(pathname)} t={t} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function FreeState({
-  upgradeHref,
-  t,
-}: {
-  upgradeHref: string;
-  t: ReturnType<typeof useTranslations>;
-}) {
-  return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <p className="flex items-center gap-1.5 text-[15px] text-kallo-text">
-          <Crown aria-hidden="true" className="h-4 w-4 text-kallo-accent" />
-          {t('freePlan')}
-        </p>
-        <p className="mt-0.5 text-[13px] text-kallo-text-muted">
-          {t('freeDescription')}
-        </p>
-      </div>
-      <Link
-        href={upgradeHref}
-        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-kallo-ink px-4 py-2 font-medium text-[14px] text-kallo-surface transition-colors hover:bg-kallo-ink-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
-      >
-        {t('upgradeCta')}
-      </Link>
+          <PlanFeatures plan="free" />
+        </div>
+      )}
     </div>
   );
 }

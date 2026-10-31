@@ -1,6 +1,5 @@
 'use client';
 
-import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
@@ -158,7 +157,7 @@ export function DesktopSidebar({
       href: item.href,
       icon: <Icon className="h-5 w-5" />,
       // Resolved here, where `item.id` is still the nav-id union: a
-      // SidebarNavItem widens it to string for the settings link below.
+      // SidebarNavItem widens it to string.
       showBadge: (badgeCounts[item.id] ?? 0) > 0,
     };
   });
@@ -185,7 +184,7 @@ export function DesktopSidebar({
         onTogglePinned={togglePinned}
       />
 
-      {/* Scroll region: nav + onboarding + settings */}
+      {/* Scroll region: nav */}
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain p-3">
         <nav className="flex flex-col gap-3">
           <SectionHeader label={t('sectionLabel')} collapsed={collapsed} />
@@ -202,20 +201,6 @@ export function DesktopSidebar({
             ))}
           </ul>
         </nav>
-
-        <div className="flex flex-col gap-3">
-          <SectionHeader label={t('settings')} collapsed={collapsed} />
-          <SidebarNavLink
-            item={{
-              id: 'settings',
-              label: t('settings'),
-              href: '/settings',
-              icon: <Settings className="h-5 w-5" />,
-            }}
-            collapsed={collapsed}
-            isActive={isActiveRoute(pathname, '/settings')}
-          />
-        </div>
       </div>
 
       {/* Footer — onboarding nudge + user menu, pinned to bottom.

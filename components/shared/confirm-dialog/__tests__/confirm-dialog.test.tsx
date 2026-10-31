@@ -64,4 +64,15 @@ describe('ConfirmDialog', () => {
       screen.getByRole('button', { name: 'Discard' }).hasAttribute('disabled')
     ).toBe(true);
   });
+
+  // Closing can't stop work already in flight (a deletion), so the dialog
+  // must not pretend it can.
+  it('cannot be cancelled or escaped while pending', () => {
+    open({ pending: true });
+    expect(
+      screen.getByRole('button', { name: 'Cancel' }).hasAttribute('disabled')
+    ).toBe(true);
+    fireEvent.keyDown(screen.getByRole('alertdialog'), { key: 'Escape' });
+    expect(screen.getByRole('alertdialog')).toBeTruthy();
+  });
 });

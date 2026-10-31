@@ -5,6 +5,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+  GHOST_BUTTON,
+  SECONDARY_BUTTON,
+} from '@/components/settings/chrome/controls';
+import { SettingsRow } from '@/components/settings/chrome/group';
 import { AppleLogo, GoogleLogo } from '@/components/shared/brand-logos';
 import { createClient } from '@/lib/infra/supabase/client';
 
@@ -81,7 +86,9 @@ export function LinkedAccounts() {
     // Until identities resolve we don't know what's linked — show a
     // placeholder rather than rendering every provider as "Connect".
     return (
-      <p className="text-[13px] text-kallo-text-muted">{t('linkedLoading')}</p>
+      <p className="py-4 text-[13px] text-kallo-text-muted">
+        {t('linkedLoading')}
+      </p>
     );
   }
 
@@ -89,14 +96,14 @@ export function LinkedAccounts() {
     // Fetch failed — don't render the providers as silently "unlinked"
     // (misleads the user into reconnecting). Offer an explicit retry.
     return (
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex min-h-[52px] items-center justify-between gap-4 py-2.5">
         <p className="text-[13px] text-kallo-text-muted">
           {t('linkedLoadError')}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className="shrink-0 rounded-lg border border-kallo-border bg-card px-3 py-1.5 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+          className={SECONDARY_BUTTON}
         >
           {t('linkedRetry')}
         </button>
@@ -105,7 +112,10 @@ export function LinkedAccounts() {
   }
 
   return (
-    <div className="flex flex-col divide-y divide-kallo-border">
+    <section
+      aria-label={t('linkedTitle')}
+      className="flex flex-col divide-y divide-kallo-border"
+    >
       {OAUTH_PROVIDERS.map(({ key, label, Logo }) => {
         const identity = identities?.find((i) => i.provider === key) ?? null;
         const linked = Boolean(identity);
@@ -113,15 +123,15 @@ export function LinkedAccounts() {
         const isLast = total <= 1;
 
         return (
-          <div
+          <SettingsRow
             key={key}
-            className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0"
+            label={
+              <span className="flex items-center gap-2.5">
+                <Logo className="size-4 shrink-0 text-kallo-text" />
+                {label}
+              </span>
+            }
           >
-            <div className="flex min-w-0 items-start gap-2.5">
-              <Logo className="mt-0.5 size-4 shrink-0 text-kallo-text" />
-              <p className="text-[14px] text-kallo-text">{label}</p>
-            </div>
-
             {linked ? (
               <button
                 type="button"
@@ -129,7 +139,7 @@ export function LinkedAccounts() {
                 disabled={busy || isLast}
                 aria-busy={busy}
                 aria-label={`${t('linkedDisconnect')} ${label}`}
-                className="shrink-0 rounded-lg px-3 py-1.5 font-medium text-[13px] text-kallo-text-muted transition-colors duration-150 hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-40"
+                className={GHOST_BUTTON}
               >
                 {t('linkedDisconnect')}
               </button>
@@ -140,14 +150,14 @@ export function LinkedAccounts() {
                 disabled={busy || identitiesLoading}
                 aria-busy={busy}
                 aria-label={`${t('linkedConnect')} ${label}`}
-                className="shrink-0 rounded-lg border border-kallo-border bg-card px-3 py-1.5 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
+                className={SECONDARY_BUTTON}
               >
                 {t('linkedConnect')}
               </button>
             )}
-          </div>
+          </SettingsRow>
         );
       })}
-    </div>
+    </section>
   );
 }

@@ -7,7 +7,11 @@ const mocks = vi.hoisted(() => ({ useEntitlements: vi.fn() }));
 vi.mock('@/hooks/billing/use-entitlements', () => ({
   useEntitlements: mocks.useEntitlements,
 }));
-vi.mock('next/navigation', () => ({ usePathname: () => '/en/settings' }));
+// The dialog opens over any page, its page held in `?settings=`.
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/en/dashboard',
+  useSearchParams: () => new URLSearchParams('settings=subscriptions'),
+}));
 
 import { SubscriptionSettings } from '../subscription-settings';
 
@@ -36,7 +40,7 @@ function entitlements(
 describe('SubscriptionSettings', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('links a Free user straight to /pricing, with no trial copy', () => {
+  it('links a Free user to /pricing, back to this settings page', () => {
     mocks.useEntitlements.mockReturnValue({
       data: entitlements(),
       isPending: false,
@@ -48,11 +52,25 @@ describe('SubscriptionSettings', () => {
     expect(screen.queryByText(/trial/i)).toBeNull();
     expect(screen.getByRole('link', { name: 'upgradeCta' })).toHaveAttribute(
       'href',
-      `/pricing?from=${encodeURIComponent('/en/settings')}`
+      `/pricing?from=${encodeURIComponent('/en/dashboard?settings=subscriptions')}`
     );
   });
 
-  it('puts Manage subscription beside a subscriber plan', () => {
+  // It fills the settings dialog's Subscriptions page, which must not be left empty.
+  it('tells a Free user upgrades are not open yet while purchases are off', () => {
+    mocks.useEntitlements.mockReturnValue({
+      data: entitlements({ purchasesEnabled: false }),
+      isPending: false,
+      isError: false,
+    });
+    render(<SubscriptionSettings userId="user-1" locale="en" />);
+
+    expect(screen.getByText('freePlan')).toBeInTheDocument();
+    expect(screen.getByText('purchasesUnavailable')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'upgradeCta' })).toBeNull();
+  });
+
+  it('lays out Payment, Invoices and Cancellation for a web subscriber', () => {
     mocks.useEntitlements.mockReturnValue({
       data: entitlements({
         tier: 'premium',
@@ -67,10 +85,37 @@ describe('SubscriptionSettings', () => {
     render(<SubscriptionSettings userId="user-1" locale="en" />);
 
     expect(screen.getByText('premiumPlan')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'manageWeb' })).toHaveAttribute(
-      'href',
-      'https://customer-portal.paddle.com/cpl_1'
-    );
+    // Each row opens the Paddle portal, where the card, receipts and
+    // cancelling live; the plan's head carries no separate Manage button.
+    for (const name of ['billing.update', 'billing.view', 'billing.cancel']) {
+      expect(screen.getByRole('link', { name })).toHaveAttribute(
+        'href',
+        'https://customer-portal.paddle.com/cpl_1'
+      );
+    }
+    expect(
+      screen.queryByRole('link', { name: 'manageWeb' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('drops Invoices for an App Store plan and Cancellation once it ends', () => {
+    mocks.useEntitlements.mockReturnValue({
+      data: entitlements({
+        tier: 'premium',
+        hasActiveSubscription: true,
+        willRenew: false,
+        expiresAt: '2026-10-01T00:00:00Z',
+        managementUrl: 'https://apps.apple.com/account/subscriptions',
+        managementStore: 'app_store',
+      }),
+      isPending: false,
+      isError: false,
+    });
+    render(<SubscriptionSettings userId="user-1" locale="en" />);
+
+    expect(screen.getByText('billing.paymentAppStore')).toBeInTheDocument();
+    expect(screen.queryByText('billing.invoicesTitle')).not.toBeInTheDocument();
+    expect(screen.queryByText('billing.cancelTitle')).not.toBeInTheDocument();
   });
 
   // Premium the user never paid for (welcome or an admin grant) has no

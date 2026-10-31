@@ -1,35 +1,70 @@
 {
   "title": "Cài đặt",
-  "profile": "Hồ sơ",
-  "profileDescription": "Cách bạn xuất hiện và cơ thể bạn cần gì.",
-  "preferences": "Tùy chỉnh",
-  "preferencesDescription": "Ngôn ngữ, khu vực, cách nấu ăn và chia sẻ.",
+  "pages": {
+    "profile": {
+      "title": "Hồ sơ"
+    },
+    "body": {
+      "title": "Cơ thể & mục tiêu"
+    },
+    "preferences": {
+      "title": "Tùy chỉnh"
+    },
+    "cooking": {
+      "title": "Nấu ăn"
+    },
+    "privacy": {
+      "title": "Quyền riêng tư"
+    },
+    "subscriptions": {
+      "title": "Gói đăng ký"
+    },
+    "account": {
+      "title": "Tài khoản"
+    },
+    "feedback": {
+      "title": "Gửi góp ý"
+    }
+  },
   "bodyMetrics": "Chỉ số cơ thể",
+  "activity": {
+    "sedentary": {
+      "label": "Ít vận động",
+      "hint": "Làm văn phòng, ít tập"
+    },
+    "light": {
+      "label": "Hoạt động nhẹ",
+      "hint": "Tập nhẹ 1–3 ngày/tuần"
+    },
+    "moderate": {
+      "label": "Hoạt động vừa",
+      "hint": "Tập vừa 3–5 ngày/tuần"
+    },
+    "very_active": {
+      "label": "Hoạt động nhiều",
+      "hint": "Tập nặng 6–7 ngày/tuần"
+    }
+  },
+  "carbSplit": {
+    "moderate_carb": "Vừa",
+    "lower_carb": "Ít",
+    "higher_carb": "Nhiều"
+  },
   "save": "Lưu thay đổi",
   "saveWithTarget": "Lưu — mục tiêu mới {target} kcal",
   "saved": "Đã lưu thay đổi",
   "targetRitual": {
-    "newLabel": "Mục tiêu mới",
-    "unit": "kcal",
+    "heading": "Chỉ tiêu",
+    "replaces": "Thay cho mức hiện tại {kcal} kcal",
     "aggressivePace": "{pace} kg/tuần — nhịp khá gắt"
   },
   "language": "Ngôn ngữ",
-  "languageHint": "Thay đổi ngôn ngữ ứng dụng",
   "appearance": {
     "label": "Giao diện",
-    "hint": "Sáng, tối, hoặc theo thiết bị",
     "system": "Theo hệ thống",
     "light": "Sáng",
     "dark": "Tối",
     "aurora": "Aurora"
-  },
-  "anchorNav": {
-    "label": "Trong trang này",
-    "profile": "Hồ sơ",
-    "preferences": "Tùy chỉnh",
-    "subscription": "Gói đăng ký",
-    "feedback": "Góp ý",
-    "account": "Tài khoản"
   },
   "feedback": {
     "title": "Gửi góp ý",
@@ -120,8 +155,11 @@
     "nameSave": "Lưu tên",
     "nameSaved": "Đã cập nhật tên",
     "nameError": "Không thể cập nhật tên",
-    "linkPreview": "Liên kết mời của bạn:",
-    "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa."
+    "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa.",
+    "inviteLabel": "Liên kết mời",
+    "linkCopy": "Sao chép liên kết mời",
+    "linkCopied": "Đã sao chép liên kết",
+    "linkCopyError": "Không sao chép được liên kết"
   },
   "sharing": {
     "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",

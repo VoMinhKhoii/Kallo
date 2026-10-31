@@ -14,9 +14,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useSignOut } from '@/hooks/auth/use-sign-out';
+import { useSettingsLink } from '@/hooks/settings/use-settings-dialog';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import type { SidebarExpandMode } from '@/lib/sidebar/types';
+import { deriveLabel } from './mobile/mobile-user-label';
 import {
   ExpandModeMenuItem,
   MENU_ROW,
@@ -27,12 +29,6 @@ export interface UserMenuUser {
   email: string | null;
   displayName: string | null;
   avatarUrl: string | null;
-}
-
-function deriveLabel(user: UserMenuUser): string {
-  if (user.displayName?.trim()) return user.displayName.trim();
-  if (user.email) return user.email.split('@')[0] ?? user.email;
-  return '';
 }
 
 /**
@@ -71,6 +67,9 @@ export function UserMenu({
     if (openProp === undefined) setInternalOpen(next);
     onOpenChange?.(next);
   };
+  // The link cancels its click to open the dialog in place, which Radix
+  // reads as "keep the menu open": close it ourselves.
+  const settingsLink = useSettingsLink(() => handleOpenChange(false));
   const label = deriveLabel(user);
 
   // Show the hover-mode toggle only on fine-pointer devices. On touch the
@@ -159,7 +158,7 @@ export function UserMenu({
         )}
 
         <DropdownMenuItem asChild className={MENU_ROW}>
-          <Link href="/settings">
+          <Link href={settingsLink.href} onClick={settingsLink.onClick}>
             <Settings className={MENU_ROW_ICON} />
             {t('settings')}
           </Link>
