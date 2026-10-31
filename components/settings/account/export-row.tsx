@@ -3,7 +3,7 @@
 import { Download } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { SettingsRow } from '@/components/settings/chrome/group';
-import { ROW_BUTTON } from './row-button';
+import { RowButton } from '@/components/settings/chrome/row-button';
 import { useAccountActions } from './use-account-actions';
 
 /** Export my data — a JSON download of everything in the account. */
@@ -13,16 +13,13 @@ export function ExportRow({ userId }: { userId: string }) {
 
   return (
     <SettingsRow label={t('exportTitle')} description={t('exportDescription')}>
-      <button
-        type="button"
+      <RowButton
+        pending={exportPending}
         onClick={handleExport}
-        disabled={exportPending}
-        aria-busy={exportPending}
-        className={ROW_BUTTON}
+        icon={<Download className="h-3.5 w-3.5" />}
       >
-        <Download className="h-3.5 w-3.5" />
         {exportPending ? t('exporting') : t('exportAction')}
-      </button>
+      </RowButton>
     </SettingsRow>
   );
 }

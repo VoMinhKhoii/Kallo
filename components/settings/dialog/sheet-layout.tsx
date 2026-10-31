@@ -25,7 +25,7 @@ const EASE_OUT = [0.32, 0.72, 0, 1] as const;
 export function SheetLayout({
   page,
   onShow,
-  isVisible,
+  hasProfile,
   renderPage,
   saveBar,
 }: SettingsLayoutProps) {
@@ -90,7 +90,7 @@ export function SheetLayout({
             {page ? (
               renderPage(page)
             ) : (
-              <SettingsMenu onShow={onShow} isVisible={isVisible} />
+              <SettingsMenu onShow={onShow} hasProfile={hasProfile} />
             )}
             {saveBar}
           </motion.div>

@@ -50,6 +50,13 @@ export function isSettingsPageVisible(
   return hasProfile || !PROFILE_ONLY_PAGES.has(page);
 }
 
+/** The rail's groups, keeping only the pages this user can open. */
+export function visibleSettingsGroups(hasProfile: boolean): SettingsPageId[][] {
+  return SETTINGS_GROUPS.map((group) =>
+    group.filter((page) => isSettingsPageVisible(page, hasProfile))
+  );
+}
+
 export function parseSettingsPage(raw: string | null): SettingsPageId | null {
   return SETTINGS_PAGES.find((page) => page === raw) ?? null;
 }

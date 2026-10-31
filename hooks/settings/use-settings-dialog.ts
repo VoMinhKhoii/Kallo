@@ -2,7 +2,6 @@
 
 import { useSearchParams } from 'next/navigation';
 import type { MouseEvent } from 'react';
-import { isPlainLeftClick } from '@/lib/core/ui/plain-click';
 import {
   parseSettingsPage,
   SETTINGS_PARAM,
@@ -63,6 +62,18 @@ export function useSettingsDialog() {
       }
     },
   };
+}
+
+// An ordinary left click. A cmd/ctrl/shift/middle click falls through to the
+// browser, which opens the link's href in a new tab.
+function isPlainLeftClick(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return (
+    event.button === 0 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey
+  );
 }
 
 /**

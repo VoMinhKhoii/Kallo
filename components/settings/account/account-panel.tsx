@@ -3,10 +3,10 @@
 import { LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { SettingsGroup, SettingsRow } from '@/components/settings/chrome/group';
+import { RowButton } from '@/components/settings/chrome/row-button';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { DangerZone } from './danger-zone';
 import { LinkedAccounts } from './linked-accounts';
-import { ROW_BUTTON } from './row-button';
 import { useAccountActions } from './use-account-actions';
 
 /**
@@ -45,16 +45,13 @@ export function AccountPanel({
         </SettingsRow>
 
         <SettingsRow label={t('signOutTitle')}>
-          <button
-            type="button"
+          <RowButton
+            pending={signOutPending}
             onClick={handleSignOut}
-            disabled={signOutPending}
-            aria-busy={signOutPending}
-            className={ROW_BUTTON}
+            icon={<LogOut className="h-3.5 w-3.5" />}
           >
-            <LogOut className="h-3.5 w-3.5" />
             {t('signOutAction')}
-          </button>
+          </RowButton>
         </SettingsRow>
       </SettingsGroup>
 
