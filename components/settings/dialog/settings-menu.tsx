@@ -4,22 +4,22 @@ import { ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   PINNED_SETTINGS_PAGE,
-  SETTINGS_GROUPS,
   type SettingsPageId,
+  visibleSettingsGroups,
 } from '@/lib/domain/settings/pages';
 
 interface SettingsMenuProps {
   onShow: (page: SettingsPageId) => void;
-  isVisible: (page: SettingsPageId) => boolean;
+  hasProfile: boolean;
 }
 
 /**
  * The phone sheet's first level: the rail's groups as hairline cards of rows,
  * each pushing its page in. Send feedback gets a card of its own at the end.
  */
-export function SettingsMenu({ onShow, isVisible }: SettingsMenuProps) {
+export function SettingsMenu({ onShow, hasProfile }: SettingsMenuProps) {
   const t = useTranslations('settings');
-  const groups = [...SETTINGS_GROUPS, [PINNED_SETTINGS_PAGE]];
+  const groups = [...visibleSettingsGroups(hasProfile), [PINNED_SETTINGS_PAGE]];
 
   return (
     <>
@@ -37,7 +37,7 @@ export function SettingsMenu({ onShow, isVisible }: SettingsMenuProps) {
             key={group.join()}
             className="divide-y divide-kallo-border overflow-hidden rounded-2xl border border-kallo-border bg-card"
           >
-            {group.filter(isVisible).map((page) => (
+            {group.map((page) => (
               <li key={page}>
                 <button
                   type="button"

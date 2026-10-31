@@ -6,14 +6,14 @@ import { dialogShell } from '@/components/shared/dialog-shell/dialog-shell';
 import { cn } from '@/lib/core/ui/cn';
 import {
   PINNED_SETTINGS_PAGE,
-  SETTINGS_GROUPS,
   type SettingsPageId,
+  visibleSettingsGroups,
 } from '@/lib/domain/settings/pages';
 
 interface SettingsRailProps {
   current: SettingsPageId;
   onShow: (page: SettingsPageId) => void;
-  isVisible: (page: SettingsPageId) => boolean;
+  hasProfile: boolean;
 }
 
 /**
@@ -24,7 +24,7 @@ interface SettingsRailProps {
 export function SettingsRail({
   current,
   onShow,
-  isVisible,
+  hasProfile,
 }: SettingsRailProps) {
   const t = useTranslations('settings');
 
@@ -55,9 +55,9 @@ export function SettingsRail({
         {t('title')}
       </DialogPrimitive.Title>
       <div className="flex flex-col gap-4">
-        {SETTINGS_GROUPS.map((group) => (
+        {visibleSettingsGroups(hasProfile).map((group) => (
           <ul key={group.join()} className="flex flex-col gap-0.5">
-            {group.filter(isVisible).map(item)}
+            {group.map(item)}
           </ul>
         ))}
       </div>

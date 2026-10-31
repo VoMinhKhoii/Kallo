@@ -52,6 +52,20 @@ describe('SubscriptionSettings', () => {
     );
   });
 
+  // It fills the settings dialog's Plan page, which must not be left empty.
+  it('tells a Free user upgrades are not open yet while purchases are off', () => {
+    mocks.useEntitlements.mockReturnValue({
+      data: entitlements({ purchasesEnabled: false }),
+      isPending: false,
+      isError: false,
+    });
+    render(<SubscriptionSettings userId="user-1" locale="en" />);
+
+    expect(screen.getByText('freePlan')).toBeInTheDocument();
+    expect(screen.getByText('purchasesUnavailable')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'upgradeCta' })).toBeNull();
+  });
+
   it('puts Manage subscription beside a subscriber plan', () => {
     mocks.useEntitlements.mockReturnValue({
       data: entitlements({

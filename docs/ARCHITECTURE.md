@@ -113,7 +113,7 @@ another domain module is a smell worth a second look.
 | `text/` | string shaping for display and input parsing |
 | `theme/` | the colour themes (light, Graphite `dark`, `aurora`), the four Settings choices, the localStorage key and the per-theme browser-chrome colour; `theme-store.ts` (the stored choice, no in-memory copy) and `paint-theme.ts` (self-contained, also serialised into the before-paint script). The tokens live in `app/globals.css`; `components/providers/theme/` applies them to the app's pages only — the landing page too (it has a theme switch in its header) — docs and legal pages stay light |
 | `types/` | cross-cutting DTOs |
-| `ui/` | the Tailwind class-merge helper, `plain-click.ts` (whether a click should open something in place or fall through to the browser) plus `loaders/` (the loader pool's SMIL sampling math, painters and registry) — the only `lib/` folder that knows about drawing |
+| `ui/` | the Tailwind class-merge helper plus `loaders/` (the loader pool's SMIL sampling math, painters and registry) — the only `lib/` folder that knows about drawing |
 | `validation/` | Zod request schemas: primitives (incl. the shared gram cap), the password policy mirrored from Supabase Auth (`password.ts`, kept for the reset page old iOS builds still reach — see `docs/AUTH_SECURITY.md`), plus one file per domain |
 
 ### `lib/infra/` — edges to the outside world
@@ -227,7 +227,7 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `onboarding/` | onboarding wizard and screens | split |
 | `privacy/` | `AiConsentProvider` (the app-wide AI-processing consent state, mounted in the `(app)` layout) and the one-time consent dialog it opens; its `gate` goes to the two transports that own the ask — `useStreamAnalysis` (every meal analysis) and `useNutritionOcr` (label scans) | ok |
 | `providers/` | root client providers: TanStack Query, and the auth listener that keeps PostHog/Sentry identity in step; `theme/` paints Settings → Appearance onto the app's own pages (a before-paint script plus an applier that re-reads the stored choice on every reveal, so pages kept alive by Next never disagree) and forces the marketing pages light (`LightOnly`) | split |
-| `settings/` | `dialog/` (the settings dialog: desktop rail, phone sheet, page switch) and `chrome/` (the rows every page renders into) plus one folder per panel — `account/` `appearance/` `feedback/` `identity/` `plan/` `privacy/` `profile/` `sharing/` | ok |
+| `settings/` | `dialog/` (the settings dialog: desktop rail, phone sheet, page switch) and `chrome/` (the rows every page renders into) plus one folder per panel — `account/` `appearance/` `feedback/` `identity/` `privacy/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
 | `shared/surface-state/` | the one shape every empty, error, 404 and offline surface takes — illustration → title → subtitle → one action, plus its retry button | ok |
 | `shared/invite-confirm/` | the confirm in front of accepting or dismissing a meal-share offer — shared by the Circle deck card and the Activity row | ok |

@@ -10,13 +10,19 @@ export interface SettingsAccount {
   email: string | null;
 }
 
+/** The profile form, present exactly when the profile is. */
+export interface ProfileFormHandle {
+  onSubmit: () => void;
+  saveBar: ReactNode;
+}
+
 /** What both layouts (desktop rail, phone sheet) need from the frame. */
 export interface SettingsLayoutProps {
   /** The page in the URL, or null when it names none (or a hidden one). */
   page: SettingsPageId | null;
   onShow: (page: SettingsPageId | null) => void;
-  isVisible: (page: SettingsPageId) => boolean;
+  hasProfile: boolean;
   renderPage: (page: SettingsPageId) => ReactNode;
-  /** The profile form's save bar; absent before onboarding. */
+  /** The profile form's save bar; null before onboarding. */
   saveBar: ReactNode;
 }

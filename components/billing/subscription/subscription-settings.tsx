@@ -31,6 +31,7 @@ export function SubscriptionSettings({
   locale: string;
 }) {
   const t = useTranslations('billing.settings');
+  const tPremium = useTranslations('billing.premium');
   const { data, isPending, isError } = useEntitlements(userId);
   // The full, locale-prefixed path, so /pricing can link back here.
   const pathname = usePathname();
@@ -52,7 +53,17 @@ export function SubscriptionSettings({
     );
   }
 
-  if (!data.purchasesEnabled && data.tier !== 'premium') return null;
+  // Nothing to buy yet: say so, rather than leave the Plan page empty.
+  if (!data.purchasesEnabled && data.tier !== 'premium') {
+    return (
+      <div className="rounded-2xl border border-kallo-border/70 bg-card px-4 py-4 font-sans-display">
+        <p className="text-[15px] text-kallo-text">{t('freePlan')}</p>
+        <p className="mt-0.5 text-[13px] text-kallo-text-muted">
+          {tPremium('purchasesUnavailable')}
+        </p>
+      </div>
+    );
+  }
 
   const expiryDays = daysUntil(data.expiresAt);
   const showExpiryBanner =

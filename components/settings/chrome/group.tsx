@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/core/ui/cn';
 
 interface SettingsGroupProps {
-  id?: string;
   variant?: 'default' | 'danger';
   className?: string;
   children: ReactNode;
@@ -14,18 +13,15 @@ interface SettingsGroupProps {
  * swap the border to the terracotta `kallo-danger` concern register.
  */
 export function SettingsGroup({
-  id,
   variant = 'default',
   className,
   children,
 }: SettingsGroupProps) {
   return (
     <section
-      id={id}
       className={cn(
         'divide-y divide-kallo-border rounded-2xl border bg-card shadow-xs',
         variant === 'danger' ? 'border-kallo-danger/40' : 'border-kallo-border',
-        id && 'scroll-mt-20',
         className
       )}
     >
