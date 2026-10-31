@@ -5,14 +5,29 @@ import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
-import type { PersistedMeal } from '@/lib/actions/meals/types';
+import type { PersistedMealItemGroup } from '@/lib/actions/meals/types';
+import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
+
+/**
+ * What the dish rows read from a meal. A saved meal is one; so is a meal
+ * shown outside the feed (the public food pages), which has no ids, no
+ * ingredients and no micronutrients to supply.
+ */
+export interface DishRowsMeal {
+  mealItemGroups: (Pick<PersistedMealItemGroup, 'name' | 'order'> & {
+    nutrition: Pick<
+      NutritionValues,
+      'caloriesKcal' | 'proteinG' | 'carbohydrateG' | 'fatG'
+    >;
+  })[];
+}
 
 /** Expanded details: per-dish macro rows plus the meal totals line. */
 export function MealDetails({
   meal,
   totals,
 }: {
-  meal: PersistedMeal;
+  meal: DishRowsMeal;
   totals: { calories: string; protein: string; carbs: string; fat: string };
 }) {
   const t = useTranslations('logging.persistedMealCard');

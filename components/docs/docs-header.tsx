@@ -1,7 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
-import { DocsLocaleToggle } from '@/components/docs/docs-locale-toggle';
 import { DocsSearch } from '@/components/docs/docs-search';
+import { LocaleSwitcher } from '@/components/landing-page/locale-switcher';
+import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import type { DocsSearchEntry } from '@/lib/domain/docs/search-index';
 
@@ -22,6 +23,7 @@ export async function DocsHeader({
   searchEntries: DocsSearchEntry[];
 }) {
   const t = await getTranslations('docs');
+  const tHeader = await getTranslations('landing.header');
 
   return (
     <header className="sticky top-0 z-40 border-kallo-border border-b bg-kallo-surface">
@@ -42,13 +44,18 @@ export async function DocsHeader({
 
         <div className="ml-auto flex items-center gap-2">
           <DocsSearch entries={searchEntries} />
-          <DocsLocaleToggle />
-          <Link
-            className="hidden h-9 items-center rounded-lg bg-kallo-btn px-3.5 font-medium font-sans-display text-caption text-kallo-surface transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent sm:flex"
-            href="/"
+          {/* The landing header's own switcher and CTA, so the two bars read
+              as one site. The CTA goes to the landing page: a signed-in reader
+              is sent on to the dashboard from there, everyone else meets the
+              sign-up button. */}
+          <LocaleSwitcher />
+          <Button
+            asChild
+            variant="landing-ink"
+            className="hidden h-9 whitespace-nowrap px-4 font-sans-display text-sm md:flex"
           >
-            {t('openApp')}
-          </Link>
+            <Link href="/">{tHeader('getStarted')}</Link>
+          </Button>
         </div>
       </div>
     </header>

@@ -3,6 +3,7 @@ import {
   markdownAlternatePath,
   negotiate,
   unknownDocsTarget,
+  unknownFoodPageTarget,
 } from '@/lib/infra/http/negotiate';
 
 const MD = 'text/markdown';
@@ -107,6 +108,7 @@ describe('negotiate', () => {
       '/vi/circle/friends',
       '/en/invite/abc',
       '/en/reset-password',
+      '/en/calories/chicken-burrito',
     ]) {
       expect(ask(path)).toEqual({ kind: 'pass' });
     }
@@ -185,6 +187,44 @@ describe('unknownDocsTarget', () => {
       '/en/documents/nope',
     ]) {
       expect(unknownDocsTarget(pathname), pathname).toBeNull();
+    }
+  });
+});
+
+describe('unknownFoodPageTarget', () => {
+  it('leaves a published food page, with or without a trailing slash', () => {
+    expect(unknownFoodPageTarget('/en/calories/chicken-burrito')).toBeNull();
+    expect(unknownFoodPageTarget('/en/calories/chicken-burrito/')).toBeNull();
+    expect(unknownFoodPageTarget('/en/calories/chicken%2Dburrito')).toBeNull();
+  });
+
+  it('gives every other /calories URL the real 404', () => {
+    for (const pathname of [
+      '/en/calories',
+      '/en/calories/',
+      '/en/calories/pho-bo',
+      '/en/calories/Chicken-Burrito',
+      '/en/calories/chicken-burrito/extra',
+      '/en/calories/toString',
+    ]) {
+      expect(unknownFoodPageTarget(pathname), pathname).toBe('/en/not-found');
+    }
+    // English only: the same slug under another locale is not a page.
+    expect(unknownFoodPageTarget('/vi/calories/chicken-burrito')).toBe(
+      '/vi/not-found'
+    );
+  });
+
+  it('is null outside /{locale}/calories and for a malformed escape', () => {
+    for (const pathname of [
+      '/',
+      '/en',
+      '/en/caloriesx',
+      '/en/docs/overview',
+      '/calories/chicken-burrito',
+      '/en/calories/%E0%A4%A',
+    ]) {
+      expect(unknownFoodPageTarget(pathname), pathname).toBeNull();
     }
   });
 });

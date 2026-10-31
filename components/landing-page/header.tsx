@@ -93,7 +93,7 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
         </nav>
 
         {/* CTA Buttons */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-1">
             <ThemeSwitcher />
             <LocaleSwitcher />
@@ -111,11 +111,16 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
           <Button
             variant="landing-ink"
             size="header"
-            className="font-sans-display text-sm"
+            // Tighter on phones, where the label shares one row with the
+            // wordmark and both switchers. Under 400px even that is short of
+            // the full label (measured at 360px: ~144px free, 165px needed),
+            // so those widths get the short one.
+            className="whitespace-nowrap px-3.5 font-sans-display text-[13px] sm:px-6 sm:text-sm"
             disabled={!AUTH_CTAS_LIVE}
             onClick={() => openDialog('sign-up')}
           >
-            {t('getStarted')}
+            <span className="min-[400px]:hidden">{t('getStartedShort')}</span>
+            <span className="hidden min-[400px]:inline">{t('getStarted')}</span>
           </Button>
         </div>
       </div>

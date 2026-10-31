@@ -1,6 +1,11 @@
 import { locales } from '@/i18n/config';
 import { isKnownDocSlug } from '@/lib/domain/docs/navigation';
 import { MEDIA_MARKDOWN, preferredType } from '@/lib/infra/http/accept';
+import {
+  FOOD_PAGE_PREFIX,
+  FOOD_SLUGS,
+  foodPagePath,
+} from '@/lib/seo/food-pages/slugs';
 import { isKnownNonMarkdownPath } from '@/lib/seo/private-paths';
 
 /**
@@ -87,19 +92,46 @@ export function markdownAlternatePath(pathname: string): string | null {
 export function unknownDocsTarget(pathname: string): string | null {
   const split = splitLocale(pathname);
   if (!split?.rest.startsWith('/docs/')) return null;
-  // A trailing slash names the same page; Next normally redirects it away
-  // before the proxy runs, but the check must not depend on that.
-  const rest = split.rest.endsWith('/') ? split.rest.slice(0, -1) : split.rest;
-  // The pathname arrives percent-encoded, and Next decodes it before it reaches
-  // the page, so `/docs/%6fverview` is a real page. A malformed escape is left
-  // for Next to answer.
-  let decoded: string;
+  const decoded = pagePath(split.rest);
+  if (decoded === null) return null;
+  return docSlug(decoded) ? null : `/${split.locale}/not-found`;
+}
+
+/**
+ * The same early 404 for the food pages: a URL under the food folder is a page
+ * only when it is exactly a published page's path (`foodPagePath`), so the
+ * bare folder, another locale and a mistyped slug all get the real 404.
+ */
+export function unknownFoodPageTarget(pathname: string): string | null {
+  const split = splitLocale(pathname);
+  if (!split) return null;
+  const { locale, rest } = split;
+  if (rest !== FOOD_PAGE_PREFIX && !rest.startsWith(`${FOOD_PAGE_PREFIX}/`))
+    return null;
+  const decoded = pagePath(rest);
+  if (decoded === null) return null;
+  const known = FOOD_SLUGS.some(
+    (slug) => foodPagePath(slug) === `/${locale}${decoded}`
+  );
+  return known ? null : `/${locale}/not-found`;
+}
+
+/**
+ * A locale-relative path as the page will see it, or null for a malformed
+ * escape, which is left for Next to answer.
+ *
+ * A trailing slash names the same page; Next normally redirects it away before
+ * the proxy runs, but the check must not depend on that. The pathname arrives
+ * percent-encoded and Next decodes it before it reaches the page, so
+ * `/docs/%6fverview` is a real page.
+ */
+function pagePath(rest: string): string | null {
+  const trimmed = rest.endsWith('/') ? rest.slice(0, -1) : rest;
   try {
-    decoded = decodeURIComponent(rest);
+    return decodeURIComponent(trimmed);
   } catch {
     return null;
   }
-  return docSlug(decoded) ? null : `/${split.locale}/not-found`;
 }
 
 export interface NegotiationInput {
