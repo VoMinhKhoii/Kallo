@@ -14,9 +14,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useSignOut } from '@/hooks/auth/use-sign-out';
+import { useSettingsLink } from '@/hooks/settings/use-settings-dialog';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import type { SidebarExpandMode } from '@/lib/sidebar/types';
+import { deriveLabel } from './mobile/mobile-user-label';
 import {
   ExpandModeMenuItem,
   MENU_ROW,
@@ -27,12 +29,6 @@ export interface UserMenuUser {
   email: string | null;
   displayName: string | null;
   avatarUrl: string | null;
-}
-
-function deriveLabel(user: UserMenuUser): string {
-  if (user.displayName?.trim()) return user.displayName.trim();
-  if (user.email) return user.email.split('@')[0] ?? user.email;
-  return '';
 }
 
 /**
@@ -66,6 +62,7 @@ export function UserMenu({
   const t = useTranslations('app.userMenu');
   const [internalOpen, setInternalOpen] = useState(false);
   const { signOut: handleSignOut, signingOut } = useSignOut();
+  const settingsLink = useSettingsLink();
   const open = openProp ?? internalOpen;
   const handleOpenChange = (next: boolean) => {
     if (openProp === undefined) setInternalOpen(next);
@@ -159,7 +156,7 @@ export function UserMenu({
         )}
 
         <DropdownMenuItem asChild className={MENU_ROW}>
-          <Link href="/settings">
+          <Link href={settingsLink.href} onClick={settingsLink.onClick}>
             <Settings className={MENU_ROW_ICON} />
             {t('settings')}
           </Link>

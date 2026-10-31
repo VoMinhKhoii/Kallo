@@ -3,27 +3,27 @@
 import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
+import { useFormState } from 'react-hook-form';
+import { useLiveTargets } from '@/hooks/profile/use-live-targets';
 
 interface SaveBarProps {
-  isDirty: boolean;
   isPending: boolean;
-  /** Floored kcal target the save names, or null when metrics are incomplete. */
-  pendingTarget: number | null;
+  onSave: () => void;
   onCancel: () => void;
 }
 
 /**
  * Pinned save bar — rests above the bottom edge while content scrolls behind it
  * and dissolves into a soft fade. Names its consequence when a target exists.
+ * Reads the profile form it sits under, so it shows on every settings page
+ * while that form has unsaved edits, whichever page they were made on.
  */
-export function SaveBar({
-  isDirty,
-  isPending,
-  pendingTarget,
-  onCancel,
-}: SaveBarProps) {
+export function SaveBar({ isPending, onSave, onCancel }: SaveBarProps) {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
+  const { isDirty } = useFormState();
+  // Floored kcal target the save names, or null when metrics are incomplete.
+  const { pendingTarget } = useLiveTargets();
 
   return (
     <AnimatePresence>
@@ -49,7 +49,8 @@ export function SaveBar({
               {tc('cancel')}
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={onSave}
               disabled={isPending}
               className="flex items-center gap-2 rounded-xl bg-kallo-btn px-5 py-2.5 font-medium text-[14px] text-kallo-btn-ink shadow-sm transition-all hover:bg-kallo-btn/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60 disabled:opacity-50"
             >

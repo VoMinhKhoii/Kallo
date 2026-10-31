@@ -113,7 +113,7 @@ another domain module is a smell worth a second look.
 | `text/` | string shaping for display and input parsing |
 | `theme/` | the colour themes (light, Graphite `dark`, `aurora`), the four Settings choices, the localStorage key and the per-theme browser-chrome colour; `theme-store.ts` (the stored choice, no in-memory copy) and `paint-theme.ts` (self-contained, also serialised into the before-paint script). The tokens live in `app/globals.css`; `components/providers/theme/` applies them to the app's pages only — the landing page too (it has a theme switch in its header) — docs and legal pages stay light |
 | `types/` | cross-cutting DTOs |
-| `ui/` | the Tailwind class-merge helper plus `loaders/` (the loader pool's SMIL sampling math, painters and registry) — the only `lib/` folder that knows about drawing |
+| `ui/` | the Tailwind class-merge helper, `plain-click.ts` (whether a click should open something in place or fall through to the browser) plus `loaders/` (the loader pool's SMIL sampling math, painters and registry) — the only `lib/` folder that knows about drawing |
 | `validation/` | Zod request schemas: primitives (incl. the shared gram cap), the password policy mirrored from Supabase Auth (`password.ts`, kept for the reset page old iOS builds still reach — see `docs/AUTH_SECURITY.md`), plus one file per domain |
 
 ### `lib/infra/` — edges to the outside world
@@ -154,7 +154,7 @@ another domain module is a smell worth a second look.
 | `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share, and `label-images/` — keeping each scanned label photo with its scan outcome (private `nutrition-labels` R2 bucket + `nutrition_label_images`) |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data |
 | `privacy/` | consent to third-party AI processing (App Store 5.1.2(i)): `ai-consent.ts` (the server gate every AI entry point asks — `hasAiConsent` / `assertAiConsent`, 403 `ai_consent_required`) and `consent-gate.ts` (the `AiConsentGate` interface the client entry-point hooks receive) |
-| `settings/` | the contracts the settings page's route, panels and hooks share: `anchors.ts` (scroll-target ids), `profile-form.ts` (the profile form's data model) |
+| `settings/` | the contracts the settings dialog, its pages and hooks share: `pages.ts` (page ids, rail groups, the `?settings=` URL param), `profile-form.ts` (the profile form's data model) |
 | `social/` | `identity/` `feed/` `shares/` `chat/` — the circle and its group chats, plus `query-keys.ts`, the cache addresses its write side shares with `hooks/social/`; `moderation/` (App Store 1.2): `blocks.ts` (the one symmetric block predicate over `user_blocks`, and the pair lock block/accept share), `text-filter.ts` over the curated `objectionable-terms.ts` (422 `objectionable_content` on UGC writes), and `report-targets.ts` (resolves a reported target to its owner, gated on what the reporter could see ignoring blocks). Visibility seams every read folds in: `shares/share-visibility.ts` (`shareAccessSql` for share-by-id, `groupShareVisibleSql` for group reads), `chat/message-visibility.ts` (`visibleChatMessageSql`) and `shares/shareable-meal.ts` (the text filter at the moment a meal becomes visible to others) |
 | `waitlist/` | signup, confirm, token |
 
@@ -227,7 +227,7 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `onboarding/` | onboarding wizard and screens | split |
 | `privacy/` | `AiConsentProvider` (the app-wide AI-processing consent state, mounted in the `(app)` layout) and the one-time consent dialog it opens; its `gate` goes to the two transports that own the ask — `useStreamAnalysis` (every meal analysis) and `useNutritionOcr` (label scans) | ok |
 | `providers/` | root client providers: TanStack Query, and the auth listener that keeps PostHog/Sentry identity in step; `theme/` paints Settings → Appearance onto the app's own pages (a before-paint script plus an applier that re-reads the stored choice on every reveal, so pages kept alive by Next never disagree) and forces the marketing pages light (`LightOnly`) | split |
-| `settings/` | `chrome/` (the page shell every panel renders into) plus one folder per panel — `account/` `appearance/` `feedback/` `identity/` `privacy/` `profile/` `sharing/` | ok |
+| `settings/` | `dialog/` (the settings dialog: desktop rail, phone sheet, page switch) and `chrome/` (the rows every page renders into) plus one folder per panel — `account/` `appearance/` `feedback/` `identity/` `plan/` `privacy/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
 | `shared/surface-state/` | the one shape every empty, error, 404 and offline surface takes — illustration → title → subtitle → one action, plus its retry button | ok |
 | `shared/invite-confirm/` | the confirm in front of accepting or dismissing a meal-share offer — shared by the Circle deck card and the Activity row | ok |
@@ -237,6 +237,7 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | Folder | Concern | Status |
 |---|---|---|
 | `auth/` · `billing/` · `dashboard/` · `profile/` · `weight/` | one feature's client state each | ok |
+| `settings/` | the settings dialog's open state and page, kept in the URL (`?settings=<page>`), and the link props that open it in place | ok |
 | `meals/` | meal lifecycle, one folder per stage — a directory index, no direct files | ok |
 | `meals/queries/` | the read-only TanStack wrappers: a day's meals, ingredient search, cheat chips, adjacent-date prefetch | ok |
 | `meals/mutations/` | one file per write: confirm, manual save, update, duplicate, delete | ok |

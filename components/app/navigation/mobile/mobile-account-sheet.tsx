@@ -8,6 +8,7 @@ import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { ResponsiveSheet } from '@/components/shared/responsive-sheet';
 import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-header';
 import { useSignOut } from '@/hooks/auth/use-sign-out';
+import { useSettingsLink } from '@/hooks/settings/use-settings-dialog';
 import { cn } from '@/lib/core/ui/cn';
 import { OnboardingNudge } from '../onboarding-nudge';
 import type { UserMenuUser } from '../user-menu';
@@ -55,6 +56,7 @@ export function MobileAccountSheet({
   const label = deriveLabel(user) || tMenu('account');
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const settingsLink = useSettingsLink(close);
 
   return (
     <ResponsiveSheet
@@ -113,10 +115,10 @@ export function MobileAccountSheet({
             <ThemeSegments />
           </li>
           <AccountSheetRow
-            href="/settings"
+            href={settingsLink.href}
             icon={<Settings className="size-[18px]" aria-hidden="true" />}
             label={tNav('settings')}
-            onNavigate={close}
+            onClick={settingsLink.onClick}
           />
         </ul>
 

@@ -11,6 +11,10 @@ export function useLocaleSwitch() {
 
   return (nextLocale: Locale) => {
     if (nextLocale === locale) return;
-    router.replace(pathname, { locale: nextLocale });
+    // Keep the query: the settings dialog lives in it (`?settings=`), and
+    // switching language from inside it should leave it open.
+    router.replace(`${pathname}${window.location.search}`, {
+      locale: nextLocale,
+    });
   };
 }
