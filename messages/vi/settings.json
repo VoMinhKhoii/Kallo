@@ -54,8 +54,8 @@
   "saveWithTarget": "Lưu — mục tiêu mới {target} kcal",
   "saved": "Đã lưu thay đổi",
   "targetRitual": {
-    "newLabel": "Mục tiêu mới",
-    "unit": "kcal",
+    "heading": "Chỉ tiêu",
+    "replaces": "Thay cho mức hiện tại {kcal} kcal",
     "aggressivePace": "{pace} kg/tuần — nhịp khá gắt"
   },
   "language": "Ngôn ngữ",

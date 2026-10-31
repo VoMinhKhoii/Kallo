@@ -54,8 +54,8 @@
   "saveWithTarget": "Save — new target {target} kcal",
   "saved": "Changes saved",
   "targetRitual": {
-    "newLabel": "New target",
-    "unit": "kcal",
+    "heading": "Target",
+    "replaces": "Replaces your current {kcal} kcal",
     "aggressivePace": "{pace} kg/wk — an aggressive pace"
   },
   "language": "Language",

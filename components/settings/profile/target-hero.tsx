@@ -13,16 +13,17 @@ interface TargetHeroProps {
   savedCalorieTarget: number | null;
   goal: string;
   aggression: number | null;
-  /** Sits between how the number was reached and the macros (the carb split). */
-  children?: ReactNode;
+  /** The controls that move the target (goal, pace, carb split). */
+  children: ReactNode;
 }
 
 /**
- * The daily target, as a card beside (or above) the body inputs that produce
- * it: the number, how it was reached, the carb split and the macros it
- * splits into. When the
- * recomputed target differs from the saved one, the saved one shows struck
- * through under it; an aggressive pace tints the number terracotta.
+ * The daily plan, as one card: the result on the left (the kcal target with
+ * its macros right under it, then the TDEE it rests on) and the controls that
+ * move it on the right, so a change shows up beside the control that made
+ * it. Stacked on a phone. When the recomputed target differs from the saved
+ * one, a line under it names the saved target it would replace; an aggressive
+ * pace tints the number terracotta.
  */
 export function TargetHero({
   tdee,
@@ -52,63 +53,54 @@ export function TargetHero({
   ];
 
   return (
-    <div className="rounded-2xl border border-kallo-border bg-card p-5">
-      <p className="text-[13px] text-kallo-text-muted">
-        {diverged ? tSettings('targetRitual.newLabel') : t('calorieTarget')}
-      </p>
-      <p
-        className={`mt-2 font-semibold text-[40px] tabular-nums leading-none tracking-tight ${newTargetClass}`}
-      >
-        {newTarget.toLocaleString()}{' '}
-        <span className="font-normal text-[15px] text-kallo-text-muted tracking-normal">
-          {t('kcal')}
-        </span>
-      </p>
-      {diverged && savedCalorieTarget !== null ? (
-        <p className="mt-2 text-[13px] text-kallo-text-muted tabular-nums line-through">
-          {Math.round(savedCalorieTarget).toLocaleString()}{' '}
-          {tSettings('targetRitual.unit')}
+    <div className="grid @3xl:grid-cols-[15rem_minmax(0,1fr)] @3xl:gap-x-8 rounded-2xl border border-kallo-border bg-card p-5">
+      <div>
+        <p
+          className={`font-semibold text-[40px] tabular-nums leading-none tracking-tight ${newTargetClass}`}
+        >
+          {newTarget.toLocaleString()}{' '}
+          <span className="font-normal text-[15px] text-kallo-text-muted tracking-normal">
+            {t('kcal')}
+          </span>
         </p>
-      ) : null}
-      {aggressivePace ? (
-        <p className="mt-2 text-[13px] text-kallo-danger">
-          {tSettings('targetRitual.aggressivePace', {
-            pace: (aggression ?? 0).toFixed(2),
-          })}
+        {diverged && savedCalorieTarget !== null ? (
+          <p className="mt-2 text-[13px] text-kallo-text-muted tabular-nums">
+            {tSettings('targetRitual.replaces', {
+              kcal: Math.round(savedCalorieTarget).toLocaleString(),
+            })}
+          </p>
+        ) : null}
+        <dl className="mt-4 grid grid-cols-3 gap-3">
+          {macroRows.map((row) => (
+            <div key={row.label}>
+              <dt className="text-[13px] text-kallo-text-muted">{row.label}</dt>
+              <dd className="mt-0.5 font-medium text-[15px] text-kallo-text tabular-nums">
+                {row.grams} {t('grams')}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        {aggressivePace ? (
+          <p className="mt-4 text-[13px] text-kallo-danger">
+            {tSettings('targetRitual.aggressivePace', {
+              pace: (aggression ?? 0).toFixed(2),
+            })}
+          </p>
+        ) : null}
+        {/* The deficit or surplus itself reads on the pace row. */}
+        <p className="mt-4 text-[13px] text-kallo-text-muted">
+          {t('basedOnTdee')} ~{Math.round(tdee).toLocaleString()} {t('kcal')}
+          {goal === 'maintaining' && (
+            <>
+              <br />
+              {t('maintenance')}
+            </>
+          )}
         </p>
-      ) : null}
-      <p className="mt-2 text-[13px] text-kallo-text-muted">
-        {t('basedOnTdee')} ~{Math.round(tdee).toLocaleString()} {t('kcal')}
-        <br />
-        {goal === 'maintaining' ? (
-          t('maintenance')
-        ) : (
-          <>
-            {goal === 'cutting' ? '−' : '+'}
-            {Math.abs(
-              Math.round(tdee) - Math.round(targetCalories)
-            ).toLocaleString()}{' '}
-            {t('perDay')}{' '}
-            {goal === 'cutting'
-              ? t('aggressionDeficit')
-              : t('aggressionSurplus')}
-          </>
-        )}
-      </p>
-      {children && <div className="mt-5">{children}</div>}
-      <dl className="mt-4 divide-y divide-kallo-border border-kallo-border border-t">
-        {macroRows.map((row) => (
-          <div
-            key={row.label}
-            className="flex items-center justify-between py-2.5 text-[14px]"
-          >
-            <dt className="text-kallo-text-muted">{row.label}</dt>
-            <dd className="font-medium text-kallo-text tabular-nums">
-              {row.grams} {t('grams')}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      </div>
+      <div className="@3xl:mt-0 mt-5 divide-y divide-kallo-border border-kallo-border border-t @3xl:border-t-0 @3xl:border-l @3xl:pt-0 pt-1 @3xl:pl-8">
+        {children}
+      </div>
     </div>
   );
 }
