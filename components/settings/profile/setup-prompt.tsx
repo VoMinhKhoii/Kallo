@@ -10,7 +10,9 @@ export function SetupPrompt() {
 
   return (
     <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-kallo-border bg-card px-4 py-12 text-center">
-      <h3 className="font-serif text-kallo-text text-lg">{t('emptyTitle')}</h3>
+      <h3 className="font-semibold text-[16px] text-kallo-text">
+        {t('emptyTitle')}
+      </h3>
       <p className="max-w-sm text-[14px] text-kallo-text-soft">
         {t('emptyDescription')}
       </p>

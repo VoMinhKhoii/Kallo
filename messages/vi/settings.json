@@ -35,6 +35,24 @@
     }
   },
   "bodyMetrics": "Chỉ số cơ thể",
+  "activity": {
+    "sedentary": {
+      "label": "Ít vận động",
+      "hint": "Làm văn phòng, ít tập"
+    },
+    "light": {
+      "label": "Hoạt động nhẹ",
+      "hint": "Tập nhẹ 1–3 ngày/tuần"
+    },
+    "moderate": {
+      "label": "Hoạt động vừa",
+      "hint": "Tập vừa 3–5 ngày/tuần"
+    },
+    "very_active": {
+      "label": "Hoạt động nhiều",
+      "hint": "Tập nặng 6–7 ngày/tuần"
+    }
+  },
   "save": "Lưu thay đổi",
   "saveWithTarget": "Lưu — mục tiêu mới {target} kcal",
   "saved": "Đã lưu thay đổi",

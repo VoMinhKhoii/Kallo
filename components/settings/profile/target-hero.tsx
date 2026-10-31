@@ -15,10 +15,10 @@ interface TargetHeroProps {
 }
 
 /**
- * The daily-target ritual — its own card beside (or above) the inputs that
- * produce it. Daily target is the headline; TDEE is the supporting caption.
- * When the recomputed target diverges from the saved one, surface the
- * comparison (muted strikethrough → new), tinting terracotta on aggressive pace.
+ * The daily target, as a card beside (or above) the body inputs that produce
+ * it: the number, how it was reached, and the macros it splits into. When the
+ * recomputed target differs from the saved one, the saved one shows struck
+ * through under it; an aggressive pace tints the number terracotta.
  */
 export function TargetHero({
   tdee,
@@ -40,40 +40,45 @@ export function TargetHero({
     ? 'text-kallo-danger'
     : 'text-kallo-text';
 
+  const macroRows = [
+    { label: t('protein'), grams: macros.proteinG },
+    { label: t('carbs'), grams: macros.carbsG },
+    { label: t('fat'), grams: macros.fatG },
+  ];
+
   return (
-    <div className="rounded-2xl border border-kallo-accent/40 bg-card p-card text-center">
-      <span className="block font-bold text-[11px] text-kallo-text-soft uppercase tracking-widest">
+    <div className="rounded-2xl border border-kallo-border bg-card p-5">
+      <p className="text-[13px] text-kallo-text-muted">
         {diverged ? tSettings('targetRitual.newLabel') : t('calorieTarget')}
-      </span>
+      </p>
+      <p
+        className={`mt-2 font-semibold text-[40px] tabular-nums leading-none tracking-tight ${newTargetClass}`}
+      >
+        {newTarget.toLocaleString()}{' '}
+        <span className="font-normal text-[15px] text-kallo-text-muted tracking-normal">
+          {t('kcal')}
+        </span>
+      </p>
       {diverged && savedCalorieTarget !== null ? (
-        <p className="mt-1 font-serif text-[#9A8F80] text-sm tabular-nums line-through">
+        <p className="mt-2 text-[13px] text-kallo-text-muted tabular-nums line-through">
           {Math.round(savedCalorieTarget).toLocaleString()}{' '}
           {tSettings('targetRitual.unit')}
         </p>
       ) : null}
-      <div
-        className={`mt-1 font-serif text-4xl tabular-nums tracking-tighter sm:text-5xl ${newTargetClass}`}
-        style={{ fontWeight: 400 }}
-      >
-        {newTarget.toLocaleString()}{' '}
-        <span className="font-sans text-kallo-text-muted text-lg">
-          {t('kcal')}
-        </span>
-      </div>
       {aggressivePace ? (
-        <p className="mt-1.5 text-[12px] text-kallo-danger">
+        <p className="mt-2 text-[13px] text-kallo-danger">
           {tSettings('targetRitual.aggressivePace', {
             pace: (aggression ?? 0).toFixed(2),
           })}
         </p>
       ) : null}
-      <p className="mt-1.5 text-[12px] text-kallo-text-muted">
+      <p className="mt-2 text-[13px] text-kallo-text-muted">
         {t('basedOnTdee')} ~{Math.round(tdee).toLocaleString()} {t('kcal')}
+        <br />
         {goal === 'maintaining' ? (
-          <> · {t('maintenance')}</>
+          t('maintenance')
         ) : (
           <>
-            {' · '}
             {goal === 'cutting' ? '−' : '+'}
             {Math.abs(
               Math.round(tdee) - Math.round(targetCalories)
@@ -85,32 +90,19 @@ export function TargetHero({
           </>
         )}
       </p>
-      <div className="mt-5 grid grid-cols-3 gap-4 border-kallo-accent/20 border-t pt-4">
-        <div>
-          <div className="font-bold text-[10px] text-kallo-text-soft uppercase tracking-widest">
-            {t('protein')}
+      <dl className="mt-4 divide-y divide-kallo-border border-kallo-border border-t">
+        {macroRows.map((row) => (
+          <div
+            key={row.label}
+            className="flex items-center justify-between py-2.5 text-[14px]"
+          >
+            <dt className="text-kallo-text-muted">{row.label}</dt>
+            <dd className="font-medium text-kallo-text tabular-nums">
+              {row.grams} {t('grams')}
+            </dd>
           </div>
-          <div className="font-medium text-kallo-text text-lg">
-            {macros.proteinG}g
-          </div>
-        </div>
-        <div>
-          <div className="font-bold text-[10px] text-kallo-text-soft uppercase tracking-widest">
-            {t('carbs')}
-          </div>
-          <div className="font-medium text-kallo-text text-lg">
-            {macros.carbsG}g
-          </div>
-        </div>
-        <div>
-          <div className="font-bold text-[10px] text-kallo-text-soft uppercase tracking-widest">
-            {t('fat')}
-          </div>
-          <div className="font-medium text-kallo-text text-lg">
-            {macros.fatG}g
-          </div>
-        </div>
-      </div>
+        ))}
+      </dl>
     </div>
   );
 }

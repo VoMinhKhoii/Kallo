@@ -37,7 +37,7 @@ export function FeedbackPanel() {
             <h3
               ref={form.sentHeading}
               tabIndex={-1}
-              className="font-serif text-kallo-text text-lg outline-none"
+              className="font-semibold text-[16px] text-kallo-text outline-none"
             >
               {t('successTitle')}
             </h3>

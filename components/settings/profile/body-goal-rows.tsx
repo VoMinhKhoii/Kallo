@@ -1,6 +1,5 @@
 'use client';
 
-import { SettingsGroup } from '@/components/settings/chrome/group';
 import { useLiveTargets } from '@/hooks/profile/use-live-targets';
 import { GoalFields } from './goal-fields';
 import { MetricsFields } from './metrics-fields';
@@ -18,14 +17,14 @@ export function BodyGoalRows({
 }) {
   const live = useLiveTargets();
 
-  // The target is what every field here moves, so it stays in sight: a
-  // sticky card beside the inputs when the page is wide enough, the first
-  // card above them when it is not (phones, a narrow window).
+  // Body inputs on the left with the target they produce on the right; the
+  // goal, which moves the target too, spans the full width right under both.
+  // Narrow (phones), everything stacks with the target first.
   return (
-    <div className="@container">
-      <div className="grid @3xl:grid-cols-[minmax(0,1fr)_17rem] @3xl:items-start gap-4">
+    <div className="@container flex flex-col gap-8">
+      <div className="grid @3xl:grid-cols-[minmax(0,1fr)_17rem] @3xl:items-start gap-8">
         {live.tdee !== null && live.macros && (
-          <div className="@3xl:sticky @3xl:top-14 @3xl:order-last">
+          <div className="@3xl:order-last">
             <TargetHero
               tdee={live.tdee}
               targetCalories={live.targetCalories}
@@ -36,21 +35,9 @@ export function BodyGoalRows({
             />
           </div>
         )}
-        <div className="flex min-w-0 flex-col gap-4">
-          <SettingsGroup>
-            <MetricsFields />
-          </SettingsGroup>
-          <SettingsGroup>
-            <div>
-              <GoalFields
-                tdee={live.tdee}
-                targetCalories={live.targetCalories}
-                goal={live.goal}
-              />
-            </div>
-          </SettingsGroup>
-        </div>
+        <MetricsFields />
       </div>
+      <GoalFields tdee={live.tdee} goal={live.goal} />
     </div>
   );
 }

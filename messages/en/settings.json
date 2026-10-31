@@ -34,7 +34,25 @@
       "description": "Found a bug, missing an ingredient, or have an idea? Tell us — it goes straight to the team."
     }
   },
-  "bodyMetrics": "Body Metrics",
+  "bodyMetrics": "Body metrics",
+  "activity": {
+    "sedentary": {
+      "label": "Sedentary",
+      "hint": "Desk job, little exercise"
+    },
+    "light": {
+      "label": "Lightly active",
+      "hint": "Light exercise 1–3 days a week"
+    },
+    "moderate": {
+      "label": "Moderately active",
+      "hint": "Exercise 3–5 days a week"
+    },
+    "very_active": {
+      "label": "Very active",
+      "hint": "Hard exercise 6–7 days a week"
+    }
+  },
   "save": "Save changes",
   "saveWithTarget": "Save — new target {target} kcal",
   "saved": "Changes saved",
