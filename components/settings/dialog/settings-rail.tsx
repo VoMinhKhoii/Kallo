@@ -19,7 +19,7 @@ interface SettingsRailProps {
 /**
  * The desktop dialog's left rail: "Settings" on top, text-only page links
  * grouped by space alone (no labels, no icons), Send feedback pinned to the
- * foot. The selected page reads as a raised white chip on the tinted rail.
+ * foot. The selected page wears the beige wash; a hovered one lifts to white.
  */
 export function SettingsRail({
   current,
@@ -37,8 +37,8 @@ export function SettingsRail({
         className={cn(
           'flex h-8 w-full items-center rounded-lg px-3 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent',
           page === current
-            ? 'bg-card font-medium text-kallo-text shadow-xs ring-1 ring-kallo-border'
-            : 'text-kallo-text-muted hover:bg-kallo-hover hover:text-kallo-text'
+            ? 'bg-kallo-hover font-medium text-kallo-text'
+            : 'text-kallo-text-muted hover:bg-card hover:text-kallo-text'
         )}
       >
         {t(`pages.${page}.title`)}
