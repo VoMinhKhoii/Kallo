@@ -30,7 +30,7 @@ function PortalLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(SECONDARY_BUTTON, danger && 'text-kallo-danger')}
+      className={cn(SECONDARY_BUTTON, danger && 'text-kallo-error')}
     >
       {children}
       <ExternalLink aria-hidden="true" className="size-3.5" />
