@@ -33,6 +33,12 @@ export const IGNORED_ERRORS: Array<string | RegExp> = [
   /^Load failed$/,
   'ResizeObserver loop limit exceeded',
   'ResizeObserver loop completed with undelivered notifications',
+  // An iOS in-app browser injects a script (`sendDataToNative`,
+  // `sendPageHideMessage`) into the page that posts to its native host on
+  // pagehide and throws when the bridge is missing. Our code never touches
+  // `window.webkit`, and the inline frame carries our page URL, so
+  // `denyUrls` cannot drop it.
+  /evaluating 'window\.webkit\.messageHandlers/,
 ];
 
 /** Browser-extension frames — never our code. */

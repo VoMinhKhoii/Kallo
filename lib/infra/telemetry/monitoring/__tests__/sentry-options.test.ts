@@ -2,9 +2,36 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { scrubTransaction } from '../scrub';
 import {
   clientSentryEnvironment,
+  IGNORED_ERRORS,
   serverSentryEnvironment,
   sharedSentryOptions,
 } from '../sentry-options';
+
+function isIgnored(message: string): boolean {
+  return IGNORED_ERRORS.some((pattern) =>
+    typeof pattern === 'string'
+      ? message.includes(pattern)
+      : pattern.test(message)
+  );
+}
+
+describe('IGNORED_ERRORS', () => {
+  it("drops the in-app browser's missing webkit bridge (KALLO-WEB-6/9)", () => {
+    expect(
+      isIgnored(
+        "TypeError: undefined is not an object (evaluating 'window.webkit.messageHandlers')"
+      )
+    ).toBe(true);
+  });
+
+  it('keeps ordinary TypeErrors', () => {
+    expect(
+      isIgnored(
+        "TypeError: undefined is not an object (evaluating 'meal.items')"
+      )
+    ).toBe(false);
+  });
+});
 
 describe('sharedSentryOptions', () => {
   afterEach(() => vi.unstubAllEnvs());
