@@ -186,7 +186,7 @@ function inHotAuthFunction(node: ts.Node) {
  * a change that removes one must lower the number here in the same PR, so
  * the win is locked in.
  */
-const GET_USER_CALL_CEILING = 16;
+const GET_USER_CALL_CEILING = 15;
 
 describe('latency ratchets', () => {
   it('no query reads through a Server Action (they run one at a time)', () => {

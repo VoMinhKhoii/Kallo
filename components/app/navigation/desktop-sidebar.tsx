@@ -1,6 +1,5 @@
 'use client';
 
-import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
@@ -11,6 +10,7 @@ import { cn } from '@/lib/core/ui/cn';
 import { isActiveRoute, NAV_ITEMS } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
 import { SidebarNavLink } from './sidebar/sidebar-nav-link';
+import { SidebarSettingsLink } from './sidebar/sidebar-settings-link';
 import { SidebarBrandHeader } from './sidebar-brand-header';
 import { UserMenu, type UserMenuUser } from './user-menu';
 
@@ -205,16 +205,7 @@ export function DesktopSidebar({
 
         <div className="flex flex-col gap-3">
           <SectionHeader label={t('settings')} collapsed={collapsed} />
-          <SidebarNavLink
-            item={{
-              id: 'settings',
-              label: t('settings'),
-              href: '/settings',
-              icon: <Settings className="h-5 w-5" />,
-            }}
-            collapsed={collapsed}
-            isActive={isActiveRoute(pathname, '/settings')}
-          />
+          <SidebarSettingsLink label={t('settings')} collapsed={collapsed} />
         </div>
       </div>
 

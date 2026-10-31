@@ -1,9 +1,39 @@
 {
   "title": "Cài đặt",
-  "profile": "Hồ sơ",
-  "profileDescription": "Cách bạn xuất hiện và cơ thể bạn cần gì.",
-  "preferences": "Tùy chỉnh",
-  "preferencesDescription": "Ngôn ngữ, khu vực, cách nấu ăn và chia sẻ.",
+  "pages": {
+    "profile": {
+      "title": "Hồ sơ",
+      "description": "Cách bạn xuất hiện trên Kallo và với vòng kết nối."
+    },
+    "body": {
+      "title": "Cơ thể & mục tiêu",
+      "description": "Các chỉ số của bạn quyết định mục tiêu mỗi ngày."
+    },
+    "preferences": {
+      "title": "Tùy chỉnh",
+      "description": "Ngôn ngữ, giao diện và nơi bạn đến từ."
+    },
+    "cooking": {
+      "title": "Nấu ăn",
+      "description": "Cách bạn thường nấu và ăn — dùng khi ước tính bữa ăn."
+    },
+    "privacy": {
+      "title": "Quyền riêng tư",
+      "description": "Dữ liệu nào rời khỏi tài khoản, và đi đâu."
+    },
+    "subscriptions": {
+      "title": "Gói đăng ký",
+      "description": "Gói của bạn, kỳ gia hạn và cách quản lý."
+    },
+    "account": {
+      "title": "Tài khoản",
+      "description": "Đăng nhập, và cách rời đi của bạn."
+    },
+    "feedback": {
+      "title": "Gửi góp ý",
+      "description": "Gặp lỗi, thiếu nguyên liệu, hay có ý tưởng? Hãy cho chúng tôi biết — góp ý sẽ đến thẳng đội ngũ."
+    }
+  },
   "bodyMetrics": "Chỉ số cơ thể",
   "save": "Lưu thay đổi",
   "saveWithTarget": "Lưu — mục tiêu mới {target} kcal",
@@ -22,14 +52,6 @@
     "light": "Sáng",
     "dark": "Tối",
     "aurora": "Aurora"
-  },
-  "anchorNav": {
-    "label": "Trong trang này",
-    "profile": "Hồ sơ",
-    "preferences": "Tùy chỉnh",
-    "subscription": "Gói đăng ký",
-    "feedback": "Góp ý",
-    "account": "Tài khoản"
   },
   "feedback": {
     "title": "Gửi góp ý",

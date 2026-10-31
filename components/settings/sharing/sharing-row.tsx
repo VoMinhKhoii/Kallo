@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -17,12 +18,12 @@ export function SharingRow({ initialValue }: { initialValue: boolean }) {
   const t = useTranslations('settings.sharing');
   const [enabled, setEnabled] = useState(initialValue);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
-  // Settings stays mounted (hidden) across navigations under Cache
-  // Components, so `useState(initialValue)` alone would keep showing the value
-  // from the first visit after it changed elsewhere (another device, the
-  // app). Adopt a new server value when one arrives, unless a toggle of ours
-  // is still in flight.
+  // A value changed elsewhere (another device, the app) arrives as a new prop
+  // while the row stays mounted, so `useState(initialValue)` alone would keep
+  // showing the old one. Adopt a new server value when one arrives, unless a
+  // toggle of ours is still in flight.
   const [seenValue, setSeenValue] = useState(initialValue);
   if (initialValue !== seenValue && !isPending) {
     setSeenValue(initialValue);
@@ -36,6 +37,9 @@ export function SharingRow({ initialValue }: { initialValue: boolean }) {
     startTransition(async () => {
       try {
         await setAutoShareToCircle(checked);
+        // The row remounts from the shell's profile each time its settings
+        // page opens; refetch it so coming back shows the saved value.
+        router.refresh();
       } catch {
         setEnabled(previous);
         toast.error(t('error'));

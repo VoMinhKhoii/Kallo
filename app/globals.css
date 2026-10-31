@@ -550,6 +550,35 @@
        Vietnamese-capable UI face. */
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   }
+  /* Tailwind v4 dropped the pointer cursor on buttons. Everything clickable
+     shows the finger again; disabled controls keep the arrow, and a
+     component's own cursor utility still wins (utilities outrank base).
+     `data-disabled` comes two ways: present-and-empty (Radix) or
+     "true"/"false" (cmdk), so only those two values count as disabled. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"]:not([data-disabled=""]):not([data-disabled="true"]),
+  [role="slider"]:not([aria-disabled="true"]):not([data-disabled=""]):not(
+      [data-disabled="true"]
+    ),
+  [data-slot="slider"]:not([data-disabled=""]):not([data-disabled="true"]),
+  summary,
+  label[for],
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="range"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* The shadcn kit stamps `cursor-default` on menu items and list options, and
+   components/ui is CLI-managed. Unlayered, so it outranks that utility. */
+[role="menuitem"]:not([data-disabled=""]):not([data-disabled="true"]),
+[role="menuitemradio"]:not([data-disabled=""]):not([data-disabled="true"]),
+[role="menuitemcheckbox"]:not([data-disabled=""]):not([data-disabled="true"]),
+[role="option"]:not([data-disabled=""]):not([data-disabled="true"]) {
+  cursor: pointer;
 }
 
 @layer utilities {

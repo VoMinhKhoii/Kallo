@@ -1,6 +1,6 @@
 // The data model behind the settings profile form: the values it holds, the
 // goal fields it validates on its own, the defaults it opens with, and which
-// subsection each field belongs to. No React — the panels render it and
+// settings page each field belongs to. No React — the panels render it and
 // `useProfileForm` drives it.
 
 import type { DefaultValues } from 'react-hook-form';
@@ -19,7 +19,7 @@ import type {
   ProteinPortion,
   RicePortion,
 } from '@/lib/domain/onboarding/types';
-import type { SUBSECTION_ANCHOR } from './anchors';
+import type { SettingsPageId } from './pages';
 
 export const profileGoalSchema = z.object({
   goal: z.enum(['cutting', 'bulking', 'maintaining']),
@@ -34,23 +34,19 @@ export type ProfileFormValues = z.infer<
   z.infer<typeof countrySchema> &
   z.infer<typeof cookingHabitsSchema>;
 
-type SubsectionId = keyof typeof SUBSECTION_ANCHOR;
-
-// Which subsection owns each field, so an invalid submit can scroll to the
-// subsection holding the first error instead of leaving it off-screen.
-export const SECTION_FOR_FIELD: Partial<
-  Record<keyof ProfileFormValues, SubsectionId>
-> = {
-  biologicalSex: 'body-metrics',
-  weightKg: 'body-metrics',
-  heightCm: 'body-metrics',
-  age: 'body-metrics',
-  activityLevel: 'body-metrics',
-  goal: 'body-metrics',
-  aggression: 'body-metrics',
-  carbSplit: 'body-metrics',
-  countryOfOrigin: 'regional',
-  countryOfResidence: 'regional',
+// Which settings page owns each field, so an invalid submit can open the page
+// holding the first error instead of leaving it out of sight.
+export const PAGE_FOR_FIELD: Record<keyof ProfileFormValues, SettingsPageId> = {
+  biologicalSex: 'body',
+  weightKg: 'body',
+  heightCm: 'body',
+  age: 'body',
+  activityLevel: 'body',
+  goal: 'body',
+  aggression: 'body',
+  carbSplit: 'body',
+  countryOfOrigin: 'preferences',
+  countryOfResidence: 'preferences',
   oilUsage: 'cooking',
   defaultRicePortion: 'cooking',
   defaultProteinPortion: 'cooking',

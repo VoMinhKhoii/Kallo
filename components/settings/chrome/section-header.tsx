@@ -4,14 +4,13 @@ interface SectionHeaderProps {
 }
 
 /**
- * The heading block that sits above each settings section — Lora serif title
- * (never bold), optional muted description. Extracted from the settings page so
- * every section shares one header idiom.
+ * The heading that opens each settings dialog page — Lora serif title (never
+ * bold), optional muted description — so every page shares one header idiom.
  */
 export function SectionHeader({ title, description }: SectionHeaderProps) {
   return (
-    <div className="mb-4">
-      <h2 className="font-normal font-serif text-kallo-text text-xl">
+    <div className="mb-5">
+      <h2 className="font-normal font-serif text-[28px] text-kallo-text leading-tight tracking-tight md:text-[26px]">
         {title}
       </h2>
       {description && (

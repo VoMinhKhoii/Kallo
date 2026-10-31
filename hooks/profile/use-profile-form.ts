@@ -1,10 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useTransition } from 'react';
 import { type FieldErrors, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { useSettingsDialog } from '@/hooks/settings/use-settings-dialog';
 import { saveProfileSettings } from '@/lib/domain/onboarding/actions';
 import {
   bodyMetricsMessages,
@@ -17,13 +19,12 @@ import {
   calcDailyTargets,
   calcTDEE,
 } from '@/lib/domain/onboarding/tdee';
-import { SUBSECTION_ANCHOR } from '@/lib/domain/settings/anchors';
 import {
   buildDefaultValues,
+  PAGE_FOR_FIELD,
   type ProfileFormValues,
   type ProfileInput,
   profileGoalSchema,
-  SECTION_FOR_FIELD,
 } from '@/lib/domain/settings/profile-form';
 
 export function useProfileForm(profile: ProfileInput) {
@@ -31,6 +32,8 @@ export function useProfileForm(profile: ProfileInput) {
   const tValidation = useTranslations('validation.bodyMetrics');
   const locale = useLocale();
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const settings = useSettingsDialog();
 
   const defaultValues = useMemo(() => buildDefaultValues(profile), [profile]);
 
@@ -51,10 +54,10 @@ export function useProfileForm(profile: ProfileInput) {
     mode: 'onBlur',
   });
 
-  // Settings stays mounted (hidden) across navigations under Cache
-  // Components, so a profile changed elsewhere arrives as new props instead of
-  // a fresh mount. Adopt it, keeping any field the user has edited but not
-  // saved.
+  // The form lives in the app shell for the whole session (the dialog closing
+  // keeps unsaved edits), so a profile changed elsewhere arrives as new props
+  // instead of a fresh mount. Adopt it, keeping any field the user has edited
+  // but not saved.
   useEffect(() => {
     form.reset(defaultValues, { keepDirtyValues: true });
   }, [form, defaultValues]);
@@ -67,12 +70,7 @@ export function useProfileForm(profile: ProfileInput) {
     const firstField = Object.keys(errors)[0] as
       | keyof ProfileFormValues
       | undefined;
-    const section = firstField ? SECTION_FOR_FIELD[firstField] : undefined;
-    if (section) {
-      document
-        .getElementById(SUBSECTION_ANCHOR[section])
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    if (firstField) settings.show(PAGE_FOR_FIELD[firstField]);
     toast.error(t('profilePanel.invalidError'));
   }
 
@@ -120,6 +118,9 @@ export function useProfileForm(profile: ProfileInput) {
         });
         form.reset(values);
         toast.success(t('saved'));
+        // The shell holds the profile the dialog opened with, and the page
+        // behind the dialog may show the old target: refetch both.
+        router.refresh();
       } catch {
         toast.error(t('profilePanel.saveError'));
       }

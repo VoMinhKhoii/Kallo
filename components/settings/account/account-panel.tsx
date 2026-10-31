@@ -1,17 +1,18 @@
 'use client';
 
-import { Download, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { SettingsGroup, SettingsRow } from '@/components/settings/chrome/group';
+import { RowButton } from '@/components/settings/chrome/row-button';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { DangerZone } from './danger-zone';
 import { LinkedAccounts } from './linked-accounts';
 import { useAccountActions } from './use-account-actions';
 
 /**
- * Account settings: sign-in identity, linked methods, data export, sign out,
- * and permanent account deletion — as two grouped list-cards (Apple Settings
- * idiom) rather than a stack of individual cards.
+ * Account settings: sign-in identity, linked methods, sign out, and permanent
+ * account deletion — as two grouped list-cards (Apple Settings idiom) rather
+ * than a stack of individual cards. Data export lives on the Privacy page.
  *
  * Deletion lives in its own danger-variant group as an inline, type-to-confirm
  * panel (not a modal-first flow) in the brand's calm "concern" register —
@@ -26,14 +27,8 @@ export function AccountPanel({
   email: string | null;
 }) {
   const t = useTranslations('settings.account');
-  const {
-    exportPending,
-    signOutPending,
-    deletePending,
-    handleExport,
-    handleSignOut,
-    handleDelete,
-  } = useAccountActions(userId);
+  const { signOutPending, deletePending, handleSignOut, handleDelete } =
+    useAccountActions(userId);
   const { data: entitlements } = useEntitlements(userId);
 
   return (
@@ -49,33 +44,14 @@ export function AccountPanel({
           <LinkedAccounts />
         </SettingsRow>
 
-        <SettingsRow
-          label={t('exportTitle')}
-          description={t('exportDescription')}
-        >
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={exportPending}
-            aria-busy={exportPending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-card px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
-          >
-            <Download className="h-3.5 w-3.5" />
-            {exportPending ? t('exporting') : t('exportAction')}
-          </button>
-        </SettingsRow>
-
         <SettingsRow label={t('signOutTitle')}>
-          <button
-            type="button"
+          <RowButton
+            pending={signOutPending}
             onClick={handleSignOut}
-            disabled={signOutPending}
-            aria-busy={signOutPending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-card px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
+            icon={<LogOut className="h-3.5 w-3.5" />}
           >
-            <LogOut className="h-3.5 w-3.5" />
             {t('signOutAction')}
-          </button>
+          </RowButton>
         </SettingsRow>
       </SettingsGroup>
 
