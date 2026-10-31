@@ -18,21 +18,14 @@ export function BodyGoalRows({
 }) {
   const live = useLiveTargets();
 
-  // Two cards: what your body is, then what you want from it and the target
-  // that follows.
+  // The target is what every field here moves, so it stays in sight: a
+  // sticky card beside the inputs when the page is wide enough, the first
+  // card above them when it is not (phones, a narrow window).
   return (
-    <div className="flex flex-col gap-4">
-      <SettingsGroup>
-        <MetricsFields />
-      </SettingsGroup>
-      <SettingsGroup>
-        <div>
-          <GoalFields
-            tdee={live.tdee}
-            targetCalories={live.targetCalories}
-            goal={live.goal}
-          />
-          {live.tdee !== null && live.macros && (
+    <div className="@container">
+      <div className="grid @3xl:grid-cols-[minmax(0,1fr)_17rem] @3xl:items-start gap-4">
+        {live.tdee !== null && live.macros && (
+          <div className="@3xl:sticky @3xl:top-14 @3xl:order-last">
             <TargetHero
               tdee={live.tdee}
               targetCalories={live.targetCalories}
@@ -41,9 +34,23 @@ export function BodyGoalRows({
               goal={live.goal}
               aggression={live.aggression}
             />
-          )}
+          </div>
+        )}
+        <div className="flex min-w-0 flex-col gap-4">
+          <SettingsGroup>
+            <MetricsFields />
+          </SettingsGroup>
+          <SettingsGroup>
+            <div>
+              <GoalFields
+                tdee={live.tdee}
+                targetCalories={live.targetCalories}
+                goal={live.goal}
+              />
+            </div>
+          </SettingsGroup>
         </div>
-      </SettingsGroup>
+      </div>
     </div>
   );
 }
