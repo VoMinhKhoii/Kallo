@@ -11,8 +11,8 @@ import { useAccountActions } from './use-account-actions';
 
 /**
  * Account settings: sign-in identity, linked methods, sign out, and permanent
- * account deletion — as two hairline-divided lists. Data export lives on the
- * Privacy page.
+ * account deletion — four groups split by space, not titles. Data export
+ * lives on the Privacy page.
  *
  * Deletion lives in its own group as an inline, type-to-confirm
  * panel (not a modal-first flow) in the brand's calm "concern" register —
@@ -32,18 +32,18 @@ export function AccountPanel({
   const { data: entitlements } = useEntitlements(userId);
 
   return (
-    <div className="font-sans-display">
-      <SettingsGroup>
-        {email && (
+    <div className="flex flex-col gap-6 font-sans-display">
+      {email && (
+        <SettingsGroup>
           <SettingsRow label={t('emailLabel')}>
             <p className="text-[14px] text-kallo-text-muted">{email}</p>
           </SettingsRow>
-        )}
+        </SettingsGroup>
+      )}
 
-        <SettingsRow label={t('linkedTitle')} layout="stacked">
-          <LinkedAccounts />
-        </SettingsRow>
+      <LinkedAccounts />
 
+      <SettingsGroup>
         <SettingsRow label={t('signOutTitle')}>
           <RowButton
             pending={signOutPending}

@@ -4,9 +4,9 @@ import { ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import {
+  DANGER_BUTTON,
   FIELD_CLASS,
   GHOST_BUTTON,
-  SECONDARY_BUTTON,
 } from '@/components/settings/chrome/controls';
 import { SettingsGroup, SettingsRow } from '@/components/settings/chrome/group';
 
@@ -40,7 +40,7 @@ export function DangerZone({
   };
 
   return (
-    <SettingsGroup className="mt-8 border-kallo-border border-t">
+    <SettingsGroup>
       <SettingsRow
         label={t('deleteTitle')}
         description={t('deleteDescription')}
@@ -49,7 +49,7 @@ export function DangerZone({
           <button
             type="button"
             onClick={() => setConfirmOpen(true)}
-            className={`${SECONDARY_BUTTON} text-kallo-danger`}
+            className={DANGER_BUTTON}
           >
             {t('deleteAction')}
           </button>
@@ -106,7 +106,7 @@ export function DangerZone({
               onClick={handleConfirm}
               disabled={!canDelete}
               aria-busy={deleting}
-              className="inline-flex h-8 items-center rounded-lg bg-kallo-danger px-3 font-medium text-[13px] text-white transition-opacity duration-150 hover:bg-kallo-danger/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-danger/40 disabled:opacity-40"
+              className={DANGER_BUTTON}
             >
               {deleting ? t('deleting') : t('deleteConfirmAction')}
             </button>

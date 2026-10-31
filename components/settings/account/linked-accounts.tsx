@@ -85,7 +85,9 @@ export function LinkedAccounts() {
     // Until identities resolve we don't know what's linked — show a
     // placeholder rather than rendering every provider as "Connect".
     return (
-      <p className="text-[13px] text-kallo-text-muted">{t('linkedLoading')}</p>
+      <p className="py-4 text-[13px] text-kallo-text-muted">
+        {t('linkedLoading')}
+      </p>
     );
   }
 
@@ -93,7 +95,7 @@ export function LinkedAccounts() {
     // Fetch failed — don't render the providers as silently "unlinked"
     // (misleads the user into reconnecting). Offer an explicit retry.
     return (
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex min-h-[52px] items-center justify-between gap-4 py-2.5">
         <p className="text-[13px] text-kallo-text-muted">
           {t('linkedLoadError')}
         </p>
@@ -109,7 +111,10 @@ export function LinkedAccounts() {
   }
 
   return (
-    <div className="flex flex-col divide-y divide-kallo-border">
+    <section
+      aria-label={t('linkedTitle')}
+      className="flex flex-col divide-y divide-kallo-border"
+    >
       {OAUTH_PROVIDERS.map(({ key, label, Logo }) => {
         const identity = identities?.find((i) => i.provider === key) ?? null;
         const linked = Boolean(identity);
@@ -119,7 +124,7 @@ export function LinkedAccounts() {
         return (
           <div
             key={key}
-            className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0"
+            className="flex min-h-[52px] items-center justify-between gap-4 py-2.5"
           >
             <div className="flex min-w-0 items-start gap-2.5">
               <Logo className="mt-0.5 size-4 shrink-0 text-kallo-text" />
@@ -152,6 +157,6 @@ export function LinkedAccounts() {
           </div>
         );
       })}
-    </div>
+    </section>
   );
 }

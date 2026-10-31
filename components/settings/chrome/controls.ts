@@ -14,3 +14,7 @@ export const SECONDARY_BUTTON =
 /** A quieter action beside a secondary one (Remove, Disconnect, Cancel). */
 export const GHOST_BUTTON =
   'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 font-medium text-[13px] text-kallo-text-muted transition-colors duration-150 hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-40';
+
+/** The one destructive action (Delete account). */
+export const DANGER_BUTTON =
+  'inline-flex h-8 shrink-0 items-center rounded-lg bg-kallo-danger px-3 font-medium text-[13px] text-white transition-colors duration-150 hover:bg-kallo-danger/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-danger/40 disabled:opacity-40';

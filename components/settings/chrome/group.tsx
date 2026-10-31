@@ -22,7 +22,6 @@ interface SettingsRowProps {
   label: ReactNode;
   /** Only for a consequence the user must know before acting. */
   description?: ReactNode;
-  layout?: 'inline' | 'stacked';
   htmlFor?: string;
   className?: string;
   children?: ReactNode;
@@ -32,12 +31,11 @@ interface SettingsRowProps {
  * One settings row: a 14px label on the left, the control on the right,
  * centred on one line at least 52px tall. Draws no border of its own — the
  * parent's `divide-y` does. A control too wide to sit beside the label wraps
- * under it; `stacked` always puts it in a full-width block below.
+ * under it.
  */
 export function SettingsRow({
   label,
   description,
-  layout = 'inline',
   htmlFor,
   className,
   children,
@@ -58,15 +56,6 @@ export function SettingsRow({
       )}
     </div>
   );
-
-  if (layout === 'stacked') {
-    return (
-      <div className={cn('py-3', className)}>
-        {labelBlock}
-        {children && <div className="mt-2">{children}</div>}
-      </div>
-    );
-  }
 
   return (
     <div
