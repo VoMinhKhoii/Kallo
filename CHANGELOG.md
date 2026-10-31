@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.21.1](https://github.com/VoMinhKhoii/Kallo/compare/v1.21.0...v1.21.1) (2026-10-31)
+
+
+### Bug Fixes
+
+* **mobile:** draw the composer's focus ring over its content ([#509](https://github.com/VoMinhKhoii/Kallo/issues/509)) ([d340db4](https://github.com/VoMinhKhoii/Kallo/commit/d340db424834690d94d2b5686bf54a28826c5e1d))
+* **mobile:** stop sign-out crashing in the router's redirect refresh ([#510](https://github.com/VoMinhKhoii/Kallo/issues/510)) ([c62180d](https://github.com/VoMinhKhoii/Kallo/commit/c62180d85b541041aef2ef43f30a7334a31dd2aa))
+* **rate-limit:** stop leaked slots from locking people out of relog ([#502](https://github.com/VoMinhKhoii/Kallo/issues/502)) ([dc4d1a2](https://github.com/VoMinhKhoii/Kallo/commit/dc4d1a2d28d2f1a08b2902c84cc5d4f425e69cb5))
+* **sentry:** ignore the iOS in-app browser's missing webkit bridge error ([#505](https://github.com/VoMinhKhoii/Kallo/issues/505)) ([67db194](https://github.com/VoMinhKhoii/Kallo/commit/67db19497ec3be80192565a0d335d3f87992fb7f))
+
 ## [1.21.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.20.0...v1.21.0) (2026-10-28)
 
 
