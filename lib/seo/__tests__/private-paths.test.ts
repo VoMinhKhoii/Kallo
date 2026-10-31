@@ -22,7 +22,7 @@ describe('PRIVATE_PATH_PREFIXES', () => {
 describe('needsSignIn', () => {
   it('matches a private surface and the pages under it', () => {
     expect(needsSignIn('/dashboard')).toBe(true);
-    expect(needsSignIn('/settings/account')).toBe(true);
+    expect(needsSignIn('/circle/friends')).toBe(true);
   });
 
   it('does not match a lookalike or a public page', () => {

@@ -29,7 +29,6 @@ export const APP_ROUTE_PATTERNS = [
   '/[locale]/onboarding',
   '/[locale]/pricing',
   '/[locale]/reset-password',
-  '/[locale]/settings',
   '/api/[...unmatched]',
   '/api/analyze-meal',
   '/api/analyze-meal/debug',
