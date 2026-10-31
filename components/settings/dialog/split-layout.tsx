@@ -34,6 +34,12 @@ export function SplitLayout({
   return (
     <DialogPrimitive.Content
       aria-describedby={undefined}
+      // Focus the dialog, not the rail's first link: opened on another page
+      // (a deep link), that link would wear a focus ring it has no claim to.
+      onOpenAutoFocus={(event) => {
+        event.preventDefault();
+        (event.currentTarget as HTMLElement).focus();
+      }}
       className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 flex h-[min(640px,calc(100dvh-3rem))] w-[min(920px,calc(100vw-3rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-kallo-border bg-kallo-surface font-sans-display text-kallo-text shadow-lg outline-none duration-200 data-[state=closed]:animate-out data-[state=open]:animate-in"
     >
       <SettingsRail current={current} onShow={onShow} isVisible={isVisible} />
