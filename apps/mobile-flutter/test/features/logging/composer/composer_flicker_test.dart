@@ -73,10 +73,12 @@ _Frame _sample(WidgetTester tester, double inset) {
     find.descendant(of: surface, matching: find.byType(Container)).first,
   );
   final decoration = box.decoration! as BoxDecoration;
+  // The ring paints over the content, so it lives on the foreground.
+  final ring = box.foregroundDecoration! as BoxDecoration;
   return _Frame(
     inset: inset,
     rect: tester.getRect(surface),
-    border: decoration.border!.top.color,
+    border: ring.border!.top.color,
     glow: decoration.boxShadow!.first.color.a,
     controls: <String>{
       if (tester.any(find.byType(ComposerModeButton))) 'mode',

@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/mutations/day_completion_mutation.dart';
 import '../../widgets/actions/confirm_day_complete.dart';
@@ -21,7 +20,6 @@ import 'view_state.dart';
 /// the figures the user just read.
 Future<void> confirmAndMarkDay(
   BuildContext context,
-  WidgetRef ref,
   FeedViewState view,
   String userId,
 ) async {
@@ -30,5 +28,5 @@ Future<void> confirmAndMarkDay(
     calories: view.dailyCalories,
   );
   if (!confirmed || !context.mounted) return;
-  await markDayComplete(context, ref, userId: userId, date: view.date);
+  await markDayComplete(context, userId: userId, date: view.date);
 }

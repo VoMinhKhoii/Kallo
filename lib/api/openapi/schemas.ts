@@ -147,7 +147,7 @@ export const SCHEMAS: Record<string, JsonSchema> = {
           type: 'array',
           items: {
             type: 'object',
-            required: ['date', 'ratio', 'consumedRatio', 'status'],
+            required: ['date', 'ratio', 'consumedRatio', 'calories', 'status'],
             additionalProperties: false,
             properties: {
               date: { type: 'string', format: 'date' },
@@ -160,6 +160,10 @@ export const SCHEMAS: Record<string, JsonSchema> = {
                 type: ['number', 'null'],
                 description:
                   'Calories ÷ target, never gated by the partial rule.',
+              },
+              calories: {
+                type: ['number', 'null'],
+                description: 'Kcal logged that day; null when none.',
               },
               status: {
                 type: 'string',

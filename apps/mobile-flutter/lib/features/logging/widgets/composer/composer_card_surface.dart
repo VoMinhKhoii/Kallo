@@ -49,9 +49,18 @@ class ComposerCardSurface extends StatelessWidget {
         // in the same 250ms as the keyboard's retract.
         final ring = KalloColors.borderAccent40;
         final borderColor = ring.withValues(alpha: ring.a * t);
+        final radius = BorderRadius.circular(KalloRadii.card);
+        // The ring paints OVER the content: that same fill reaches into the
+        // top-right arc, and under it the ring broke off there.
+        final ringBox = BoxDecoration(
+          borderRadius: radius,
+          border: Border.all(color: borderColor),
+        );
         return Container(
-          // No padding here — the notice sets its own inset, so the field and
+          // Only the ring's own width, which a foreground border no longer
+          // reserves — the notice sets its own inset, so the field and
           // controls carry theirs on the column below.
+          padding: ringBox.padding,
           // Clipped to the radius: the theme fills every TextField, and the
           // field sits flush with the card's top edge inside a corner wider
           // than its inset, so its square fill showed past both top corners.
@@ -59,8 +68,7 @@ class ComposerCardSurface extends StatelessWidget {
           decoration: BoxDecoration(
             // Opaque: the feed reads through the DOCK, never through the field.
             color: KalloColors.elev,
-            borderRadius: BorderRadius.circular(KalloRadii.card),
-            border: Border.all(color: borderColor),
+            borderRadius: radius,
             // The only lift left, and only while focused: the field is the one
             // live control on the screen while the keyboard is up.
             boxShadow: [
@@ -71,6 +79,7 @@ class ComposerCardSurface extends StatelessWidget {
               ),
             ],
           ),
+          foregroundDecoration: ringBox,
           child: child,
         );
       },

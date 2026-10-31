@@ -71,6 +71,13 @@ export function ResponsiveModal({
 }: ResponsiveModalProps) {
   const t = useTranslations('common');
   const isMobile = useIsMobile();
+  // The desktop half of `ResponsiveSheet`'s close focus: without a ref the
+  // primitive's own (back to `trigger`) runs.
+  const handleCloseAutoFocus = (event: Event) => {
+    if (!returnFocusRef?.current) return;
+    event.preventDefault();
+    returnFocusRef.current.focus();
+  };
 
   if (isMobile) {
     return (
@@ -116,6 +123,7 @@ export function ResponsiveModal({
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent
         aria-describedby={undefined}
+        onCloseAutoFocus={handleCloseAutoFocus}
         className={cn(
           'flex max-h-[min(90dvh,44rem)] flex-col gap-0 p-0',
           dialogShell.card,

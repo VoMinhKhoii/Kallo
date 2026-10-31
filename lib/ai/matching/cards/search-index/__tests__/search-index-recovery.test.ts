@@ -176,11 +176,12 @@ describe('card search index recovery', () => {
       vi.useFakeTimers({ toFake: ['setTimeout'] });
       expect(cardIndexSettled(0)).toBe(false); // the first read is under way
       // Retry backoffs on the fake clock; the failing reads themselves are
-      // real file I/O, given a few event-loop turns to settle.
-      for (let i = 0; i < 40 && !cardIndexSettled(0); i++) {
-        for (let turn = 0; turn < 20; turn++) {
-          await new Promise((r) => setImmediate(r));
-        }
+      // real file I/O, so the wait is bounded by real time (Date is not
+      // faked), not event-loop turns: on a busy CI runner the reads queue
+      // behind other work in libuv's thread pool.
+      const deadline = Date.now() + 10_000;
+      while (!cardIndexSettled(0) && Date.now() < deadline) {
+        await new Promise((r) => setImmediate(r));
         await vi.advanceTimersByTimeAsync(2_000);
       }
       // Four reads (the first + three retries 2, 4 and 8 s apart) fail, all

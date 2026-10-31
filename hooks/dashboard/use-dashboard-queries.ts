@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { useDailyMeals } from '@/hooks/meals/queries/use-daily-meals';
@@ -10,7 +10,6 @@ import type {
   HeatmapRange,
   TimeRange,
 } from '@/lib/core/types/dashboard';
-import { buildCalorieAdherenceHeatmapData } from '@/lib/domain/dashboard/adherence';
 import { fetchCalorieAdherenceHeatmap } from '@/lib/domain/dashboard/dashboard-client';
 import {
   buildTodayNutritionData,
@@ -50,6 +49,9 @@ export function useDashboardQueries({
     },
     enabled: hasMeasuredHeatmap,
     staleTime: 60_000,
+    // The range follows the card's width a week at a time, so a resize asks
+    // for a new span; keep the last grid up rather than flashing a skeleton.
+    placeholderData: keepPreviousData,
   });
   const dailyMealsQuery = useDailyMeals(todayDate);
   const persistedMeals = dailyMealsQuery.data ?? [];
@@ -67,16 +69,6 @@ export function useDashboardQueries({
     toast.error(heatmapLoadErrorMessage);
   }, [heatmapLoadErrorMessage, heatmapQuery.error, heatmapQuery.isError]);
 
-  const emptyHeatmapData = useMemo(() => {
-    const timezoneOffset = new Date().getTimezoneOffset();
-
-    return buildCalorieAdherenceHeatmapData({
-      range: heatmapRange,
-      dailyCalories: [],
-      calorieTarget: null,
-      timezoneOffset,
-    });
-  }, [heatmapRange]);
   const todayMeals = useMemo(
     () => mapPersistedMealsToMealEntries(persistedMeals),
     [persistedMeals]
@@ -88,9 +80,7 @@ export function useDashboardQueries({
 
   return {
     dailyMealsQuery,
-    heatmapData: heatmapQuery.data,
     heatmapQuery,
-    resolvedHeatmapData: heatmapQuery.data ?? emptyHeatmapData,
     todayMeals,
     todayNutrition,
     weightSummary: weightSummaryQuery.data,

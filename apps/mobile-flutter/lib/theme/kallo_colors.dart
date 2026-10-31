@@ -100,15 +100,21 @@ abstract final class KalloColors {
 
   /// A committed relog pick, rendered inline in the composer as `/Phở bò`.
   ///
-  /// The one deliberate blue: a pick is a REFERENCE to stored data, not typed
-  /// prose, and the warm palette has no hue that reads "this token is not free
-  /// text" without also reading as a warning.
+  /// A deliberate blue (the confirm's [alertAction] is the only other): a
+  /// pick is a REFERENCE to stored data, not typed prose, and the warm palette
+  /// has no hue that reads "this token is not free text" without also reading
+  /// as a warning.
   ///
   /// Darker than the web's `--kallo-mention` (#4A90D9) on purpose. That value is
   /// 3.34:1 on the composer's white field — under AA for 14px body text. This
   /// one measures 4.86:1 at the same size, which is the bar every other text
   /// token in this palette is held to.
   static Color get mention => _p.mention;
+
+  /// The confirm dialog's answer pill: iOS 26's `systemBlue` (#0088FF light,
+  /// #0091FF dark, sampled off the simulator), so the alert reads as the
+  /// system's. Resolved against the palette, which owns light and dark.
+  static Color get alertAction => _p.alertAction;
 
   /// Seat 0 — you — on a portion meter. Ink in light; a mid grey on Dark and
   /// Aurora, where ink would vanish into the page and white initials must

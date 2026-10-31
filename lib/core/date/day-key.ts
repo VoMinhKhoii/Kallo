@@ -44,6 +44,11 @@ export function toLocalDayKey(
   return toUtcDayKey(toLocalCalendarDate(instant, timezoneOffset));
 }
 
+/** Monday-first weekday of a UTC-anchored date: Monday 0 … Sunday 6. */
+export function mondayIndex(date: Date): number {
+  return (date.getUTCDay() + 6) % 7;
+}
+
 /** A day key read as UTC midnight — the anchor day arithmetic runs on. */
 export function dayKeyToUtcDate(dayKey: string): Date {
   return new Date(`${dayKey}T00:00:00.000Z`);

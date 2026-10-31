@@ -64,28 +64,12 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 ///
 /// It re-evaluates on every auth state change via [refreshListenable] (an
 /// auth-stream bridge), matching RN's `onAuthStateChange` re-render, and on
-/// the async provider settles it listens to below.
+/// the async provider settles [routerRefreshProvider] listens to.
 final routerProvider = Provider<GoRouter>((ref) {
-  // Re-run redirects whenever Supabase auth state changes.
-  final refresh = _GoRouterAuthRefresh(ref.read(authEventsProvider));
-  ref.onDispose(refresh.dispose);
-
-  // Re-run redirects when the async profile resolves and flips the
-  // onboarding-resume decision (signed-in + incomplete profile → /onboarding).
-  // Auth changes alone don't cover this — the profile fetch settles later.
-  // `profileProvider` itself covers the brand-new-user splash hold (we wait on
-  // the profile before deciding); the dismissed flag covers skip-out.
-  ref.listen(profileProvider, (_, __) => refresh.ping());
-  ref.listen(onboardingResumeProvider, (_, __) => refresh.ping());
-  ref.listen(onboardingForceDismissedProvider, (_, __) => refresh.ping());
-  // The signed-out landing is decided by the local draft, which arrives from
-  // secure storage a beat late — same shape as the profile above, same fix.
-  ref.listen(onboardingDraftProvider, (_, __) => refresh.ping());
-
   final router = GoRouter(
     navigatorKey: _rootKey,
     initialLocation: '/',
-    refreshListenable: refresh,
+    refreshListenable: ref.watch(routerRefreshProvider),
     // `state.error` is always a GoException here, so the pose turns on what it
     // says: "no routes for location" is an address with no screen behind it; a
     // redirect loop or any other GoException is a route that failed. The two
@@ -312,13 +296,34 @@ bool _isFirstSession(User? user) {
   return signIn.difference(created).abs() < const Duration(seconds: 60);
 }
 
+/// The router's [GoRouter.refreshListenable]: everything that re-runs the
+/// redirect, kept out of [routerProvider] so a test can run this exact wiring.
+final routerRefreshProvider = Provider<GoRouterAuthRefresh>((ref) {
+  // Re-run redirects whenever Supabase auth state changes.
+  final refresh = GoRouterAuthRefresh(ref.read(authEventsProvider));
+  ref.onDispose(refresh.dispose);
+
+  // Re-run redirects when the async profile resolves and flips the
+  // onboarding-resume decision (signed-in + incomplete profile → /onboarding).
+  // Auth changes alone don't cover this — the profile fetch settles later.
+  // `profileProvider` itself covers the brand-new-user splash hold (we wait on
+  // the profile before deciding); the dismissed flag covers skip-out.
+  ref.listen(profileProvider, (_, __) => refresh.ping());
+  ref.listen(onboardingResumeProvider, (_, __) => refresh.ping());
+  ref.listen(onboardingForceDismissedProvider, (_, __) => refresh.ping());
+  // The signed-out landing is decided by the local draft, which arrives from
+  // secure storage a beat late — same shape as the profile above, same fix.
+  ref.listen(onboardingDraftProvider, (_, __) => refresh.ping());
+  return refresh;
+});
+
 /// Bridges Supabase's auth stream to a [Listenable] for [GoRouter.refreshListenable].
 ///
 /// Re-runs the router's redirect on every auth state change (sign-in,
 /// sign-out, token refresh) — the go_router equivalent of RN's
 /// `onAuthStateChange` re-render.
-class _GoRouterAuthRefresh extends ChangeNotifier {
-  _GoRouterAuthRefresh(Stream<AuthState> events) {
+class GoRouterAuthRefresh extends ChangeNotifier {
+  GoRouterAuthRefresh(Stream<AuthState> events) {
     notifyListeners();
     _sub = events.listen(
       (_) => notifyListeners(),
@@ -333,12 +338,30 @@ class _GoRouterAuthRefresh extends ChangeNotifier {
 
   late final StreamSubscription<AuthState> _sub;
 
+  bool _pingScheduled = false;
+  bool _disposed = false;
+
   /// Lets external Riverpod listeners (e.g. the onboarding-resume decision)
   /// trigger a redirect re-evaluation.
-  void ping() => notifyListeners();
+  ///
+  /// The redirect runs on the next microtask, never inside the listener: those
+  /// fire while Riverpod is mid-refresh, and go_router runs the redirect
+  /// synchronously, so its `ref.read`s rebuilt a provider in the middle of
+  /// refreshing that provider's own dependencies. On sign-out that threw
+  /// "Concurrent modification during iteration" and wedged Riverpod's
+  /// scheduler. Pings within one refresh share one redirect.
+  void ping() {
+    if (_pingScheduled) return;
+    _pingScheduled = true;
+    scheduleMicrotask(() {
+      _pingScheduled = false;
+      if (!_disposed) notifyListeners();
+    });
+  }
 
   @override
   void dispose() {
+    _disposed = true;
     _sub.cancel();
     super.dispose();
   }

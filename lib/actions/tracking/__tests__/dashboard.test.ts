@@ -120,10 +120,17 @@ describe('loadCalorieAdherenceHeatmap', () => {
     );
   });
 
-  it('rejects invalid range input', async () => {
+  // Any whole day count from 1 to 371 is a range now ('14d' included); these
+  // are not.
+  it.each([
+    'week',
+    '0d',
+    '372d',
+    '1.5d',
+  ])('rejects invalid range input %s', async (range) => {
     await expect(
       loadCalorieAdherenceHeatmap({
-        range: '14d' as never,
+        range: range as never,
         timezoneOffset: 0,
       })
     ).rejects.toThrow();

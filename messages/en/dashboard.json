@@ -31,8 +31,7 @@
   "offTrack": "Off track",
   "mealsLogged": "{count} logged",
   "ranges": {
-    "thirtyDays": "30 days",
-    "ninetyDays": "90 days",
+    "days": "{count} days",
     "year": "Year"
   },
   "units": {
@@ -69,7 +68,14 @@
     "overTarget": "Over target",
     "nearlyFull": "Nearly full",
     "light": "Light day",
-    "veryLight": "Very light day"
+    "veryLight": "Very light day",
+    "kcal": "{calories, number} kcal",
+    "dayDialog": {
+      "addMissed": "Add a missed meal",
+      "total": "Total",
+      "todayNote": "You can confirm today once it's over.",
+      "loadError": "Couldn't load this day's meals."
+    }
   },
   "caloriesLogged": "Kcal eaten",
   "kcalRemaining": "Kcal left",
