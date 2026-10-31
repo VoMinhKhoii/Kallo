@@ -4,13 +4,14 @@ import { Loader2, Upload, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import { toast } from 'sonner';
+import {
+  GHOST_BUTTON,
+  SECONDARY_BUTTON,
+} from '@/components/settings/chrome/controls';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { useRemoveAvatar, useUploadAvatar } from '@/hooks/profile/use-profile';
 import type { PublicProfile } from '@/lib/actions/groups/types';
 import { IMAGE_TYPES, MAX_IMAGE_BYTES } from '@/lib/infra/uploads/image-file';
-
-const BUTTON_CLASS =
-  'inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-kallo-border bg-card px-3.5 py-2 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60';
 
 /** Avatar preview with upload/remove — the photo half of the identity panel. */
 export function AvatarField({ profile }: { profile: PublicProfile }) {
@@ -48,11 +49,11 @@ export function AvatarField({ profile }: { profile: PublicProfile }) {
   };
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-3">
       <ProfileAvatar
         avatarUrl={profile.avatarUrl}
         label={profile.displayName?.trim() || profile.handle}
-        className="size-16 text-[22px]"
+        className="size-10 text-[15px]"
       />
       <div className="flex flex-wrap items-center gap-2">
         <input
@@ -67,7 +68,7 @@ export function AvatarField({ profile }: { profile: PublicProfile }) {
           onClick={() => inputRef.current?.click()}
           disabled={busy}
           aria-busy={upload.isPending}
-          className={BUTTON_CLASS}
+          className={SECONDARY_BUTTON}
         >
           {upload.isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -82,7 +83,7 @@ export function AvatarField({ profile }: { profile: PublicProfile }) {
             onClick={handleRemove}
             disabled={busy}
             aria-busy={remove.isPending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 font-medium text-[13px] text-kallo-text-muted transition-colors duration-150 hover:bg-kallo-hover/40 hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
+            className={GHOST_BUTTON}
           >
             {remove.isPending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />

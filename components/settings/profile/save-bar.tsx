@@ -13,10 +13,10 @@ interface SaveBarProps {
 }
 
 /**
- * Pinned save bar — rests above the bottom edge while content scrolls behind it
- * and dissolves into a soft fade. Names its consequence when a target exists.
- * Reads the profile form it sits under, so it shows on every settings page
- * while that form has unsaved edits, whichever page they were made on.
+ * The dialog's footer while the profile form has unsaved edits: a hairline
+ * across the bottom edge with Cancel and Save, whichever page is showing.
+ * Save names its consequence when a target exists. The layout places it
+ * under the scrolling page, so it always sits at the very bottom.
  */
 export function SaveBar({ isPending, onSave, onCancel }: SaveBarProps) {
   const t = useTranslations('settings');
@@ -29,22 +29,18 @@ export function SaveBar({ isPending, onSave, onCancel }: SaveBarProps) {
     <AnimatePresence>
       {isDirty && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="sticky inset-x-0 bottom-0 z-20 pb-3 sm:pb-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+          className="shrink-0 border-kallo-border border-t bg-kallo-surface"
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 -top-8 bottom-0 bg-gradient-to-t from-55% from-kallo-surface to-transparent"
-          />
-          <div className="relative flex items-center justify-end gap-3 rounded-2xl border border-kallo-border bg-card/95 px-5 py-3.5 shadow-lg backdrop-blur-sm sm:px-6 sm:py-4">
+          <div className="flex items-center justify-end gap-2 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-8">
             <button
               type="button"
               onClick={onCancel}
               disabled={isPending}
-              className="rounded-xl px-5 py-2.5 font-medium text-[14px] text-kallo-text-muted transition-colors hover:bg-kallo-track hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40"
+              className="h-9 rounded-lg px-4 font-medium text-[14px] text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40"
             >
               {tc('cancel')}
             </button>
@@ -52,7 +48,7 @@ export function SaveBar({ isPending, onSave, onCancel }: SaveBarProps) {
               type="button"
               onClick={onSave}
               disabled={isPending}
-              className="flex items-center gap-2 rounded-xl bg-kallo-btn px-5 py-2.5 font-medium text-[14px] text-kallo-btn-ink shadow-sm transition-all hover:bg-kallo-btn/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60 disabled:opacity-50"
+              className="flex h-9 items-center gap-2 rounded-lg bg-kallo-btn px-4 font-medium text-[14px] text-kallo-btn-ink transition-colors hover:bg-kallo-btn/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60 disabled:opacity-50"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {pendingTarget !== null

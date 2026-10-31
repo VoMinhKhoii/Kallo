@@ -9,6 +9,8 @@ interface CustomSelectOption {
   label: string;
   /** Shown before the label, in the list and on the closed field. */
   icon?: ReactNode;
+  /** A muted second line, in the list only. */
+  description?: string;
 }
 
 interface CustomSelectProps {
@@ -52,7 +54,7 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between rounded-lg border bg-card px-3 py-2 text-[14px] text-kallo-text transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 ${
+        className={`flex h-9 w-full items-center justify-between rounded-lg border bg-card px-3 text-[14px] text-kallo-text transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 ${
           isOpen
             ? 'border-kallo-accent shadow-sm ring-1 ring-kallo-accent/20'
             : 'border-kallo-border hover:border-kallo-accent/50'
@@ -84,16 +86,25 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
                   onChange(opt.value);
                   setIsOpen(false);
                 }}
-                className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[14px] text-kallo-text transition-colors hover:bg-kallo-track focus-visible:bg-kallo-track focus-visible:outline-none"
+                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[14px] text-kallo-text transition-colors hover:bg-kallo-track focus-visible:bg-kallo-track focus-visible:outline-none"
               >
-                <span
-                  className={`flex items-center gap-2.5 ${value === opt.value ? 'font-medium' : ''}`}
-                >
+                <span className="flex min-w-0 items-center gap-2.5">
                   {opt.icon}
-                  {opt.label}
+                  <span className="min-w-0">
+                    <span
+                      className={`block ${value === opt.value ? 'font-medium' : ''}`}
+                    >
+                      {opt.label}
+                    </span>
+                    {opt.description && (
+                      <span className="block text-[13px] text-kallo-text-muted">
+                        {opt.description}
+                      </span>
+                    )}
+                  </span>
                 </span>
                 {value === opt.value && (
-                  <Check className="h-4 w-4 text-kallo-text" />
+                  <Check className="h-4 w-4 shrink-0 text-kallo-text" />
                 )}
               </button>
             ))}

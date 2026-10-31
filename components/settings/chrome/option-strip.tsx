@@ -6,6 +6,7 @@ import { cn } from '@/lib/core/ui/cn';
 interface OptionStripItem {
   value: string;
   label: string;
+  /** A second, smaller line under the label (e.g. a split's numbers). */
   hint?: string;
   icon?: LucideIcon;
 }
@@ -18,7 +19,7 @@ interface OptionStripProps {
 
 export function OptionStrip({ options, value, onChange }: OptionStripProps) {
   return (
-    <div className="flex rounded-xl bg-kallo-track p-1">
+    <div className="flex rounded-lg bg-kallo-track p-0.5">
       {options.map((opt) => (
         <button
           key={opt.value}
@@ -26,7 +27,7 @@ export function OptionStrip({ options, value, onChange }: OptionStripProps) {
           aria-pressed={value === opt.value}
           onClick={() => onChange(opt.value)}
           className={cn(
-            'flex flex-1 flex-col items-center rounded-lg py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40',
+            'flex min-h-8 min-w-0 flex-1 flex-col items-center justify-center rounded-md px-2 py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40',
             value === opt.value
               ? 'bg-kallo-thumb text-kallo-text shadow-sm'
               : 'text-kallo-text-muted hover:text-kallo-text'
@@ -37,7 +38,7 @@ export function OptionStrip({ options, value, onChange }: OptionStripProps) {
             {opt.label}
           </span>
           {opt.hint && (
-            <span className="mt-0.5 text-center text-[10px] leading-tight opacity-70">
+            <span className="text-[12px] tabular-nums opacity-70">
               {opt.hint}
             </span>
           )}

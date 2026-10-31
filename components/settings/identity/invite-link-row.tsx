@@ -35,7 +35,7 @@ export function InviteLinkRow({ link }: { link: string }) {
           type="button"
           onClick={copy}
           aria-label={t('linkCopy')}
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
         >
           {copied ? (
             <Check className="size-4" aria-hidden="true" />

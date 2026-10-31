@@ -1,23 +1,26 @@
 'use client';
 
+import { ArrowDown, ArrowUp, Equal, type LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { FieldRow } from '@/components/settings/chrome/field-row';
 import { FieldSection } from '@/components/settings/chrome/field-section';
+import { SettingsRow } from '@/components/settings/chrome/group';
 import { OptionStrip } from '@/components/settings/chrome/option-strip';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
 import { AGGRESSION_KCAL_PER_KG } from '@/lib/domain/onboarding/constants';
-import type { CarbSplit, Goal } from '@/lib/domain/onboarding/types';
+import type { Goal } from '@/lib/domain/onboarding/types';
 import type { ProfileFormValues } from '@/lib/domain/settings/profile-form';
 
-const GOALS: Goal[] = ['cutting', 'maintaining', 'bulking'];
+const GOALS: { value: Goal; icon: LucideIcon }[] = [
+  { value: 'cutting', icon: ArrowDown },
+  { value: 'maintaining', icon: Equal },
+  { value: 'bulking', icon: ArrowUp },
+];
 const PACE_MIN_KG = 0.1;
 const PACE_MAX_KG = 0.8;
-const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];
 
 interface GoalFieldsProps {
-  /** Live TDEE; goal/pace/split UI only renders once metrics produce one. */
+  /** Live TDEE; the goal and pace only render once metrics produce one. */
   tdee: number | null;
   goal: string;
 }
@@ -26,25 +29,7 @@ export function GoalFields({ tdee, goal }: GoalFieldsProps) {
   const t = useTranslations('onboarding.bodyMetrics');
   const form = useFormContext<ProfileFormValues>();
 
-  const carbInfo: Record<CarbSplit, { label: string; desc: string }> = useMemo(
-    () => ({
-      moderate_carb: {
-        label: t('moderateCarb'),
-        desc: t('moderateCarbDescription'),
-      },
-      lower_carb: { label: t('lowerCarb'), desc: t('lowerCarbDescription') },
-      higher_carb: { label: t('higherCarb'), desc: t('higherCarbDescription') },
-    }),
-    [t]
-  );
-
   if (tdee === null) return null;
-
-  const goalLabels: Record<Goal, string> = {
-    maintaining: t('maintaining'),
-    cutting: t('cutting'),
-    bulking: t('bulking'),
-  };
 
   return (
     <FieldSection title={t('goal')}>
@@ -52,7 +37,7 @@ export function GoalFields({ tdee, goal }: GoalFieldsProps) {
         control={form.control}
         name="goal"
         render={({ field }) => (
-          <FormItem className="pt-1 pb-2.5">
+          <FormItem className="py-2.5">
             <FormControl>
               <div>
                 <OptionStrip
@@ -64,8 +49,9 @@ export function GoalFields({ tdee, goal }: GoalFieldsProps) {
                     }
                   }}
                   options={GOALS.map((g) => ({
-                    value: g,
-                    label: goalLabels[g],
+                    value: g.value,
+                    label: t(g.value),
+                    icon: g.icon,
                   }))}
                 />
               </div>
@@ -86,20 +72,11 @@ export function GoalFields({ tdee, goal }: GoalFieldsProps) {
               ((aggressionKg - PACE_MIN_KG) / (PACE_MAX_KG - PACE_MIN_KG)) *
               100;
             const delta = `${goal === 'cutting' ? '−' : '+'}${kcalDelta} ${t('perDay')}`;
+            // The kcal it costs is in the target card; the row stays one line.
             return (
               <FormItem>
-                <FieldRow
-                  label={`${t('aggressionLabel')} (${
-                    goal === 'cutting'
-                      ? t('aggressionDeficit')
-                      : t('aggressionSurplus')
-                  })`}
-                  description={delta}
-                >
-                  <div className="@lg:w-80 w-full">
-                    <div className="mb-1.5 text-right text-[13px] text-kallo-text tabular-nums">
-                      {pace}
-                    </div>
+                <SettingsRow label={t('aggressionLabel')}>
+                  <div className="flex @lg:w-80 w-full items-center gap-4">
                     <FormControl>
                       <input
                         type="range"
@@ -116,42 +93,19 @@ export function GoalFields({ tdee, goal }: GoalFieldsProps) {
                         style={{
                           background: `linear-gradient(to right, var(--kallo-accent) ${filled}%, var(--kallo-segment) ${filled}%)`,
                         }}
-                        className="h-1 w-full appearance-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-kallo-border [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-kallo-border [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-sm"
+                        className="h-1 min-w-0 flex-1 appearance-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-kallo-border [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-kallo-border [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-sm"
                       />
                     </FormControl>
+                    <span className="w-20 shrink-0 text-right text-[14px] text-kallo-text tabular-nums">
+                      {pace}
+                    </span>
                   </div>
-                </FieldRow>
+                </SettingsRow>
               </FormItem>
             );
           }}
         />
       )}
-
-      <FormField
-        control={form.control}
-        name="carbSplit"
-        render={({ field }) => (
-          <FormItem>
-            <FieldRow
-              label={t('carbSplit')}
-              description={carbInfo[field.value as CarbSplit]?.desc}
-            >
-              <FormControl>
-                <div className="@lg:w-96 w-full">
-                  <OptionStrip
-                    value={field.value ?? ''}
-                    onChange={field.onChange}
-                    options={CARB_SPLITS.map((cs) => ({
-                      value: cs,
-                      label: carbInfo[cs].label,
-                    }))}
-                  />
-                </div>
-              </FormControl>
-            </FieldRow>
-          </FormItem>
-        )}
-      />
     </FieldSection>
   );
 }

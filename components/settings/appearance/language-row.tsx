@@ -17,8 +17,8 @@ export function LanguageRow() {
   const switchLocale = useLocaleSwitch();
 
   return (
-    <SettingsRow label={t('language')} description={t('languageHint')}>
-      <div className="w-full sm:w-72">
+    <SettingsRow label={t('language')}>
+      <div className="w-full sm:w-64">
         <CustomSelect
           options={[
             { value: 'en', label: 'English' },

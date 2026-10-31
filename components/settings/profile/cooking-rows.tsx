@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
+import { CustomSelect } from '@/components/settings/chrome/custom-select';
 import { SettingsRow } from '@/components/settings/chrome/group';
-import { OptionStrip } from '@/components/settings/chrome/option-strip';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
 import type { ProfileFormValues } from '@/lib/domain/settings/profile-form';
 
@@ -89,12 +89,12 @@ export function CookingRows() {
             <FormItem>
               <SettingsRow label={t(row.labelKey)}>
                 <FormControl>
-                  <div className="w-full sm:w-96">
-                    <OptionStrip
+                  <div className="w-full sm:w-64">
+                    <CustomSelect
                       options={row.options.map((o) => ({
                         value: o.value,
                         label: t(o.labelKey),
-                        hint: o.hintKey ? t(o.hintKey) : undefined,
+                        description: o.hintKey ? t(o.hintKey) : undefined,
                       }))}
                       value={field.value}
                       onChange={field.onChange}

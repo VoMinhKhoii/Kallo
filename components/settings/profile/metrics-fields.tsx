@@ -1,10 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
+import { FIELD_CLASS } from '@/components/settings/chrome/controls';
 import { CustomSelect } from '@/components/settings/chrome/custom-select';
-import { FieldRow } from '@/components/settings/chrome/field-row';
 import { FieldSection } from '@/components/settings/chrome/field-section';
+import { SettingsRow } from '@/components/settings/chrome/group';
 import { OptionStrip } from '@/components/settings/chrome/option-strip';
 import { DecimalInput } from '@/components/shared/decimal-input';
 import {
@@ -15,8 +16,7 @@ import {
 } from '@/components/ui/form';
 import type { ProfileFormValues } from '@/lib/domain/settings/profile-form';
 
-const inputClass =
-  'w-full rounded-lg border border-kallo-border bg-card py-2 pr-10 pl-3 text-[14px] text-kallo-text tabular-nums transition-colors hover:border-kallo-accent/50 focus:border-kallo-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40';
+const inputClass = `${FIELD_CLASS} pr-10 tabular-nums`;
 
 /** Wide controls sit beside the label on a wide page, under it on a phone. */
 const wideControl = 'w-full @lg:w-64';
@@ -46,9 +46,9 @@ function NumberField({
       name={name}
       render={({ field }) => (
         <FormItem>
-          <FieldRow label={label}>
+          <SettingsRow label={label}>
             <div className="flex flex-col items-end gap-1">
-              <div className="relative w-32">
+              <div className="relative w-28">
                 <FormControl>
                   <DecimalInput
                     integer={integer}
@@ -73,7 +73,7 @@ function NumberField({
               </div>
               <FormMessage />
             </div>
-          </FieldRow>
+          </SettingsRow>
         </FormItem>
       )}
     />
@@ -84,10 +84,6 @@ export function MetricsFields() {
   const t = useTranslations('onboarding.bodyMetrics');
   const tSettings = useTranslations('settings');
   const form = useFormContext<ProfileFormValues>();
-  const activityLevel = useWatch({
-    control: form.control,
-    name: 'activityLevel',
-  });
 
   const activity = {
     sedentary: {
@@ -107,9 +103,11 @@ export function MetricsFields() {
       hint: tSettings('activity.very_active.hint'),
     },
   };
+  // The hint rides in each option, not under the row's label.
   const activityOptions = Object.entries(activity).map(([value, a]) => ({
     value,
     label: a.label,
+    description: a.hint,
   }));
 
   return (
@@ -119,7 +117,7 @@ export function MetricsFields() {
         name="biologicalSex"
         render={({ field }) => (
           <FormItem>
-            <FieldRow label={t('biologicalSex')}>
+            <SettingsRow label={t('biologicalSex')}>
               <FormControl>
                 <div className={wideControl}>
                   <OptionStrip
@@ -132,7 +130,7 @@ export function MetricsFields() {
                   />
                 </div>
               </FormControl>
-            </FieldRow>
+            </SettingsRow>
           </FormItem>
         )}
       />
@@ -155,12 +153,7 @@ export function MetricsFields() {
         name="activityLevel"
         render={({ field }) => (
           <FormItem>
-            <FieldRow
-              label={t('activityLevel')}
-              description={
-                activity[activityLevel as keyof typeof activity]?.hint
-              }
-            >
+            <SettingsRow label={t('activityLevel')}>
               <FormControl>
                 <div className={wideControl}>
                   <CustomSelect
@@ -170,7 +163,7 @@ export function MetricsFields() {
                   />
                 </div>
               </FormControl>
-            </FieldRow>
+            </SettingsRow>
           </FormItem>
         )}
       />

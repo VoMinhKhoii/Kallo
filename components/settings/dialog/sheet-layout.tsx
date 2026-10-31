@@ -19,8 +19,8 @@ const EASE_OUT = [0.32, 0.72, 0, 1] as const;
 
 /**
  * The phone dialog: a full-height sheet whose first level is the page list
- * and whose second is one page. The profile form's save bar rides at the
- * bottom of either level, so unsaved edits stay in sight after Back.
+ * and whose second is one page. The profile form's save bar is the sheet's
+ * footer under either level, so unsaved edits stay in sight after Back.
  */
 export function SheetLayout({
   page,
@@ -92,10 +92,10 @@ export function SheetLayout({
             ) : (
               <SettingsMenu onShow={onShow} hasProfile={hasProfile} />
             )}
-            {saveBar}
           </motion.div>
         </AnimatePresence>
       </div>
+      {saveBar}
     </DialogPrimitive.Content>
   );
 }

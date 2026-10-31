@@ -21,7 +21,7 @@ export function RegionalRows() {
           <FormItem>
             <SettingsRow label={tOrigin('countryOfOrigin')}>
               <FormControl>
-                <div className="w-full sm:w-72">
+                <div className="w-full sm:w-64">
                   <CountrySelect
                     value={field.value}
                     onChange={field.onChange}
@@ -40,7 +40,7 @@ export function RegionalRows() {
           <FormItem>
             <SettingsRow label={tOrigin('countryOfResidence')}>
               <FormControl>
-                <div className="w-full sm:w-72">
+                <div className="w-full sm:w-64">
                   <CountrySelect
                     value={field.value}
                     onChange={field.onChange}

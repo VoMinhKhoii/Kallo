@@ -5,6 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+  GHOST_BUTTON,
+  SECONDARY_BUTTON,
+} from '@/components/settings/chrome/controls';
 import { AppleLogo, GoogleLogo } from '@/components/shared/brand-logos';
 import { createClient } from '@/lib/infra/supabase/client';
 
@@ -96,7 +100,7 @@ export function LinkedAccounts() {
         <button
           type="button"
           onClick={() => refetch()}
-          className="shrink-0 rounded-lg border border-kallo-border bg-card px-3 py-1.5 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+          className={SECONDARY_BUTTON}
         >
           {t('linkedRetry')}
         </button>
@@ -129,7 +133,7 @@ export function LinkedAccounts() {
                 disabled={busy || isLast}
                 aria-busy={busy}
                 aria-label={`${t('linkedDisconnect')} ${label}`}
-                className="shrink-0 rounded-lg px-3 py-1.5 font-medium text-[13px] text-kallo-text-muted transition-colors duration-150 hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-40"
+                className={GHOST_BUTTON}
               >
                 {t('linkedDisconnect')}
               </button>
@@ -140,7 +144,7 @@ export function LinkedAccounts() {
                 disabled={busy || identitiesLoading}
                 aria-busy={busy}
                 aria-label={`${t('linkedConnect')} ${label}`}
-                className="shrink-0 rounded-lg border border-kallo-border bg-card px-3 py-1.5 font-medium text-[13px] text-kallo-text transition-colors duration-150 hover:bg-kallo-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent disabled:opacity-60"
+                className={SECONDARY_BUTTON}
               >
                 {t('linkedConnect')}
               </button>

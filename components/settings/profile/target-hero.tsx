@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import type { calcMacroGrams } from '@/lib/domain/onboarding/tdee';
 
 const AGGRESSIVE_PACE_KG = 0.6;
@@ -12,11 +13,14 @@ interface TargetHeroProps {
   savedCalorieTarget: number | null;
   goal: string;
   aggression: number | null;
+  /** Sits between how the number was reached and the macros (the carb split). */
+  children?: ReactNode;
 }
 
 /**
  * The daily target, as a card beside (or above) the body inputs that produce
- * it: the number, how it was reached, and the macros it splits into. When the
+ * it: the number, how it was reached, the carb split and the macros it
+ * splits into. When the
  * recomputed target differs from the saved one, the saved one shows struck
  * through under it; an aggressive pace tints the number terracotta.
  */
@@ -27,6 +31,7 @@ export function TargetHero({
   savedCalorieTarget,
   goal,
   aggression,
+  children,
 }: TargetHeroProps) {
   const t = useTranslations('onboarding.bodyMetrics');
   const tSettings = useTranslations('settings');
@@ -90,6 +95,7 @@ export function TargetHero({
           </>
         )}
       </p>
+      {children && <div className="mt-5">{children}</div>}
       <dl className="mt-4 divide-y divide-kallo-border border-kallo-border border-t">
         {macroRows.map((row) => (
           <div

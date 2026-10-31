@@ -45,6 +45,11 @@
       "hint": "Tập nặng 6–7 ngày/tuần"
     }
   },
+  "carbSplit": {
+    "moderate_carb": "Vừa",
+    "lower_carb": "Ít",
+    "higher_carb": "Nhiều"
+  },
   "save": "Lưu thay đổi",
   "saveWithTarget": "Lưu — mục tiêu mới {target} kcal",
   "saved": "Đã lưu thay đổi",
@@ -54,10 +59,8 @@
     "aggressivePace": "{pace} kg/tuần — nhịp khá gắt"
   },
   "language": "Ngôn ngữ",
-  "languageHint": "Thay đổi ngôn ngữ ứng dụng",
   "appearance": {
     "label": "Giao diện",
-    "hint": "Sáng, tối, hoặc theo thiết bị",
     "system": "Theo hệ thống",
     "light": "Sáng",
     "dark": "Tối",

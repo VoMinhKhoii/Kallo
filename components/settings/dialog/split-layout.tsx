@@ -10,8 +10,8 @@ import type { SettingsLayoutProps } from './types';
 
 /**
  * The desktop dialog: a centered card split into the rail and the page. The
- * page scrolls on its own; the profile form's save bar is pinned to the
- * bottom of that scroll whichever page is showing.
+ * page scrolls on its own; the profile form's save bar is the pane's footer,
+ * under that scroll, whichever page is showing.
  */
 export function SplitLayout({
   page,
@@ -43,7 +43,7 @@ export function SplitLayout({
       className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 flex h-[min(925px,calc(100dvh-4rem))] w-[min(1184px,calc(100vw-4rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-kallo-border bg-kallo-surface font-sans-display text-kallo-text shadow-lg outline-none duration-200 data-[state=closed]:animate-out data-[state=open]:animate-in"
     >
       <SettingsRail current={current} onShow={onShow} hasProfile={hasProfile} />
-      <div className="relative min-w-0 flex-1">
+      <div className="relative flex min-w-0 flex-1 flex-col">
         <DialogPrimitive.Close
           aria-label={tc('close')}
           className="absolute top-3 right-3 z-30 flex size-8 items-center justify-center rounded-lg text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
@@ -52,12 +52,11 @@ export function SplitLayout({
         </DialogPrimitive.Close>
         <div
           ref={scrollRef}
-          className="h-full overflow-y-auto overscroll-contain px-8 pt-7"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-8 pt-7 pb-7"
         >
           {renderPage(current)}
-          {saveBar}
-          <div aria-hidden="true" className="h-7" />
         </div>
+        {saveBar}
       </div>
     </DialogPrimitive.Content>
   );

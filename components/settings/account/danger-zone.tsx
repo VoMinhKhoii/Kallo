@@ -3,6 +3,11 @@
 import { ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  FIELD_CLASS,
+  GHOST_BUTTON,
+  SECONDARY_BUTTON,
+} from '@/components/settings/chrome/controls';
 import { SettingsGroup, SettingsRow } from '@/components/settings/chrome/group';
 
 interface DangerZoneProps {
@@ -15,8 +20,7 @@ interface DangerZoneProps {
  * Permanent account deletion in the terracotta `kallo-danger` concern register.
  * Deliberately an inline, type-to-confirm expansion (never a modal): triggering
  * grows a consequence block, a locale-aware confirm word, and cancel/confirm
- * buttons, with confirm disabled until the typed word matches exactly. The
- * group border stays `kallo-danger` permanently (SettingsGroup danger variant).
+ * buttons, with confirm disabled until the typed word matches exactly.
  */
 export function DangerZone({
   onDelete,
@@ -36,7 +40,7 @@ export function DangerZone({
   };
 
   return (
-    <SettingsGroup variant="danger" className="mt-3">
+    <SettingsGroup className="mt-8 border-kallo-border border-t">
       <SettingsRow
         label={t('deleteTitle')}
         description={t('deleteDescription')}
@@ -45,7 +49,7 @@ export function DangerZone({
           <button
             type="button"
             onClick={() => setConfirmOpen(true)}
-            className="shrink-0 rounded-xl px-3.5 py-2 font-medium text-[13px] text-kallo-danger transition-colors duration-150 hover:bg-kallo-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-danger/40"
+            className={`${SECONDARY_BUTTON} text-kallo-danger`}
           >
             {t('deleteAction')}
           </button>
@@ -53,12 +57,12 @@ export function DangerZone({
       </SettingsRow>
 
       {confirmOpen && (
-        <div className="border-kallo-border border-t p-card-sm">
-          <p className="text-[13.5px] text-kallo-text leading-relaxed">
+        <div className="py-3">
+          <p className="max-w-prose text-[13px] text-kallo-text leading-relaxed">
             {t('deleteConsequence')}
           </p>
           {managementUrl && (
-            <div className="mt-3 rounded-xl bg-kallo-danger/5 p-3 text-[13px] text-kallo-text">
+            <div className="mt-3 rounded-lg bg-kallo-danger/5 p-3 text-[13px] text-kallo-text">
               <p>{t('deleteSubscriptionWarning')}</p>
               <a
                 href={managementUrl}
@@ -82,7 +86,7 @@ export function DangerZone({
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
-              className="mt-1.5 w-full rounded-xl border border-kallo-border bg-card px-3.5 py-2.5 text-[15px] text-kallo-text outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-kallo-danger/30"
+              className={`${FIELD_CLASS} mt-1.5 sm:w-64`}
             />
           </label>
           <div className="mt-3 flex items-center justify-end gap-2">
@@ -93,7 +97,7 @@ export function DangerZone({
                 setConfirmText('');
               }}
               disabled={deleting}
-              className="rounded-xl px-3.5 py-2 font-medium text-[13px] text-kallo-text-muted transition-colors duration-150 hover:text-kallo-text disabled:opacity-60"
+              className={GHOST_BUTTON}
             >
               {t('deleteCancel')}
             </button>
@@ -102,7 +106,7 @@ export function DangerZone({
               onClick={handleConfirm}
               disabled={!canDelete}
               aria-busy={deleting}
-              className="rounded-xl bg-kallo-danger px-3.5 py-2 font-medium text-[13px] text-white transition-opacity duration-150 hover:bg-kallo-danger/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-danger/40 disabled:opacity-40"
+              className="inline-flex h-8 items-center rounded-lg bg-kallo-danger px-3 font-medium text-[13px] text-white transition-opacity duration-150 hover:bg-kallo-danger/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-danger/40 disabled:opacity-40"
             >
               {deleting ? t('deleting') : t('deleteConfirmAction')}
             </button>

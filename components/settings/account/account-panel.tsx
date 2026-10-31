@@ -11,10 +11,10 @@ import { useAccountActions } from './use-account-actions';
 
 /**
  * Account settings: sign-in identity, linked methods, sign out, and permanent
- * account deletion — as two grouped list-cards (Apple Settings idiom) rather
- * than a stack of individual cards. Data export lives on the Privacy page.
+ * account deletion — as two hairline-divided lists. Data export lives on the
+ * Privacy page.
  *
- * Deletion lives in its own danger-variant group as an inline, type-to-confirm
+ * Deletion lives in its own group as an inline, type-to-confirm
  * panel (not a modal-first flow) in the brand's calm "concern" register —
  * terracotta `kallo-danger`, never the cold shadcn `destructive`. Sign out lives
  * here as well as in the user menu so the settings area is self-sufficient.
@@ -36,7 +36,7 @@ export function AccountPanel({
       <SettingsGroup>
         {email && (
           <SettingsRow label={t('emailLabel')}>
-            <p className="text-[15px] text-kallo-text-muted">{email}</p>
+            <p className="text-[14px] text-kallo-text-muted">{email}</p>
           </SettingsRow>
         )}
 

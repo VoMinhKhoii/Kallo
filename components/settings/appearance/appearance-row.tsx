@@ -17,8 +17,8 @@ export function AppearanceRow() {
   const [choice, setChoice] = useThemeChoice();
 
   return (
-    <SettingsRow label={t('label')} description={t('hint')}>
-      <div className="w-full sm:w-72">
+    <SettingsRow label={t('label')}>
+      <div className="w-full sm:w-64">
         <CustomSelect
           options={THEME_CHOICES.map((option) => {
             const Icon = THEME_ICONS[option];

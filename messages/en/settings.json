@@ -45,6 +45,11 @@
       "hint": "Hard exercise 6–7 days a week"
     }
   },
+  "carbSplit": {
+    "moderate_carb": "Moderate",
+    "lower_carb": "Lower",
+    "higher_carb": "Higher"
+  },
   "save": "Save changes",
   "saveWithTarget": "Save — new target {target} kcal",
   "saved": "Changes saved",
@@ -54,10 +59,8 @@
     "aggressivePace": "{pace} kg/wk — an aggressive pace"
   },
   "language": "Language",
-  "languageHint": "Change the app language",
   "appearance": {
     "label": "Appearance",
-    "hint": "Light, dark, or match your device",
     "system": "System",
     "light": "Light",
     "dark": "Dark",
