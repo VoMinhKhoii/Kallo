@@ -7,7 +7,11 @@ const mocks = vi.hoisted(() => ({ useEntitlements: vi.fn() }));
 vi.mock('@/hooks/billing/use-entitlements', () => ({
   useEntitlements: mocks.useEntitlements,
 }));
-vi.mock('next/navigation', () => ({ usePathname: () => '/en/settings' }));
+// The dialog opens over any page, its page held in `?settings=`.
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/en/dashboard',
+  useSearchParams: () => new URLSearchParams('settings=subscriptions'),
+}));
 
 import { SubscriptionSettings } from '../subscription-settings';
 
@@ -36,7 +40,7 @@ function entitlements(
 describe('SubscriptionSettings', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('links a Free user straight to /pricing, with no trial copy', () => {
+  it('links a Free user to /pricing, back to this settings page', () => {
     mocks.useEntitlements.mockReturnValue({
       data: entitlements(),
       isPending: false,
@@ -48,7 +52,7 @@ describe('SubscriptionSettings', () => {
     expect(screen.queryByText(/trial/i)).toBeNull();
     expect(screen.getByRole('link', { name: 'upgradeCta' })).toHaveAttribute(
       'href',
-      `/pricing?from=${encodeURIComponent('/en/settings')}`
+      `/pricing?from=${encodeURIComponent('/en/dashboard?settings=subscriptions')}`
     );
   });
 

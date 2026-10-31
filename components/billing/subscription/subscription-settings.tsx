@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2, Sprout } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEntitlements } from '@/hooks/billing/use-entitlements';
 import { pricingHref } from '@/lib/domain/billing/pricing/pricing-href';
@@ -37,8 +37,11 @@ export function SubscriptionSettings({
   const tPremium = useTranslations('billing.premium');
   const tLanding = useTranslations('landing.pricing');
   const { data, isPending, isError } = useEntitlements(userId);
-  // The full, locale-prefixed path, so /pricing can link back here.
+  // The full, locale-prefixed path with its query, so /pricing links back
+  // here: the open settings page lives in `?settings=`.
   const pathname = usePathname();
+  const query = useSearchParams().toString();
+  const backHref = pricingHref(query ? `${pathname}?${query}` : pathname);
 
   if (isPending) {
     return (
@@ -94,9 +97,7 @@ export function SubscriptionSettings({
           locale={locale}
           t={t}
           upgradeHref={
-            data.complimentary && data.purchasesEnabled
-              ? pricingHref(pathname)
-              : null
+            data.complimentary && data.purchasesEnabled ? backHref : null
           }
         />
       ) : (
@@ -105,7 +106,7 @@ export function SubscriptionSettings({
             icon={Sprout}
             name={t('freePlan')}
             subtitle={tLanding('plans.free.tagline')}
-            action={<UpgradeLink href={pricingHref(pathname)} t={t} />}
+            action={<UpgradeLink href={backHref} t={t} />}
           />
           <PlanFeatures plan="free" />
         </div>

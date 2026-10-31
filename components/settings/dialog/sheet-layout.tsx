@@ -4,6 +4,7 @@ import { ChevronLeft, X } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { Dialog as DialogPrimitive } from 'radix-ui';
+import { useReturnFocus } from '@/hooks/settings/use-return-focus';
 import { cn } from '@/lib/core/ui/cn';
 import { SettingsMenu } from './settings-menu';
 import type { SettingsLayoutProps } from './types';
@@ -31,18 +32,15 @@ export function SheetLayout({
 }: SettingsLayoutProps) {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
+  const returnFocus = useReturnFocus();
   const reduceMotion = useReducedMotion();
   const direction = page ? 1 : -1;
 
   return (
     <DialogPrimitive.Content
       aria-describedby={undefined}
-      // Focus the sheet, not its first button: a tapped-open sheet would
-      // otherwise greet the thumb with a focus ring on the close button.
-      onOpenAutoFocus={(event) => {
-        event.preventDefault();
-        (event.currentTarget as HTMLElement).focus();
-      }}
+      onOpenAutoFocus={returnFocus.onOpenAutoFocus}
+      onCloseAutoFocus={returnFocus.onCloseAutoFocus}
       className="data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom fixed inset-x-0 bottom-0 z-50 flex h-[calc(100dvh-env(safe-area-inset-top)-0.75rem)] flex-col overflow-hidden rounded-t-2xl bg-kallo-surface font-sans-display text-kallo-text outline-none duration-300 data-[state=closed]:animate-out data-[state=open]:animate-in"
     >
       <DialogPrimitive.Title className="sr-only">

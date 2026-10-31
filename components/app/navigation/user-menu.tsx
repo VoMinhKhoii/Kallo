@@ -62,12 +62,14 @@ export function UserMenu({
   const t = useTranslations('app.userMenu');
   const [internalOpen, setInternalOpen] = useState(false);
   const { signOut: handleSignOut, signingOut } = useSignOut();
-  const settingsLink = useSettingsLink();
   const open = openProp ?? internalOpen;
   const handleOpenChange = (next: boolean) => {
     if (openProp === undefined) setInternalOpen(next);
     onOpenChange?.(next);
   };
+  // The link cancels its click to open the dialog in place, which Radix
+  // reads as "keep the menu open": close it ourselves.
+  const settingsLink = useSettingsLink(() => handleOpenChange(false));
   const label = deriveLabel(user);
 
   // Show the hover-mode toggle only on fine-pointer devices. On touch the

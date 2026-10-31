@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { useEffect, useRef } from 'react';
+import { useReturnFocus } from '@/hooks/settings/use-return-focus';
 import { DEFAULT_SETTINGS_PAGE } from '@/lib/domain/settings/pages';
 import { SettingsRail } from './settings-rail';
 import type { SettingsLayoutProps } from './types';
@@ -21,6 +22,7 @@ export function SplitLayout({
   saveBar,
 }: SettingsLayoutProps) {
   const tc = useTranslations('common');
+  const returnFocus = useReturnFocus();
   const current = page ?? DEFAULT_SETTINGS_PAGE;
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -34,12 +36,8 @@ export function SplitLayout({
   return (
     <DialogPrimitive.Content
       aria-describedby={undefined}
-      // Focus the dialog, not the rail's first link: opened on another page
-      // (a deep link), that link would wear a focus ring it has no claim to.
-      onOpenAutoFocus={(event) => {
-        event.preventDefault();
-        (event.currentTarget as HTMLElement).focus();
-      }}
+      onOpenAutoFocus={returnFocus.onOpenAutoFocus}
+      onCloseAutoFocus={returnFocus.onCloseAutoFocus}
       className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 flex h-[min(925px,calc(100dvh-4rem))] w-[min(1184px,calc(100vw-4rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-kallo-border bg-kallo-surface font-sans-display text-kallo-text shadow-lg outline-none duration-200 data-[state=closed]:animate-out data-[state=open]:animate-in"
     >
       <SettingsRail current={current} onShow={onShow} hasProfile={hasProfile} />

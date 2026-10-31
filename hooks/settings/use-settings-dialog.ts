@@ -7,6 +7,7 @@ import {
   SETTINGS_PARAM,
   type SettingsPageId,
 } from '@/lib/domain/settings/pages';
+import { rememberSettingsOpener } from './use-return-focus';
 
 // Marks a history entry `open` pushed. Closing from such an entry steps back
 // to the page underneath, so Back after a close never reopens the dialog. Kept
@@ -90,6 +91,7 @@ export function useSettingsLink(onOpen?: () => void) {
     onClick(event: MouseEvent<HTMLAnchorElement>) {
       if (!isPlainLeftClick(event)) return;
       event.preventDefault();
+      rememberSettingsOpener(event.currentTarget);
       onOpen?.();
       open();
     },

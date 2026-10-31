@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useTransition } from 'react';
 import { type FieldErrors, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useSettingsDialog } from '@/hooks/settings/use-settings-dialog';
@@ -32,6 +32,9 @@ export function useProfileForm(profile: ProfileInput) {
   const tValidation = useTranslations('validation.bodyMetrics');
   const locale = useLocale();
   const [isPending, startTransition] = useTransition();
+  // Set synchronously, so a second submit (Enter while Save is pending)
+  // can't start a save that races the first and lands older values last.
+  const saving = useRef(false);
   const router = useRouter();
   const settings = useSettingsDialog();
 
@@ -75,6 +78,8 @@ export function useProfileForm(profile: ProfileInput) {
   }
 
   function handleSave(values: ProfileFormValues) {
+    if (saving.current) return;
+    saving.current = true;
     // Compute TDEE and macros for persistence
     const bmr = calcBMR({
       biologicalSex: values.biologicalSex,
@@ -123,6 +128,8 @@ export function useProfileForm(profile: ProfileInput) {
         router.refresh();
       } catch {
         toast.error(t('profilePanel.saveError'));
+      } finally {
+        saving.current = false;
       }
     });
   }
