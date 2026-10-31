@@ -12,7 +12,6 @@
  */
 export const PRIVATE_PATH_PREFIXES = [
   '/dashboard',
-  '/settings',
   '/circle',
   '/nutrition',
   '/logging',

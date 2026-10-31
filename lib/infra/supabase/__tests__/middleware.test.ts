@@ -84,7 +84,7 @@ describe('signed-out visitor', () => {
   it.each([
     '/en/dashboard',
     '/vi/logging',
-    '/en/settings/account',
+    '/en/circle/friends',
     '/en/activity',
   ])('is sent from %s to the sign-in dialog with a way back', async (path) => {
     const response = await run(path);
@@ -212,9 +212,9 @@ describe('signed-in visitor', () => {
 
   it('is sent from the landing page to the page sign-in was holding', async () => {
     const url = await location(
-      '/en?auth=sign-in&next=%2Fen%2Fsettings%2Faccount'
+      '/en?auth=sign-in&next=%2Fen%2Fcircle%2Ffriends'
     );
-    expect(url?.href).toBe('https://kallo.fit/en/settings/account');
+    expect(url?.href).toBe('https://kallo.fit/en/circle/friends');
   });
 
   it('ignores an unsafe next on the landing page', async () => {
