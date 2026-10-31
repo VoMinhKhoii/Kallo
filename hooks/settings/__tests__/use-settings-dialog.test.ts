@@ -70,6 +70,41 @@ describe('useSettingsDialog', () => {
     back.mockRestore();
   });
 
+  it('drops the param instead of stepping back once the entry was replaced', () => {
+    const back = vi.spyOn(window.history, 'back');
+    const { result, rerender } = renderHook(() => useSettingsDialog());
+    act(() => result.current.open('preferences'));
+    // A language switch inside the dialog: the router replaces the entry
+    // with its own state, at the new locale's URL.
+    act(() =>
+      window.history.replaceState(
+        { __NA: true },
+        '',
+        '/vi/dashboard?settings=preferences'
+      )
+    );
+
+    act(() => result.current.close());
+    rerender();
+
+    expect(back).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe('/vi/dashboard');
+    expect(search().has('settings')).toBe(false);
+    back.mockRestore();
+  });
+
+  it('keeps the pushed mark across page switches', () => {
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    const { result } = renderHook(() => useSettingsDialog());
+    act(() => result.current.open());
+    act(() => result.current.show('account'));
+
+    act(() => result.current.close());
+
+    expect(back).toHaveBeenCalledTimes(1);
+    back.mockRestore();
+  });
+
   it('treats an unknown page as open on no particular page', () => {
     window.history.replaceState(null, '', '/en/dashboard?settings=billing');
     const { result } = renderHook(() => useSettingsDialog());

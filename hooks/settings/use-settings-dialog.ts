@@ -9,11 +9,16 @@ import {
   type SettingsPageId,
 } from '@/lib/domain/settings/pages';
 
-// Whether the history entry showing the dialog is one `open` pushed. Closing
-// then steps back to the page underneath, so Back after a close never reopens
-// the dialog. Module-level because the opener (sidebar, menu) and the dialog
-// are different components with their own hook calls.
-let openedByPush = false;
+// Marks a history entry `open` pushed. Closing from such an entry steps back
+// to the page underneath, so Back after a close never reopens the dialog. Kept
+// on the entry itself, not in memory: an entry replaced since (a language
+// switch inside the dialog) loses the mark, and closing then just drops the
+// param instead of stepping back to the old URL.
+const PUSHED_MARK = 'kalloSettingsPushed';
+
+function isPushedEntry(): boolean {
+  return window.history.state?.[PUSHED_MARK] === true;
+}
 
 function writeParam(value: string | null, mode: 'push' | 'replace') {
   const url = new URL(window.location.href);
@@ -21,8 +26,13 @@ function writeParam(value: string | null, mode: 'push' | 'replace') {
   else url.searchParams.set(SETTINGS_PARAM, value);
   // Native history calls sync with useSearchParams without a server round
   // trip, so switching pages never re-renders the page behind the dialog.
-  if (mode === 'push') window.history.pushState(null, '', url);
-  else window.history.replaceState(null, '', url);
+  // Always a fresh state object: Next copies its own keys in, but passes a
+  // state that already has them straight through without syncing the URL.
+  if (mode === 'push') {
+    window.history.pushState({ [PUSHED_MARK]: true }, '', url);
+  } else {
+    window.history.replaceState({ [PUSHED_MARK]: isPushedEntry() }, '', url);
+  }
 }
 
 /**
@@ -39,7 +49,6 @@ export function useSettingsDialog() {
     isOpen: raw !== null,
     page: parseSettingsPage(raw),
     open(page?: SettingsPageId) {
-      openedByPush = true;
       writeParam(page ?? '', 'push');
     },
     /** Switches page in place; page switches do not stack history. */
@@ -47,8 +56,7 @@ export function useSettingsDialog() {
       writeParam(page ?? '', 'replace');
     },
     close() {
-      if (openedByPush) {
-        openedByPush = false;
+      if (isPushedEntry()) {
         window.history.back();
       } else {
         writeParam(null, 'replace');
