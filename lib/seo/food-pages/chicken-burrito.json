@@ -5,14 +5,6 @@
     {
       "key": "shop",
       "text": "Chicken burrito from a burrito shop (large flour tortilla + grilled chicken + white rice + black beans + cheese + sour cream + guacamole)",
-      "kcal": {
-        "low": 934,
-        "mid": 975,
-        "high": 1029
-      },
-      "protein": 62,
-      "carbs": 110,
-      "fat": 32,
       "ingredients": [
         {
           "name": "Flour tortilla",
@@ -70,14 +62,6 @@
     {
       "key": "shop-lighter",
       "text": "Chicken burrito from a burrito shop (large flour tortilla + grilled chicken + white rice + black beans + salsa, no cheese, no sour cream)",
-      "kcal": {
-        "low": 617,
-        "mid": 634,
-        "high": 660
-      },
-      "protein": 46,
-      "carbs": 85,
-      "fat": 12,
       "ingredients": [
         {
           "name": "Flour tortilla",
@@ -129,14 +113,6 @@
     {
       "key": "bowl-no-rice",
       "text": "Chicken burrito bowl (1 tortilla + 1 scoop of grilled chicken + salad and pineapple + a bit of cheese, no rice)",
-      "kcal": {
-        "low": 385,
-        "mid": 400,
-        "high": 414
-      },
-      "protein": 36,
-      "carbs": 32,
-      "fat": 15,
       "ingredients": [
         {
           "name": "Grilled chicken",
@@ -188,14 +164,6 @@
     {
       "key": "homemade",
       "text": "Homemade chicken burrito (1 small flour tortilla + 100g grilled chicken breast + lettuce + salsa + a bit of cheese)",
-      "kcal": {
-        "low": 301,
-        "mid": 310,
-        "high": 326
-      },
-      "protein": 38,
-      "carbs": 18,
-      "fat": 10,
       "ingredients": [
         {
           "name": "Small flour tortilla",

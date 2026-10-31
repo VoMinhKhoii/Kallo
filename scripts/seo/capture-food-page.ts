@@ -10,37 +10,17 @@
  * `.cache/food-pages/<slug>.capture.json` as it lands, so a failed meal costs
  * one rerun, not the page. Delete the cache to capture afresh.
  *
- * Meals are written the way people log them: parts, amounts and what was left
- * out ("no rice, a bit of cheese"). A bare "1 chicken burrito" shows nothing
- * Kallo does that a lookup table does not.
+ * The meals themselves, and how to write them, are in
+ * `lib/seo/food-pages/meals.ts`.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import type { UserContext } from '@/lib/ai/types/user-context';
+import { FOOD_PAGE_MEALS } from '@/lib/seo/food-pages/meals';
 import type {
   FoodPageCapture,
   FoodPageVariant,
 } from '@/lib/seo/food-pages/pages';
-
-const MEALS: Record<string, { key: string; text: string }[]> = {
-  'chicken-burrito': [
-    {
-      key: 'shop',
-      text: 'Chicken burrito from a burrito shop (large flour tortilla + grilled chicken + white rice + black beans + cheese + sour cream + guacamole)',
-    },
-    {
-      key: 'shop-lighter',
-      text: 'Chicken burrito from a burrito shop (large flour tortilla + grilled chicken + white rice + black beans + salsa, no cheese, no sour cream)',
-    },
-    {
-      key: 'bowl-no-rice',
-      text: 'Chicken burrito bowl (1 tortilla + 1 scoop of grilled chicken + salad and pineapple + a bit of cheese, no rice)',
-    },
-    {
-      key: 'homemade',
-      text: 'Homemade chicken burrito (1 small flour tortilla + 100g grilled chicken breast + lettuce + salsa + a bit of cheese)',
-    },
-  ],
-};
+import { isFoodSlug } from '@/lib/seo/food-pages/slugs';
 
 /**
  * The food table a composition row came from, by its id prefix. A public page
@@ -58,8 +38,10 @@ function sourceOf(foodCompositionId: string | null, name: string): string {
 }
 
 const slug = process.argv[2] ?? '';
-const meals = MEALS[slug];
-if (!meals) throw new Error(`unknown food page "${slug}"`);
+if (!isFoodSlug(slug)) {
+  throw new Error(`unknown food page "${slug}": add it to slugs.ts`);
+}
+const meals = FOOD_PAGE_MEALS[slug];
 const CACHE = `.cache/food-pages/${slug}.capture.json`;
 const OUT = `lib/seo/food-pages/${slug}.json`;
 
@@ -121,19 +103,9 @@ function toVariant(
   raw: PipelineResult
 ): FoodPageVariant {
   const parsed = toParsedMeal(raw);
-  const total = raw.boundedNutrition;
-  const mid = (bound: { mid: number } | null) => Math.round(bound?.mid ?? 0);
   return {
     key,
     text,
-    kcal: {
-      low: Math.round(total.caloriesKcal?.low ?? 0),
-      mid: mid(total.caloriesKcal),
-      high: Math.round(total.caloriesKcal?.high ?? 0),
-    },
-    protein: mid(total.proteinG),
-    carbs: mid(total.carbohydrateG),
-    fat: mid(total.fatG),
     ingredients: raw.mealItems.flatMap((item) =>
       item.ingredients.map((ingredient) => ({
         name: ingredient.ingredientName,

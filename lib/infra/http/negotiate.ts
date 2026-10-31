@@ -1,7 +1,11 @@
 import { locales } from '@/i18n/config';
 import { isKnownDocSlug } from '@/lib/domain/docs/navigation';
 import { MEDIA_MARKDOWN, preferredType } from '@/lib/infra/http/accept';
-import { FOOD_PAGE_LOCALE, isFoodSlug } from '@/lib/seo/food-pages/slugs';
+import {
+  FOOD_PAGE_PREFIX,
+  FOOD_SLUGS,
+  foodPagePath,
+} from '@/lib/seo/food-pages/slugs';
 import { isKnownNonMarkdownPath } from '@/lib/seo/private-paths';
 
 /**
@@ -94,22 +98,21 @@ export function unknownDocsTarget(pathname: string): string | null {
 }
 
 /**
- * The same early 404 for the food pages, which exist in one locale only, at
- * `/calories/<slug>` for a published slug: the bare `/calories`, another
- * locale and a mistyped slug all get the real 404.
+ * The same early 404 for the food pages: a URL under the food folder is a page
+ * only when it is exactly a published page's path (`foodPagePath`), so the
+ * bare folder, another locale and a mistyped slug all get the real 404.
  */
 export function unknownFoodPageTarget(pathname: string): string | null {
   const split = splitLocale(pathname);
   if (!split) return null;
   const { locale, rest } = split;
-  if (rest !== '/calories' && !rest.startsWith('/calories/')) return null;
+  if (rest !== FOOD_PAGE_PREFIX && !rest.startsWith(`${FOOD_PAGE_PREFIX}/`))
+    return null;
   const decoded = pagePath(rest);
   if (decoded === null) return null;
-  const slug = decoded.slice('/calories/'.length);
-  const known =
-    locale === FOOD_PAGE_LOCALE &&
-    decoded.startsWith('/calories/') &&
-    isFoodSlug(slug);
+  const known = FOOD_SLUGS.some(
+    (slug) => foodPagePath(slug) === `/${locale}${decoded}`
+  );
   return known ? null : `/${locale}/not-found`;
 }
 

@@ -5,7 +5,7 @@ import { loadFrontmatter } from '@/lib/domain/docs/loader';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { alternateLanguages } from '@/lib/seo/alternates';
 import { FOOD_PAGES } from '@/lib/seo/food-pages/pages';
-import { FOOD_PAGE_LOCALE, FOOD_SLUGS } from '@/lib/seo/food-pages/slugs';
+import { FOOD_SLUGS, foodPagePath } from '@/lib/seo/food-pages/slugs';
 import { SITE_URL } from '@/lib/seo/site';
 
 // Only the publicly crawlable, unauthenticated surfaces belong here. Everything
@@ -69,7 +69,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Their date is the day their meals were captured.
   for (const slug of FOOD_SLUGS) {
     entries.push({
-      url: `${SITE_URL}/${FOOD_PAGE_LOCALE}/calories/${slug}`,
+      url: `${SITE_URL}${foodPagePath(slug)}`,
       lastModified: new Date(FOOD_PAGES[slug].capture.capturedAt),
       changeFrequency: 'monthly',
       priority: 0.6,
