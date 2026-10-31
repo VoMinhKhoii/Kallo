@@ -26,7 +26,10 @@ interface ConfirmDialogProps {
   cancelLabel: string;
   /** `destructive` fills the action in error red — for a step that deletes. */
   tone?: 'default' | 'destructive';
-  /** Disables the action while the caller's work is in flight. */
+  /**
+   * The caller's work is in flight: the action is disabled, and the dialog
+   * can't be dismissed (Cancel, Escape), since closing can't stop the work.
+   */
   pending?: boolean;
   /** Disables the action until the caller's own check passes. */
   confirmDisabled?: boolean;
@@ -67,6 +70,9 @@ export function ConfirmDialog({
       ) : null}
       <AlertDialogContent
         className={cn(dialogShell.card, 'gap-5 p-[22px] sm:max-w-md')}
+        onEscapeKeyDown={(event) => {
+          if (pending) event.preventDefault();
+        }}
       >
         <AlertDialogHeader>
           <AlertDialogTitle className={dialogShell.title}>
@@ -88,6 +94,7 @@ export function ConfirmDialog({
           <AlertDialogPrimitive.Cancel asChild>
             <Button
               variant="ghost"
+              disabled={pending}
               className="rounded-xl font-sans-display hover:bg-kallo-hover hover:text-kallo-text dark:hover:bg-kallo-hover"
             >
               {cancelLabel}
