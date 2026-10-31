@@ -1,4 +1,5 @@
 import chickenBurrito from './chicken-burrito.json';
+import type { FoodSlug } from './slugs';
 
 /**
  * The public food pages: "how many calories in X", answered with real meals
@@ -52,7 +53,7 @@ export interface FoodPage {
 
 const chickenBurritoCapture: FoodPageCapture = chickenBurrito;
 
-const PAGES = {
+export const FOOD_PAGES: Record<FoodSlug, FoodPage> = {
   'chicken-burrito': {
     capture: chickenBurritoCapture,
     title: 'How many calories are in a chicken burrito?',
@@ -72,14 +73,4 @@ const PAGES = {
     tryLine:
       'Type yours the way you would say it, like “chicken burrito, extra rice, no beans, half the cheese”, and Kallo works out the rest.',
   },
-} satisfies Record<string, FoodPage>;
-
-export type FoodSlug = keyof typeof PAGES;
-
-export const FOOD_PAGES: Record<FoodSlug, FoodPage> = PAGES;
-
-export const FOOD_SLUGS = Object.keys(FOOD_PAGES) as FoodSlug[];
-
-export function isFoodSlug(slug: string): slug is FoodSlug {
-  return Object.hasOwn(FOOD_PAGES, slug);
-}
+};

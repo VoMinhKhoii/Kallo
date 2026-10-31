@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { FOOD_PAGES, FOOD_SLUGS, isFoodSlug } from '../pages';
+import { FOOD_PAGES } from '../pages';
+import { FOOD_SLUGS, isFoodSlug } from '../slugs';
 
 // Each ingredient and the total are rounded on their own, so a sum can be off
 // by about half a kcal per ingredient.

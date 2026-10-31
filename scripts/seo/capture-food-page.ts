@@ -95,36 +95,31 @@ const client = gemini.createPipelineLlm(gemini.resolveGeminiProvider(), {
 });
 
 type PipelineResult = Parameters<typeof toParsedMeal>[0];
-type Cached = { capturedAt: string; byKey: Record<string, PipelineResult> };
+/**
+ * Only results that converted cleanly are cached, each with the text it
+ * answered: a reworded meal is captured again rather than reusing the answer
+ * to its old wording.
+ */
+type Cached = Record<
+  string,
+  { text: string; capturedAt: string; result: PipelineResult }
+>;
 
 const cache: Cached = (() => {
   try {
     return JSON.parse(readFileSync(CACHE, 'utf8'));
   } catch {
-    return { capturedAt: new Date().toISOString(), byKey: {} };
+    return {};
   }
 })();
 mkdirSync('.cache/food-pages', { recursive: true });
 
-for (const meal of meals.filter((m) => !cache.byKey[m.key])) {
-  const res = await analyzeMealV2(meal.text, USER, db, client);
-  if (!res.success) {
-    console.log(`✗ ${meal.key} — ${JSON.stringify(res).slice(0, 200)}`);
-    continue;
-  }
-  cache.byKey[meal.key] = res.data;
-  writeFileSync(CACHE, `${JSON.stringify(cache, null, 2)}\n`);
-  console.log(`✓ ${meal.key}`);
-}
-
-const missing = meals.filter((m) => !cache.byKey[m.key]);
-if (missing.length > 0) {
-  console.log(`${missing.length} meal(s) failed; rerun to retry them.`);
-  process.exit(1);
-}
-
-const variants: FoodPageVariant[] = meals.map(({ key, text }) => {
-  const raw = cache.byKey[key];
+/** The page's numbers for one meal; throws on a row the page cannot name. */
+function toVariant(
+  key: string,
+  text: string,
+  raw: PipelineResult
+): FoodPageVariant {
   const parsed = toParsedMeal(raw);
   const total = raw.boundedNutrition;
   const mid = (bound: { mid: number } | null) => Math.round(bound?.mid ?? 0);
@@ -158,10 +153,49 @@ const variants: FoodPageVariant[] = meals.map(({ key, text }) => {
       fat: item.macros.fat,
     })),
   };
-});
+}
+
+const variants: FoodPageVariant[] = [];
+for (const meal of meals) {
+  const hit = cache[meal.key];
+  if (hit?.text === meal.text) {
+    variants.push(toVariant(meal.key, meal.text, hit.result));
+    continue;
+  }
+  const res = await analyzeMealV2(meal.text, USER, db, client);
+  // An unresolved result is one the app itself refuses to show.
+  if (!res.success || res.unresolved) {
+    console.log(`✗ ${meal.key} — ${JSON.stringify(res).slice(0, 200)}`);
+    continue;
+  }
+  try {
+    variants.push(toVariant(meal.key, meal.text, res.data));
+  } catch (error) {
+    console.log(`✗ ${meal.key} — ${(error as Error).message}`);
+    continue;
+  }
+  cache[meal.key] = {
+    text: meal.text,
+    capturedAt: new Date().toISOString(),
+    result: res.data,
+  };
+  writeFileSync(CACHE, `${JSON.stringify(cache, null, 2)}\n`);
+  console.log(`✓ ${meal.key}`);
+}
+
+if (variants.length < meals.length) {
+  console.log(
+    `${meals.length - variants.length} meal(s) failed; rerun to retry them.`
+  );
+  process.exit(1);
+}
 
 const page: FoodPageCapture = {
-  capturedAt: cache.capturedAt,
+  // The page is dated by its newest capture.
+  capturedAt: meals
+    .map((meal) => cache[meal.key].capturedAt)
+    .sort()
+    .at(-1) as string,
   modelProfile: process.env.PIPELINE_MODEL_PROFILE ?? 'stable',
   variants,
 };

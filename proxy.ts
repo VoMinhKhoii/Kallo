@@ -6,6 +6,7 @@ import {
   markdownAlternatePath,
   negotiate,
   unknownDocsTarget,
+  unknownFoodPageTarget,
 } from '@/lib/infra/http/negotiate';
 import { updateSession } from '@/lib/infra/supabase/middleware';
 
@@ -134,13 +135,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  // An unknown docs URL gets a real 404 from here, not from the page: by the
-  // time the page can call `notFound()` the status is already 200. After the
-  // negotiation above, so a markdown request for the same URL keeps its own 404.
-  const unknownDocs = unknownDocsTarget(request.nextUrl.pathname);
-  if (unknownDocs) {
+  // An unknown docs or food page URL gets a real 404 from here, not from the
+  // page: by the time the page can call `notFound()` the status is already 200.
+  // After the negotiation above, so a markdown request for the same URL keeps
+  // its own 404.
+  const unknownPage =
+    unknownDocsTarget(request.nextUrl.pathname) ??
+    unknownFoodPageTarget(request.nextUrl.pathname);
+  if (unknownPage) {
     const url = request.nextUrl.clone();
-    url.pathname = unknownDocs;
+    url.pathname = unknownPage;
     url.search = '';
     return NextResponse.rewrite(url);
   }

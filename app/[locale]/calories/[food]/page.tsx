@@ -14,12 +14,12 @@ import type { DishRowsMeal } from '@/components/logging/feed/persisted/meal-deta
 import { PersistedMealBody } from '@/components/logging/feed/persisted/persisted-meal-body';
 import { UserMessageBubble } from '@/components/logging/feed/turn/user-message-bubble';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
+import { FOOD_PAGES, type FoodPageVariant } from '@/lib/seo/food-pages/pages';
 import {
-  FOOD_PAGES,
+  FOOD_PAGE_LOCALE,
   FOOD_SLUGS,
-  type FoodPageVariant,
   isFoodSlug,
-} from '@/lib/seo/food-pages/pages';
+} from '@/lib/seo/food-pages/slugs';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 
@@ -37,16 +37,16 @@ interface FoodPageProps {
 }
 
 export function generateStaticParams() {
-  return FOOD_SLUGS.map((food) => ({ locale: 'en', food }));
+  return FOOD_SLUGS.map((food) => ({ locale: FOOD_PAGE_LOCALE, food }));
 }
 
 export async function generateMetadata({
   params,
 }: FoodPageProps): Promise<Metadata> {
   const { locale, food } = await params;
-  if (locale !== 'en' || !isFoodSlug(food)) return {};
+  if (locale !== FOOD_PAGE_LOCALE || !isFoodSlug(food)) return {};
   const page = FOOD_PAGES[food];
-  const url = `${SITE_URL}/en/calories/${food}`;
+  const url = `${SITE_URL}/${FOOD_PAGE_LOCALE}/calories/${food}`;
   return {
     title: page.metaTitle,
     description: page.description,
@@ -99,7 +99,7 @@ function totalsOf(variant: FoodPageVariant) {
 
 async function FoodContent({ params }: FoodPageProps) {
   const { locale, food } = await params;
-  if (locale !== 'en' || !isFoodSlug(food)) notFound();
+  if (locale !== FOOD_PAGE_LOCALE || !isFoodSlug(food)) notFound();
   const page = FOOD_PAGES[food];
   const t = await getTranslations({ locale, namespace: 'landing.header' });
   const { variants, capturedAt } = page.capture;

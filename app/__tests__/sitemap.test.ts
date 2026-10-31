@@ -12,7 +12,7 @@ vi.mock('@/lib/domain/docs/loader', () => ({
 }));
 
 const { default: sitemap } = await import('@/app/sitemap');
-const { FOOD_SLUGS } = await import('@/lib/seo/food-pages/pages');
+const { FOOD_SLUGS } = await import('@/lib/seo/food-pages/slugs');
 const { SITE_URL } = await import('@/lib/seo/site');
 
 describe('sitemap', () => {
