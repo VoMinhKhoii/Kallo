@@ -1,5 +1,5 @@
 /**
- * The shapes behind a food page: what is written by hand (`foods/<slug>.ts`)
+ * The shapes behind a food page: what is written by hand (`foods/<group>/<slug>.ts`)
  * and what the capture script writes (`captures/<slug>.json`).
  */
 

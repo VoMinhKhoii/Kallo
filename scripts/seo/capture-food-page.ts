@@ -11,12 +11,12 @@
  * one rerun, not the page. Delete the cache to capture afresh.
  *
  * The meals themselves, and how to write them, are in
- * `lib/seo/food-pages/foods/<slug>.ts`.
+ * `lib/seo/food-pages/foods/<group>/<slug>.ts`.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { buildAiRequestContext } from '@/lib/ai/adapters/user-context';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import { FOODS } from '@/lib/seo/food-pages/foods';
+import { FOODS } from '@/lib/seo/food-pages/food-registry';
 import { isFoodSlug } from '@/lib/seo/food-pages/slugs';
 import type {
   FoodPageCapture,

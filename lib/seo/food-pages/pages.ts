@@ -1,5 +1,5 @@
-import { CAPTURES } from './captures';
-import { FOODS } from './foods';
+import { CAPTURES } from './capture-registry';
+import { FOODS } from './food-registry';
 import { FOOD_SLUGS, type FoodSlug } from './slugs';
 import {
   FOOD_GROUPS,
@@ -14,7 +14,7 @@ import {
  * The public food pages: "how many calories in X", answered with real meals
  * logged in Kallo rather than one number.
  *
- * Each page is two files: `foods/<slug>.ts`, written by hand (its meals and
+ * Each page is two files: `foods/<group>/<slug>.ts`, written by hand (its meals and
  * the words around them), and `captures/<slug>.json`, written by
  * `scripts/seo/capture-food-page.ts`, which runs each meal through the real
  * pipeline once. Every number comes from the capture. English only for now: a
