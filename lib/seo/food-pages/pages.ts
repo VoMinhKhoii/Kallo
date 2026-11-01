@@ -1,70 +1,38 @@
-import chickenBurrito from './chicken-burrito.json';
-import type { FoodSlug } from './slugs';
+import { CAPTURES } from './capture-registry';
+import { FOODS } from './food-registry';
+import { FOOD_SLUGS, type FoodSlug } from './slugs';
+import {
+  FOOD_GROUPS,
+  type FoodGroup,
+  type FoodPageCapture,
+  type FoodPageCopy,
+  type FoodPageMeal,
+  type FoodPageVariant,
+} from './types';
 
 /**
  * The public food pages: "how many calories in X", answered with real meals
  * logged in Kallo rather than one number.
  *
- * Every number comes from a `<slug>.json` written by
- * `scripts/seo/capture-food-page.ts`, which runs each meal in `meals.ts`
- * through the real pipeline once; the copy below only places them. English
- * only for now: a Vietnamese page is its own dish list, not a translation.
+ * Each page is two files: `foods/<group>/<slug>.ts`, written by hand (its meals and
+ * the words around them), and `captures/<slug>.json`, written by
+ * `scripts/seo/capture-food-page.ts`, which runs each meal through the real
+ * pipeline once. Every number comes from the capture. English only for now: a
+ * Vietnamese page is its own dish list, not a translation.
  */
-
-/** One captured meal, as the capture script writes it. */
-export interface FoodPageVariant {
-  key: string;
-  /** The sentence typed into Kallo. */
-  text: string;
-  ingredients: { name: string; grams: number; kcal: number; source: string }[];
-  /** The rows the app's meal card shows. */
-  dishes: {
-    name: string;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  }[];
-}
-
-export interface FoodPageCapture {
-  capturedAt: string;
-  /** Which model profile produced the numbers, kept as provenance. */
-  modelProfile: string;
-  variants: FoodPageVariant[];
-}
-
-export interface FoodPage {
+export interface FoodPage extends FoodPageCopy {
+  slug: FoodSlug;
+  group: FoodGroup;
+  meals: FoodPageMeal[];
   capture: FoodPageCapture;
-  title: string;
-  metaTitle: string;
-  /** Sentences that quote the page's span, e.g. "300 to 1,000". */
-  description: (span: string) => string;
-  lead: (span: string) => string;
-  /** The meal whose ingredients explain what moves the number. */
-  breakdownOf: string;
-  breakdownLead: string;
-  tryLine: string;
 }
 
-const chickenBurritoCapture: FoodPageCapture = chickenBurrito;
-
-export const FOOD_PAGES: Record<FoodSlug, FoodPage> = {
-  'chicken-burrito': {
-    capture: chickenBurritoCapture,
-    title: 'How many calories are in a chicken burrito?',
-    metaTitle: 'Calories in a Chicken Burrito: 4 Real Examples',
-    description: (span) =>
-      `From about ${span} kcal. Four real chicken burritos broken down by tortilla, rice, chicken and toppings, so you can see what moves the number.`,
-    lead: (span) =>
-      `Anywhere from about ${span} kcal. A burrito is not one food: the tortilla, the rice and the toppings decide the number. Here are four real burritos, each typed into Kallo the way people describe them.`,
-    breakdownOf: 'shop',
-    breakdownLead:
-      'Inside the first burrito, here is where the calories sit. The tortilla and the rice together are nearly half of it.',
-    tryLine:
-      'Type yours the way you would say it, like “chicken burrito, extra rice, no beans, half the cheese”, and Kallo works out the rest.',
-  },
-};
+export const FOOD_PAGES = Object.fromEntries(
+  FOOD_SLUGS.map((slug) => {
+    const { copy, ...food } = FOODS[slug];
+    return [slug, { slug, ...food, ...copy, capture: CAPTURES[slug] }];
+  })
+) as Record<FoodSlug, FoodPage>;
 
 /** A meal's total, as its card's rows add up. */
 export function mealKcal(variant: FoodPageVariant): number {
@@ -97,4 +65,21 @@ export function sourcesOf(capture: FoodPageCapture): string {
   return new Intl.ListFormat('en', { type: 'conjunction' }).format([
     ...sources,
   ]);
+}
+
+/** The hub's sections: each group with its pages, in `FOOD_SLUGS` order. */
+export function pagesByGroup(): { group: FoodGroup; pages: FoodPage[] }[] {
+  return (Object.keys(FOOD_GROUPS) as FoodGroup[]).map((group) => ({
+    group,
+    pages: FOOD_SLUGS.map((slug) => FOOD_PAGES[slug]).filter(
+      (page) => page.group === group
+    ),
+  }));
+}
+
+/** The other pages in a page's group, for its "more meals" links. */
+export function relatedPages(page: FoodPage): FoodPage[] {
+  return FOOD_SLUGS.map((slug) => FOOD_PAGES[slug]).filter(
+    (other) => other.group === page.group && other.slug !== page.slug
+  );
 }

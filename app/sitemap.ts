@@ -5,7 +5,11 @@ import { loadFrontmatter } from '@/lib/domain/docs/loader';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { alternateLanguages } from '@/lib/seo/alternates';
 import { FOOD_PAGES } from '@/lib/seo/food-pages/pages';
-import { FOOD_SLUGS, foodPagePath } from '@/lib/seo/food-pages/slugs';
+import {
+  FOOD_SLUGS,
+  foodHubPath,
+  foodPagePath,
+} from '@/lib/seo/food-pages/slugs';
 import { SITE_URL } from '@/lib/seo/site';
 
 // Only the publicly crawlable, unauthenticated surfaces belong here. Everything
@@ -66,7 +70,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // The food pages are English only, so they carry no language alternates.
-  // Their date is the day their meals were captured.
+  // Their date is the day their meals were captured; the hub's is its newest
+  // page's.
+  entries.push({
+    url: `${SITE_URL}${foodHubPath()}`,
+    lastModified: new Date(
+      FOOD_SLUGS.map((slug) => FOOD_PAGES[slug].capture.capturedAt)
+        .sort()
+        .at(-1) as string
+    ),
+    changeFrequency: 'monthly',
+    priority: 0.6,
+  });
   for (const slug of FOOD_SLUGS) {
     entries.push({
       url: `${SITE_URL}${foodPagePath(slug)}`,

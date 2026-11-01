@@ -1,0 +1,174 @@
+{
+  "capturedAt": "2026-11-01T06:02:13.112Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Spaghetti bolognese at an Italian restaurant (big plate of spaghetti + beef bolognese sauce + parmesan on top)",
+      "ingredients": [
+        {
+          "name": "Spaghetti",
+          "grams": 280,
+          "kcal": 433,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Beef bolognese sauce",
+          "grams": 150,
+          "kcal": 280,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ground beef",
+          "grams": 40,
+          "kcal": 96,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Parmesan cheese",
+          "grams": 15,
+          "kcal": 63,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Spaghetti bolognese",
+          "calories": 918,
+          "protein": 68,
+          "carbs": 90,
+          "fat": 32
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade spaghetti bolognese (100g dry spaghetti + 120g lean beef mince + tomato sauce + onion + 1 teaspoon olive oil)",
+      "ingredients": [
+        {
+          "name": "Spaghetti",
+          "grams": 100,
+          "kcal": 364,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lean beef mince",
+          "grams": 120,
+          "kcal": 157,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 55,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Onion",
+          "grams": 21,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 2,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade spaghetti bolognese",
+          "calories": 562,
+          "protein": 40,
+          "carbs": 80,
+          "fat": 10
+        }
+      ]
+    },
+    {
+      "key": "small",
+      "text": "Spaghetti bolognese, small portion (1 cup cooked spaghetti + 1 ladle of beef bolognese sauce, no cheese)",
+      "ingredients": [
+        {
+          "name": "Spaghetti",
+          "grams": 140,
+          "kcal": 217,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Beef bolognese sauce",
+          "grams": 80,
+          "kcal": 63,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 2,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Spaghetti bolognese",
+          "calories": 298,
+          "protein": 9,
+          "carbs": 49,
+          "fat": 7
+        }
+      ]
+    },
+    {
+      "key": "zucchini",
+      "text": "Turkey bolognese on zucchini noodles (150g turkey mince + tomato sauce + 2 spiralized zucchini + a bit of parmesan)",
+      "ingredients": [
+        {
+          "name": "Turkey mince",
+          "grams": 150,
+          "kcal": 222,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 120,
+          "kcal": 35,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Zucchini noodles",
+          "grams": 266,
+          "kcal": 53,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Parmesan",
+          "grams": 10,
+          "kcal": 38,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Turkey bolognese on zucchini noodles",
+          "calories": 389,
+          "protein": 38,
+          "carbs": 15,
+          "fat": 20
+        }
+      ]
+    }
+  ]
+}

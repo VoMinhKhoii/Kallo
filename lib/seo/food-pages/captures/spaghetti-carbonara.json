@@ -1,0 +1,180 @@
+{
+  "capturedAt": "2026-11-01T06:26:11.274Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Spaghetti carbonara at an Italian restaurant (spaghetti + guanciale + egg yolks + pecorino + black pepper)",
+      "ingredients": [
+        {
+          "name": "Spaghetti",
+          "grams": 200,
+          "kcal": 309,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Guanciale",
+          "grams": 30,
+          "kcal": 97,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg yolks",
+          "grams": 36,
+          "kcal": 114,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pecorino",
+          "grams": 20,
+          "kcal": 77,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Black pepper",
+          "grams": 1,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Spaghetti carbonara",
+          "calories": 600,
+          "protein": 28,
+          "carbs": 64,
+          "fat": 26
+        }
+      ]
+    },
+    {
+      "key": "cream",
+      "text": "Spaghetti carbonara made with cream (spaghetti + bacon + cream + egg + parmesan)",
+      "ingredients": [
+        {
+          "name": "Spaghetti",
+          "grams": 80,
+          "kcal": 291,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 30,
+          "kcal": 146,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cream",
+          "grams": 60,
+          "kcal": 209,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 45,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Parmesan",
+          "grams": 15,
+          "kcal": 63,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "Vietnam’s National Institute of Nutrition"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Spaghetti carbonara",
+          "calories": 816,
+          "protein": 32,
+          "carbs": 64,
+          "fat": 48
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade carbonara (100g dry spaghetti + 2 eggs + 40g pancetta + 20g parmesan)",
+      "ingredients": [
+        {
+          "name": "Spaghetti",
+          "grams": 100,
+          "kcal": 364,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Eggs",
+          "grams": 29,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pancetta",
+          "grams": 40,
+          "kcal": 298,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Parmesan",
+          "grams": 20,
+          "kcal": 85,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade carbonara",
+          "calories": 788,
+          "protein": 24,
+          "carbs": 78,
+          "fat": 42
+        }
+      ]
+    },
+    {
+      "key": "small",
+      "text": "Small plate of carbonara (1 cup cooked spaghetti + a bit of bacon + egg + parmesan)",
+      "ingredients": [
+        {
+          "name": "Spaghetti",
+          "grams": 140,
+          "kcal": 217,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 10,
+          "kcal": 47,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 45,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Parmesan",
+          "grams": 10,
+          "kcal": 42,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Carbonara",
+          "calories": 367,
+          "protein": 20,
+          "carbs": 45,
+          "fat": 12
+        }
+      ]
+    }
+  ]
+}

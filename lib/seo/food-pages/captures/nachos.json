@@ -1,0 +1,192 @@
+{
+  "capturedAt": "2026-11-01T06:19:36.217Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "loaded",
+      "text": "Loaded nachos at a bar, shared between 2 (tortilla chips + ground beef + melted cheese + sour cream + guacamole + jalapeños), I ate half",
+      "ingredients": [
+        {
+          "name": "Tortilla chips",
+          "grams": 60,
+          "kcal": 298,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ground beef",
+          "grams": 45,
+          "kcal": 105,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Melted cheese",
+          "grams": 30,
+          "kcal": 121,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sour cream",
+          "grams": 30,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Guacamole",
+          "grams": 40,
+          "kcal": 71,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Jalapeños",
+          "grams": 10,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 3,
+          "kcal": 24,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Loaded nachos",
+          "calories": 684,
+          "protein": 24,
+          "carbs": 47,
+          "fat": 44
+        }
+      ]
+    },
+    {
+      "key": "cheese-sauce",
+      "text": "Nachos with cheese sauce (tortilla chips + nacho cheese sauce + jalapeños)",
+      "ingredients": [
+        {
+          "name": "Tortilla chips",
+          "grams": 40,
+          "kcal": 199,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nacho cheese sauce",
+          "grams": 60,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Jalapeños",
+          "grams": 18,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Nachos with cheese sauce",
+          "calories": 310,
+          "protein": 7,
+          "carbs": 32,
+          "fat": 17
+        }
+      ]
+    },
+    {
+      "key": "chicken",
+      "text": "Chicken nachos (tortilla chips + shredded chicken + black beans + cheese + salsa + sour cream)",
+      "ingredients": [
+        {
+          "name": "Tortilla chips",
+          "grams": 30,
+          "kcal": 149,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 3,
+          "kcal": 27,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Shredded chicken",
+          "grams": 35,
+          "kcal": 55,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Black beans",
+          "grams": 30,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 25,
+          "kcal": 101,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salsa",
+          "grams": 30,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sour cream",
+          "grams": 20,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken nachos",
+          "calories": 424,
+          "protein": 22,
+          "carbs": 31,
+          "fat": 23
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade nachos (40g tortilla chips + 30g shredded cheese + black beans + salsa), no sour cream",
+      "ingredients": [
+        {
+          "name": "Tortilla chips",
+          "grams": 40,
+          "kcal": 199,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Shredded cheese",
+          "grams": 30,
+          "kcal": 121,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Black beans",
+          "grams": 54,
+          "kcal": 73,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salsa",
+          "grams": 36,
+          "kcal": 13,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade nachos",
+          "calories": 405,
+          "protein": 15,
+          "carbs": 43,
+          "fat": 19
+        }
+      ]
+    }
+  ]
+}

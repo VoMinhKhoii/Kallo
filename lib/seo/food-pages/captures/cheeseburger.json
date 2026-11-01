@@ -1,0 +1,229 @@
+{
+  "capturedAt": "2026-11-01T06:17:57.358Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Cheeseburger at a restaurant (brioche bun + 6oz beef patty + 2 slices of cheddar + bacon + lettuce + tomato + mayo) with a side of fries",
+      "ingredients": [
+        {
+          "name": "Brioche bun",
+          "grams": 70,
+          "kcal": 217,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Beef patty",
+          "grams": 170,
+          "kcal": 406,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheddar cheese",
+          "grams": 56,
+          "kcal": 226,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 15,
+          "kcal": 69,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 14,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 38,
+          "kcal": 8,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Mayonnaise",
+          "grams": 15,
+          "kcal": 105,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "French fries",
+          "grams": 150,
+          "kcal": 226,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cheeseburger",
+          "calories": 1033,
+          "protein": 67,
+          "carbs": 41,
+          "fat": 67
+        },
+        {
+          "name": "French fries",
+          "calories": 226,
+          "protein": 3,
+          "carbs": 37,
+          "fat": 7
+        }
+      ]
+    },
+    {
+      "key": "fast-food",
+      "text": "Fast food double cheeseburger (bun + 2 thin beef patties + 2 slices of American cheese + pickles + ketchup + mustard)",
+      "ingredients": [
+        {
+          "name": "Beef patty",
+          "grams": 100,
+          "kcal": 210,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bun",
+          "grams": 50,
+          "kcal": 137,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "American cheese",
+          "grams": 40,
+          "kcal": 147,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pickles",
+          "grams": 20,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ketchup",
+          "grams": 15,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mustard",
+          "grams": 5,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Double cheeseburger",
+          "calories": 518,
+          "protein": 39,
+          "carbs": 32,
+          "fat": 26
+        }
+      ]
+    },
+    {
+      "key": "lettuce-wrap",
+      "text": "Cheeseburger with no bun, in a lettuce wrap (quarter-pound beef patty + 1 slice of cheddar + tomato + onion + mustard)",
+      "ingredients": [
+        {
+          "name": "Lettuce",
+          "grams": 29,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ground beef patty",
+          "grams": 113,
+          "kcal": 271,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheddar cheese",
+          "grams": 28,
+          "kcal": 113,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 49,
+          "kcal": 10,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Onion",
+          "grams": 18,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mustard",
+          "grams": 5,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cheeseburger in lettuce wrap",
+          "calories": 409,
+          "protein": 35,
+          "carbs": 6,
+          "fat": 28
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade cheeseburger (whole wheat bun + 120g lean beef patty + 1 slice of light cheese + lettuce + tomato + ketchup)",
+      "ingredients": [
+        {
+          "name": "Whole wheat bun",
+          "grams": 60,
+          "kcal": 161,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lean beef patty",
+          "grams": 120,
+          "kcal": 174,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Light cheese slice",
+          "grams": 21,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 19,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 39,
+          "kcal": 8,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Ketchup",
+          "grams": 15,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade cheeseburger",
+          "calories": 400,
+          "protein": 44,
+          "carbs": 34,
+          "fat": 10
+        }
+      ]
+    }
+  ]
+}

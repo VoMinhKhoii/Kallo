@@ -1,0 +1,163 @@
+{
+  "capturedAt": "2026-11-01T06:25:22.618Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "meal-prep",
+      "text": "Meal prep chicken and rice (150g chicken breast + 150g cooked white rice + 100g broccoli)",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 150,
+          "kcal": 171,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "White rice",
+          "grams": 150,
+          "kcal": 190,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Broccoli",
+          "grams": 100,
+          "kcal": 42,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken and rice meal prep",
+          "calories": 403,
+          "protein": 41,
+          "carbs": 49,
+          "fat": 5
+        }
+      ]
+    },
+    {
+      "key": "halal-cart",
+      "text": "Chicken over rice from a halal cart (yellow rice + chicken + lettuce + white sauce + hot sauce)",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 120,
+          "kcal": 182,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Yellow rice",
+          "grams": 160,
+          "kcal": 203,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 29,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "White sauce",
+          "grams": 40,
+          "kcal": 59,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hot sauce",
+          "grams": 10,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken over rice",
+          "calories": 494,
+          "protein": 43,
+          "carbs": 50,
+          "fat": 14
+        }
+      ]
+    },
+    {
+      "key": "thighs",
+      "text": "Chicken and rice (2 boneless chicken thighs pan-fried in oil + 1 cup of jasmine rice)",
+      "ingredients": [
+        {
+          "name": "Boneless chicken thighs",
+          "grams": 150,
+          "kcal": 325,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Jasmine rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Pan-fried chicken thighs",
+          "calories": 325,
+          "protein": 42,
+          "carbs": 2,
+          "fat": 17
+        },
+        {
+          "name": "Jasmine rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "bulk",
+      "text": "Big chicken and rice bowl (200g chicken breast + 2 cups cooked rice + 1 tablespoon olive oil + half an avocado)",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 200,
+          "kcal": 237,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Cooked rice",
+          "grams": 320,
+          "kcal": 404,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 14,
+          "kcal": 122,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Avocado",
+          "grams": 53,
+          "kcal": 94,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken and rice bowl",
+          "calories": 857,
+          "protein": 55,
+          "carbs": 95,
+          "fat": 29
+        }
+      ]
+    }
+  ]
+}

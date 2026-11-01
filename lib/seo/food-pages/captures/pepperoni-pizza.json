@@ -1,0 +1,168 @@
+{
+  "capturedAt": "2026-11-01T06:20:18.575Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "two-slices",
+      "text": "2 slices of a large pepperoni pizza from a pizza place (regular crust + tomato sauce + mozzarella + pepperoni)",
+      "ingredients": [
+        {
+          "name": "Regular crust",
+          "grams": 110,
+          "kcal": 375,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 30,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mozzarella",
+          "grams": 60,
+          "kcal": 168,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pepperoni",
+          "grams": 24,
+          "kcal": 111,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Pepperoni pizza",
+          "calories": 670,
+          "protein": 27,
+          "carbs": 68,
+          "fat": 32
+        }
+      ]
+    },
+    {
+      "key": "deep-dish",
+      "text": "1 slice of deep-dish pepperoni pizza",
+      "ingredients": [
+        {
+          "name": "Deep-dish pizza dough",
+          "grams": 30,
+          "kcal": 160,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mozzarella cheese",
+          "grams": 28,
+          "kcal": 83,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 25,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pepperoni",
+          "grams": 18,
+          "kcal": 89,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 2,
+          "kcal": 16,
+          "source": "Vietnam’s National Institute of Nutrition"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Deep-dish pepperoni pizza",
+          "calories": 356,
+          "protein": 12,
+          "carbs": 19,
+          "fat": 26
+        }
+      ]
+    },
+    {
+      "key": "thin-half",
+      "text": "Half of a 12 inch thin crust pepperoni pizza",
+      "ingredients": [
+        {
+          "name": "Thin crust pizza dough",
+          "grams": 53,
+          "kcal": 281,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 36,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mozzarella cheese",
+          "grams": 43,
+          "kcal": 126,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pepperoni",
+          "grams": 28,
+          "kcal": 142,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Pepperoni pizza",
+          "calories": 560,
+          "protein": 19,
+          "carbs": 30,
+          "fat": 40
+        }
+      ]
+    },
+    {
+      "key": "frozen",
+      "text": "Half a frozen pepperoni pizza, about 200g",
+      "ingredients": [
+        {
+          "name": "Pizza crust",
+          "grams": 67,
+          "kcal": 303,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 44,
+          "kcal": 13,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mozzarella cheese",
+          "grams": 56,
+          "kcal": 164,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pepperoni",
+          "grams": 33,
+          "kcal": 166,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Pepperoni pizza",
+          "calories": 646,
+          "protein": 24,
+          "carbs": 38,
+          "fat": 44
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,234 @@
+{
+  "capturedAt": "2026-11-01T06:24:23.431Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Cobb salad at a restaurant (romaine + grilled chicken + bacon + hard-boiled egg + avocado + blue cheese + tomato) with ranch dressing",
+      "ingredients": [
+        {
+          "name": "Romaine",
+          "grams": 90,
+          "kcal": 19,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken",
+          "grams": 100,
+          "kcal": 151,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 20,
+          "kcal": 91,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hard-boiled egg",
+          "grams": 45,
+          "kcal": 67,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 53,
+          "kcal": 90,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Blue cheese",
+          "grams": 20,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 58,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ranch dressing",
+          "grams": 30,
+          "kcal": 129,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cobb salad",
+          "calories": 629,
+          "protein": 50,
+          "carbs": 13,
+          "fat": 42
+        }
+      ]
+    },
+    {
+      "key": "vinaigrette",
+      "text": "Cobb salad with red wine vinaigrette instead of ranch (romaine + chicken + bacon + egg + avocado + tomato + blue cheese)",
+      "ingredients": [
+        {
+          "name": "Romaine",
+          "grams": 81,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken",
+          "grams": 100,
+          "kcal": 163,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 20,
+          "kcal": 91,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 44,
+          "kcal": 66,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 49,
+          "kcal": 85,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 78,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Blue cheese",
+          "grams": 30,
+          "kcal": 106,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Red wine vinaigrette",
+          "grams": 30,
+          "kcal": 116,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cobb salad with red wine vinaigrette",
+          "calories": 660,
+          "protein": 52,
+          "carbs": 12,
+          "fat": 45
+        }
+      ]
+    },
+    {
+      "key": "no-bacon",
+      "text": "Cobb salad, no bacon, no blue cheese (romaine + chicken + egg + avocado + tomato + light vinaigrette)",
+      "ingredients": [
+        {
+          "name": "Romaine",
+          "grams": 110,
+          "kcal": 23,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken",
+          "grams": 100,
+          "kcal": 154,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 44,
+          "kcal": 72,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 49,
+          "kcal": 85,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 87,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Light vinaigrette",
+          "grams": 30,
+          "kcal": 30,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cobb salad",
+          "calories": 383,
+          "protein": 39,
+          "carbs": 15,
+          "fat": 19
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade cobb salad (2 cups romaine + 100g chicken breast + 1 boiled egg + a quarter of an avocado + 1 strip of bacon + 1 tablespoon blue cheese dressing)",
+      "ingredients": [
+        {
+          "name": "Romaine",
+          "grams": 86,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken breast",
+          "grams": 100,
+          "kcal": 150,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Boiled egg",
+          "grams": 44,
+          "kcal": 66,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 25,
+          "kcal": 51,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 8,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Blue cheese dressing",
+          "grams": 15,
+          "kcal": 73,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade cobb salad",
+          "calories": 395,
+          "protein": 41,
+          "carbs": 6,
+          "fat": 23
+        }
+      ]
+    }
+  ]
+}

@@ -192,7 +192,9 @@ describe('unknownDocsTarget', () => {
 });
 
 describe('unknownFoodPageTarget', () => {
-  it('leaves a published food page, with or without a trailing slash', () => {
+  it('leaves the hub and a published page, with or without a trailing slash', () => {
+    expect(unknownFoodPageTarget('/en/calories')).toBeNull();
+    expect(unknownFoodPageTarget('/en/calories/')).toBeNull();
     expect(unknownFoodPageTarget('/en/calories/chicken-burrito')).toBeNull();
     expect(unknownFoodPageTarget('/en/calories/chicken-burrito/')).toBeNull();
     expect(unknownFoodPageTarget('/en/calories/chicken%2Dburrito')).toBeNull();
@@ -200,8 +202,6 @@ describe('unknownFoodPageTarget', () => {
 
   it('gives every other /calories URL the real 404', () => {
     for (const pathname of [
-      '/en/calories',
-      '/en/calories/',
       '/en/calories/pho-bo',
       '/en/calories/Chicken-Burrito',
       '/en/calories/chicken-burrito/extra',
@@ -209,10 +209,11 @@ describe('unknownFoodPageTarget', () => {
     ]) {
       expect(unknownFoodPageTarget(pathname), pathname).toBe('/en/not-found');
     }
-    // English only: the same slug under another locale is not a page.
+    // English only: the same paths under another locale are not pages.
     expect(unknownFoodPageTarget('/vi/calories/chicken-burrito')).toBe(
       '/vi/not-found'
     );
+    expect(unknownFoodPageTarget('/vi/calories')).toBe('/vi/not-found');
   });
 
   it('is null outside /{locale}/calories and for a malformed escape', () => {

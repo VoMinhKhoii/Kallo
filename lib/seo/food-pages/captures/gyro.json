@@ -1,0 +1,240 @@
+{
+  "capturedAt": "2026-11-01T06:26:21.274Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "lamb",
+      "text": "Lamb gyro from a Greek place (pita + gyro meat + tzatziki + tomato + onion + fries inside)",
+      "ingredients": [
+        {
+          "name": "Pita bread",
+          "grams": 60,
+          "kcal": 162,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lamb gyro meat",
+          "grams": 100,
+          "kcal": 291,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tzatziki",
+          "grams": 40,
+          "kcal": 29,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 40,
+          "kcal": 8,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Onion",
+          "grams": 18,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "French fries",
+          "grams": 60,
+          "kcal": 98,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 3,
+          "kcal": 27,
+          "source": "Vietnam’s National Institute of Nutrition"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Lamb gyro",
+          "calories": 622,
+          "protein": 36,
+          "carbs": 54,
+          "fat": 29
+        }
+      ]
+    },
+    {
+      "key": "chicken",
+      "text": "Chicken gyro (pita + chicken gyro meat + tzatziki + tomato + onion), no fries",
+      "ingredients": [
+        {
+          "name": "Pita",
+          "grams": 60,
+          "kcal": 162,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken gyro meat",
+          "grams": 110,
+          "kcal": 236,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 43,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tzatziki",
+          "grams": 60,
+          "kcal": 44,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 30,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Tomato",
+          "grams": 50,
+          "kcal": 10,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Onion",
+          "grams": 20,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken gyro",
+          "calories": 508,
+          "protein": 39,
+          "carbs": 41,
+          "fat": 21
+        }
+      ]
+    },
+    {
+      "key": "plate",
+      "text": "Gyro plate (gyro meat + rice + salad with tomato, cucumber and feta + tzatziki + 1 pita)",
+      "ingredients": [
+        {
+          "name": "Gyro meat",
+          "grams": 120,
+          "kcal": 364,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salad",
+          "grams": 57,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 68,
+          "kcal": 13,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 57,
+          "kcal": 9,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Feta cheese",
+          "grams": 40,
+          "kcal": 106,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tzatziki",
+          "grams": 60,
+          "kcal": 35,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 8,
+          "kcal": 68,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pita bread",
+          "grams": 60,
+          "kcal": 162,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Gyro plate",
+          "calories": 970,
+          "protein": 53,
+          "carbs": 88,
+          "fat": 45
+        }
+      ]
+    },
+    {
+      "key": "bowl",
+      "text": "Chicken gyro bowl, no pita (chicken + rice + cucumber + tomato + a bit of feta + tzatziki)",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 100,
+          "kcal": 159,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 48,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 48,
+          "kcal": 10,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Feta",
+          "grams": 10,
+          "kcal": 26,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tzatziki",
+          "grams": 40,
+          "kcal": 29,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken gyro bowl",
+          "calories": 435,
+          "protein": 41,
+          "carbs": 51,
+          "fat": 8
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "capturedAt": "2026-11-01T06:22:00.877Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "shop",
+      "text": "Beef pho from a pho shop, large bowl (rice noodles + rare beef + brisket + broth + bean sprouts + basil + hoisin and sriracha)",
+      "ingredients": [
+        {
+          "name": "Rice noodles",
+          "grams": 200,
+          "kcal": 210,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rare beef",
+          "grams": 105,
+          "kcal": 183,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Beef brisket",
+          "grams": 45,
+          "kcal": 120,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Beef broth",
+          "grams": 550,
+          "kcal": 39,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bean sprouts",
+          "grams": 57,
+          "kcal": 21,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Basil",
+          "grams": 7,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hoisin sauce",
+          "grams": 10,
+          "kcal": 22,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sriracha",
+          "grams": 8,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Beef pho",
+          "calories": 604,
+          "protein": 47,
+          "carbs": 58,
+          "fat": 20
+        }
+      ]
+    },
+    {
+      "key": "chicken",
+      "text": "Chicken pho, small bowl (rice noodles + chicken breast + broth + herbs), drank half the broth",
+      "ingredients": [
+        {
+          "name": "Rice noodles",
+          "grams": 160,
+          "kcal": 168,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken breast",
+          "grams": 70,
+          "kcal": 79,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken broth",
+          "grams": 250,
+          "kcal": 86,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Herbs",
+          "grams": 9,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken pho",
+          "calories": 335,
+          "protein": 25,
+          "carbs": 48,
+          "fat": 5
+        }
+      ]
+    },
+    {
+      "key": "meatballs",
+      "text": "Beef pho with extra noodles (rice noodles + beef meatballs + brisket + broth)",
+      "ingredients": [
+        {
+          "name": "Rice noodles",
+          "grams": 200,
+          "kcal": 210,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Beef brisket",
+          "grams": 60,
+          "kcal": 169,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Beef meatballs",
+          "grams": 60,
+          "kcal": 168,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Beef broth",
+          "grams": 500,
+          "kcal": 67,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Beef pho with extra noodles",
+          "calories": 615,
+          "protein": 38,
+          "carbs": 59,
+          "fat": 25
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade beef pho (100g fresh rice noodles + 80g lean sirloin + clear broth + herbs, no hoisin)",
+      "ingredients": [
+        {
+          "name": "Fresh rice noodles",
+          "grams": 100,
+          "kcal": 143,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Lean sirloin",
+          "grams": 80,
+          "kcal": 135,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Clear broth",
+          "grams": 300,
+          "kcal": 43,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Herbs",
+          "grams": 9,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Beef pho",
+          "calories": 323,
+          "protein": 33,
+          "carbs": 36,
+          "fat": 6
+        }
+      ]
+    }
+  ]
+}

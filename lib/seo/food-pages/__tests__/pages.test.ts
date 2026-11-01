@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { FOOD_PAGE_MEALS } from '../meals';
 import {
   FOOD_PAGES,
-  type FoodPageCapture,
   kcalSpan,
   mealKcal,
+  pagesByGroup,
+  relatedPages,
   sourcesOf,
 } from '../pages';
-import { FOOD_SLUGS, foodPagePath, isFoodSlug } from '../slugs';
+import { FOOD_SLUGS, foodHubPath, foodPagePath, isFoodSlug } from '../slugs';
+import type { FoodPageCapture } from '../types';
 
 // Each ingredient is rounded on its own, so their sum can drift from the card
 // total by about half a kcal per ingredient.
@@ -20,7 +21,7 @@ describe.each(FOOD_SLUGS)('food page %s', (slug) => {
   it('captured exactly the meals it lists, in order and word for word', () => {
     // A meal reworded in meals.ts without a fresh capture fails here.
     expect(variants.map((v) => [v.key, v.text])).toEqual(
-      FOOD_PAGE_MEALS[slug].map((m) => [m.key, m.text])
+      page.meals.map((m) => [m.key, m.text])
     );
     expect(variants.map((v) => v.key)).toContain(page.breakdownOf);
   });
@@ -60,6 +61,23 @@ describe('kcalSpan', () => {
   });
 });
 
+describe('the hub', () => {
+  it('lists every page exactly once', () => {
+    const listed = pagesByGroup().flatMap(({ pages }) =>
+      pages.map((p) => p.slug)
+    );
+    expect([...listed].sort()).toEqual([...FOOD_SLUGS].sort());
+  });
+
+  it('relates a page to the rest of its group, never itself', () => {
+    const page = FOOD_PAGES['chicken-burrito'];
+    const related = relatedPages(page);
+    expect(related.length).toBeGreaterThan(0);
+    expect(related.every((p) => p.group === page.group)).toBe(true);
+    expect(related.map((p) => p.slug)).not.toContain(page.slug);
+  });
+});
+
 describe('sourcesOf', () => {
   it('names each food table the meals used, once', () => {
     expect(sourcesOf(FOOD_PAGES['chicken-burrito'].capture)).toBe(
@@ -72,6 +90,7 @@ describe('slugs', () => {
   it('accepts a page and rejects anything else, inherited keys included', () => {
     expect(isFoodSlug('chicken-burrito')).toBe(true);
     expect(isFoodSlug('pho-bo')).toBe(false);
+    expect(isFoodSlug('pho')).toBe(true);
     expect(isFoodSlug('toString')).toBe(false);
   });
 
@@ -79,5 +98,6 @@ describe('slugs', () => {
     expect(foodPagePath('chicken-burrito')).toBe(
       '/en/calories/chicken-burrito'
     );
+    expect(foodHubPath()).toBe('/en/calories');
   });
 });

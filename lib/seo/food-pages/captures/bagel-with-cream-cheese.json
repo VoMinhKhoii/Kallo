@@ -1,0 +1,144 @@
+{
+  "capturedAt": "2026-11-01T06:17:19.249Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "deli",
+      "text": "Bagel with cream cheese from a deli (1 large plain bagel + a thick layer of cream cheese)",
+      "ingredients": [
+        {
+          "name": "Plain bagel",
+          "grams": 105,
+          "kcal": 277,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cream cheese",
+          "grams": 30,
+          "kcal": 109,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bagel with cream cheese",
+          "calories": 385,
+          "protein": 13,
+          "carbs": 57,
+          "fat": 12
+        }
+      ]
+    },
+    {
+      "key": "lox",
+      "text": "Everything bagel + cream cheese + 60g smoked salmon + capers + red onion",
+      "ingredients": [
+        {
+          "name": "Everything bagel",
+          "grams": 95,
+          "kcal": 272,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cream cheese",
+          "grams": 30,
+          "kcal": 107,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Smoked salmon",
+          "grams": 60,
+          "kcal": 67,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Capers",
+          "grams": 5,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Red onion",
+          "grams": 14,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Everything bagel with cream cheese and smoked salmon",
+          "calories": 453,
+          "protein": 24,
+          "carbs": 58,
+          "fat": 14
+        }
+      ]
+    },
+    {
+      "key": "half-light",
+      "text": "Half a plain bagel, toasted, with 1 tablespoon of light cream cheese",
+      "ingredients": [
+        {
+          "name": "Plain bagel",
+          "grams": 43,
+          "kcal": 122,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Light cream cheese",
+          "grams": 14,
+          "kcal": 30,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Toasted plain bagel",
+          "calories": 152,
+          "protein": 6,
+          "carbs": 25,
+          "fat": 3
+        }
+      ]
+    },
+    {
+      "key": "veg",
+      "text": "Whole wheat bagel + 2 tablespoons of cream cheese + sliced tomato + cucumber",
+      "ingredients": [
+        {
+          "name": "Whole wheat bagel",
+          "grams": 100,
+          "kcal": 255,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cream cheese",
+          "grams": 28,
+          "kcal": 99,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 60,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 50,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Whole wheat bagel with cream cheese, tomato and cucumber",
+          "calories": 377,
+          "protein": 12,
+          "carbs": 60,
+          "fat": 10
+        }
+      ]
+    }
+  ]
+}

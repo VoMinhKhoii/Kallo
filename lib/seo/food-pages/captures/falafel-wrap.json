@@ -1,0 +1,198 @@
+{
+  "capturedAt": "2026-11-01T06:26:04.845Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "shop",
+      "text": "Falafel wrap from a falafel shop (large pita + 5 falafel balls + hummus + tahini + salad + pickles)",
+      "ingredients": [
+        {
+          "name": "Large pita",
+          "grams": 85,
+          "kcal": 229,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Falafel balls",
+          "grams": 125,
+          "kcal": 426,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Frying oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Hummus",
+          "grams": 60,
+          "kcal": 151,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tahini sauce",
+          "grams": 20,
+          "kcal": 127,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salad",
+          "grams": 40,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pickles",
+          "grams": 30,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Falafel wrap",
+          "calories": 986,
+          "protein": 33,
+          "carbs": 102,
+          "fat": 49
+        }
+      ]
+    },
+    {
+      "key": "fries",
+      "text": "Falafel wrap (pita + 4 falafel + fries inside + garlic sauce + salad)",
+      "ingredients": [
+        {
+          "name": "Pita",
+          "grams": 60,
+          "kcal": 162,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Falafel",
+          "grams": 100,
+          "kcal": 347,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 3,
+          "kcal": 24,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "French fries",
+          "grams": 100,
+          "kcal": 172,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Garlic sauce",
+          "grams": 30,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salad",
+          "grams": 40,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Falafel wrap",
+          "calories": 782,
+          "protein": 23,
+          "carbs": 95,
+          "fat": 34
+        }
+      ]
+    },
+    {
+      "key": "plate",
+      "text": "Falafel plate (4 falafel + hummus + tabbouleh + 1 pita bread)",
+      "ingredients": [
+        {
+          "name": "Falafel",
+          "grams": 120,
+          "kcal": 451,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Frying oil",
+          "grams": 8,
+          "kcal": 72,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Hummus",
+          "grams": 60,
+          "kcal": 151,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tabbouleh",
+          "grams": 100,
+          "kcal": 93,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pita bread",
+          "grams": 60,
+          "kcal": 162,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Falafel plate",
+          "calories": 928,
+          "protein": 29,
+          "carbs": 99,
+          "fat": 46
+        }
+      ]
+    },
+    {
+      "key": "baked",
+      "text": "Homemade falafel wrap (1 whole wheat wrap + 4 baked falafel + salad + 1 tablespoon tahini)",
+      "ingredients": [
+        {
+          "name": "Whole wheat wrap",
+          "grams": 55,
+          "kcal": 171,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Baked falafel",
+          "grams": 120,
+          "kcal": 361,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salad",
+          "grams": 57,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tahini",
+          "grams": 15,
+          "kcal": 95,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade falafel wrap",
+          "calories": 639,
+          "protein": 25,
+          "carbs": 68,
+          "fat": 30
+        }
+      ]
+    }
+  ]
+}

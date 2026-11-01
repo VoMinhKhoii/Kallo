@@ -1,0 +1,249 @@
+{
+  "capturedAt": "2026-11-01T06:29:06.908Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Thai green curry with chicken at a Thai restaurant (coconut milk curry + chicken + bamboo shoots + Thai basil) with jasmine rice",
+      "ingredients": [
+        {
+          "name": "Coconut milk",
+          "grams": 120,
+          "kcal": 257,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Green curry paste",
+          "grams": 20,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken",
+          "grams": 120,
+          "kcal": 146,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bamboo shoots",
+          "grams": 40,
+          "kcal": 13,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thai basil",
+          "grams": 5,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Jasmine rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Thai green curry with chicken",
+          "calories": 471,
+          "protein": 27,
+          "carbs": 7,
+          "fat": 37
+        },
+        {
+          "name": "Jasmine rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "tofu",
+      "text": "Thai green curry with tofu and vegetables, with jasmine rice",
+      "ingredients": [
+        {
+          "name": "Tofu",
+          "grams": 100,
+          "kcal": 85,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mixed vegetables",
+          "grams": 100,
+          "kcal": 65,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Green curry paste",
+          "grams": 20,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Coconut milk",
+          "grams": 60,
+          "kcal": 147,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 7,
+          "kcal": 56,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Jasmine rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Thai green curry with tofu and vegetables",
+          "calories": 362,
+          "protein": 13,
+          "carbs": 21,
+          "fat": 25
+        },
+        {
+          "name": "Jasmine rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "no-rice",
+      "text": "Chicken green curry, no rice (chicken + eggplant + coconut milk curry)",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 100,
+          "kcal": 129,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Eggplant",
+          "grams": 80,
+          "kcal": 32,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Coconut milk",
+          "grams": 60,
+          "kcal": 148,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Green curry paste",
+          "grams": 5,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Coconut milk",
+          "grams": 10,
+          "kcal": 25,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Fish sauce",
+          "grams": 5,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Sugar",
+          "grams": 3,
+          "kcal": 12,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken green curry",
+          "calories": 389,
+          "protein": 24,
+          "carbs": 14,
+          "fat": 26
+        }
+      ]
+    },
+    {
+      "key": "light",
+      "text": "Homemade green curry (150g chicken breast + 100ml light coconut milk + 1 tablespoon green curry paste + green beans) with 150g cooked brown rice",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 150,
+          "kcal": 214,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Light coconut milk",
+          "grams": 100,
+          "kcal": 103,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Green curry paste",
+          "grams": 15,
+          "kcal": 10,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Green beans",
+          "grams": 76,
+          "kcal": 32,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Brown rice",
+          "grams": 150,
+          "kcal": 183,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade green curry",
+          "calories": 399,
+          "protein": 47,
+          "carbs": 12,
+          "fat": 18
+        },
+        {
+          "name": "Cooked brown rice",
+          "calories": 183,
+          "protein": 4,
+          "carbs": 38,
+          "fat": 2
+        }
+      ]
+    }
+  ]
+}

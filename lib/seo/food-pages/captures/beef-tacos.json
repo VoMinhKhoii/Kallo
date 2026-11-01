@@ -1,0 +1,198 @@
+{
+  "capturedAt": "2026-11-01T06:19:09.104Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "truck",
+      "text": "3 beef tacos from a taco truck (corn tortillas + seasoned ground beef + onion + cilantro + salsa)",
+      "ingredients": [
+        {
+          "name": "Corn tortillas",
+          "grams": 75,
+          "kcal": 171,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Seasoned ground beef",
+          "grams": 150,
+          "kcal": 351,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 3,
+          "kcal": 27,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Onion",
+          "grams": 23,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cilantro",
+          "grams": 5,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salsa",
+          "grams": 45,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Beef tacos",
+          "calories": 575,
+          "protein": 43,
+          "carbs": 40,
+          "fat": 27
+        }
+      ]
+    },
+    {
+      "key": "hard-shell",
+      "text": "2 hard shell beef tacos (crunchy shells + ground beef + shredded cheese + lettuce + sour cream)",
+      "ingredients": [
+        {
+          "name": "Hard shell taco",
+          "grams": 20,
+          "kcal": 96,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ground beef",
+          "grams": 90,
+          "kcal": 210,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Shredded cheese",
+          "grams": 28,
+          "kcal": 114,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 19,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sour cream",
+          "grams": 30,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 3,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Hard shell beef tacos",
+          "calories": 510,
+          "protein": 31,
+          "carbs": 16,
+          "fat": 36
+        }
+      ]
+    },
+    {
+      "key": "carne-asada",
+      "text": "3 carne asada tacos on flour tortillas with guacamole and cheese",
+      "ingredients": [
+        {
+          "name": "Flour tortillas",
+          "grams": 72,
+          "kcal": 207,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Carne asada",
+          "grams": 60,
+          "kcal": 175,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Guacamole",
+          "grams": 31,
+          "kcal": 109,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 15,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Carne asada tacos",
+          "calories": 551,
+          "protein": 27,
+          "carbs": 39,
+          "fat": 32
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade beef tacos (2 small corn tortillas + 100g lean ground beef + lettuce + tomato + salsa + a bit of cheese)",
+      "ingredients": [
+        {
+          "name": "Corn tortillas",
+          "grams": 52,
+          "kcal": 118,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lean ground beef",
+          "grams": 100,
+          "kcal": 115,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 19,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 38,
+          "kcal": 8,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Salsa",
+          "grams": 30,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 10,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade beef tacos",
+          "calories": 295,
+          "protein": 28,
+          "carbs": 28,
+          "fat": 8
+        }
+      ]
+    }
+  ]
+}

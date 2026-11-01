@@ -16,8 +16,11 @@ const { FOOD_SLUGS } = await import('@/lib/seo/food-pages/slugs');
 const { SITE_URL } = await import('@/lib/seo/site');
 
 describe('sitemap', () => {
-  it('lists each food page once, in English only', async () => {
+  it('lists the food hub and each food page once, in English only', async () => {
     const urls = (await sitemap()).map((entry) => entry.url);
+    expect(
+      urls.filter((url) => url === `${SITE_URL}/en/calories`)
+    ).toHaveLength(1);
     for (const slug of FOOD_SLUGS) {
       expect(
         urls.filter((url) => url === `${SITE_URL}/en/calories/${slug}`)

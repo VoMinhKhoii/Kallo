@@ -1,0 +1,198 @@
+{
+  "capturedAt": "2026-11-01T06:26:22.022Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "tonkotsu",
+      "text": "Tonkotsu ramen at a ramen shop (pork bone broth + ramen noodles + 2 slices of chashu pork + half a soft-boiled egg + green onion + nori), drank most of the broth",
+      "ingredients": [
+        {
+          "name": "Pork bone broth",
+          "grams": 300,
+          "kcal": 374,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Ramen noodles",
+          "grams": 90,
+          "kcal": 396,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chashu pork",
+          "grams": 60,
+          "kcal": 113,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Soft-boiled egg",
+          "grams": 22,
+          "kcal": 33,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Green onion",
+          "grams": 9,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nori",
+          "grams": 1,
+          "kcal": 0,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Tonkotsu ramen",
+          "calories": 919,
+          "protein": 58,
+          "carbs": 57,
+          "fat": 51
+        }
+      ]
+    },
+    {
+      "key": "shoyu",
+      "text": "Shoyu chicken ramen (ramen noodles + soy sauce broth + chicken + soft-boiled egg + bamboo shoots + spinach), left most of the broth",
+      "ingredients": [
+        {
+          "name": "Ramen noodles",
+          "grams": 70,
+          "kcal": 244,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Chicken",
+          "grams": 110,
+          "kcal": 126,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Shoyu broth",
+          "grams": 330,
+          "kcal": 19,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Soy sauce",
+          "grams": 12,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Soft-boiled egg",
+          "grams": 48,
+          "kcal": 68,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bamboo shoots",
+          "grams": 40,
+          "kcal": 10,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Spinach",
+          "grams": 36,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Shoyu chicken ramen",
+          "calories": 484,
+          "protein": 42,
+          "carbs": 57,
+          "fat": 10
+        }
+      ]
+    },
+    {
+      "key": "instant",
+      "text": "Instant ramen (1 pack with the full seasoning packet) + 1 egg cracked in",
+      "ingredients": [
+        {
+          "name": "Instant ramen noodles",
+          "grams": 80,
+          "kcal": 347,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ramen seasoning packet",
+          "grams": 11,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 44,
+          "kcal": 68,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Instant ramen with egg",
+          "calories": 452,
+          "protein": 15,
+          "carbs": 55,
+          "fat": 19
+        }
+      ]
+    },
+    {
+      "key": "miso-extra",
+      "text": "Spicy miso ramen with extra noodles (ramen noodles + miso soup + chashu pork + corn + a pat of butter + soft-boiled egg)",
+      "ingredients": [
+        {
+          "name": "Ramen noodles",
+          "grams": 200,
+          "kcal": 275,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Miso broth",
+          "grams": 20,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chashu pork",
+          "grams": 70,
+          "kcal": 136,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Corn",
+          "grams": 40,
+          "kcal": 44,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Soft-boiled egg",
+          "grams": 44,
+          "kcal": 72,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Spicy miso ramen",
+          "calories": 606,
+          "protein": 39,
+          "carbs": 64,
+          "fat": 22
+        }
+      ]
+    }
+  ]
+}

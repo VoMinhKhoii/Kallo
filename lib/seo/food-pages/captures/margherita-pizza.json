@@ -1,0 +1,168 @@
+{
+  "capturedAt": "2026-11-01T06:20:33.281Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "neapolitan",
+      "text": "Neapolitan margherita pizza, the whole 12 inch pizza (thin crust + tomato sauce + fresh mozzarella + basil + olive oil)",
+      "ingredients": [
+        {
+          "name": "Thin pizza crust",
+          "grams": 150,
+          "kcal": 576,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 60,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Fresh mozzarella",
+          "grams": 125,
+          "kcal": 371,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Basil",
+          "grams": 3,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 8,
+          "kcal": 72,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Neapolitan margherita pizza",
+          "calories": 1038,
+          "protein": 33,
+          "carbs": 83,
+          "fat": 64
+        }
+      ]
+    },
+    {
+      "key": "shared",
+      "text": "Half a margherita pizza from an Italian restaurant, I shared it",
+      "ingredients": [
+        {
+          "name": "Pizza dough",
+          "grams": 110,
+          "kcal": 494,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 50,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mozzarella cheese",
+          "grams": 60,
+          "kcal": 141,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 4,
+          "kcal": 36,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Basil",
+          "grams": 1,
+          "kcal": 0,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Margherita pizza",
+          "calories": 686,
+          "protein": 22,
+          "carbs": 61,
+          "fat": 39
+        }
+      ]
+    },
+    {
+      "key": "slices",
+      "text": "2 slices of margherita pizza (regular crust + tomato sauce + mozzarella)",
+      "ingredients": [
+        {
+          "name": "Regular pizza crust",
+          "grams": 80,
+          "kcal": 402,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 60,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mozzarella",
+          "grams": 50,
+          "kcal": 148,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Margherita pizza",
+          "calories": 567,
+          "protein": 18,
+          "carbs": 46,
+          "fat": 34
+        }
+      ]
+    },
+    {
+      "key": "tortilla",
+      "text": "Homemade margherita pizza on a tortilla base (1 large flour tortilla + 3 tablespoons tomato sauce + 60g light mozzarella + basil)",
+      "ingredients": [
+        {
+          "name": "Flour tortilla",
+          "grams": 49,
+          "kcal": 150,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 45,
+          "kcal": 13,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Light mozzarella",
+          "grams": 60,
+          "kcal": 177,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Basil",
+          "grams": 2,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Margherita pizza on tortilla",
+          "calories": 340,
+          "protein": 19,
+          "carbs": 30,
+          "fat": 16
+        }
+      ]
+    }
+  ]
+}

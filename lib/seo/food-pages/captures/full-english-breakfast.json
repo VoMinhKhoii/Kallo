@@ -1,0 +1,329 @@
+{
+  "capturedAt": "2026-11-01T06:17:35.708Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "cafe",
+      "text": "Full English breakfast at a café (2 fried eggs + 2 pork sausages + 2 rashers of bacon + baked beans + hash browns + grilled tomato + mushrooms + 1 slice of toast with butter)",
+      "ingredients": [
+        {
+          "name": "Eggs",
+          "grams": 88,
+          "kcal": 168,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pork sausages",
+          "grams": 100,
+          "kcal": 326,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon rashers",
+          "grams": 40,
+          "kcal": 183,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Baked beans",
+          "grams": 130,
+          "kcal": 139,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hash browns",
+          "grams": 90,
+          "kcal": 206,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Tomato",
+          "grams": 86,
+          "kcal": 18,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Mushrooms",
+          "grams": 57,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 4,
+          "kcal": 36,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Toast",
+          "grams": 30,
+          "kcal": 87,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Fried eggs",
+          "calories": 168,
+          "protein": 12,
+          "carbs": 1,
+          "fat": 13
+        },
+        {
+          "name": "Pork sausages",
+          "calories": 326,
+          "protein": 19,
+          "carbs": 1,
+          "fat": 27
+        },
+        {
+          "name": "Bacon",
+          "calories": 183,
+          "protein": 14,
+          "carbs": 1,
+          "fat": 14
+        },
+        {
+          "name": "Baked beans",
+          "calories": 139,
+          "protein": 6,
+          "carbs": 27,
+          "fat": 1
+        },
+        {
+          "name": "Hash browns",
+          "calories": 251,
+          "protein": 2,
+          "carbs": 26,
+          "fat": 15
+        },
+        {
+          "name": "Grilled tomato",
+          "calories": 18,
+          "protein": 1,
+          "carbs": 3,
+          "fat": 0
+        },
+        {
+          "name": "Fried mushrooms",
+          "calories": 56,
+          "protein": 2,
+          "carbs": 2,
+          "fat": 5
+        },
+        {
+          "name": "Buttered toast",
+          "calories": 124,
+          "protein": 3,
+          "carbs": 16,
+          "fat": 5
+        }
+      ]
+    },
+    {
+      "key": "no-toast",
+      "text": "Full English breakfast (2 pork sausages + 2 rashers of bacon + 1 fried egg + baked beans + grilled tomato + mushrooms), no toast, no hash browns",
+      "ingredients": [
+        {
+          "name": "Pork sausages",
+          "grams": 100,
+          "kcal": 260,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 30,
+          "kcal": 137,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Fried egg",
+          "grams": 50,
+          "kcal": 95,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Baked beans",
+          "grams": 130,
+          "kcal": 139,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled tomato",
+          "grams": 70,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mushrooms",
+          "grams": 60,
+          "kcal": 24,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Full english breakfast",
+          "calories": 715,
+          "protein": 44,
+          "carbs": 35,
+          "fat": 44
+        }
+      ]
+    },
+    {
+      "key": "grilled",
+      "text": "Homemade full English (2 poached eggs + 2 grilled turkey sausages + 1 rasher of back bacon + half a can of baked beans + mushrooms)",
+      "ingredients": [
+        {
+          "name": "Eggs",
+          "grams": 100,
+          "kcal": 138,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Turkey sausages",
+          "grams": 100,
+          "kcal": 189,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Back bacon",
+          "grams": 25,
+          "kcal": 134,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Baked beans",
+          "grams": 200,
+          "kcal": 214,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mushrooms",
+          "grams": 67,
+          "kcal": 47,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Poached eggs",
+          "calories": 138,
+          "protein": 13,
+          "carbs": 1,
+          "fat": 10
+        },
+        {
+          "name": "Grilled turkey sausages",
+          "calories": 189,
+          "protein": 24,
+          "carbs": 0,
+          "fat": 10
+        },
+        {
+          "name": "Back bacon",
+          "calories": 134,
+          "protein": 9,
+          "carbs": 0,
+          "fat": 11
+        },
+        {
+          "name": "Baked beans",
+          "calories": 214,
+          "protein": 10,
+          "carbs": 42,
+          "fat": 1
+        },
+        {
+          "name": "Mushrooms",
+          "calories": 47,
+          "protein": 2,
+          "carbs": 3,
+          "fat": 3
+        }
+      ]
+    },
+    {
+      "key": "veggie",
+      "text": "Veggie full English breakfast (2 fried eggs + 2 vegetarian sausages + 2 slices of grilled halloumi + baked beans + mushrooms + 1 slice of toast)",
+      "ingredients": [
+        {
+          "name": "Eggs",
+          "grams": 88,
+          "kcal": 168,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Vegetarian sausages",
+          "grams": 120,
+          "kcal": 332,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled halloumi",
+          "grams": 60,
+          "kcal": 109,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Baked beans",
+          "grams": 130,
+          "kcal": 139,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mushrooms",
+          "grams": 67,
+          "kcal": 26,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Toast",
+          "grams": 36,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 8,
+          "kcal": 71,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Veggie full English breakfast",
+          "calories": 986,
+          "protein": 56,
+          "carbs": 61,
+          "fat": 58
+        }
+      ]
+    }
+  ]
+}

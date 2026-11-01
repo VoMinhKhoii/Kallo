@@ -1,0 +1,186 @@
+{
+  "capturedAt": "2026-11-01T06:22:25.629Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "takeout",
+      "text": "Chicken fried rice from a Chinese takeout, the whole container (fried rice + chicken + egg + peas + carrots + soy sauce)",
+      "ingredients": [
+        {
+          "name": "Fried rice",
+          "grams": 200,
+          "kcal": 307,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken",
+          "grams": 60,
+          "kcal": 68,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 50,
+          "kcal": 95,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Peas",
+          "grams": 30,
+          "kcal": 26,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Carrots",
+          "grams": 20,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Soy sauce",
+          "grams": 15,
+          "kcal": 8,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken fried rice",
+          "calories": 558,
+          "protein": 29,
+          "carbs": 76,
+          "fat": 15
+        }
+      ]
+    },
+    {
+      "key": "half",
+      "text": "Chicken fried rice from a Chinese takeout, I ate about half the container",
+      "ingredients": [
+        {
+          "name": "Fried rice",
+          "grams": 180,
+          "kcal": 236,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken fried rice",
+          "calories": 276,
+          "protein": 5,
+          "carbs": 51,
+          "fat": 6
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade chicken fried rice (1 cup cooked jasmine rice + 100g chicken breast + 1 egg + frozen peas and carrots + 1 tablespoon oil + soy sauce)",
+      "ingredients": [
+        {
+          "name": "Jasmine rice",
+          "grams": 158,
+          "kcal": 200,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken breast",
+          "grams": 100,
+          "kcal": 131,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 45,
+          "kcal": 67,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Frozen peas and carrots",
+          "grams": 80,
+          "kcal": 46,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 14,
+          "kcal": 122,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Soy sauce",
+          "grams": 10,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade chicken fried rice",
+          "calories": 570,
+          "protein": 35,
+          "carbs": 54,
+          "fat": 24
+        }
+      ]
+    },
+    {
+      "key": "cauliflower",
+      "text": "Chicken fried cauliflower rice (200g cauliflower rice + 120g chicken breast + 1 egg + peas + 1 teaspoon sesame oil)",
+      "ingredients": [
+        {
+          "name": "Cauliflower rice",
+          "grams": 200,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken breast",
+          "grams": 120,
+          "kcal": 201,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 46,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Peas",
+          "grams": 56,
+          "kcal": 41,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Sesame oil",
+          "grams": 5,
+          "kcal": 47,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken fried cauliflower rice",
+          "calories": 429,
+          "protein": 50,
+          "carbs": 16,
+          "fat": 18
+        }
+      ]
+    }
+  ]
+}

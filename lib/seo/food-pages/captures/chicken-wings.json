@@ -1,0 +1,170 @@
+{
+  "capturedAt": "2026-11-01T06:27:15.956Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "buffalo",
+      "text": "10 buffalo chicken wings with blue cheese dip and celery",
+      "ingredients": [
+        {
+          "name": "Chicken wings",
+          "grams": 221,
+          "kcal": 785,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Buffalo sauce",
+          "grams": 30,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 10,
+          "kcal": 73,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 10,
+          "kcal": 90,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Blue cheese",
+          "grams": 30,
+          "kcal": 145,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mayonnaise",
+          "grams": 15,
+          "kcal": 102,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sour cream",
+          "grams": 15,
+          "kcal": 30,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Celery",
+          "grams": 90,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Buffalo chicken wings",
+          "calories": 952,
+          "protein": 44,
+          "carbs": 25,
+          "fat": 75
+        },
+        {
+          "name": "Blue cheese dip",
+          "calories": 277,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 29
+        },
+        {
+          "name": "Celery sticks",
+          "calories": 15,
+          "protein": 1,
+          "carbs": 3,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "bbq",
+      "text": "6 BBQ chicken wings",
+      "ingredients": [
+        {
+          "name": "Chicken wings",
+          "grams": 215,
+          "kcal": 474,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "BBQ sauce",
+          "grams": 60,
+          "kcal": 103,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "BBQ chicken wings",
+          "calories": 578,
+          "protein": 38,
+          "carbs": 24,
+          "fat": 36
+        }
+      ]
+    },
+    {
+      "key": "boneless",
+      "text": "10 boneless chicken wings with honey garlic sauce",
+      "ingredients": [
+        {
+          "name": "Boneless chicken wings",
+          "grams": 200,
+          "kcal": 450,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Honey garlic sauce",
+          "grams": 40,
+          "kcal": 186,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 10,
+          "kcal": 81,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Boneless chicken wings with honey garlic sauce",
+          "calories": 717,
+          "protein": 61,
+          "carbs": 9,
+          "fat": 49
+        }
+      ]
+    },
+    {
+      "key": "air-fried",
+      "text": "8 air-fried chicken wings with a dry rub, no sauce",
+      "ingredients": [
+        {
+          "name": "Chicken wings",
+          "grams": 198,
+          "kcal": 409,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dry rub",
+          "grams": 4,
+          "kcal": 14,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Air-fried chicken wings with dry rub",
+          "calories": 423,
+          "protein": 35,
+          "carbs": 2,
+          "fat": 30
+        }
+      ]
+    }
+  ]
+}

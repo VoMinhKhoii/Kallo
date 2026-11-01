@@ -1,0 +1,201 @@
+{
+  "capturedAt": "2026-11-01T06:24:32.391Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "toppings",
+      "text": "Bowl of chili con carne (ground beef + kidney beans + tomato) with shredded cheese and sour cream on top",
+      "ingredients": [
+        {
+          "name": "Ground beef",
+          "grams": 110,
+          "kcal": 254,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Kidney beans",
+          "grams": 80,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 120,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Shredded cheese",
+          "grams": 30,
+          "kcal": 121,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sour cream",
+          "grams": 30,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chili con carne",
+          "calories": 433,
+          "protein": 36,
+          "carbs": 25,
+          "fat": 21
+        },
+        {
+          "name": "Shredded cheese topping",
+          "calories": 121,
+          "protein": 7,
+          "carbs": 1,
+          "fat": 10
+        },
+        {
+          "name": "Sour cream topping",
+          "calories": 61,
+          "protein": 1,
+          "carbs": 1,
+          "fat": 6
+        }
+      ]
+    },
+    {
+      "key": "rice",
+      "text": "Chili con carne with white rice",
+      "ingredients": [
+        {
+          "name": "Ground beef",
+          "grams": 120,
+          "kcal": 281,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Kidney beans",
+          "grams": 80,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 100,
+          "kcal": 38,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Onion",
+          "grams": 36,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chili powder",
+          "grams": 3,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "White rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chili con carne",
+          "calories": 490,
+          "protein": 39,
+          "carbs": 31,
+          "fat": 23
+        },
+        {
+          "name": "White rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "canned",
+      "text": "1 can of chili con carne with beans, the whole can",
+      "ingredients": [
+        {
+          "name": "Chili con carne",
+          "grams": 425,
+          "kcal": 474,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Canned chili con carne with beans",
+          "calories": 474,
+          "protein": 26,
+          "carbs": 56,
+          "fat": 16
+        }
+      ]
+    },
+    {
+      "key": "turkey",
+      "text": "Homemade turkey chili (150g lean turkey mince + kidney beans + tomato + peppers), no toppings",
+      "ingredients": [
+        {
+          "name": "Lean turkey mince",
+          "grams": 150,
+          "kcal": 225,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Kidney beans",
+          "grams": 40,
+          "kcal": 52,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 39,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Peppers",
+          "grams": 24,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 2,
+          "kcal": 14,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Turkey chili",
+          "calories": 304,
+          "protein": 32,
+          "carbs": 12,
+          "fat": 14
+        }
+      ]
+    }
+  ]
+}

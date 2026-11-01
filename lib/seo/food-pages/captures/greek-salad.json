@@ -1,0 +1,240 @@
+{
+  "capturedAt": "2026-11-01T06:24:18.277Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "taverna",
+      "text": "Greek salad at a taverna (tomatoes + cucumber + red onion + green pepper + olives + a slab of feta + olive oil)",
+      "ingredients": [
+        {
+          "name": "Tomatoes",
+          "grams": 97,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 57,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Red onion",
+          "grams": 23,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Green pepper",
+          "grams": 53,
+          "kcal": 13,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olives",
+          "grams": 26,
+          "kcal": 32,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Feta cheese",
+          "grams": 50,
+          "kcal": 133,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 10,
+          "kcal": 86,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Greek salad",
+          "calories": 304,
+          "protein": 9,
+          "carbs": 14,
+          "fat": 24
+        }
+      ]
+    },
+    {
+      "key": "chicken",
+      "text": "Greek salad with grilled chicken (tomatoes + cucumber + olives + feta + red onion + Greek dressing)",
+      "ingredients": [
+        {
+          "name": "Grilled chicken",
+          "grams": 100,
+          "kcal": 151,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Romaine lettuce",
+          "grams": 54,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 100,
+          "kcal": 21,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 60,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olives",
+          "grams": 30,
+          "kcal": 38,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Feta cheese",
+          "grams": 40,
+          "kcal": 106,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Red onion",
+          "grams": 27,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Greek dressing",
+          "grams": 25,
+          "kcal": 60,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Greek salad with grilled chicken",
+          "calories": 455,
+          "protein": 39,
+          "carbs": 17,
+          "fat": 26
+        }
+      ]
+    },
+    {
+      "key": "lemon",
+      "text": "Greek salad (tomatoes + cucumber + red onion + olives + a bit of feta) with lemon juice instead of oil",
+      "ingredients": [
+        {
+          "name": "Tomatoes",
+          "grams": 116,
+          "kcal": 24,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 95,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Red onion",
+          "grams": 36,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olives",
+          "grams": 27,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Feta cheese",
+          "grams": 30,
+          "kcal": 80,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lemon juice",
+          "grams": 15,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Greek salad",
+          "calories": 175,
+          "protein": 7,
+          "carbs": 15,
+          "fat": 10
+        }
+      ]
+    },
+    {
+      "key": "side",
+      "text": "Small side Greek salad with feta and olive oil dressing",
+      "ingredients": [
+        {
+          "name": "Lettuce",
+          "grams": 36,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 49,
+          "kcal": 10,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 57,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Red onion",
+          "grams": 14,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olives",
+          "grams": 18,
+          "kcal": 30,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Feta cheese",
+          "grams": 30,
+          "kcal": 80,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil dressing",
+          "grams": 10,
+          "kcal": 86,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Small side Greek salad",
+          "calories": 229,
+          "protein": 6,
+          "carbs": 8,
+          "fat": 19
+        }
+      ]
+    }
+  ]
+}
