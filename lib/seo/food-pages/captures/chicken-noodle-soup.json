@@ -1,0 +1,188 @@
+{
+  "capturedAt": "2026-11-01T06:25:24.020Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "homemade",
+      "text": "Homemade chicken noodle soup, 1 big bowl (chicken + egg noodles + carrots + celery + broth)",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 70,
+          "kcal": 119,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg noodles",
+          "grams": 140,
+          "kcal": 192,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Carrots",
+          "grams": 36,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Celery",
+          "grams": 36,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken broth",
+          "grams": 300,
+          "kcal": 105,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade chicken noodle soup",
+          "calories": 438,
+          "protein": 34,
+          "carbs": 50,
+          "fat": 11
+        }
+      ]
+    },
+    {
+      "key": "canned",
+      "text": "Canned chicken noodle soup, the whole can",
+      "ingredients": [
+        {
+          "name": "Chicken noodle soup",
+          "grams": 305,
+          "kcal": 72,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Canned chicken noodle soup",
+          "calories": 72,
+          "protein": 4,
+          "carbs": 9,
+          "fat": 2
+        }
+      ]
+    },
+    {
+      "key": "deli",
+      "text": "Chicken noodle soup from a deli with a bread roll and butter",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 60,
+          "kcal": 43,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg noodles",
+          "grams": 100,
+          "kcal": 138,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken broth",
+          "grams": 450,
+          "kcal": 28,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Carrot",
+          "grams": 27,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Celery",
+          "grams": 23,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Onion",
+          "grams": 23,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bread roll",
+          "grams": 60,
+          "kcal": 186,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken noodle soup",
+          "calories": 234,
+          "protein": 11,
+          "carbs": 37,
+          "fat": 5
+        },
+        {
+          "name": "Bread roll",
+          "calories": 186,
+          "protein": 7,
+          "carbs": 31,
+          "fat": 4
+        },
+        {
+          "name": "Butter",
+          "calories": 37,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 4
+        }
+      ]
+    },
+    {
+      "key": "high-protein",
+      "text": "Chicken noodle soup with lots of chicken and few noodles (150g chicken breast + 30g dry egg noodles + vegetables + broth)",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 150,
+          "kcal": 170,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg noodles",
+          "grams": 30,
+          "kcal": 114,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Vegetables",
+          "grams": 27,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken broth",
+          "grams": 67,
+          "kcal": 23,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken noodle soup",
+          "calories": 325,
+          "protein": 40,
+          "carbs": 27,
+          "fat": 6
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "capturedAt": "2026-11-01T06:19:04.351Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "ballpark",
+      "text": "Hot dog at a ballpark (beef frank + hot dog bun + mustard + ketchup + relish)",
+      "ingredients": [
+        {
+          "name": "Beef frank",
+          "grams": 50,
+          "kcal": 161,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hot dog bun",
+          "grams": 45,
+          "kcal": 124,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Yellow mustard",
+          "grams": 5,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ketchup",
+          "grams": 15,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sweet pickle relish",
+          "grams": 15,
+          "kcal": 22,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Hot dog",
+          "calories": 328,
+          "protein": 11,
+          "carbs": 34,
+          "fat": 17
+        }
+      ]
+    },
+    {
+      "key": "chili-cheese",
+      "text": "Chili cheese dog (beef frank + hot dog bun + beef chili + shredded cheese + onions)",
+      "ingredients": [
+        {
+          "name": "Beef frank",
+          "grams": 50,
+          "kcal": 161,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hot dog bun",
+          "grams": 45,
+          "kcal": 124,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Beef chili",
+          "grams": 60,
+          "kcal": 72,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Shredded cheese",
+          "grams": 28,
+          "kcal": 113,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Onions",
+          "grams": 14,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chili cheese dog",
+          "calories": 475,
+          "protein": 20,
+          "carbs": 34,
+          "fat": 29
+        }
+      ]
+    },
+    {
+      "key": "two",
+      "text": "2 hot dogs (2 beef franks + 2 buns + ketchup + mustard)",
+      "ingredients": [
+        {
+          "name": "Beef franks",
+          "grams": 100,
+          "kcal": 322,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hot dog buns",
+          "grams": 100,
+          "kcal": 275,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ketchup",
+          "grams": 30,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mustard",
+          "grams": 10,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Hot dogs",
+          "calories": 637,
+          "protein": 22,
+          "carbs": 62,
+          "fat": 34
+        }
+      ]
+    },
+    {
+      "key": "chicken",
+      "text": "Hot dog with a chicken sausage on a whole wheat bun + mustard + sauerkraut",
+      "ingredients": [
+        {
+          "name": "Chicken sausage",
+          "grams": 60,
+          "kcal": 118,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Whole wheat bun",
+          "grams": 70,
+          "kcal": 188,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mustard",
+          "grams": 10,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sauerkraut",
+          "grams": 40,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Hot dog with chicken sausage",
+          "calories": 321,
+          "protein": 22,
+          "carbs": 42,
+          "fat": 7
+        }
+      ]
+    }
+  ]
+}

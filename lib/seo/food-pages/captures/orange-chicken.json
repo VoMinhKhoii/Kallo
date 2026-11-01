@@ -1,0 +1,225 @@
+{
+  "capturedAt": "2026-11-01T06:23:01.285Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "takeout",
+      "text": "Orange chicken from a Chinese takeout (battered chicken + orange sauce) with fried rice",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 130,
+          "kcal": 315,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Frying oil",
+          "grams": 12,
+          "kcal": 97,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Orange sauce",
+          "grams": 60,
+          "kcal": 147,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "White rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 45,
+          "kcal": 92,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Soy sauce",
+          "grams": 10,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mixed vegetables",
+          "grams": 48,
+          "kcal": 31,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Orange chicken",
+          "calories": 560,
+          "protein": 33,
+          "carbs": 48,
+          "fat": 26
+        },
+        {
+          "name": "Fried rice",
+          "calories": 377,
+          "protein": 13,
+          "carbs": 52,
+          "fat": 13
+        }
+      ]
+    },
+    {
+      "key": "white-rice",
+      "text": "Orange chicken with steamed white rice",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 110,
+          "kcal": 284,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Batter flour",
+          "grams": 12,
+          "kcal": 42,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Orange sauce",
+          "grams": 60,
+          "kcal": 147,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "White rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Orange chicken",
+          "calories": 514,
+          "protein": 29,
+          "carbs": 55,
+          "fat": 20
+        },
+        {
+          "name": "Steamed white rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "small",
+      "text": "Small portion of orange chicken, no rice",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 75,
+          "kcal": 182,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 3,
+          "kcal": 27,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Orange sauce",
+          "grams": 40,
+          "kcal": 100,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Orange chicken",
+          "calories": 309,
+          "protein": 17,
+          "carbs": 31,
+          "fat": 13
+        }
+      ]
+    },
+    {
+      "key": "air-fried",
+      "text": "Homemade orange chicken (150g chicken breast tossed in cornstarch and air-fried + 2 tablespoons orange sauce) with 1 cup of jasmine rice",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 150,
+          "kcal": 176,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cornstarch",
+          "grams": 5,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Orange sauce",
+          "grams": 30,
+          "kcal": 46,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Orange juice",
+          "grams": 20,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sugar",
+          "grams": 10,
+          "kcal": 40,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Soy sauce",
+          "grams": 8,
+          "kcal": 4,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Jasmine rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Orange chicken",
+          "calories": 293,
+          "protein": 35,
+          "carbs": 28,
+          "fat": 5
+        },
+        {
+          "name": "Jasmine rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 0
+        }
+      ]
+    }
+  ]
+}

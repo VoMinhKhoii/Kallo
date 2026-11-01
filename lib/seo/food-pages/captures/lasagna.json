@@ -1,0 +1,204 @@
+{
+  "capturedAt": "2026-11-01T06:21:08.433Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Beef lasagna at an Italian restaurant, one large piece (pasta sheets + beef ragu + béchamel + mozzarella + parmesan)",
+      "ingredients": [
+        {
+          "name": "Lasagna pasta sheets",
+          "grams": 100,
+          "kcal": 130,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Beef ragu",
+          "grams": 70,
+          "kcal": 136,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bechamel sauce",
+          "grams": 60,
+          "kcal": 89,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mozzarella cheese",
+          "grams": 30,
+          "kcal": 95,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Parmesan cheese",
+          "grams": 10,
+          "kcal": 42,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Beef lasagna",
+          "calories": 491,
+          "protein": 39,
+          "carbs": 33,
+          "fat": 23
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade lasagna, 1 square from a 9x13 tray (beef + ricotta + mozzarella + tomato sauce)",
+      "ingredients": [
+        {
+          "name": "Lasagna noodles",
+          "grams": 110,
+          "kcal": 170,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ground beef",
+          "grams": 40,
+          "kcal": 93,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ricotta cheese",
+          "grams": 30,
+          "kcal": 46,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mozzarella cheese",
+          "grams": 25,
+          "kcal": 74,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 60,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 3,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sugar",
+          "grams": 2,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade lasagna",
+          "calories": 435,
+          "protein": 25,
+          "carbs": 43,
+          "fat": 18
+        }
+      ]
+    },
+    {
+      "key": "veggie",
+      "text": "Vegetable lasagna, 1 piece (pasta sheets + zucchini + spinach + ricotta + tomato sauce + mozzarella)",
+      "ingredients": [
+        {
+          "name": "Pasta sheets",
+          "grams": 40,
+          "kcal": 146,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Zucchini",
+          "grams": 38,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Spinach",
+          "grams": 27,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ricotta",
+          "grams": 40,
+          "kcal": 55,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 60,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mozzarella",
+          "grams": 30,
+          "kcal": 91,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Vegetable lasagna",
+          "calories": 325,
+          "protein": 19,
+          "carbs": 40,
+          "fat": 10
+        }
+      ]
+    },
+    {
+      "key": "frozen",
+      "text": "Frozen beef lasagna, 1 single-serve tray of about 300g",
+      "ingredients": [
+        {
+          "name": "Lasagna noodles",
+          "grams": 77,
+          "kcal": 119,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ground beef",
+          "grams": 70,
+          "kcal": 164,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 77,
+          "kcal": 22,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ricotta cheese",
+          "grams": 38,
+          "kcal": 53,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mozzarella cheese",
+          "grams": 38,
+          "kcal": 113,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Frozen beef lasagna",
+          "calories": 471,
+          "protein": 36,
+          "carbs": 32,
+          "fat": 22
+        }
+      ]
+    }
+  ]
+}

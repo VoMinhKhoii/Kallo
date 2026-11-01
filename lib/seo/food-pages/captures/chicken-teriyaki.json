@@ -1,0 +1,227 @@
+{
+  "capturedAt": "2026-11-01T06:23:13.397Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Chicken teriyaki at a Japanese restaurant (grilled chicken thigh + teriyaki sauce + white rice + steamed vegetables)",
+      "ingredients": [
+        {
+          "name": "Chicken thigh",
+          "grams": 105,
+          "kcal": 242,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Teriyaki sauce",
+          "grams": 30,
+          "kcal": 26,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "White rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Steamed vegetables",
+          "grams": 95,
+          "kcal": 62,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken teriyaki",
+          "calories": 267,
+          "protein": 26,
+          "carbs": 5,
+          "fat": 16
+        },
+        {
+          "name": "White rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 46,
+          "fat": 0
+        },
+        {
+          "name": "Steamed vegetables",
+          "calories": 62,
+          "protein": 3,
+          "carbs": 12,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "bowl",
+      "text": "Chicken teriyaki bowl (rice + teriyaki chicken + broccoli + sesame seeds)",
+      "ingredients": [
+        {
+          "name": "Rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Teriyaki chicken",
+          "grams": 96,
+          "kcal": 206,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Teriyaki sauce",
+          "grams": 30,
+          "kcal": 26,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Broccoli",
+          "grams": 72,
+          "kcal": 30,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sesame seeds",
+          "grams": 5,
+          "kcal": 31,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken teriyaki bowl",
+          "calories": 540,
+          "protein": 31,
+          "carbs": 56,
+          "fat": 21
+        }
+      ]
+    },
+    {
+      "key": "salad",
+      "text": "Chicken teriyaki (grilled chicken + teriyaki sauce) with salad instead of rice",
+      "ingredients": [
+        {
+          "name": "Grilled chicken",
+          "grams": 120,
+          "kcal": 187,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Teriyaki sauce",
+          "grams": 30,
+          "kcal": 26,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 76,
+          "kcal": 14,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 60,
+          "kcal": 10,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Tomato",
+          "grams": 70,
+          "kcal": 14,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Salad dressing",
+          "grams": 30,
+          "kcal": 14,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken teriyaki",
+          "calories": 213,
+          "protein": 38,
+          "carbs": 5,
+          "fat": 5
+        },
+        {
+          "name": "Salad",
+          "calories": 51,
+          "protein": 2,
+          "carbs": 9,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade chicken teriyaki (150g chicken breast + 2 tablespoons teriyaki sauce + 150g cooked brown rice + green beans)",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 150,
+          "kcal": 232,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Teriyaki sauce",
+          "grams": 36,
+          "kcal": 31,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Brown rice",
+          "grams": 150,
+          "kcal": 183,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Green beans",
+          "grams": 90,
+          "kcal": 38,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade chicken teriyaki",
+          "calories": 308,
+          "protein": 48,
+          "carbs": 6,
+          "fat": 10
+        },
+        {
+          "name": "Brown rice",
+          "calories": 183,
+          "protein": 4,
+          "carbs": 38,
+          "fat": 2
+        },
+        {
+          "name": "Green beans",
+          "calories": 38,
+          "protein": 2,
+          "carbs": 7,
+          "fat": 0
+        }
+      ]
+    }
+  ]
+}

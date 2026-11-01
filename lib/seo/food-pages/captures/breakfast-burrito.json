@@ -1,0 +1,216 @@
+{
+  "capturedAt": "2026-11-01T06:17:00.697Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "cafe",
+      "text": "Breakfast burrito from a café (large flour tortilla + 3 scrambled eggs + bacon + hash browns + cheddar cheese + salsa)",
+      "ingredients": [
+        {
+          "name": "Large flour tortilla",
+          "grams": 68,
+          "kcal": 195,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Scrambled eggs",
+          "grams": 150,
+          "kcal": 218,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 4,
+          "kcal": 36,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Bacon",
+          "grams": 12,
+          "kcal": 60,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hash browns",
+          "grams": 70,
+          "kcal": 160,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheddar cheese",
+          "grams": 30,
+          "kcal": 121,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salsa",
+          "grams": 30,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Breakfast burrito",
+          "calories": 802,
+          "protein": 34,
+          "carbs": 59,
+          "fat": 48
+        }
+      ]
+    },
+    {
+      "key": "sausage",
+      "text": "Breakfast burrito (flour tortilla + 2 scrambled eggs + pork sausage + cheese + sour cream)",
+      "ingredients": [
+        {
+          "name": "Flour tortilla",
+          "grams": 49,
+          "kcal": 148,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Eggs",
+          "grams": 88,
+          "kcal": 171,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pork sausage",
+          "grams": 45,
+          "kcal": 147,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 28,
+          "kcal": 113,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sour cream",
+          "grams": 30,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Breakfast burrito",
+          "calories": 640,
+          "protein": 28,
+          "carbs": 29,
+          "fat": 46
+        }
+      ]
+    },
+    {
+      "key": "veggie",
+      "text": "Veggie breakfast burrito (flour tortilla + 2 scrambled eggs + black beans + peppers + onion + salsa, no cheese)",
+      "ingredients": [
+        {
+          "name": "Flour tortilla",
+          "grams": 60,
+          "kcal": 181,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Scrambled eggs",
+          "grams": 106,
+          "kcal": 136,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Black beans",
+          "grams": 60,
+          "kcal": 81,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bell peppers",
+          "grams": 54,
+          "kcal": 13,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Onion",
+          "grams": 36,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salsa",
+          "grams": 30,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 3,
+          "kcal": 27,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Veggie breakfast burrito",
+          "calories": 465,
+          "protein": 22,
+          "carbs": 53,
+          "fat": 18
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade breakfast burrito (1 small whole wheat tortilla + 2 egg whites + 1 whole egg + 30g turkey bacon + a bit of cheese)",
+      "ingredients": [
+        {
+          "name": "Small whole wheat tortilla",
+          "grams": 36,
+          "kcal": 112,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg whites",
+          "grams": 66,
+          "kcal": 32,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Whole egg",
+          "grams": 50,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Turkey bacon",
+          "grams": 30,
+          "kcal": 111,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 10,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 3,
+          "kcal": 27,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade breakfast burrito",
+          "calories": 391,
+          "protein": 28,
+          "carbs": 19,
+          "fat": 22
+        }
+      ]
+    }
+  ]
+}

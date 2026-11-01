@@ -1,0 +1,224 @@
+{
+  "capturedAt": "2026-11-01T06:26:04.014Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "takeout",
+      "text": "Chicken stir fry from a Chinese takeout (chicken + broccoli + peppers + brown sauce) with steamed white rice",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 120,
+          "kcal": 229,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Broccoli",
+          "grams": 72,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bell pepper",
+          "grams": 54,
+          "kcal": 15,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Brown sauce",
+          "grams": 30,
+          "kcal": 112,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "White rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken stir fry",
+          "calories": 432,
+          "protein": 40,
+          "carbs": 25,
+          "fat": 19
+        },
+        {
+          "name": "Steamed white rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 46,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "noodles",
+      "text": "Chicken stir fry with egg noodles (chicken + egg noodles + mixed vegetables + soy sauce + oil)",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 120,
+          "kcal": 167,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg noodles",
+          "grams": 160,
+          "kcal": 222,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mixed vegetables",
+          "grams": 100,
+          "kcal": 66,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Soy sauce",
+          "grams": 15,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 7,
+          "kcal": 58,
+          "source": "Vietnam’s National Institute of Nutrition"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken stir fry with egg noodles",
+          "calories": 521,
+          "protein": 38,
+          "carbs": 54,
+          "fat": 17
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade chicken stir fry (150g chicken breast + broccoli + snap peas + carrots + 1 tablespoon oil + soy sauce) with 1 cup of jasmine rice",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 150,
+          "kcal": 254,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Broccoli",
+          "grams": 27,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Snap peas",
+          "grams": 22,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Carrots",
+          "grams": 18,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Soy sauce",
+          "grams": 5,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Jasmine rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade chicken stir fry",
+          "calories": 325,
+          "protein": 48,
+          "carbs": 5,
+          "fat": 12
+        },
+        {
+          "name": "Jasmine rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "no-rice",
+      "text": "Chicken and vegetable stir fry, no rice (chicken thigh + bok choy + mushrooms + garlic + oyster sauce)",
+      "ingredients": [
+        {
+          "name": "Chicken thigh",
+          "grams": 108,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bok choy",
+          "grams": 143,
+          "kcal": 21,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mushrooms",
+          "grams": 76,
+          "kcal": 21,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Garlic",
+          "grams": 5,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oyster sauce",
+          "grams": 15,
+          "kcal": 11,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "Vietnam’s National Institute of Nutrition"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken and vegetable stir fry",
+          "calories": 257,
+          "protein": 27,
+          "carbs": 9,
+          "fat": 13
+        }
+      ]
+    }
+  ]
+}

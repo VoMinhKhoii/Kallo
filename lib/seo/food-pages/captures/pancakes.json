@@ -1,0 +1,197 @@
+{
+  "capturedAt": "2026-11-01T06:15:57.576Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "diner",
+      "text": "Diner pancakes (stack of 3 buttermilk pancakes + 1 tablespoon butter + 3 tablespoons maple syrup)",
+      "ingredients": [
+        {
+          "name": "Buttermilk pancakes",
+          "grams": 240,
+          "kcal": 542,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 14,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Maple syrup",
+          "grams": 60,
+          "kcal": 162,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Buttermilk pancakes",
+          "calories": 807,
+          "protein": 16,
+          "carbs": 109,
+          "fat": 34
+        }
+      ]
+    },
+    {
+      "key": "bacon",
+      "text": "2 buttermilk pancakes + 2 strips of bacon + a drizzle of maple syrup",
+      "ingredients": [
+        {
+          "name": "Pancakes",
+          "grams": 110,
+          "kcal": 233,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 20,
+          "kcal": 91,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Maple syrup",
+          "grams": 15,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Buttermilk pancakes",
+          "calories": 269,
+          "protein": 8,
+          "carbs": 32,
+          "fat": 13
+        },
+        {
+          "name": "Bacon",
+          "calories": 91,
+          "protein": 7,
+          "carbs": 0,
+          "fat": 7
+        },
+        {
+          "name": "Maple syrup",
+          "calories": 40,
+          "protein": 0,
+          "carbs": 10,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "berries",
+      "text": "3 small homemade pancakes with fresh berries and 1 tablespoon of honey, no butter",
+      "ingredients": [
+        {
+          "name": "Pancakes",
+          "grams": 135,
+          "kcal": 305,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Fresh berries",
+          "grams": 75,
+          "kcal": 43,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Honey",
+          "grams": 21,
+          "kcal": 69,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade pancakes",
+          "calories": 305,
+          "protein": 9,
+          "carbs": 38,
+          "fat": 13
+        },
+        {
+          "name": "Fresh berries",
+          "calories": 43,
+          "protein": 1,
+          "carbs": 9,
+          "fat": 0
+        },
+        {
+          "name": "Honey",
+          "calories": 69,
+          "protein": 0,
+          "carbs": 17,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "protein",
+      "text": "Protein pancakes (1 scoop whey protein + 1 banana + 2 eggs + 30g oats) with 100g Greek yogurt on top",
+      "ingredients": [
+        {
+          "name": "Whey protein",
+          "grams": 30,
+          "kcal": 106,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Banana",
+          "grams": 77,
+          "kcal": 75,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Eggs",
+          "grams": 86,
+          "kcal": 143,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Oats",
+          "grams": 30,
+          "kcal": 119,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 4,
+          "kcal": 36,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Greek yogurt",
+          "grams": 100,
+          "kcal": 97,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Protein pancakes",
+          "calories": 477,
+          "protein": 42,
+          "carbs": 39,
+          "fat": 17
+        },
+        {
+          "name": "Greek yogurt topping",
+          "calories": 97,
+          "protein": 9,
+          "carbs": 4,
+          "fat": 5
+        }
+      ]
+    }
+  ]
+}

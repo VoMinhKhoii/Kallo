@@ -1,0 +1,233 @@
+{
+  "capturedAt": "2026-11-01T06:23:36.210Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Chicken tikka masala at an Indian restaurant (chicken tikka masala + basmati rice + 1 garlic naan)",
+      "ingredients": [
+        {
+          "name": "Chicken tikka",
+          "grams": 100,
+          "kcal": 195,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Tomato cream sauce",
+          "grams": 120,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 10,
+          "kcal": 74,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Basmati rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Naan",
+          "grams": 90,
+          "kcal": 262,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken tikka masala",
+          "calories": 310,
+          "protein": 27,
+          "carbs": 8,
+          "fat": 19
+        },
+        {
+          "name": "Basmati rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 1
+        },
+        {
+          "name": "Garlic naan",
+          "calories": 299,
+          "protein": 9,
+          "carbs": 45,
+          "fat": 9
+        }
+      ]
+    },
+    {
+      "key": "rice",
+      "text": "Chicken tikka masala with basmati rice, no naan",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 120,
+          "kcal": 230,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Tikka masala sauce",
+          "grams": 100,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cream",
+          "grams": 40,
+          "kcal": 139,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Basmati rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken tikka masala",
+          "calories": 448,
+          "protein": 32,
+          "carbs": 8,
+          "fat": 32
+        },
+        {
+          "name": "Basmati rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "naan",
+      "text": "Chicken tikka masala with 1 plain naan, no rice",
+      "ingredients": [
+        {
+          "name": "Chicken tikka",
+          "grams": 120,
+          "kcal": 192,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato cream sauce",
+          "grams": 120,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cream",
+          "grams": 30,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ghee",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Plain naan",
+          "grams": 90,
+          "kcal": 262,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken tikka masala",
+          "calories": 382,
+          "protein": 37,
+          "carbs": 7,
+          "fat": 23
+        },
+        {
+          "name": "Plain naan",
+          "calories": 262,
+          "protein": 9,
+          "carbs": 45,
+          "fat": 5
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade chicken tikka masala (150g chicken breast + tomato sauce + 2 tablespoons light cream + spices) with 1 cup of cooked basmati rice",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 150,
+          "kcal": 223,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 120,
+          "kcal": 35,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Light cream",
+          "grams": 60,
+          "kcal": 119,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Spices",
+          "grams": 6,
+          "kcal": 24,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Basmati rice",
+          "grams": 180,
+          "kcal": 227,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken tikka masala",
+          "calories": 447,
+          "protein": 48,
+          "carbs": 12,
+          "fat": 23
+        },
+        {
+          "name": "Basmati rice",
+          "calories": 227,
+          "protein": 5,
+          "carbs": 51,
+          "fat": 1
+        }
+      ]
+    }
+  ]
+}

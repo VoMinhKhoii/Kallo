@@ -1,0 +1,232 @@
+{
+  "capturedAt": "2026-11-01T06:17:26.703Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "diner",
+      "text": "French toast at a diner (3 thick slices of brioche + butter + maple syrup + powdered sugar)",
+      "ingredients": [
+        {
+          "name": "Brioche",
+          "grams": 165,
+          "kcal": 476,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 50,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Milk",
+          "grams": 60,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 14,
+          "kcal": 127,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Maple syrup",
+          "grams": 30,
+          "kcal": 81,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Powdered sugar",
+          "grams": 10,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "French toast",
+          "calories": 830,
+          "protein": 24,
+          "carbs": 112,
+          "fat": 32
+        }
+      ]
+    },
+    {
+      "key": "bacon",
+      "text": "2 slices of French toast + 2 strips of bacon + maple syrup",
+      "ingredients": [
+        {
+          "name": "Bread",
+          "grams": 100,
+          "kcal": 290,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 50,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Milk",
+          "grams": 30,
+          "kcal": 19,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 8,
+          "kcal": 59,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 20,
+          "kcal": 91,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Maple syrup",
+          "grams": 20,
+          "kcal": 54,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "French toast",
+          "calories": 437,
+          "protein": 16,
+          "carbs": 56,
+          "fat": 16
+        },
+        {
+          "name": "Bacon",
+          "calories": 91,
+          "protein": 7,
+          "carbs": 0,
+          "fat": 7
+        },
+        {
+          "name": "Maple syrup",
+          "calories": 54,
+          "protein": 0,
+          "carbs": 13,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "berries",
+      "text": "French toast (2 slices of white bread dipped in egg and milk, cooked in butter) with strawberries and a bit of whipped cream",
+      "ingredients": [
+        {
+          "name": "White bread",
+          "grams": 92,
+          "kcal": 267,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 44,
+          "kcal": 64,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Milk",
+          "grams": 30,
+          "kcal": 19,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Strawberries",
+          "grams": 95,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Whipped cream",
+          "grams": 15,
+          "kcal": 39,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "French toast",
+          "calories": 386,
+          "protein": 16,
+          "carbs": 52,
+          "fat": 13
+        },
+        {
+          "name": "Strawberries",
+          "calories": 34,
+          "protein": 1,
+          "carbs": 7,
+          "fat": 0
+        },
+        {
+          "name": "Whipped cream",
+          "calories": 39,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 3
+        }
+      ]
+    },
+    {
+      "key": "light",
+      "text": "Homemade French toast (2 slices of whole wheat bread + 1 egg + a splash of milk, cooked with cooking spray) with cinnamon, no syrup",
+      "ingredients": [
+        {
+          "name": "Whole wheat bread",
+          "grams": 66,
+          "kcal": 166,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 45,
+          "kcal": 74,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Milk",
+          "grams": 15,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking spray",
+          "grams": 1,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cinnamon",
+          "grams": 1,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade French toast",
+          "calories": 261,
+          "protein": 15,
+          "carbs": 30,
+          "fat": 9
+        }
+      ]
+    }
+  ]
+}

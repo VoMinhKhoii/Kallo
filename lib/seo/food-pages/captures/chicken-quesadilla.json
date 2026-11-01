@@ -1,0 +1,225 @@
+{
+  "capturedAt": "2026-11-01T06:26:04.032Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Chicken quesadilla at a Mexican restaurant (large flour tortilla + chicken + lots of melted cheese) with sour cream and guacamole on the side",
+      "ingredients": [
+        {
+          "name": "Flour tortilla",
+          "grams": 70,
+          "kcal": 212,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken",
+          "grams": 60,
+          "kcal": 78,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Melted cheese",
+          "grams": 60,
+          "kcal": 224,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sour cream",
+          "grams": 30,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Guacamole",
+          "grams": 60,
+          "kcal": 121,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken quesadilla",
+          "calories": 554,
+          "protein": 34,
+          "carbs": 35,
+          "fat": 31
+        },
+        {
+          "name": "Sour cream",
+          "calories": 61,
+          "protein": 1,
+          "carbs": 1,
+          "fat": 6
+        },
+        {
+          "name": "Guacamole",
+          "calories": 121,
+          "protein": 1,
+          "carbs": 5,
+          "fat": 11
+        }
+      ]
+    },
+    {
+      "key": "jalapeno",
+      "text": "Chicken quesadilla (flour tortilla + grilled chicken + cheddar and Monterey Jack + creamy jalapeño sauce)",
+      "ingredients": [
+        {
+          "name": "Flour tortilla",
+          "grams": 60,
+          "kcal": 172,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken",
+          "grams": 70,
+          "kcal": 118,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheddar cheese",
+          "grams": 30,
+          "kcal": 121,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Monterey jack cheese",
+          "grams": 25,
+          "kcal": 94,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Creamy jalapeño sauce",
+          "grams": 30,
+          "kcal": 42,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 3,
+          "kcal": 27,
+          "source": "Vietnam’s National Institute of Nutrition"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken quesadilla",
+          "calories": 574,
+          "protein": 40,
+          "carbs": 36,
+          "fat": 30
+        }
+      ]
+    },
+    {
+      "key": "half",
+      "text": "Half a chicken quesadilla (flour tortilla + chicken + cheese + peppers and onions) with salsa",
+      "ingredients": [
+        {
+          "name": "Flour tortilla",
+          "grams": 30,
+          "kcal": 86,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken",
+          "grams": 45,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 28,
+          "kcal": 113,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Peppers",
+          "grams": 27,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Onions",
+          "grams": 23,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 2,
+          "kcal": 16,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Salsa",
+          "grams": 30,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken quesadilla",
+          "calories": 365,
+          "protein": 22,
+          "carbs": 19,
+          "fat": 22
+        },
+        {
+          "name": "Salsa",
+          "calories": 11,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade chicken quesadilla (1 whole wheat tortilla + 100g chicken breast + 30g light shredded cheese + peppers), cooked without oil",
+      "ingredients": [
+        {
+          "name": "Whole wheat tortilla",
+          "grams": 45,
+          "kcal": 140,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken breast",
+          "grams": 100,
+          "kcal": 143,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Light shredded cheese",
+          "grams": 30,
+          "kcal": 50,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Peppers",
+          "grams": 53,
+          "kcal": 13,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade chicken quesadilla",
+          "calories": 346,
+          "protein": 41,
+          "carbs": 24,
+          "fat": 10
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "capturedAt": "2026-11-01T06:29:28.432Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Mac and cheese at a restaurant, big bowl (elbow pasta + cheddar cheese sauce + breadcrumb topping)",
+      "ingredients": [
+        {
+          "name": "Elbow pasta",
+          "grams": 220,
+          "kcal": 341,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheddar cheese sauce",
+          "grams": 150,
+          "kcal": 261,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Breadcrumb topping",
+          "grams": 10,
+          "kcal": 39,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 10,
+          "kcal": 73,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Mac and cheese",
+          "calories": 713,
+          "protein": 24,
+          "carbs": 85,
+          "fat": 31
+        }
+      ]
+    },
+    {
+      "key": "box",
+      "text": "Boxed mac and cheese, made with butter and milk, I ate half the box",
+      "ingredients": [
+        {
+          "name": "Macaroni",
+          "grams": 125,
+          "kcal": 455,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Cheese sauce powder",
+          "grams": 15,
+          "kcal": 65,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Milk",
+          "grams": 60,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 7,
+          "kcal": 51,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Boxed mac and cheese",
+          "calories": 608,
+          "protein": 19,
+          "carbs": 105,
+          "fat": 12
+        }
+      ]
+    },
+    {
+      "key": "broccoli",
+      "text": "Mac and cheese with broccoli (80g dry macaroni + cheddar cheese sauce + 100g steamed broccoli)",
+      "ingredients": [
+        {
+          "name": "Macaroni",
+          "grams": 80,
+          "kcal": 292,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheddar cheese sauce",
+          "grams": 60,
+          "kcal": 119,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Milk",
+          "grams": 30,
+          "kcal": 19,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Broccoli",
+          "grams": 100,
+          "kcal": 42,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Mac and cheese",
+          "calories": 466,
+          "protein": 18,
+          "carbs": 65,
+          "fat": 15
+        },
+        {
+          "name": "Steamed broccoli",
+          "calories": 42,
+          "protein": 2,
+          "carbs": 7,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade mac and cheese (80g dry macaroni + 40g sharp cheddar + 100ml skim milk + 1 teaspoon butter)",
+      "ingredients": [
+        {
+          "name": "Macaroni",
+          "grams": 80,
+          "kcal": 292,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sharp cheddar cheese",
+          "grams": 40,
+          "kcal": 162,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Skim milk",
+          "grams": 100,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 4,
+          "kcal": 25,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade mac and cheese",
+          "calories": 513,
+          "protein": 23,
+          "carbs": 66,
+          "fat": 17
+        }
+      ]
+    }
+  ]
+}

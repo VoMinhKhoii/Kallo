@@ -1,0 +1,258 @@
+{
+  "capturedAt": "2026-11-01T06:23:03.346Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Bibimbap at a Korean restaurant (rice + bulgogi beef + spinach + bean sprouts + carrots + zucchini + fried egg + gochujang + sesame oil)",
+      "ingredients": [
+        {
+          "name": "White rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bulgogi beef",
+          "grams": 90,
+          "kcal": 184,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Spinach",
+          "grams": 40,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bean sprouts",
+          "grams": 40,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Carrot",
+          "grams": 30,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Zucchini",
+          "grams": 40,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Fried egg",
+          "grams": 50,
+          "kcal": 95,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Gochujang",
+          "grams": 15,
+          "kcal": 11,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Sesame oil",
+          "grams": 5,
+          "kcal": 41,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bibimbap",
+          "calories": 615,
+          "protein": 39,
+          "carbs": 54,
+          "fat": 27
+        }
+      ]
+    },
+    {
+      "key": "dolsot",
+      "text": "Dolsot bibimbap in a hot stone bowl (rice + beef + vegetables + raw egg yolk + gochujang)",
+      "ingredients": [
+        {
+          "name": "Rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Beef",
+          "grams": 60,
+          "kcal": 124,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Vegetables",
+          "grams": 90,
+          "kcal": 58,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Raw egg yolk",
+          "grams": 17,
+          "kcal": 54,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gochujang",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Sesame oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Dolsot bibimbap",
+          "calories": 489,
+          "protein": 27,
+          "carbs": 59,
+          "fat": 16
+        }
+      ]
+    },
+    {
+      "key": "tofu",
+      "text": "Tofu bibimbap (rice + tofu + vegetables + fried egg + gochujang)",
+      "ingredients": [
+        {
+          "name": "Rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tofu",
+          "grams": 100,
+          "kcal": 293,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Spinach",
+          "grams": 40,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Carrot",
+          "grams": 40,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bean sprouts",
+          "grams": 60,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Zucchini",
+          "grams": 50,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Fried egg",
+          "grams": 50,
+          "kcal": 95,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gochujang",
+          "grams": 15,
+          "kcal": 10,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Sesame oil",
+          "grams": 3,
+          "kcal": 24,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Tofu bibimbap",
+          "calories": 723,
+          "protein": 33,
+          "carbs": 64,
+          "fat": 37
+        }
+      ]
+    },
+    {
+      "key": "half-rice",
+      "text": "Homemade bibimbap (half a cup of rice + 100g lean beef + lots of vegetables + 1 egg + 1 teaspoon sesame oil + gochujang)",
+      "ingredients": [
+        {
+          "name": "Rice",
+          "grams": 80,
+          "kcal": 101,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lean beef",
+          "grams": 100,
+          "kcal": 205,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mixed vegetables",
+          "grams": 143,
+          "kcal": 93,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 50,
+          "kcal": 106,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sesame oil",
+          "grams": 5,
+          "kcal": 41,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Gochujang",
+          "grams": 15,
+          "kcal": 10,
+          "source": "Vietnam’s National Institute of Nutrition"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade bibimbap",
+          "calories": 556,
+          "protein": 43,
+          "carbs": 42,
+          "fat": 24
+        }
+      ]
+    }
+  ]
+}

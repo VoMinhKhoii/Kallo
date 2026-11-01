@@ -1,0 +1,168 @@
+{
+  "capturedAt": "2026-11-01T06:27:22.337Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "peanut-butter",
+      "text": "Oatmeal (60g rolled oats cooked in whole milk + 1 tablespoon peanut butter + 1 sliced banana)",
+      "ingredients": [
+        {
+          "name": "Rolled oats",
+          "grams": 60,
+          "kcal": 237,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Whole milk",
+          "grams": 244,
+          "kcal": 150,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Peanut butter",
+          "grams": 16,
+          "kcal": 102,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Banana",
+          "grams": 86,
+          "kcal": 44,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Oatmeal",
+          "calories": 532,
+          "protein": 22,
+          "carbs": 65,
+          "fat": 21
+        }
+      ]
+    },
+    {
+      "key": "coffee-shop",
+      "text": "Oatmeal from a coffee shop with brown sugar, raisins and mixed nuts",
+      "ingredients": [
+        {
+          "name": "Oatmeal",
+          "grams": 40,
+          "kcal": 153,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Brown sugar",
+          "grams": 10,
+          "kcal": 39,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Raisins",
+          "grams": 15,
+          "kcal": 50,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mixed nuts",
+          "grams": 20,
+          "kcal": 124,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Oatmeal with brown sugar, raisins and mixed nuts",
+          "calories": 366,
+          "protein": 9,
+          "carbs": 54,
+          "fat": 13
+        }
+      ]
+    },
+    {
+      "key": "water",
+      "text": "40g dry rolled oats cooked with water + a handful of blueberries + a drizzle of honey",
+      "ingredients": [
+        {
+          "name": "Dry rolled oats",
+          "grams": 40,
+          "kcal": 153,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Water",
+          "grams": 200,
+          "kcal": 0,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Blueberries",
+          "grams": 40,
+          "kcal": 25,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Honey",
+          "grams": 10,
+          "kcal": 33,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Oatmeal with blueberries and honey",
+          "calories": 211,
+          "protein": 6,
+          "carbs": 41,
+          "fat": 3
+        }
+      ]
+    },
+    {
+      "key": "overnight",
+      "text": "Overnight oats (50g oats + 150ml almond milk + 1 tablespoon chia seeds + 100g Greek yogurt + strawberries)",
+      "ingredients": [
+        {
+          "name": "Oats",
+          "grams": 50,
+          "kcal": 191,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Almond milk",
+          "grams": 150,
+          "kcal": 24,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chia seeds",
+          "grams": 12,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Greek yogurt",
+          "grams": 100,
+          "kcal": 97,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Strawberries",
+          "grams": 80,
+          "kcal": 29,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Overnight oats",
+          "calories": 402,
+          "protein": 19,
+          "carbs": 51,
+          "fat": 14
+        }
+      ]
+    }
+  ]
+}

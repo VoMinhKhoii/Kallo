@@ -5,7 +5,7 @@ import {
 import type { DishRowsMeal } from '@/components/logging/feed/persisted/meal-details';
 import { PersistedMealBody } from '@/components/logging/feed/persisted/persisted-meal-body';
 import { UserMessageBubble } from '@/components/logging/feed/turn/user-message-bubble';
-import type { FoodPageVariant } from '@/lib/seo/food-pages/pages';
+import type { FoodPageVariant } from '@/lib/seo/food-pages/types';
 
 /** The meal card's dish rows, from a captured meal. */
 function dishRowsOf(variant: FoodPageVariant): DishRowsMeal {

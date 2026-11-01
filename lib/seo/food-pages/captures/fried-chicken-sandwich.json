@@ -1,0 +1,193 @@
+{
+  "capturedAt": "2026-11-01T06:26:14.431Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "fast-food",
+      "text": "Fried chicken sandwich from a fast food place (brioche bun + crispy fried chicken breast + pickles + mayo)",
+      "ingredients": [
+        {
+          "name": "Brioche bun",
+          "grams": 70,
+          "kcal": 176,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Fried chicken breast",
+          "grams": 140,
+          "kcal": 356,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Frying oil",
+          "grams": 8,
+          "kcal": 72,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Pickles",
+          "grams": 20,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mayonnaise",
+          "grams": 15,
+          "kcal": 105,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Fried chicken sandwich",
+          "calories": 712,
+          "protein": 42,
+          "carbs": 48,
+          "fat": 39
+        }
+      ]
+    },
+    {
+      "key": "spicy-fries",
+      "text": "Spicy fried chicken sandwich (brioche bun + fried chicken thigh + spicy mayo + coleslaw) with medium fries",
+      "ingredients": [
+        {
+          "name": "Brioche bun",
+          "grams": 70,
+          "kcal": 210,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Fried chicken thigh",
+          "grams": 90,
+          "kcal": 259,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Spicy mayo",
+          "grams": 20,
+          "kcal": 127,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Coleslaw",
+          "grams": 40,
+          "kcal": 123,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "French fries",
+          "grams": 150,
+          "kcal": 278,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Spicy fried chicken sandwich",
+          "calories": 764,
+          "protein": 26,
+          "carbs": 49,
+          "fat": 52
+        },
+        {
+          "name": "Medium fries",
+          "calories": 278,
+          "protein": 4,
+          "carbs": 38,
+          "fat": 12
+        }
+      ]
+    },
+    {
+      "key": "grilled",
+      "text": "Grilled chicken sandwich (whole wheat bun + grilled chicken breast + lettuce + tomato + mustard, no mayo)",
+      "ingredients": [
+        {
+          "name": "Whole wheat bun",
+          "grams": 60,
+          "kcal": 161,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken breast",
+          "grams": 90,
+          "kcal": 137,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 20,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 30,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mustard",
+          "grams": 5,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Grilled chicken sandwich",
+          "calories": 311,
+          "protein": 36,
+          "carbs": 29,
+          "fat": 6
+        }
+      ]
+    },
+    {
+      "key": "air-fryer",
+      "text": "Homemade chicken sandwich (1 burger bun + 130g breaded chicken breast cooked in the air fryer + lettuce + 1 tablespoon light mayo)",
+      "ingredients": [
+        {
+          "name": "Burger bun",
+          "grams": 55,
+          "kcal": 151,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Breaded chicken breast",
+          "grams": 130,
+          "kcal": 348,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 19,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Light mayonnaise",
+          "grams": 14,
+          "kcal": 33,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade chicken sandwich",
+          "calories": 535,
+          "protein": 38,
+          "carbs": 41,
+          "fat": 24
+        }
+      ]
+    }
+  ]
+}

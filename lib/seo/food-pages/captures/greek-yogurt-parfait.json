@@ -1,0 +1,156 @@
+{
+  "capturedAt": "2026-11-01T06:16:53.982Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "coffee-shop",
+      "text": "Greek yogurt parfait from a coffee shop (vanilla Greek yogurt + granola + mixed berries + honey)",
+      "ingredients": [
+        {
+          "name": "Vanilla greek yogurt",
+          "grams": 150,
+          "kcal": 143,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Granola",
+          "grams": 30,
+          "kcal": 147,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mixed berries",
+          "grams": 60,
+          "kcal": 31,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Honey",
+          "grams": 10,
+          "kcal": 33,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Greek yogurt parfait",
+          "calories": 353,
+          "protein": 19,
+          "carbs": 44,
+          "fat": 12
+        }
+      ]
+    },
+    {
+      "key": "full-fat",
+      "text": "200g full-fat Greek yogurt + 30g granola + 1 tablespoon honey + blueberries",
+      "ingredients": [
+        {
+          "name": "Full-fat Greek yogurt",
+          "grams": 200,
+          "kcal": 194,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Granola",
+          "grams": 30,
+          "kcal": 147,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Honey",
+          "grams": 7,
+          "kcal": 23,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Blueberries",
+          "grams": 20,
+          "kcal": 13,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Greek yogurt bowl",
+          "calories": 376,
+          "protein": 22,
+          "carbs": 33,
+          "fat": 17
+        }
+      ]
+    },
+    {
+      "key": "nonfat",
+      "text": "170g nonfat Greek yogurt + strawberries + 1 tablespoon chia seeds, no granola",
+      "ingredients": [
+        {
+          "name": "Nonfat Greek yogurt",
+          "grams": 170,
+          "kcal": 100,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Strawberries",
+          "grams": 33,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chia seeds",
+          "grams": 4,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Greek yogurt with strawberries and chia seeds",
+          "calories": 133,
+          "protein": 18,
+          "carbs": 10,
+          "fat": 2
+        }
+      ]
+    },
+    {
+      "key": "walnuts",
+      "text": "Greek yogurt bowl (150g 2% Greek yogurt + a handful of walnuts + 1 sliced banana + a drizzle of maple syrup)",
+      "ingredients": [
+        {
+          "name": "2% Greek yogurt",
+          "grams": 150,
+          "kcal": 109,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Walnuts",
+          "grams": 15,
+          "kcal": 106,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Banana",
+          "grams": 77,
+          "kcal": 105,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Maple syrup",
+          "grams": 15,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Greek yogurt bowl",
+          "calories": 361,
+          "protein": 18,
+          "carbs": 43,
+          "fat": 13
+        }
+      ]
+    }
+  ]
+}

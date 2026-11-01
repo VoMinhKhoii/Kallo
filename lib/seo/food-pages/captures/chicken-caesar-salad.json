@@ -1,0 +1,180 @@
+{
+  "capturedAt": "2026-11-01T05:59:29.547Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Chicken Caesar salad from a restaurant (romaine + grilled chicken + croutons + shaved parmesan + about 3 tablespoons of Caesar dressing)",
+      "ingredients": [
+        {
+          "name": "Romaine lettuce",
+          "grams": 81,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken",
+          "grams": 120,
+          "kcal": 187,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Croutons",
+          "grams": 30,
+          "kcal": 120,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Shaved parmesan",
+          "grams": 15,
+          "kcal": 57,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Caesar dressing",
+          "grams": 45,
+          "kcal": 244,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken Caesar salad",
+          "calories": 626,
+          "protein": 48,
+          "carbs": 27,
+          "fat": 37
+        }
+      ]
+    },
+    {
+      "key": "wrap",
+      "text": "Chicken Caesar wrap from a café (large flour tortilla + grilled chicken + romaine + parmesan + Caesar dressing)",
+      "ingredients": [
+        {
+          "name": "Flour tortilla",
+          "grams": 70,
+          "kcal": 212,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken",
+          "grams": 85,
+          "kcal": 130,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Romaine lettuce",
+          "grams": 36,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Parmesan cheese",
+          "grams": 15,
+          "kcal": 63,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Caesar dressing",
+          "grams": 30,
+          "kcal": 146,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken caesar wrap",
+          "calories": 558,
+          "protein": 37,
+          "carbs": 39,
+          "fat": 28
+        }
+      ]
+    },
+    {
+      "key": "no-croutons",
+      "text": "Chicken Caesar salad (romaine + grilled chicken + a bit of parmesan + 1 tablespoon of Caesar dressing, no croutons)",
+      "ingredients": [
+        {
+          "name": "Romaine",
+          "grams": 54,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken",
+          "grams": 100,
+          "kcal": 155,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Parmesan",
+          "grams": 8,
+          "kcal": 30,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Caesar dressing",
+          "grams": 14,
+          "kcal": 76,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken Caesar salad",
+          "calories": 273,
+          "protein": 34,
+          "carbs": 2,
+          "fat": 14
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade chicken Caesar salad (2 handfuls of romaine + 120g grilled chicken breast + 1 tablespoon light Caesar dressing + 1 tablespoon grated parmesan + a few croutons)",
+      "ingredients": [
+        {
+          "name": "Romaine",
+          "grams": 86,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken breast",
+          "grams": 120,
+          "kcal": 181,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Light Caesar dressing",
+          "grams": 15,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grated parmesan",
+          "grams": 5,
+          "kcal": 21,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Croutons",
+          "grams": 10,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade chicken Caesar salad",
+          "calories": 278,
+          "protein": 40,
+          "carbs": 14,
+          "fat": 7
+        }
+      ]
+    }
+  ]
+}

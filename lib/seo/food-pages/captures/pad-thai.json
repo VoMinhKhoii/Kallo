@@ -1,0 +1,240 @@
+{
+  "capturedAt": "2026-11-01T06:21:30.077Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Chicken pad thai from a Thai restaurant (rice noodles + chicken + egg + bean sprouts + crushed peanuts + tamarind sauce)",
+      "ingredients": [
+        {
+          "name": "Rice noodles",
+          "grams": 180,
+          "kcal": 189,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken",
+          "grams": 70,
+          "kcal": 118,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 45,
+          "kcal": 67,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bean sprouts",
+          "grams": 40,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Crushed peanuts",
+          "grams": 10,
+          "kcal": 65,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tamarind sauce",
+          "grams": 30,
+          "kcal": 80,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 8,
+          "kcal": 71,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken pad thai",
+          "calories": 606,
+          "protein": 35,
+          "carbs": 66,
+          "fat": 22
+        }
+      ]
+    },
+    {
+      "key": "half-box",
+      "text": "Shrimp pad thai from a takeout box (rice noodles + shrimp + egg + bean sprouts + peanuts), I ate about half the box",
+      "ingredients": [
+        {
+          "name": "Rice noodles",
+          "grams": 70,
+          "kcal": 245,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Shrimp",
+          "grams": 54,
+          "kcal": 53,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 35,
+          "kcal": 67,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bean sprouts",
+          "grams": 45,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Peanuts",
+          "grams": 10,
+          "kcal": 63,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 8,
+          "kcal": 58,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Pad thai sauce",
+          "grams": 30,
+          "kcal": 74,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Shrimp pad thai",
+          "calories": 577,
+          "protein": 28,
+          "carbs": 68,
+          "fat": 22
+        }
+      ]
+    },
+    {
+      "key": "tofu",
+      "text": "Tofu pad thai (rice noodles + fried tofu + egg + bean sprouts + spring onion + extra crushed peanuts)",
+      "ingredients": [
+        {
+          "name": "Rice noodles",
+          "grams": 60,
+          "kcal": 210,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Fried tofu",
+          "grams": 70,
+          "kcal": 204,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 44,
+          "kcal": 92,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bean sprouts",
+          "grams": 40,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Spring onion",
+          "grams": 14,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Crushed peanuts",
+          "grams": 15,
+          "kcal": 95,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pad thai sauce",
+          "grams": 30,
+          "kcal": 77,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 8,
+          "kcal": 72,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Tofu pad thai",
+          "calories": 770,
+          "protein": 30,
+          "carbs": 68,
+          "fat": 42
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade chicken pad thai (75g dry rice noodles + 100g chicken breast + 1 egg + bean sprouts + 1 tablespoon oil + 1 tablespoon peanuts)",
+      "ingredients": [
+        {
+          "name": "Dry rice noodles",
+          "grams": 75,
+          "kcal": 263,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken breast",
+          "grams": 100,
+          "kcal": 113,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 44,
+          "kcal": 67,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bean sprouts",
+          "grams": 60,
+          "kcal": 22,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 14,
+          "kcal": 122,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Peanuts",
+          "grams": 9,
+          "kcal": 55,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pad thai sauce",
+          "grams": 30,
+          "kcal": 77,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade chicken pad thai",
+          "calories": 720,
+          "protein": 39,
+          "carbs": 72,
+          "fat": 31
+        }
+      ]
+    }
+  ]
+}

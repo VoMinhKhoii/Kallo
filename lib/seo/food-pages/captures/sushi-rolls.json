@@ -1,0 +1,263 @@
+{
+  "capturedAt": "2026-11-01T06:21:58.495Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "california",
+      "text": "California roll, 8 pieces (sushi rice + crab stick + avocado + cucumber + sesame seeds) with soy sauce",
+      "ingredients": [
+        {
+          "name": "Sushi rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Crab stick",
+          "grams": 20,
+          "kcal": 19,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 12,
+          "kcal": 21,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 10,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Sesame seeds",
+          "grams": 2,
+          "kcal": 11,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nori",
+          "grams": 1,
+          "kcal": 0,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Soy sauce",
+          "grams": 10,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "California roll",
+          "calories": 255,
+          "protein": 6,
+          "carbs": 51,
+          "fat": 3
+        },
+        {
+          "name": "Soy sauce",
+          "calories": 5,
+          "protein": 1,
+          "carbs": 1,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "spicy-tuna",
+      "text": "Spicy tuna roll, 8 pieces (sushi rice + tuna + spicy mayo + nori) with soy sauce",
+      "ingredients": [
+        {
+          "name": "Sushi rice",
+          "grams": 130,
+          "kcal": 164,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tuna",
+          "grams": 40,
+          "kcal": 49,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Spicy mayo",
+          "grams": 10,
+          "kcal": 68,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nori",
+          "grams": 2,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Soy sauce",
+          "grams": 8,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Spicy tuna roll",
+          "calories": 287,
+          "protein": 16,
+          "carbs": 38,
+          "fat": 8
+        }
+      ]
+    },
+    {
+      "key": "tempura",
+      "text": "Shrimp tempura roll, 8 pieces, with eel sauce and spicy mayo on top",
+      "ingredients": [
+        {
+          "name": "Sushi rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nori",
+          "grams": 2,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Shrimp tempura",
+          "grams": 28,
+          "kcal": 26,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tempura batter",
+          "grams": 30,
+          "kcal": 105,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Frying oil",
+          "grams": 10,
+          "kcal": 85,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Eel sauce",
+          "grams": 20,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Spicy mayo",
+          "grams": 15,
+          "kcal": 102,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Shrimp tempura roll",
+          "calories": 419,
+          "protein": 12,
+          "carbs": 69,
+          "fat": 11
+        },
+        {
+          "name": "Eel sauce",
+          "calories": 17,
+          "protein": 1,
+          "carbs": 3,
+          "fat": 0
+        },
+        {
+          "name": "Spicy mayo",
+          "calories": 102,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 11
+        }
+      ]
+    },
+    {
+      "key": "combo",
+      "text": "Sushi lunch combo (6 piece salmon roll + 4 pieces of salmon nigiri + miso soup)",
+      "ingredients": [
+        {
+          "name": "Sushi rice",
+          "grams": 180,
+          "kcal": 227,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salmon",
+          "grams": 90,
+          "kcal": 182,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nori",
+          "grams": 2,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sushi rice",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salmon",
+          "grams": 60,
+          "kcal": 121,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Miso paste",
+          "grams": 15,
+          "kcal": 31,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tofu",
+          "grams": 30,
+          "kcal": 26,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Seaweed",
+          "grams": 3,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Salmon roll",
+          "calories": 411,
+          "protein": 23,
+          "carbs": 52,
+          "fat": 13
+        },
+        {
+          "name": "Salmon nigiri",
+          "calories": 273,
+          "protein": 15,
+          "carbs": 34,
+          "fat": 8
+        },
+        {
+          "name": "Miso soup",
+          "calories": 59,
+          "protein": 5,
+          "carbs": 5,
+          "fat": 2
+        }
+      ]
+    }
+  ]
+}

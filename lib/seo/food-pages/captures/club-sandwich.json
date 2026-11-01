@@ -1,0 +1,229 @@
+{
+  "capturedAt": "2026-11-01T06:18:12.978Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "cafe",
+      "text": "Club sandwich from a café (3 slices of toasted white bread + turkey + bacon + lettuce + tomato + mayo) with a side of potato chips",
+      "ingredients": [
+        {
+          "name": "White bread",
+          "grams": 66,
+          "kcal": 191,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Turkey",
+          "grams": 60,
+          "kcal": 62,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 24,
+          "kcal": 92,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 19,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 29,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mayonnaise",
+          "grams": 14,
+          "kcal": 95,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Potato chips",
+          "grams": 28,
+          "kcal": 147,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Club sandwich",
+          "calories": 449,
+          "protein": 24,
+          "carbs": 39,
+          "fat": 22
+        },
+        {
+          "name": "Potato chips",
+          "calories": 147,
+          "protein": 1,
+          "carbs": 14,
+          "fat": 10
+        }
+      ]
+    },
+    {
+      "key": "chicken",
+      "text": "Club sandwich (3 slices of white toast + chicken breast + bacon + cheese + lettuce + tomato + mayo)",
+      "ingredients": [
+        {
+          "name": "White toast",
+          "grams": 84,
+          "kcal": 244,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken breast",
+          "grams": 85,
+          "kcal": 128,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 24,
+          "kcal": 85,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 28,
+          "kcal": 106,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 20,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 40,
+          "kcal": 8,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Mayonnaise",
+          "grams": 14,
+          "kcal": 98,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Club sandwich",
+          "calories": 673,
+          "protein": 49,
+          "carbs": 48,
+          "fat": 31
+        }
+      ]
+    },
+    {
+      "key": "no-mayo",
+      "text": "Turkey club on 2 slices of whole wheat bread (turkey + 1 strip of bacon + lettuce + tomato + mustard, no mayo)",
+      "ingredients": [
+        {
+          "name": "Whole wheat bread",
+          "grams": 70,
+          "kcal": 177,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Turkey",
+          "grams": 60,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 8,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lettuce",
+          "grams": 20,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato",
+          "grams": 38,
+          "kcal": 8,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Mustard",
+          "grams": 10,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Turkey club sandwich",
+          "calories": 292,
+          "protein": 21,
+          "carbs": 34,
+          "fat": 8
+        }
+      ]
+    },
+    {
+      "key": "half",
+      "text": "Half a club sandwich (toasted white bread + turkey + ham + bacon + cheese + mayo)",
+      "ingredients": [
+        {
+          "name": "White bread",
+          "grams": 30,
+          "kcal": 87,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Turkey",
+          "grams": 25,
+          "kcal": 26,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ham",
+          "grams": 25,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bacon",
+          "grams": 10,
+          "kcal": 47,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cheese",
+          "grams": 20,
+          "kcal": 81,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mayonnaise",
+          "grams": 10,
+          "kcal": 70,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Club sandwich (half)",
+          "calories": 351,
+          "protein": 19,
+          "carbs": 19,
+          "fat": 22
+        }
+      ]
+    }
+  ]
+}

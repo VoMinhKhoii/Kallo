@@ -1,7 +1,8 @@
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Link } from '@/i18n/navigation';
 import type { DocsNavSection } from '@/lib/domain/docs/tree';
+import { FOOD_PAGE_LOCALE, FOOD_PAGE_PREFIX } from '@/lib/seo/food-pages/slugs';
 import { LINKEDIN_URL } from '@/lib/seo/structured-data';
 
 /**
@@ -51,6 +52,7 @@ export async function DocsFooter({
   const t = await getTranslations('docs');
   const tSections = await getTranslations('docs.sections');
   const tFooter = await getTranslations('landing.footer');
+  const locale = await getLocale();
 
   return (
     <footer
@@ -116,6 +118,16 @@ export async function DocsFooter({
           >
             {tFooter('pricing')}
           </Link>
+          {/* The food pages' way into the site. They exist in English only,
+              so the link (and its label) shows on English pages only. */}
+          {locale === FOOD_PAGE_LOCALE ? (
+            <Link
+              className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
+              href={FOOD_PAGE_PREFIX}
+            >
+              Calories in meals
+            </Link>
+          ) : null}
           <a
             className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
             href={LINKEDIN_URL}

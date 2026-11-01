@@ -1,0 +1,180 @@
+{
+  "capturedAt": "2026-11-01T06:16:57.204Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "shop",
+      "text": "Acai bowl from a smoothie shop (acai blended with banana + granola + strawberries + banana slices + honey + coconut flakes)",
+      "ingredients": [
+        {
+          "name": "Acai",
+          "grams": 100,
+          "kcal": 62,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Banana",
+          "grams": 52,
+          "kcal": 52,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Granola",
+          "grams": 40,
+          "kcal": 195,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Strawberries",
+          "grams": 70,
+          "kcal": 25,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Honey",
+          "grams": 15,
+          "kcal": 49,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Coconut flakes",
+          "grams": 8,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Acai bowl",
+          "calories": 424,
+          "protein": 8,
+          "carbs": 68,
+          "fat": 14
+        }
+      ]
+    },
+    {
+      "key": "peanut-butter",
+      "text": "Acai bowl (acai blended with banana + 1 tablespoon peanut butter + granola + sliced strawberries)",
+      "ingredients": [
+        {
+          "name": "Acai",
+          "grams": 100,
+          "kcal": 62,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Banana",
+          "grams": 65,
+          "kcal": 65,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Peanut butter",
+          "grams": 16,
+          "kcal": 102,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Granola",
+          "grams": 30,
+          "kcal": 147,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Strawberries",
+          "grams": 76,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Acai bowl",
+          "calories": 403,
+          "protein": 10,
+          "carbs": 53,
+          "fat": 17
+        }
+      ]
+    },
+    {
+      "key": "small",
+      "text": "Small acai bowl (acai base + blueberries + a sprinkle of granola, no honey)",
+      "ingredients": [
+        {
+          "name": "Acai base",
+          "grams": 100,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Blueberries",
+          "grams": 40,
+          "kcal": 25,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Granola",
+          "grams": 15,
+          "kcal": 73,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Acai bowl",
+          "calories": 125,
+          "protein": 3,
+          "carbs": 20,
+          "fat": 4
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade acai bowl (100g frozen acai pack + half a frozen banana + 50ml almond milk + 20g granola + a few raspberries)",
+      "ingredients": [
+        {
+          "name": "Frozen acai pack",
+          "grams": 100,
+          "kcal": 62,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Frozen banana",
+          "grams": 39,
+          "kcal": 39,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Almond milk",
+          "grams": 50,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Granola",
+          "grams": 20,
+          "kcal": 98,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Raspberries",
+          "grams": 40,
+          "kcal": 24,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade acai bowl",
+          "calories": 231,
+          "protein": 5,
+          "carbs": 38,
+          "fat": 7
+        }
+      ]
+    }
+  ]
+}

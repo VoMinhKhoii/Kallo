@@ -30,4 +30,13 @@ describe('DocsFooter', () => {
     expect(within(logging).getAllByRole('link')).toHaveLength(2);
     expect(screen.getByRole('list', { name: 'start' })).toBeInTheDocument();
   });
+
+  it('links the food pages on English pages', async () => {
+    // The setup's locale is `en`; the pages exist in English only.
+    render(await DocsFooter({ sections }));
+
+    expect(
+      screen.getByRole('link', { name: 'Calories in meals' })
+    ).toHaveAttribute('href', '/calories');
+  });
 });

@@ -1,0 +1,281 @@
+{
+  "capturedAt": "2026-11-01T06:23:44.325Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Butter chicken from an Indian restaurant (butter chicken + pilau rice + butter naan)",
+      "ingredients": [
+        {
+          "name": "Chicken thigh",
+          "grams": 113,
+          "kcal": 112,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Tomato cream sauce",
+          "grams": 120,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 10,
+          "kcal": 74,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Basmati rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 40,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Naan bread",
+          "grams": 90,
+          "kcal": 262,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Butter chicken",
+          "calories": 267,
+          "protein": 22,
+          "carbs": 7,
+          "fat": 17
+        },
+        {
+          "name": "Pilau rice",
+          "calories": 279,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 9
+        },
+        {
+          "name": "Butter naan",
+          "calories": 299,
+          "protein": 9,
+          "carbs": 45,
+          "fat": 9
+        }
+      ]
+    },
+    {
+      "key": "rice",
+      "text": "Butter chicken with plain basmati rice",
+      "ingredients": [
+        {
+          "name": "Chicken thigh",
+          "grams": 84,
+          "kcal": 180,
+          "source": "Vietnam’s National Institute of Nutrition"
+        },
+        {
+          "name": "Butter",
+          "grams": 10,
+          "kcal": 73,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cream",
+          "grams": 40,
+          "kcal": 139,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 60,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Onion",
+          "grams": 54,
+          "kcal": 23,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Oil",
+          "grams": 5,
+          "kcal": 45,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Basmati rice",
+          "grams": 160,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Butter chicken",
+          "calories": 478,
+          "protein": 24,
+          "carbs": 10,
+          "fat": 38
+        },
+        {
+          "name": "Plain basmati rice",
+          "calories": 202,
+          "protein": 4,
+          "carbs": 45,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "half",
+      "text": "Half a portion of takeaway butter chicken with a little rice",
+      "ingredients": [
+        {
+          "name": "Chicken",
+          "grams": 77,
+          "kcal": 193,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cream",
+          "grams": 30,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 60,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Onion",
+          "grams": 36,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Garlic",
+          "grams": 3,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ginger",
+          "grams": 2,
+          "kcal": 0,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cooking oil",
+          "grams": 4,
+          "kcal": 36,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Rice",
+          "grams": 80,
+          "kcal": 101,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Butter chicken",
+          "calories": 407,
+          "protein": 18,
+          "carbs": 8,
+          "fat": 34
+        },
+        {
+          "name": "White rice",
+          "calories": 101,
+          "protein": 2,
+          "carbs": 23,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade butter chicken (150g chicken thigh + tomato sauce + 1 tablespoon butter + 50ml cream) with 150g cooked rice",
+      "ingredients": [
+        {
+          "name": "Chicken thigh",
+          "grams": 150,
+          "kcal": 222,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tomato sauce",
+          "grams": 120,
+          "kcal": 35,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 14,
+          "kcal": 103,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cream",
+          "grams": 50,
+          "kcal": 173,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cooked rice",
+          "grams": 150,
+          "kcal": 190,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade butter chicken",
+          "calories": 534,
+          "protein": 32,
+          "carbs": 8,
+          "fat": 41
+        },
+        {
+          "name": "Cooked rice",
+          "calories": 190,
+          "protein": 4,
+          "carbs": 42,
+          "fat": 1
+        }
+      ]
+    }
+  ]
+}

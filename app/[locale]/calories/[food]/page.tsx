@@ -5,19 +5,21 @@ import { Suspense } from 'react';
 import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
-import { DocsH2, DocsParagraph } from '@/components/docs/mdx/prose';
+import { DocsH2, DocsLink, DocsParagraph } from '@/components/docs/mdx/prose';
+import { FoodLinkList } from '@/components/seo/food-page/food-link-list';
 import { IngredientBars } from '@/components/seo/food-page/ingredient-bars';
 import { MealExample } from '@/components/seo/food-page/meal-example';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
-import { FOOD_PAGE_MEALS } from '@/lib/seo/food-pages/meals';
 import {
   breakdownOf,
   FOOD_PAGES,
   kcalSpan,
+  relatedPages,
   sourcesOf,
 } from '@/lib/seo/food-pages/pages';
 import {
   FOOD_PAGE_LOCALE,
+  FOOD_PAGE_PREFIX,
   FOOD_SLUGS,
   foodPagePath,
   isFoodSlug,
@@ -99,7 +101,7 @@ async function FoodContent({ params }: FoodPageProps) {
         <div className="mt-10">
           <DocsParagraph>{page.lead(kcalSpan(page.capture))}</DocsParagraph>
 
-          {FOOD_PAGE_MEALS[food].map((meal) => {
+          {page.meals.map((meal) => {
             const variant = page.capture.variants.find(
               (v) => v.key === meal.key
             );
@@ -121,6 +123,16 @@ async function FoodContent({ params }: FoodPageProps) {
             Each meal above was typed into Kallo once, on {loggedOn}. Kallo
             split it into ingredients, estimated the grams, and took calories
             and macros from {sourcesOf(page.capture)}.
+          </DocsParagraph>
+
+          <DocsH2>More meals</DocsH2>
+          <FoodLinkList pages={relatedPages(page)} />
+          <DocsParagraph>
+            Or browse{' '}
+            <DocsLink href={FOOD_PAGE_PREFIX}>
+              all {FOOD_SLUGS.length} meals
+            </DocsLink>
+            .
           </DocsParagraph>
 
           <div className="mt-16 border-kallo-text border-t pt-10 text-center">

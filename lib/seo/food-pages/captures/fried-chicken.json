@@ -1,0 +1,209 @@
+{
+  "capturedAt": "2026-11-01T06:24:58.389Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "meal",
+      "text": "Fried chicken meal (1 fried chicken breast + 1 fried thigh) with mashed potatoes and gravy and coleslaw",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 170,
+          "kcal": 518,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken thigh",
+          "grams": 120,
+          "kcal": 309,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Potatoes",
+          "grams": 200,
+          "kcal": 225,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 10,
+          "kcal": 73,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Milk",
+          "grams": 40,
+          "kcal": 24,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gravy",
+          "grams": 60,
+          "kcal": 28,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Flour",
+          "grams": 5,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cabbage",
+          "grams": 90,
+          "kcal": 26,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Coleslaw dressing",
+          "grams": 30,
+          "kcal": 122,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Fried chicken breast",
+          "calories": 518,
+          "protein": 42,
+          "carbs": 15,
+          "fat": 32
+        },
+        {
+          "name": "Fried chicken thigh",
+          "calories": 309,
+          "protein": 26,
+          "carbs": 11,
+          "fat": 18
+        },
+        {
+          "name": "Mashed potatoes",
+          "calories": 323,
+          "protein": 5,
+          "carbs": 36,
+          "fat": 18
+        },
+        {
+          "name": "Gravy",
+          "calories": 47,
+          "protein": 1,
+          "carbs": 7,
+          "fat": 2
+        },
+        {
+          "name": "Coleslaw",
+          "calories": 148,
+          "protein": 2,
+          "carbs": 11,
+          "fat": 11
+        }
+      ]
+    },
+    {
+      "key": "three-piece",
+      "text": "3 pieces of fried chicken (drumstick + thigh + wing), skin on",
+      "ingredients": [
+        {
+          "name": "Chicken drumstick",
+          "grams": 84,
+          "kcal": 210,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken thigh",
+          "grams": 98,
+          "kcal": 237,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken wing",
+          "grams": 42,
+          "kcal": 133,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Fried chicken pieces",
+          "calories": 579,
+          "protein": 48,
+          "carbs": 20,
+          "fat": 34
+        }
+      ]
+    },
+    {
+      "key": "tenders",
+      "text": "4 fried chicken tenders with honey mustard sauce",
+      "ingredients": [
+        {
+          "name": "Chicken tenders",
+          "grams": 240,
+          "kcal": 605,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Breading",
+          "grams": 24,
+          "kcal": 94,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Frying oil",
+          "grams": 10,
+          "kcal": 85,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Honey mustard sauce",
+          "grams": 40,
+          "kcal": 185,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Fried chicken tenders",
+          "calories": 783,
+          "protein": 42,
+          "carbs": 59,
+          "fat": 42
+        },
+        {
+          "name": "Honey mustard sauce",
+          "calories": 185,
+          "protein": 0,
+          "carbs": 9,
+          "fat": 16
+        }
+      ]
+    },
+    {
+      "key": "no-skin",
+      "text": "2 pieces of fried chicken (1 breast + 1 drumstick), I took the skin off",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "grams": 100,
+          "kcal": 274,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken drumstick",
+          "grams": 77,
+          "kcal": 139,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Fried chicken",
+          "calories": 413,
+          "protein": 41,
+          "carbs": 9,
+          "fat": 23
+        }
+      ]
+    }
+  ]
+}

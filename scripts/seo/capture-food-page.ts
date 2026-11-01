@@ -1,7 +1,7 @@
 /**
  * Food page capture: run each detailed meal on a food page through the real
  * pipeline once, and write the numbers the page shows to
- * `lib/seo/food-pages/<slug>.json`. Run with the production model profile:
+ * `lib/seo/food-pages/captures/<slug>.json`. Run with the production model profile:
  *
  *   ANTHROPIC_API_KEY=$CLAUDE_API_KEY PIPELINE_MODEL_PROFILE=haiku \
  *     bun --conditions=react-server scripts/seo/capture-food-page.ts chicken-burrito
@@ -11,16 +11,17 @@
  * one rerun, not the page. Delete the cache to capture afresh.
  *
  * The meals themselves, and how to write them, are in
- * `lib/seo/food-pages/meals.ts`.
+ * `lib/seo/food-pages/foods/<slug>.ts`.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { buildAiRequestContext } from '@/lib/ai/adapters/user-context';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import { FOOD_PAGE_MEALS } from '@/lib/seo/food-pages/meals';
+import { FOODS } from '@/lib/seo/food-pages/foods';
+import { isFoodSlug } from '@/lib/seo/food-pages/slugs';
 import type {
   FoodPageCapture,
   FoodPageVariant,
-} from '@/lib/seo/food-pages/pages';
-import { isFoodSlug } from '@/lib/seo/food-pages/slugs';
+} from '@/lib/seo/food-pages/types';
 
 /**
  * The food table a composition row came from, by its id prefix. A public page
@@ -32,6 +33,9 @@ function sourceOf(foodCompositionId: string | null, name: string): string {
   }
   if (foodCompositionId.startsWith('usda_')) return 'USDA FoodData Central';
   if (foodCompositionId.startsWith('fao_')) return 'FAO/INFOODS';
+  if (foodCompositionId.startsWith('nin_')) {
+    return 'Vietnam’s National Institute of Nutrition';
+  }
   throw new Error(
     `no source name for "${foodCompositionId}": add its prefix to sourceOf`
   );
@@ -41,9 +45,9 @@ const slug = process.argv[2] ?? '';
 if (!isFoodSlug(slug)) {
   throw new Error(`unknown food page "${slug}": add it to slugs.ts`);
 }
-const meals = FOOD_PAGE_MEALS[slug];
+const { meals } = FOODS[slug];
 const CACHE = `.cache/food-pages/${slug}.capture.json`;
-const OUT = `lib/seo/food-pages/${slug}.json`;
+const OUT = `lib/seo/food-pages/captures/${slug}.json`;
 
 // A global default user: no country-specific portion habits.
 const USER: UserContext = {
@@ -134,10 +138,35 @@ for (const meal of meals) {
     variants.push(toVariant(meal.key, meal.text, hit.result));
     continue;
   }
-  const res = await analyzeMealV2(meal.text, USER, db, client);
+  // The app sets the meal's language from its text and the page's locale;
+  // without it the pipeline may name English meals' ingredients in Vietnamese.
+  const user = buildAiRequestContext(USER, {
+    mealText: meal.text,
+    requestLocale: 'en',
+  });
+  // A page is English: a meal the app would answer in Vietnamese ("café"
+  // reads as Vietnamese to it) must be reworded, not published.
+  if (user.outputLanguage !== 'en') {
+    console.log(`✗ ${meal.key} — the app reads this meal as Vietnamese`);
+    continue;
+  }
+  let vectorDown = false;
+  const res = await analyzeMealV2(meal.text, user, db, client, undefined, {
+    onDiagnostics: ({ matchResults }) => {
+      vectorDown = matchResults.some(
+        (m) => m.retrieval?.vectorSource === 'none'
+      );
+    },
+  });
   // An unresolved result is one the app itself refuses to show.
   if (!res.success || res.unresolved) {
     console.log(`✗ ${meal.key} — ${JSON.stringify(res).slice(0, 200)}`);
+    continue;
+  }
+  // A slow embedding call leaves only the lexical search, which matches worse
+  // than the app normally does: not a fair number to publish.
+  if (vectorDown) {
+    console.log(`✗ ${meal.key} — vector search timed out`);
     continue;
   }
   try {

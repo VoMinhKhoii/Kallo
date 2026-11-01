@@ -1,0 +1,162 @@
+{
+  "capturedAt": "2026-11-01T06:26:16.354Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "cafe",
+      "text": "Avocado toast from a cafe (2 slices of sourdough + 1 whole avocado smashed + olive oil drizzle + chili flakes)",
+      "ingredients": [
+        {
+          "name": "Sourdough bread",
+          "grams": 80,
+          "kcal": 255,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 105,
+          "kcal": 177,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Olive oil",
+          "grams": 7,
+          "kcal": 56,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chili flakes",
+          "grams": 1,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Avocado toast",
+          "calories": 491,
+          "protein": 13,
+          "carbs": 59,
+          "fat": 23
+        }
+      ]
+    },
+    {
+      "key": "poached-egg",
+      "text": "Avocado toast (1 slice of sourdough + half an avocado + 1 poached egg + a pinch of salt)",
+      "ingredients": [
+        {
+          "name": "Sourdough bread",
+          "grams": 28,
+          "kcal": 89,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 70,
+          "kcal": 122,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 44,
+          "kcal": 62,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salt",
+          "grams": 0,
+          "kcal": 0,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Avocado toast",
+          "calories": 273,
+          "protein": 11,
+          "carbs": 24,
+          "fat": 15
+        }
+      ]
+    },
+    {
+      "key": "feta",
+      "text": "Avocado toast (2 slices of whole wheat toast + half an avocado + a bit of feta + cherry tomatoes)",
+      "ingredients": [
+        {
+          "name": "Whole wheat toast",
+          "grams": 60,
+          "kcal": 184,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 47,
+          "kcal": 98,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Feta cheese",
+          "grams": 15,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cherry tomatoes",
+          "grams": 60,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Avocado toast",
+          "calories": 334,
+          "protein": 13,
+          "carbs": 38,
+          "fat": 14
+        }
+      ]
+    },
+    {
+      "key": "rye",
+      "text": "Avocado toast on 1 slice of rye bread (a quarter of an avocado + lemon juice + black pepper, no oil)",
+      "ingredients": [
+        {
+          "name": "Rye bread",
+          "grams": 32,
+          "kcal": 82,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 29,
+          "kcal": 50,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lemon juice",
+          "grams": 5,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Black pepper",
+          "grams": 1,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Avocado toast",
+          "calories": 135,
+          "protein": 3,
+          "carbs": 19,
+          "fat": 5
+        }
+      ]
+    }
+  ]
+}

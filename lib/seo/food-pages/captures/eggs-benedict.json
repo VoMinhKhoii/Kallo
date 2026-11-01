@@ -1,0 +1,205 @@
+{
+  "capturedAt": "2026-11-01T06:16:30.354Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "brunch",
+      "text": "Eggs Benedict at a brunch place (English muffin + 2 poached eggs + 2 slices of Canadian bacon + hollandaise sauce) with a side of home fries",
+      "ingredients": [
+        {
+          "name": "English muffin",
+          "grams": 57,
+          "kcal": 130,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Poached eggs",
+          "grams": 100,
+          "kcal": 138,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Canadian bacon",
+          "grams": 60,
+          "kcal": 92,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hollandaise sauce",
+          "grams": 40,
+          "kcal": 93,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Home fries",
+          "grams": 150,
+          "kcal": 245,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Eggs benedict",
+          "calories": 454,
+          "protein": 36,
+          "carbs": 30,
+          "fat": 21
+        },
+        {
+          "name": "Home fries",
+          "calories": 245,
+          "protein": 4,
+          "carbs": 38,
+          "fat": 8
+        }
+      ]
+    },
+    {
+      "key": "classic",
+      "text": "Eggs Benedict (1 English muffin + 2 poached eggs + 2 slices of ham + hollandaise sauce)",
+      "ingredients": [
+        {
+          "name": "English muffin",
+          "grams": 57,
+          "kcal": 153,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg",
+          "grams": 100,
+          "kcal": 138,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ham",
+          "grams": 56,
+          "kcal": 89,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg yolk",
+          "grams": 22,
+          "kcal": 69,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 18,
+          "kcal": 137,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Eggs Benedict",
+          "calories": 588,
+          "protein": 31,
+          "carbs": 34,
+          "fat": 36
+        }
+      ]
+    },
+    {
+      "key": "salmon",
+      "text": "Eggs Benedict with smoked salmon (1 English muffin + 2 poached eggs + 50g smoked salmon + hollandaise sauce)",
+      "ingredients": [
+        {
+          "name": "English muffin",
+          "grams": 57,
+          "kcal": 130,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Poached eggs",
+          "grams": 100,
+          "kcal": 139,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Smoked salmon",
+          "grams": 50,
+          "kcal": 56,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 10,
+          "kcal": 73,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg yolk",
+          "grams": 30,
+          "kcal": 95,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lemon juice",
+          "grams": 8,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Eggs Benedict with smoked salmon",
+          "calories": 496,
+          "protein": 32,
+          "carbs": 28,
+          "fat": 29
+        }
+      ]
+    },
+    {
+      "key": "half",
+      "text": "Half an eggs Benedict (half an English muffin + 1 poached egg + 1 slice of ham + a little hollandaise)",
+      "ingredients": [
+        {
+          "name": "English muffin",
+          "grams": 28,
+          "kcal": 65,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Poached egg",
+          "grams": 50,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ham",
+          "grams": 21,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Egg yolk",
+          "grams": 6,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 4,
+          "kcal": 32,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Lemon juice",
+          "grams": 4,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Eggs Benedict (half)",
+          "calories": 223,
+          "protein": 13,
+          "carbs": 14,
+          "fat": 13
+        }
+      ]
+    }
+  ]
+}

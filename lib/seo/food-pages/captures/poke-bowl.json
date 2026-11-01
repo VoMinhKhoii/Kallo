@@ -1,0 +1,216 @@
+{
+  "capturedAt": "2026-11-01T06:21:11.130Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "shop",
+      "text": "Salmon poke bowl from a poke shop (sushi rice + raw salmon + avocado + edamame + cucumber + spicy mayo + sesame seeds)",
+      "ingredients": [
+        {
+          "name": "Sushi rice",
+          "grams": 160,
+          "kcal": 201,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salmon",
+          "grams": 100,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 35,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Edamame",
+          "grams": 40,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 40,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Spicy mayo",
+          "grams": 15,
+          "kcal": 102,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sesame seeds",
+          "grams": 3,
+          "kcal": 17,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Salmon poke bowl",
+          "calories": 651,
+          "protein": 31,
+          "carbs": 55,
+          "fat": 34
+        }
+      ]
+    },
+    {
+      "key": "half-rice",
+      "text": "Tuna poke bowl (half sushi rice, half salad + ahi tuna + cucumber + edamame + seaweed salad + ponzu, no mayo)",
+      "ingredients": [
+        {
+          "name": "Sushi rice",
+          "grams": 80,
+          "kcal": 102,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ahi tuna",
+          "grams": 100,
+          "kcal": 102,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 60,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Edamame",
+          "grams": 40,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Seaweed salad",
+          "grams": 30,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ponzu",
+          "grams": 15,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Tuna poke bowl",
+          "calories": 305,
+          "protein": 34,
+          "carbs": 34,
+          "fat": 4
+        }
+      ]
+    },
+    {
+      "key": "greens",
+      "text": "Poke bowl on mixed greens, no rice (tuna + salmon + mango + cucumber + edamame + a drizzle of spicy mayo)",
+      "ingredients": [
+        {
+          "name": "Mixed greens",
+          "grams": 48,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tuna",
+          "grams": 70,
+          "kcal": 72,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salmon",
+          "grams": 70,
+          "kcal": 142,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mango",
+          "grams": 56,
+          "kcal": 38,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 57,
+          "kcal": 9,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Edamame",
+          "grams": 60,
+          "kcal": 90,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Spicy mayo",
+          "grams": 10,
+          "kcal": 68,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Poke bowl on mixed greens",
+          "calories": 429,
+          "protein": 40,
+          "carbs": 18,
+          "fat": 22
+        }
+      ]
+    },
+    {
+      "key": "homemade",
+      "text": "Homemade salmon poke bowl (1 cup cooked brown rice + 100g raw salmon + half an avocado + cucumber + 1 tablespoon soy sauce)",
+      "ingredients": [
+        {
+          "name": "Brown rice",
+          "grams": 195,
+          "kcal": 238,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Salmon",
+          "grams": 100,
+          "kcal": 202,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Avocado",
+          "grams": 47,
+          "kcal": 97,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cucumber",
+          "grams": 60,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Soy sauce",
+          "grams": 16,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Salmon poke bowl",
+          "calories": 558,
+          "protein": 28,
+          "carbs": 57,
+          "fat": 24
+        }
+      ]
+    }
+  ]
+}

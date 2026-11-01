@@ -1,0 +1,187 @@
+{
+  "capturedAt": "2026-11-01T06:21:07.226Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "restaurant",
+      "text": "Chicken fettuccine alfredo at an Italian restaurant (fettuccine + grilled chicken + alfredo sauce + parmesan) with garlic bread",
+      "ingredients": [
+        {
+          "name": "Fettuccine",
+          "grams": 200,
+          "kcal": 311,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken",
+          "grams": 120,
+          "kcal": 181,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Alfredo sauce",
+          "grams": 110,
+          "kcal": 183,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Parmesan",
+          "grams": 15,
+          "kcal": 63,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bread",
+          "grams": 70,
+          "kcal": 245,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 14,
+          "kcal": 103,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Garlic",
+          "grams": 3,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken fettuccine alfredo",
+          "calories": 738,
+          "protein": 57,
+          "carbs": 74,
+          "fat": 24
+        },
+        {
+          "name": "Garlic bread",
+          "calories": 357,
+          "protein": 6,
+          "carbs": 30,
+          "fat": 23
+        }
+      ]
+    },
+    {
+      "key": "no-bread",
+      "text": "Chicken alfredo (fettuccine + grilled chicken + alfredo sauce), no garlic bread",
+      "ingredients": [
+        {
+          "name": "Fettuccine",
+          "grams": 140,
+          "kcal": 218,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Grilled chicken",
+          "grams": 100,
+          "kcal": 158,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Alfredo sauce",
+          "grams": 90,
+          "kcal": 146,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken alfredo",
+          "calories": 522,
+          "protein": 42,
+          "carbs": 51,
+          "fat": 16
+        }
+      ]
+    },
+    {
+      "key": "jar",
+      "text": "Chicken alfredo with jarred sauce (100g dry penne + half a jar of alfredo sauce + 100g chicken breast)",
+      "ingredients": [
+        {
+          "name": "Penne pasta",
+          "grams": 100,
+          "kcal": 364,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Alfredo sauce",
+          "grams": 60,
+          "kcal": 109,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken breast",
+          "grams": 100,
+          "kcal": 113,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Chicken alfredo pasta",
+          "calories": 586,
+          "protein": 40,
+          "carbs": 79,
+          "fat": 13
+        }
+      ]
+    },
+    {
+      "key": "light",
+      "text": "Homemade light chicken alfredo (80g dry fettuccine + 120g chicken breast + sauce made with milk, 1 tablespoon cream cheese and parmesan)",
+      "ingredients": [
+        {
+          "name": "Fettuccine",
+          "grams": 80,
+          "kcal": 292,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chicken breast",
+          "grams": 120,
+          "kcal": 181,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Milk",
+          "grams": 120,
+          "kcal": 51,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cream cheese",
+          "grams": 14,
+          "kcal": 29,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Parmesan",
+          "grams": 10,
+          "kcal": 38,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Butter",
+          "grams": 5,
+          "kcal": 38,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Homemade light chicken alfredo",
+          "calories": 628,
+          "protein": 56,
+          "carbs": 67,
+          "fat": 15
+        }
+      ]
+    }
+  ]
+}

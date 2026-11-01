@@ -4,6 +4,7 @@ import { MEDIA_MARKDOWN, preferredType } from '@/lib/infra/http/accept';
 import {
   FOOD_PAGE_PREFIX,
   FOOD_SLUGS,
+  foodHubPath,
   foodPagePath,
 } from '@/lib/seo/food-pages/slugs';
 import { isKnownNonMarkdownPath } from '@/lib/seo/private-paths';
@@ -99,8 +100,8 @@ export function unknownDocsTarget(pathname: string): string | null {
 
 /**
  * The same early 404 for the food pages: a URL under the food folder is a page
- * only when it is exactly a published page's path (`foodPagePath`), so the
- * bare folder, another locale and a mistyped slug all get the real 404.
+ * only when it is exactly the hub's path (`foodHubPath`) or a published page's
+ * (`foodPagePath`), so another locale and a mistyped slug get the real 404.
  */
 export function unknownFoodPageTarget(pathname: string): string | null {
   const split = splitLocale(pathname);
@@ -110,9 +111,10 @@ export function unknownFoodPageTarget(pathname: string): string | null {
     return null;
   const decoded = pagePath(rest);
   if (decoded === null) return null;
-  const known = FOOD_SLUGS.some(
-    (slug) => foodPagePath(slug) === `/${locale}${decoded}`
-  );
+  const path = `/${locale}${decoded}`;
+  const known =
+    path === foodHubPath() ||
+    FOOD_SLUGS.some((slug) => foodPagePath(slug) === path);
   return known ? null : `/${locale}/not-found`;
 }
 
