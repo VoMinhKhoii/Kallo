@@ -39,6 +39,9 @@ const nextConfig: NextConfig = {
     // leaves the tests out, so the build checks what ships. CI's Type Check
     // job still runs `tsc` over everything with `tsconfig.json`.
     tsconfigPath: 'tsconfig.build.json',
+    // The CI image build sets this: CI's Build job runs this same check, so
+    // the image build would only repeat it (~20s).
+    ignoreBuildErrors: process.env.SKIP_NEXT_TYPECHECK === '1',
   },
   experimental: {
     // OCR sends at most 4 MiB of decoded image bytes as base64 (~5.34 MiB).
