@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SESSION_COOKIE_MAX_AGE_SECONDS } from '@/lib/infra/supabase/cookie-options';
 

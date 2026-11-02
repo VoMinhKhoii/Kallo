@@ -35,6 +35,8 @@ ENV R2_ACCOUNT_ID=$R2_ACCOUNT_ID
 # below so it never lands in an image layer.
 ARG SENTRY_ORG
 ARG SENTRY_PROJECT
+# CI passes 1: its Build job already type-checks this same `next build`.
+ARG SKIP_NEXT_TYPECHECK
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN \

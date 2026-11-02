@@ -1,14 +1,12 @@
 name: Setup Bun
-description: Install Bun, restore the dependency cache, and install project dependencies from the frozen lockfile.
+description: Install Bun and the project dependencies from the frozen lockfile.
 
+# No dependency cache: restoring Bun's (859 MB) took ~23s of every job, while a
+# cold `bun install` from the registry takes ~5s on these runners (measured in
+# the container build's deps stage, 2026-11).
 runs:
   using: composite
   steps:
     - uses: oven-sh/setup-bun@v2
-    - uses: actions/cache@v4
-      with:
-        path: ~/.bun/install/cache
-        key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-        restore-keys: ${{ runner.os }}-bun-
     - run: bun install --frozen-lockfile
       shell: bash
