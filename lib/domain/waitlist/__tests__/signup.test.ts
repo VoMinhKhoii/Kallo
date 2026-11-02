@@ -12,6 +12,7 @@ import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
 import {
   confirmationUrl,
   signUpForWaitlist,
+  type WaitlistSignupContext,
 } from '@/lib/domain/waitlist/signup';
 import { createFakeDb, type FakeDb } from '@/lib/infra/db/__fixtures__/fake-db';
 import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
@@ -29,7 +30,7 @@ let sendEmail: Mock<SendEmailFn>;
 
 async function run(
   input: WaitlistSignupInput = { email: 'Nguyen@Example.COM', locale: 'vi' },
-  context: { ip?: string | null } = { ip: '203.0.113.7' }
+  context: WaitlistSignupContext = { ip: '203.0.113.7' }
 ) {
   const pending = signUpForWaitlist(input, context, {
     db: fake.db,
@@ -233,6 +234,7 @@ describe('signUpForWaitlist', () => {
 
   it('a throttled mailbox stores and sends nothing but waits the same floor', async () => {
     const database = createFakeDb();
+    database.queueSelect([{ count: 0 }]);
     let settledAt: number | undefined;
     void signUpForWaitlist(
       { email: 'a@example.test' },
@@ -247,6 +249,19 @@ describe('signUpForWaitlist', () => {
     expect(settledAt).toBe(NOW.getTime() + 4500);
     expect(database.inserts).toHaveLength(0);
     expect(database.updates).toHaveLength(0);
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it('a throttled mailbox still answers the IP quota like any other address', async () => {
+    fake.queueSelect([{ count: 5 }]);
+
+    await expect(
+      run(
+        { email: 'a@example.test' },
+        { ip: '203.0.113.4', mailboxThrottled: true }
+      )
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    expect(fake.inserts).toHaveLength(0);
     expect(sendEmail).not.toHaveBeenCalled();
   });
 

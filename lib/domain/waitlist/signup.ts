@@ -72,7 +72,8 @@ export async function signUpForWaitlist(
 ): Promise<void> {
   const startedAt = performance.now();
   try {
-    if (!context.mailboxThrottled) await storeAndSend(input, context, deps);
+    if (context.mailboxThrottled) await assertIpQuotaOnly(context, deps);
+    else await storeAndSend(input, context, deps);
   } finally {
     // Keep sending inside the request: Cloud Run throttles CPU after response.
     // Every branch waits to the same floor, including confirmed and cooldown.
@@ -222,6 +223,21 @@ async function mailboxCoolingDown(
       )
     );
   return recent.some((row) => canonicalizeEmailForKey(row.email) === mailbox);
+}
+
+/**
+ * A throttled mailbox stores and sends nothing, but still pays the IP quota:
+ * otherwise an IP over it would get 200 for a recently tried mailbox and 429
+ * for any other, which tells it which addresses were tried.
+ */
+async function assertIpQuotaOnly(
+  context: WaitlistSignupContext,
+  deps: WaitlistSignupDeps
+): Promise<void> {
+  const db = deps.db ?? appDb;
+  const now = deps.now?.() ?? new Date();
+  const ipHash = hashIp(context.ip ?? null);
+  await db.transaction((tx) => assertIpQuota(tx, ipHash, now));
 }
 
 /** Throws `rateLimited` when this IP has submitted too often. */
