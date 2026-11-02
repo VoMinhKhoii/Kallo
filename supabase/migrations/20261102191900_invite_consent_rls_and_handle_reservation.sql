@@ -49,7 +49,9 @@ CREATE POLICY "Previous owners can view own released handles"
 -- Each handle involved is locked (transaction-scoped advisory lock) before the
 -- check, so a claim racing a release of the same handle waits for it and then
 -- sees the reservation. An UPDATE locks two handles, always in sorted order,
--- so two people swapping handles cannot deadlock. API roles have no grants on
+-- so two people swapping handles cannot deadlock. Every path that already has
+-- a profile row takes the row lock before any handle lock (an upsert defers
+-- to its UPDATE), so a row lock never waits behind a handle lock. API roles have no grants on
 -- public_profiles (20260825120000): writes come from the app's owner
 -- connection or the auth.users cascade, which runs as the table owner.
 CREATE OR REPLACE FUNCTION public.public_profiles_reserve_handle()
@@ -73,6 +75,17 @@ BEGIN
     released := OLD.handle;
     owner_id := NEW.user_id;
   ELSE
+    -- An upsert for an account that already has a profile becomes an UPDATE
+    -- (ON CONFLICT (user_id) DO UPDATE), and that UPDATE fires this trigger
+    -- again with the row locked, where the handle is checked. Locking the
+    -- handle here, before the row, would invert that order against a
+    -- concurrent handle change on the same row and deadlock (40P01). A plain
+    -- read takes no lock, and an INSERT that conflicts writes no handle.
+    IF EXISTS (
+      SELECT 1 FROM public.public_profiles p WHERE p.user_id = NEW.user_id
+    ) THEN
+      RETURN NEW;
+    END IF;
     claimed := NEW.handle;
     owner_id := NEW.user_id;
   END IF;

@@ -109,6 +109,45 @@ describe.skipIf(!databaseUrl)('released handles stay with their owner', () => {
     ).rejects.toMatchObject({ code: '23505' });
   });
 
+  // Lock order: an upsert for an account that has a profile must take the
+  // row lock before any handle lock, or it deadlocks against a concurrent
+  // handle change on the same row (which holds the row, then locks handles).
+  it('an upsert waiting on its profile row holds no handle lock', async () => {
+    const owner = await newUser();
+    const handle = freshHandle();
+    await upsertPublicProfile(owner, { handle }, db);
+
+    const holder = await pg().reserve();
+    try {
+      await holder`BEGIN`;
+      await holder`UPDATE public.public_profiles SET display_name = 'Held' WHERE user_id = ${owner}`;
+      const upsert = upsertPublicProfile(owner, { handle }, db);
+
+      let waiting: { pid: number }[] = [];
+      for (let i = 0; i < 100 && waiting.length === 0; i += 1) {
+        waiting = await pg()`
+          SELECT pid FROM pg_stat_activity
+          WHERE wait_event_type = 'Lock'
+            AND query ILIKE 'insert into "public_profiles"%'
+        `;
+        if (waiting.length === 0) await new Promise((r) => setTimeout(r, 50));
+      }
+      expect(waiting.length).toBeGreaterThan(0);
+      const advisory = await pg()`
+        SELECT count(*)::int AS n FROM pg_locks
+        WHERE pid = ANY(${waiting.map((row) => row.pid)}::int[])
+          AND locktype = 'advisory' AND granted
+      `;
+      expect(advisory[0].n).toBe(0);
+
+      await holder`COMMIT`;
+      await expect(upsert).resolves.toMatchObject({ handle });
+    } finally {
+      await holder`ROLLBACK`.catch(() => undefined);
+      holder.release();
+    }
+  });
+
   it('lets the owner reclaim their handle, which ends the reservation', async () => {
     const owner = await newUser();
     const old = freshHandle();

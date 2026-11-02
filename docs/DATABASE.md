@@ -213,11 +213,21 @@ inviter's standing consent to connect. Two tables keep that consent honest:
   a taken handle: `upsertPublicProfile` returns its 409, `renameMyProfile` and
   `getOrCreateMyProfile` retry with another handle. Each claimed and released
   handle is locked (transaction-scoped advisory lock, sorted) before the check,
-  so a claim racing a release waits and then sees the reservation. The
-  reservation is permanent; the previous owner may reclaim it, which deletes
+  so a claim racing a release waits and then sees the reservation. An upsert
+  for an account that already has a profile skips the INSERT-time check and is
+  checked by the UPDATE it becomes, after the row lock, so a handle lock is
+  never held while waiting for a profile row (no 40P01 against a concurrent
+  handle change). The reservation is permanent; the previous owner may reclaim it, which deletes
   the row. It records the account-delete cascade too: referential actions run
   as the table owner, so Supabase Auth's role needs no grant. Exported under
   `social.releasedHandles`.
+
+**Storage (500 MB plan).** One row in each table is about 150 B with its
+indexes (a ≤20-char handle or two uuids, a timestamptz, the PK and one
+secondary index). `released_handles` only grows, by one row per handle given
+up, including after account deletion; `friend_removals` holds one row per
+removal not yet cleared. Even 100,000 rows of each is about 30 MB, far below
+the plan; today there are a handful of users.
 
 Neither table has client grants; both are read and written only on the owner
 connection.
