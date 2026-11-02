@@ -112,7 +112,13 @@ falls back to Supabase's own sender; no deploy is involved. The commented-out
 
 The landing-page waitlist is double opt-in: the signup POST stores an
 unconfirmed row and sends a confirm link; following that link is what sets
-`confirmed_at` and triggers the welcome email. See `lib/waitlist/`.
+`confirmed_at` and triggers the welcome email. See `lib/domain/waitlist/`.
+Signup waits to a fixed 4.5-second minimum whether it sends or skips a
+confirmation. Sends stay inside the request; failures clear the sent marker
+where possible and are logged and reported without changing `{ok:true}`.
+The canonical mailbox shares a recipient budget and rolling five-minute
+cooldown across Gmail aliases, while delivery keeps the submitted address
+(normalised for storage). See `docs/RATE_LIMITING.md`.
 
 ## Content-report alerts
 

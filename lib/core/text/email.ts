@@ -70,3 +70,14 @@ export function canonicalizeEmailForKey(email: string): string {
   // collapse onto; keep the normalised original rather than inventing `@x.com`.
   return local.length > 0 ? `${local}@${domain}` : normalised;
 }
+
+/**
+ * True when other spellings of this address can reach the same mailbox, so a
+ * per-mailbox check must look past the exact address to the canonical key.
+ */
+export function hasAliasSpellings(email: string): boolean {
+  const normalised = normaliseEmail(email);
+  return KNOWN_ALIAS_DOMAINS.has(
+    normalised.slice(normalised.lastIndexOf('@') + 1)
+  );
+}

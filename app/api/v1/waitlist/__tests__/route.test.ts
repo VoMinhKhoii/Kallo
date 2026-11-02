@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 describe('POST /api/v1/waitlist', () => {
-  it('charges the IP then global policy, then signs the address up', async () => {
+  it('charges IP, global, then canonical recipient before signing up', async () => {
     const res = await POST(makeRequest('{"email":"a@b.co","locale":"vi"}'));
 
     expect(res.status).toBe(200);
@@ -46,9 +46,17 @@ describe('POST /api/v1/waitlist', () => {
       kind: 'global',
       value: 'waitlist',
     });
+    expect(assertRateLimit).toHaveBeenNthCalledWith(
+      3,
+      'waitlistSignupRecipient',
+      {
+        kind: 'recipient',
+        value: 'a@b.co',
+      }
+    );
     expect(signUpForWaitlist).toHaveBeenCalledWith(
       { email: 'a@b.co', locale: 'vi' },
-      { ip: '203.0.113.4' }
+      { ip: '203.0.113.4', mailboxThrottled: false }
     );
   });
 
@@ -68,7 +76,7 @@ describe('POST /api/v1/waitlist', () => {
     );
     expect(signUpForWaitlist).toHaveBeenCalledWith(
       { email: 'a@b.co' },
-      { ip: null }
+      { ip: null, mailboxThrottled: false }
     );
   });
 
@@ -85,6 +93,24 @@ describe('POST /api/v1/waitlist', () => {
       value: 'waitlist',
     });
     expect(signUpForWaitlist).not.toHaveBeenCalled();
+  });
+
+  // The mailbox limit is about one address, so its refusal answers like a
+  // signup: the domain stores and sends nothing but still waits its floor.
+  it('answers a refused mailbox like any other signup', async () => {
+    assertRateLimit
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(Errors.rateLimited(undefined, 60));
+
+    const res = await POST(makeRequest('{"email":"a@b.co"}'));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(signUpForWaitlist).toHaveBeenCalledWith(
+      { email: 'a@b.co' },
+      { ip: '203.0.113.4', mailboxThrottled: true }
+    );
   });
 
   it('answers a rate-limited signup with 429 and Retry-After', async () => {

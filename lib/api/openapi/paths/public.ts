@@ -33,7 +33,7 @@ export const PUBLIC_PATHS: Record<string, PathItem> = {
       operationId: 'joinWaitlist',
       summary: 'Join the launch waitlist',
       description:
-        'Registers an email address for the mobile launch announcement and sends a confirmation link. Rate limited per IP address, and per address by a resend cooldown. The request body is capped at 8 KB.',
+        'Registers an email address for the mobile launch announcement and sends a confirmation link. Rate limited per IP address and per mailbox (Gmail dot and plus spellings count as one), with a resend cooldown. Every accepted request answers with the same body after the same minimum delay. The request body is capped at 8 KB.',
       tags: ['Public'],
       extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(waitlistSignupSchema),
