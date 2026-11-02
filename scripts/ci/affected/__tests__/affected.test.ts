@@ -39,6 +39,11 @@ describe('groupsFor', () => {
     for (const file of [
       'apps/kallo-proxy/package.json',
       'apps/mobile-flutter/pubspec.yaml',
+      // The iOS release's fastlane, its pods, the Swift and Android builds:
+      'apps/mobile-flutter/ios/Gemfile',
+      'apps/mobile-flutter/ios/Podfile.lock',
+      'apps/mobile-flutter/ios/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved',
+      'apps/mobile-flutter/android/app/build.gradle.kts',
       '.github/workflows/flutter-ci.yml',
     ]) {
       expect([file, groups([file]).deps]).toEqual([file, true]);

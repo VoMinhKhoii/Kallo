@@ -60,12 +60,11 @@ const IMAGE = [
 
 // Dependency Review diffs the dependency manifests, and GitHub Actions
 // versions count: with none of these changed it has nothing to report.
-const DEPS = [
-  /(^|\/)package\.json$/,
-  /(^|\/)bun\.lock$/,
-  /(^|\/)pubspec\.(yaml|lock)$/,
-  /^\.github\/(workflows|actions)\//,
-];
+// Matched by file name, so a manifest in a new folder (or a new ecosystem's
+// usual file) is still caught.
+const MANIFEST =
+  /(^|\/)(package\.json|package-lock\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?|pubspec\.(yaml|lock)|Gemfile(\.lock)?|Podfile(\.lock)?|Package\.(swift|resolved)|(build|settings)\.gradle(\.kts)?|gradle\.lockfile|requirements[^/]*\.txt|pyproject\.toml|Pipfile(\.lock)?|poetry\.lock|uv\.lock|go\.(mod|sum)|Cargo\.(toml|lock))$/;
+const DEPS = [MANIFEST, /^\.github\/(workflows|actions)\//];
 
 const isProse = (file) => PROSE.some((rule) => rule.test(file));
 
