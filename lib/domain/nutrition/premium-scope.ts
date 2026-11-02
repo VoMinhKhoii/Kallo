@@ -45,7 +45,12 @@ export async function scopeMealResponseForViewer<
   T extends { meal: PersistedMeal | null },
 >(userId: string, response: Promise<T>): Promise<T> {
   const [gate, result] = await Promise.all([
-    checkFeatureGate({ userId }, 'micronutrients'),
+    checkFeatureGate({ userId }, 'micronutrients').catch((error) => {
+      // The write may already have committed. Preserve its success while
+      // hiding paid figures when access cannot be established.
+      console.error('Failed to resolve meal micronutrient access:', error);
+      return { locked: true } as const;
+    }),
     response,
   ]);
   return {

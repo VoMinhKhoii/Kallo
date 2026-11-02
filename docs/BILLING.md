@@ -252,6 +252,8 @@ Notes the table cannot hold:
   upgrading reveals existing history on the next read. `null` means hidden or
   unknown, never zero. The web and Flutter meal cards and dashboard use only
   the four macros from these responses.
+  If the parallel entitlement lookup fails during a mutation, its successful
+  write still returns success with micronutrients hidden; the failure is logged.
 - **"Visual edit" has no key.** The pre-confirm portion ruler is only reachable
   from the AI-analysis and relog flows, both gated, so it is premium
   transitively; a dedicated gate would be a second lock on the same door.

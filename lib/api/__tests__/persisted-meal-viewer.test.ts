@@ -150,7 +150,13 @@ const ingredient = {
   foodCompositionId: ID,
 };
 const { item, nutrition: displayedNutrition } = buildBarcodeMealItem(
-  source,
+  {
+    ...source,
+    ...(Object.fromEntries(NUTRITION_KEYS.map((key) => [key, '10'])) as Record<
+      keyof NutritionValues,
+      string
+    >),
+  },
   100
 );
 const pending = {
@@ -334,6 +340,42 @@ const cases = [
     shape: 'dashboard',
   },
 ];
+
+describe('committed mutation responses when entitlement reads fail', () => {
+  it.each(
+    cases.filter(({ shape, name }) => !shape && name !== 'meals/manual')
+  )('$name returns the successful save with nutrients hidden', async ({
+    call,
+    factor = 1,
+  }) => {
+    mocks.gate.mockRejectedValue(new Error('entitlement unavailable'));
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const response = await call();
+      const body = await response.json();
+      expect(response.status).toBe(200);
+      expect(body.meal.nutrition.caloriesKcal).toBe(10 * factor);
+      expect(body.meal.nutrition.fiberG).toBeNull();
+      expect(body.meal.nutrition.sodiumMg).toBeNull();
+      expect(body.meal.mealItemGroups[0].nutrition.sodiumMg).toBeNull();
+      expect(
+        body.meal.mealItemGroups[0].ingredients[0].nutrition.sodiumMg
+      ).toBeNull();
+      expect(writes.length).toBeGreaterThan(0);
+      for (const write of writes) {
+        for (const row of Array.isArray(write.values)
+          ? write.values
+          : [write.values]) {
+          if (row.sodiumMg !== undefined)
+            expect(row.sodiumMg).toBe(10 * factor);
+        }
+      }
+      expect(mocks.gate).toHaveBeenCalledTimes(1);
+    } finally {
+      errorLog.mockRestore();
+    }
+  });
+});
 
 describe.each([
   false,
