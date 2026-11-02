@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   EXPECTED_HSTS_MAX_AGE_SECONDS,
