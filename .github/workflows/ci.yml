@@ -60,7 +60,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-bun
-      # TODO: migrate to tsgo when GA for 10x faster type checking
       - run: bunx tsc --noEmit
 
   test-shard:
