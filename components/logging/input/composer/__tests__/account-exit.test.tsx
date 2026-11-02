@@ -15,13 +15,15 @@ const mocks = vi.hoisted(() => ({
   deleteAccount: vi.fn(),
   assign: vi.fn(),
   unsubscribe: vi.fn(),
-  authChange: null as null | ((event: string) => void),
+  authChange: null as
+    | null
+    | ((event: string, session: { user: { id: string } } | null) => void),
 }));
 vi.mock('@/lib/infra/supabase/client', () => ({
   createClient: () => ({
     auth: {
       signOut: mocks.signOut,
-      onAuthStateChange: (callback: (event: string) => void) => {
+      onAuthStateChange: (callback: NonNullable<typeof mocks.authChange>) => {
         mocks.authChange = callback;
         return { data: { subscription: { unsubscribe: mocks.unsubscribe } } };
       },
@@ -104,7 +106,9 @@ async function mountDraft() {
   return { MealInput, useStagedEntries, ref, input, staged };
 }
 
-describe('composer account exits', () => {
+// Each test re-imports the composer tree after resetModules; the first cold
+// import alone can pass the 5 s default when the full suite runs in parallel.
+describe('composer account exits', { timeout: 20_000 }, () => {
   it.each([
     'menu',
     'settings',
@@ -117,11 +121,11 @@ describe('composer account exits', () => {
         '@/components/providers/composer-draft-session'
       );
       const listener = render(<ComposerDraftSession />);
-      act(() => mocks.authChange?.('TOKEN_REFRESHED'));
+      act(() => mocks.authChange?.('TOKEN_REFRESHED', { user: { id: 'A' } }));
       expect(localStorage.getItem('nham:meal-input-draft:A')).toBe(
         'private text'
       );
-      act(() => mocks.authChange?.('SIGNED_OUT'));
+      act(() => mocks.authChange?.('SIGNED_OUT', null));
       listener.unmount();
       expect(mocks.unsubscribe).toHaveBeenCalledOnce();
     } else if (exit === 'menu') {
@@ -173,6 +177,26 @@ describe('composer account exits', () => {
       input.unmount();
       staged.unmount();
     }
+  });
+
+  it('a SIGNED_OUT on a document that never held a session keeps drafts writable', async () => {
+    const { ComposerDraftSession } = await import(
+      '@/components/providers/composer-draft-session'
+    );
+    const { readDraft, writeDraft } = await import(
+      '@/lib/domain/logging/meal-input-draft'
+    );
+    writeDraft('kept text', 'A');
+    const listener = render(<ComposerDraftSession />);
+    // auth-js drops a stale stored session on a signed-out page this way.
+    act(() => mocks.authChange?.('SIGNED_OUT', null));
+    expect(mocks.assign).not.toHaveBeenCalled();
+    expect(readDraft('A')).toBe('kept text');
+    // A later in-document sign-in can still persist its drafts.
+    act(() => mocks.authChange?.('SIGNED_IN', { user: { id: 'B' } }));
+    writeDraft('new text', 'B');
+    expect(readDraft('B')).toBe('new text');
+    listener.unmount();
   });
 
   it('a failed sign-out preserves the current account draft', async () => {

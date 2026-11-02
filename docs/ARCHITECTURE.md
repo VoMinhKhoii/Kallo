@@ -111,7 +111,9 @@ The three `nham:meal-input-*` drafts (text, manual rows, staged relog picks) app
 the authenticated user id to their keys. Old global keys are discarded once per
 document, never assigned to whoever signs in next. `clearComposerDrafts()` purges
 every key with that prefix on successful menu sign-out, Settings sign-out,
-account deletion, and any `SIGNED_OUT` auth event, including another tab's. It
+account deletion, and a `SIGNED_OUT` auth event (including another tab's) in a
+document that held a session; the `SIGNED_OUT` auth-js emits when it drops a
+stale stored session on a signed-out page is ignored. It
 also blocks writes for the rest of the document so pending debounce, unmount and
 `beforeunload` flushes cannot restore departing drafts. All exits hard-navigate;
 a new document starts with persistence enabled. `FeedArea` is keyed by user id so
