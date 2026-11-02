@@ -130,3 +130,16 @@ export function foodPagePath<L extends FoodLocale>(
 ): string {
   return `/${locale}${FOOD_PAGE_PREFIX}/${slug}`;
 }
+
+/**
+ * Where a locale switch should land from `pathname` (locale-relative). Each
+ * locale has its own dishes, so a dish page with no twin in `nextLocale` goes
+ * to that locale's hub instead of a 404; every other path is kept.
+ */
+export function switchedFoodPath(pathname: string, nextLocale: string): string {
+  if (!pathname.startsWith(`${FOOD_PAGE_PREFIX}/`)) return pathname;
+  const slug = pathname.slice(FOOD_PAGE_PREFIX.length + 1).replace(/\/$/, '');
+  return isFoodLocale(nextLocale) && isFoodSlug(nextLocale, slug)
+    ? pathname
+    : FOOD_PAGE_PREFIX;
+}

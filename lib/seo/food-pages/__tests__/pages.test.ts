@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { switchedFoodPath } from '@/lib/seo/food-pages/slugs';
 import { FOOD_PAGE_CHROME } from '../page-copy';
 import {
   FOOD_PAGES,
@@ -201,5 +202,20 @@ describe('the English pages stay as published', () => {
       'Salads',
       'Chicken and comfort food',
     ]);
+  });
+});
+
+describe('switchedFoodPath', () => {
+  it("sends a dish with no twin to the other locale's hub", () => {
+    expect(switchedFoodPath('/calories/pho-bo', 'en')).toBe('/calories');
+    expect(switchedFoodPath('/calories/pad-thai', 'vi')).toBe('/calories');
+  });
+
+  it('keeps every other path, including the hubs and non-food pages', () => {
+    expect(switchedFoodPath('/calories', 'vi')).toBe('/calories');
+    expect(switchedFoodPath('/tools/bmi-calculator', 'vi')).toBe(
+      '/tools/bmi-calculator'
+    );
+    expect(switchedFoodPath('/docs/overview', 'en')).toBe('/docs/overview');
   });
 });
