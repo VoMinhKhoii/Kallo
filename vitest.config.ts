@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { configDefaults, defineConfig } from 'vitest/config';
+import { CostSequencer } from './scripts/ci/test-shards/sequencer';
 
 export default defineConfig({
   plugins: [react()],
@@ -17,6 +18,8 @@ export default defineConfig({
     globals: true,
     pool: 'forks',
     setupFiles: ['./vitest.setup.ts'],
+    // `--shard` (CI) splits by each file's measured cost, not a path hash.
+    sequence: { sequencer: CostSequencer },
     // Building a jsdom window was 58% of the CI test run, and most suites
     // never touch the DOM. Component suites (.tsx) get jsdom; .ts suites run
     // in Node, and the few that need a DOM opt in with a
