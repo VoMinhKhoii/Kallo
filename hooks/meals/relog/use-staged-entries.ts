@@ -58,9 +58,9 @@ export interface StagedEntriesApi {
  * `(sourceMealId, mealItemOrder)` — so a stale draft can show a stale macro
  * line but can never corrupt a save.
  */
-export function useStagedEntries(): StagedEntriesApi {
+export function useStagedEntries(userId: string): StagedEntriesApi {
   const [entries, setEntries] = useState<RelogMention[]>(() =>
-    readStagedDraft().map((entry, index) => ({ ...entry, start: index }))
+    readStagedDraft(userId).map((entry, index) => ({ ...entry, start: index }))
   );
   // The composer text as of the last sync, so segments can be rebuilt without
   // reaching back into the DOM during render.
@@ -68,18 +68,18 @@ export function useStagedEntries(): StagedEntriesApi {
 
   useEffect(() => {
     const timer = setTimeout(
-      () => writeStagedDraft(entries),
+      () => writeStagedDraft(entries, userId),
       DRAFT_DEBOUNCE_MS
     );
     return () => clearTimeout(timer);
-  }, [entries]);
+  }, [entries, userId]);
 
   // Flush on tab close; the debounce above would otherwise lose the last pick.
   useEffect(() => {
-    const flush = () => writeStagedDraft(entries);
+    const flush = () => writeStagedDraft(entries, userId);
     window.addEventListener('beforeunload', flush);
     return () => window.removeEventListener('beforeunload', flush);
-  }, [entries]);
+  }, [entries, userId]);
 
   const sync = useCallback((next: string) => {
     setValue(next);
@@ -162,10 +162,10 @@ export function useStagedEntries(): StagedEntriesApi {
       const remaining = reconcileMentions(next, kept);
       setEntries(remaining);
       setValue(next);
-      writeStagedDraft(remaining);
+      writeStagedDraft(remaining, userId);
       return next;
     },
-    [entries]
+    [entries, userId]
   );
 
   const totals = useMemo(() => sumStagedMacros(entries), [entries]);

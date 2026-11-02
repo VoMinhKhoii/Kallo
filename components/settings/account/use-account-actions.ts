@@ -6,6 +6,7 @@ import {
   deleteAccountAction,
   exportMyDataAction,
 } from '@/lib/actions/identity/account';
+import { clearComposerDrafts } from '@/lib/domain/logging/drafts/composer-drafts';
 import { createClient } from '@/lib/infra/supabase/client';
 
 /**
@@ -46,6 +47,7 @@ export function useAccountActions(expectedUserId: string) {
         const supabase = createClient();
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
+        clearComposerDrafts();
         document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
         window.location.assign('/');
       },
@@ -60,6 +62,7 @@ export function useAccountActions(expectedUserId: string) {
     deleteAction.run(
       async () => {
         await deleteAccountAction({ expectedUserId });
+        clearComposerDrafts();
         // The account (and all data) is gone — leave the app entirely.
         document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
         window.location.assign('/');

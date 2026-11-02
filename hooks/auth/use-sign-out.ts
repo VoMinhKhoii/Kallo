@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { clearComposerDrafts } from '@/lib/domain/logging/drafts/composer-drafts';
 import { createClient } from '@/lib/infra/supabase/client';
 
 /**
@@ -23,6 +24,7 @@ export function useSignOut() {
       const supabase = createClient();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      clearComposerDrafts();
       document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
       window.location.assign('/');
     } catch (error) {

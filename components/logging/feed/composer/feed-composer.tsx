@@ -20,6 +20,7 @@ import type { InputMode } from '@/lib/domain/logging/types';
 const RELOG_LISTBOX_ID = 'relog-picker-listbox';
 
 interface FeedComposerProps {
+  userId: string;
   relog: ReturnType<typeof useRelogComposer>;
   inputRef: RefObject<MealInputHandle | null>;
   isCheat: boolean;
@@ -49,6 +50,7 @@ interface FeedComposerProps {
  * (empty day) down to the bottom once cards take the height above it.
  */
 export function FeedComposer({
+  userId,
   relog,
   inputRef,
   isCheat,
@@ -103,6 +105,7 @@ export function FeedComposer({
         className="relative z-10 mx-auto w-full max-w-3xl"
       >
         <MealInput
+          userId={userId}
           ref={inputRef}
           onSubmit={onSubmit}
           onManualSave={onManualSave}

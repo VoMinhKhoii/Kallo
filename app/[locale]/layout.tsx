@@ -13,6 +13,7 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { ServiceWorkerRegister } from '@/components/app/shell/service-worker-register';
+import { ComposerDraftSession } from '@/components/providers/composer-draft-session';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { TelemetryIdentity } from '@/components/providers/telemetry-identity';
 import { Toaster } from '@/components/ui/sonner';
@@ -164,6 +165,7 @@ export default async function LocaleLayout({
             boundary it blocks prerendering of every dynamic route. */}
         <Suspense fallback={null}>
           <TelemetryIdentity />
+          <ComposerDraftSession />
         </Suspense>
         {/* Registers the offline SW only when NEXT_PUBLIC_ENABLE_SW=true;
             defaults off so it can never white-screen production. */}

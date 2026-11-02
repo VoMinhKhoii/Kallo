@@ -34,6 +34,7 @@ const NO_SEGMENTS: MentionSegment[] = [];
  * so nothing the user picked is lost by toggling modes.
  */
 export function useRelogComposer(args: {
+  userId: string;
   selectedDate: string;
   loggingMode: InputMode;
   inputRef: RefObject<MealInputHandle | null>;
@@ -57,7 +58,7 @@ export function useRelogComposer(args: {
   } = args;
   const enabled = loggingMode === 'normal';
 
-  const staged = useStagedEntries();
+  const staged = useStagedEntries(args.userId);
 
   const getTextarea = useCallback(
     () => inputRef.current?.getTextarea() ?? null,

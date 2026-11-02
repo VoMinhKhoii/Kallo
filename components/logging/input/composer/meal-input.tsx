@@ -17,6 +17,7 @@ import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
 export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
   function MealInput(
     {
+      userId,
       onSubmit,
       onCancel,
       disabled,
@@ -59,6 +60,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       handleRowAdd,
       handleRowRemove,
     } = useMealInputState(ref, {
+      userId,
       isManual,
       disabled,
       hasExternalContent,
@@ -97,7 +99,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
               </label>
               <ComposerTextField
                 textareaRef={textareaRef}
-                defaultValue={readDraft()}
+                defaultValue={readDraft(userId)}
                 placeholder={placeholder}
                 disabled={disabled}
                 onChange={handleChange}

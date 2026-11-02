@@ -6,8 +6,8 @@ import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging
 import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
 import { MealInput } from '../meal-input';
 
-const STORAGE_KEY = 'nham:meal-input-draft';
-const MANUAL_ROWS_KEY = 'nham:meal-input-manual-items-v3';
+const STORAGE_KEY = 'nham:meal-input-draft:test-user';
+const MANUAL_ROWS_KEY = 'nham:meal-input-manual-items-v3:test-user';
 
 const riceResult: IngredientSearchResult = {
   id: 'fct-rice',
@@ -42,14 +42,14 @@ afterEach(() => {
 describe('MealInput localStorage persistence', () => {
   it('restores draft from localStorage on mount', () => {
     localStorage.setItem(STORAGE_KEY, 'saved draft');
-    render(<MealInput onSubmit={() => {}} />);
+    render(<MealInput userId="test-user" onSubmit={() => {}} />);
     const textarea = screen.getByRole('textbox');
     expect(textarea).toHaveValue('saved draft');
   });
 
   it('saves input to localStorage after debounce', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<MealInput onSubmit={() => {}} />);
+    render(<MealInput userId="test-user" onSubmit={() => {}} />);
     const textarea = screen.getByRole('textbox');
 
     await user.type(textarea, 'phở bò');
@@ -64,7 +64,7 @@ describe('MealInput localStorage persistence', () => {
   it('clears localStorage when clear() is called via ref', () => {
     localStorage.setItem(STORAGE_KEY, 'old draft');
     const ref = createRef<MealInputHandle>();
-    render(<MealInput ref={ref} onSubmit={() => {}} />);
+    render(<MealInput userId="test-user" ref={ref} onSubmit={() => {}} />);
 
     act(() => ref.current?.clear());
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
@@ -74,7 +74,7 @@ describe('MealInput localStorage persistence', () => {
   it('getText() returns current textarea value', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const ref = createRef<MealInputHandle>();
-    render(<MealInput ref={ref} onSubmit={() => {}} />);
+    render(<MealInput userId="test-user" ref={ref} onSubmit={() => {}} />);
 
     await user.type(screen.getByRole('textbox'), 'bún chả');
     expect(ref.current?.getText()).toBe('bún chả');
@@ -82,7 +82,7 @@ describe('MealInput localStorage persistence', () => {
 
   it('setText() updates textarea value and localStorage', () => {
     const ref = createRef<MealInputHandle>();
-    render(<MealInput ref={ref} onSubmit={() => {}} />);
+    render(<MealInput userId="test-user" ref={ref} onSubmit={() => {}} />);
 
     act(() => ref.current?.setText('cơm tấm'));
     expect(screen.getByRole('textbox')).toHaveValue('cơm tấm');
@@ -90,18 +90,18 @@ describe('MealInput localStorage persistence', () => {
   });
 
   it('submit button is disabled when input is empty', () => {
-    render(<MealInput onSubmit={() => {}} />);
+    render(<MealInput userId="test-user" onSubmit={() => {}} />);
     expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled();
   });
 
   it('submit button is enabled when input has content', () => {
     localStorage.setItem(STORAGE_KEY, 'food');
-    render(<MealInput onSubmit={() => {}} />);
+    render(<MealInput userId="test-user" onSubmit={() => {}} />);
     expect(screen.getByRole('button', { name: /submit/i })).toBeEnabled();
   });
 
   it('keeps the ingredient rows hidden in normal mode', () => {
-    render(<MealInput onSubmit={() => {}} mode="normal" />);
+    render(<MealInput userId="test-user" onSubmit={() => {}} mode="normal" />);
 
     expect(
       screen.queryByPlaceholderText('manualLogging.searchPlaceholder')
@@ -109,7 +109,7 @@ describe('MealInput localStorage persistence', () => {
   });
 
   it('shows ingredient search rows when mode prop is manual', () => {
-    render(<MealInput onSubmit={() => {}} mode="manual" />);
+    render(<MealInput userId="test-user" onSubmit={() => {}} mode="manual" />);
 
     expect(
       screen.getByPlaceholderText('manualLogging.searchPlaceholder')
@@ -124,7 +124,7 @@ describe('MealInput localStorage persistence', () => {
 
   it('submit is disabled in manual mode until a row has an ingredient and grams', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<MealInput onSubmit={() => {}} mode="manual" />);
+    render(<MealInput userId="test-user" onSubmit={() => {}} mode="manual" />);
 
     expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled();
 
@@ -144,7 +144,14 @@ describe('MealInput localStorage persistence', () => {
   it('getManualRows() returns the picked ingredient with grams', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const ref = createRef<MealInputHandle>();
-    render(<MealInput ref={ref} onSubmit={() => {}} mode="manual" />);
+    render(
+      <MealInput
+        userId="test-user"
+        ref={ref}
+        onSubmit={() => {}}
+        mode="manual"
+      />
+    );
 
     await user.click(
       screen.getByPlaceholderText('manualLogging.searchPlaceholder')
@@ -163,7 +170,9 @@ describe('MealInput localStorage persistence', () => {
 
   it('persists manual rows to the v3 draft key and restores them on mount', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const { unmount } = render(<MealInput onSubmit={() => {}} mode="manual" />);
+    const { unmount } = render(
+      <MealInput userId="test-user" onSubmit={() => {}} mode="manual" />
+    );
 
     await user.click(
       screen.getByPlaceholderText('manualLogging.searchPlaceholder')
@@ -179,7 +188,7 @@ describe('MealInput localStorage persistence', () => {
     expect(localStorage.getItem(MANUAL_ROWS_KEY)).not.toBeNull();
     unmount();
 
-    render(<MealInput onSubmit={() => {}} mode="manual" />);
+    render(<MealInput userId="test-user" onSubmit={() => {}} mode="manual" />);
     expect(
       screen.getByPlaceholderText('manualLogging.searchPlaceholder')
     ).toHaveValue('Cơm trắng');
@@ -188,15 +197,14 @@ describe('MealInput localStorage persistence', () => {
     ).toHaveValue('150');
   });
 
-  it('drops an incompatible legacy manual draft on read', () => {
+  it('ignores an incompatible legacy manual draft', () => {
     localStorage.setItem(
       'nham:meal-input-manual-items',
       JSON.stringify([{ id: '1', qty: '1 bowl', name: 'rice' }])
     );
 
-    render(<MealInput onSubmit={() => {}} mode="manual" />);
+    render(<MealInput userId="test-user" onSubmit={() => {}} mode="manual" />);
 
-    expect(localStorage.getItem('nham:meal-input-manual-items')).toBeNull();
     expect(
       screen.getByPlaceholderText('manualLogging.searchPlaceholder')
     ).toHaveValue('');
@@ -205,7 +213,14 @@ describe('MealInput localStorage persistence', () => {
   it('clear() resets manual rows and the draft', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const ref = createRef<MealInputHandle>();
-    render(<MealInput ref={ref} onSubmit={() => {}} mode="manual" />);
+    render(
+      <MealInput
+        userId="test-user"
+        ref={ref}
+        onSubmit={() => {}}
+        mode="manual"
+      />
+    );
 
     await user.click(
       screen.getByPlaceholderText('manualLogging.searchPlaceholder')
@@ -228,7 +243,14 @@ describe('MealInput localStorage persistence', () => {
   it('getManualName() returns the typed meal name; clear() empties it', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const ref = createRef<MealInputHandle>();
-    render(<MealInput ref={ref} onSubmit={() => {}} mode="manual" />);
+    render(
+      <MealInput
+        userId="test-user"
+        ref={ref}
+        onSubmit={() => {}}
+        mode="manual"
+      />
+    );
 
     await user.type(
       screen.getByPlaceholderText('manualLogging.mealNameEmpty'),
@@ -244,6 +266,7 @@ describe('MealInput localStorage persistence', () => {
     mobile.isMobile.mockReturnValue(true);
     render(
       <MealInput
+        userId="test-user"
         onSubmit={() => {}}
         mode="manual"
         onManualSave={async () => {}}

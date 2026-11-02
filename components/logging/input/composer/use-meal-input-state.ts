@@ -24,6 +24,7 @@ import {
 import type { MealInputHandle } from '@/lib/domain/logging/meal-input-handle';
 
 interface UseMealInputStateOptions {
+  userId: string;
   /** Manual mode swaps the textarea for ingredient rows, so `clear()` and the
    *  rows draft only act while it is on. */
   isManual: boolean;
@@ -42,6 +43,7 @@ interface UseMealInputStateOptions {
 export function useMealInputState(
   ref: React.ForwardedRef<MealInputHandle>,
   {
+    userId,
     isManual,
     disabled,
     hasExternalContent,
@@ -53,10 +55,10 @@ export function useMealInputState(
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const [hasContent, setHasContent] = useState(() =>
-    hasMeaningfulText(readDraft())
+    hasMeaningfulText(readDraft(userId))
   );
   const [manualRows, setManualRows] = useState<ManualMealRow[]>(() =>
-    readManualRowsDraft()
+    readManualRowsDraft(userId)
   );
   const manualRowsRef = useRef(manualRows);
   manualRowsRef.current = manualRows;
@@ -66,17 +68,20 @@ export function useMealInputState(
   const manualNameRef = useRef(manualName);
   manualNameRef.current = manualName;
 
-  const updateText = useCallback((text: string, caret?: number) => {
-    const el = textareaRef.current;
-    if (el) {
-      el.value = text;
-      if (caret !== undefined) el.setSelectionRange(caret, caret);
-      autoResize(el);
-    }
-    setHasContent(hasMeaningfulText(text));
-    writeDraft(text);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-  }, []);
+  const updateText = useCallback(
+    (text: string, caret?: number) => {
+      const el = textareaRef.current;
+      if (el) {
+        el.value = text;
+        if (caret !== undefined) el.setSelectionRange(caret, caret);
+        autoResize(el);
+      }
+      setHasContent(hasMeaningfulText(text));
+      writeDraft(text, userId);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    [userId]
+  );
 
   useImperativeHandle(
     ref,
@@ -89,7 +94,7 @@ export function useMealInputState(
         if (isManual) {
           setManualRows([createEmptyRow(crypto.randomUUID())]);
           setManualName('');
-          writeManualRowsDraft([]);
+          writeManualRowsDraft([], userId);
         } else {
           updateText('');
         }
@@ -100,7 +105,7 @@ export function useMealInputState(
       },
       getTextarea: () => textareaRef.current,
     }),
-    [isManual, updateText]
+    [isManual, updateText, userId]
   );
 
   useEffect(() => {
@@ -111,8 +116,8 @@ export function useMealInputState(
 
     const flushDraft = () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      writeDraft(el.value);
-      writeManualRowsDraft(manualRowsRef.current);
+      writeDraft(el.value, userId);
+      writeManualRowsDraft(manualRowsRef.current, userId);
     };
 
     window.addEventListener('beforeunload', flushDraft);
@@ -122,19 +127,19 @@ export function useMealInputState(
       // Flush on unmount (covers in-app navigation)
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
-        writeDraft(el.value);
+        writeDraft(el.value, userId);
       }
     };
-  }, []);
+  }, [userId]);
 
   // Persist manual rows draft on change.
   useEffect(() => {
     if (!isManual) return;
     const timer = setTimeout(() => {
-      writeManualRowsDraft(manualRows);
+      writeManualRowsDraft(manualRows, userId);
     }, DRAFT_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [isManual, manualRows]);
+  }, [isManual, manualRows, userId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
@@ -143,7 +148,7 @@ export function useMealInputState(
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      writeDraft(el.value);
+      writeDraft(el.value, userId);
     }, DRAFT_DEBOUNCE_MS);
     onTextareaSync?.();
   };

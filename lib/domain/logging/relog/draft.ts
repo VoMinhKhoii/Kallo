@@ -4,9 +4,11 @@
 //
 // The key is VERSIONED: a shape change gets a new key so an old payload is
 // dropped rather than parsed into a half-valid entry.
+import {
+  readComposerDraft,
+  writeComposerDraft,
+} from '@/lib/domain/logging/drafts/composer-drafts';
 import type { RelogStagedEntry } from '@/lib/domain/logging/relog/relog';
-
-const STAGED_KEY = 'nham:meal-input-relog-staged-v1';
 
 function isValidRef(value: unknown): boolean {
   if (typeof value !== 'object' || value === null) return false;
@@ -29,9 +31,9 @@ function isValidEntry(value: unknown): value is RelogStagedEntry {
   );
 }
 
-export function readStagedDraft(): RelogStagedEntry[] {
+export function readStagedDraft(userId: string): RelogStagedEntry[] {
   try {
-    const raw = localStorage.getItem(STAGED_KEY);
+    const raw = readComposerDraft('staged', userId);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     // All-or-nothing: a partially valid list would stage something the user
@@ -43,12 +45,12 @@ export function readStagedDraft(): RelogStagedEntry[] {
   return [];
 }
 
-export function writeStagedDraft(entries: RelogStagedEntry[]) {
+export function writeStagedDraft(entries: RelogStagedEntry[], userId: string) {
   try {
     if (entries.length === 0) {
-      localStorage.removeItem(STAGED_KEY);
+      writeComposerDraft('staged', userId, null);
     } else {
-      localStorage.setItem(STAGED_KEY, JSON.stringify(entries));
+      writeComposerDraft('staged', userId, JSON.stringify(entries));
     }
   } catch {
     // localStorage unavailable (incognito, quota exceeded)
