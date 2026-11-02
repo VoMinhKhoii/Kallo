@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main]
   pull_request:
-    branches: [main, staging]
+    branches: [main]
 
 permissions:
   contents: read
@@ -63,7 +63,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-bun
-      # TODO: migrate to tsgo when GA for 10x faster type checking
       - run: bunx tsc --noEmit
 
   test-shard:
@@ -257,7 +256,7 @@ jobs:
       id-token: write
     env: &container-env
       # Only main pushes publish: cloud-run-prod.yml deploys main SHAs and is
-      # the sole consumer of these images. PR and staging runs still build the
+      # the sole consumer of these images. PR runs still build the
       # image (so a broken Dockerfile fails before merge) but never push — each
       # pushed image adds ~30 MB of Artifact Registry storage (retention:
       # docs/GOOGLE_CLOUD_RUN.md → "Image retention").

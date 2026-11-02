@@ -278,7 +278,7 @@ export function rederiveKcal(macros: {
 }
 
 export interface V2AnomalySummary {
-  /** Count per cause — the telemetry payload for staging dashboards. */
+  /** Count per cause — the telemetry payload for dashboards. */
   causeCounts: Record<AnomalyCause, number>;
   /** Count per action. */
   actionCounts: Record<AnomalyAction, number>;
