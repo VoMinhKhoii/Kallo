@@ -17,8 +17,7 @@ Browser ──HTTPS──▶ Cloudflare  (WAF, DDoS, rate-limit, edge TLS for ka
                                    (so the raw run.app URL is sealed)
 ```
 
-**No Cloud Run domain mapping.** Bangkok (`asia-southeast3`, where internal/staging
-run) doesn't support it, and we don't need it: Cloudflare points straight at the
+**No Cloud Run domain mapping.** We don't need it: Cloudflare points straight at the
 `run.app` origin and rewrites the `Host` header with a free **Origin Rule**. This is
 region-proof and avoids the managed-cert-renewal-behind-a-proxy outage class
 entirely — Cloudflare validates Google's always-valid `*.run.app` cert on the
@@ -148,8 +147,8 @@ hostname is what the app sees as its own origin. `lib/infra/auth/redirects.ts`
 link) builds redirect targets from `X-Forwarded-Host`; setting it here — and
 *Set*, so a visitor-supplied value is overwritten — keeps those redirects on
 `kallo.fit`. The code already refuses to emit a `*.run.app` origin and falls
-back to `https://kallo.fit` (KALLO-11), so this header is what keeps `www` and
-staging hosts correct rather than the only thing hiding the origin.
+back to `https://kallo.fit` (KALLO-11), so this header is what keeps `www`
+correct rather than the only thing hiding the origin.
 
 ---
 
@@ -487,13 +486,6 @@ on `/dashboard`, and send a test email to `support@kallo.fit`.
 
 ## Launch prerequisites / follow-ups
 
-- **Non-prod DB split — SECURITY-REQUIRED before onboarding real users.** Until it
-  lands, `nham-internal`/`nham-staging` run `--allow-unauthenticated` with **no
-  origin-lock** on the **same database** prod uses — the identical prod data is
-  reachable through those unprotected front doors. Fix: create a fresh non-prod
-  Supabase project and repoint `nham-nonprod-database-url` + `SUPABASE_PROJECT_ID`
-  for internal/staging. The `reset-staging-db.yml` guard then self-heals. See
-  `docs/SHARED_STAGING_CICD.md`.
 - **GitHub `production` environment reviewers.** Repo Settings → Environments →
   `production` → add yourself as a required reviewer, so prod migrations/deploys
   pause for a click.
@@ -504,8 +496,7 @@ on `/dashboard`, and send a test email to `support@kallo.fit`.
   deliberately so: the App Store / TestFlight listing, the iOS bundle id
   `com.khoivo.nham`, the Android `applicationId`, the `nham://` URL scheme, the
   `nham.app` domain, the `VoMinhKhoii/Nham` GitHub repo, the `nham` Artifact
-  Registry image, and the non-prod Cloud Run services and Secret Manager entries
-  (`nham-internal`, `nham-staging`, `nham-pr-<n>`, `nham-nonprod-*`). Each of
+  Registry image. Each of
   those names a resource that lives outside this repo — renaming the string here
   would only make the docs lie. Prod was already migrated (`kallo-prod*`).
 - **Rotating the origin secret** means updating BOTH

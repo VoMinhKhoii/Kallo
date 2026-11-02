@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-command="${1:?usage: staging-lease.sh <acquire|release>}"
+command="${1:?usage: deploy-lease.sh <acquire|release>}"
 
 : "${LEASE_BUCKET:?LEASE_BUCKET is required}"
 : "${LEASE_OBJECT:?LEASE_OBJECT is required}"
 
 lease_uri="gs://${LEASE_BUCKET}/${LEASE_OBJECT}"
-lease_ttl_hours="${STAGING_LEASE_TTL_HOURS:-2}"
+lease_ttl_hours="${LEASE_TTL_HOURS:-2}"
 
 # Validate lease_ttl_hours is a positive integer
 if ! [[ "$lease_ttl_hours" =~ ^[1-9][0-9]*$ ]]; then
-  echo "STAGING_LEASE_TTL_HOURS must be a positive integer (got: $lease_ttl_hours)" >&2
+  echo "LEASE_TTL_HOURS must be a positive integer (got: $lease_ttl_hours)" >&2
   exit 1
 fi
 
@@ -89,7 +89,7 @@ render_current_lease_message() {
   run_url="$(lease_field '.run_url')"
 
   cat <<EOF
-Shared staging is currently leased.
+The deploy lease is currently held.
 Owner: ${owner:-unknown}
 Branch: ${branch:-unknown}
 Commit: ${sha:-unknown}
@@ -104,7 +104,7 @@ write_desired_lease() {
   local started_at expires_at run_url
   # Re-validate lease_ttl_hours at the point of use
   if ! [[ "$lease_ttl_hours" =~ ^[1-9][0-9]*$ ]]; then
-    echo "STAGING_LEASE_TTL_HOURS is invalid in write_desired_lease (got: $lease_ttl_hours)" >&2
+    echo "LEASE_TTL_HOURS is invalid in write_desired_lease (got: $lease_ttl_hours)" >&2
     exit 1
   fi
   started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -113,13 +113,13 @@ write_desired_lease() {
 
   jq -n \
     --arg owner "${GITHUB_ACTOR:-unknown}" \
-    --arg branch "${STAGING_REF:-unknown}" \
-    --arg sha "${STAGING_TARGET_SHA:-unknown}" \
+    --arg branch "${LEASE_REF:-unknown}" \
+    --arg sha "${LEASE_TARGET_SHA:-unknown}" \
     --arg run_id "${GITHUB_RUN_ID:-}" \
     --arg run_url "$run_url" \
     --arg started_at "$started_at" \
     --arg expires_at "$expires_at" \
-    --arg reason "${STAGING_REASON:-manual staging deploy}" \
+    --arg reason "${LEASE_REASON:-manual deploy}" \
     '{
       owner: $owner,
       branch: $branch,
@@ -146,7 +146,7 @@ acquire_fresh_lease() {
   generation="$(describe_generation)"
   append_env LEASE_GENERATION "$generation"
   append_env LEASE_URI "$lease_uri"
-  append_summary "Acquired staging lease at \`$lease_uri\` (generation \`$generation\`)."
+  append_summary "Acquired deploy lease at \`$lease_uri\` (generation \`$generation\`)."
 }
 
 replace_existing_lease() {
@@ -156,14 +156,14 @@ replace_existing_lease() {
   generation="$(describe_generation)"
   append_env LEASE_GENERATION "$generation"
   append_env LEASE_URI "$lease_uri"
-  append_summary "Replaced staging lease at \`$lease_uri\` (generation \`$generation\`)."
+  append_summary "Replaced deploy lease at \`$lease_uri\` (generation \`$generation\`)."
 }
 
 acquire() {
-  : "${STAGING_REF:?STAGING_REF is required}"
-  : "${STAGING_REASON:?STAGING_REASON is required}"
-  : "${STAGING_FORCE_TAKEOVER:?STAGING_FORCE_TAKEOVER is required}"
-  : "${STAGING_TARGET_SHA:?STAGING_TARGET_SHA is required}"
+  : "${LEASE_REF:?LEASE_REF is required}"
+  : "${LEASE_REASON:?LEASE_REASON is required}"
+  : "${LEASE_FORCE_TAKEOVER:?LEASE_FORCE_TAKEOVER is required}"
+  : "${LEASE_TARGET_SHA:?LEASE_TARGET_SHA is required}"
 
   write_desired_lease
 
@@ -207,7 +207,7 @@ acquire() {
     expired=true
   fi
 
-  if [ "$expired" = true ] || [ "$STAGING_FORCE_TAKEOVER" = "true" ]; then
+  if [ "$expired" = true ] || [ "$LEASE_FORCE_TAKEOVER" = "true" ]; then
     replace_existing_lease "$current_generation"
     return 0
   fi
@@ -226,7 +226,7 @@ release() {
   fi
 
   if gcloud storage rm "$lease_uri" --if-generation-match="$generation" >/dev/null 2>"$error_file"; then
-    append_summary "Released staging lease at \`$lease_uri\`."
+    append_summary "Released deploy lease at \`$lease_uri\`."
     exit 0
   fi
 

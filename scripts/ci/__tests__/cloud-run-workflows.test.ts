@@ -435,12 +435,12 @@ describe('Card index refresh workflow', () => {
   it("runs the lease from the workflow's own commit, never the deployed one", () => {
     const prod = readWorkflow('cloud-run-prod.yml');
     expect(prod).toContain(
-      `ref: \${{ github.sha }}\n          path: .deploy-tools\n          sparse-checkout: scripts/cloud-run/staging-lease.sh`
+      `ref: \${{ github.sha }}\n          path: .deploy-tools\n          sparse-checkout: scripts/cloud-run/deploy-lease.sh`
     );
-    const calls = prod.match(/\S*staging-lease\.sh (acquire|release)/g);
+    const calls = prod.match(/\S*deploy-lease\.sh (acquire|release)/g);
     expect(calls).toEqual([
-      './.deploy-tools/scripts/cloud-run/staging-lease.sh acquire',
-      './.deploy-tools/scripts/cloud-run/staging-lease.sh release',
+      './.deploy-tools/scripts/cloud-run/deploy-lease.sh acquire',
+      './.deploy-tools/scripts/cloud-run/deploy-lease.sh release',
     ]);
     expect(prod).not.toMatch(/^concurrency:/m);
   });
@@ -792,10 +792,11 @@ echo "[card-artifact] key abc"
 });
 
 describe('CI workflow', () => {
-  it('runs on pushes and PRs targeting both main and staging', () => {
+  it('runs on pushes and PRs targeting main only', () => {
     const workflow = readWorkflow('ci.yml');
 
-    expect(workflow).toContain('branches: [main, staging]');
+    expect(workflow).toContain('branches: [main]');
+    expect(workflow).not.toContain('staging');
   });
 
   it('pushes images only from main, while PRs still build them', () => {

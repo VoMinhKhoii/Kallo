@@ -44,7 +44,7 @@ jobs:
       LEASE_OBJECT: prod/lease.json
       # The lease's 2h default would expire mid-run and let a deploy steal the
       # lock while phase 3/4 are still writing; 4h outruns the 180m timeout.
-      STAGING_LEASE_TTL_HOURS: 4
+      LEASE_TTL_HOURS: 4
     steps:
       - uses: actions/checkout@v4
         # Nothing after this runs a git command — the pipeline only reads the
@@ -89,11 +89,11 @@ jobs:
 
       - name: Acquire prod DB lease
         env:
-          STAGING_REF: ${{ github.ref_name }}
-          STAGING_REASON: manual USDA translation backfill
-          STAGING_FORCE_TAKEOVER: 'false'
-          STAGING_TARGET_SHA: ${{ github.sha }}
-        run: ./scripts/cloud-run/staging-lease.sh acquire
+          LEASE_REF: ${{ github.ref_name }}
+          LEASE_REASON: manual USDA translation backfill
+          LEASE_FORCE_TAKEOVER: 'false'
+          LEASE_TARGET_SHA: ${{ github.sha }}
+        run: ./scripts/cloud-run/deploy-lease.sh acquire
 
       - name: Run translation pipeline (4 phases)
         env:
@@ -144,7 +144,7 @@ jobs:
 
       - name: Release prod DB lease
         if: always()
-        run: ./scripts/cloud-run/staging-lease.sh release
+        run: ./scripts/cloud-run/deploy-lease.sh release
 
       # Translation renames card rows, which the card search artifact pinned to
       # the running revision does not see until a deploy rebuilds it. The card

@@ -8,7 +8,7 @@ One concern per folder. Nothing lives at this top level except this file.
 | `assets/` | brand/PWA asset generation (splash mark, icons, and the Koboyo surface-state illustration cast via `gen-illustrations.mjs`) |
 | `bench/` | latency harness and the KPI/baseline SQL rollups |
 | `ci/` | gates run by GitHub Actions (affected jobs, migrations, structure, security report) |
-| `cloud-run/` | Cloud Run deploy plumbing, smoke checks, staging lease |
+| `cloud-run/` | Cloud Run deploy plumbing, smoke checks, deploy lease |
 | `data/` | one-off data pipelines: `usda/`, `vtn_fct/`, `translate-usda-vietnamese/` |
 | `db/` | database backfills and coverage probes run against a live DB |
 | `dev/` | local developer conveniences (worktree env links, live OCR probe, `push-gates/`: the fast CI gates `.githooks/pre-push` runs before an agent's push, `evidence/`: real browser and simulator screenshots for a PR, `docs/REAL_RUN_EVIDENCE.md`) |

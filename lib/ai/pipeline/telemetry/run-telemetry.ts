@@ -4,7 +4,7 @@ import type { AppDb } from '@/lib/infra/db/client';
 import type { RrfAggregate } from './rrf-aggregation';
 
 // In-test default pepper so unit tests can run without mutating process.env.
-// Production / preview / staging supply ANALYSIS_GUARD_HASH_SECRET via the
+// Production supplies ANALYSIS_GUARD_HASH_SECRET via the
 // Cloud Run --set-secrets bindings, same pepper the rate-limit guard uses.
 const TEST_HASH_SECRET = 'pipeline-telemetry-test-secret';
 

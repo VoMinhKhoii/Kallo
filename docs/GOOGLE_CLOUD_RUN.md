@@ -1,10 +1,5 @@
 # Google Cloud Run Setup
 
-> **Updated (2026-07):** The `nham-internal`, `nham-staging`, and PR-preview
-> pipelines were retired to cut cost. `kallo-prod` is now the only Cloud Run
-> deploy target. Sections below that describe the internal/staging/preview
-> services are historical.
-
 This repo deploys a single production service via `cloud-run-prod.yml`:
 
 - **Production service** (`kallo-prod`): Deployed manually (`workflow_dispatch` from `main`) for a `main` SHA with a green CI run; applies pending migrations behind a GCS lease, then blue-green promotes after a smoke check
@@ -21,7 +16,7 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
    (exempting it from cleanup), applies pending migrations, deploys a
    no-traffic candidate, smoke-tests it, and only then promotes traffic.
 
-There is currently no persistent staging, internal, or preview deployment.
+There is no staging, internal, or preview deployment.
 Sandbox billing tests run locally (or through an explicitly approved temporary
 tunnel) until a separate QA lane is designed.
 
@@ -112,28 +107,6 @@ flow, which keeps Apple's tokens inside Supabase Auth, out of Kallo's reach.
 Only identities signed in natively on iOS (the only Apple sign-in surface we
 ship) are revoked on deletion.
 
-## Preview database modes (Disabled by default)
-
-Automatic PR previews are currently disabled, but the preview workflow still
-retains two database modes for legacy cleanup and future re-enablement:
-
-| Mode | What staging services use | When to use |
-| --- | --- | --- |
-| `shared` | The shared non-prod Supabase database behind `nham-nonprod-database-url` | Current mode (no branching) |
-| `branch` | A per-PR Supabase branch created via `supabase branches` | Future mode once the project has Supabase branching enabled |
-
-Set GitHub Actions variable `PREVIEW_DATABASE_MODE` to control that dormant
-preview behavior if previews are ever re-enabled. Leave it unset or set it to
-`shared` for the current setup.
-
-When you later upgrade to Supabase Pro, switching is meant to be operationally
-simple:
-
-1. set `PREVIEW_DATABASE_MODE=branch`
-2. add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` GitHub secrets
-3. keep `GCS_SEED_BUCKET` and `GCS_SEED_OBJECT` pointing at the generated seed
-4. manually trigger staging deployment for a PR
-
 ## Required Google Cloud resources
 
 Create or confirm these resources:
@@ -143,7 +116,7 @@ Create or confirm these resources:
 - Workload Identity Provider for GitHub OIDC
 - Deployer service account for GitHub Actions
 - Runtime service account for Cloud Run revisions
-- GCS bucket for staging lease state
+- GCS bucket `kallo-prod-leases` for the deploy lease (`scripts/cloud-run/deploy-lease.sh`)
 - GCS bucket `kallo-prod-card-search` for the card search artifact (see "Card
   search artifact")
 - Secret Manager secrets:
@@ -383,81 +356,6 @@ To stop it, `gh variable delete PIPELINE_MODEL_PROFILE` and deploy. The secret i
 mounted only while the variable is `haiku`; with `haiku` set and the secret
 missing or unreadable, the deploy fails before it starts.
 
-## GCS preview seed bucket setup
-
-Use these commands to create and grant access to the private preview seed
-bucket:
-
-```bash
-export GCP_PROJECT_ID="cal-487315"
-export GCP_REGION="asia-southeast1"
-export GCS_PREVIEW_SEED_BUCKET="nham-preview-seeds"
-export GCP_DEPLOYER_SERVICE_ACCOUNT="github-deployer@cal-487315.iam.gserviceaccount.com"
-
-gcloud storage buckets create "gs://$GCS_PREVIEW_SEED_BUCKET" \
-  --project="$GCP_PROJECT_ID" \
-  --location="$GCP_REGION" \
-  --uniform-bucket-level-access
-
-gcloud storage buckets add-iam-policy-binding "gs://$GCS_PREVIEW_SEED_BUCKET" \
-  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
-  --role="roles/storage.objectViewer"
-```
-
-## Seed refresh flow and GitHub settings
-
-Refresh the generated seed artifact with:
-
-```bash
-bun scripts/db/generate-seed-food-sql.ts \
-  --input "Vietnamese Food Composition.csv" \
-  --output "./seed_food.sql"
-
-gcloud storage cp ./seed_food.sql \
-  "gs://$GCS_PREVIEW_SEED_BUCKET/supabase/seed_food.sql"
-
-rm -f ./seed_food.sql
-```
-
-Required GitHub settings for the current shared mode:
-
-- Variables:
-  - `PREVIEW_DATABASE_MODE=shared` (or leave unset)
-
-Additional GitHub settings used by the shared reset workflow and future branch
-mode:
-
-- Variables:
-  - `GCS_SEED_BUCKET`
-  - `GCS_SEED_OBJECT`
-- Secrets:
-  - `SUPABASE_ACCESS_TOKEN`
-  - `SUPABASE_PROJECT_ID`
-
-Additional GitHub settings required only for future `branch` mode:
-
-- No additional variables or secrets beyond the shared reset settings above.
-
-## Shared staging reset workflow
-
-The shared preview/internal database is intentionally recoverable.
-
-Use **GitHub → Actions → Reset Staging Database** when staging drifts into a bad
-state. The workflow:
-
-1. checks out the default branch
-2. verifies that `SUPABASE_PROJECT_ID` matches the project behind
-   `nham-nonprod-database-url`
-3. runs `supabase db reset --linked --yes`
-4. reapplies the generated `seed_food.sql` from GCS
-5. verifies that the rebuilt DB has core tables, seeded food rows, the
-   `on_auth_user_created` trigger, and zero orphaned `auth.users` rows
-
-That gives you a one-button rebuild of the shared staging database from the
-latest approved migrations plus the generated search/embedding seed state.
-It also replays a backfill migration so pre-existing `auth.users` rows regain
-their `public.user_profiles` rows after remote resets.
-
 ## Recommended naming
 
 Use names close to these so the guide and workflows stay easy to map:
@@ -469,10 +367,8 @@ Use names close to these so the guide and workflows stay easy to map:
 | Workload Identity Provider | `github` |
 | Deployer service account | `github-deployer` |
 | Runtime service account | `cloud-run-runtime` |
-| Internal Cloud Run service | `nham-internal` |
-| Shared staging Cloud Run service | `nham-staging` |
-| Preview Cloud Run services | `nham-pr-<number>` |
-| Staging lease bucket | `nham-staging-leases` |
+| Production Cloud Run service | `kallo-prod` |
+| Deploy lease bucket | `kallo-prod-leases` |
 
 ## Required APIs
 
@@ -704,11 +600,8 @@ gcloud iam service-accounts add-iam-policy-binding \
 ### WIF notes
 
 - This setup restricts token exchange to this repository.
-- The workflows themselves further restrict deploy lanes:
-  - previews run only for successful same-repo PR CI runs
-  - internal deploys run only for successful `main` push CI runs
-- If we later want stronger separation, split preview/internal/ops into
-  distinct service accounts or providers with narrower attribute conditions.
+- The prod deploy further requires the GitHub `Production` environment's
+  approval, and runs only for a `main` SHA with a green CI run.
 
 ## 6. Add GitHub repository variables
 
@@ -730,16 +623,14 @@ In **GitHub → Settings → Secrets and variables → Actions → Variables**, 
 | `BILLING_ENFORCEMENT_ENABLED` | Keep `false` through dark launch and sandbox validation; turn on only after the welcome-premium migration has applied |
 | `BILLING_PURCHASES_ENABLED` | Keep `false` through dark launch; independent new-checkout kill-switch |
 | `BILLING_SANDBOX_USER_IDS` | Dedicated App Review account UUIDs only; blank for normal production users |
-| `NEXT_PUBLIC_SUPABASE_URL` | Non-prod public Supabase URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Non-prod public Supabase anon key |
+| `NEXT_PUBLIC_SUPABASE_URL` | Public Supabase URL baked into the image |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public Supabase anon key baked into the image |
 | `NEXT_PUBLIC_SENTRY_DSN` | Optional. Sentry DSN baked into the CI image; empty → error reporting off (`docs/MONITORING.md`) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Optional. PostHog project key baked into the CI image; empty → analytics off |
 | `NEXT_PUBLIC_AVATAR_BASE_URL` | Public origin of the avatars R2 bucket (`https://media.kallo.fit`), baked into the CI image for avatar URLs and the CSP (`docs/STORAGE.md`) |
 | `R2_ACCOUNT_ID` | Cloudflare account id: the R2 S3 endpoint at runtime, and the presign origin in the CSP at build |
 | `SENTRY_ORG` / `SENTRY_PROJECT` | Optional. Source-map upload target, used only when the `SENTRY_AUTH_TOKEN` secret is set |
-| `GCS_SEED_BUCKET` | Private preview seed artifact bucket |
-| `GCS_SEED_OBJECT` | Object path of the seed artifact within the bucket |
-| `GCS_STAGING_LEASE_BUCKET` | GCS bucket used for staging/lease.json atomic lock |
+| `GCS_PROD_LEASE_BUCKET` | GCS bucket holding the deploy lease (`prod/lease.json`) |
 
 `GCP_WIF_PROVIDER` must be the full resource name:
 
@@ -753,27 +644,14 @@ authentication, and runtime secrets stay in Secret Manager.
 ## 7. Public config rule
 
 `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are **build-time inputs** for the shared
-CI image used by `nham-internal` and by previews while
-`PREVIEW_DATABASE_MODE=shared`.
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are **build-time inputs** for the CI
+image that `kallo-prod` deploys.
 
 That means:
 
 - changing them requires a new CI image build
 - changing Cloud Run runtime env vars later will not fix stale client bundle
   config
-- shared-mode previews and `nham-internal` both read the same public Supabase
-  config from GitHub Actions variables
-- if we later switch to `PREVIEW_DATABASE_MODE=branch`, preview images rebuild
-  after branch env is fetched from Supabase, while `nham-internal` keeps using
-  the shared GitHub Actions variables
-
-### Preview runtime notes
-
-| Mode | Public Supabase config | Server `DATABASE_URL` | Cleanup behavior |
-| --- | --- | --- | --- |
-| `shared` (current default) | Comes from `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` GitHub variables baked into the CI image | Secret Manager-backed `nham-nonprod-database-url` | PR close deletes only the preview Cloud Run service; DB recovery happens through **Reset Staging Database** |
-| `branch` (future Supabase Pro path) | Comes from Supabase branch env fetched during the preview build | Injected with `--update-env-vars=DATABASE_URL=...` for that PR branch | PR close and scheduled cleanup delete both the preview Cloud Run service and the Supabase branch |
 
 ## 8. Cloud Run defaults used by the workflows
 
@@ -817,22 +695,6 @@ where account deletion still purges it). Anything that must not be lost
 belongs before the response or in an outbox, not in `after()`. This is a known
 trade-off; the deploy flags are deliberately unchanged.
 
-### Preview services: `nham-pr-<number>` (disabled by default)
-
-- CPU: `1`
-- Memory: `1Gi`
-- Concurrency: `20`
-- Timeout: `60`
-- Min instances: `0`
-- Max instances: `3`
-- Public URL enabled
-- `DATABASE_URL` source depends on `PREVIEW_DATABASE_MODE`:
-  - shared mode uses Secret Manager-backed `nham-nonprod-database-url`
-  - branch mode injects the per-branch URL with `--update-env-vars`
-- `GEMINI_API_KEY` stays Secret Manager-backed in both modes
-- Preview services are retired. If a temporary QA lane is designed later, it
-  must not inherit production Auth-admin or provider-erasure credentials.
-
 ### Vertex AI provider
 
 The production service calls Gemini through **Vertex AI** via Application
@@ -858,7 +720,7 @@ Prerequisites the Cloud Run service account needs **before** flipping
    model-availability skew across our STABLE models (`gemini-3.1-flash-lite`,
    `gemini-2.5-flash-lite`, `gemini-embedding-001`). For the record, Cloud Run
    itself runs **prod in `asia-southeast1` (Singapore)**, co-located with the
-   Supabase database, while internal and staging run in `asia-southeast3`
+   Supabase database, while the Artifact Registry is in `asia-southeast3`
    (Bangkok, Thailand) — see `docs/PROD_DOMAIN_SETUP.md`.
 4. `GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1` (optional; defaults to
    `GOOGLE_CLOUD_LOCATION`). Query embeddings (`gemini-embedding-001`) use their
@@ -875,22 +737,13 @@ fallback works without re-issuing the secret.
 
 | Workflow | Purpose |
 | --- | --- |
-| `CI` | Validate repo, then build and push SHA-tagged image |
-| `Cloud Run Preview` | Disabled automatic preview deploy path retained for future/manual recovery work |
-| `Cloud Run Internal` | Deploy `main` to `nham-internal`, with smoke-triggered rollback |
-| `Cloud Run Preview Cleanup` | Delete legacy preview Cloud Run services on PR close, remove matching Supabase branches, and clean up orphan previews nightly |
-| `Cloud Run Staging` | Manual shared-staging promotion with lease protection, migrations, smoke check, and PR comment updates |
-| `Cloud Run Ops` | Manual internal ops plus legacy preview refresh operations |
+| `CI` | Validate the repo and build the image on every PR; on `main`, push the SHA-tagged image |
+| `Cloud Run Prod` | Manual prod deploy: lease, migrations, no-traffic candidate, smoke check, promote |
+| `Card Index Refresh` | Nightly: redeploy the serving commit when the card data has moved past its search index |
+| `Translate USDA rows` | Manual USDA translation backfill into the prod DB, holding the deploy lease |
+| `Account deletion retry` | Retry account deletions that failed part-way |
 
 ## 10. Manual operations
-
-The `Cloud Run Ops` workflow supports:
-
-- `redeploy-internal`
-- `rollback-internal`
-- `refresh-preview` (legacy/manual preview recovery only while auto-previews stay disabled)
-
-Useful commands for operators:
 
 Find the image digest for a known commit SHA:
 
@@ -900,11 +753,11 @@ gcloud artifacts docker images describe "$IMAGE_TAG" \
   --format='value(image_summary.digest)'
 ```
 
-Inspect current internal traffic:
+Inspect current prod traffic:
 
 ```bash
-gcloud run services describe nham-internal \
-  --region="$GCP_REGION" \
+gcloud run services describe kallo-prod \
+  --region=asia-southeast1 \
   --format='table(status.traffic.revisionName,status.traffic.percent)'
 ```
 
@@ -912,34 +765,22 @@ List revisions for rollback selection:
 
 ```bash
 gcloud run revisions list \
-  --region="$GCP_REGION" \
-  --service=nham-internal
+  --region=asia-southeast1 \
+  --service=kallo-prod
 ```
 
 ## 11. Manual verification checklist
 
 Run these after setup:
 
-1. Open a same-repo PR and confirm:
-   - CI builds the container image but does not push it (only `main` pushes)
-   - no automatic preview deploy runs after CI succeeds
-2. Manually run `Cloud Run Staging` for that PR and confirm:
-   - the workflow acquires the staging lease
-   - migrations apply against the shared non-prod DB
-   - the PR gets a staging comment when `ref` is `pr-<number>` or ends with `#<number>`
-   - `https://<staging-url>/api/healthz` returns the expected health JSON
-3. Merge a known-good change to `main` and confirm:
-   - `Cloud Run Internal` deploys `nham-internal`
-   - smoke checks pass without rollback
-4. Run a controlled rollback drill in a non-production window:
-   - force smoke verification to fail once
-   - confirm traffic returns to the previously serving revision
-5. Run `Cloud Run Ops` once with a known digest:
-   - redeploy internal by digest
-   - confirm deployment-record artifacts are uploaded
-6. If you still have legacy preview services to clean up, close the PR or run the cleanup workflow and confirm:
-   - `Cloud Run Preview Cleanup` deletes `nham-pr-<number>` and the matching Supabase branch
-   - the old preview URL no longer serves the app
+1. Open a same-repo PR and confirm CI builds the container image but does not
+   push it (only `main` pushes).
+2. Merge a known-good change to `main`, dispatch `Cloud Run Prod` for its SHA,
+   and confirm:
+   - the workflow acquires the deploy lease
+   - pending migrations apply and `assert-migrations-applied` passes
+   - the no-traffic candidate passes the smoke check before traffic moves
+   - `https://kallo.fit/api/healthz` returns the expected health JSON
 
 ## Structured pipeline trace capture
 
@@ -1013,19 +854,7 @@ query-delay tests do not estimate cross-region latency.
 
 ## 12. Known boundaries of the current setup
 
-- Automatic PR previews are disabled; shared staging is the only supported
-  pre-merge deployment lane.
-- Legacy preview services and cleanup workflows still exist for compatibility,
-  recovery, and eventual re-enablement work.
-- Previews and internal share one non-production Supabase backend for now.
-- This setup is intentionally open on the default Cloud Run URL; application auth
-  is still the access gate.
-- Normal preview and internal deploy workflows do not run destructive database
-  reset commands.
-- The manual **Reset Staging Database** workflow is the exception: it verifies
-  `SUPABASE_PROJECT_ID` matches the database behind
-  `nham-nonprod-database-url`, then runs `supabase db reset --linked --yes`,
-  reapplies `seed_food.sql`, and replays the `public.user_profiles` backfill so
-  existing `auth.users` rows are restored safely.
-- A later production environment with different `NEXT_PUBLIC_*` values will need
-  a separate image build or a different client-config bootstrap strategy.
+- There is no pre-merge deployment lane: changes are verified locally and in CI,
+  then deployed to prod.
+- `kallo-prod` is reached through Cloudflare, which adds the origin secret the
+  app checks (`docs/PROD_DOMAIN_SETUP.md`).

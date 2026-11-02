@@ -8,10 +8,7 @@ name: Cloud Run Prod
 # must have a green CI run (CI builds and pushes the image tag this workflow
 # pulls).
 #
-# Transitional note: until the non-prod DB is split off (see
-# docs/SHARED_STAGING_CICD.md), kallo-prod-database-url and
-# nham-nonprod-database-url point at the SAME database. `supabase db push` is
-# effectively idempotent (each applies only what is pending), so re-running this
+# `supabase db push` applies only pending migrations, so re-running this
 # workflow is safe.
 on:
   workflow_dispatch:
@@ -50,7 +47,7 @@ jobs:
       # Prod runs in Singapore to co-locate with the Supabase DB (AWS
       # ap-southeast-1) — DB-query latency dominates for this app, and Cloudflare's
       # edge absorbs user-facing latency regardless. This deliberately differs from
-      # vars.GCP_REGION (asia-southeast3 / Bangkok), where internal + staging run.
+      # vars.GCP_REGION (asia-southeast3 / Bangkok), where the Artifact Registry is.
       PROD_REGION: asia-southeast1
       # IMAGE_TAG stays on vars.GCP_REGION: the image is built + pushed to the
       # Bangkok Artifact Registry by CI. Cloud Run in Singapore pulls it
@@ -60,15 +57,12 @@ jobs:
       # workflow_run trigger supplied head_sha.
       DEPLOY_SHA: ${{ inputs.sha != '' && inputs.sha || github.sha }}
       IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ inputs.sha != '' && inputs.sha || github.sha }}
-      # staging-lease.sh is env-parameterized (LEASE_BUCKET/LEASE_OBJECT); its
-      # "staging" naming is legacy-generic. Prod uses its own bucket so prod and
-      # staging deploys can never block each other.
+      # deploy-lease.sh takes its lock object from LEASE_BUCKET/LEASE_OBJECT;
+      # translate-usda.yml holds the same lock while it writes to the prod DB.
       LEASE_BUCKET: ${{ vars.GCS_PROD_LEASE_BUCKET }}
       LEASE_OBJECT: prod/lease.json
-      # Prod's OWN Supabase project ref — deliberately NOT the shared
-      # SUPABASE_PROJECT_ID, which the non-prod DB split will repoint at the new
-      # non-prod project. Coupling prod validation to that would hard-fail every
-      # prod deploy the moment the split lands.
+      # Prod's own Supabase project ref, checked against the DB URL before any
+      # migration runs.
       KALLO_PROD_PROJECT_ID: ${{ secrets.KALLO_PROD_PROJECT_ID }}
       BILLING_ENFORCEMENT_ENABLED: ${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}
       BILLING_PURCHASES_ENABLED: ${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}
@@ -88,7 +82,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           path: .deploy-tools
-          sparse-checkout: scripts/cloud-run/staging-lease.sh
+          sparse-checkout: scripts/cloud-run/deploy-lease.sh
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - uses: google-github-actions/auth@v3
@@ -115,11 +109,11 @@ jobs:
           { echo 'PROD_DATABASE_URL_ENCODED<<EOF'; echo "$encoded_db_url"; echo 'EOF'; } >> "$GITHUB_ENV"
       - name: Acquire prod lease
         env:
-          STAGING_REF: main
-          STAGING_REASON: Manual prod deploy (commit ${{ env.DEPLOY_SHA }})
-          STAGING_FORCE_TAKEOVER: 'false'
-          STAGING_TARGET_SHA: ${{ env.DEPLOY_SHA }}
-        run: ./.deploy-tools/scripts/cloud-run/staging-lease.sh acquire
+          LEASE_REF: main
+          LEASE_REASON: Manual prod deploy (commit ${{ env.DEPLOY_SHA }})
+          LEASE_FORCE_TAKEOVER: 'false'
+          LEASE_TARGET_SHA: ${{ env.DEPLOY_SHA }}
+        run: ./.deploy-tools/scripts/cloud-run/deploy-lease.sh acquire
       # A card index refresh redeploys the commit that was serving when it
       # looked. Approval can come hours later, after a newer release: under the
       # lease nothing else is deploying, so check that commit still serves
@@ -190,10 +184,7 @@ jobs:
             *) echo "BILLING_PURCHASES_ENABLED must be true or false." >&2; exit 1 ;;
           esac
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
-          # Guard against pointing prod at the wrong Supabase project. assert-state
-          # is intentionally NOT run here: its seeded-food / no-orphaned-users
-          # checks are tuned for the non-prod seed shape and would wrongly block a
-          # prod deploy on legitimate production data.
+          # Guard against pointing prod at the wrong Supabase project.
           [ -n "$KALLO_PROD_PROJECT_ID" ]
           node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$PROD_DATABASE_URL" --project-ref "$KALLO_PROD_PROJECT_ID"
       # A prod-<sha> tag exempts the image from the registry's 14-day cleanup
@@ -456,10 +447,10 @@ jobs:
           # (pipeline Phase 2, Deliverables 1-3), so cold requests stay fast.
           #
           # --concurrency=80 on --cpu=1 is a very high request-per-vCPU ratio.
-          # Staging was ratcheted 20→8 to remove vCPU starvation; the same
-          # tightening likely applies here but is deliberately left unchanged in
-          # this phase — prod's concurrency change must be benchmarked under
-          # representative load before shipping.
+          # The retired non-prod service was ratcheted 20→8 to remove vCPU
+          # starvation; the same tightening likely applies here but is
+          # deliberately left unchanged in this phase — prod's concurrency
+          # change must be benchmarked under representative load before shipping.
           #
           # --set-secrets below: referencing a Secret Manager secret that does
           # NOT exist fails the ENTIRE deploy, not just the one variable — an
@@ -578,4 +569,4 @@ jobs:
       # traffic, so a failed smoke leaves the current revision serving unchanged.
       - name: Release prod lease
         if: always()
-        run: ./.deploy-tools/scripts/cloud-run/staging-lease.sh release
+        run: ./.deploy-tools/scripts/cloud-run/deploy-lease.sh release
