@@ -11,6 +11,7 @@ import {
   foodHubPath,
   foodPagePath,
 } from '@/lib/seo/food-pages/slugs';
+import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { SITE_URL } from '@/lib/seo/site';
 import { TOOL_SLUGS, TOOLS_PREFIX, toolPath } from '@/lib/seo/tools/slugs';
 
@@ -99,6 +100,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.6,
       alternates: { languages: alternateLanguages(FOOD_PAGE_PREFIX) },
+    });
+    // The food pages read together, in each locale from its own dishes; the
+    // same concept, so the two pair as alternates. Dated like the hub.
+    entries.push({
+      url: `${SITE_URL}/${locale}${MEAL_DATA_PATH}`,
+      lastModified: new Date(
+        pages
+          .map((page) => page.capture.capturedAt)
+          .sort()
+          .at(-1) as string
+      ),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+      alternates: { languages: alternateLanguages(MEAL_DATA_PATH) },
     });
     for (const page of pages) {
       entries.push({

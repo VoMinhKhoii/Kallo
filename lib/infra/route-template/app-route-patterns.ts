@@ -23,6 +23,7 @@ export const APP_ROUTE_PATTERNS = [
   '/[locale]/circle/friends',
   '/[locale]/circle/g/[groupId]',
   '/[locale]/dashboard',
+  '/[locale]/data/meal-calorie-variation',
   '/[locale]/design-system',
   '/[locale]/docs/[...slug]',
   '/[locale]/invite/[slug]',

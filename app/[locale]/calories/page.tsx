@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { DocsH2, DocsParagraph } from '@/components/docs/mdx/prose';
+import { DocsH2, DocsLink, DocsParagraph } from '@/components/docs/mdx/prose';
 import { FoodLinkList } from '@/components/seo/food-page/food-link-list';
 import { alternateLanguages } from '@/lib/seo/alternates';
 import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
@@ -13,6 +13,7 @@ import {
   foodHubPath,
   isFoodLocale,
 } from '@/lib/seo/food-pages/slugs';
+import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 
@@ -82,6 +83,11 @@ async function HubContent({ params }: CaloriesHubProps) {
 
       <div className="mt-10">
         <DocsParagraph>{hub.intro}</DocsParagraph>
+        <DocsParagraph>
+          <DocsLink href={MEAL_DATA_PATH}>
+            {FOOD_PAGE_CHROME[locale].dataLink}
+          </DocsLink>
+        </DocsParagraph>
 
         {pagesByGroup(locale).map(({ group, pages }) => (
           <section key={group}>

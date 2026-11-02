@@ -112,6 +112,7 @@ describe('negotiate', () => {
       '/en/calories/chicken-burrito',
       '/en/tools',
       '/vi/tools/tdee-calculator',
+      '/en/data/meal-calorie-variation',
     ]) {
       expect(ask(path)).toEqual({ kind: 'pass' });
     }

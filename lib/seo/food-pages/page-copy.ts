@@ -28,6 +28,8 @@ export interface FoodPageChrome {
   /** "Or browse [all 50 meals]." around the hub link. */
   browse: { before: string; link: (count: number) => string; after: string };
   footerLink: string;
+  /** The hub's link to the data page that reads every dish together. */
+  dataLink: string;
 }
 
 export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
@@ -63,6 +65,7 @@ export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
       after: '.',
     },
     footerLink: 'Calories in meals',
+    dataLink: 'How much the same meal varies: all these meals read together',
   },
   vi: {
     formatNumber: (n) => n.toLocaleString('vi-VN'),
@@ -91,5 +94,7 @@ export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
       after: '.',
     },
     footerLink: 'Calo các món ăn',
+    dataLink:
+      'Cùng một món, calo chênh nhau bao nhiêu: đọc tất cả các bữa cùng lúc',
   },
 };
