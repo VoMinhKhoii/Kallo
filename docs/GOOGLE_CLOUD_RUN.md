@@ -1,4 +1,4 @@
-# Google Cloud Run Setup
+# Google Cloud Run setup
 
 This repo deploys a single production service via `cloud-run-prod.yml`:
 
