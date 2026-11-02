@@ -196,8 +196,9 @@ The job installs fastlane from the committed `apps/mobile-flutter/ios/Gemfile.lo
 `BUNDLE_FROZEN=true`, so every gem version and checksum is pinned, and a missing or stale lock
 fails the job instead of resolving fresh gems. The signing secrets are set only on the steps that
 read them, never on the gem install. To bump fastlane, edit the version in the `Gemfile` and run
-`bundle lock` with Bundler 2.6 or newer (it keeps the `CHECKSUMS` section); Dependabot opens these
-bumps as lockfile PRs.
+`bundle lock --update` with Bundler 2.6 or newer (it keeps the `CHECKSUMS` section), then
+`bundle-audit check --update`; the PR's Dependency Review check fails on a vulnerable gem.
+Dependabot opens these bumps as lockfile PRs.
 
 ### One-time setup
 
