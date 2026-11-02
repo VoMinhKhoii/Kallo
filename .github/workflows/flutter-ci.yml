@@ -58,16 +58,17 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-  # `flutter test` was 383 of this workflow's 462s in one job. Each shard runs
-  # every Nth test file (sorted), so it compiles only its own files; the
-  # `--total-shards` flag splits tests, not files.
+  # `flutter test` was 383 of this workflow's 462s in one job; 6 shards took it
+  # to ~146s, each shard's test step 70-100s. Each shard runs every Nth test
+  # file (sorted), so it compiles only its own files; the `--total-shards`
+  # flag splits tests, not files.
   test:
     name: Test (${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     defaults:
       run:
         working-directory: apps/mobile-flutter

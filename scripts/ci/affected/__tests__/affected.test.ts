@@ -16,8 +16,8 @@ const REPO = repoFacts(ROOT);
 if (REPO === null) throw new Error('git could not list this checkout');
 const DB = REPO.dbFiles;
 const groups = (files: string[] | null) => groupsFor(files, REPO);
-const NONE = { web: false, migrations: false, image: false };
-const ALL = { web: true, migrations: true, image: true };
+const NONE = { web: false, migrations: false, image: false, deps: false };
+const ALL = { web: true, migrations: true, image: true, deps: true };
 
 describe('groupsFor', () => {
   it('runs everything when the diff or the checkout is unknown', () => {
@@ -27,12 +27,23 @@ describe('groupsFor', () => {
   });
 
   it('skips every gated job for a Flutter-only PR', () => {
-    expect(
-      groups([
-        'apps/mobile-flutter/lib/main.dart',
-        'apps/mobile-flutter/pubspec.lock',
-      ])
-    ).toEqual(NONE);
+    expect(groups(['apps/mobile-flutter/lib/main.dart'])).toEqual(NONE);
+    // A pub dependency change is still one for Dependency Review.
+    expect(groups(['apps/mobile-flutter/pubspec.lock'])).toEqual({
+      ...NONE,
+      deps: true,
+    });
+  });
+
+  it('runs Dependency Review only for manifests and action versions', () => {
+    for (const file of [
+      'apps/kallo-proxy/package.json',
+      'apps/mobile-flutter/pubspec.yaml',
+      '.github/workflows/flutter-ci.yml',
+    ]) {
+      expect([file, groups([file]).deps]).toEqual([file, true]);
+    }
+    expect(groups(['lib/seo/site.ts']).deps).toBe(false);
   });
 
   it('skips them for docs, Markdown and agent files', () => {
@@ -89,12 +100,14 @@ describe('groupsFor', () => {
       web: true,
       migrations: true,
       image: false,
+      deps: false,
     });
     expect(groups(['supabase/config.toml']).migrations).toBe(true);
     expect(groups(['lib/seo/site.ts'])).toEqual({
       web: true,
       migrations: false,
       image: false,
+      deps: false,
     });
   });
 

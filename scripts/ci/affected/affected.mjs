@@ -58,6 +58,15 @@ const IMAGE = [
   /^scripts\/ci\/card-index\//,
 ];
 
+// Dependency Review diffs the dependency manifests, and GitHub Actions
+// versions count: with none of these changed it has nothing to report.
+const DEPS = [
+  /(^|\/)package\.json$/,
+  /(^|\/)bun\.lock$/,
+  /(^|\/)pubspec\.(yaml|lock)$/,
+  /^\.github\/(workflows|actions)\//,
+];
+
 const isProse = (file) => PROSE.some((rule) => rule.test(file));
 
 /**
@@ -77,6 +86,7 @@ const RULES = {
     repo.imageFiles.some(
       (copied) => file === copied || file.startsWith(`${copied}/`)
     ),
+  deps: (file) => DEPS.some((rule) => rule.test(file)),
 };
 export const GROUPS = Object.keys(RULES);
 const ALL = Object.fromEntries(GROUPS.map((group) => [group, true]));
