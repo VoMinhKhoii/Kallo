@@ -15,7 +15,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    pool: 'vmForks',
+    pool: 'threads',
     setupFiles: ['./vitest.setup.ts'],
     // Building a jsdom window was 58% of the CI test run, and most suites
     // never touch the DOM. Component suites (.tsx) get jsdom; .ts suites run
