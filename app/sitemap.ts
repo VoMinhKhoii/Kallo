@@ -4,7 +4,7 @@ import { routing } from '@/i18n/routing';
 import { loadFrontmatter } from '@/lib/domain/docs/loader';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { alternateLanguages } from '@/lib/seo/alternates';
-import { pagesOf } from '@/lib/seo/food-pages/pages';
+import { captureDateRange, pagesOf } from '@/lib/seo/food-pages/pages';
 import {
   FOOD_PAGE_LOCALES,
   FOOD_PAGE_PREFIX,
@@ -91,12 +91,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const pages = pagesOf(locale);
     entries.push({
       url: `${SITE_URL}${foodHubPath(locale)}`,
-      lastModified: new Date(
-        pages
-          .map((page) => page.capture.capturedAt)
-          .sort()
-          .at(-1) as string
-      ),
+      lastModified: new Date(captureDateRange(locale).last),
       changeFrequency: 'monthly',
       priority: 0.6,
       alternates: { languages: alternateLanguages(FOOD_PAGE_PREFIX) },
@@ -105,12 +100,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // same concept, so the two pair as alternates. Dated like the hub.
     entries.push({
       url: `${SITE_URL}/${locale}${MEAL_DATA_PATH}`,
-      lastModified: new Date(
-        pages
-          .map((page) => page.capture.capturedAt)
-          .sort()
-          .at(-1) as string
-      ),
+      lastModified: new Date(captureDateRange(locale).last),
       changeFrequency: 'monthly',
       priority: 0.7,
       alternates: { languages: alternateLanguages(MEAL_DATA_PATH) },

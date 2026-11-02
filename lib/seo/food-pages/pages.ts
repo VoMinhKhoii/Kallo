@@ -51,6 +51,17 @@ export function pagesOf(locale: FoodLocale): FoodPage[] {
   return FOOD_SLUGS[locale].map((slug) => FOOD_PAGES[slug]);
 }
 
+/** The first and last day a locale's meals were captured (ISO strings). */
+export function captureDateRange(locale: FoodLocale): {
+  first: string;
+  last: string;
+} {
+  const days = pagesOf(locale)
+    .map((page) => page.capture.capturedAt)
+    .sort();
+  return { first: days[0], last: days.at(-1) as string };
+}
+
 /** A meal's total, as its card's rows add up. */
 export function mealKcal(variant: FoodPageVariant): number {
   return variant.dishes.reduce((total, dish) => total + dish.calories, 0);

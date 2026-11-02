@@ -1,8 +1,11 @@
 import type { FoodLocale } from '@/lib/seo/food-pages/slugs';
+import type { KindKey } from './stats';
 
 export interface MealDataFacts {
   meals: number;
   dishes: number;
+  /** Meals logged per dish. */
+  perDish: number;
   /** Median heaviest ÷ lightest, one decimal, as the locale writes it. */
   ratio: string;
   withOil: number;
@@ -23,7 +26,7 @@ export interface MealDataCopy {
   swingLine: (lowLabel: string, highLabel: string) => string;
   kindsHeading: string;
   kindsLead: string;
-  kinds: Record<string, string>;
+  kinds: Record<KindKey, string>;
   kindLine: (meals: number, median: string, max: string) => string;
   oilHeading: string;
   oilBody: (f: MealDataFacts) => string;
@@ -41,10 +44,10 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
     metaTitle: (f) =>
       `Same Meal, ${f.ratio}× the Calories: ${f.meals} Logged Meals`,
     description: (f) =>
-      `We logged ${f.dishes} everyday meals ${f.meals / f.dishes} ways each. The heaviest version of a typical meal had ${f.ratio}× the calories of the lightest, and cooking oil hid in ${f.unnamed} meals.`,
+      `We logged ${f.dishes} everyday meals ${f.perDish} ways each. The heaviest version of a typical meal had ${f.ratio}× the calories of the lightest, and cooking oil hid in ${f.unnamed} meals.`,
     title: 'How much the same meal varies',
     lead: (f) =>
-      `A calorie table gives one number per dish. We logged ${f.dishes} everyday meals in Kallo ${f.meals / f.dishes} common ways each, ${f.meals} meals in all, from a small homemade plate to a full restaurant one. For the typical dish, the heaviest version had ${f.ratio}× the calories of the lightest. That spread, not the table's single number, is what decides whether a day of eating lands on target.`,
+      `A calorie table gives one number per dish. We logged ${f.dishes} everyday meals in Kallo ${f.perDish} common ways each, ${f.meals} meals in all, from a small homemade plate to a full restaurant one. For the typical dish, the heaviest version had ${f.ratio}× the calories of the lightest. That spread, not the table's single number, is what decides whether a day of eating lands on target.`,
     swingsHeading: 'The biggest swings',
     swingsLead:
       'Dishes whose lightest and heaviest versions are furthest apart, with what each version was.',
@@ -60,6 +63,8 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
       oil: 'Cooking oil',
       butter: 'Butter',
       sauce: 'Sauces and dressings',
+      sugar: 'Sugar and condensed milk',
+      broth: 'Broth',
     },
     kindLine: (meals, median, max) =>
       `in ${meals} meals · median ${median} kcal a serving · up to ${max}`,
@@ -71,8 +76,8 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
       'Dishes whose versions stay close together, where one number is a fair guess.',
     methodHeading: 'How this was measured',
     method: (f) => [
-      `Each dish has ${f.meals / f.dishes} meals written to span how people commonly eat it: smaller and larger portions, with and without the usual extras, homemade and from a restaurant. They are not a random sample of what Kallo's users log, and no user's data is in them.`,
-      `Every meal was typed into Kallo once, ${f.dates.from === f.dates.to ? `on ${f.dates.from}` : `between ${f.dates.from} and ${f.dates.to}`}, and run through the same pipeline the app uses: it splits the meal into ingredients, estimates the grams, and takes calories from food composition tables (USDA FoodData Central and others). Each dish's page shows its four meals and every ingredient.`,
+      `Each dish has ${f.perDish} meals written to span how people commonly eat it: smaller and larger portions, with and without the usual extras, homemade and from a restaurant. They are not a random sample of what Kallo's users log, and no user's data is in them.`,
+      `Every meal was typed into Kallo once, ${f.dates.from === f.dates.to ? `on ${f.dates.from}` : `between ${f.dates.from} and ${f.dates.to}`}, and run through the same pipeline the app uses: it splits the meal into ingredients, estimates the grams, and takes calories from food composition tables (USDA FoodData Central and others). Each dish's page shows its ${f.perDish} meals and every ingredient.`,
       'Ratios compare the heaviest and lightest meal of one dish; "median" is the middle value across dishes or ingredient servings.',
     ],
     citeHeading: 'Using these numbers',
@@ -85,10 +90,10 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
     metaTitle: (f) =>
       `Cùng một món, chênh nhau ${f.ratio} lần calo: ${f.meals} bữa ăn thật`,
     description: (f) =>
-      `Chúng tôi ghi ${f.dishes} món ăn Việt, mỗi món ${f.meals / f.dishes} cách ăn phổ biến. Bản nhiều calo nhất của một món thường gấp ${f.ratio} lần bản ít nhất, và dầu mỡ ẩn trong ${f.unnamed} bữa.`,
+      `Chúng tôi ghi ${f.dishes} món ăn Việt, mỗi món ${f.perDish} cách ăn phổ biến. Bản nhiều calo nhất của một món thường gấp ${f.ratio} lần bản ít nhất, và dầu mỡ ẩn trong ${f.unnamed} bữa.`,
     title: 'Cùng một món, calo chênh nhau bao nhiêu?',
     lead: (f) =>
-      `Bảng calo thường chỉ cho một con số cho mỗi món. Chúng tôi ghi ${f.dishes} món ăn Việt vào Kallo, mỗi món ${f.meals / f.dishes} cách ăn phổ biến, tổng cộng ${f.meals} bữa, từ tô nhỏ ở nhà đến tô đặc biệt ngoài quán. Với một món bình thường, bản nhiều calo nhất gấp ${f.ratio} lần bản ít nhất. Chính khoảng chênh đó, chứ không phải con số trong bảng, quyết định một ngày ăn của bạn có đúng mục tiêu hay không.`,
+      `Bảng calo thường chỉ cho một con số cho mỗi món. Chúng tôi ghi ${f.dishes} món ăn Việt vào Kallo, mỗi món ${f.perDish} cách ăn phổ biến, tổng cộng ${f.meals} bữa, từ tô nhỏ ở nhà đến tô đặc biệt ngoài quán. Với một món bình thường, bản nhiều calo nhất gấp ${f.ratio} lần bản ít nhất. Chính khoảng chênh đó, chứ không phải con số trong bảng, quyết định một ngày ăn của bạn có đúng mục tiêu hay không.`,
     swingsHeading: 'Những món chênh nhiều nhất',
     swingsLead:
       'Các món có bản nhẹ nhất và nặng nhất cách xa nhau nhất, kèm theo từng bản là gì.',
@@ -104,6 +109,8 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
       oil: 'Dầu, mỡ',
       sugar: 'Đường, sữa đặc',
       sauce: 'Nước mắm, nước chấm',
+      cheese: 'Phô mai',
+      butter: 'Bơ',
     },
     kindLine: (meals, median, max) =>
       `có trong ${meals} bữa · trung bình ${median} kcal một phần · cao nhất ${max}`,
@@ -115,8 +122,8 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
       'Các món mà các bản gần nhau, nơi một con số là ước lượng khá đúng.',
     methodHeading: 'Cách đo',
     method: (f) => [
-      `Mỗi món có ${f.meals / f.dishes} bữa được viết để phủ các cách ăn phổ biến: phần nhỏ và lớn, có và không có đồ thêm, ở nhà và ngoài quán. Đây không phải mẫu ngẫu nhiên từ người dùng Kallo, và không có dữ liệu của người dùng nào trong đó.`,
-      `Mỗi bữa được gõ vào Kallo một lần, ${f.dates.from === f.dates.to ? `ngày ${f.dates.from}` : `từ ngày ${f.dates.from} đến ngày ${f.dates.to}`}, và chạy qua đúng quy trình app dùng: tách món thành nguyên liệu, ước lượng gram, lấy calo từ bảng thành phần thực phẩm (Viện Dinh dưỡng Quốc gia, USDA và các nguồn khác). Trang của từng món cho thấy bốn bữa và từng nguyên liệu.`,
+      `Mỗi món có ${f.perDish} bữa được viết để phủ các cách ăn phổ biến: phần nhỏ và lớn, có và không có đồ thêm, ở nhà và ngoài quán. Đây không phải mẫu ngẫu nhiên từ người dùng Kallo, và không có dữ liệu của người dùng nào trong đó.`,
+      `Mỗi bữa được gõ vào Kallo một lần, ${f.dates.from === f.dates.to ? `ngày ${f.dates.from}` : `từ ngày ${f.dates.from} đến ngày ${f.dates.to}`}, và chạy qua đúng quy trình app dùng: tách món thành nguyên liệu, ước lượng gram, lấy calo từ bảng thành phần thực phẩm (Viện Dinh dưỡng Quốc gia, USDA và các nguồn khác). Trang của từng món cho thấy ${f.perDish} bữa và từng nguyên liệu.`,
       'Tỷ lệ so sánh bữa nặng nhất và nhẹ nhất của cùng một món; "trung bình" ở đây là giá trị giữa (trung vị) qua các món hoặc các phần nguyên liệu.',
     ],
     citeHeading: 'Dùng lại số liệu',

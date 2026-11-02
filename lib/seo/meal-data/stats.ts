@@ -64,7 +64,21 @@ function words(alternatives: string): RegExp {
  * read "miến" inside "miếng" (a piece of chả) or "mì" inside "bánh mì". English captures can carry Vietnamese oil names ("Dầu
  * ăn"), so the English oil pattern accepts them.
  */
-const KINDS: Record<FoodLocale, { key: string; pattern: RegExp }[]> = {
+export const KIND_KEYS = [
+  'noodles',
+  'rice',
+  'bread',
+  'cheese',
+  'oil',
+  'butter',
+  'sauce',
+  'sugar',
+  'broth',
+] as const;
+
+export type KindKey = (typeof KIND_KEYS)[number];
+
+const KINDS: Record<FoodLocale, { key: KindKey; pattern: RegExp }[]> = {
   en: [
     {
       key: 'noodles',
@@ -98,7 +112,7 @@ const KINDS: Record<FoodLocale, { key: string; pattern: RegExp }[]> = {
 };
 
 /** The kind an ingredient name belongs to, or null. */
-export function kindOf(locale: FoodLocale, name: string): string | null {
+export function kindOf(locale: FoodLocale, name: string): KindKey | null {
   const lower = name.toLowerCase();
   return KINDS[locale].find((k) => k.pattern.test(lower))?.key ?? null;
 }
@@ -110,7 +124,7 @@ const MENTIONS_FAT: Record<FoodLocale, RegExp> = {
 };
 
 export interface IngredientStat {
-  key: string;
+  key: KindKey;
   /** Meals with at least one line of this kind. */
   meals: number;
   medianKcal: number;
@@ -119,31 +133,29 @@ export interface IngredientStat {
 
 /** Per kind: how many meals carry it and what a line of it costs. */
 export function ingredientStats(locale: FoodLocale): IngredientStat[] {
-  const lines = new Map<string, number[]>();
-  const meals = new Map<string, number>();
+  const byKind = new Map<KindKey, { kcal: number[]; meals: number }>();
   for (const page of pagesOf(locale)) {
     for (const variant of page.capture.variants) {
-      const seen = new Set<string>();
+      const seen = new Set<KindKey>();
       for (const ingredient of variant.ingredients) {
         const kind = kindOf(locale, ingredient.name);
         if (!kind) continue;
-        lines.set(kind, [...(lines.get(kind) ?? []), ingredient.kcal]);
+        const entry = byKind.get(kind) ?? { kcal: [], meals: 0 };
+        entry.kcal.push(ingredient.kcal);
+        byKind.set(kind, entry);
         seen.add(kind);
       }
-      for (const kind of seen) meals.set(kind, (meals.get(kind) ?? 0) + 1);
+      for (const kind of seen)
+        (byKind.get(kind) as { meals: number }).meals += 1;
     }
   }
-  return KINDS[locale]
-    .filter((k) => lines.has(k.key))
-    .map((k) => {
-      const kcal = lines.get(k.key) as number[];
-      return {
-        key: k.key,
-        meals: meals.get(k.key) ?? 0,
-        medianKcal: median(kcal),
-        maxKcal: Math.max(...kcal),
-      };
-    })
+  return [...byKind.entries()]
+    .map(([key, { kcal, meals }]) => ({
+      key,
+      meals,
+      medianKcal: median(kcal),
+      maxKcal: Math.max(...kcal),
+    }))
     .sort((a, b) => b.medianKcal - a.medianKcal);
 }
 
