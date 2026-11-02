@@ -1,6 +1,10 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
+import { NULL_NUTRITION_VALUES } from '@/lib/ai/__fixtures__/test-helpers';
+import {
+  NUTRITION_KEYS,
+  type NutritionValues,
+} from '@/lib/ai/types/nutrition-values';
 import { buildBarcodeMealItem } from '@/lib/domain/barcode/meal-item';
 import {
   friendships,
@@ -118,12 +122,18 @@ import { POST as label } from '@/app/api/v1/nutrition-label/log/route';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 
 const ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
-const nutrition = Object.fromEntries(NUTRITION_KEYS.map((key) => [key, 10]));
+const nutrition: NutritionValues = { ...NULL_NUTRITION_VALUES };
+for (const key of NUTRITION_KEYS) nutrition[key] = 10;
 const source = {
   ...nutrition,
   id: ID,
   userId: 'viewer',
   namePrimary: 'Sữa',
+  barcodeDataVersion: 3,
+  servingSizeG: null,
+  packageSizeG: null,
+  amountUnit: 'g',
+  imageUrl: null,
   rawInput: 'Sữa',
   loggedAt: new Date('2026-11-01T12:00:00Z'),
   entryMode: 'precise',
@@ -140,7 +150,7 @@ const ingredient = {
   foodCompositionId: ID,
 };
 const { item, nutrition: displayedNutrition } = buildBarcodeMealItem(
-  source as Parameters<typeof buildBarcodeMealItem>[0],
+  source,
   100
 );
 const pending = {
