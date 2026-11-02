@@ -110,6 +110,8 @@ describe('negotiate', () => {
       '/en/invite/abc',
       '/en/reset-password',
       '/en/calories/chicken-burrito',
+      '/en/tools',
+      '/vi/tools/tdee-calculator',
     ]) {
       expect(ask(path)).toEqual({ kind: 'pass' });
     }

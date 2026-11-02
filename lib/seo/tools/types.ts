@@ -72,6 +72,8 @@ export interface ToolUi {
   reachBy: string;
   weeks: string;
   floored: string;
+  /** The floor leaves no deficit at all: TDEE is at or under it. */
+  unreachable: string;
   sameWeight: string;
   calories: string;
   split: string;

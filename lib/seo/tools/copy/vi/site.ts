@@ -45,6 +45,8 @@ export const ui: ToolUi = {
   weeks: 'tuần',
   floored:
     'Đã giữ ở mức tối thiểu Kallo cho phép ({floor} kcal), nên tốc độ thật khoảng {pace} kg mỗi tuần.',
+  unreachable:
+    'Ở mức tối thiểu Kallo cho phép ({floor} kcal) bạn sẽ không giảm được cân, vì calo duy trì của bạn đã thấp như vậy. Vận động nhiều hơn sẽ nâng mức này lên.',
   sameWeight: 'Mục tiêu bằng cân nặng hiện tại: ăn ở mức calo duy trì.',
   calories: 'Calo mỗi ngày',
   split: 'Cách chia',
@@ -80,5 +82,6 @@ export const ui: ToolUi = {
     obese: 'Béo phì',
   },
   normalRange: 'Cân nặng bình thường với chiều cao của bạn',
-  fillIn: 'Điền các ô bên trên để xem kết quả.',
+  fillIn:
+    'Nhập số đo hợp lý ở trên (người trưởng thành, 30–300 kg) để xem kết quả.',
 };

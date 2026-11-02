@@ -46,6 +46,8 @@ export const ui: ToolUi = {
   weeks: 'weeks',
   floored:
     'Held at the minimum Kallo allows ({floor} kcal), so the real pace is about {pace} kg a week.',
+  unreachable:
+    'At the minimum Kallo allows ({floor} kcal) you would not lose weight: your maintenance is already that low. Moving more raises it.',
   sameWeight: 'Your goal is your current weight: eat at maintenance.',
   calories: 'Calories a day',
   split: 'Split',
@@ -84,5 +86,6 @@ export const ui: ToolUi = {
     obese: 'Obese',
   },
   normalRange: 'Normal weight for your height',
-  fillIn: 'Fill in the fields above to see your result.',
+  fillIn:
+    'Enter realistic numbers above (adults, 30–300 kg) to see your result.',
 };

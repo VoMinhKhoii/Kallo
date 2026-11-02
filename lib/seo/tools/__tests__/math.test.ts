@@ -9,6 +9,7 @@ import {
   lbToKg,
   normalWeightRange,
   proteinRange,
+  valid,
 } from '@/lib/seo/tools/math';
 
 // The worked examples the pages print. If the app's maths moves, these fail
@@ -107,6 +108,48 @@ describe('goalPlan', () => {
       floored: false,
       weeks: null,
     });
+  });
+});
+
+describe('goalPlan at the floor with no deficit left', () => {
+  it('reports no weeks when maintenance is already under the floor', () => {
+    // 70-year-old woman, 150 cm, 45 kg, sedentary: TDEE ~1,052, under 1,200,
+    // so the floor holds her at maintenance and the goal cannot be reached.
+    const tdee = calcTDEE(
+      calcBMR({
+        biologicalSex: 'female',
+        age: 70,
+        weightKg: 45,
+        heightCm: 150,
+        activityLevel: 'sedentary',
+      }),
+      'sedentary'
+    );
+    const plan = goalPlan({
+      tdee,
+      sex: 'female',
+      weightKg: 45,
+      goalKg: 43,
+      paceKgPerWeek: 0.5,
+    });
+    expect(plan).toMatchObject({
+      targetKcal: tdee,
+      paceKgPerWeek: 0,
+      floored: true,
+      weeks: null,
+    });
+  });
+});
+
+describe('valid', () => {
+  it('accepts values inside the limits and rejects typos', () => {
+    expect(valid(65, 'weightKg')).toBe(65);
+    expect(valid(-70, 'weightKg')).toBeNull();
+    expect(valid(1700, 'heightCm')).toBeNull();
+    expect(valid(Number.NaN, 'age')).toBeNull();
+    expect(valid(undefined, 'age')).toBeNull();
+    expect(valid(12, 'age')).toBeNull();
+    expect(valid(70, 'bodyFatPct')).toBeNull();
   });
 });
 

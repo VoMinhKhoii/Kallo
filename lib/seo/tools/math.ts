@@ -133,6 +133,30 @@ export function normalWeightRange(
   return [Math.round(18.5 * m2 * 10) / 10, Math.round(top * m2 * 10) / 10];
 }
 
+/**
+ * What the calculators accept. Mifflin-St Jeor and the BMI bands are built on
+ * adults, and a typo (−70 kg, 1,700 cm) must show "check the numbers", not an
+ * authoritative wrong answer.
+ */
+export const LIMITS = {
+  age: [15, 100],
+  weightKg: [30, 300],
+  heightCm: [120, 230],
+  bodyFatPct: [3, 60],
+  kcal: [800, 10_000],
+} as const satisfies Record<string, readonly [number, number]>;
+
+/** The value when it is a finite number inside the field's limits, else null. */
+export function valid(
+  value: number | undefined | null,
+  field: keyof typeof LIMITS
+): number | null {
+  const [lo, hi] = LIMITS[field];
+  return value != null && Number.isFinite(value) && value >= lo && value <= hi
+    ? value
+    : null;
+}
+
 const KG_PER_LB = 0.45359237;
 const CM_PER_IN = 2.54;
 

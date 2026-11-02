@@ -1,6 +1,12 @@
 'use client';
 
-import { bmi, bmiBand, kgToLb, normalWeightRange } from '@/lib/seo/tools/math';
+import {
+  bmi,
+  bmiBand,
+  kgToLb,
+  normalWeightRange,
+  valid,
+} from '@/lib/seo/tools/math';
 import type { ToolUi } from '@/lib/seo/tools/types';
 import { BodyFields, type BodyState, useBody } from './body-fields';
 import { NoResult, Result } from './result';
@@ -20,8 +26,10 @@ export function BmiCalculator({
   format: (n: number, digits?: number) => string;
 }) {
   const state = useBody(initial);
-  const { weightKg, heightCm } = state.body;
-  const value = weightKg && heightCm ? bmi(weightKg, heightCm) : null;
+  const weightKg = valid(state.body.weightKg, 'weightKg');
+  const heightCm = valid(state.body.heightCm, 'heightCm');
+  const value =
+    weightKg !== null && heightCm !== null ? bmi(weightKg, heightCm) : null;
   const lb = allowImperial && state.units === 'imperial';
   const weight = (kg: number) =>
     lb ? `${format(kgToLb(kg))} lb` : `${format(kg, 1)} kg`;

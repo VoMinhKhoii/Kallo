@@ -70,6 +70,7 @@ export function ToolCalculator({
       day: 'numeric',
       month: 'long',
       year: 'numeric',
+      timeZone: 'UTC',
     });
   const allowImperial = locale === 'en';
   const example = EXAMPLE[locale];

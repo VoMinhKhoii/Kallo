@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { calcMacroGrams } from '@/lib/domain/onboarding/tdee';
 import type { CarbSplit } from '@/lib/domain/onboarding/types';
+import { valid } from '@/lib/seo/tools/math';
 import type { ToolUi } from '@/lib/seo/tools/types';
 import { ChoiceField, NumberField } from './fields';
 import { NoResult, Result } from './result';
@@ -20,7 +21,8 @@ export function MacroCalculator({
 }) {
   const [kcal, setKcal] = useState<number | undefined>(initialKcal);
   const [split, setSplit] = useState<CarbSplit>('moderate_carb');
-  const macros = kcal && kcal >= 500 ? calcMacroGrams(kcal, split) : null;
+  const target = valid(kcal, 'kcal');
+  const macros = target === null ? null : calcMacroGrams(target, split);
 
   return (
     <div>

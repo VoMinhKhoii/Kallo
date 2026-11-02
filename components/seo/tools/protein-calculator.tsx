@@ -6,6 +6,7 @@ import {
   lbToKg,
   type ProteinGoal,
   proteinRange,
+  valid,
 } from '@/lib/seo/tools/math';
 import type { ToolUi } from '@/lib/seo/tools/types';
 import { ChoiceField, NumberField } from './fields';
@@ -29,11 +30,18 @@ export function ProteinCalculator({
   const [goal, setGoal] = useState<ProteinGoal>('muscle');
   const [bodyFat, setBodyFat] = useState<number | undefined>(undefined);
   const imperial = allowImperial && units === 'imperial';
-  const weightKg =
-    weight === undefined ? undefined : imperial ? lbToKg(weight) : weight;
-  const range = weightKg
-    ? proteinRange({ weightKg, goal, bodyFatPct: bodyFat })
-    : null;
+  const weightKg = valid(
+    weight === undefined ? undefined : imperial ? lbToKg(weight) : weight,
+    'weightKg'
+  );
+  const range =
+    weightKg === null
+      ? null
+      : proteinRange({
+          weightKg,
+          goal,
+          bodyFatPct: valid(bodyFat, 'bodyFatPct'),
+        });
 
   return (
     <div>

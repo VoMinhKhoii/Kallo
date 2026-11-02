@@ -1,15 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { CALORIE_FLOOR_KCAL } from '@/lib/domain/onboarding/constants';
-import { calcBMR, calcTDEE } from '@/lib/domain/onboarding/tdee';
-import { goalPlan, kgToLb, lbToKg } from '@/lib/seo/tools/math';
+import { useState, useSyncExternalStore } from 'react';
+import {
+  calcBMR,
+  calcCalorieFloor,
+  calcTDEE,
+} from '@/lib/domain/onboarding/tdee';
+import { goalPlan, kgToLb, lbToKg, valid } from '@/lib/seo/tools/math';
 import type { ToolUi } from '@/lib/seo/tools/types';
 import { BodyFields, type BodyState, useBody } from './body-fields';
 import { ChoiceField, NumberField } from './fields';
 import { NoResult, Result } from './result';
 
 const PACES = ['0.25', '0.5', '0.75'] as const;
+
+const DAY_MS = 86_400_000;
+const noSubscribe = () => () => {};
+/**
+ * Today as a whole UTC day, read only in the browser. The page is prerendered
+ * at build time, so a date computed on the server would be the build day and
+ * would not match the browser's: the server renders the weeks only, and the
+ * date appears after hydration.
+ */
+const useToday = () =>
+  useSyncExternalStore(
+    noSubscribe,
+    () => Math.floor(Date.now() / DAY_MS),
+    () => null
+  );
 
 export function DeficitCalculator({
   ui,
@@ -30,24 +48,26 @@ export function DeficitCalculator({
   const { metrics, body, units } = state;
   const [goalKg, setGoalKg] = useState<number | undefined>(initialGoalKg);
   const [pace, setPace] = useState<(typeof PACES)[number]>('0.5');
-  const [now] = useState(() => Date.now());
+  const today = useToday();
   const imperial = allowImperial && units === 'imperial';
 
   const tdee = metrics ? calcTDEE(calcBMR(metrics), body.activity) : null;
+  const goal = valid(goalKg, 'weightKg');
   const plan =
-    tdee !== null && metrics && goalKg
+    tdee !== null && metrics && goal !== null
       ? goalPlan({
           tdee,
           sex: metrics.biologicalSex,
           weightKg: metrics.weightKg,
-          goalKg,
+          goalKg: goal,
           paceKgPerWeek: Number(pace),
         })
       : null;
   const reach =
-    plan?.weeks != null
-      ? formatDate(new Date(now + plan.weeks * 7 * 86_400_000))
+    plan?.weeks != null && today !== null
+      ? formatDate(new Date((today + plan.weeks * 7) * DAY_MS))
       : null;
+  const sameWeight = metrics !== null && goal === metrics.weightKg;
 
   return (
     <div>
@@ -83,29 +103,31 @@ export function DeficitCalculator({
         <Result
           label={ui.dailyTarget}
           note={
-            plan.weeks === null
+            sameWeight
               ? ui.sameWeight
-              : plan.floored
-                ? ui.floored
-                    .replace(
-                      '{floor}',
-                      format(
-                        Math.min(
-                          tdee,
-                          CALORIE_FLOOR_KCAL[metrics.biologicalSex]
-                        )
+              : plan.weeks === null
+                ? ui.unreachable.replace(
+                    '{floor}',
+                    format(calcCalorieFloor(metrics.biologicalSex, tdee))
+                  )
+                : plan.floored
+                  ? ui.floored
+                      .replace(
+                        '{floor}',
+                        format(calcCalorieFloor(metrics.biologicalSex, tdee))
                       )
-                    )
-                    .replace('{pace}', format(plan.paceKgPerWeek, 2))
-                : undefined
+                      .replace('{pace}', format(plan.paceKgPerWeek, 2))
+                  : undefined
           }
           rows={[
             { label: ui.tdee, value: `${format(tdee)} kcal` },
-            ...(reach && plan.weeks !== null
+            ...(plan.weeks !== null
               ? [
                   {
                     label: ui.reachBy,
-                    value: `${reach} (${plan.weeks} ${ui.weeks})`,
+                    value: reach
+                      ? `${reach} (${plan.weeks} ${ui.weeks})`
+                      : `${plan.weeks} ${ui.weeks}`,
                   },
                 ]
               : []),

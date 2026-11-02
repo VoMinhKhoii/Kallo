@@ -6,14 +6,16 @@ import type {
   BiologicalSex,
   BodyMetrics,
 } from '@/lib/domain/onboarding/types';
-import { ftInToCm, kgToLb, lbToKg } from '@/lib/seo/tools/math';
+import { ftInToCm, kgToLb, lbToKg, valid } from '@/lib/seo/tools/math';
 import type { ToolUi } from '@/lib/seo/tools/types';
 import { ChoiceField, NumberField, SelectField } from './fields';
 
 /**
  * The body every calorie calculator starts from: sex, age, weight, height and
  * (when asked) activity. State is metric; the imperial view converts on the
- * way in and out, so the maths never sees pounds.
+ * way in and out, so the maths never sees pounds. Feet and inches are kept as
+ * typed while that view is open, so clearing one field never rewrites the
+ * other.
  */
 export interface BodyState {
   sex: BiologicalSex;
@@ -34,20 +36,41 @@ const ACTIVITY: ActivityLevel[] = [
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
+interface FtIn {
+  ft?: number;
+  inch?: number;
+}
+
+/** A height in cm as whole feet and inches (never "5 ft 12 in"). */
+function toFtIn(cm: number | undefined): FtIn {
+  if (cm === undefined) return {};
+  const total = Math.round(cm / 2.54);
+  return { ft: Math.floor(total / 12), inch: total % 12 };
+}
+
 export function useBody(initial: BodyState) {
   const [body, setBody] = useState(initial);
-  const [units, setUnits] = useState<Units>('metric');
+  const [units, setUnitsState] = useState<Units>('metric');
+  const [ftIn, setFtIn] = useState<FtIn>({});
+  const setUnits = (next: Units) => {
+    if (next === 'imperial' && units !== 'imperial')
+      setFtIn(toFtIn(body.heightCm));
+    setUnitsState(next);
+  };
+  const age = valid(body.age, 'age');
+  const weightKg = valid(body.weightKg, 'weightKg');
+  const heightCm = valid(body.heightCm, 'heightCm');
   const metrics: BodyMetrics | null =
-    body.age && body.weightKg && body.heightCm
+    age !== null && weightKg !== null && heightCm !== null
       ? {
           biologicalSex: body.sex,
-          age: body.age,
-          weightKg: body.weightKg,
-          heightCm: body.heightCm,
+          age,
+          weightKg,
+          heightCm,
           activityLevel: body.activity,
         }
       : null;
-  return { body, setBody, units, setUnits, metrics };
+  return { body, setBody, units, setUnits, ftIn, setFtIn, metrics };
 }
 
 export function BodyFields({
@@ -65,13 +88,16 @@ export function BodyFields({
   withAge?: boolean;
   withActivity?: boolean;
 }) {
-  const { body, setBody, units, setUnits } = state;
+  const { body, setBody, units, setUnits, ftIn, setFtIn } = state;
   const set = (patch: Partial<BodyState>) => setBody({ ...body, ...patch });
   const imperial = allowImperial && units === 'imperial';
-  const totalIn = body.heightCm ? body.heightCm / 2.54 : undefined;
-  const ft = totalIn === undefined ? undefined : Math.floor(totalIn / 12);
-  const inches =
-    totalIn === undefined ? undefined : Math.round(totalIn - (ft ?? 0) * 12);
+  const setHeight = (next: FtIn) => {
+    setFtIn(next);
+    set({
+      heightCm:
+        next.ft === undefined ? undefined : ftInToCm(next.ft, next.inch ?? 0),
+    });
+  };
 
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -127,20 +153,16 @@ export function BodyFields({
           <NumberField
             integer
             label={ui.height}
-            onChange={(f) =>
-              set({ heightCm: f === undefined ? f : ftInToCm(f, inches ?? 0) })
-            }
+            onChange={(ft) => setHeight({ ...ftIn, ft })}
             unit="ft"
-            value={ft}
+            value={ftIn.ft}
           />
           <NumberField
             integer
             label={ui.height}
-            onChange={(i) =>
-              set({ heightCm: ftInToCm(ft ?? 0, i ?? 0) || undefined })
-            }
+            onChange={(inch) => setHeight({ ...ftIn, inch })}
             unit="in"
-            value={inches}
+            value={ftIn.inch}
           />
         </div>
       ) : (
