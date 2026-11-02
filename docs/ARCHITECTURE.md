@@ -95,6 +95,32 @@ together give Instant Navigations. The rules the build enforces, and the choices
   or the URL (`useState(initialX)`) must re-sync when new values arrive, as `SharingRow` and
   `AuthProvider` do. Sign-out is a hard navigation, which drops all of it.
 
+### Logging arrivals and draft ownership
+
+`/{locale}/logging?meal=...` only fills and focuses the composer; the user sends
+it. `useMealPrefill` reports that the text was applied, and `LoggingShell` removes
+`meal` while preserving the selected date. A URL never starts paid analysis.
+The producer sweep (web app, SEO/marketing, email templates, Flutter links and
+docs, November 2026) found no current producer of a meal query: the dashboard
+logs in place through `useDashboardMealLog`; historical dashboard handoffs remain
+in `docs/superpowers/`. Flutter uses a single-use in-memory `pendingMealProvider`,
+and its router does not read a `meal` query. A future web producer that needs
+auto-send must use a same-origin, single-use handoff rather than URL text alone.
+
+The three `nham:meal-input-*` drafts (text, manual rows, staged relog picks) append
+the authenticated user id to their keys. Old global keys are discarded once per
+document, never assigned to whoever signs in next. `clearComposerDrafts()` purges
+every key with that prefix on successful menu sign-out, Settings sign-out,
+account deletion, and a `SIGNED_OUT` auth event (including another tab's) in a
+document that held a session; the `SIGNED_OUT` auth-js emits when it drops a
+stale stored session on a signed-out page is ignored. It
+also blocks writes for the rest of the document so pending debounce, unmount and
+`beforeunload` flushes cannot restore departing drafts. All exits hard-navigate;
+a new document starts with persistence enabled. `FeedArea` is keyed by user id so
+an account change replaces its in-memory composer and staged picks too. Flutter's
+composer state already watches `loggingUiOwnerProvider` and resets on owner change.
+These changes add no UI copy in either locale.
+
 ---
 
 ## `lib/` — domain, data, infrastructure
@@ -148,7 +174,7 @@ another domain module is a smell worth a second look.
 | `dashboard/` | dashboard aggregations |
 | `docs/` | in-app docs loader, toc, nav, search |
 | `ingredients/` | `search/` — the food-composition picker: recents, lexical + semantic arms, rank fusion, then `card-enrichment.ts` attaching each row's display fields in one query; `display/` — those fields from the row's food card: clean English name, a raw/cooked label only where the card says so, brand, and the vessel family its amount ruler offers |
-| `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts`; `manual-logging.ts` / `manual-display.ts` — manual logging's rows, totals, default meal title, and what its sheets print and compute (subtitle, vessel default, gram steps) |
+| `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts`; `manual-logging.ts` / `manual-display.ts` — manual logging's rows, totals, default meal title, and what its sheets print and compute (subtitle, vessel default, gram steps); `drafts/` owns account-scoped browser persistence and the account-exit write barrier |
 | `meals/` | dish quantity edits and the macro rescaling they imply, plus `meal-edit/` (the meal edit dialog's model: servings, amount and whole-meal steps per dish, and the saved/unsaved payloads it produces; Dart twin in the Flutter `logic/meal_edit/`), `save/` (the optimistic-meal builders and the cache choreography a save runs through) and `query-keys.ts`, the cache addresses that write side shares with `hooks/meals/` |
 | `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, the after-commit push fan-out (`push.ts` + its server-side `push-copy.ts` templates), plus `client.ts` and `query-keys.ts` |
 | `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share, and `label-images/` — keeping each scanned label photo with its scan outcome (private `nutrition-labels` R2 bucket + `nutrition_label_images`) |
@@ -226,7 +252,7 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `nutrition/` | nutrition page — primitives/rows/sections/states | **reference shape** |
 | `onboarding/` | onboarding wizard and screens | split |
 | `privacy/` | `AiConsentProvider` (the app-wide AI-processing consent state, mounted in the `(app)` layout) and the one-time consent dialog it opens; its `gate` goes to the two transports that own the ask — `useStreamAnalysis` (every meal analysis) and `useNutritionOcr` (label scans) | ok |
-| `providers/` | root client providers: TanStack Query, and the auth listener that keeps PostHog/Sentry identity in step; `theme/` paints Settings → Appearance onto the app's own pages (a before-paint script plus an applier that re-reads the stored choice on every reveal, so pages kept alive by Next never disagree) and forces the marketing pages light (`LightOnly`) | split |
+| `providers/` | root client providers: TanStack Query, the auth listener that keeps PostHog/Sentry identity in step, and `ComposerDraftSession` (purges composer storage on `SIGNED_OUT`, even without telemetry); `theme/` paints Settings → Appearance onto the app's own pages (a before-paint script plus an applier that re-reads the stored choice on every reveal, so pages kept alive by Next never disagree) and forces the marketing pages light (`LightOnly`) | split |
 | `settings/` | `dialog/` (the settings dialog: desktop rail, phone sheet, page switch) and `chrome/` (the rows every page renders into) plus one folder per panel — `account/` `appearance/` `feedback/` `identity/` `privacy/` `profile/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
 | `shared/surface-state/` | the one shape every empty, error, 404 and offline surface takes — illustration → title → subtitle → one action, plus its retry button | ok |
@@ -243,7 +269,7 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `meals/mutations/` | one file per write: confirm, manual save, update, duplicate, delete | ok |
 | `meals/analysis/` | the SSE stream lifecycle and the two effects that ride it | ok |
 | `meals/feed/` | the day-feed controller and its handler hooks | ok |
-| `meals/entry/` | the non-streaming ways into the composer: manual rows, label OCR, dashboard prefill | ok |
+| `meals/entry/` | the non-streaming ways into the composer: manual rows, label OCR, URL prefill (never auto-submits) | ok |
 | `meals/relog/` | relog composer state | **reference shape** |
 | `notifications/` | the activity feed, its badge poll and the seen/read mutations | ok |
 | `social/circle/` | friends, thread feed, circle wall, invites, group chats | ok |

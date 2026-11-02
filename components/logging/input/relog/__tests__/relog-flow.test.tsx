@@ -135,6 +135,7 @@ function Harness({
 } = {}) {
   const inputRef = useRef<MealInputHandle>(null);
   const relog = useRelogComposer({
+    userId: 'test-user',
     selectedDate: '2026-07-30',
     loggingMode: mode,
     inputRef,
@@ -157,6 +158,7 @@ function Harness({
 
   return (
     <MealInput
+      userId="test-user"
       ref={inputRef}
       mode={mode}
       onSubmit={() => {

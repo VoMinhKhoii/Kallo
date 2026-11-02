@@ -155,11 +155,8 @@ export function useFeedController(args: {
 
   useMealPrefill({
     initialMeal,
-    isCheat,
-    isAnalyzing: stream.isAnalyzing,
     inputRef,
     onInitialMealApplied,
-    handleSubmit,
   });
 
   const handleManualSheetSave = useManualSave({
@@ -178,6 +175,7 @@ export function useFeedController(args: {
   // through the AI path, pure picks stage a deterministic review card, and a
   // mix of the two analyzes the text alone with the picks merged server-side.
   const relog = useRelogComposer({
+    userId: profile.userId,
     selectedDate,
     loggingMode,
     inputRef,

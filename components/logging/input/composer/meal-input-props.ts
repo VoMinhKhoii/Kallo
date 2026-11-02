@@ -5,6 +5,7 @@ import type { InputMode } from '@/lib/domain/logging/types';
 
 /** The composer's props — the feed drives everything it shows. */
 export interface MealInputProps {
+  userId: string;
   onSubmit: () => void;
   /** When provided and the condition (analysis in flight) is active, the
    * submit button is replaced with a stop button that calls this. */

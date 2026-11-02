@@ -154,6 +154,7 @@ export function LoggingShell({
       />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
         <FeedArea
+          key={profile.userId}
           selectedDate={selectedDate}
           today={today}
           profile={profile}

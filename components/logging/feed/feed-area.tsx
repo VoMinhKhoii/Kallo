@@ -142,6 +142,7 @@ export function FeedArea({
         {feed.isEmptyComposer && <EmptyPrompt />}
 
         <FeedComposer
+          userId={profile.userId}
           inputRef={feed.inputRef}
           isCheat={feed.isCheat}
           cheatOccasions={feed.recentCheatOccasions.data ?? []}

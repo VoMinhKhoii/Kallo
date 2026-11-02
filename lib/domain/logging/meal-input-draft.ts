@@ -7,19 +7,17 @@
 // the legacy list, so an old payload is deleted rather than parsed into a
 // half-valid row.
 import {
+  readComposerDraft,
+  writeComposerDraft,
+} from '@/lib/domain/logging/drafts/composer-drafts';
+import {
   createEmptyRow,
   type ManualMealRow,
 } from '@/lib/domain/logging/manual-logging';
 
-const STORAGE_KEY = 'nham:meal-input-draft';
 // v3: rows are {id, query, ingredient, grams} — `query` is the raw typed text.
 // Older shapes (v2 {id, ingredient, grams}, pre-rework {id, qty, name}) are
 // incompatible and their keys are deleted on first read.
-const MANUAL_ROWS_KEY = 'nham:meal-input-manual-items-v3';
-const LEGACY_MANUAL_ITEMS_KEYS = [
-  'nham:meal-input-manual-items',
-  'nham:meal-input-manual-items-v2',
-];
 
 export const DRAFT_DEBOUNCE_MS = 500;
 // Single-line height matches the submit button (h-8 = 32px) so the placeholder
@@ -40,24 +38,12 @@ export function autoResize(el: HTMLTextAreaElement) {
 
 export const hasMeaningfulText = (text: string) => text.trim().length > 0;
 
-export function readDraft(): string {
-  try {
-    return localStorage.getItem(STORAGE_KEY) ?? '';
-  } catch {
-    return '';
-  }
+export function readDraft(userId: string): string {
+  return readComposerDraft('text', userId) ?? '';
 }
 
-export function writeDraft(text: string) {
-  try {
-    if (text) {
-      localStorage.setItem(STORAGE_KEY, text);
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  } catch {
-    // localStorage unavailable (incognito, quota exceeded)
-  }
+export function writeDraft(text: string, userId: string) {
+  writeComposerDraft('text', userId, text || null);
 }
 
 function isValidManualRow(value: unknown): value is ManualMealRow {
@@ -81,10 +67,9 @@ function isValidManualRow(value: unknown): value is ManualMealRow {
   );
 }
 
-export function readManualRowsDraft(): ManualMealRow[] {
+export function readManualRowsDraft(userId: string): ManualMealRow[] {
   try {
-    for (const key of LEGACY_MANUAL_ITEMS_KEYS) localStorage.removeItem(key);
-    const raw = localStorage.getItem(MANUAL_ROWS_KEY);
+    const raw = readComposerDraft('manual', userId);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (
@@ -99,15 +84,15 @@ export function readManualRowsDraft(): ManualMealRow[] {
   return [createEmptyRow(crypto.randomUUID())];
 }
 
-export function writeManualRowsDraft(rows: ManualMealRow[]) {
+export function writeManualRowsDraft(rows: ManualMealRow[], userId: string) {
   try {
     const filled = rows.filter(
       (row) => row.ingredient || row.query.trim() || row.grams.trim()
     );
     if (filled.length === 0) {
-      localStorage.removeItem(MANUAL_ROWS_KEY);
+      writeComposerDraft('manual', userId, null);
     } else {
-      localStorage.setItem(MANUAL_ROWS_KEY, JSON.stringify(rows));
+      writeComposerDraft('manual', userId, JSON.stringify(rows));
     }
   } catch {}
 }
