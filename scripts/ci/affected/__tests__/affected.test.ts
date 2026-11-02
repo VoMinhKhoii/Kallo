@@ -4,6 +4,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
+  dockerfileCopies,
   groupsFor,
   importClosure,
   repoFacts,
@@ -15,8 +16,8 @@ const REPO = repoFacts(ROOT);
 if (REPO === null) throw new Error('git could not list this checkout');
 const DB = REPO.dbFiles;
 const groups = (files: string[] | null) => groupsFor(files, REPO);
-const NONE = { web: false, migrations: false };
-const ALL = { web: true, migrations: true };
+const NONE = { web: false, migrations: false, image: false };
+const ALL = { web: true, migrations: true, image: true };
 
 describe('groupsFor', () => {
   it('runs everything when the diff or the checkout is unknown', () => {
@@ -84,11 +85,16 @@ describe('groupsFor', () => {
   });
 
   it('runs the migrations job for supabase/ and nothing else in a web PR', () => {
-    expect(groups(['supabase/migrations/20261102000000_x.sql'])).toEqual(ALL);
+    expect(groups(['supabase/migrations/20261102000000_x.sql'])).toEqual({
+      web: true,
+      migrations: true,
+      image: false,
+    });
     expect(groups(['supabase/config.toml']).migrations).toBe(true);
     expect(groups(['lib/seo/site.ts'])).toEqual({
       web: true,
       migrations: false,
+      image: false,
     });
   });
 
@@ -105,6 +111,25 @@ describe('groupsFor', () => {
     }
   });
 
+  it('builds the PR image only for what the Docker build alone can break', () => {
+    for (const file of [
+      'Dockerfile',
+      '.dockerignore',
+      'next.config.ts',
+      'public/favicon.ico',
+      'scripts/ci/card-index/check-runtime.mjs',
+      // Copied into the image by hand, read from the Dockerfile:
+      'lib/ai/matching/cards/search-index/worker.mjs',
+      'lib/ai/matching/cards/search-index/search-core.mjs',
+    ]) {
+      expect([file, groups([file]).image]).toEqual([file, true]);
+    }
+    expect(groups(['app/[locale]/page.tsx']).image).toBe(false);
+    expect(
+      groups(['lib/ai/matching/cards/search-index/search-index.ts']).image
+    ).toBe(false);
+  });
+
   it('counts both paths of a rename', () => {
     expect(
       groups(['apps/mobile-flutter/lib/x.dart', 'lib/core/x.ts']).web
@@ -119,6 +144,24 @@ describe('importClosure', () => {
     ]);
     expect(closure).toContain('lib/infra/rate-limit/limiter/sql-consumer.ts');
     expect(closure).toContain('lib/core/errors/app-error.ts');
+  });
+});
+
+describe('dockerfileCopies', () => {
+  it('lists hand-copied repo paths, not build output or node_modules', () => {
+    const dockerfile = [
+      'COPY --from=builder /app/.next/standalone ./',
+      'COPY --from=builder \\',
+      '  /app/lib/x/worker.mjs \\',
+      '  /app/lib/x/core.mjs \\',
+      '  ./lib/x/',
+      'COPY --from=builder /app/node_modules/usearch/package.json ./x',
+      'COPY --from=builder /app/lib/x/worker.mjs ./again',
+    ].join('\n');
+    expect(dockerfileCopies(dockerfile)).toEqual([
+      'lib/x/worker.mjs',
+      'lib/x/core.mjs',
+    ]);
   });
 });
 

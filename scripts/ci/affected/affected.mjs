@@ -45,13 +45,26 @@ const MIGRATIONS = [
   /^tsconfig\.json$/,
 ];
 
+// The PR image build checks what only the Docker build can break: the
+// Dockerfile, what it copies by hand (repoFacts() reads those paths from it),
+// the standalone output settings, and the card search worker check. Plain
+// `next build` breakage is the Build job's, which runs the same build. Pushes
+// to main always build the image, before any deploy can use it.
+const IMAGE = [
+  /^Dockerfile$/,
+  /^\.dockerignore$/,
+  /^next\.config\.ts$/,
+  /^public\//,
+  /^scripts\/ci\/card-index\//,
+];
+
 const isProse = (file) => PROSE.some((rule) => rule.test(file));
 
 /**
  * Whether one changed file needs each group. `repo` comes from repoFacts().
  *
  * @type {Record<string, (file: string, repo: { dbFiles: Set<string>,
- *   testDirs: string[] }) => boolean>}
+ *   testDirs: string[], imageFiles: string[] }) => boolean>}
  */
 const RULES = {
   web: (file, repo) =>
@@ -59,6 +72,11 @@ const RULES = {
     repo.testDirs.some((dir) => file.startsWith(dir)),
   migrations: (file, repo) =>
     repo.dbFiles.has(file) || MIGRATIONS.some((rule) => rule.test(file)),
+  image: (file, repo) =>
+    IMAGE.some((rule) => rule.test(file)) ||
+    repo.imageFiles.some(
+      (copied) => file === copied || file.startsWith(`${copied}/`)
+    ),
 };
 export const GROUPS = Object.keys(RULES);
 const ALL = Object.fromEntries(GROUPS.map((group) => [group, true]));
@@ -68,7 +86,7 @@ const ALL = Object.fromEntries(GROUPS.map((group) => [group, true]));
  * is unknown, and `repo` (repoFacts()) when the checkout could not be listed.
  *
  * @param {string[] | null} files
- * @param {{ dbFiles: Set<string>, testDirs: string[] } | null} repo
+ * @param {{ dbFiles: Set<string>, testDirs: string[], imageFiles: string[] } | null} repo
  * @returns {Record<string, boolean>}
  */
 export function groupsFor(files, repo) {
@@ -133,6 +151,8 @@ export function importClosure(root, entries) {
  * `dbFiles`: every file the `*.db.test.ts` suites load, test config included.
  * `testDirs`: each prose or agent folder that holds a unit test (the folder
  * above `__tests__`), since the test may read any file in it.
+ * `imageFiles`: the paths the Dockerfile copies into the image by hand, and
+ * every repo file they import.
  */
 export function repoFacts(root) {
   const tests = git(root, ['ls-files', '-z', '*.test.ts', '*.test.tsx']);
@@ -151,7 +171,37 @@ export function repoFacts(root) {
       'vitest.setup.ts',
     ]),
     testDirs: [...new Set(testDirs)],
+    imageFiles: imageInputs(root),
   };
+}
+
+/** What the Dockerfile copies by hand, and every repo file those files import. */
+function imageInputs(root) {
+  const copies = dockerfileCopies(
+    readFileSync(path.join(root, 'Dockerfile'), 'utf8')
+  );
+  const files = copies.filter((copy) => {
+    const full = path.join(root, copy);
+    return existsSync(full) && statSync(full).isFile();
+  });
+  return [...new Set([...copies, ...importClosure(root, files)])];
+}
+
+/**
+ * The repo paths a Dockerfile copies by hand (`/app/<path>`), leaving out the
+ * build output and node_modules, which package.json and bun.lock cover.
+ */
+export function dockerfileCopies(dockerfile) {
+  const paths = [...dockerfile.matchAll(/\/app\/([^\s\\]+)/g)].map(
+    ([, p]) => p
+  );
+  return [
+    ...new Set(
+      paths.filter(
+        (p) => !p.startsWith('.next') && !p.startsWith('node_modules')
+      )
+    ),
+  ];
 }
 
 function git(root, args) {

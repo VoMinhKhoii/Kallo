@@ -39,7 +39,8 @@ async function runSmokeCheck(
     [resolve('scripts/cloud-run/smoke-check.sh'), baseUrl, ...args],
     {
       stdio: 'pipe',
-      env: { ...process.env, ...env },
+      // Poll every 0.1s, not the deploy's 2s: the waits are what is tested.
+      env: { ...process.env, SMOKE_POLL_SECONDS: '0.1', ...env },
     }
   );
 
@@ -183,7 +184,7 @@ describeSmokeCheck('smoke-check.sh', () => {
       await withServer(statuses(['failed']), async (baseUrl) => {
         expect(
           await runSmokeCheck(baseUrl, ['--expect-card-index'], {
-            CARD_INDEX_WAIT_SECONDS: '3',
+            CARD_INDEX_WAIT_SECONDS: '1',
           })
         ).toBe(1);
       });
@@ -193,7 +194,7 @@ describeSmokeCheck('smoke-check.sh', () => {
       await withServer(statuses(['loading']), async (baseUrl) => {
         expect(
           await runSmokeCheck(baseUrl, ['--expect-card-index'], {
-            CARD_INDEX_WAIT_SECONDS: '3',
+            CARD_INDEX_WAIT_SECONDS: '1',
           })
         ).toBe(1);
       });
@@ -224,7 +225,7 @@ describeSmokeCheck('smoke-check.sh', () => {
         async (baseUrl) => {
           expect(
             await runSmokeCheck(baseUrl, ['--expect-card-index'], {
-              CARD_INDEX_WAIT_SECONDS: '3',
+              CARD_INDEX_WAIT_SECONDS: '1',
             })
           ).toBe(1);
         }
