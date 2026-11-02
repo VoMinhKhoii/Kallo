@@ -1,0 +1,245 @@
+{
+  "capturedAt": "2026-11-02T17:22:33.830Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "duong-chau",
+      "text": "1 dĩa cơm chiên Dương Châu ở quán (lạp xưởng, tôm, trứng, đậu Hà Lan, cà rốt)",
+      "ingredients": [
+        {
+          "name": "Cơm",
+          "grams": 150,
+          "kcal": 190,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 45,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tôm",
+          "grams": 33,
+          "kcal": 33,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lạp xưởng",
+          "grams": 19,
+          "kcal": 112,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đậu Hà Lan",
+          "grams": 15,
+          "kcal": 13,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cà rốt",
+          "grams": 15,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 4,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm chiên Dương Châu",
+          "calories": 460,
+          "protein": 21,
+          "carbs": 47,
+          "fat": 21
+        }
+      ]
+    },
+    {
+      "key": "com-rang-trung",
+      "text": "Cơm rang ở nhà: 1 bát cơm nguội với 1 quả trứng, rắc ít ruốc, không hành",
+      "ingredients": [
+        {
+          "name": "Cơm nguội",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 45,
+          "kcal": 67,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ruốc",
+          "grams": 6,
+          "kcal": 23,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm rang",
+          "calories": 282,
+          "protein": 12,
+          "carbs": 34,
+          "fat": 11
+        }
+      ]
+    },
+    {
+      "key": "hai-san",
+      "text": "Cơm chiên hải sản dĩa lớn (tôm, mực, trứng), ăn kèm dưa leo và 1 chén canh",
+      "ingredients": [
+        {
+          "name": "Cơm",
+          "grams": 180,
+          "kcal": 228,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tôm",
+          "grams": 40,
+          "kcal": 97,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mực",
+          "grams": 40,
+          "kcal": 35,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng",
+          "grams": 44,
+          "kcal": 81,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 8,
+          "kcal": 72,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dưa leo",
+          "grams": 76,
+          "kcal": 14,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Canh",
+          "grams": 300,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm chiên hải sản",
+          "calories": 514,
+          "protein": 26,
+          "carbs": 57,
+          "fat": 20
+        },
+        {
+          "name": "Dưa leo",
+          "calories": 14,
+          "protein": 0,
+          "carbs": 3,
+          "fat": 0
+        },
+        {
+          "name": "Canh",
+          "calories": 17,
+          "protein": 1,
+          "carbs": 3,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "ga-xoi-mo",
+      "text": "1 dĩa cơm chiên gà xối mỡ, 1 cái đùi gà, dưa leo, nước mắm",
+      "ingredients": [
+        {
+          "name": "Cơm",
+          "grams": 180,
+          "kcal": 232,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đùi gà",
+          "grams": 105,
+          "kcal": 290,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dưa leo",
+          "grams": 76,
+          "kcal": 14,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm chiên gà xối mỡ",
+          "calories": 272,
+          "protein": 5,
+          "carbs": 51,
+          "fat": 6
+        },
+        {
+          "name": "Đùi gà chiên",
+          "calories": 290,
+          "protein": 23,
+          "carbs": 9,
+          "fat": 18
+        },
+        {
+          "name": "Dưa leo",
+          "calories": 14,
+          "protein": 0,
+          "carbs": 3,
+          "fat": 0
+        },
+        {
+          "name": "Nước mắm",
+          "calories": 3,
+          "protein": 1,
+          "carbs": 0,
+          "fat": 0
+        }
+      ]
+    }
+  ]
+}

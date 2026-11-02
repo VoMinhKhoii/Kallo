@@ -1,0 +1,307 @@
+{
+  "capturedAt": "2026-11-02T17:06:30.960Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "cha-lua",
+      "text": "Bánh cuốn nóng 1 đĩa, thêm 2 lát chả lụa, chấm nước mắm pha, có hành phi rau thơm, ăn thêm 1 miếng chả quế",
+      "ingredients": [
+        {
+          "name": "Bánh cuốn",
+          "grams": 200,
+          "kcal": 199,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Thịt heo xay",
+          "grams": 40,
+          "kcal": 113,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành phi",
+          "grams": 5,
+          "kcal": 17,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 2,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau thơm",
+          "grams": 13,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Chả lụa",
+          "grams": 50,
+          "kcal": 68,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Chả quế",
+          "grams": 30,
+          "kcal": 102,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh cuốn nóng",
+          "calories": 350,
+          "protein": 16,
+          "carbs": 39,
+          "fat": 15
+        },
+        {
+          "name": "Chả lụa",
+          "calories": 68,
+          "protein": 11,
+          "carbs": 0,
+          "fat": 3
+        },
+        {
+          "name": "Chả quế",
+          "calories": 102,
+          "protein": 5,
+          "carbs": 0,
+          "fat": 9
+        },
+        {
+          "name": "Nước mắm pha",
+          "calories": 25,
+          "protein": 1,
+          "carbs": 6,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "hai-dia",
+      "text": "2 đĩa bánh cuốn nóng nhân thịt mộc nhĩ, thêm 1 miếng chả quế cắt khoanh, nước chấm, không lấy trứng",
+      "ingredients": [
+        {
+          "name": "Bánh cuốn",
+          "grams": 300,
+          "kcal": 307,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Thịt heo xay",
+          "grams": 120,
+          "kcal": 218,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mộc nhĩ",
+          "grams": 27,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành phi",
+          "grams": 5,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 2,
+          "kcal": 18,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Chả quế",
+          "grams": 40,
+          "kcal": 135,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh cuốn nóng nhân thịt mộc nhĩ",
+          "calories": 555,
+          "protein": 45,
+          "carbs": 56,
+          "fat": 17
+        },
+        {
+          "name": "Chả quế",
+          "calories": 135,
+          "protein": 7,
+          "carbs": 0,
+          "fat": 12
+        },
+        {
+          "name": "Nước chấm",
+          "calories": 25,
+          "protein": 1,
+          "carbs": 6,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "thanh-tri",
+      "text": "Bánh cuốn Thanh Trì 1 đĩa (không nhân) ăn với 2 miếng chả quế, nước chấm",
+      "ingredients": [
+        {
+          "name": "Bánh cuốn",
+          "grams": 200,
+          "kcal": 253,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Hành phi",
+          "grams": 5,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chả quế",
+          "grams": 100,
+          "kcal": 339,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 10,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước cốt chanh",
+          "grams": 10,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tỏi",
+          "grams": 3,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ớt",
+          "grams": 3,
+          "kcal": 0,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh cuốn Thanh Trì (không nhân)",
+          "calories": 257,
+          "protein": 6,
+          "carbs": 36,
+          "fat": 10
+        },
+        {
+          "name": "Chả quế",
+          "calories": 339,
+          "protein": 18,
+          "carbs": 1,
+          "fat": 29
+        },
+        {
+          "name": "Nước chấm",
+          "calories": 54,
+          "protein": 1,
+          "carbs": 12,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "trung",
+      "text": "Bánh cuốn trứng 1 đĩa, nhân thịt, 1 quả trứng gà tráng trong bánh, chấm nước mắm, hành phi",
+      "ingredients": [
+        {
+          "name": "Bánh cuốn",
+          "grams": 150,
+          "kcal": 190,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Thịt heo xay",
+          "grams": 60,
+          "kcal": 174,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 44,
+          "kcal": 84,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành phi",
+          "grams": 5,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 2,
+          "kcal": 14,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 1,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh cuốn trứng",
+          "calories": 473,
+          "protein": 27,
+          "carbs": 29,
+          "fat": 28
+        }
+      ]
+    }
+  ]
+}

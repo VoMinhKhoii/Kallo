@@ -1,0 +1,358 @@
+{
+  "capturedAt": "2026-11-02T17:28:50.414Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "mot-bia",
+      "text": "Đậu phụ rán sốt cà chua 1 bìa, canh cải nấu thịt băm 1 bát, 2 bát cơm",
+      "ingredients": [
+        {
+          "name": "Đậu phụ",
+          "grams": 120,
+          "kcal": 351,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 8,
+          "kcal": 72,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 57,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cải",
+          "grams": 54,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt băm",
+          "grams": 40,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước dùng",
+          "grams": 150,
+          "kcal": 42,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 9,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 240,
+          "kcal": 303,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Đậu phụ rán sốt cà chua",
+          "calories": 439,
+          "protein": 23,
+          "carbs": 14,
+          "fat": 32
+        },
+        {
+          "name": "Canh cải nấu thịt băm",
+          "calories": 167,
+          "protein": 12,
+          "carbs": 8,
+          "fat": 9
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 303,
+          "protein": 6,
+          "carbs": 68,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "com-bui",
+      "text": "Cơm bụi 25k: cơm, đậu sốt cà chua, trứng chiên, ít rau muống luộc, xin thêm 1 vá cơm",
+      "ingredients": [
+        {
+          "name": "Cơm",
+          "grams": 240,
+          "kcal": 303,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đậu phụ",
+          "grams": 80,
+          "kcal": 66,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 60,
+          "kcal": 50,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đường",
+          "grams": 3,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 8,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 44,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 8,
+          "kcal": 65,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau muống",
+          "grams": 54,
+          "kcal": 17,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm trắng",
+          "calories": 303,
+          "protein": 6,
+          "carbs": 68,
+          "fat": 1
+        },
+        {
+          "name": "Đậu sốt cà chua",
+          "calories": 172,
+          "protein": 8,
+          "carbs": 13,
+          "fat": 10
+        },
+        {
+          "name": "Trứng chiên",
+          "calories": 135,
+          "protein": 6,
+          "carbs": 0,
+          "fat": 12
+        },
+        {
+          "name": "Rau muống luộc",
+          "calories": 17,
+          "protein": 2,
+          "carbs": 2,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "nhoi-thit",
+      "text": "Đậu phụ nhồi thịt sốt cà chua 3 miếng, canh cải nấu tôm khô, đỗ quả xào tỏi, 1 bát rưỡi cơm",
+      "ingredients": [
+        {
+          "name": "Đậu phụ",
+          "grams": 180,
+          "kcal": 149,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt heo xay",
+          "grams": 90,
+          "kcal": 233,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 90,
+          "kcal": 26,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành",
+          "grams": 23,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 8,
+          "kcal": 68,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cải",
+          "grams": 135,
+          "kcal": 44,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tôm khô",
+          "grams": 10,
+          "kcal": 33,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 9,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đỗ quả",
+          "grams": 110,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tỏi",
+          "grams": 5,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 8,
+          "kcal": 72,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 180,
+          "kcal": 227,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Đậu phụ nhồi thịt sốt cà chua",
+          "calories": 488,
+          "protein": 32,
+          "carbs": 11,
+          "fat": 35
+        },
+        {
+          "name": "Canh cải nấu tôm khô",
+          "calories": 81,
+          "protein": 11,
+          "carbs": 7,
+          "fat": 1
+        },
+        {
+          "name": "Đỗ quả xào tỏi",
+          "calories": 121,
+          "protein": 2,
+          "carbs": 9,
+          "fat": 8
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 227,
+          "protein": 5,
+          "carbs": 51,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "dau-non",
+      "text": "Đậu hũ non sốt cà chua 1 dĩa nhỏ (không chiên), 1 chén cơm, rau lang luộc chấm tương",
+      "ingredients": [
+        {
+          "name": "Đậu hũ non",
+          "grams": 150,
+          "kcal": 101,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 60,
+          "kcal": 50,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành",
+          "grams": 9,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 3,
+          "kcal": 24,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau lang",
+          "grams": 114,
+          "kcal": 34,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Tương",
+          "grams": 10,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Đậu hũ non sốt cà chua",
+          "calories": 179,
+          "protein": 12,
+          "carbs": 10,
+          "fat": 10
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 152,
+          "protein": 3,
+          "carbs": 34,
+          "fat": 0
+        },
+        {
+          "name": "Rau lang luộc chấm tương",
+          "calories": 40,
+          "protein": 4,
+          "carbs": 6,
+          "fat": 0
+        }
+      ]
+    }
+  ]
+}

@@ -1,9 +1,13 @@
 /**
- * The published food pages, by slug, and where they live. Kept apart from the
- * page data so the proxy can tell a real food page from a mistyped one without
- * loading any of it.
+ * The published food pages, by locale and slug, and where they live. Kept apart
+ * from the page data so the proxy can tell a real food page from a mistyped one
+ * without loading any of it.
+ *
+ * Each locale has its own dishes: the Vietnamese pages are what Vietnamese
+ * searchers ask about ("phở bò bao nhiêu calo"), not translations of the
+ * English ones, so a slug exists in one locale only.
  */
-export const FOOD_SLUGS = [
+const EN_FOOD_SLUGS = [
   'avocado-toast',
   'eggs-benedict',
   'pancakes',
@@ -56,24 +60,73 @@ export const FOOD_SLUGS = [
   'chicken-noodle-soup',
 ] as const;
 
-export type FoodSlug = (typeof FOOD_SLUGS)[number];
+const VI_FOOD_SLUGS = [
+  'pho-bo',
+  'bun-bo-hue',
+  'bun-rieu',
+  'hu-tieu',
+  'mi-quang',
+  'chao-long',
+  'bun-cha',
+  'bun-thit-nuong',
+  'banh-cuon',
+  'banh-xeo',
+  'bun-dau-mam-tom',
+  'com-tam-suon',
+  'banh-mi-thit',
+  'xoi',
+  'banh-bao',
+  'tra-sua-tran-chau',
+  'ca-phe-sua-da',
+  'thit-kho-trung',
+  'ca-kho-to',
+  'canh-chua',
+  'rau-muong-xao-toi',
+  'dau-phu-sot-ca-chua',
+  'ga-rang-gung',
+  'com-chien',
+  'mi-goi',
+] as const;
 
-/** Food pages exist in this locale only. */
-export const FOOD_PAGE_LOCALE = 'en';
+export const FOOD_SLUGS = { en: EN_FOOD_SLUGS, vi: VI_FOOD_SLUGS } as const;
+
+/** The locales that have food pages. */
+export type FoodLocale = keyof typeof FOOD_SLUGS;
+
+export const FOOD_PAGE_LOCALES = Object.keys(FOOD_SLUGS) as FoodLocale[];
+
+export type FoodSlugOf<L extends FoodLocale> = (typeof FOOD_SLUGS)[L][number];
+
+export type FoodSlug = FoodSlugOf<FoodLocale>;
 
 /** The locale-relative folder every food page sits under. */
 export const FOOD_PAGE_PREFIX = '/calories';
 
-export function isFoodSlug(slug: string): slug is FoodSlug {
-  return (FOOD_SLUGS as readonly string[]).includes(slug);
+export function isFoodLocale(locale: string): locale is FoodLocale {
+  return Object.hasOwn(FOOD_SLUGS, locale);
 }
 
-/** The page that lists every food page: `/en/calories`. */
-export function foodHubPath(): string {
-  return `/${FOOD_PAGE_LOCALE}${FOOD_PAGE_PREFIX}`;
+export function isFoodSlug<L extends FoodLocale>(
+  locale: L,
+  slug: string
+): slug is FoodSlugOf<L> {
+  return (FOOD_SLUGS[locale] as readonly string[]).includes(slug);
+}
+
+/** The locale a slug is published in, or null for no page. */
+export function foodLocaleOf(slug: string): FoodLocale | null {
+  return FOOD_PAGE_LOCALES.find((locale) => isFoodSlug(locale, slug)) ?? null;
+}
+
+/** The page that lists a locale's food pages: `/en/calories`. */
+export function foodHubPath(locale: FoodLocale): string {
+  return `/${locale}${FOOD_PAGE_PREFIX}`;
 }
 
 /** A food page's path, locale included: `/en/calories/<slug>`. */
-export function foodPagePath(slug: FoodSlug): string {
-  return `/${FOOD_PAGE_LOCALE}${FOOD_PAGE_PREFIX}/${slug}`;
+export function foodPagePath<L extends FoodLocale>(
+  locale: L,
+  slug: FoodSlugOf<L>
+): string {
+  return `/${locale}${FOOD_PAGE_PREFIX}/${slug}`;
 }

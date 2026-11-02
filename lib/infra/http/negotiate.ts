@@ -6,6 +6,7 @@ import {
   FOOD_SLUGS,
   foodHubPath,
   foodPagePath,
+  isFoodLocale,
 } from '@/lib/seo/food-pages/slugs';
 import { isKnownNonMarkdownPath } from '@/lib/seo/private-paths';
 import { isToolSlug, TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
@@ -101,8 +102,9 @@ export function unknownDocsTarget(pathname: string): string | null {
 
 /**
  * The same early 404 for the food pages: a URL under the food folder is a page
- * only when it is exactly the hub's path (`foodHubPath`) or a published page's
- * (`foodPagePath`), so another locale and a mistyped slug get the real 404.
+ * only when it is exactly its locale's hub path (`foodHubPath`) or one of that
+ * locale's published pages (`foodPagePath`). Each locale has its own dishes, so
+ * a slug under the other locale gets the real 404, as does a mistyped one.
  */
 export function unknownFoodPageTarget(pathname: string): string | null {
   const split = splitLocale(pathname);
@@ -114,8 +116,9 @@ export function unknownFoodPageTarget(pathname: string): string | null {
   if (decoded === null) return null;
   const path = `/${locale}${decoded}`;
   const known =
-    path === foodHubPath() ||
-    FOOD_SLUGS.some((slug) => foodPagePath(slug) === path);
+    isFoodLocale(locale) &&
+    (path === foodHubPath(locale) ||
+      FOOD_SLUGS[locale].some((slug) => foodPagePath(locale, slug) === path));
   return known ? null : `/${locale}/not-found`;
 }
 

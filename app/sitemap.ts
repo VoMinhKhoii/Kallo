@@ -4,9 +4,10 @@ import { routing } from '@/i18n/routing';
 import { loadFrontmatter } from '@/lib/domain/docs/loader';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { alternateLanguages } from '@/lib/seo/alternates';
-import { FOOD_PAGES } from '@/lib/seo/food-pages/pages';
+import { pagesOf } from '@/lib/seo/food-pages/pages';
 import {
-  FOOD_SLUGS,
+  FOOD_PAGE_LOCALES,
+  FOOD_PAGE_PREFIX,
   foodHubPath,
   foodPagePath,
 } from '@/lib/seo/food-pages/slugs';
@@ -82,26 +83,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  // The food pages are English only, so they carry no language alternates.
-  // Their date is the day their meals were captured; the hub's is its newest
-  // page's.
-  entries.push({
-    url: `${SITE_URL}${foodHubPath()}`,
-    lastModified: new Date(
-      FOOD_SLUGS.map((slug) => FOOD_PAGES[slug].capture.capturedAt)
-        .sort()
-        .at(-1) as string
-    ),
-    changeFrequency: 'monthly',
-    priority: 0.6,
-  });
-  for (const slug of FOOD_SLUGS) {
+  // Each locale's food pages are its own dishes, so a page carries no
+  // language alternates; only the hubs pair. A page's date is the day its
+  // meals were captured; a hub's is its newest page's.
+  for (const locale of FOOD_PAGE_LOCALES) {
+    const pages = pagesOf(locale);
     entries.push({
-      url: `${SITE_URL}${foodPagePath(slug)}`,
-      lastModified: new Date(FOOD_PAGES[slug].capture.capturedAt),
+      url: `${SITE_URL}${foodHubPath(locale)}`,
+      lastModified: new Date(
+        pages
+          .map((page) => page.capture.capturedAt)
+          .sort()
+          .at(-1) as string
+      ),
       changeFrequency: 'monthly',
       priority: 0.6,
+      alternates: { languages: alternateLanguages(FOOD_PAGE_PREFIX) },
     });
+    for (const page of pages) {
+      entries.push({
+        url: `${SITE_URL}${foodPagePath(page.locale, page.slug)}`,
+        lastModified: new Date(page.capture.capturedAt),
+        changeFrequency: 'monthly',
+        priority: 0.6,
+      });
+    }
   }
 
   return entries;

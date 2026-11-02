@@ -1,0 +1,306 @@
+{
+  "capturedAt": "2026-11-02T17:29:32.594Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "chay",
+      "text": "1 cái bánh xèo chay nhân nấm, đậu hũ, giá, cuốn rau sống, chấm nước tương",
+      "ingredients": [
+        {
+          "name": "Bột gạo",
+          "grams": 30,
+          "kcal": 107,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước cốt dừa",
+          "grams": 10,
+          "kcal": 21,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nấm",
+          "grams": 38,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đậu hũ",
+          "grams": 50,
+          "kcal": 147,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá đỗ",
+          "grams": 40,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 6,
+          "kcal": 49,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Rau sống",
+          "grams": 54,
+          "kcal": 10,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước tương",
+          "grams": 10,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh xèo chay",
+          "calories": 351,
+          "protein": 14,
+          "carbs": 33,
+          "fat": 18
+        },
+        {
+          "name": "Cuốn rau sống",
+          "calories": 10,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 0
+        },
+        {
+          "name": "Nước tương chấm",
+          "calories": 5,
+          "protein": 1,
+          "carbs": 1,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "mot-cai",
+      "text": "1 cái bánh xèo tôm thịt cỡ lớn, cuốn rau sống, chấm nước mắm chua ngọt",
+      "ingredients": [
+        {
+          "name": "Bột gạo",
+          "grams": 60,
+          "kcal": 216,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước cốt dừa",
+          "grams": 40,
+          "kcal": 98,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tôm",
+          "grams": 44,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt heo",
+          "grams": 50,
+          "kcal": 106,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá đỗ",
+          "grams": 48,
+          "kcal": 18,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành tây",
+          "grams": 23,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 10,
+          "kcal": 90,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Xà lách",
+          "grams": 38,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau thơm",
+          "grams": 14,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 10,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước chanh",
+          "grams": 15,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh xèo tôm thịt",
+          "calories": 574,
+          "protein": 25,
+          "carbs": 56,
+          "fat": 28
+        },
+        {
+          "name": "Rau sống",
+          "calories": 9,
+          "protein": 1,
+          "carbs": 1,
+          "fat": 0
+        },
+        {
+          "name": "Nước mắm chua ngọt",
+          "calories": 51,
+          "protein": 1,
+          "carbs": 12,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "mien-trung",
+      "text": "Bánh xèo miền Trung 6 cái nhỏ nhân tôm thịt, cuốn bánh tráng với rau sống, chấm nước chấm tương đậu phộng",
+      "ingredients": [
+        {
+          "name": "Bánh xèo",
+          "grams": 150,
+          "kcal": 315,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bánh tráng",
+          "grams": 20,
+          "kcal": 66,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Rau sống",
+          "grams": 108,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tương đậu phộng",
+          "grams": 20,
+          "kcal": 51,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh xèo miền Trung",
+          "calories": 360,
+          "protein": 6,
+          "carbs": 34,
+          "fat": 22
+        },
+        {
+          "name": "Bánh xèo cuốn rau sống",
+          "calories": 87,
+          "protein": 2,
+          "carbs": 19,
+          "fat": 0
+        },
+        {
+          "name": "Nước chấm tương đậu phộng",
+          "calories": 75,
+          "protein": 2,
+          "carbs": 10,
+          "fat": 3
+        }
+      ]
+    },
+    {
+      "key": "nha-do",
+      "text": "Bánh xèo tự đổ ở nhà, 2 cái nhỏ, chảo chống dính dùng 1 muỗng canh dầu, nhân tôm và giá",
+      "ingredients": [
+        {
+          "name": "Bột gạo",
+          "grams": 40,
+          "kcal": 144,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước cốt dừa",
+          "grams": 30,
+          "kcal": 73,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nghệ",
+          "grams": 1,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 14,
+          "kcal": 122,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tôm",
+          "grams": 36,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá đỗ",
+          "grams": 57,
+          "kcal": 21,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh xèo tự đổ",
+          "calories": 400,
+          "protein": 14,
+          "carbs": 39,
+          "fat": 21
+        }
+      ]
+    }
+  ]
+}

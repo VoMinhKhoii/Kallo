@@ -1,0 +1,382 @@
+{
+  "capturedAt": "2026-11-02T17:10:58.888Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "suon-bi-cha",
+      "text": "Dĩa cơm tấm sườn bì chả trứng ốp la, xin thêm mỡ hành và nước mắm, ăn thêm nửa chén cơm",
+      "ingredients": [
+        {
+          "name": "Cơm tấm",
+          "grams": 150,
+          "kcal": 190,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 7,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 4,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đồ chua",
+          "grams": 29,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cơm",
+          "grams": 60,
+          "kcal": 76,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sườn heo",
+          "grams": 83,
+          "kcal": 148,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Da heo",
+          "grams": 60,
+          "kcal": 87,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt heo nạc",
+          "grams": 40,
+          "kcal": 71,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt heo xay",
+          "grams": 40,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 26,
+          "kcal": 39,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mộc nhĩ",
+          "grams": 5,
+          "kcal": 16,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Bún tàu",
+          "grams": 20,
+          "kcal": 69,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 44,
+          "kcal": 90,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm tấm",
+          "calories": 237,
+          "protein": 5,
+          "carbs": 44,
+          "fat": 5
+        },
+        {
+          "name": "Cơm tấm thêm",
+          "calories": 76,
+          "protein": 2,
+          "carbs": 17,
+          "fat": 0
+        },
+        {
+          "name": "Sườn nướng",
+          "calories": 148,
+          "protein": 20,
+          "carbs": 0,
+          "fat": 8
+        },
+        {
+          "name": "Bì heo",
+          "calories": 158,
+          "protein": 25,
+          "carbs": 0,
+          "fat": 7
+        },
+        {
+          "name": "Chả trứng",
+          "calories": 227,
+          "protein": 11,
+          "carbs": 21,
+          "fat": 11
+        },
+        {
+          "name": "Trứng ốp la",
+          "calories": 90,
+          "protein": 6,
+          "carbs": 0,
+          "fat": 7
+        }
+      ]
+    },
+    {
+      "key": "chi-suon",
+      "text": "Cơm tấm sườn nướng, chỉ có sườn, ít mỡ hành, chan 2 muỗng nước mắm, dưa leo cà chua",
+      "ingredients": [
+        {
+          "name": "Cơm tấm",
+          "grams": 200,
+          "kcal": 252,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sườn heo nướng",
+          "grams": 99,
+          "kcal": 236,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 5,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 3,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 30,
+          "kcal": 10,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dưa leo",
+          "grams": 57,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 60,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm tấm sườn nướng",
+          "calories": 550,
+          "protein": 30,
+          "carbs": 62,
+          "fat": 20
+        }
+      ]
+    },
+    {
+      "key": "hai-suon",
+      "text": "Dĩa cơm tấm 2 miếng sườn nướng, 1 trứng ốp la, chả trứng, bì, mỡ hành, kèm chén canh",
+      "ingredients": [
+        {
+          "name": "Cơm tấm",
+          "grams": 180,
+          "kcal": 227,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 7,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 3,
+          "kcal": 24,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đồ chua",
+          "grams": 19,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Sườn heo nướng",
+          "grams": 132,
+          "kcal": 351,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 44,
+          "kcal": 90,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 44,
+          "kcal": 66,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt heo xay",
+          "grams": 40,
+          "kcal": 116,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mộc nhĩ",
+          "grams": 5,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bì heo",
+          "grams": 60,
+          "kcal": 78,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt heo nạc",
+          "grams": 40,
+          "kcal": 56,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước canh",
+          "grams": 300,
+          "kcal": 105,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau canh",
+          "grams": 36,
+          "kcal": 9,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 5,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm tấm",
+          "calories": 260,
+          "protein": 6,
+          "carbs": 52,
+          "fat": 3
+        },
+        {
+          "name": "Sườn nướng",
+          "calories": 351,
+          "protein": 30,
+          "carbs": 0,
+          "fat": 26
+        },
+        {
+          "name": "Trứng ốp la",
+          "calories": 90,
+          "protein": 6,
+          "carbs": 0,
+          "fat": 7
+        },
+        {
+          "name": "Chả trứng",
+          "calories": 183,
+          "protein": 16,
+          "carbs": 1,
+          "fat": 13
+        },
+        {
+          "name": "Bì heo",
+          "calories": 134,
+          "protein": 22,
+          "carbs": 0,
+          "fat": 5
+        },
+        {
+          "name": "Canh",
+          "calories": 116,
+          "protein": 8,
+          "carbs": 12,
+          "fat": 4
+        }
+      ]
+    },
+    {
+      "key": "nua-com",
+      "text": "Dĩa cơm tấm sườn, đổi nửa cơm nửa dưa leo cà chua, không mỡ hành, chan 2 muỗng nước mắm",
+      "ingredients": [
+        {
+          "name": "Cơm tấm",
+          "grams": 100,
+          "kcal": 126,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sườn heo",
+          "grams": 78,
+          "kcal": 146,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dưa leo",
+          "grams": 40,
+          "kcal": 6,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 40,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 30,
+          "kcal": 10,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm tấm sườn",
+          "calories": 298,
+          "protein": 24,
+          "carbs": 32,
+          "fat": 8
+        }
+      ]
+    }
+  ]
+}

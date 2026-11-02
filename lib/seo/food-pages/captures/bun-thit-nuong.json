@@ -1,0 +1,271 @@
+{
+  "capturedAt": "2026-11-02T17:05:33.268Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "cha-gio",
+      "text": "Tô bún thịt nướng chả giò, xin thêm chén nước mắm, có đồ chua, đậu phộng, mỡ hành đầy đủ",
+      "ingredients": [
+        {
+          "name": "Bún",
+          "grams": 200,
+          "kcal": 222,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt nướng",
+          "grams": 90,
+          "kcal": 290,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Chả giò",
+          "grams": 50,
+          "kcal": 78,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Đồ chua",
+          "grams": 19,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đậu phộng",
+          "grams": 8,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mỡ hành",
+          "grams": 9,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm pha",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 2,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bún thịt nướng chả giò",
+          "calories": 682,
+          "protein": 32,
+          "carbs": 64,
+          "fat": 33
+        }
+      ]
+    },
+    {
+      "key": "to-thuong",
+      "text": "Bún thịt nướng tô thường, không chả giò, ít mỡ hành, nhiều rau",
+      "ingredients": [
+        {
+          "name": "Bún",
+          "grams": 160,
+          "kcal": 178,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt heo nướng",
+          "grams": 90,
+          "kcal": 227,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm pha",
+          "grams": 15,
+          "kcal": 6,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Rau sống",
+          "grams": 60,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá đỗ",
+          "grams": 40,
+          "kcal": 18,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dưa leo",
+          "grams": 38,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mỡ hành",
+          "grams": 5,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 4,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bún thịt nướng",
+          "calories": 484,
+          "protein": 30,
+          "carbs": 47,
+          "fat": 19
+        }
+      ]
+    },
+    {
+      "key": "dac-biet",
+      "text": "Bún thịt nướng tô đặc biệt: thịt nướng, 2 cuốn chả giò, nem nướng, tôm, mỡ hành, đậu phộng",
+      "ingredients": [
+        {
+          "name": "Bún",
+          "grams": 200,
+          "kcal": 223,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt nướng",
+          "grams": 90,
+          "kcal": 361,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Nem nướng",
+          "grams": 60,
+          "kcal": 109,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Tôm",
+          "grams": 36,
+          "kcal": 30,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Mỡ hành",
+          "grams": 14,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đậu phộng",
+          "grams": 10,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm pha",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 3,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chả giò",
+          "grams": 100,
+          "kcal": 188,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bún thịt nướng tô đặc biệt",
+          "calories": 823,
+          "protein": 34,
+          "carbs": 64,
+          "fat": 48
+        },
+        {
+          "name": "Chả giò",
+          "calories": 188,
+          "protein": 5,
+          "carbs": 14,
+          "fat": 13
+        }
+      ]
+    },
+    {
+      "key": "them-thit",
+      "text": "Bún thịt nướng ít bún, xin thêm 1 phần thịt nướng, không mỡ hành, không đậu phộng",
+      "ingredients": [
+        {
+          "name": "Bún",
+          "grams": 120,
+          "kcal": 127,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt heo nướng",
+          "grams": 200,
+          "kcal": 801,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Rau sống",
+          "grams": 54,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm pha",
+          "grams": 15,
+          "kcal": 6,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 2,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 3,
+          "kcal": 27,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bún thịt nướng",
+          "calories": 979,
+          "protein": 45,
+          "carbs": 34,
+          "fat": 74
+        }
+      ]
+    }
+  ]
+}

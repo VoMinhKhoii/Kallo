@@ -3,8 +3,15 @@
  * pipeline once, and write the numbers the page shows to
  * `lib/seo/food-pages/captures/<slug>.json`. Run with the production model profile:
  *
+ *   set -a; source .env.local; set +a
  *   ANTHROPIC_API_KEY=$CLAUDE_API_KEY PIPELINE_MODEL_PROFILE=haiku \
+ *     CARD_INDEX_URI=file://$PWD/.cache/card-index \
  *     bun --conditions=react-server scripts/seo/capture-food-page.ts chicken-burrito
+ *
+ * Card search reads the local index (`bun card-index:local` builds it), never
+ * the shared database's. A page in Vietnamese (`pho-bo`) is captured as a
+ * Vietnamese user in Vietnam would log it: the app answers in Vietnamese and
+ * uses Vietnam's portion habits.
  *
  * Resumable: each raw pipeline result is cached in
  * `.cache/food-pages/<slug>.capture.json` as it lands, so a failed meal costs
@@ -17,11 +24,25 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { buildAiRequestContext } from '@/lib/ai/adapters/user-context';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { FOODS } from '@/lib/seo/food-pages/food-registry';
-import { isFoodSlug } from '@/lib/seo/food-pages/slugs';
+import { type FoodLocale, foodLocaleOf } from '@/lib/seo/food-pages/slugs';
 import type {
   FoodPageCapture,
   FoodPageVariant,
 } from '@/lib/seo/food-pages/types';
+
+/** Each food table's name, by composition id prefix, as a page names it. */
+const SOURCE_NAMES: Record<FoodLocale, Record<string, string>> = {
+  en: {
+    usda_: 'USDA FoodData Central',
+    fao_: 'FAO/INFOODS',
+    nin_: 'Vietnam’s National Institute of Nutrition',
+  },
+  vi: {
+    usda_: 'USDA FoodData Central',
+    fao_: 'FAO/INFOODS',
+    nin_: 'Viện Dinh dưỡng Quốc gia',
+  },
+};
 
 /**
  * The food table a composition row came from, by its id prefix. A public page
@@ -31,30 +52,33 @@ function sourceOf(foodCompositionId: string | null, name: string): string {
   if (!foodCompositionId) {
     throw new Error(`"${name}" matched no food row: reword the meal`);
   }
-  if (foodCompositionId.startsWith('usda_')) return 'USDA FoodData Central';
-  if (foodCompositionId.startsWith('fao_')) return 'FAO/INFOODS';
-  if (foodCompositionId.startsWith('nin_')) {
-    return 'Vietnam’s National Institute of Nutrition';
-  }
+  const prefix = Object.keys(SOURCE_NAMES[locale]).find((p) =>
+    foodCompositionId.startsWith(p)
+  );
+  if (prefix) return SOURCE_NAMES[locale][prefix];
   throw new Error(
-    `no source name for "${foodCompositionId}": add its prefix to sourceOf`
+    `no source name for "${foodCompositionId}": add its prefix to SOURCE_NAMES`
   );
 }
 
 const slug = process.argv[2] ?? '';
-if (!isFoodSlug(slug)) {
+const found = foodLocaleOf(slug);
+if (!found) {
   throw new Error(`unknown food page "${slug}": add it to slugs.ts`);
 }
-const { meals } = FOODS[slug];
+const locale: FoodLocale = found;
+const { meals } = FOODS[slug as keyof typeof FOODS];
 const CACHE = `.cache/food-pages/${slug}.capture.json`;
 const OUT = `lib/seo/food-pages/captures/${slug}.json`;
 
-// A global default user: no country-specific portion habits.
+// A default user for the page's readers: an English page uses no
+// country-specific portion habits, a Vietnamese one Vietnam's (a 120 g chén).
+const COUNTRY: Record<FoodLocale, string> = { en: 'US', vi: 'VN' };
 const USER: UserContext = {
   goal: 'maintaining',
   aggression: 0,
-  countryOfOrigin: 'US',
-  countryOfResidence: 'US',
+  countryOfOrigin: COUNTRY[locale],
+  countryOfResidence: COUNTRY[locale],
   cookingHabits: {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
@@ -142,12 +166,14 @@ for (const meal of meals) {
   // without it the pipeline may name English meals' ingredients in Vietnamese.
   const user = buildAiRequestContext(USER, {
     mealText: meal.text,
-    requestLocale: 'en',
+    requestLocale: locale,
   });
-  // A page is English: a meal the app would answer in Vietnamese ("café"
-  // reads as Vietnamese to it) must be reworded, not published.
-  if (user.outputLanguage !== 'en') {
-    console.log(`✗ ${meal.key} — the app reads this meal as Vietnamese`);
+  // A page is in one language: a meal the app would answer in the other
+  // ("café" reads as Vietnamese to it) must be reworded, not published.
+  if (user.outputLanguage !== locale) {
+    console.log(
+      `✗ ${meal.key} — the app answers this meal in "${user.outputLanguage}"`
+    );
     continue;
   }
   let vectorDown = false;

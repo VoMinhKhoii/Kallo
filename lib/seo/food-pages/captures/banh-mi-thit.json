@@ -1,0 +1,210 @@
+{
+  "capturedAt": "2026-11-02T17:11:33.210Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "op-la",
+      "text": "Ổ bánh mì thịt nguội pate chả lụa, thêm trứng ốp la, không dưa leo không ngò",
+      "ingredients": [
+        {
+          "name": "Bánh mì",
+          "grams": 70,
+          "kcal": 175,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt nguội",
+          "grams": 25,
+          "kcal": 83,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Pate",
+          "grams": 15,
+          "kcal": 49,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Chả lụa",
+          "grams": 30,
+          "kcal": 44,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 50,
+          "kcal": 95,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 4,
+          "kcal": 32,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh mì thịt nguội pate chả lụa trứng ốp la",
+          "calories": 479,
+          "protein": 24,
+          "carbs": 40,
+          "fat": 25
+        }
+      ]
+    },
+    {
+      "key": "thuong",
+      "text": "1 ổ bánh mì thịt thường: pate, bơ, thịt nguội, chả lụa, dưa leo, đồ chua, ngò",
+      "ingredients": [
+        {
+          "name": "Bánh mì",
+          "grams": 80,
+          "kcal": 201,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Pate",
+          "grams": 20,
+          "kcal": 65,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Bơ",
+          "grams": 5,
+          "kcal": 37,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt nguội",
+          "grams": 30,
+          "kcal": 99,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chả lụa",
+          "grams": 35,
+          "kcal": 48,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dưa leo",
+          "grams": 30,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đồ chua",
+          "grams": 15,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Ngò",
+          "grams": 5,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh mì thịt thường",
+          "calories": 460,
+          "protein": 20,
+          "carbs": 47,
+          "fat": 21
+        }
+      ]
+    },
+    {
+      "key": "thit-nuong",
+      "text": "1 ổ bánh mì thịt nướng, có đồ chua, dưa leo, ít nước sốt",
+      "ingredients": [
+        {
+          "name": "Ổ bánh mì",
+          "grams": 80,
+          "kcal": 199,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt nướng",
+          "grams": 70,
+          "kcal": 280,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Đồ chua",
+          "grams": 24,
+          "kcal": 4,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dưa leo",
+          "grams": 38,
+          "kcal": 7,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước sốt",
+          "grams": 8,
+          "kcal": 19,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh mì thịt nướng",
+          "calories": 509,
+          "protein": 21,
+          "carbs": 45,
+          "fat": 27
+        }
+      ]
+    },
+    {
+      "key": "heo-quay",
+      "text": "1 ổ bánh mì heo quay da giòn, có dưa leo, đồ chua, nước sốt",
+      "ingredients": [
+        {
+          "name": "Bánh mì",
+          "grams": 70,
+          "kcal": 177,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Heo quay da giòn",
+          "grams": 63,
+          "kcal": 161,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dưa leo",
+          "grams": 24,
+          "kcal": 4,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đồ chua",
+          "grams": 20,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước sốt",
+          "grams": 15,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh mì heo quay",
+          "calories": 351,
+          "protein": 23,
+          "carbs": 39,
+          "fat": 11
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,450 @@
+{
+  "capturedAt": "2026-11-02T17:17:28.658Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "ca-loc",
+      "text": "Cơm má nấu: cá lóc kho tộ 1 khúc, canh chua cá lóc có bạc hà, thơm, giá, cà chua, 2 chén cơm, rau sống chấm nước mắm",
+      "ingredients": [
+        {
+          "name": "Cơm",
+          "grams": 240,
+          "kcal": 303,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cá lóc",
+          "grams": 180,
+          "kcal": 221,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 8,
+          "kcal": 72,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành tím",
+          "grams": 18,
+          "kcal": 14,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cá lóc",
+          "grams": 66,
+          "kcal": 57,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Me",
+          "grams": 7,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thơm",
+          "grams": 24,
+          "kcal": 9,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Bạc hà",
+          "grams": 4,
+          "kcal": 1,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Giá",
+          "grams": 29,
+          "kcal": 10,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 57,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau sống",
+          "grams": 72,
+          "kcal": 13,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 3,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm trắng",
+          "calories": 303,
+          "protein": 6,
+          "carbs": 68,
+          "fat": 1
+        },
+        {
+          "name": "Cá lóc kho tộ",
+          "calories": 332,
+          "protein": 34,
+          "carbs": 9,
+          "fat": 18
+        },
+        {
+          "name": "Canh chua cá lóc",
+          "calories": 91,
+          "protein": 14,
+          "carbs": 6,
+          "fat": 1
+        },
+        {
+          "name": "Rau sống chấm nước mắm",
+          "calories": 30,
+          "protein": 2,
+          "carbs": 6,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "basa",
+      "text": "Bữa tối nhà nấu: cá basa kho tộ 1 khúc, canh chua, rau muống xào tỏi, 1 chén rưỡi cơm",
+      "ingredients": [
+        {
+          "name": "Cá basa",
+          "grams": 85,
+          "kcal": 128,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành",
+          "grams": 14,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cá",
+          "grams": 70,
+          "kcal": 66,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Me",
+          "grams": 7,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dứa",
+          "grams": 24,
+          "kcal": 9,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 40,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đậu bắp",
+          "grams": 27,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá đỗ",
+          "grams": 40,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ngò",
+          "grams": 5,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau muống",
+          "grams": 90,
+          "kcal": 26,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Tỏi",
+          "grams": 7,
+          "kcal": 8,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 180,
+          "kcal": 227,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cá basa kho tộ",
+          "calories": 198,
+          "protein": 14,
+          "carbs": 6,
+          "fat": 13
+        },
+        {
+          "name": "Canh chua",
+          "calories": 109,
+          "protein": 16,
+          "carbs": 8,
+          "fat": 2
+        },
+        {
+          "name": "Rau muống xào tỏi",
+          "calories": 79,
+          "protein": 3,
+          "carbs": 5,
+          "fat": 5
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 227,
+          "protein": 5,
+          "carbs": 51,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "ca-bong",
+      "text": "Cá bống kho tiêu 5 con nhỏ, canh bí đao nấu tôm khô, dưa leo, 2 chén cơm",
+      "ingredients": [
+        {
+          "name": "Cá bống",
+          "grams": 83,
+          "kcal": 70,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 4,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Tiêu",
+          "grams": 1,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bí đao",
+          "grams": 113,
+          "kcal": 15,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Tôm khô",
+          "grams": 10,
+          "kcal": 33,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước dùng",
+          "grams": 250,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dưa leo",
+          "grams": 95,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 240,
+          "kcal": 303,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cá bống kho tiêu",
+          "calories": 133,
+          "protein": 14,
+          "carbs": 5,
+          "fat": 6
+        },
+        {
+          "name": "Canh bí đao nấu tôm khô",
+          "calories": 90,
+          "protein": 14,
+          "carbs": 3,
+          "fat": 3
+        },
+        {
+          "name": "Dưa leo",
+          "calories": 17,
+          "protein": 1,
+          "carbs": 3,
+          "fat": 0
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 303,
+          "protein": 6,
+          "carbs": 68,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "ca-nuc",
+      "text": "Cơm trưa: 2 chén cơm, 2 con cá nục kho cà, rau lang luộc 1 dĩa nhỏ, chấm mắm nêm",
+      "ingredients": [
+        {
+          "name": "Cơm",
+          "grams": 240,
+          "kcal": 303,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cá nục",
+          "grams": 143,
+          "kcal": 198,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 38,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 4,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Rau lang",
+          "grams": 135,
+          "kcal": 39,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Mắm nêm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm trắng",
+          "calories": 303,
+          "protein": 6,
+          "carbs": 68,
+          "fat": 1
+        },
+        {
+          "name": "Cá nục kho cà",
+          "calories": 265,
+          "protein": 36,
+          "carbs": 7,
+          "fat": 11
+        },
+        {
+          "name": "Rau lang luộc",
+          "calories": 39,
+          "protein": 4,
+          "carbs": 6,
+          "fat": 0
+        },
+        {
+          "name": "Mắm nêm chấm",
+          "calories": 25,
+          "protein": 1,
+          "carbs": 6,
+          "fat": 0
+        }
+      ]
+    }
+  ]
+}

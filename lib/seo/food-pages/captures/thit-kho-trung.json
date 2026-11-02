@@ -1,0 +1,327 @@
+{
+  "capturedAt": "2026-11-02T17:28:29.763Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "com-chieu",
+      "text": "Cơm chiều: 1 chén cơm, thịt kho trứng 2 miếng ba rọi và 1 trứng gà, 1 chén dưa giá",
+      "ingredients": [
+        {
+          "name": "Cơm",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt ba rọi",
+          "grams": 120,
+          "kcal": 477,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 44,
+          "kcal": 64,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đường",
+          "grams": 8,
+          "kcal": 32,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá",
+          "grams": 105,
+          "kcal": 43,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đồ chua",
+          "grams": 10,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm trắng",
+          "calories": 152,
+          "protein": 3,
+          "carbs": 34,
+          "fat": 0
+        },
+        {
+          "name": "Thịt kho trứng",
+          "calories": 616,
+          "protein": 17,
+          "carbs": 9,
+          "fat": 57
+        },
+        {
+          "name": "Dưa giá",
+          "calories": 45,
+          "protein": 5,
+          "carbs": 5,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "hot-vit",
+      "text": "Thịt kho hột vịt: 2 hột vịt và 3 miếng thịt ba rọi có chan nước kho, dưa giá 1 chén nhỏ, cơm 1 chén",
+      "ingredients": [
+        {
+          "name": "Thịt ba rọi",
+          "grams": 150,
+          "kcal": 641,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hột vịt",
+          "grams": 114,
+          "kcal": 181,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước kho",
+          "grams": 40,
+          "kcal": 108,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dưa giá",
+          "grams": 95,
+          "kcal": 42,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cơm",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Thịt kho hột vịt",
+          "calories": 991,
+          "protein": 30,
+          "carbs": 26,
+          "fat": 85
+        },
+        {
+          "name": "Dưa giá",
+          "calories": 42,
+          "protein": 5,
+          "carbs": 5,
+          "fat": 0
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 152,
+          "protein": 3,
+          "carbs": 34,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "van-phong",
+      "text": "Cơm văn phòng: cơm trắng, thịt kho trứng (1 trứng), canh bí đỏ, cải ngọt xào tỏi, xin thêm nửa chén cơm",
+      "ingredients": [
+        {
+          "name": "Cơm trắng",
+          "grams": 180,
+          "kcal": 227,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt ba chỉ",
+          "grams": 100,
+          "kcal": 577,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 50,
+          "kcal": 75,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bí đỏ",
+          "grams": 98,
+          "kcal": 26,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước dùng",
+          "grams": 150,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cải ngọt",
+          "grams": 108,
+          "kcal": 23,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Tỏi",
+          "grams": 5,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 4,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm trắng",
+          "calories": 227,
+          "protein": 5,
+          "carbs": 51,
+          "fat": 1
+        },
+        {
+          "name": "Thịt kho trứng",
+          "calories": 721,
+          "protein": 16,
+          "carbs": 6,
+          "fat": 70
+        },
+        {
+          "name": "Canh bí đỏ",
+          "calories": 35,
+          "protein": 1,
+          "carbs": 7,
+          "fat": 0
+        },
+        {
+          "name": "Cải ngọt xào tỏi",
+          "calories": 66,
+          "protein": 2,
+          "carbs": 5,
+          "fat": 4
+        }
+      ]
+    },
+    {
+      "key": "nac-vai",
+      "text": "Thịt kho trứng bằng thịt nạc vai: 4 miếng nạc và 1 trứng gà, 1 chén cơm, 1 dĩa rau luộc",
+      "ingredients": [
+        {
+          "name": "Thịt nạc vai",
+          "grams": 240,
+          "kcal": 275,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 53,
+          "kcal": 74,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau luộc",
+          "grams": 135,
+          "kcal": 40,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Thịt kho trứng",
+          "calories": 414,
+          "protein": 56,
+          "carbs": 6,
+          "fat": 19
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 152,
+          "protein": 3,
+          "carbs": 34,
+          "fat": 0
+        },
+        {
+          "name": "Rau luộc",
+          "calories": 40,
+          "protein": 4,
+          "carbs": 5,
+          "fat": 0
+        }
+      ]
+    }
+  ]
+}

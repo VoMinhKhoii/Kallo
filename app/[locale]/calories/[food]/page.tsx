@@ -10,18 +10,21 @@ import { FoodLinkList } from '@/components/seo/food-page/food-link-list';
 import { IngredientBars } from '@/components/seo/food-page/ingredient-bars';
 import { MealExample } from '@/components/seo/food-page/meal-example';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
+import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
 import {
   breakdownOf,
   FOOD_PAGES,
+  type FoodPage as FoodPageData,
   kcalSpan,
   relatedPages,
   sourcesOf,
 } from '@/lib/seo/food-pages/pages';
 import {
-  FOOD_PAGE_LOCALE,
+  FOOD_PAGE_LOCALES,
   FOOD_PAGE_PREFIX,
   FOOD_SLUGS,
   foodPagePath,
+  isFoodLocale,
   isFoodSlug,
 } from '@/lib/seo/food-pages/slugs';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
@@ -32,7 +35,8 @@ import { SITE_URL } from '@/lib/seo/site';
  * burrito?") answered with real meals logged in Kallo. The copy and numbers
  * live in `lib/seo/food-pages/`; this route lays them out in the docs shell.
  *
- * English only. Another locale or an unknown slug gets its real 404 from the
+ * Each locale has its own dishes, so a page has no language alternates. A
+ * slug under another locale, or an unknown one, gets its real 404 from the
  * proxy (`unknownFoodPageTarget`); `notFound()` here is the backstop.
  */
 interface FoodPageProps {
@@ -40,17 +44,25 @@ interface FoodPageProps {
 }
 
 export function generateStaticParams() {
-  return FOOD_SLUGS.map((food) => ({ locale: FOOD_PAGE_LOCALE, food }));
+  return FOOD_PAGE_LOCALES.flatMap((locale) =>
+    FOOD_SLUGS[locale].map((food) => ({ locale, food }))
+  );
+}
+
+/** The page a URL names, or null when its locale has no such page. */
+function pageAt(locale: string, food: string): FoodPageData | null {
+  if (!isFoodLocale(locale) || !isFoodSlug(locale, food)) return null;
+  return FOOD_PAGES[food];
 }
 
 export async function generateMetadata({
   params,
 }: FoodPageProps): Promise<Metadata> {
   const { locale, food } = await params;
-  if (locale !== FOOD_PAGE_LOCALE || !isFoodSlug(food)) return {};
-  const page = FOOD_PAGES[food];
-  const url = `${SITE_URL}${foodPagePath(food)}`;
-  const description = page.description(kcalSpan(page.capture));
+  const page = pageAt(locale, food);
+  if (!page) return {};
+  const url = `${SITE_URL}${foodPagePath(page.locale, page.slug)}`;
+  const description = page.description(kcalSpan(page.capture, page.locale));
   return {
     title: page.metaTitle,
     description,
@@ -76,13 +88,11 @@ export default function FoodPage({ params }: FoodPageProps) {
 
 async function FoodContent({ params }: FoodPageProps) {
   const { locale, food } = await params;
-  if (locale !== FOOD_PAGE_LOCALE || !isFoodSlug(food)) notFound();
-  const page = FOOD_PAGES[food];
+  const page = pageAt(locale, food);
+  if (!page) notFound();
+  const chrome = FOOD_PAGE_CHROME[page.locale];
   const t = await getTranslations({ locale, namespace: 'landing.header' });
-  const loggedOn = new Date(page.capture.capturedAt).toLocaleDateString(
-    'en-US',
-    { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }
-  );
+  const loggedOn = chrome.formatDate(new Date(page.capture.capturedAt));
 
   return (
     <AuthProvider>
@@ -92,14 +102,16 @@ async function FoodContent({ params }: FoodPageProps) {
             {page.title}
           </h1>
           <p className="mt-3 font-sans-display text-kallo-text-muted text-sm">
-            Logged in Kallo on {loggedOn}
+            {chrome.loggedOn(loggedOn)}
           </p>
         </div>
 
         <hr className="mt-8 border-kallo-text border-t" />
 
         <div className="mt-10">
-          <DocsParagraph>{page.lead(kcalSpan(page.capture))}</DocsParagraph>
+          <DocsParagraph>
+            {page.lead(kcalSpan(page.capture, page.locale))}
+          </DocsParagraph>
 
           {page.meals.map((meal) => {
             const variant = page.capture.variants.find(
@@ -114,25 +126,23 @@ async function FoodContent({ params }: FoodPageProps) {
             ) : null;
           })}
 
-          <DocsH2>What moves the number</DocsH2>
+          <DocsH2>{chrome.movesHeading}</DocsH2>
           <DocsParagraph>{page.breakdownLead}</DocsParagraph>
           <IngredientBars ingredients={breakdownOf(page)} />
 
-          <DocsH2>Where these numbers come from</DocsH2>
+          <DocsH2>{chrome.sourcesHeading}</DocsH2>
           <DocsParagraph>
-            Each meal above was typed into Kallo once, on {loggedOn}. Kallo
-            split it into ingredients, estimated the grams, and took calories
-            and macros from {sourcesOf(page.capture)}.
+            {chrome.sourcesBody(loggedOn, sourcesOf(page))}
           </DocsParagraph>
 
-          <DocsH2>More meals</DocsH2>
+          <DocsH2>{chrome.moreHeading}</DocsH2>
           <FoodLinkList pages={relatedPages(page)} />
           <DocsParagraph>
-            Or browse{' '}
+            {chrome.browse.before}
             <DocsLink href={FOOD_PAGE_PREFIX}>
-              all {FOOD_SLUGS.length} meals
+              {chrome.browse.link(FOOD_SLUGS[page.locale].length)}
             </DocsLink>
-            .
+            {chrome.browse.after}
           </DocsParagraph>
 
           <div className="mt-16 border-kallo-text border-t pt-10 text-center">

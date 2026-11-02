@@ -1,0 +1,206 @@
+{
+  "capturedAt": "2026-11-02T17:13:10.510Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "duong-den",
+      "text": "Trà sữa trân châu đường đen size L, 50% đường, ít đá, thêm pudding trứng và thạch phô mai",
+      "ingredients": [
+        {
+          "name": "Trà đen",
+          "grams": 300,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sữa tươi",
+          "grams": 120,
+          "kcal": 90,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường đen",
+          "grams": 12,
+          "kcal": 47,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trân châu",
+          "grams": 60,
+          "kcal": 207,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Pudding trứng",
+          "grams": 60,
+          "kcal": 64,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thạch phô mai",
+          "grams": 40,
+          "kcal": 25,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Trà sữa trân châu đường đen",
+          "calories": 348,
+          "protein": 5,
+          "carbs": 69,
+          "fat": 5
+        },
+        {
+          "name": "Pudding trứng",
+          "calories": 64,
+          "protein": 3,
+          "carbs": 7,
+          "fat": 3
+        },
+        {
+          "name": "Thạch phô mai",
+          "calories": 25,
+          "protein": 0,
+          "carbs": 6,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "size-m",
+      "text": "Trà sữa trân châu size M, 50% đường, ít đá",
+      "ingredients": [
+        {
+          "name": "Trà đen",
+          "grams": 150,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sữa",
+          "grams": 60,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đường",
+          "grams": 10,
+          "kcal": 40,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trân châu",
+          "grams": 30,
+          "kcal": 103,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Trà sữa trân châu",
+          "calories": 181,
+          "protein": 2,
+          "carbs": 39,
+          "fat": 2
+        }
+      ]
+    },
+    {
+      "key": "khong-topping",
+      "text": "Trà sữa size M không trân châu, 30% đường, 70% đá",
+      "ingredients": [
+        {
+          "name": "Trà đen",
+          "grams": 150,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sữa tươi",
+          "grams": 120,
+          "kcal": 90,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 9,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đá",
+          "grams": 60,
+          "kcal": 0,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Trà sữa",
+          "calories": 128,
+          "protein": 5,
+          "carbs": 15,
+          "fat": 5
+        }
+      ]
+    },
+    {
+      "key": "full-topping",
+      "text": "1 ly trà sữa full topping size L, 100% đường: trân châu đen, trân châu trắng, pudding, thạch",
+      "ingredients": [
+        {
+          "name": "Trà đen",
+          "grams": 250,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sữa tươi",
+          "grams": 200,
+          "kcal": 150,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 20,
+          "kcal": 80,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trân châu đen",
+          "grams": 80,
+          "kcal": 276,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Trân châu trắng",
+          "grams": 60,
+          "kcal": 207,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Pudding",
+          "grams": 60,
+          "kcal": 78,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thạch",
+          "grams": 50,
+          "kcal": 31,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Trà sữa full topping",
+          "calories": 825,
+          "protein": 11,
+          "carbs": 170,
+          "fat": 11
+        }
+      ]
+    }
+  ]
+}

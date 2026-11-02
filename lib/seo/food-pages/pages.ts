@@ -1,6 +1,12 @@
 import { CAPTURES } from './capture-registry';
 import { FOODS } from './food-registry';
-import { FOOD_SLUGS, type FoodSlug } from './slugs';
+import { FOOD_PAGE_CHROME } from './page-copy';
+import {
+  FOOD_PAGE_LOCALES,
+  FOOD_SLUGS,
+  type FoodLocale,
+  type FoodSlug,
+} from './slugs';
 import {
   FOOD_GROUPS,
   type FoodGroup,
@@ -17,22 +23,33 @@ import {
  * Each page is two files: `foods/<group>/<slug>.ts`, written by hand (its meals and
  * the words around them), and `captures/<slug>.json`, written by
  * `scripts/seo/capture-food-page.ts`, which runs each meal through the real
- * pipeline once. Every number comes from the capture. English only for now: a
- * Vietnamese page is its own dish list, not a translation.
+ * pipeline once. Every number comes from the capture. Each locale has its own
+ * dishes: a Vietnamese page is its own dish, not a translation.
  */
 export interface FoodPage extends FoodPageCopy {
   slug: FoodSlug;
+  locale: FoodLocale;
   group: FoodGroup;
   meals: FoodPageMeal[];
   capture: FoodPageCapture;
 }
 
 export const FOOD_PAGES = Object.fromEntries(
-  FOOD_SLUGS.map((slug) => {
-    const { copy, ...food } = FOODS[slug];
-    return [slug, { slug, ...food, ...copy, capture: CAPTURES[slug] }];
-  })
+  FOOD_PAGE_LOCALES.flatMap((locale) =>
+    FOOD_SLUGS[locale].map((slug) => {
+      const { copy, ...food } = FOODS[slug];
+      return [
+        slug,
+        { slug, locale, ...food, ...copy, capture: CAPTURES[slug] },
+      ];
+    })
+  )
 ) as Record<FoodSlug, FoodPage>;
+
+/** A locale's pages, in `FOOD_SLUGS` order. */
+export function pagesOf(locale: FoodLocale): FoodPage[] {
+  return FOOD_SLUGS[locale].map((slug) => FOOD_PAGES[slug]);
+}
 
 /** A meal's total, as its card's rows add up. */
 export function mealKcal(variant: FoodPageVariant): number {
@@ -43,12 +60,12 @@ export function mealKcal(variant: FoodPageVariant): number {
  * The span the page's meals cover, rounded out to whole hundreds so a reader
  * can say it aloud: meals of 310 and 975 kcal give "300 to 1,000".
  */
-export function kcalSpan(capture: FoodPageCapture): string {
+export function kcalSpan(capture: FoodPageCapture, locale: FoodLocale): string {
   const totals = capture.variants.map(mealKcal);
   const low = Math.floor(Math.min(...totals) / 100) * 100;
   const high = Math.ceil(Math.max(...totals) / 100) * 100;
-  const kcal = (n: number) => n.toLocaleString('en-US');
-  return `${kcal(low)} to ${kcal(high)}`;
+  const { formatNumber, spanJoin } = FOOD_PAGE_CHROME[locale];
+  return `${formatNumber(low)} ${spanJoin} ${formatNumber(high)}`;
 }
 
 /** The breakdown meal's ingredients, largest first. */
@@ -57,29 +74,35 @@ export function breakdownOf(page: FoodPage) {
   return [...(variant?.ingredients ?? [])].sort((a, b) => b.kcal - a.kcal);
 }
 
-/** The food tables the meals actually used, as one English phrase. */
-export function sourcesOf(capture: FoodPageCapture): string {
+/**
+ * The food tables the meals actually used, as one phrase in the page's
+ * language. The capture script names them in that language.
+ */
+export function sourcesOf(page: FoodPage): string {
   const sources = new Set(
-    capture.variants.flatMap((v) => v.ingredients.map((i) => i.source))
+    page.capture.variants.flatMap((v) => v.ingredients.map((i) => i.source))
   );
-  return new Intl.ListFormat('en', { type: 'conjunction' }).format([
-    ...sources,
-  ]);
+  return FOOD_PAGE_CHROME[page.locale].formatList([...sources]);
 }
 
-/** The hub's sections: each group with its pages, in `FOOD_SLUGS` order. */
-export function pagesByGroup(): { group: FoodGroup; pages: FoodPage[] }[] {
-  return (Object.keys(FOOD_GROUPS) as FoodGroup[]).map((group) => ({
+/** A hub's sections: each of its groups with its pages, in `FOOD_SLUGS` order. */
+export function pagesByGroup(
+  locale: FoodLocale
+): { group: FoodGroup; pages: FoodPage[] }[] {
+  return (Object.keys(FOOD_GROUPS[locale]) as FoodGroup[]).map((group) => ({
     group,
-    pages: FOOD_SLUGS.map((slug) => FOOD_PAGES[slug]).filter(
-      (page) => page.group === group
-    ),
+    pages: pagesOf(locale).filter((page) => page.group === group),
   }));
 }
 
 /** The other pages in a page's group, for its "more meals" links. */
 export function relatedPages(page: FoodPage): FoodPage[] {
-  return FOOD_SLUGS.map((slug) => FOOD_PAGES[slug]).filter(
+  return pagesOf(page.locale).filter(
     (other) => other.group === page.group && other.slug !== page.slug
   );
+}
+
+/** A group's heading on its locale's hub. */
+export function groupName(locale: FoodLocale, group: FoodGroup): string {
+  return (FOOD_GROUPS[locale] as Record<FoodGroup, string>)[group];
 }
