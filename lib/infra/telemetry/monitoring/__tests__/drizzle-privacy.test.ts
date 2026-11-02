@@ -39,7 +39,16 @@ describe('database exception privacy', () => {
     );
     Sentry.captureException(error);
     await Sentry.flush(3000);
-    expect(sent).toHaveLength(1);
+    // Count only this test's error event: the SDK may also send session or
+    // client-report envelopes, or another suite's event, in a shared worker.
+    const eventEnvelopes = sent.filter(
+      (entry) =>
+        entry.includes('insert into meals') &&
+        JSON.parse(entry)[1].some(
+          (item: [{ type?: string }, unknown]) => item[0].type === 'event'
+        )
+    );
+    expect(eventEnvelopes).toHaveLength(1);
     const payload = sent.join('');
     expect(payload).toContain('insert into meals');
     for (const value of privateValues) expect(payload).not.toContain(value);
