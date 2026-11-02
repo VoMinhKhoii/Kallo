@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { loadActivityExport } from '@/lib/domain/account-export/activity';
 import { loadBillingExport } from '@/lib/domain/account-export/billing';
 import { loadChatExport } from '@/lib/domain/account-export/chat';
@@ -110,23 +111,32 @@ function providersOf(user: ExportAccountSource): string[] {
 /**
  * Build the complete "Export my data" document for one user.
  *
- * Every area loader scopes its own queries to `user.id` and all of them run in
- * parallel. What each table contributes — or why it is left out — is recorded
+ * Every area loader scopes its queries to `user.id`. Reads run sequentially
+ * on one connection and one consistent, read-only snapshot. What each table
+ * contributes — or why it is left out — is recorded
  * in `coverage.ts`, which a test holds against the schema.
  */
 export async function buildDataExport(db: AppDb, user: ExportAccountSource) {
   const userId = user.id;
-  const [profile, diary, social, chat, inbox, support, billing, activity] =
-    await Promise.all([
-      loadProfileExport(db, userId),
-      loadMealsExport(db, userId),
-      loadSocialExport(db, userId),
-      loadChatExport(db, userId),
-      loadNotificationsExport(db, userId),
-      loadSupportExport(db, userId),
-      loadBillingExport(db, userId),
-      loadActivityExport(db, userId),
-    ]);
+  const { profile, diary, social, chat, inbox, support, billing, activity } =
+    await db.transaction(
+      async (tx) => {
+        // Per statement: room for a complete history read, while a slow query
+        // fails the whole export instead of holding a shared connection forever.
+        await tx.execute(sql`SET LOCAL statement_timeout = '15s'`);
+        return {
+          profile: await loadProfileExport(tx, userId),
+          diary: await loadMealsExport(tx, userId),
+          social: await loadSocialExport(tx, userId),
+          chat: await loadChatExport(tx, userId),
+          inbox: await loadNotificationsExport(tx, userId),
+          support: await loadSupportExport(tx, userId),
+          billing: await loadBillingExport(tx, userId),
+          activity: await loadActivityExport(tx, userId),
+        };
+      },
+      { accessMode: 'read only', isolationLevel: 'repeatable read' }
+    );
 
   const files: ExportedFile[] = [];
   if (profile.circleProfile?.avatarPath) {

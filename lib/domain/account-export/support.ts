@@ -8,7 +8,10 @@ import { userFeedback } from '@/lib/infra/db/schema';
  * object path in the private `feedback-screenshots` bucket, not the image; the
  * builder also lists it under `files`.
  */
-export async function loadSupportExport(db: AppDb, userId: string) {
+export async function loadSupportExport(
+  db: Pick<AppDb, 'select'>,
+  userId: string
+) {
   const feedbackRows = await db
     .select({
       id: userFeedback.id,

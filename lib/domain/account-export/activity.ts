@@ -17,69 +17,69 @@ import {
  * error text, prompt-version bookkeeping and admin replay/dry-run markers on
  * `pipeline_requests`.
  */
-export async function loadActivityExport(db: AppDb, userId: string) {
-  const [requestRows, pendingRows, unmatchedRows, telemetryRows] =
-    await Promise.all([
-      db
-        .select({
-          id: pipelineRequests.id,
-          rawInput: pipelineRequests.rawInput,
-          userContext: pipelineRequests.userContextJson,
-          status: pipelineRequests.status,
-          durationMs: pipelineRequests.durationMs,
-          mealName: pipelineRequests.mealName,
-          caloriesKcal: pipelineRequests.caloriesKcal,
-          proteinG: pipelineRequests.proteinG,
-          carbohydrateG: pipelineRequests.carbohydrateG,
-          fatG: pipelineRequests.fatG,
-          itemCount: pipelineRequests.itemCount,
-          createdAt: pipelineRequests.createdAt,
-        })
-        .from(pipelineRequests)
-        .where(eq(pipelineRequests.userId, userId)),
-      db
-        .select({
-          id: pendingAnalyses.id,
-          rawInput: pendingAnalyses.rawInput,
-          pipelineResult: pendingAnalyses.pipelineResult,
-          entryMode: pendingAnalyses.entryMode,
-          pipelineRequestId: pendingAnalyses.pipelineRequestId,
-          sourceInviteId: pendingAnalyses.sourceInviteId,
-          loggedAt: pendingAnalyses.loggedAt,
-          expiresAt: pendingAnalyses.expiresAt,
-          createdAt: pendingAnalyses.createdAt,
-        })
-        .from(pendingAnalyses)
-        .where(eq(pendingAnalyses.userId, userId)),
-      db
-        .select({
-          id: unmatchedIngredients.id,
-          mealId: unmatchedIngredients.mealId,
-          queryText: unmatchedIngredients.queryText,
-          mealContext: unmatchedIngredients.mealContext,
-          createdAt: unmatchedIngredients.createdAt,
-        })
-        .from(unmatchedIngredients)
-        .where(eq(unmatchedIngredients.userId, userId)),
-      db
-        .select({
-          eventId: productTelemetryEvents.eventId,
-          eventName: productTelemetryEvents.eventName,
-          occurredAt: productTelemetryEvents.occurredAt,
-          platform: productTelemetryEvents.platform,
-          appVersion: productTelemetryEvents.appVersion,
-          locale: productTelemetryEvents.locale,
-          sessionId: productTelemetryEvents.sessionId,
-          anonymousId: productTelemetryEvents.anonymousId,
-          consent: productTelemetryEvents.consent,
-          pipelineRequestId: productTelemetryEvents.pipelineRequestId,
-          mealId: productTelemetryEvents.mealId,
-          properties: productTelemetryEvents.properties,
-          receivedAt: productTelemetryEvents.receivedAt,
-        })
-        .from(productTelemetryEvents)
-        .where(eq(productTelemetryEvents.userId, userId)),
-    ]);
+export async function loadActivityExport(
+  db: Pick<AppDb, 'select'>,
+  userId: string
+) {
+  const requestRows = await db
+    .select({
+      id: pipelineRequests.id,
+      rawInput: pipelineRequests.rawInput,
+      userContext: pipelineRequests.userContextJson,
+      status: pipelineRequests.status,
+      durationMs: pipelineRequests.durationMs,
+      mealName: pipelineRequests.mealName,
+      caloriesKcal: pipelineRequests.caloriesKcal,
+      proteinG: pipelineRequests.proteinG,
+      carbohydrateG: pipelineRequests.carbohydrateG,
+      fatG: pipelineRequests.fatG,
+      itemCount: pipelineRequests.itemCount,
+      createdAt: pipelineRequests.createdAt,
+    })
+    .from(pipelineRequests)
+    .where(eq(pipelineRequests.userId, userId));
+  const pendingRows = await db
+    .select({
+      id: pendingAnalyses.id,
+      rawInput: pendingAnalyses.rawInput,
+      pipelineResult: pendingAnalyses.pipelineResult,
+      entryMode: pendingAnalyses.entryMode,
+      pipelineRequestId: pendingAnalyses.pipelineRequestId,
+      sourceInviteId: pendingAnalyses.sourceInviteId,
+      loggedAt: pendingAnalyses.loggedAt,
+      expiresAt: pendingAnalyses.expiresAt,
+      createdAt: pendingAnalyses.createdAt,
+    })
+    .from(pendingAnalyses)
+    .where(eq(pendingAnalyses.userId, userId));
+  const unmatchedRows = await db
+    .select({
+      id: unmatchedIngredients.id,
+      mealId: unmatchedIngredients.mealId,
+      queryText: unmatchedIngredients.queryText,
+      mealContext: unmatchedIngredients.mealContext,
+      createdAt: unmatchedIngredients.createdAt,
+    })
+    .from(unmatchedIngredients)
+    .where(eq(unmatchedIngredients.userId, userId));
+  const telemetryRows = await db
+    .select({
+      eventId: productTelemetryEvents.eventId,
+      eventName: productTelemetryEvents.eventName,
+      occurredAt: productTelemetryEvents.occurredAt,
+      platform: productTelemetryEvents.platform,
+      appVersion: productTelemetryEvents.appVersion,
+      locale: productTelemetryEvents.locale,
+      sessionId: productTelemetryEvents.sessionId,
+      anonymousId: productTelemetryEvents.anonymousId,
+      consent: productTelemetryEvents.consent,
+      pipelineRequestId: productTelemetryEvents.pipelineRequestId,
+      mealId: productTelemetryEvents.mealId,
+      properties: productTelemetryEvents.properties,
+      receivedAt: productTelemetryEvents.receivedAt,
+    })
+    .from(productTelemetryEvents)
+    .where(eq(productTelemetryEvents.userId, userId));
 
   return {
     analysis: {

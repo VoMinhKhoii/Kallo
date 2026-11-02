@@ -73,7 +73,13 @@ export const routeInventory = {
     'entitlementsReconcile',
   ],
   'api/v1/account/entitlements/route.ts': ['session', false, 'none-cheap'],
-  'api/v1/account/route.ts': ['session', false, 'none-cheap'],
+  // GET is guarded in the shared action; DELETE is an independent erasure path.
+  'api/v1/account/route.ts': [
+    'session',
+    false,
+    'accountExport',
+    'lib/actions/identity/account.ts',
+  ],
   'api/v1/auth/apple/token/route.ts': ['session', true, 'appleTokenLink'],
   'api/v1/barcode/image/[code]/route.ts': ['none', false, 'barcodeImageIp'],
   'api/v1/barcode/log/route.ts': ['session', true, 'none-cheap'],

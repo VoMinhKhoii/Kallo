@@ -109,6 +109,7 @@
     "exportAction": "Xuất",
     "exporting": "Đang chuẩn bị dữ liệu…",
     "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+    "exportRateLimited": "Dữ liệu đang được xuất hoặc bạn đã đạt giới hạn xuất trong ngày. Vui lòng thử lại sau.",
     "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
     "signOutTitle": "Đăng xuất",
     "signOutAction": "Đăng xuất",

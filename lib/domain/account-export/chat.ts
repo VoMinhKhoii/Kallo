@@ -18,40 +18,43 @@ const mine = alias(chatGroupMembers, 'my_membership');
  * created and later left is still listed, since `created_by` keeps pointing at
  * them.
  */
-export async function loadChatExport(db: AppDb, userId: string) {
-  const [membershipRows, createdRows, rosterRows, messageRows] =
-    await Promise.all([
-      db
-        .select({
-          group: getTableColumns(chatGroups),
-          role: chatGroupMembers.role,
-          joinedAt: chatGroupMembers.joinedAt,
-          lastReadAt: chatGroupMembers.lastReadAt,
-        })
-        .from(chatGroupMembers)
-        .innerJoin(chatGroups, eq(chatGroupMembers.groupId, chatGroups.id))
-        .where(eq(chatGroupMembers.userId, userId)),
-      db.select().from(chatGroups).where(eq(chatGroups.createdBy, userId)),
-      // Rosters of the user's own chats only: the self-join admits a member
-      // row solely when the caller is in the same group.
-      db
-        .select({
-          groupId: chatGroupMembers.groupId,
-          userId: chatGroupMembers.userId,
-        })
-        .from(chatGroupMembers)
-        .innerJoin(mine, eq(mine.groupId, chatGroupMembers.groupId))
-        .where(eq(mine.userId, userId)),
-      db
-        .select({
-          id: chatGroupMessages.id,
-          groupId: chatGroupMessages.groupId,
-          body: chatGroupMessages.body,
-          createdAt: chatGroupMessages.createdAt,
-        })
-        .from(chatGroupMessages)
-        .where(eq(chatGroupMessages.senderId, userId)),
-    ]);
+export async function loadChatExport(
+  db: Pick<AppDb, 'select'>,
+  userId: string
+) {
+  const membershipRows = await db
+    .select({
+      group: getTableColumns(chatGroups),
+      role: chatGroupMembers.role,
+      joinedAt: chatGroupMembers.joinedAt,
+      lastReadAt: chatGroupMembers.lastReadAt,
+    })
+    .from(chatGroupMembers)
+    .innerJoin(chatGroups, eq(chatGroupMembers.groupId, chatGroups.id))
+    .where(eq(chatGroupMembers.userId, userId));
+  const createdRows = await db
+    .select()
+    .from(chatGroups)
+    .where(eq(chatGroups.createdBy, userId));
+  // Rosters of the user's own chats only: the self-join admits a member
+  // row solely when the caller is in the same group.
+  const rosterRows = await db
+    .select({
+      groupId: chatGroupMembers.groupId,
+      userId: chatGroupMembers.userId,
+    })
+    .from(chatGroupMembers)
+    .innerJoin(mine, eq(mine.groupId, chatGroupMembers.groupId))
+    .where(eq(mine.userId, userId));
+  const messageRows = await db
+    .select({
+      id: chatGroupMessages.id,
+      groupId: chatGroupMessages.groupId,
+      body: chatGroupMessages.body,
+      createdAt: chatGroupMessages.createdAt,
+    })
+    .from(chatGroupMessages)
+    .where(eq(chatGroupMessages.senderId, userId));
 
   const rosters = new Map<string, string[]>();
   for (const row of rosterRows) {

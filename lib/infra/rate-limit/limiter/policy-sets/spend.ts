@@ -10,6 +10,20 @@ export const spendPolicies = {
   // ---------------------------------------------------------------------
 
   /**
+   * Full account exports share one budget across web and mobile. The slot
+   * outlives all 28 sequential reads at their 15 s statement deadline, even
+   * if work continues after the HTTP request ends. No AI spend is reserved.
+   * Fail closed so a limiter outage cannot turn off the bulk-read bound.
+   */
+  accountExport: {
+    route: 'account:export',
+    limits: { perDay: 5 },
+    concurrency: { limit: 1, ttlSeconds: 600, retryAfterSeconds: 5 },
+    keyKinds: ['user'],
+    failMode: 'closed',
+  },
+
+  /**
    * Meal analysis (`/api/analyze-meal`), typed meals and cheat mode alike:
    * 30 a UTC day per person, one at a time. No minute or hour window: a
    * person logging a day's meals in one sitting is normal, and the slot

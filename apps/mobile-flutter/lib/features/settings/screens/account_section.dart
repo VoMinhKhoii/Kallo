@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../services/http/api_client.dart';
+import '../../../models/http/api_error.dart';
 import '../../../services/auth/session_provider.dart';
 import '../../../shared/widgets/brand/apple_logo.dart';
 import '../../../shared/widgets/dialog/kallo_confirm.dart';
@@ -213,8 +214,14 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       final file = File('${dir.path}/kallo-data-$stamp.json');
       await file.writeAsString(pretty);
       await Share.shareXFiles([XFile(file.path)]);
-    } catch (_) {
-      if (mounted) _showErrorToast(context, tr('settings.account.exportError'));
+    } catch (error) {
+      if (mounted) {
+        final key =
+            error is ApiError && error.code == 'RATE_LIMITED'
+                ? 'exportRateLimited'
+                : 'exportError';
+        _showErrorToast(context, tr('settings.account.$key'));
+      }
     } finally {
       if (mounted) setState(() => _exporting = false);
     }

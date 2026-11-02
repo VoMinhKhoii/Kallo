@@ -1831,6 +1831,7 @@
       "title": "Account",
       "exportTitle": "Export my data",
       "exportError": "Could not export your data. Please try again.",
+      "exportRateLimited": "An export is already running or you've reached today's export limit. Please try again later.",
       "connectGoogle": "Connect Google",
       "connectApple": "Connect Apple",
       "googleConnected": "Google · Connected",

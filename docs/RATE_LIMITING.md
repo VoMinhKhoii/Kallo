@@ -85,6 +85,7 @@ code.
 | `appleTokenLink` | user | 5 / 20 / 50 | degraded |
 | `labelImageView` | user | 30 / 300 / — | degraded |
 | `nutritionCandidates` | user | 30 / 300 / — | degraded |
+| `accountExport` (**one at a time**, shared by web and mobile) | user | — / — / 5 | **closed** |
 | `adminDebugAnalysis` | user | 3 / 20 / — | **closed** |
 | `analyzeMeal` (typed meals + cheat mode; **one at a time**) | user | — / — / 30 | **closed** |
 | `analyzeMealClarify` (a cheat-mode clarify answer, not one of the 30) | user | — / — / 30 | **closed** |
@@ -143,7 +144,9 @@ would leave the slot unenforced while the registry says it is.
   read, which has a size cap but no deadline, so Cloud Run's 60 s timeout is
   its bound); relog search 20 s and relog writes 30 s (queries
   of milliseconds, plus up to 10 s waiting for a pooled connection);
-  entitlement reconcile 30 s (an 8 s RevenueCat call). Raising a request's
+  entitlement reconcile 30 s (an 8 s RevenueCat call); account export 600 s
+  (28 sequential reads, each with a 15 s statement timeout, plus headroom for
+  acquiring the shared connection and assembling the document). Raising a request's
   deadline means raising its lifetime. `slot-lifetimes.test.ts` imports the
   OCR, RevenueCat and DB connect deadlines, so raising one of those fails it;
   analyze-meal's 60 s `maxDuration` must stay a literal in the route (Next
@@ -401,6 +404,7 @@ except invite lookup (IP) and the two global budgets.
 
 | Route / action | Policies | Key | Refusal, and what the client sees |
 |---|---|---|---|
+| `GET /api/v1/account` + `exportMyDataAction` | `accountExport` (5 per UTC day, one in flight) | `user` | Route → **429** `RATE_LIMITED` + `Retry-After` (5 s for an in-flight export, otherwise time until UTC midnight). The direct web action returns the same error envelope and `retryAfterSeconds`; both clients show localized export retry copy. Limiter unavailable → **503**, no export starts. `DELETE` on this route remains a separate erasure action. |
 | `POST /api/v1/nutrition-label/scan` + `scanNutritionLabelAction` (via `withOcrGuard`) | `labelOcr` (5/min, 30/hr, 100/day, one at a time) **then**, immediately before the Gemini call, `ocrGlobalDaily` and the AI spend brake | `user`, then `global:'ocr'` | Per-user/concurrency block → **429** + `Retry-After`, and it spends nothing app-wide. Global budget exhausted → **429**; its limiter down (fail-closed) → **503** `RATE_LIMITER_UNAVAILABLE` + `Retry-After: 10`. An oversized body → **413** `PAYLOAD_TOO_LARGE`. All pass through `mapNutritionLabelError` untouched; the web action folds them to the `rate_limited` / `server_error` codes. |
 | `sendChatGroupMessage` (`POST /api/v1/chat-groups/{groupId}/messages`) | `chatMessageSend`, charged before any database read | `user` (actor) | Route → **429** + `Retry-After` via `handleRouteError`. Placed after `requireGroupAccess` it bounded neither the membership lookup nor the circle-quota read, so bogus group ids drove unlimited reads on a two-connection pool. |
 | `createShareReplyAction` (`POST /api/v1/groups/shares/reply`) | `shareReply` | `user` (actor) | same |
@@ -425,6 +429,28 @@ except invite lookup (IP) and the two global budgets.
 `serializeError` only runs at the *route* edge, so a `RateLimitedError` thrown
 inside a Server Action does not become an HTTP 429 on its own. What the web
 caller actually receives depends on how it reaches the action:
+
+- **Account export.** `exportMyDataAction` holds its lease with `withRateLimit`,
+  releasing in `finally` on success or failure. Admitted attempts count toward
+  the day even if a read fails; refused concurrent calls do not. On a throttle,
+  it returns `{error, retryAfterSeconds}` so production's Server Action error
+  redaction cannot hide the reason. The REST route maps this to the standard
+  429 envelope and header; the web shows `settings.account.exportRateLimited`
+  without downloading an error as JSON. Flutter reads the same code from the
+  route and shows the same localized copy. Other failures keep the existing
+  generic export error.
+
+  The builder uses the existing DB client, one read-only `repeatable read`
+  transaction, and sequential reads (one outstanding query). `SET LOCAL
+  statement_timeout = '15s'` leaves room for a complete history read while
+  stopping any single slow statement; it is per statement, not a total export
+  deadline. The local setting expires with the transaction, including rollback.
+  A failed read aborts the entire export; no rows are truncated and no partial
+  document is returned. JSON assembly/serialization still happens in memory;
+  this change does not impose a byte cap or introduce streaming. Production
+  uses the transaction pooler and an 8-connection instance pool (local default:
+  2); the transaction stays on one connection in both environments. This path
+  has not been exercised against the production pooler as part of this change.
 
 - **Reply / reaction / chat.** The web does NOT call these actions directly. It
   goes through `lib/domain/social/circle-client.ts`, which `fetch`es the REST
@@ -610,17 +636,16 @@ works even when the pool is the exhausted resource.
 
 | failMode | On DB error or timeout | Used by |
 |---|---|---|
-| `closed` | Throw `RateLimitUnavailableError` → **503 + `Retry-After: 10`** | Spend routes only (`ocrGlobalDaily`, `adminDebugAnalysis`, and the AI spend brake) |
+| `closed` | Throw `RateLimitUnavailableError` → **503 + `Retry-After: 10`** | AI spend paths and account exports (whose bulk-read admission bound must hold) |
 | `degraded` | Fall back to a per-instance bucket at the policy's raw `perMinute` (no burst) and keep serving; result `source: 'degraded'` | Auth proxy, cheap IP routes, authenticated surfaces |
 | `memory` | Never touches the DB at all; the bucket *is* the policy (`perMinute` only, per instance) | healthz, invite lookup, auth refresh |
 
-**Spend-only fail-closed.** `ocrGlobalDaily` and `adminDebugAnalysis` are the
-only `closed` policies, and the rule is the same for both: each admitted
-request spends Gemini quota, so admitting with the guard down means spending
-money with no ceiling — a 503 is cheaper than an uncapped bill. Everything else
-degrades, because failing an *auth* route closed hands an attacker a
-denial-of-service against sign-in by attacking the limiter instead.
-`consume.test.ts` pins the `closed` set so a third one cannot be added quietly.
+**Fail-closed is reserved for spend and bulk exports.** AI spend policies
+cannot admit unmetered provider calls. `accountExport` is the capacity
+exception: degrading a per-day-only policy would admit bulk reads without
+either its daily cap or its concurrency slot. It therefore refuses with 503
+while the limiter cannot answer. Auth and lightweight read policies degrade;
+`consume.test.ts` pins the complete `closed` set.
 
 `pushGlobalHourly` is `degraded` and has no `perMinute`, so during a limiter
 outage it admits. That is intentional: the guard runs inside the send path, and

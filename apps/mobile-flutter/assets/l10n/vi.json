@@ -1828,6 +1828,7 @@
       "title": "Tài khoản",
       "exportTitle": "Xuất dữ liệu của tôi",
       "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+      "exportRateLimited": "Dữ liệu đang được xuất hoặc bạn đã đạt giới hạn xuất trong ngày. Vui lòng thử lại sau.",
       "connectGoogle": "Liên kết Google",
       "connectApple": "Liên kết Apple",
       "googleConnected": "Google · Đã liên kết",

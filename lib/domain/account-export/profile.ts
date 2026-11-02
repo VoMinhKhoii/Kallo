@@ -74,19 +74,20 @@ function pickCircleProfileExport(row: typeof publicProfiles.$inferSelect) {
 }
 
 /** The private profile (targets, body metrics) and the public Circle one. */
-export async function loadProfileExport(db: AppDb, userId: string) {
-  const [profileRows, circleRows] = await Promise.all([
-    db
-      .select()
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, userId))
-      .limit(1),
-    db
-      .select()
-      .from(publicProfiles)
-      .where(eq(publicProfiles.userId, userId))
-      .limit(1),
-  ]);
+export async function loadProfileExport(
+  db: Pick<AppDb, 'select'>,
+  userId: string
+) {
+  const profileRows = await db
+    .select()
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+  const circleRows = await db
+    .select()
+    .from(publicProfiles)
+    .where(eq(publicProfiles.userId, userId))
+    .limit(1);
 
   return {
     profile: profileRows[0] ? pickProfileExport(profileRows[0]) : null,

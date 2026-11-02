@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { useAsyncAction } from '@/hooks/ui/use-async-action';
 import {
   deleteAccountAction,
@@ -24,6 +25,10 @@ export function useAccountActions(expectedUserId: string) {
     exportAction.run(
       async () => {
         const data = await exportMyDataAction({ expectedUserId });
+        if ('error' in data) {
+          toast.error(t('exportRateLimited'));
+          return;
+        }
         const blob = new Blob([JSON.stringify(data, null, 2)], {
           type: 'application/json',
         });
