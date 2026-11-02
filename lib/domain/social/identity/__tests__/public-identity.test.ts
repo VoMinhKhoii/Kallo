@@ -6,6 +6,7 @@ const { storageReadsAllowed } = vi.hoisted(() => ({
 vi.mock('@/lib/infra/storage/object-storage', () => ({ storageReadsAllowed }));
 
 import { toPublicIdentity } from '@/lib/domain/social/identity/public-identity';
+import { HOSTILE_AVATAR_URLS } from './hostile-avatar-urls';
 
 const ROW = {
   userId: 'u1',
@@ -43,5 +44,13 @@ describe('toPublicIdentity', () => {
       avatarUrl: 'https://lh3.googleusercontent.com/oauth.jpg',
       hasCustomAvatar: false,
     });
+  });
+
+  it.each(
+    Object.entries(HOSTILE_AVATAR_URLS)
+  )('drops a stored OAuth picture with %s', (_, url) => {
+    expect(
+      toPublicIdentity({ ...ROW, avatarPath: null, avatarUrl: url })
+    ).toMatchObject({ avatarUrl: null, hasCustomAvatar: false });
   });
 });

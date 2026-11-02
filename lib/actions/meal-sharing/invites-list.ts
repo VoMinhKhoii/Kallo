@@ -2,6 +2,7 @@
 
 import { and, asc, eq, or } from 'drizzle-orm';
 import { avatarUrlFor } from '@/lib/domain/social/identity/avatar-url';
+import { externalAvatarUrl } from '@/lib/domain/social/identity/external-avatar-url';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -100,7 +101,8 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
         displayName: row.displayName,
         avatarSeed: row.avatarSeed,
         // Uploaded photo takes precedence over the synced OAuth picture.
-        avatarUrl: avatarUrlFor(row.avatarPath) ?? row.avatarUrl,
+        avatarUrl:
+          avatarUrlFor(row.avatarPath) ?? externalAvatarUrl(row.avatarUrl),
       },
       meal: {
         rawInput: row.rawInput,

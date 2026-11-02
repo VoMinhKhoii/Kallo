@@ -42,6 +42,14 @@ Rows store the **key**, never a URL, so moving storage needs no data migration.
   scoped to that environment's three buckets only.
 - **CSP**: `img-src` allows the avatar origin (`NEXT_PUBLIC_AVATAR_BASE_URL`)
   and the account's S3 origin (`R2_ACCOUNT_ID`), both read at `next build`.
+- **Sign-in pictures**: `public_profiles.avatar_url` is synced from auth
+  metadata the account owner can write, and phones load it outside the CSP.
+  `externalAvatarUrl` (`lib/domain/social/identity/external-avatar-url.ts`)
+  passes only an https URL with no userinfo or port, ≤ 2048 characters, on
+  `*.googleusercontent.com` or the avatar origin; anything else is null (the
+  initials disc). It runs when the URL is stored (`requireUserWithAvatar`) and
+  in every projection that hands it to someone else (`toPublicIdentity`, the
+  meal-share invites list, the push sender).
 
 ## Configuration
 

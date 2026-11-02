@@ -1,4 +1,5 @@
 import { avatarUrlFor } from '@/lib/domain/social/identity/avatar-url';
+import { externalAvatarUrl } from '@/lib/domain/social/identity/external-avatar-url';
 import { publicProfiles } from '@/lib/infra/db/schema';
 
 /** Canonical public-profile projection for every server-side identity query. */
@@ -23,7 +24,8 @@ export interface PublicIdentity {
 }
 
 /** Row → response shape. A user-uploaded photo (`avatar_path`, served from the
- * public `avatars` bucket) takes precedence over the OAuth `avatar_url`. */
+ * public `avatars` bucket) takes precedence over the OAuth `avatar_url`, which
+ * is only passed on from an allowed image host (`externalAvatarUrl`). */
 export function toPublicIdentity(
   row: Omit<PublicIdentity, 'avatarUrl' | 'hasCustomAvatar'> & {
     avatarUrl: string | null;
@@ -36,7 +38,7 @@ export function toPublicIdentity(
     handle: row.handle,
     displayName: row.displayName,
     avatarSeed: row.avatarSeed,
-    avatarUrl: uploadedUrl ?? row.avatarUrl,
+    avatarUrl: uploadedUrl ?? externalAvatarUrl(row.avatarUrl),
     // From the stored path, not the URL: past the storage read cap the URL is
     // withheld, but the photo still exists and must stay removable.
     hasCustomAvatar: Boolean(row.avatarPath),
