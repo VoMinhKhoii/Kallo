@@ -224,7 +224,7 @@ describe('key handling', () => {
     expect(consumer.consume).toHaveBeenCalledTimes(1);
   });
 
-  it('orders multi-kind keys global -> ip -> account -> recipient -> user', () => {
+  it('orders caller-owned keys before global and target keys', () => {
     const policy: RateLimitPolicy = {
       route: 'test',
       limits: {},
@@ -241,11 +241,11 @@ describe('key handling', () => {
     ]);
 
     expect(ordered.map((key) => key.kind)).toEqual([
-      'global',
       'ip',
+      'user',
+      'global',
       'account',
       'recipient',
-      'user',
     ]);
   });
 });

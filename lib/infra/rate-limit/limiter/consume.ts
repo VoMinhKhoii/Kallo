@@ -24,18 +24,16 @@ import type {
 } from './types';
 
 /**
- * Cheapest rejection first. A `global` budget is one row for the whole app, so
- * checking it before the per-client keys means an app-wide flood costs one
- * statement per request instead of three, and the narrowest keys (the ones an
- * attacker is actively rotating) are only paid for by traffic that got past
- * the coarse budget.
+ * Caller-owned keys precede shared global and target keys. A later refusal
+ * cannot refund an earlier consume, so caller refusals must short-circuit
+ * before spending budgets other principals share.
  */
 const KEY_KIND_ORDER: readonly RateLimitKeyKind[] = [
-  'global',
   'ip',
+  'user',
+  'global',
   'account',
   'recipient',
-  'user',
 ];
 
 let cachedSqlConsumer: RateLimitConsumer | undefined;
@@ -180,7 +178,7 @@ async function consumeOneKey(
 }
 
 /**
- * Keys this policy accepts, cheapest rejection first.
+ * Keys this policy accepts, caller-owned before shared.
  *
  * Exported (folder-private) so the ordering can be tested on its own: every
  * policy in the registry is single-key today, so the ordering has no observable
@@ -236,12 +234,11 @@ function noResolvedKeys(
 }
 
 /**
- * Run every key a policy accepts, cheapest first, and return the FIRST block.
+ * Run every key a policy accepts, caller-owned first, and return the FIRST block.
  *
  * All listed keys must pass, so a later key is only consumed when the earlier
- * ones admitted — which is also why a block short-circuits: charging the
- * narrower counters for a request that was already refused would let one
- * attacker burn a victim's per-account budget.
+ * ones admitted. Short-circuiting keeps a caller's refusal from charging the
+ * shared global or target counters. Earlier admits are never refunded.
  *
  * A key whose value cannot be canonicalized (an unparseable IP) is SKIPPED, so
  * the caller's remaining keys still apply. If that leaves NO key at all, see

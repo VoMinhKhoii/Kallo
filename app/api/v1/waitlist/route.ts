@@ -19,12 +19,12 @@ const MAX_BODY_BYTES = 8 * 1024;
  * A route handler rather than a Server Action because the caller is
  * unauthenticated and the rate limiter needs the request's IP.
  *
- * Three ceilings. `waitlistGlobal` is the app-wide backstop and runs ALWAYS,
- * so a null-IP flood of distinct addresses is still bounded. The per-IP policy
+ * Three ceilings. `waitlistGlobal` is the app-wide backstop, including when
+ * there is no IP. The per-IP policy runs first and
  * is the flood control, skipped only when there is no IP to key on (production
  * returns `null` whenever `cf-connecting-ip` is absent). The per-address
  * cooldown inside `signUpForWaitlist` is the mail-bombing control for one
- * address. Global first, then IP: cheapest rejection first.
+ * address. IP refusals never spend the shared global budget.
  *
  * The body is read BEFORE the limiters, deliberately. It is capped at 8 KB and
  * parsed in memory, while each limiter charge is a database round trip, so a
@@ -43,12 +43,12 @@ export async function POST(req: NextRequest) {
     );
 
     const ip = getRequestIp(req);
+    if (ip)
+      await assertRateLimit('waitlistSignupIp', { kind: 'ip', value: ip });
     await assertRateLimit('waitlistGlobal', {
       kind: 'global',
       value: 'waitlist',
     });
-    if (ip)
-      await assertRateLimit('waitlistSignupIp', { kind: 'ip', value: ip });
 
     await signUpForWaitlist(body, { ip });
     return Response.json({ ok: true } satisfies WaitlistSignupResponse);

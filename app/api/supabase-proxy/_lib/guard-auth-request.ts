@@ -6,7 +6,7 @@ import { getRequestIp } from '@/lib/infra/security/request-ip';
 import { hasValidRefreshToken, parseAuthBody } from './auth-body';
 import { classifyAuthRequest } from './auth-path-policy';
 import { captchaCheckFor, verifyCaptcha } from './captcha-gate';
-import { enforceAuthProxyLimits } from './enforce-limits';
+import { enforceSharedLimits, enforceSourceLimits } from './enforce-limits';
 import {
   captchaFailedResponse,
   limiterUnavailableResponse,
@@ -59,8 +59,8 @@ export async function guardAuthRequest(
   }
 
   // A gated email request with no Turnstile token is refused before it costs a
-  // limiter round trip. A token is checked AFTER the limits, so a flood of junk
-  // tokens is throttled per IP instead of each costing a call to Cloudflare.
+  // limiter round trip. A token is checked after the IP limit and before shared
+  // budgets, so siteverify and shared counters only see IP-admitted requests.
   const captcha = captchaCheckFor({
     method: input.method,
     path: input.path,
@@ -72,7 +72,24 @@ export async function guardAuthRequest(
   }
 
   try {
-    await enforceAuthProxyLimits(request, classification);
+    await enforceSourceLimits(request, classification);
+
+    if (captcha) {
+      const outcome = await verifyCaptcha(
+        captcha,
+        request,
+        getRequestIp(request)
+      );
+      if (captcha.enforced && outcome === 'invalid')
+        return captchaFailedResponse();
+      // Cloudflare could not be asked. Keep shared budgets for requests whose
+      // enforced captcha admits them; the client can retry this 503.
+      if (captcha.enforced && outcome === 'unavailable') {
+        return limiterUnavailableResponse();
+      }
+    }
+
+    await enforceSharedLimits(classification);
   } catch (error) {
     if (error instanceof RateLimitedError) {
       // A 429 on token refresh SIGNS THE USER OUT. Both clients call
@@ -89,21 +106,6 @@ export async function guardAuthRequest(
       return limiterUnavailableResponse(error.retryAfterSeconds);
     }
     throw error;
-  }
-
-  if (captcha) {
-    const outcome = await verifyCaptcha(
-      captcha,
-      request,
-      getRequestIp(request)
-    );
-    if (captcha.enforced && outcome === 'invalid')
-      return captchaFailedResponse();
-    // Cloudflare could not be asked. Refusing costs a retry; admitting would
-    // let a flood through for as long as siteverify is down.
-    if (captcha.enforced && outcome === 'unavailable') {
-      return limiterUnavailableResponse();
-    }
   }
 
   return null;

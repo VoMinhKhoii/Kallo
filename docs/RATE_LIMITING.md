@@ -69,7 +69,7 @@ code.
 | `authLinkIp` (emailed verify links + the OAuth callback) | ip | 20 / 100 / — | degraded |
 | `waitlistSignupIp` | ip | 5 / 20 / 50 | degraded |
 | `waitlistConfirmIp` | ip | 20 / 100 / — | degraded |
-| `waitlistGlobal` (app-wide backstop for both waitlist surfaces — runs even with a null IP) | global | 30 / 300 / — | degraded |
+| `waitlistGlobal` (app-wide backstop after per-IP admission; global-only with a null IP) | global | 30 / 300 / — | degraded |
 | `healthzIp` | ip | 30 / — / — | memory |
 | `inviteLookupIp` | ip | 30 / — / — | memory |
 | `cspReportIp` | ip | 30 / — / — | memory |
@@ -113,8 +113,12 @@ Shape of the numbers:
   enforces. The `RateLimitPolicy` type rejects it outright.
 
 When a caller applies several policies to one request, the order is
-`global → ip → account/recipient`: cheapest rejection first, and a block
-short-circuits so a refused request never charges the narrower counters.
+`ip/user → global → account/recipient`: the caller's own budget must admit it
+before budgets shared with other principals are charged. A block short-circuits;
+earlier consumes are not refunded. On gated auth requests, the Turnstile verdict
+also precedes shared budgets, after the IP policy. Missing IPs skip only that
+policy, keeping the global backstop. The generic multi-key consumer uses the
+same caller-first order (`ip → user → global → account → recipient`).
 
 ## One at a time: slots and leases
 
@@ -185,14 +189,14 @@ is easy to get wrong — **what a refusal looks like to the client that made it*
 
 | Route | Class / condition | Policies, in order | Keys | Refusal envelope |
 |---|---|---|---|---|
-| `POST /api/supabase-proxy/auth/v1/{signup,recover,otp,magiclink,resend}`, `PUT\|POST .../user` with an `email` **or `phone`** | `email` | `authGlobal` → `authEmailIp` → `authEmailRecipient` | `global:'auth'`, `ip`, `recipient` (canonical target — see "What a target key is") | GoTrue: `{code:429, error_code:'over_request_rate_limit', msg}` + `Retry-After` |
-| `GET\|POST .../reauthenticate` (sends a nonce by mail/SMS — an `email` op on BOTH verbs) | `email` | `authGlobal` → `authEmailIp` | `global:'auth'`, `ip` (no account key — the bearer token is unverified here) | same |
-| `POST .../token?grant_type=password\|pkce\|id_token`, `POST .../verify`, `POST .../factors/{id}/{verify,challenge}` | `login` | `authGlobal` → `authLoginIp` → `authLoginAccount` | `global:'auth'`, `ip`, `account` (canonical target account) | same |
-| `POST .../token?grant_type=refresh_token` | `refresh` | `authRefreshGlobal` → `authRefresh` | `global:'auth:refresh'`, `ip` | **503** `{code:503, error_code:'service_unavailable', msg}` + `Retry-After` — see "Why a refusal on refresh is a 503" |
+| `POST /api/supabase-proxy/auth/v1/{signup,recover,otp,magiclink,resend}`, `PUT\|POST .../user` with an `email` **or `phone`** | `email` | `authEmailIp` → Turnstile where gated → `authGlobal` → `authEmailRecipient` | `ip`, `global:'auth'`, `recipient` (canonical target — see "What a target key is") | GoTrue: `{code:429, error_code:'over_request_rate_limit', msg}` + `Retry-After` |
+| `GET\|POST .../reauthenticate` (sends a nonce by mail/SMS — an `email` op on BOTH verbs) | `email` | `authEmailIp` → `authGlobal` | `ip`, `global:'auth'` (no account key — the bearer token is unverified here) | same |
+| `POST .../token?grant_type=password\|pkce\|id_token`, `POST .../verify`, `POST .../factors/{id}/{verify,challenge}` | `login` | `authLoginIp` → `authGlobal` → `authLoginAccount` | `ip`, `global:'auth'`, `account` (canonical target account) | same |
+| `POST .../token?grant_type=refresh_token` | `refresh` | `authRefresh` → `authRefreshGlobal` | `ip`, `global:'auth:refresh'` | **503** `{code:503, error_code:'service_unavailable', msg}` + `Retry-After` — see "Why a refusal on refresh is a 503" |
 | everything else under `auth/v1/` (`GET /user`, `logout`, `settings`, `authorize`, `callback`, unknown paths) | `other` | `authOther` | `ip` only | 429, as above |
 | `auth/v1/admin/*` and `auth/v1/invite` (any letter case), and any path that fails canonicalization (see below) | — | none (never forwarded) | — | `404 {"error":"Not found"}` — admin and invite are service-key surfaces no client of this proxy holds a key for |
-| `POST /api/v1/waitlist` | — | `waitlistGlobal` → `waitlistSignupIp` | `global:'waitlist'`, `ip` | app envelope `{error:{code:'RATE_LIMITED',…}}` + `Retry-After` |
-| `GET /api/v1/waitlist/confirm` | — | `waitlistGlobal` → `waitlistConfirmIp` | `global:'waitlist-confirm'`, `ip` | same |
+| `POST /api/v1/waitlist` | — | `waitlistSignupIp` → `waitlistGlobal` (global-only with a null IP) | `ip`, `global:'waitlist'` | app envelope `{error:{code:'RATE_LIMITED',…}}` + `Retry-After` |
+| `GET /api/v1/waitlist/confirm` | — | `waitlistConfirmIp` → `waitlistGlobal` (global-only with a null IP) | `ip`, `global:'waitlist-confirm'` | same |
 | `GET /api/healthz` | — | `healthzIp` | `ip` | same (never health JSON — a throttled probe learned nothing about the service) |
 | `POST /api/csp-report` | — | `cspReportIp` (skipped when the IP is null) | `ip` | app envelope + `Retry-After`; browsers ignore it. Memory-only: a violation report never costs a DB round trip |
 
@@ -200,9 +204,12 @@ is easy to get wrong — **what a refusal looks like to the client that made it*
 (`_lib/captcha-gate.ts`, staged by `TURNSTILE_MODE` — `docs/AUTH_SECURITY.md`).
 A request that owes a token and has none is refused (`400 captcha_failed`)
 before any limiter round trip; a token is checked with Cloudflare only after
-the limits pass, so a flood of junk tokens is throttled per IP instead of each
-costing a siteverify call. Cloudflare unreachable while enforcing → `503`
-(retryable). The password grant and `/verify` are never gated.
+the IP policy passes, before global and recipient budgets. Enforced invalid
+tokens return `400 captcha_failed` without charging shared counters; IP refusals
+make no siteverify call. Cloudflare unreachable while enforcing → `503`
+(retryable), also without shared charges. Monitor mode still charges shared
+budgets because it admits the request. The password grant and `/verify` are
+never gated.
 
 Classification lives in `app/api/supabase-proxy/_lib/auth-path-policy.ts` and is
 covered by an exhaustive test table; body reading in `_lib/auth-body.ts`, target
@@ -300,15 +307,17 @@ each client; it does not by itself make it correct there. Builder + test:
   in production whenever `cf-connecting-ip` is absent, so every per-IP policy is
   called under `if (ip)`. A call that resolves no key counts nothing and throws
   `RateLimitPolicyMisuseError` outside production.
-- **A `null` IP is not unlimited** on the auth proxy: `authGlobal` still ran.
-  On `authRefresh` / `authOther` (IP-only memory policies) there is genuinely
-  nothing to enforce, and the request is admitted — both are cheap, and refusing
-  token refresh over a missing edge header would be the worse failure.
+- **A `null` IP is not unlimited** on the auth proxy: email/login still pay
+  `authGlobal`, and refresh still pays `authRefreshGlobal`. Only the per-IP
+  policy is skipped. `other` has no shared policy, so without an IP there is
+  genuinely nothing to enforce.
 - **The waitlist has an app-wide backstop, not only a per-IP one.**
-  `waitlistGlobal` (30/min, 300/hr) runs on every signup and confirm regardless
-  of whether an IP could be resolved, so a caller submitting DISTINCT addresses
-  with a null IP is now bounded app-wide rather than only by `signUpForWaitlist`'s
-  per-ADDRESS resend cooldown. Signup and confirm key it on distinct values
+  `waitlistGlobal` (30/min, 300/hr) runs after the per-IP policy admits the
+  signup or confirm; requests refused per IP leave the shared counter unchanged.
+  With no usable IP it runs alone, retaining the app-wide bound in addition to
+  `signUpForWaitlist`'s per-address resend cooldown. An exhausted global budget
+  may still leave the caller's earlier IP charge spent; that affects only that
+  caller. Signup and confirm key it on distinct values
   (`waitlist` / `waitlist-confirm`), so each gets its own counter under the same
   ceiling. A null IP in production means the request did not come through
   Cloudflare (something already holding the origin secret); the global cap makes

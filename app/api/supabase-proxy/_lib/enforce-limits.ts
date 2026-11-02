@@ -3,7 +3,7 @@ import { getRequestIp } from '@/lib/infra/security/request-ip';
 import type { AuthRequestClass } from './auth-path-policy';
 
 /**
- * Apply the policies a classified auth request earns, cheapest key first.
+ * Apply the caller's own IP policy before captcha and shared budgets.
  *
  * Every class carries an app-wide budget except `other` — a botnet spread
  * across a million addresses looks unremarkable on every per-client key and is
@@ -17,7 +17,7 @@ import type { AuthRequestClass } from './auth-path-policy';
  *    with nothing to key on resolves no key, which the limiter treats as
  *    misuse (it throws outside production and admits-with-telemetry inside
  *    it). So each per-client policy is guarded on the value existing.
- *  - **A null IP is not unlimited.** The global budget still ran.
+ *  - **A null IP is not unlimited.** `enforceSharedLimits` still runs.
  *
  * `authOther` is an IP-only memory policy, so with no IP there is genuinely
  * nothing to enforce and nothing to fall back to; the request is admitted.
@@ -36,37 +36,46 @@ import type { AuthRequestClass } from './auth-path-policy';
  * this service's Cloud Run egress address. Those upstream limits, not
  * `authGlobal`, are the app's real auth ceiling; see docs/RATE_LIMITING.md.
  */
-export async function enforceAuthProxyLimits(
+export async function enforceSourceLimits(
   request: Request,
-  classification: AuthRequestClass
+  { op }: AuthRequestClass
 ): Promise<void> {
   const ip = getRequestIp(request);
-  const { op, targetKey } = classification;
+  if (!ip) return;
 
-  // Refresh runs its own global budget BEFORE the per-IP bucket: the IP one is
-  // a memory flood breaker sized for CGNAT, so a botnet refreshing stolen
-  // tokens from a million addresses is invisible to it and visible only here.
-  // This is the one place refresh pays a database round trip, and it is worth
-  // it precisely because nothing else can see that shape.
+  if (op === 'refresh') {
+    await assertRateLimit('authRefresh', { kind: 'ip', value: ip });
+    return;
+  }
+
+  if (op === 'other') {
+    await assertRateLimit('authOther', { kind: 'ip', value: ip });
+    return;
+  }
+
+  await assertRateLimit(op === 'email' ? 'authEmailIp' : 'authLoginIp', {
+    kind: 'ip',
+    value: ip,
+  });
+}
+
+/** Charge shared budgets only after source limits and captcha admit the request. */
+export async function enforceSharedLimits({
+  op,
+  targetKey,
+}: AuthRequestClass): Promise<void> {
+  if (op === 'other') return;
   if (op === 'refresh') {
     await assertRateLimit('authRefreshGlobal', {
       kind: 'global',
       value: 'auth:refresh',
     });
-    if (ip) await assertRateLimit('authRefresh', { kind: 'ip', value: ip });
-    return;
-  }
-
-  if (op === 'other') {
-    if (!ip) return;
-    await assertRateLimit('authOther', { kind: 'ip', value: ip });
     return;
   }
 
   await assertRateLimit('authGlobal', { kind: 'global', value: 'auth' });
 
   if (op === 'email') {
-    if (ip) await assertRateLimit('authEmailIp', { kind: 'ip', value: ip });
     if (targetKey) {
       await assertRateLimit('authEmailRecipient', {
         kind: 'recipient',
@@ -76,7 +85,6 @@ export async function enforceAuthProxyLimits(
     return;
   }
 
-  if (ip) await assertRateLimit('authLoginIp', { kind: 'ip', value: ip });
   if (targetKey) {
     await assertRateLimit('authLoginAccount', {
       kind: 'account',

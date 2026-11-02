@@ -18,8 +18,8 @@ export const surfacePolicies = {
   },
 
   /**
-   * App-wide backstop for the waitlist surfaces — the botnet cap that applies
-   * even when there is no IP to key on. `getRequestIp` returns `null` whenever
+   * App-wide backstop for the waitlist surfaces, charged after IP admission or
+   * alone when there is no IP to key on. `getRequestIp` returns `null` whenever
    * `cf-connecting-ip` is absent, and the per-IP policy is skipped there; a
    * caller flooding DISTINCT addresses with a null IP would otherwise be bounded
    * only by the per-address cooldown, i.e. not at all. Keyed on a constant
