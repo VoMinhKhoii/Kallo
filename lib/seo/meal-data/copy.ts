@@ -98,6 +98,7 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
       'Trong tất cả các bữa, những thành phần mang nhiều calo nhất mỗi phần, và bao nhiêu bữa có chúng.',
     kinds: {
       rice: 'Cơm',
+      bread: 'Bánh mì',
       noodles: 'Bún, phở, mì, hủ tiếu',
       broth: 'Nước dùng',
       oil: 'Dầu, mỡ',

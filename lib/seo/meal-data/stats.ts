@@ -51,11 +51,17 @@ export function mealSwings(locale: FoodLocale): MealSwing[] {
     .sort((a, b) => b.ratio - a.ratio);
 }
 
+/** Any of `alternatives` as whole words, Unicode-aware. */
+function words(alternatives: string): RegExp {
+  return new RegExp(`(?:^|[^\\p{L}])(?:${alternatives})(?=[^\\p{L}]|$)`, 'u');
+}
+
 /**
  * Ingredient kinds by name, per locale. Order matters: first match wins, so
  * noodles come before rice ("rice noodles") and sauces before oil ("dầu hào"
- * is oyster sauce). Plain substrings, not `\b`: JavaScript's word boundary
- * treats accented letters (the ì in "mì") as non-word characters. English captures can carry Vietnamese oil names ("Dầu
+ * is oyster sauce). Vietnamese names match whole words only: JavaScript's
+ * `\b` treats accented letters as non-word characters, and a substring would
+ * read "miến" inside "miếng" (a piece of chả) or "mì" inside "bánh mì". English captures can carry Vietnamese oil names ("Dầu
  * ăn"), so the English oil pattern accepts them.
  */
 const KINDS: Record<FoodLocale, { key: string; pattern: RegExp }[]> = {
@@ -78,12 +84,16 @@ const KINDS: Record<FoodLocale, { key: string; pattern: RegExp }[]> = {
     },
   ],
   vi: [
-    { key: 'noodles', pattern: /bún|phở|hủ tiếu|bánh canh|miến|mì/ },
-    { key: 'sauce', pattern: /nước mắm|nước chấm|mắm|tương|dầu hào/ },
-    { key: 'oil', pattern: /dầu|mỡ/ },
-    { key: 'sugar', pattern: /đường|sữa đặc/ },
-    { key: 'rice', pattern: /^cơm|gạo/ },
-    { key: 'broth', pattern: /nước dùng|nước lèo/ },
+    { key: 'bread', pattern: words('bánh mì|ổ bánh') },
+    {
+      key: 'noodles',
+      pattern: words('bún|phở|hủ tiếu|bánh canh|miến|mì'),
+    },
+    { key: 'sauce', pattern: words('nước mắm|nước chấm|mắm|tương|dầu hào') },
+    { key: 'oil', pattern: words('dầu|mỡ') },
+    { key: 'sugar', pattern: words('đường|sữa đặc') },
+    { key: 'rice', pattern: words('cơm|gạo') },
+    { key: 'broth', pattern: words('nước dùng|nước lèo') },
   ],
 };
 

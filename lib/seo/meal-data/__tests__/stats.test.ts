@@ -25,6 +25,15 @@ describe('kindOf', () => {
     expect(kindOf('vi', 'Dầu ăn')).toBe('oil');
   });
 
+  it('matches Vietnamese names as whole words', () => {
+    expect(kindOf('vi', 'Chả miếng')).toBeNull();
+    expect(kindOf('vi', 'Miến gà')).toBe('noodles');
+    expect(kindOf('vi', 'Bánh mì')).toBe('bread');
+    expect(kindOf('vi', 'Ổ bánh mì')).toBe('bread');
+    expect(kindOf('vi', 'Bánh phở')).toBe('noodles');
+    expect(kindOf('vi', 'Cơm trắng')).toBe('rice');
+  });
+
   it('reads the Vietnamese oil names English captures carry', () => {
     expect(kindOf('en', 'Dầu ăn')).toBe('oil');
     expect(kindOf('en', 'Olive oil')).toBe('oil');
