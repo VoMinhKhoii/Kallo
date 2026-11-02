@@ -11,6 +11,7 @@ import {
   foodPagePath,
 } from '@/lib/seo/food-pages/slugs';
 import { SITE_URL } from '@/lib/seo/site';
+import { TOOL_SLUGS, TOOLS_PREFIX, toolPath } from '@/lib/seo/tools/slugs';
 
 // Only the publicly crawlable, unauthenticated surfaces belong here. Everything
 // behind auth (dashboard, settings, groups, …) is disallowed in robots.ts.
@@ -64,6 +65,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           : {}),
         changeFrequency: 'monthly',
         priority: 0.5,
+        alternates: { languages: alternateLanguages(path) },
+      });
+    }
+
+    // The calculators exist in every locale under the same slugs. Their copy
+    // has no revision date to read, so like the landing page they carry no
+    // `lastModified`.
+    for (const path of [TOOLS_PREFIX, ...TOOL_SLUGS.map(toolPath)]) {
+      entries.push({
+        url: `${SITE_URL}/${locale}${path}`,
+        changeFrequency: 'monthly',
+        priority: path === TOOLS_PREFIX ? 0.6 : 0.7,
         alternates: { languages: alternateLanguages(path) },
       });
     }

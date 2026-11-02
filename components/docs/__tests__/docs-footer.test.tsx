@@ -39,4 +39,13 @@ describe('DocsFooter', () => {
       screen.getByRole('link', { name: 'Calories in meals' })
     ).toHaveAttribute('href', '/calories');
   });
+
+  it('links the calculators in every locale', async () => {
+    render(await DocsFooter({ sections }));
+
+    expect(screen.getByRole('link', { name: 'calculators' })).toHaveAttribute(
+      'href',
+      '/tools'
+    );
+  });
 });

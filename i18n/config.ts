@@ -2,6 +2,10 @@ export const locales = ['en', 'vi'] as const;
 export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = 'en';
 
+export function isLocale(value: string | undefined): value is Locale {
+  return (locales as readonly (string | undefined)[]).includes(value);
+}
+
 /**
  * Shared next-intl routing policy.
  *

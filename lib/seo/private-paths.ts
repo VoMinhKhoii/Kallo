@@ -1,4 +1,5 @@
 import { FOOD_PAGE_PREFIX } from '@/lib/seo/food-pages/slugs';
+import { TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
 
 /**
  * The authenticated app surfaces, as locale-relative path prefixes — every
@@ -35,6 +36,7 @@ export const PUBLIC_NON_MARKDOWN_PREFIXES = [
   '/reset-password',
   '/design-system',
   FOOD_PAGE_PREFIX,
+  TOOLS_PREFIX,
 ] as const;
 
 /** True when `path` is one of `prefixes` or sits under one of them. */
