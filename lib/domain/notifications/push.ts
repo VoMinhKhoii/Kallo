@@ -28,7 +28,10 @@ import type {
   PushSender,
   PushSenderIdentity,
 } from '@/lib/infra/push/types';
-import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
+import {
+  assertRateLimit,
+  type RateLimitKey,
+} from '@/lib/infra/rate-limit/limiter/limiter';
 import {
   type PushCopyType,
   type PushCopyValues,
@@ -188,7 +191,7 @@ async function buildMessages(
 let lastPushBudgetLogAt = 0;
 
 /**
- * The app-wide APNs fan-out budget (`pushGlobalHourly`). Charged once per
+ * The actor's share and app-wide APNs fan-out budget. Charged once per
  * fan-out, immediately before `send` and only when there are messages to send,
  * INSIDE the send path: a block means skip sending and return, never
  * throw. The producer's message/notification row is already committed, so a
@@ -198,12 +201,13 @@ let lastPushBudgetLogAt = 0;
  *
  * Returns `true` when the budget is exhausted (caller should skip).
  */
-async function pushGlobalBudgetExhausted(): Promise<boolean> {
+async function pushBudgetExhausted(
+  policy: 'pushActorHourly' | 'pushGlobalHourly',
+  key: RateLimitKey
+): Promise<boolean> {
   try {
-    await assertRateLimit('pushGlobalHourly', {
-      kind: 'global',
-      value: 'push',
-    });
+    // assertRateLimit records the exhaustion event for this policy/key.
+    await assertRateLimit(policy, key);
     return false;
   } catch (error) {
     if (error instanceof RateLimitedError) {
@@ -211,7 +215,7 @@ async function pushGlobalBudgetExhausted(): Promise<boolean> {
       if (now - lastPushBudgetLogAt > 30_000) {
         lastPushBudgetLogAt = now;
         console.warn(
-          'push fan-out skipped: global hourly budget exhausted (pushGlobalHourly)'
+          `push fan-out skipped: hourly budget exhausted (${policy})`
         );
       }
       return true;
@@ -248,7 +252,20 @@ export async function sendNotificationPush(
     // hourly ceiling was reached by traffic that never sent a push. On a block
     // the send is skipped — the row/message is already committed.
     if (messages.length === 0) return;
-    if (await pushGlobalBudgetExhausted()) return;
+    if (
+      await pushBudgetExhausted('pushActorHourly', {
+        kind: 'user',
+        value: payload.actor.id,
+      })
+    )
+      return;
+    if (
+      await pushBudgetExhausted('pushGlobalHourly', {
+        kind: 'global',
+        value: 'push',
+      })
+    )
+      return;
     // Resolved INSIDE the try, never as a default argument: default arguments
     // evaluate before the function body, so a malformed
     // APNS_KEY_P8 would throw past this boundary and reject the
