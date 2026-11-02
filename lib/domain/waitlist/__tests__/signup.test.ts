@@ -1,10 +1,24 @@
-import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from 'vitest';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
 import {
   confirmationUrl,
   signUpForWaitlist,
 } from '@/lib/domain/waitlist/signup';
 import { createFakeDb, type FakeDb } from '@/lib/infra/db/__fixtures__/fake-db';
+import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
+
+vi.mock('@/lib/infra/telemetry/monitoring/report-error', () => ({
+  reportError: vi.fn(),
+}));
 
 type SendEmailFn = typeof import('@/lib/infra/email/send').sendEmail;
 
@@ -13,15 +27,21 @@ const NOW = new Date('2026-07-30T12:00:00.000Z');
 let fake: FakeDb;
 let sendEmail: Mock<SendEmailFn>;
 
-function run(
+async function run(
   input: WaitlistSignupInput = { email: 'Nguyen@Example.COM', locale: 'vi' },
   context: { ip?: string | null } = { ip: '203.0.113.7' }
 ) {
-  return signUpForWaitlist(input, context, {
+  const pending = signUpForWaitlist(input, context, {
     db: fake.db,
     sendEmail,
     now: () => NOW,
   });
+  const result = pending.then(() => undefined);
+  // Attach the rejection handler before advancing timers.
+  const assertion = result.catch((error: unknown) => ({ error }));
+  await vi.runAllTimersAsync();
+  const outcome = await assertion;
+  if (outcome) throw outcome.error;
 }
 
 /** No prior signups from this IP, and no existing row for this address. */
@@ -41,10 +61,17 @@ describe('confirmationUrl', () => {
 
 describe('signUpForWaitlist', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
     fake = createFakeDb();
     sendEmail = vi
       .fn<SendEmailFn>()
       .mockResolvedValue({ id: 'email_1', skipped: false });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('stores a normalised, unconfirmed row and mails a confirm link', async () => {
@@ -124,18 +151,84 @@ describe('signUpForWaitlist', () => {
     expect(sendEmail).not.toHaveBeenCalled();
   });
 
-  it('clears confirmationSentAt and rethrows when the send fails', async () => {
+  it('clears confirmationSentAt and reports a failed send without rejecting', async () => {
     // A failed provider call must leave the row retryable: the transaction
     // stamped confirmationSentAt=now, so without this rollback the cooldown
     // would silently block an immediate retry.
     queueFreshAddress();
     sendEmail.mockRejectedValueOnce(new Error('resend down'));
 
-    await expect(run()).rejects.toThrow('resend down');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expect(run()).resolves.toBeUndefined();
+    expect(reportError).toHaveBeenCalledWith(expect.any(Error), '[waitlist]', {
+      redactMessage: true,
+    });
 
     // The compensating update clears the sent marker so retry is unblocked.
     const rollback = fake.updates.at(-1);
     expect(rollback).toMatchObject({ confirmationSentAt: null });
+  });
+
+  it('still resolves if the send and its compensating update both fail', async () => {
+    queueFreshAddress();
+    sendEmail.mockRejectedValueOnce(new Error('provider unavailable'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(fake.db, 'update').mockImplementationOnce(() => {
+      throw new Error('rollback unavailable');
+    });
+    await expect(run()).resolves.toBeUndefined();
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'rollback unavailable' }),
+      '[waitlist]',
+      { redactMessage: true }
+    );
+  });
+
+  it('settles new, pending and confirmed addresses at the same floor', async () => {
+    const settled: number[] = [];
+    sendEmail.mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 3500));
+      return { id: 'sent', skipped: false };
+    });
+    for (const existing of [
+      [],
+      [{ id: 'pending', confirmedAt: null, confirmationSentAt: NOW }],
+      [{ id: 'stale', confirmedAt: null, confirmationSentAt: new Date(0) }],
+      [{ id: 'confirmed', confirmedAt: NOW }],
+    ]) {
+      const database = createFakeDb();
+      database.queueSelect(existing);
+      void signUpForWaitlist(
+        { email: 'a@example.test' },
+        {},
+        {
+          db: database.db,
+          sendEmail,
+        }
+      ).then(() => settled.push(Date.now()));
+    }
+    await vi.advanceTimersByTimeAsync(4499);
+    expect(settled).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(settled).toEqual(Array(4).fill(NOW.getTime() + 4500));
+    expect(sendEmail).toHaveBeenCalledTimes(2);
+  });
+
+  it('locks Gmail aliases on their mailbox and preserves the send address', async () => {
+    queueFreshAddress();
+    fake.queueSelect([]); // no recent confirmation to this mailbox
+    await run({ email: 'N.gu.yen+news@gmail.com' });
+    const lock = new PgDialect().sqlToQuery(fake.execute.mock.calls[0][0]);
+    expect(lock.params).toEqual(['nguyen@gmail.com']);
+    expect(sendEmail.mock.calls[0][0].to).toBe('n.gu.yen+news@gmail.com');
+  });
+
+  it('suppresses a Gmail alias while another spelling is cooling down', async () => {
+    queueFreshAddress();
+    fake.queueSelect([{ email: 'nguyen+first@gmail.com' }]);
+    await run({ email: 'n.gu.yen+second@gmail.com' });
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect(fake.inserts).toHaveLength(0);
   });
 
   it('sends nothing for an already-confirmed address', async () => {

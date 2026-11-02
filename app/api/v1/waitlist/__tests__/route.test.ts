@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 describe('POST /api/v1/waitlist', () => {
-  it('charges the IP then global policy, then signs the address up', async () => {
+  it('charges IP, global, then canonical recipient before signing up', async () => {
     const res = await POST(makeRequest('{"email":"a@b.co","locale":"vi"}'));
 
     expect(res.status).toBe(200);
@@ -46,6 +46,14 @@ describe('POST /api/v1/waitlist', () => {
       kind: 'global',
       value: 'waitlist',
     });
+    expect(assertRateLimit).toHaveBeenNthCalledWith(
+      3,
+      'waitlistSignupRecipient',
+      {
+        kind: 'recipient',
+        value: 'a@b.co',
+      }
+    );
     expect(signUpForWaitlist).toHaveBeenCalledWith(
       { email: 'a@b.co', locale: 'vi' },
       { ip: '203.0.113.4' }

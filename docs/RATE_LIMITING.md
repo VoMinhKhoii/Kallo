@@ -68,8 +68,9 @@ code.
 | `authOther` | ip | 60 / — / — | memory |
 | `authLinkIp` (emailed verify links + the OAuth callback) | ip | 20 / 100 / — | degraded |
 | `waitlistSignupIp` | ip | 5 / 20 / 50 | degraded |
+| `waitlistSignupRecipient` (canonical mailbox; domain also enforces a rolling 5-minute send gap) | recipient | 1 / 12 / 5 | degraded |
 | `waitlistConfirmIp` | ip | 20 / 100 / — | degraded |
-| `waitlistGlobal` (app-wide backstop after per-IP admission; global-only with a null IP) | global | 30 / 300 / — | degraded |
+| `waitlistGlobal` (app-wide backstop after per-IP admission; still runs with a null IP) | global | 30 / 300 / — | degraded |
 | `healthzIp` | ip | 30 / — / — | memory |
 | `inviteLookupIp` | ip | 30 / — / — | memory |
 | `cspReportIp` | ip | 30 / — / — | memory |
@@ -198,7 +199,7 @@ is easy to get wrong — **what a refusal looks like to the client that made it*
 | `POST .../token?grant_type=refresh_token` | `refresh` | `authRefresh` → `authRefreshGlobal` | `ip`, `global:'auth:refresh'` | **503** `{code:503, error_code:'service_unavailable', msg}` + `Retry-After` — see "Why a refusal on refresh is a 503" |
 | everything else under `auth/v1/` (`GET /user`, `logout`, `settings`, `authorize`, `callback`, unknown paths) | `other` | `authOther` | `ip` only | 429, as above |
 | `auth/v1/admin/*` and `auth/v1/invite` (any letter case), and any path that fails canonicalization (see below) | — | none (never forwarded) | — | `404 {"error":"Not found"}` — admin and invite are service-key surfaces no client of this proxy holds a key for |
-| `POST /api/v1/waitlist` | — | `waitlistSignupIp` → `waitlistGlobal` (global-only with a null IP) | `ip`, `global:'waitlist'` | app envelope `{error:{code:'RATE_LIMITED',…}}` + `Retry-After` |
+| `POST /api/v1/waitlist` | — | `waitlistSignupIp` → `waitlistGlobal` → `waitlistSignupRecipient` (skip IP only when null) | `ip`, `global:'waitlist'`, canonical `recipient` | app envelope `{error:{code:'RATE_LIMITED',…}}` + `Retry-After` |
 | `GET /api/v1/waitlist/confirm` | — | `waitlistConfirmIp` → `waitlistGlobal` (global-only with a null IP) | `ip`, `global:'waitlist-confirm'` | same |
 | `GET /api/healthz` | — | `healthzIp` | `ip` | same (never health JSON — a throttled probe learned nothing about the service) |
 | `POST /api/csp-report` | — | `cspReportIp` (skipped when the IP is null) | `ip` | app envelope + `Retry-After`; browsers ignore it. Memory-only: a violation report never costs a DB round trip |
@@ -317,14 +318,30 @@ each client; it does not by itself make it correct there. Builder + test:
 - **The waitlist has an app-wide backstop, not only a per-IP one.**
   `waitlistGlobal` (30/min, 300/hr) runs after the per-IP policy admits the
   signup or confirm; requests refused per IP leave the shared counter unchanged.
-  With no usable IP it runs alone, retaining the app-wide bound in addition to
-  `signUpForWaitlist`'s per-address resend cooldown. An exhausted global budget
+  With no usable IP signup still pays global then recipient; confirm pays global
+  alone. Signup's `waitlistSignupRecipient` counts the canonical mailbox on
+  every attempt, regardless of membership or whether mail is sent. Gmail dot
+  and plus spellings share a budget; other domains retain distinct plus
+  addresses. The domain takes the same canonical advisory lock and checks
+  recent confirmation rows through `canonicalizeEmailForKey` to enforce the
+  rolling five-minute send gap across Gmail aliases without a migration.
+  The recipient policy adds a five-attempt UTC daily cap; like other degraded
+  policies its outage fallback is per instance, while the domain cooldown
+  remains transactional. An exhausted global budget
   may still leave the caller's earlier IP charge spent; that affects only that
   caller. Signup and confirm key it on distinct values
   (`waitlist` / `waitlist-confirm`), so each gets its own counter under the same
   ceiling. A null IP in production means the request did not come through
   Cloudflare (something already holding the origin secret); the global cap makes
   that a bounded edge rather than a hole.
+
+  Membership does not change the signup response: new, pending, cooling-down
+  and confirmed addresses all complete at a 4.5-second minimum measured from
+  the domain call, covering the 4-second send deadline plus transaction
+  headroom. Work that exceeds that headroom can still exceed the floor.
+  Confirmation sends stay inside the request for Cloud Run; a send failure
+  clears `confirmationSentAt` where possible, logs and reports the error, and
+  still returns `{ok:true}`. Retry attempts still pay the same recipient budget.
 - **`other` skips every DB policy**; `refresh` carries `authRefreshGlobal`
   instead of `authGlobal`. `authRefresh` is per-IP and per-instance, so a botnet
   replaying stolen refresh tokens from a million addresses looks like a million

@@ -21,7 +21,7 @@ vi.mock('@/lib/domain/waitlist/signup', () => ({
 
 const { POST } = await import('@/app/api/v1/waitlist/route');
 
-function post(ip: string | null) {
+function post(ip: string | null, email = 'person@example.test') {
   return POST(
     new NextRequest('http://localhost/api/v1/waitlist', {
       method: 'POST',
@@ -29,7 +29,7 @@ function post(ip: string | null) {
         'content-type': 'application/json',
         ...(ip ? { 'cf-connecting-ip': ip } : {}),
       },
-      body: JSON.stringify({ email: 'person@example.test', locale: 'en' }),
+      body: JSON.stringify({ email, locale: 'en' }),
     })
   );
 }
@@ -59,7 +59,9 @@ afterEach(() => {
 
 it('charges only IP-admitted signups and leaves room for a second IP', async () => {
   for (let index = 0; index < 5; index += 1) {
-    expect((await post('203.0.113.4')).status).toBe(200);
+    expect(
+      (await post('203.0.113.4', `person${index}@example.test`)).status
+    ).toBe(200);
   }
   const before = globalCount();
   expect(before).toBe(5);
@@ -72,8 +74,41 @@ it('charges only IP-admitted signups and leaves room for a second IP', async () 
   expect(globalCount()).toBe(before + 1);
 });
 
-it('keeps the global-only backstop for a null IP', async () => {
+it('keeps global and mailbox controls for a null IP', async () => {
   expect((await post(null)).status).toBe(200);
   expect(globalCount()).toBe(1);
-  expect(consumer.rows.size).toBe(1);
+  expect(consumer.rows.size).toBe(2);
+});
+
+it('shares a recipient budget across Gmail dot and plus spellings from distinct IPs', async () => {
+  expect((await post('203.0.113.1', 'person@gmail.com')).status).toBe(200);
+  expect((await post('203.0.113.2', 'person+news@gmail.com')).status).toBe(429);
+  expect((await post('203.0.113.3', 'p.er.son@gmail.com')).status).toBe(429);
+  expect(signup).toHaveBeenCalledTimes(1);
+});
+
+it('keeps distinct non-Gmail plus mailboxes on separate budgets', async () => {
+  expect((await post('203.0.113.1', 'person@example.com')).status).toBe(200);
+  expect((await post('203.0.113.2', 'person+news@example.com')).status).toBe(
+    200
+  );
+  expect(signup).toHaveBeenCalledTimes(2);
+});
+
+it('caps a canonical mailbox daily even when each rolling cooldown has passed', async () => {
+  for (let index = 0; index < 5; index += 1) {
+    expect((await post(null, `person+${index}@gmail.com`)).status).toBe(200);
+    vi.advanceTimersByTime(5 * 60 * 1000);
+  }
+  expect((await post(null, 'p.erson@gmail.com')).status).toBe(429);
+  expect(signup).toHaveBeenCalledTimes(5);
+});
+
+it('does not spend a recipient budget when the earlier global policy refuses', async () => {
+  for (let index = 0; index < 30; index += 1) {
+    expect((await post(null, `person${index}@example.test`)).status).toBe(200);
+  }
+  expect((await post(null, 'fresh@example.test')).status).toBe(429);
+  vi.advanceTimersByTime(60 * 1000);
+  expect((await post(null, 'fresh@example.test')).status).toBe(200);
 });

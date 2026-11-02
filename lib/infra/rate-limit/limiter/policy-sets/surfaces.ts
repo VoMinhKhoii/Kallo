@@ -18,6 +18,18 @@ export const surfacePolicies = {
   },
 
   /**
+   * Canonical mailbox budget, after IP and global admission. The signup
+   * transaction enforces the rolling five-minute gap across alias rows;
+   * this policy caps attempts independently of spelling and membership.
+   */
+  waitlistSignupRecipient: {
+    route: 'waitlist:signup:recipient',
+    limits: { perMinute: 1, perHour: 12, perDay: 5 },
+    keyKinds: ['recipient'],
+    failMode: 'degraded',
+  },
+
+  /**
    * App-wide backstop for the waitlist surfaces, charged after IP admission or
    * alone when there is no IP to key on. `getRequestIp` returns `null` whenever
    * `cf-connecting-ip` is absent, and the per-IP policy is skipped there; a

@@ -230,7 +230,12 @@ export const routeInventory = {
   'api/v1/profile/sharing/route.ts': ['session', true, 'none-cheap'],
   'api/v1/reports/route.ts': ['session', true, 'contentReport'],
   'api/v1/waitlist/confirm/route.ts': ['none', false, 'waitlistConfirmIp'],
-  'api/v1/waitlist/route.ts': ['none', true, 'waitlistSignupIp'],
+  'api/v1/waitlist/route.ts': [
+    'none',
+    true,
+    // IP admission, then waitlistGlobal, precede this mailbox guard.
+    'waitlistSignupRecipient',
+  ],
   'api/v1/weight/[loggedDate]/route.ts': ['session', false, 'none-cheap'],
   'api/v1/weight/route.ts': ['session', true, 'none-cheap'],
   'api/v1/weight/summary/route.ts': ['session', false, 'none-cheap'],

@@ -4,6 +4,7 @@ import {
   waitlistSignupSchema,
 } from '@/lib/api/contracts/waitlist';
 import { handleRouteError } from '@/lib/api/respond';
+import { canonicalizeEmailForKey } from '@/lib/core/text/email';
 import { signUpForWaitlist } from '@/lib/domain/waitlist/signup';
 import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
@@ -19,12 +20,12 @@ const MAX_BODY_BYTES = 8 * 1024;
  * A route handler rather than a Server Action because the caller is
  * unauthenticated and the rate limiter needs the request's IP.
  *
- * Three ceilings. `waitlistGlobal` is the app-wide backstop, including when
+ * `waitlistGlobal` is the app-wide backstop, including when
  * there is no IP. The per-IP policy runs first and
  * is the flood control, skipped only when there is no IP to key on (production
- * returns `null` whenever `cf-connecting-ip` is absent). The per-address
- * cooldown inside `signUpForWaitlist` is the mail-bombing control for one
- * address. IP refusals never spend the shared global budget.
+ * returns `null` whenever `cf-connecting-ip` is absent). The canonical mailbox
+ * policy follows global admission; the domain also enforces its rolling
+ * cooldown. IP refusals never spend the shared global or recipient budgets.
  *
  * The body is read BEFORE the limiters, deliberately. It is capped at 8 KB and
  * parsed in memory, while each limiter charge is a database round trip, so a
@@ -48,6 +49,10 @@ export async function POST(req: NextRequest) {
     await assertRateLimit('waitlistGlobal', {
       kind: 'global',
       value: 'waitlist',
+    });
+    await assertRateLimit('waitlistSignupRecipient', {
+      kind: 'recipient',
+      value: canonicalizeEmailForKey(body.email),
     });
 
     await signUpForWaitlist(body, { ip });

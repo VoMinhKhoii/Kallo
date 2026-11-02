@@ -1,12 +1,14 @@
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, eq, gt, gte, sql } from 'drizzle-orm';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
 import { Errors } from '@/lib/core/errors/catalog';
-import { normaliseEmail } from '@/lib/core/text/email';
+import { canonicalizeEmailForKey, normaliseEmail } from '@/lib/core/text/email';
 import { hashIp, issueConfirmationToken } from '@/lib/domain/waitlist/token';
 import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 import { waitlistSignups } from '@/lib/infra/db/schema';
+import { EMAIL_SEND_TIMEOUT_MS } from '@/lib/infra/email/config';
 import { sendEmail as defaultSendEmail } from '@/lib/infra/email/send';
 import { waitlistConfirmEmail } from '@/lib/infra/email/templates/waitlist';
+import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**
@@ -32,6 +34,8 @@ const IP_HOURLY_LIMIT = 5;
 const RESEND_COOLDOWN_MS = 5 * 60 * 1000;
 
 const HOUR_MS = 60 * 60 * 1000;
+/** The send deadline plus headroom for the signup transaction and rollback. */
+const RESPONSE_FLOOR_MS = EMAIL_SEND_TIMEOUT_MS + 500;
 
 export interface WaitlistSignupDeps {
   db?: AppDb;
@@ -56,23 +60,42 @@ export async function signUpForWaitlist(
   context: WaitlistSignupContext = {},
   deps: WaitlistSignupDeps = {}
 ): Promise<void> {
+  const startedAt = performance.now();
+  try {
+    await storeAndSend(input, context, deps);
+  } finally {
+    // Keep sending inside the request: Cloud Run throttles CPU after response.
+    // Every branch waits to the same floor, including confirmed and cooldown.
+    const remaining = RESPONSE_FLOOR_MS - (performance.now() - startedAt);
+    if (remaining > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remaining));
+    }
+  }
+}
+
+async function storeAndSend(
+  input: WaitlistSignupInput,
+  context: WaitlistSignupContext,
+  deps: WaitlistSignupDeps
+): Promise<void> {
   const db = deps.db ?? appDb;
   const send = deps.sendEmail ?? defaultSendEmail;
   const now = deps.now?.() ?? new Date();
 
   const email = normaliseEmail(input.email);
+  const mailbox = canonicalizeEmailForKey(email);
   const locale = input.locale ?? 'en';
   const ipHash = hashIp(context.ip ?? null);
   const token = issueConfirmationToken(now);
 
   // Everything that decides "do we send an email?" happens inside one
   // transaction. Two advisory locks serialise the checks that a concurrent
-  // request could otherwise race: one per-address (so two submits of the same
-  // email can't both pass the cooldown and both mail) and one per-IP (so the
+  // request could otherwise race: one per-mailbox (so aliases cannot both
+  // pass the cooldown and both mail) and one per-IP (so the
   // per-IP quota can't be bypassed by firing N distinct emails at once, each
   // reading the same pre-insert count). Both are transaction-scoped.
   const shouldSend = await db.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${email}))`);
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${mailbox}))`);
     if (ipHash) {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${ipHash}))`);
     }
@@ -91,6 +114,12 @@ export async function signUpForWaitlist(
 
     // Already on the list: nothing to do, and nothing to say about it.
     if (existing?.confirmedAt) return false;
+
+    // The shared limiter owns the daily mailbox budget. The exact rolling
+    // cooldown also reads recent aliases while holding the mailbox lock. The
+    // global admission policy bounds this small recent-row scan; no new column
+    // or second implementation of provider alias semantics is needed.
+    if (await mailboxCoolingDown(tx, email, mailbox, now)) return false;
 
     if (existing) {
       // Pending: re-issue rather than error, since the usual reason someone
@@ -140,19 +169,51 @@ export async function signUpForWaitlist(
   // stamped `confirmationSentAt: now` so the cooldown protects against
   // mail-bombing during this window — if the send then fails, that stamp would
   // wrongly block a legitimate immediate retry. So clear it on failure (the
-  // token stays valid) and rethrow, leaving the row retryable.
+  // token stays valid). Report failures without changing the caller's result.
   try {
     await send({
       to: email,
       message: waitlistConfirmEmail(locale, confirmationUrl(token.token)),
     });
   } catch (error) {
-    await db
-      .update(waitlistSignups)
-      .set({ confirmationSentAt: null })
-      .where(eq(waitlistSignups.confirmationTokenHash, token.tokenHash));
-    throw error;
+    try {
+      await db
+        .update(waitlistSignups)
+        .set({ confirmationSentAt: null })
+        .where(eq(waitlistSignups.confirmationTokenHash, token.tokenHash));
+    } catch (rollbackError) {
+      logSendFailure('confirmation rollback failed', rollbackError);
+    }
+    logSendFailure('confirmation email failed', error);
   }
+}
+
+function logSendFailure(message: string, error: unknown) {
+  console.error(`[waitlist] ${message}:`, error);
+  reportError(error, '[waitlist]', { redactMessage: true });
+}
+
+async function mailboxCoolingDown(
+  tx: Parameters<Parameters<AppDb['transaction']>[0]>[0],
+  email: string,
+  mailbox: string,
+  now: Date
+): Promise<boolean> {
+  // Other providers keep distinct plus/dot mailboxes; their exact-address
+  // cooldown below already covers the canonical key.
+  if (!email.endsWith('@gmail.com') && !email.endsWith('@googlemail.com')) {
+    return false;
+  }
+  const recent = await tx
+    .select({ email: waitlistSignups.email })
+    .from(waitlistSignups)
+    .where(
+      gt(
+        waitlistSignups.confirmationSentAt,
+        new Date(now.getTime() - RESEND_COOLDOWN_MS)
+      )
+    );
+  return recent.some((row) => canonicalizeEmailForKey(row.email) === mailbox);
 }
 
 /** Throws `rateLimited` when this IP has submitted too often. */
