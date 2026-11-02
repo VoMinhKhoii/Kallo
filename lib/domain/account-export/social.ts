@@ -26,7 +26,10 @@ import {
  * status (schema.ts), and those stay out: the row does not record who blocked,
  * and the product never tells a blocked person they were blocked.
  */
-export async function loadSocialExport(db: AppDb, userId: string) {
+export async function loadSocialExport(
+  db: Pick<AppDb, 'select'>,
+  userId: string
+) {
   const isMine = or(
     eq(friendships.userLow, userId),
     eq(friendships.userHigh, userId)
@@ -43,93 +46,82 @@ export async function loadSocialExport(db: AppDb, userId: string) {
     )
   );
 
-  const [
-    friendshipRows,
-    shareRows,
-    reactionRows,
-    replyRows,
-    inviteRows,
-    eventRows,
-    readMarkerRows,
-    coachRows,
-  ] = await Promise.all([
-    db
-      .select({
-        id: friendships.id,
-        friendUserId: sql<string>`CASE WHEN ${friendships.userLow} = ${userId}::uuid THEN ${friendships.userHigh} ELSE ${friendships.userLow} END`,
-        friendHandle: publicProfiles.handle,
-        status: friendships.status,
-        requestedBy: friendships.requestedBy,
-        // When the request was accepted: only meals shared after it are
-        // visible across the edge (share-visibility.ts). Null while pending.
-        acceptedAt: friendships.acceptedAt,
-        createdAt: friendships.createdAt,
-        updatedAt: friendships.updatedAt,
-      })
-      .from(friendships)
-      .leftJoin(publicProfiles, counterpartProfile)
-      .where(and(isMine, ne(friendships.status, 'blocked'))),
-    db
-      .select({
-        id: mealShares.id,
-        mealId: mealShares.mealId,
-        visibility: mealShares.visibility,
-        sharedAt: mealShares.sharedAt,
-      })
-      .from(mealShares)
-      .where(eq(mealShares.actorId, userId)),
-    db
-      .select({
-        id: mealShareReactions.id,
-        shareId: mealShareReactions.shareId,
-        kind: mealShareReactions.kind,
-        createdAt: mealShareReactions.createdAt,
-      })
-      .from(mealShareReactions)
-      .where(eq(mealShareReactions.userId, userId)),
-    db
-      .select({
-        id: mealShareReplies.id,
-        shareId: mealShareReplies.shareId,
-        body: mealShareReplies.body,
-        createdAt: mealShareReplies.createdAt,
-      })
-      .from(mealShareReplies)
-      .where(eq(mealShareReplies.userId, userId)),
-    db
-      .select()
-      .from(mealShareInvites)
-      .where(
-        or(
-          eq(mealShareInvites.fromUserId, userId),
-          eq(mealShareInvites.toUserId, userId)
-        )
-      ),
-    db
-      .select({
-        id: circleEvents.id,
-        type: circleEvents.type,
-        refId: circleEvents.refId,
-        audience: circleEvents.audience,
-        createdAt: circleEvents.createdAt,
-      })
-      .from(circleEvents)
-      .where(eq(circleEvents.actorId, userId)),
-    db
-      .select({ lastReadAt: friendsFeedReadMarkers.lastReadAt })
-      .from(friendsFeedReadMarkers)
-      .where(eq(friendsFeedReadMarkers.userId, userId))
-      .limit(1),
-    db
-      .select()
-      .from(coachAssignments)
-      .where(
-        or(
-          eq(coachAssignments.coachId, userId),
-          eq(coachAssignments.clientId, userId)
-        )
-      ),
-  ]);
+  const friendshipRows = await db
+    .select({
+      id: friendships.id,
+      friendUserId: sql<string>`CASE WHEN ${friendships.userLow} = ${userId}::uuid THEN ${friendships.userHigh} ELSE ${friendships.userLow} END`,
+      friendHandle: publicProfiles.handle,
+      status: friendships.status,
+      requestedBy: friendships.requestedBy,
+      // When the request was accepted: only meals shared after it are
+      // visible across the edge (share-visibility.ts). Null while pending.
+      acceptedAt: friendships.acceptedAt,
+      createdAt: friendships.createdAt,
+      updatedAt: friendships.updatedAt,
+    })
+    .from(friendships)
+    .leftJoin(publicProfiles, counterpartProfile)
+    .where(and(isMine, ne(friendships.status, 'blocked')));
+  const shareRows = await db
+    .select({
+      id: mealShares.id,
+      mealId: mealShares.mealId,
+      visibility: mealShares.visibility,
+      sharedAt: mealShares.sharedAt,
+    })
+    .from(mealShares)
+    .where(eq(mealShares.actorId, userId));
+  const reactionRows = await db
+    .select({
+      id: mealShareReactions.id,
+      shareId: mealShareReactions.shareId,
+      kind: mealShareReactions.kind,
+      createdAt: mealShareReactions.createdAt,
+    })
+    .from(mealShareReactions)
+    .where(eq(mealShareReactions.userId, userId));
+  const replyRows = await db
+    .select({
+      id: mealShareReplies.id,
+      shareId: mealShareReplies.shareId,
+      body: mealShareReplies.body,
+      createdAt: mealShareReplies.createdAt,
+    })
+    .from(mealShareReplies)
+    .where(eq(mealShareReplies.userId, userId));
+  const inviteRows = await db
+    .select()
+    .from(mealShareInvites)
+    .where(
+      or(
+        eq(mealShareInvites.fromUserId, userId),
+        eq(mealShareInvites.toUserId, userId)
+      )
+    );
+  const eventRows = await db
+    .select({
+      id: circleEvents.id,
+      type: circleEvents.type,
+      refId: circleEvents.refId,
+      audience: circleEvents.audience,
+      createdAt: circleEvents.createdAt,
+    })
+    .from(circleEvents)
+    .where(eq(circleEvents.actorId, userId));
+  const readMarkerRows = await db
+    .select({ lastReadAt: friendsFeedReadMarkers.lastReadAt })
+    .from(friendsFeedReadMarkers)
+    .where(eq(friendsFeedReadMarkers.userId, userId))
+    .limit(1);
+  const coachRows = await db
+    .select()
+    .from(coachAssignments)
+    .where(
+      or(
+        eq(coachAssignments.coachId, userId),
+        eq(coachAssignments.clientId, userId)
+      )
+    );
 
   return {
     friendships: friendshipRows.map(({ requestedBy, ...row }) => ({

@@ -8,7 +8,7 @@ import {
 } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { vi } from 'vitest';
-import type { AppDb } from '@/lib/infra/db/client';
+import type { AppDb, AppTransaction } from '@/lib/infra/db/client';
 
 /**
  * A schema-aware stand-in for the Drizzle query builder, for the export.
@@ -26,6 +26,7 @@ export interface CapturedQuery {
   joins: string[];
   where?: SQL;
   fields?: Record<string, unknown>;
+  limit?: number;
 }
 
 export const SAMPLE_UUID = '99999999-9999-4999-8999-999999999999';
@@ -123,22 +124,36 @@ export function compileWhere(query: CapturedQuery) {
 }
 
 export function createExportDb(
-  rows: (query: CapturedQuery) => unknown[] | undefined = () => undefined,
+  rows: (
+    query: CapturedQuery
+  ) => unknown[] | undefined | Promise<unknown[] | undefined> = () => undefined,
   /** Answer with this one column's value changed (column-coverage test). */
   perturb?: Column
 ) {
   const queries: CapturedQuery[] = [];
+  const concurrency = { active: 0, peak: 0 };
 
   const select = vi.fn((fields?: Record<string, unknown>) => {
     const query: CapturedQuery = { from: '', joins: [], fields };
     let fromTable: Table | undefined;
     queries.push(query);
+    concurrency.active++;
+    concurrency.peak = Math.max(concurrency.peak, concurrency.active);
 
     // Resolved in a microtask, i.e. after the synchronous chain has recorded
     // the table and the predicate the answer depends on.
-    const self = Promise.resolve().then(
-      () => rows(query) ?? [sampleRowFor(query, fromTable as Table, perturb)]
-    ) as Promise<unknown[]> & Record<string, unknown>;
+    const self = Promise.resolve().then(async () => {
+      try {
+        const result = (await rows(query)) ?? [
+          sampleRowFor(query, fromTable as Table, perturb),
+        ];
+        return query.limit === undefined
+          ? result
+          : result.slice(0, query.limit);
+      } finally {
+        concurrency.active--;
+      }
+    }) as Promise<unknown[]> & Record<string, unknown>;
 
     self.from = (table: Table) => {
       fromTable = table;
@@ -155,10 +170,28 @@ export function createExportDb(
       query.where = predicate;
       return self;
     };
-    self.limit = () => self;
+    self.limit = (limit: number) => {
+      query.limit = limit;
+      return self;
+    };
     self.orderBy = () => self;
     return self;
   });
 
-  return { db: { select } as unknown as AppDb, queries };
+  const execute = vi.fn(async (_statement: SQL) => []);
+  const transaction = vi.fn(
+    async (work: (tx: AppTransaction) => Promise<unknown>, _config?: unknown) =>
+      work({ select, execute } as unknown as AppTransaction)
+  );
+  return {
+    db: {
+      select: vi.fn((fields?: Record<string, unknown>) => select(fields)),
+      transaction,
+    } as unknown as AppDb,
+    queries,
+    concurrency,
+    transaction,
+    execute,
+    select,
+  };
 }

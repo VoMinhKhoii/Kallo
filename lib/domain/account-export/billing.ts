@@ -10,26 +10,27 @@ import { billingProviderSyncs, entitlementGrants } from '@/lib/infra/db/schema';
  * The raw provider webhook envelopes are deliberately not here; see the
  * `billing_webhook_events` entry in `coverage.ts` for why.
  */
-export async function loadBillingExport(db: AppDb, userId: string) {
-  const [grantRows, syncRows] = await Promise.all([
-    db
-      .select()
-      .from(entitlementGrants)
-      .where(eq(entitlementGrants.userId, userId)),
-    db
-      .select({
-        id: billingProviderSyncs.id,
-        source: billingProviderSyncs.source,
-        environment: billingProviderSyncs.environment,
-        providerSyncedAt: billingProviderSyncs.providerSyncedAt,
-        ownershipEventAt: billingProviderSyncs.ownershipEventAt,
-        ownershipRevoked: billingProviderSyncs.ownershipRevoked,
-        customerMissingSince: billingProviderSyncs.customerMissingSince,
-        updatedAt: billingProviderSyncs.updatedAt,
-      })
-      .from(billingProviderSyncs)
-      .where(eq(billingProviderSyncs.userId, userId)),
-  ]);
+export async function loadBillingExport(
+  db: Pick<AppDb, 'select'>,
+  userId: string
+) {
+  const grantRows = await db
+    .select()
+    .from(entitlementGrants)
+    .where(eq(entitlementGrants.userId, userId));
+  const syncRows = await db
+    .select({
+      id: billingProviderSyncs.id,
+      source: billingProviderSyncs.source,
+      environment: billingProviderSyncs.environment,
+      providerSyncedAt: billingProviderSyncs.providerSyncedAt,
+      ownershipEventAt: billingProviderSyncs.ownershipEventAt,
+      ownershipRevoked: billingProviderSyncs.ownershipRevoked,
+      customerMissingSince: billingProviderSyncs.customerMissingSince,
+      updatedAt: billingProviderSyncs.updatedAt,
+    })
+    .from(billingProviderSyncs)
+    .where(eq(billingProviderSyncs.userId, userId));
 
   return { billingGrants: grantRows, billingSyncs: syncRows };
 }

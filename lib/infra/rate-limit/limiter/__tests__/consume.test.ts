@@ -450,18 +450,17 @@ describe('policy registry', () => {
     expect(new Set(routes).size).toBe(routes.length);
   });
 
-  it('only fails closed where admitting means SPENDING', () => {
+  it('fails closed for spend and bulk exports whose capacity bound must hold', () => {
     const closed = Object.entries(rateLimitPolicies)
       .filter(([, policy]) => policy.failMode === 'closed')
       .map(([name]) => name)
       .sort();
 
-    // Every one of these spends AI money per admitted request, which is the
-    // only reason to fail closed: admitting with the guard down means spending
-    // money with no ceiling. Every auth or read surface must stay `degraded` —
-    // failing THOSE closed hands an attacker a denial of service against
-    // sign-in by attacking the limiter instead.
+    // Spend paths cannot admit unmetered AI calls. Full account exports are
+    // the capacity exception: their daily cap and slot must also hold during
+    // outages. Auth and lightweight reads must remain degraded.
     expect(closed).toEqual([
+      'accountExport',
       'adminDebugAnalysis',
       'analyzeMeal',
       'analyzeMealClarify',

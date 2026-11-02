@@ -3,6 +3,7 @@
 import { sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { z } from 'zod';
+import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   authUserIsConfirmedAbsent,
@@ -23,6 +24,7 @@ import {
 import { NUTRITION_LABEL_BUCKET } from '@/lib/domain/nutrition/label-images/bucket';
 import { db } from '@/lib/infra/db/client';
 import { billingWebhookEvents } from '@/lib/infra/db/schema';
+import { withRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import {
   assertObjectStorageConfigured,
   removePrefix,
@@ -130,9 +132,31 @@ async function deleteBillingAuditRowsForUser(userId: string): Promise<void> {
  * document is assembled by `lib/domain/account-export/`, whose coverage
  * registry records where every table goes or why it is excluded.
  */
-export async function exportMyDataAction(input: unknown): Promise<DataExport> {
+export async function exportMyDataAction(input: unknown): Promise<
+  | DataExport
+  | {
+      error: ReturnType<RateLimitedError['toJSON']>['error'];
+      retryAfterSeconds: number;
+    }
+> {
   const { user } = await requireExpectedUser(input);
-  return buildDataExport(db, user);
+  try {
+    return await withRateLimit(
+      'accountExport',
+      { kind: 'user', value: user.id },
+      () => buildDataExport(db, user)
+    );
+  } catch (error) {
+    // Server Actions redact thrown errors in production. Return the same
+    // envelope as the REST edge, with its header-equivalent retry interval.
+    if (error instanceof RateLimitedError) {
+      return {
+        ...error.toJSON(),
+        retryAfterSeconds: error.retryAfterSeconds ?? 5,
+      };
+    }
+    throw error;
+  }
 }
 
 /**

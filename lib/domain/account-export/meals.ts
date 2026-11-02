@@ -22,40 +22,46 @@ type MealItemRow = typeof mealItems.$inferSelect;
  * `meals` and `weights` keep the full row shape the export has always had, so
  * existing readers of the file are unaffected.
  */
-export async function loadMealsExport(db: AppDb, userId: string) {
-  const [mealRows, itemRows, weightRows, dayMarkRows, labelScanRows] =
-    await Promise.all([
-      db.select().from(meals).where(eq(meals.userId, userId)),
-      db
-        .select(getTableColumns(mealItems))
-        .from(mealItems)
-        .innerJoin(meals, eq(mealItems.mealId, meals.id))
-        .where(eq(meals.userId, userId)),
-      db.select().from(bodyWeightLog).where(eq(bodyWeightLog.userId, userId)),
-      db
-        .select({
-          id: dayCompletionMarks.id,
-          localDate: dayCompletionMarks.localDate,
-          createdAt: dayCompletionMarks.createdAt,
-        })
-        .from(dayCompletionMarks)
-        .where(eq(dayCompletionMarks.userId, userId)),
-      db
-        .select({
-          id: nutritionLabelImages.id,
-          storagePath: nutritionLabelImages.storagePath,
-          mimeType: nutritionLabelImages.mimeType,
-          byteSize: nutritionLabelImages.byteSize,
-          status: nutritionLabelImages.status,
-          result: nutritionLabelImages.result,
-          errorCode: nutritionLabelImages.errorCode,
-          mealId: nutritionLabelImages.mealId,
-          reviewedResult: nutritionLabelImages.reviewedResult,
-          createdAt: nutritionLabelImages.createdAt,
-        })
-        .from(nutritionLabelImages)
-        .where(eq(nutritionLabelImages.userId, userId)),
-    ]);
+export async function loadMealsExport(
+  db: Pick<AppDb, 'select'>,
+  userId: string
+) {
+  const mealRows = await db
+    .select()
+    .from(meals)
+    .where(eq(meals.userId, userId));
+  const itemRows = await db
+    .select(getTableColumns(mealItems))
+    .from(mealItems)
+    .innerJoin(meals, eq(mealItems.mealId, meals.id))
+    .where(eq(meals.userId, userId));
+  const weightRows = await db
+    .select()
+    .from(bodyWeightLog)
+    .where(eq(bodyWeightLog.userId, userId));
+  const dayMarkRows = await db
+    .select({
+      id: dayCompletionMarks.id,
+      localDate: dayCompletionMarks.localDate,
+      createdAt: dayCompletionMarks.createdAt,
+    })
+    .from(dayCompletionMarks)
+    .where(eq(dayCompletionMarks.userId, userId));
+  const labelScanRows = await db
+    .select({
+      id: nutritionLabelImages.id,
+      storagePath: nutritionLabelImages.storagePath,
+      mimeType: nutritionLabelImages.mimeType,
+      byteSize: nutritionLabelImages.byteSize,
+      status: nutritionLabelImages.status,
+      result: nutritionLabelImages.result,
+      errorCode: nutritionLabelImages.errorCode,
+      mealId: nutritionLabelImages.mealId,
+      reviewedResult: nutritionLabelImages.reviewedResult,
+      createdAt: nutritionLabelImages.createdAt,
+    })
+    .from(nutritionLabelImages)
+    .where(eq(nutritionLabelImages.userId, userId));
 
   const itemsByMeal = new Map<string, MealItemRow[]>();
   for (const item of itemRows) {

@@ -108,8 +108,8 @@ export class PayloadTooLargeError extends AppError {
  * errored or blew its deadline) on a policy whose `failMode` is `'closed'`.
  *
  * 503, not 429: nothing about the caller is over quota — the guard in front of
- * a spend route is down, and admitting the request would mean spending money
- * with no ceiling. Retryable with a fixed `Retry-After`, because the outage is
+ * a spend or bulk-export route is down, and admitting would bypass its
+ * resource bound. Retryable with a fixed `Retry-After`, because the outage is
  * expected to be brief and the client should not treat it as a quota denial.
  */
 export class RateLimitUnavailableError extends AppError {

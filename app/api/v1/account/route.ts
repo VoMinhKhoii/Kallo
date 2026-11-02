@@ -10,6 +10,15 @@ export async function GET() {
   try {
     const expectedUserId = await requireUserId();
     const data = await exportMyDataAction({ expectedUserId });
+    if ('error' in data) {
+      return Response.json(
+        { error: data.error },
+        {
+          status: data.error.status,
+          headers: { 'Retry-After': String(data.retryAfterSeconds) },
+        }
+      );
+    }
     return Response.json(data);
   } catch (error) {
     return handleRouteError(error);

@@ -25,6 +25,7 @@ const {
   mockSignOut,
   mockRemovePrefix,
   mockAssertStorage,
+  mockLimiterSql,
 } = vi.hoisted(() => ({
   mockAuthUserIsConfirmedAbsent: vi.fn(),
   mockBuildDataExport: vi.fn(),
@@ -42,6 +43,7 @@ const {
   mockSignOut: vi.fn(),
   mockRemovePrefix: vi.fn(),
   mockAssertStorage: vi.fn(),
+  mockLimiterSql: vi.fn(),
 }));
 
 vi.mock('next/headers', () => ({
@@ -85,7 +87,15 @@ vi.mock('@/lib/domain/account-export/build-export', () => ({
 }));
 
 vi.mock('@/lib/infra/db/client', () => ({
-  db: { delete: mockDbDelete, select: mockDbSelect },
+  db: {
+    delete: mockDbDelete,
+    select: mockDbSelect,
+    $client: { unsafe: mockLimiterSql },
+  },
+}));
+
+vi.mock('@/lib/infra/rate-limit/limiter/events', () => ({
+  recordRateLimitEvent: vi.fn(),
 }));
 
 import {
@@ -436,6 +446,38 @@ describe('exportMyDataAction', () => {
     mockHeaders.mockResolvedValue(new Headers());
     mockGetUser.mockResolvedValue({ data: { user }, error: null });
     mockBuildDataExport.mockResolvedValue({ exportedAt: 'now' });
+    const counters = new Map<string, { count: number; held: boolean }>();
+    mockLimiterSql.mockImplementation(
+      async (statement: string, args: unknown[]) => {
+        const key = String(args[1]);
+        const state = counters.get(key) ?? { count: 0, held: false };
+        counters.set(key, state);
+        if (statement.includes('rate_limit_release')) {
+          state.held = false;
+          return [];
+        }
+        const reason = state.held
+          ? 'concurrent'
+          : state.count >= Number(args[5])
+            ? 'day'
+            : null;
+        if (!reason) {
+          state.count++;
+          state.held = true;
+        }
+        return [
+          {
+            allowed: reason === null,
+            reason,
+            retry_after_seconds: reason === 'day' ? 3600 : 5,
+            spend_day: null,
+            slot_expires_at: reason
+              ? null
+              : new Date(Date.now() + 600_000).toISOString(),
+          },
+        ];
+      }
+    );
   });
 
   it('rejects stale-tab data export before reading another account', async () => {
@@ -468,5 +510,75 @@ describe('exportMyDataAction', () => {
     // Export is read-only and needs no privileged client.
     expect(mockCreateAdminClient).not.toHaveBeenCalled();
     expect(mockGetClaims).not.toHaveBeenCalled();
+  });
+
+  it('refuses the sixth export with a serializable 429 and the daily retry interval', async () => {
+    for (let index = 0; index < 5; index++) await exportMyDataAction(input);
+    await expect(exportMyDataAction(input)).resolves.toMatchObject({
+      error: { code: 'RATE_LIMITED', status: 429, retryable: true },
+      retryAfterSeconds: 3600,
+    });
+    expect(mockBuildDataExport).toHaveBeenCalledTimes(5);
+    expect(mockLimiterSql.mock.calls[0]?.[1]).toEqual([
+      'user',
+      expect.stringMatching(/^v1:/),
+      'account:export',
+      null,
+      null,
+      5,
+      1,
+      600,
+      null,
+      null,
+      null,
+    ]);
+  });
+
+  it('refuses a second concurrent export without starting another builder', async () => {
+    const { promise, resolve } = Promise.withResolvers<{
+      exportedAt: string;
+    }>();
+    mockBuildDataExport.mockReturnValueOnce(promise);
+    const first = exportMyDataAction(input);
+    await vi.waitFor(() => expect(mockBuildDataExport).toHaveBeenCalledOnce());
+    const second = await exportMyDataAction(input);
+    resolve({ exportedAt: 'now' });
+    await first;
+    expect(second).toMatchObject({
+      error: { code: 'RATE_LIMITED', status: 429 },
+      retryAfterSeconds: 5,
+    });
+    expect(mockBuildDataExport).toHaveBeenCalledOnce();
+    await expect(exportMyDataAction(input)).resolves.toEqual({
+      exportedAt: 'now',
+    });
+  });
+
+  it('releases the slot after a failed export and keeps the attempt counted', async () => {
+    const failure = new Error('statement timeout');
+    mockBuildDataExport.mockRejectedValueOnce(failure);
+    await expect(exportMyDataAction(input)).rejects.toBe(failure);
+    for (let index = 0; index < 4; index++) {
+      await expect(exportMyDataAction(input)).resolves.toEqual({
+        exportedAt: 'now',
+      });
+    }
+    await expect(exportMyDataAction(input)).resolves.toMatchObject({
+      error: { code: 'RATE_LIMITED' },
+    });
+    expect(
+      mockLimiterSql.mock.calls.filter(([statement]) =>
+        statement.includes('rate_limit_release')
+      )
+    ).toHaveLength(5);
+  });
+
+  it('does not start an export while its limiter is unavailable', async () => {
+    mockLimiterSql.mockRejectedValue(new Error('database unavailable'));
+    await expect(exportMyDataAction(input)).rejects.toMatchObject({
+      code: 'RATE_LIMITER_UNAVAILABLE',
+      status: 503,
+    });
+    expect(mockBuildDataExport).not.toHaveBeenCalled();
   });
 });

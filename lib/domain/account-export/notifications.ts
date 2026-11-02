@@ -23,38 +23,39 @@ export function redactPushToken(token: string): string {
  * `rebadged` is left out: it is a per-statement scratch flag that means
  * nothing outside the upsert that set it (see the schema).
  */
-export async function loadNotificationsExport(db: AppDb, userId: string) {
-  const [notificationRows, tokenRows] = await Promise.all([
-    db
-      .select({
-        id: notifications.id,
-        type: notifications.type,
-        actorIds: notifications.actorIds,
-        actorCount: notifications.actorCount,
-        objectType: notifications.objectType,
-        objectId: notifications.objectId,
-        targetType: notifications.targetType,
-        targetId: notifications.targetId,
-        data: notifications.data,
-        createdAt: notifications.createdAt,
-        updatedAt: notifications.updatedAt,
-        seenAt: notifications.seenAt,
-        readAt: notifications.readAt,
-        dismissedAt: notifications.dismissedAt,
-      })
-      .from(notifications)
-      .where(eq(notifications.recipientId, userId)),
-    db
-      .select({
-        id: pushTokens.id,
-        token: pushTokens.token,
-        platform: pushTokens.platform,
-        lastSeenAt: pushTokens.lastSeenAt,
-        createdAt: pushTokens.createdAt,
-      })
-      .from(pushTokens)
-      .where(eq(pushTokens.userId, userId)),
-  ]);
+export async function loadNotificationsExport(
+  db: Pick<AppDb, 'select'>,
+  userId: string
+) {
+  const notificationRows = await db
+    .select({
+      id: notifications.id,
+      type: notifications.type,
+      actorIds: notifications.actorIds,
+      actorCount: notifications.actorCount,
+      objectType: notifications.objectType,
+      objectId: notifications.objectId,
+      targetType: notifications.targetType,
+      targetId: notifications.targetId,
+      data: notifications.data,
+      createdAt: notifications.createdAt,
+      updatedAt: notifications.updatedAt,
+      seenAt: notifications.seenAt,
+      readAt: notifications.readAt,
+      dismissedAt: notifications.dismissedAt,
+    })
+    .from(notifications)
+    .where(eq(notifications.recipientId, userId));
+  const tokenRows = await db
+    .select({
+      id: pushTokens.id,
+      token: pushTokens.token,
+      platform: pushTokens.platform,
+      lastSeenAt: pushTokens.lastSeenAt,
+      createdAt: pushTokens.createdAt,
+    })
+    .from(pushTokens)
+    .where(eq(pushTokens.userId, userId));
 
   return {
     notifications: notificationRows,
