@@ -12,7 +12,7 @@ import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 /**
- * staging-lease.sh against a fake `gcloud storage` holding one lease object
+ * deploy-lease.sh against a fake `gcloud storage` holding one lease object
  * (state: `<dir>/state/gen` and `lease.json`), with a GNU-style `date` shim
  * so the script's `date -d` runs on macOS too.
  */
@@ -45,7 +45,7 @@ echo "unexpected gcloud $args" >&2; exit 2
 `;
 
 const DATE = `#!/usr/bin/env node
-// The GNU date forms staging-lease.sh uses: -u [-d <when>] +<format>.
+// The GNU date forms deploy-lease.sh uses: -u [-d <when>] +<format>.
 const args = process.argv.slice(2).filter((a) => a !== '-u');
 let when = new Date();
 const d = args.indexOf('-d');
@@ -92,7 +92,7 @@ function acquire({ dir, bin, state }: ReturnType<typeof setup>) {
   writeFileSync(githubEnv, '');
   const run = spawnSync(
     'bash',
-    [resolve('scripts/cloud-run/staging-lease.sh'), 'acquire'],
+    [resolve('scripts/cloud-run/deploy-lease.sh'), 'acquire'],
     {
       encoding: 'utf8',
       env: {
@@ -101,10 +101,10 @@ function acquire({ dir, bin, state }: ReturnType<typeof setup>) {
         FAKE_STATE: state,
         LEASE_BUCKET: 'kallo-prod-leases',
         LEASE_OBJECT: 'prod/lease.json',
-        STAGING_REF: 'main',
-        STAGING_REASON: 'test',
-        STAGING_FORCE_TAKEOVER: 'false',
-        STAGING_TARGET_SHA: 'a'.repeat(40),
+        LEASE_REF: 'main',
+        LEASE_REASON: 'test',
+        LEASE_FORCE_TAKEOVER: 'false',
+        LEASE_TARGET_SHA: 'a'.repeat(40),
         GITHUB_ENV: githubEnv,
         GITHUB_STEP_SUMMARY: '',
       },
@@ -115,7 +115,7 @@ function acquire({ dir, bin, state }: ReturnType<typeof setup>) {
 
 const inAnHour = () => new Date(Date.now() + 3600e3).toISOString();
 
-describe('staging-lease.sh acquire', () => {
+describe('deploy-lease.sh acquire', () => {
   it('takes a free lease and records its generation', () => {
     const fx = setup();
     const run = acquire(fx);
@@ -129,7 +129,7 @@ describe('staging-lease.sh acquire', () => {
     const fx = setup({ expiresAt: inAnHour() });
     const run = acquire(fx);
     expect(run.status).not.toBe(0);
-    expect(run.stderr).toContain('currently leased');
+    expect(run.stderr).toContain('The deploy lease is currently held');
     expect(run.env).not.toContain('LEASE_GENERATION');
     expect(readFileSync(join(fx.state, 'gen'), 'utf8').trim()).toBe('111');
   });

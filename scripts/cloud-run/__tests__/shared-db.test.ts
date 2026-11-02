@@ -9,7 +9,6 @@ import {
   extractProjectRefFromDatabaseUrl,
   findPendingMigrations,
   parseAppliedMigrationVersions,
-  parseSharedDbStateOutput,
   readLocalMigrationVersions,
   validateProjectRefAlignment,
 } from '../shared-db.mjs';
@@ -64,24 +63,7 @@ describe('shared-db helpers', () => {
         'wxyz7890'
       )
     ).toThrow(
-      'Shared staging DATABASE_URL points at Supabase project "abcd1234", but SUPABASE_PROJECT_ID is "wxyz7890".'
-    );
-  });
-
-  it('parses the psql state row into a typed object', () => {
-    expect(parseSharedDbStateOutput('1|1|1|1|526|0\n')).toEqual({
-      hasUserProfiles: true,
-      hasFoodTable: true,
-      hasFoodSourceId: true,
-      hasNewUserTrigger: true,
-      seededFoodRows: 526,
-      orphanedAuthUsers: 0,
-    });
-  });
-
-  it('rejects non-numeric row counts', () => {
-    expect(() => parseSharedDbStateOutput('1|1|1|1|NaN|oops\n')).toThrow(
-      'Malformed shared DB state row (non-numeric counts): 1|1|1|1|NaN|oops'
+      'DATABASE_URL points at Supabase project "abcd1234", but the expected project is "wxyz7890".'
     );
   });
 });

@@ -39,7 +39,7 @@ export function isRevenueCatWebClientKey(
  * without a sandbox-specific key, that user gets no key and the paywall reports
  * itself unavailable.
  *
- * A wholly sandbox deployment (local, preview, staging) has no such split, so
+ * A wholly sandbox deployment (local dev) has no such split, so
  * the single key is used as-is.
  */
 function resolveWebClientKey(

@@ -10,8 +10,8 @@
  *   3. No future-dated timestamps (filename digits are UTC, matching the
  *      Supabase CLI, which stamps `supabase migration new` files in UTC)
  *   4. In PR context (GITHUB_BASE_REF set): every migration the branch ADDS
- *      must sort AFTER every migration already on the base branch. Staging/
- *      prod deploys apply the base branch's migrations continuously, so a
+ *      must sort AFTER every migration already on the base branch. Prod
+ *      deploys apply the base branch's migrations continuously, so a
  *      new file that sorts before the base's newest would be refused or
  *      skipped by `supabase db push` (run without --include-all) AFTER
  *      merge — a failure mode invisible to fresh-database validation.

@@ -39,11 +39,11 @@ its loader or excluded on purpose. Either way, update the `DataExport` OpenAPI
 schema (`lib/api/openapi/export-shapes.ts`) with it; `export-shapes.test.ts`
 checks a built export against that schema.
 
-### Shared staging preview rule
+### Destructive migration rule
 
-While `PREVIEW_DATABASE_MODE=shared`, PR previews and `nham-internal` point at
-the same non-prod Supabase database, so a destructive migration lands for every
-deployment at once. Nothing blocks one — this is a judgement call, not a gate:
+A migration reaches the prod database while the previous revision is still
+serving. Nothing blocks a destructive one — this is a judgement call, not a
+gate:
 
 - prefer append-only migrations for normal feature work; they are always safe
 - a `DROP TABLE`, `DROP COLUMN`, `RENAME COLUMN` or `ALTER COLUMN TYPE` is
@@ -62,12 +62,6 @@ deployment at once. Nothing blocks one — this is a judgement call, not a gate:
 - the same reasoning is why additive migrations must go the *other* way: a new
   column has to exist before the revision that uses it is promoted, which is
   exactly what the current step order gives you.
-
-If shared staging gets into a bad state, recover it with the manual
-`Reset Staging Database` GitHub Actions workflow. That reset replays the current
-migrations from the default branch, runs `supabase/seed.sql`, and then reapplies
-the generated `seed_food.sql` artifact from GCS so search/embedding state is
-restored too.
 
 ### Domain B — Security & Database Logic (Raw SQL owns this)
 
