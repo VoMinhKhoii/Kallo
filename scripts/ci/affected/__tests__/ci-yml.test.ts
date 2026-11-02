@@ -52,6 +52,27 @@ describe('ci.yml agrees with the skip rules', () => {
   it('gates each job on exactly its own group', () => {
     for (const [name, job] of Object.entries(JOBS)) {
       const block = blocks.get(name) ?? '';
+      if (job.selfGated) {
+        // No wait on `changes`: the affected step decides, and every step
+        // after it runs only on its answer.
+        expect([name, block.includes('needs.changes.outputs.')]).toEqual([
+          name,
+          false,
+        ]);
+        expect(block).toContain(`group: ${job.group}`);
+        const steps = block
+          .slice(block.indexOf('id: affected'))
+          .split(/\n {6}- /)
+          .slice(1);
+        expect(steps.length).toBeGreaterThan(0);
+        for (const step of steps) {
+          expect([
+            name,
+            step.includes("steps.affected.outputs.run == 'true'"),
+          ]).toEqual([name, true]);
+        }
+        continue;
+      }
       for (const group of GROUPS) {
         const gate = `needs.changes.outputs.${group} == 'true'`;
         expect([name, block.includes(gate)]).toEqual([

@@ -12,16 +12,19 @@ import { pathToFileURL } from 'node:url';
  * event, `sameRepo` to non-fork PRs. `advisory` is for a non-blocking
  * (continue-on-error) job that `CI passed` neither waits for nor judges;
  * `ownCondition` for a job whose `if` has inputs this cannot see.
+ * `selfGated` jobs always start and decide themselves (.github/actions/
+ * affected): they must succeed, and the `ran` they report must match what
+ * `changes` decided for their group.
  *
  * @type {Record<string, { group: string, on?: string, sameRepo?: boolean,
- *   advisory?: boolean, ownCondition?: boolean }>}
+ *   advisory?: boolean, ownCondition?: boolean, selfGated?: boolean }>}
  */
 export const JOBS = {
   changes: { group: 'always' },
   lint: { group: 'always' },
-  typecheck: { group: 'web' },
-  'test-shard': { group: 'web' },
-  build: { group: 'web' },
+  typecheck: { group: 'web', selfGated: true },
+  'test-shard': { group: 'web', selfGated: true },
+  build: { group: 'web', selfGated: true },
   e2e: { group: 'web', advisory: true },
   migrations: { group: 'migrations' },
   'dependency-review': { group: 'always', ownCondition: true },
@@ -50,6 +53,16 @@ export function problems(needs, run) {
     const result = needs[name]?.result;
     if (result === undefined) {
       found.push(`${name}: not in this job's needs`);
+      continue;
+    }
+    if (job.selfGated) {
+      const ran = needs[name]?.outputs?.ran;
+      if (result !== 'success') found.push(`${name}: ${result}`);
+      else if (ran !== outputs[job.group]) {
+        found.push(
+          `${name}: ran=${ran ?? 'unset'}, but changes said ${job.group}=${outputs[job.group]}`
+        );
+      }
       continue;
     }
     const shouldRun =

@@ -1,0 +1,22 @@
+name: Affected
+description: Whether this pull request needs one of CI's job groups (scripts/ci/affected/affected.mjs). Run it after a full-history checkout.
+
+inputs:
+  group:
+    description: The affected.mjs group this job belongs to.
+    required: true
+outputs:
+  run:
+    description: '"true" when the job has to run its steps.'
+    value: ${{ steps.affected.outputs.run }}
+
+runs:
+  using: composite
+  steps:
+    - id: affected
+      shell: bash
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        AFFECTED_GROUP: ${{ inputs.group }}
+      run: node scripts/ci/affected/affected.mjs

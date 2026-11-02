@@ -245,14 +245,23 @@ function main() {
   }
   console.log(lines.join('\n'));
 
+  // A job that gates itself (.github/actions/affected) names its group and
+  // reads `run`; the `changes` job reads every group.
+  const own = process.env.AFFECTED_GROUP;
+  if (own && !GROUPS.includes(own)) {
+    throw new Error(
+      `Unknown AFFECTED_GROUP "${own}"; groups: ${GROUPS.join(', ')}`
+    );
+  }
   const output = process.env.GITHUB_OUTPUT;
   if (output) {
     appendFileSync(
       output,
-      GROUPS.map((group) => `${group}=${groups[group]}\n`).join('')
+      GROUPS.map((group) => `${group}=${groups[group]}\n`).join('') +
+        (own ? `run=${groups[own]}\n` : '')
     );
   }
-  if (process.env.GITHUB_STEP_SUMMARY) {
+  if (process.env.GITHUB_STEP_SUMMARY && !own) {
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
   }
 }
