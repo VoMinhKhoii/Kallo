@@ -4,6 +4,7 @@ import {
   negotiate,
   unknownDocsTarget,
   unknownFoodPageTarget,
+  unknownToolPageTarget,
 } from '@/lib/infra/http/negotiate';
 
 const MD = 'text/markdown';
@@ -226,6 +227,41 @@ describe('unknownFoodPageTarget', () => {
       '/en/calories/%E0%A4%A',
     ]) {
       expect(unknownFoodPageTarget(pathname), pathname).toBeNull();
+    }
+  });
+});
+
+describe('unknownToolPageTarget', () => {
+  it('leaves the hub and every real tool, in both locales', () => {
+    for (const pathname of [
+      '/en/tools',
+      '/en/tools/',
+      '/vi/tools',
+      '/en/tools/tdee-calculator',
+      '/vi/tools/bmi-calculator/',
+      '/en/tools/tdee%2Dcalculator',
+    ]) {
+      expect(unknownToolPageTarget(pathname), pathname).toBeNull();
+    }
+  });
+
+  it('gives every other /tools URL the real 404', () => {
+    expect(unknownToolPageTarget('/en/tools/bmr-calculator')).toBe(
+      '/en/not-found'
+    );
+    expect(unknownToolPageTarget('/vi/tools/tdee-calculator/extra')).toBe(
+      '/vi/not-found'
+    );
+  });
+
+  it('is null outside /{locale}/tools and for a malformed escape', () => {
+    for (const pathname of [
+      '/',
+      '/en/toolsx',
+      '/tools/tdee-calculator',
+      '/en/tools/%E0%A4%A',
+    ]) {
+      expect(unknownToolPageTarget(pathname), pathname).toBeNull();
     }
   });
 });

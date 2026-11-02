@@ -8,6 +8,7 @@ import {
   foodPagePath,
 } from '@/lib/seo/food-pages/slugs';
 import { isKnownNonMarkdownPath } from '@/lib/seo/private-paths';
+import { isToolSlug, TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
 
 /**
  * Which representation a request should get — decided as a pure function so
@@ -116,6 +117,23 @@ export function unknownFoodPageTarget(pathname: string): string | null {
     path === foodHubPath() ||
     FOOD_SLUGS.some((slug) => foodPagePath(slug) === path);
   return known ? null : `/${locale}/not-found`;
+}
+
+/**
+ * The 404 target for an unknown calculator URL, or null when the path is the
+ * tools hub, a real tool page, or not under `/tools` at all. Calculators exist
+ * in every locale, so only the slug is checked.
+ */
+export function unknownToolPageTarget(pathname: string): string | null {
+  const split = splitLocale(pathname);
+  if (!split) return null;
+  const { locale, rest } = split;
+  if (rest !== TOOLS_PREFIX && !rest.startsWith(`${TOOLS_PREFIX}/`))
+    return null;
+  const decoded = pagePath(rest);
+  if (decoded === null || decoded === TOOLS_PREFIX) return null;
+  const slug = decoded.slice(TOOLS_PREFIX.length + 1);
+  return isToolSlug(slug) ? null : `/${locale}/not-found`;
 }
 
 /**

@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import type { DocsNavSection } from '@/lib/domain/docs/tree';
 import { FOOD_PAGE_LOCALE, FOOD_PAGE_PREFIX } from '@/lib/seo/food-pages/slugs';
 import { LINKEDIN_URL } from '@/lib/seo/structured-data';
+import { TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
 
 /**
  * The docs navigation, as a footer.
@@ -117,6 +118,13 @@ export async function DocsFooter({
             href="/pricing"
           >
             {tFooter('pricing')}
+          </Link>
+          {/* The calculators' way into the site, in every locale. */}
+          <Link
+            className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
+            href={TOOLS_PREFIX}
+          >
+            {tFooter('calculators')}
           </Link>
           {/* The food pages' way into the site. They exist in English only,
               so the link (and its label) shows on English pages only. */}
