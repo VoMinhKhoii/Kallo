@@ -4,24 +4,27 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
-  dbTestFiles,
   GROUPS,
   groupsFor,
   importClosure,
+  repoFacts,
   resolveImport,
 } from '../affected.mjs';
 import { JOBS } from '../verify.mjs';
 
 const ROOT = process.cwd();
-const DB = dbTestFiles(ROOT);
-const groups = (files: string[] | null) => groupsFor(files, DB);
+const REPO = repoFacts(ROOT);
+if (REPO === null) throw new Error('git could not list this checkout');
+const DB = REPO.dbFiles;
+const groups = (files: string[] | null) => groupsFor(files, REPO);
 const NONE = { web: false, migrations: false };
 const ALL = { web: true, migrations: true };
 
 describe('groupsFor', () => {
-  it('runs everything when the diff is unknown or empty', () => {
+  it('runs everything when the diff or the checkout is unknown', () => {
     expect(groups(null)).toEqual(ALL);
     expect(groups([])).toEqual(ALL);
+    expect(groupsFor(['docs/X.md'], null)).toEqual(ALL);
   });
 
   it('skips every gated job for a Flutter-only PR', () => {
@@ -44,6 +47,19 @@ describe('groupsFor', () => {
         '.tuturuuu/tasks/plan.md',
       ])
     ).toEqual(NONE);
+  });
+
+  // docs/brand/kallo/exploration/ holds a unit test that reads the SVG and
+  // HTML around it, so a change there is a web change after all.
+  it('runs the web jobs for files beside a test under an ignored path', () => {
+    for (const file of [
+      'docs/brand/kallo/exploration/logo-concepts.test.ts',
+      'docs/brand/kallo/exploration/concepts/01-calibrated-letter.svg',
+      'docs/brand/kallo/exploration/index.html',
+    ]) {
+      expect(groups([file]).web).toBe(true);
+    }
+    expect(groups(['docs/brand/kallo/README.md']).web).toBe(false);
   });
 
   it('runs the web jobs for prose a web job reads', () => {
@@ -108,7 +124,14 @@ describe('importClosure', () => {
   });
 });
 
-describe('dbTestFiles', () => {
+describe('repoFacts', () => {
+  it('lists only test folders under ignored paths, never the repo root', () => {
+    expect(REPO.testDirs).toContain('docs/brand/kallo/exploration/');
+    for (const dir of REPO.testDirs) {
+      expect(dir === '/' || dir === './').toBe(false);
+    }
+  });
+
   it('starts from every *.db.test.ts suite', () => {
     expect(DB).toContain(
       'lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts'
