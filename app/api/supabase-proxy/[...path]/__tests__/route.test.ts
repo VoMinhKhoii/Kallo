@@ -202,7 +202,7 @@ describe('supabase-proxy rate limiting', () => {
     fetchMock.mockResolvedValue(upstreamResponse('{}', { status: 200 }));
   });
 
-  it('charges global, IP and recipient for a mail-sending op, in that order', async () => {
+  it('charges IP, global and recipient for a mail-sending op, in that order', async () => {
     const { req, params } = makeRequest('auth/v1/recover', {
       method: 'POST',
       headers: { ...FROM_IP, 'content-type': 'application/json' },
@@ -212,8 +212,8 @@ describe('supabase-proxy rate limiting', () => {
     await POST(req, params);
 
     expect(policyCalls()).toEqual([
-      ['authGlobal', { kind: 'global', value: 'auth' }],
       ['authEmailIp', { kind: 'ip', value: '203.0.113.9' }],
+      ['authGlobal', { kind: 'global', value: 'auth' }],
       [
         'authEmailRecipient',
         { kind: 'recipient', value: 'victim@example.com' },
@@ -231,8 +231,8 @@ describe('supabase-proxy rate limiting', () => {
     await POST(req, params);
 
     expect(policyCalls()).toEqual([
-      ['authGlobal', { kind: 'global', value: 'auth' }],
       ['authLoginIp', { kind: 'ip', value: '203.0.113.9' }],
+      ['authGlobal', { kind: 'global', value: 'auth' }],
       ['authLoginAccount', { kind: 'account', value: 'victim@example.com' }],
     ]);
   });
@@ -247,13 +247,13 @@ describe('supabase-proxy rate limiting', () => {
     await PUT(req, params);
 
     expect(policyCalls().map(([policy]) => policy)).toEqual([
-      'authGlobal',
       'authEmailIp',
+      'authGlobal',
       'authEmailRecipient',
     ]);
   });
 
-  it('charges the refresh global budget before the per-IP flood breaker', async () => {
+  it('charges the refresh per-IP flood breaker before the global budget', async () => {
     const { req, params } = makeRequest(
       'auth/v1/token?grant_type=refresh_token',
       {
@@ -266,8 +266,8 @@ describe('supabase-proxy rate limiting', () => {
     await POST(req, params);
 
     expect(policyCalls()).toEqual([
-      ['authRefreshGlobal', { kind: 'global', value: 'auth:refresh' }],
       ['authRefresh', { kind: 'ip', value: '203.0.113.9' }],
+      ['authRefreshGlobal', { kind: 'global', value: 'auth:refresh' }],
     ]);
   });
 
@@ -396,8 +396,8 @@ describe('supabase-proxy rate limiting', () => {
     await POST(req, params);
 
     expect(policyCalls()).toEqual([
-      ['authGlobal', { kind: 'global', value: 'auth' }],
       ['authEmailIp', { kind: 'ip', value: '203.0.113.9' }],
+      ['authGlobal', { kind: 'global', value: 'auth' }],
       [
         'authEmailRecipient',
         { kind: 'recipient', value: 'victim@example.com' },
@@ -443,8 +443,8 @@ describe('supabase-proxy rate limiting', () => {
     await GET(req, params);
 
     expect(policyCalls()).toEqual([
-      ['authGlobal', { kind: 'global', value: 'auth' }],
       ['authEmailIp', { kind: 'ip', value: '203.0.113.9' }],
+      ['authGlobal', { kind: 'global', value: 'auth' }],
     ]);
   });
 

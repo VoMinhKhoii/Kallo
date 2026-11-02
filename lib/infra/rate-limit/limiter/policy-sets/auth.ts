@@ -54,7 +54,8 @@ export const authPolicies = {
    * `token_verifications` 30 / 5 min, `token_refresh` 150 / 5 min per
    * supabase/config.toml, plus whatever the hosted dashboard is set to — apply
    * to ALL of our users together and are the app's real auth ceiling. This
-   * number only caps total spend when no individual key looks abusive. See
+   * number only caps total spend after the source IP and any enforced captcha
+   * admit the request. Recipient/account budgets follow it. See
    * docs/RATE_LIMITING.md and the ops action in docs/PROD_DOMAIN_SETUP.md.
    */
   authGlobal: {
@@ -90,6 +91,7 @@ export const authPolicies = {
    * refresh tokens from a million addresses, each of which looks like one
    * ordinary phone to `authRefresh`.
    *
+   * Charged after `authRefresh` admits the IP (or alone when the IP is null).
    * It costs one database round trip on the path that keeps every signed-in
    * user signed in, which the memory-only design of `authRefresh` exists to
    * avoid. That is the accepted trade: one shared counter row, `degraded` so a

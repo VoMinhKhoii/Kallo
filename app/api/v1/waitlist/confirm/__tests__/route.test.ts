@@ -40,16 +40,16 @@ beforeEach(() => {
 });
 
 describe('GET /api/v1/waitlist/confirm', () => {
-  it('charges the global then IP policy, then redirects with the outcome', async () => {
+  it('charges the IP then global policy, then redirects with the outcome', async () => {
     const res = await GET(makeRequest('tok_123'));
 
-    expect(assertRateLimit).toHaveBeenCalledWith('waitlistGlobal', {
-      kind: 'global',
-      value: 'waitlist-confirm',
-    });
-    expect(assertRateLimit).toHaveBeenCalledWith('waitlistConfirmIp', {
+    expect(assertRateLimit).toHaveBeenNthCalledWith(1, 'waitlistConfirmIp', {
       kind: 'ip',
       value: '203.0.113.4',
+    });
+    expect(assertRateLimit).toHaveBeenNthCalledWith(2, 'waitlistGlobal', {
+      kind: 'global',
+      value: 'waitlist-confirm',
     });
     expect(res.status).toBe(307);
     expect(res.headers.get('location')).toContain('/vi/?waitlist=confirmed');

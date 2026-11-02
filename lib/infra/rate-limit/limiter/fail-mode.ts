@@ -3,7 +3,7 @@
  * answer.
  *
  * Split out of `consume.ts` because it is a separate question: `consume.ts`
- * owns the ORDER of the checks (which keys, cheapest first, short-circuit on
+ * owns the ORDER of the checks (caller-owned keys first, short-circuit on
  * block), while this file owns the DEGRADED semantics — how a bucket is sized,
  * what a `failMode: 'memory'` policy enforces, and what a `'degraded'` policy
  * falls back to during an outage.

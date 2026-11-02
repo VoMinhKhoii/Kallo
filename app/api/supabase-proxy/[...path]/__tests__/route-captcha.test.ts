@@ -102,8 +102,18 @@ describe('Turnstile gate — enforced on code requests', () => {
     expect(form.get('secret')).toBe('secret-key');
     expect(form.get('response')).toBe('tok-1');
     expect(form.get('remoteip')).toBe('203.0.113.7');
-    // The limiter ran first: a junk-token flood is throttled per IP.
-    expect(assertRateLimit).toHaveBeenCalled();
+    const siteverifyOrder = fetchMock.mock.invocationCallOrder[0];
+    expect(assertRateLimit.mock.calls.map(([policy]) => policy)).toEqual([
+      'authEmailIp',
+      'authGlobal',
+      'authEmailRecipient',
+    ]);
+    expect(assertRateLimit.mock.invocationCallOrder[0]).toBeLessThan(
+      siteverifyOrder
+    );
+    expect(assertRateLimit.mock.invocationCallOrder[1]).toBeGreaterThan(
+      siteverifyOrder
+    );
     expect(supabaseCalls()).toHaveLength(1);
     expect(consoleInfo).toHaveBeenCalledWith(
       '[turnstile] path=otp mode=codes outcome=valid client=supabase-flutter'
@@ -117,6 +127,9 @@ describe('Turnstile gate — enforced on code requests', () => {
 
     expect(res.status).toBe(400);
     expect((await res.json()).error_code).toBe('captcha_failed');
+    expect(assertRateLimit.mock.calls.map(([policy]) => policy)).toEqual([
+      'authEmailIp',
+    ]);
     expect(supabaseCalls()).toHaveLength(0);
   });
 
@@ -126,6 +139,9 @@ describe('Turnstile gate — enforced on code requests', () => {
     const res = await post('auth/v1/otp', withToken('tok-1'));
 
     expect(res.status).toBe(503);
+    expect(assertRateLimit.mock.calls.map(([policy]) => policy)).toEqual([
+      'authEmailIp',
+    ]);
     expect(supabaseCalls()).toHaveLength(0);
   });
 

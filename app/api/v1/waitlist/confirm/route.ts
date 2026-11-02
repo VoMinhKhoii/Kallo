@@ -18,8 +18,8 @@ import { getRequestIp } from '@/lib/infra/security/request-ip';
  * The IP limit is what stops that uniformity from becoming a free token
  * oracle: identical responses mean guessing costs nothing to interpret, so the
  * cost has to be on the guessing itself. Skipped when there is no usable IP —
- * but `waitlistGlobal` runs ALWAYS, so a null-IP guessing flood is still capped
- * app-wide. Global first, then IP.
+ * but `waitlistGlobal` still caps null-IP traffic app-wide. IP first, then
+ * global: a request refused by its IP policy never spends the shared budget.
  *
  * Lives under `/api` so `proxy.ts` skips the next-intl locale rewrite; the
  * locale for the redirect comes from the stored row instead.
@@ -27,12 +27,12 @@ import { getRequestIp } from '@/lib/infra/security/request-ip';
 export async function GET(request: NextRequest) {
   try {
     const ip = getRequestIp(request);
+    if (ip)
+      await assertRateLimit('waitlistConfirmIp', { kind: 'ip', value: ip });
     await assertRateLimit('waitlistGlobal', {
       kind: 'global',
       value: 'waitlist-confirm',
     });
-    if (ip)
-      await assertRateLimit('waitlistConfirmIp', { kind: 'ip', value: ip });
 
     const token = request.nextUrl.searchParams.get('token') ?? '';
     const { status, locale } = await confirmWaitlistSignup(token);
