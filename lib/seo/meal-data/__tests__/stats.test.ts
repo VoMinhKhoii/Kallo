@@ -40,6 +40,17 @@ describe('kindOf', () => {
     expect(kindOf('en', 'Boiled egg')).toBeNull();
     expect(kindOf('en', 'Peanut butter')).toBeNull();
   });
+
+  it('keeps coatings, soups, chips and vegetable swaps out of their look-alikes', () => {
+    expect(kindOf('en', 'Breaded chicken breast')).toBeNull();
+    expect(kindOf('en', 'Tortilla chips')).toBeNull();
+    expect(kindOf('en', 'Chicken noodle soup')).toBeNull();
+    expect(kindOf('en', 'Zucchini noodles')).toBeNull();
+    expect(kindOf('en', 'Cauliflower rice')).toBeNull();
+    expect(kindOf('en', 'Cheeseburger patty')).toBeNull();
+    expect(kindOf('vi', 'Bột gạo')).toBeNull();
+    expect(kindOf('en', 'Sourdough bread')).toBe('bread');
+  });
 });
 
 describe.each(FOOD_PAGE_LOCALES)('meal data, %s', (locale) => {

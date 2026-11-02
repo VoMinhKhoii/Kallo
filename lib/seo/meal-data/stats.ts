@@ -59,7 +59,7 @@ function words(alternatives: string): RegExp {
 /**
  * Ingredient kinds by name, per locale. Order matters: first match wins, so
  * noodles come before rice ("rice noodles") and sauces before oil ("dầu hào"
- * is oyster sauce). Vietnamese names match whole words only: JavaScript's
+ * is oyster sauce). Names match whole words only: JavaScript's
  * `\b` treats accented letters as non-word characters, and a substring would
  * read "miến" inside "miếng" (a piece of chả) or "mì" inside "bánh mì". English captures can carry Vietnamese oil names ("Dầu
  * ăn"), so the English oil pattern accepts them.
@@ -78,23 +78,41 @@ export const KIND_KEYS = [
 
 export type KindKey = (typeof KIND_KEYS)[number];
 
-const KINDS: Record<FoodLocale, { key: KindKey; pattern: RegExp }[]> = {
+const KINDS: Record<
+  FoodLocale,
+  { key: KindKey; pattern: RegExp; not?: RegExp }[]
+> = {
   en: [
     {
       key: 'noodles',
-      pattern: /pasta|spaghetti|noodle|ramen|linguine|fettuccine|macaroni/,
+      pattern: words(
+        'pasta|spaghetti|noodles?|ramen|linguine|fettuccine|macaroni|udon|soba|penne'
+      ),
+      // A whole soup, a vegetable "noodle" or a seasoning packet is not pasta.
+      not: words('soup|zucchini|seasoning|packet'),
     },
     {
       key: 'sauce',
-      pattern: /sauce|dressing|mayo|aioli|gravy|ketchup|dầu hào/,
+      pattern: words(
+        'sauce|dressing|mayo|mayonnaise|aioli|gravy|ketchup|dầu hào'
+      ),
     },
-    { key: 'oil', pattern: /\boil\b|dầu|mỡ/ },
+    { key: 'oil', pattern: words('oil|dầu|mỡ') },
     { key: 'butter', pattern: /^(?!.*peanut).*\bbutter\b/ },
-    { key: 'cheese', pattern: /cheese|parmesan|mozzarella|cheddar|feta/ },
-    { key: 'rice', pattern: /\brice\b/ },
     {
+      key: 'cheese',
+      pattern: words(
+        'cheese|parmesan|mozzarella|cheddar|feta|halloumi|ricotta'
+      ),
+    },
+    { key: 'rice', pattern: words('rice'), not: words('cauliflower') },
+    {
+      // Whole words ("breaded chicken" is meat), and not crumbs or chips.
       key: 'bread',
-      pattern: /tortilla|bread|\bbun\b|bagel|toast|pita|wrap|naan|\broll\b/,
+      pattern: words(
+        'bread|tortillas?|buns?|bagel|toast|pita|wraps?|naan|rolls?|brioche|baguette'
+      ),
+      not: /crumb|chips/,
     },
   ],
   vi: [
@@ -106,7 +124,7 @@ const KINDS: Record<FoodLocale, { key: KindKey; pattern: RegExp }[]> = {
     { key: 'sauce', pattern: words('nước mắm|nước chấm|mắm|tương|dầu hào') },
     { key: 'oil', pattern: words('dầu|mỡ') },
     { key: 'sugar', pattern: words('đường|sữa đặc') },
-    { key: 'rice', pattern: words('cơm|gạo') },
+    { key: 'rice', pattern: words('cơm|gạo'), not: words('bột') },
     { key: 'broth', pattern: words('nước dùng|nước lèo') },
   ],
 };
@@ -114,7 +132,10 @@ const KINDS: Record<FoodLocale, { key: KindKey; pattern: RegExp }[]> = {
 /** The kind an ingredient name belongs to, or null. */
 export function kindOf(locale: FoodLocale, name: string): KindKey | null {
   const lower = name.toLowerCase();
-  return KINDS[locale].find((k) => k.pattern.test(lower))?.key ?? null;
+  return (
+    KINDS[locale].find((k) => k.pattern.test(lower) && !k.not?.test(lower))
+      ?.key ?? null
+  );
 }
 
 /** "The text never mentions oil or frying", per locale. */
