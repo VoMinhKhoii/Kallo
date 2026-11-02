@@ -71,12 +71,10 @@ export function validateProjectRefAlignment(databaseUrl, expectedProjectRef) {
  * Run a one-shot psql query against `databaseUrl` and return `{ status,
  * stdout, stderr }`. Always uses the unaligned (`-A`) tuples-only (`-t`)
  * mode with `ON_ERROR_STOP=1` so callers get predictable, parseable output
- * and a non-zero exit on SQL errors. Pass `extraArgs` for query-specific
- * formatting (e.g. `['-F', '|']` for pipe-delimited rows). Error
- * classification is left to the caller so each query can produce a tailored
- * remediation message.
+ * and a non-zero exit on SQL errors. Error classification is left to the
+ * caller, which knows what remediation to suggest.
  */
-function runPsqlQuery(databaseUrl, query, extraArgs = []) {
+function runPsqlQuery(databaseUrl, query) {
   const encodedDatabaseUrl = encodeDatabaseUrl(databaseUrl);
 
   const result = spawnSync(
@@ -88,7 +86,6 @@ function runPsqlQuery(databaseUrl, query, extraArgs = []) {
       'ON_ERROR_STOP=1',
       '-A',
       '-t',
-      ...extraArgs,
       '-c',
       query,
     ],
