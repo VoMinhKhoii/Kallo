@@ -1,14 +1,17 @@
-import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import type { File, Node } from '@babel/types';
 import { describe, expect, it } from 'vitest';
 import {
   directive,
   isCall,
+  lineOf,
   memberObject,
   parseSource,
+  ROOT,
+  resolveAlias,
+  sourceFiles,
   walk,
-} from '@/lib/__test-utils__/source-ast';
+} from '@/lib/__test-utils__/source';
 
 // Latency ratchets: deterministic counts that stand in for two measured
 // costs, so a later change cannot quietly bring either back (PRs #499, #500).
@@ -21,31 +24,11 @@ import {
 //    the free-plan database box: 32 ms p50 but 0.6 s p95 and 1 s p99 in prod.
 //    Hot paths verify the token locally (`verifyUser`).
 
-const ROOT = process.cwd();
 const SOURCE_DIRS = ['app', 'components', 'hooks', 'lib'];
-
-function sourceFiles(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === '__tests__' || entry.name === 'node_modules') continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) sourceFiles(full, out);
-    else if (/\.tsx?$/.test(entry.name) && !entry.name.endsWith('.d.ts')) {
-      out.push(full);
-    }
-  }
-  return out;
-}
 
 const files = SOURCE_DIRS.flatMap((dir) => sourceFiles(path.join(ROOT, dir)));
 const parsed = new Map(files.map((file) => [file, parseSource(file)]));
 const rel = (file: string) => path.relative(ROOT, file);
-const lineOf = (node: Node) => node.loc?.start.line ?? 0;
-
-function resolveAlias(specifier: string): string | undefined {
-  if (!specifier.startsWith('@/')) return undefined;
-  const base = path.join(ROOT, specifier.slice(2));
-  return [`${base}.ts`, `${base}.tsx`, `${base}/index.ts`].find(existsSync);
-}
 
 /** Local names this file imports from Server Action modules. */
 function serverActionImports(source: File) {
@@ -131,29 +114,28 @@ const HOT_AUTH_FUNCTIONS = new Set([
   'getAuthUser',
 ]);
 
+/** The name a function, method or `const x = …` declares, when a plain identifier. */
+function declaredName(node: Node): string | undefined {
+  switch (node.type) {
+    case 'FunctionDeclaration':
+      return node.id?.name;
+    case 'VariableDeclarator':
+      return node.id.type === 'Identifier' ? node.id.name : undefined;
+    case 'ClassMethod':
+    case 'ObjectMethod':
+      return node.kind === 'method' &&
+        !node.computed &&
+        node.key.type === 'Identifier'
+        ? node.key.name
+        : undefined;
+    default:
+      return undefined;
+  }
+}
+
 function inHotAuthFunction(node: Node) {
-  if (node.type === 'FunctionDeclaration') {
-    return (
-      node.id !== null &&
-      node.id !== undefined &&
-      HOT_AUTH_FUNCTIONS.has(node.id.name)
-    );
-  }
-  if (
-    (node.type === 'ClassMethod' || node.type === 'ObjectMethod') &&
-    node.kind === 'method'
-  ) {
-    return (
-      !node.computed &&
-      node.key.type === 'Identifier' &&
-      HOT_AUTH_FUNCTIONS.has(node.key.name)
-    );
-  }
-  return (
-    node.type === 'VariableDeclarator' &&
-    node.id.type === 'Identifier' &&
-    HOT_AUTH_FUNCTIONS.has(node.id.name)
-  );
+  const name = declaredName(node);
+  return name !== undefined && HOT_AUTH_FUNCTIONS.has(name);
 }
 
 /**

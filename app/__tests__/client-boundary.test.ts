@@ -1,7 +1,12 @@
-import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { directive, parseSource } from '@/lib/__test-utils__/source-ast';
+import {
+  directive,
+  parseSource,
+  ROOT,
+  resolveAlias,
+  sourceFiles,
+} from '@/lib/__test-utils__/source';
 
 // A Server Component that imports a plain value (a constant, a function) from
 // a 'use client' module does not get the value: the bundler hands it a client
@@ -11,26 +16,6 @@ import { directive, parseSource } from '@/lib/__test-utils__/source-ast';
 // phone, prod 2026-10-27). Unit tests cannot see it (no RSC transform), so
 // this checks the source: server code under app/ may import only components
 // from a 'use client' module. Move shared values to a plain module.
-
-const ROOT = process.cwd();
-
-function sourceFiles(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === '__tests__' || entry.name === 'node_modules') continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) sourceFiles(full, out);
-    else if (/\.tsx?$/.test(entry.name) && !entry.name.endsWith('.d.ts')) {
-      out.push(full);
-    }
-  }
-  return out;
-}
-
-function resolveAlias(specifier: string) {
-  if (!specifier.startsWith('@/')) return undefined;
-  const base = path.join(ROOT, specifier.slice(2));
-  return [`${base}.ts`, `${base}.tsx`, `${base}/index.ts`].find(existsSync);
-}
 
 /** A React component name: PascalCase with at least one lowercase letter
  *  (so `OAuthErrorToast` is one and `TIMEZONE_COOKIE` is not). */
