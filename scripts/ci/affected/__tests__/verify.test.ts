@@ -16,6 +16,10 @@ function run(
   for (const [name, job] of Object.entries(JOBS)) {
     if (job.advisory) continue;
     needs[name] = { result: overrides[name] ?? 'success' };
+    // A self-gated job reports what it decided, which matches `changes`.
+    if (job.selfGated) {
+      needs[name].outputs = { ran: outputs[job.group] ?? 'false' };
+    }
   }
   needs.changes = { result: overrides.changes ?? 'success', outputs };
   return needs;
@@ -32,17 +36,34 @@ describe('problems', () => {
     ).toEqual([]);
   });
 
+  // Self-gated jobs (Type Check, the shards, Build) still succeed on a
+  // docs-only PR: they start, find nothing to do, and report ran=false.
   it('passes a docs-only PR whose gated jobs all skipped', () => {
     const skipped = {
-      typecheck: 'skipped',
-      'test-shard': 'skipped',
-      build: 'skipped',
-      e2e: 'skipped',
       migrations: 'skipped',
       'container-build': 'skipped',
       'container-publish': 'skipped',
     };
     expect(problems(run(NOTHING, skipped), PR)).toEqual([]);
+  });
+
+  it('fails a self-gated job whose decision differs from changes', () => {
+    const needs = run(EVERYTHING, { 'container-publish': 'skipped' });
+    needs.build = { result: 'success', outputs: { ran: 'false' } };
+    expect(problems(needs, PR)).toEqual([
+      'build: ran=false, but changes said web=true',
+    ]);
+    const quiet = run(NOTHING, {
+      migrations: 'skipped',
+      'container-build': 'skipped',
+      'container-publish': 'skipped',
+    });
+    quiet.typecheck = { result: 'success', outputs: { ran: 'true' } };
+    delete quiet.build.outputs;
+    expect(problems(quiet, PR)).toEqual([
+      'typecheck: ran=true, but changes said web=false',
+      'build: ran=unset, but changes said web=false',
+    ]);
   });
 
   it('fails a job skipped though its group had to run', () => {

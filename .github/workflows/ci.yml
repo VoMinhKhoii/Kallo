@@ -55,32 +55,58 @@ jobs:
       - name: Structure gate (size, folders, test placement, barrels)
         run: node scripts/ci/check-structure/check-structure.mjs --strict
 
+  # Type Check, the unit test shards and Build gate themselves (the
+  # `affected` step, then every step on its answer) instead of waiting for the
+  # `changes` job: they set how long a PR takes, and each extra stage costs a
+  # round of GitHub job scheduling. `CI passed` checks each answer against
+  # `changes`.
   typecheck:
     name: Type Check
-    needs: changes
-    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      ran: ${{ steps.affected.outputs.run }}
     steps:
+      # Full history (blobless) for the affected step below.
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-bun
-      - run: bunx tsc --noEmit
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - id: affected
+        uses: ./.github/actions/affected
+        with:
+          group: web
+      - if: steps.affected.outputs.run == 'true'
+        uses: ./.github/actions/setup-bun
+      - if: steps.affected.outputs.run == 'true'
+        run: bunx tsc --noEmit
 
   test-shard:
     name: Unit Test (${{ matrix.shard }}/${{ strategy.job-total }})
-    needs: changes
-    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      ran: ${{ steps.affected.outputs.run }}
     strategy:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4, 5, 6]
     steps:
+      # Full history (blobless) for the affected step below.
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - id: affected
+        uses: ./.github/actions/affected
+        with:
+          group: web
+      - if: steps.affected.outputs.run == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: ./.github/actions/setup-bun
-      - run: bun run test -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+      - if: steps.affected.outputs.run == 'true'
+        uses: ./.github/actions/setup-bun
+      - if: steps.affected.outputs.run == 'true'
+        run: bun run test -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
         env:
           SKIP_DB_TESTS: '1'
       # The prod deploy runs the card search artifact builder under Bun on
@@ -88,7 +114,7 @@ jobs:
       # the builder's own code under Bun, so a native-binary or runtime
       # mismatch fails here, not in a deploy.
       - name: Card artifact builder runs under Bun
-        if: matrix.shard == 1
+        if: steps.affected.outputs.run == 'true' && matrix.shard == 1
         run: bun scripts/ci/check-card-artifact-runtime.ts
 
   # The same `next build` the image runs, with the image's public build
@@ -96,9 +122,9 @@ jobs:
   # needs the image build only when something Docker-specific changes.
   build:
     name: Build
-    needs: changes
-    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      ran: ${{ steps.affected.outputs.run }}
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'placeholder' }}
@@ -108,18 +134,29 @@ jobs:
       NEXT_PUBLIC_AVATAR_BASE_URL: ${{ vars.NEXT_PUBLIC_AVATAR_BASE_URL }}
       R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
     steps:
+      # Full history (blobless) for the affected step below.
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-bun
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - id: affected
+        uses: ./.github/actions/affected
+        with:
+          group: web
+      - if: steps.affected.outputs.run == 'true'
+        uses: ./.github/actions/setup-bun
       # Turbopack keeps its build cache in .next/cache (on by default since
       # Next 16.3). PRs restore main's latest; only main saves one, so PR runs
       # do not crowd the repo's 10 GB cache.
-      - uses: actions/cache/restore@v4
+      - if: steps.affected.outputs.run == 'true'
+        uses: actions/cache/restore@v4
         with:
           path: .next/cache
           key: next-build-${{ runner.os }}-${{ github.sha }}
           restore-keys: next-build-${{ runner.os }}-
-      - run: bun run build
-      - if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - if: steps.affected.outputs.run == 'true'
+        run: bun run build
+      - if: steps.affected.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/cache/save@v4
         with:
           path: .next/cache
