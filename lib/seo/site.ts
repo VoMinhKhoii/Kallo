@@ -1,4 +1,4 @@
-// Canonical public origin for metadata, sitemap, and robots.
+// Canonical public origin for metadata, sitemap and robots.
 //
 // This is a hardcoded constant, not an env var, on purpose: those three
 // surfaces are statically rendered, and a single container image serves prod
