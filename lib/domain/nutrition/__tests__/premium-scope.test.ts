@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { stripMicronutrients } from '@/lib/domain/nutrition/premium-scope';
+import {
+  NUTRITION_KEYS,
+  type NutritionValues,
+} from '@/lib/ai/types/nutrition-values';
+import {
+  scopeNutritionForViewer,
+  stripMicronutrients,
+} from '@/lib/domain/nutrition/premium-scope';
 import type {
   DaySeriesMetricKey,
   NutrientCardData,
@@ -8,6 +15,30 @@ import type {
   NutritionNutrientKey,
   NutritionOverview,
 } from '@/lib/domain/nutrition/types';
+
+describe('scopeNutritionForViewer', () => {
+  const values = Object.fromEntries(
+    NUTRITION_KEYS.map((key) => [key, 12])
+  ) as unknown as NutritionValues;
+  values.proteinG = null;
+
+  it('keeps only calories and the three macros for a locked viewer', () => {
+    const before = structuredClone(values);
+    const scoped = scopeNutritionForViewer(values, true);
+    for (const key of NUTRITION_KEYS) {
+      expect(scoped[key]).toBe(
+        ['caloriesKcal', 'proteinG', 'carbohydrateG', 'fatG'].includes(key)
+          ? values[key]
+          : null
+      );
+    }
+    expect(values).toEqual(before);
+  });
+
+  it('returns the same values for an entitled viewer', () => {
+    expect(scopeNutritionForViewer(values, false)).toBe(values);
+  });
+});
 
 function card(nutrient: NutritionNutrientKey): NutrientCardData {
   return {

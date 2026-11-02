@@ -17,6 +17,7 @@ import {
 } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   acceptMealShareInviteSchema,
@@ -47,7 +48,7 @@ export async function acceptMealShareInviteAction(input: {
   // No premium gate here on purpose: the INITIATOR pays. By the time an invite
   // exists a split has already halved the sender's meal, so refusing the
   // recipient would strand that half against an offer they can never take.
-  return withNotifications(db, async (tx, notify) => {
+  const response = withNotifications(db, async (tx, notify) => {
     // Everything up to and including the claim is shared with the cheat path —
     // see `claimPendingInvite` for the ordering rules it enforces.
     const { invite, source, copyFactor } = await claimPendingInvite(tx, {
@@ -140,6 +141,7 @@ export async function acceptMealShareInviteAction(input: {
 
     return { mealId, meal };
   });
+  return scopeMealResponseForViewer(user.id, response);
 }
 
 // ---------------------------------------------------------------------------

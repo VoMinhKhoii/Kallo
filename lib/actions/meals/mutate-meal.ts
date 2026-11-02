@@ -11,6 +11,7 @@ import {
   sumAlcoholG,
 } from '@/lib/actions/logging/persisted-meal';
 import { releaseInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
 import {
@@ -145,7 +146,7 @@ export async function updateMealAction(input: {
   const parsed = updateMealSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  return await db.transaction(async (tx) => {
+  const response = db.transaction(async (tx) => {
     // Ownership gate: load the meal scoped to the authenticated user. A meal
     // belonging to anyone else simply isn't returned, so the edit can't proceed.
     const [meal] = await tx
@@ -298,4 +299,5 @@ export async function updateMealAction(input: {
 
     return { mealId: meal.id, meal: savedMeal };
   });
+  return scopeMealResponseForViewer(user.id, response);
 }

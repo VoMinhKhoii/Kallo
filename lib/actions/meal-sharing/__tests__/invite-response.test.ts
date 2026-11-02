@@ -77,9 +77,15 @@ const { mockTxSelect, mockTxUpdate, mockTxInsert, mockTx } = vi.hoisted(() => {
 
 // The accept side is deliberately UNGATED (see share-with-friends: a split has
 // already halved the sender's meal). Mocked only so this suite can prove the
-// gate module is never reached.
+// throwing gate is never reached. Nutrition still uses a response-only gate.
 const assertFeatureAccess = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+const micronutrientGate = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ locked: false })
+);
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  assertFeatureAccess,
+  checkFeatureGate: micronutrientGate,
+}));
 
 vi.mock('@/lib/infra/auth/session', async () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
@@ -261,14 +267,22 @@ describe('acceptMealShareInviteAction', () => {
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
-  it('copies the source meal verbatim into my diary with its portion', async () => {
+  it.each([
+    false,
+    true,
+  ])('saves all invite nutrients and scopes my response (locked=%s)', async (locked) => {
+    micronutrientGate.mockResolvedValueOnce({ locked });
     queueLimitSelect([
       { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
     ]);
-    queueLimitSelect([sourceMeal({ portionFactor: 0.5, caloriesKcal: 100 })]); // the sender's split share, row-locked before claim
+    queueLimitSelect([
+      sourceMeal({ portionFactor: 0.5, caloriesKcal: 100, sodiumMg: 120 }),
+    ]); // the sender's split share, row-locked before claim
     installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
     queueLimitSelect([{ id: 'friendship-1' }]); // still friends
-    queueWhereSelect([sourceItem({ estimatedGrams: 200, caloriesKcal: 100 })]);
+    queueWhereSelect([
+      sourceItem({ estimatedGrams: 200, caloriesKcal: 100, sodiumMg: 120 }),
+    ]);
 
     const captured: Record<string, { vals: unknown }> = {};
     mockTxInsert.mockImplementation(routeInserts(captured));
@@ -292,6 +306,19 @@ describe('acceptMealShareInviteAction', () => {
     expect(items[0]?.id).not.toBe(UUID_ITEM); // fresh id
 
     expect(result.mealId).toBe(UUID_NEW);
+    expect(mealVals.sodiumMg).toBe(120);
+    expect(items[0].sodiumMg).toBe(120);
+    expect(result.meal.nutrition.sodiumMg).toBe(locked ? null : 120);
+    expect(result.meal.mealItemGroups[0].nutrition.sodiumMg).toBe(
+      locked ? null : 120
+    );
+    expect(
+      result.meal.mealItemGroups[0].ingredients[0].nutrition.sodiumMg
+    ).toBe(locked ? null : 120);
+    expect(micronutrientGate).toHaveBeenCalledExactlyOnceWith(
+      { userId: mockUser.id },
+      'micronutrients'
+    );
     expect(result.meal.portionFactor).toBe(0.5);
     expect(result.meal.share).toEqual({
       shareId: 'share-1',

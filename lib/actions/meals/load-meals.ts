@@ -10,6 +10,7 @@ import {
 import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
 import { reapAbandonedPendingAnalyses } from '@/lib/actions/meals/day/reap-abandoned';
 import { toStagedCard } from '@/lib/actions/meals/day/staged-card';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
 import type { CheatSlidersPersisted } from '@/lib/core/types/cheat';
 import {
@@ -47,7 +48,10 @@ export async function loadMealsByDate(input: {
   const parsed = loadMealsByDateSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  return loadMealsByDateForUser(user.id, parsed);
+  return scopeMealResponseForViewer(
+    user.id,
+    loadMealsByDateForUser(user.id, parsed)
+  );
 }
 
 async function loadMealsByDateForUser(
@@ -212,7 +216,10 @@ export async function loadLoggingDay(input: {
   const { user } = await requireAuthAndProfile();
   const [persistedMeals, pendingConfirmations, marks, reaped] =
     await Promise.all([
-      loadMealsByDateForUser(user.id, parsed),
+      scopeMealResponseForViewer(
+        user.id,
+        loadMealsByDateForUser(user.id, parsed)
+      ),
       loadPendingAnalysesByDateForUser(user.id, parsed),
       db
         .select({ id: dayCompletionMarks.id })

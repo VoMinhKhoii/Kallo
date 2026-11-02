@@ -1,4 +1,30 @@
+import {
+  type GoalAdjustedNutrient,
+  NUTRITION_KEYS,
+  type NutritionValues,
+} from '@/lib/ai/types/nutrition-values';
 import type { DaySeriesMetricKey, MacroKey, NutritionOverview } from './types';
+
+/** The calorie/macro values every viewer sees; everything else is Premium. */
+const MACRO_NUTRIENTS = new Set<keyof NutritionValues>([
+  'caloriesKcal',
+  'proteinG',
+  'carbohydrateG',
+  'fatG',
+] satisfies GoalAdjustedNutrient[]);
+
+/** Response-only projection. Stored nutrition must always remain complete. */
+export function scopeNutritionForViewer(
+  values: NutritionValues,
+  locked: boolean
+): NutritionValues {
+  if (!locked) return values;
+  const scoped = { ...values };
+  for (const key of NUTRITION_KEYS) {
+    if (!MACRO_NUTRIENTS.has(key)) scoped[key] = null;
+  }
+  return scoped;
+}
 
 /**
  * The macro/calorie metrics a non-entitled viewer keeps on the time axis —

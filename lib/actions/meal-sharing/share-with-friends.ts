@@ -20,6 +20,7 @@
 
 import { and, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareMealWithFriendsSchema } from '@/lib/core/validation/social';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
@@ -70,7 +71,7 @@ export async function shareMealWithFriendsAction(input: {
     throw Errors.validationFailed('Hãy chọn ít nhất một người bạn.');
   }
 
-  return withNotifications(db, async (tx, notify) => {
+  const response = withNotifications(db, async (tx, notify) => {
     // Ownership gate (mirrors duplicateMealAction). Locked FOR UPDATE so two
     // concurrent splits can't both read portionFactor = 1 and each scale the
     // same meal from the stale full portion.
@@ -299,4 +300,5 @@ export async function shareMealWithFriendsAction(input: {
     // because it is indistinguishable from success and they stop trying.
     return { invitedCount: offered.length, portionFactor, meal };
   });
+  return scopeMealResponseForViewer(user.id, response);
 }

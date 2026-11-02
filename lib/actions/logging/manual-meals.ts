@@ -11,6 +11,7 @@ import {
 } from '@/lib/actions/logging/persisted-meal';
 import { insertDefaultCircleShare } from '@/lib/actions/meals/insert-default-share';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import {
@@ -61,6 +62,13 @@ export async function saveManualMealAction(
   const parsed = saveManualMealSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
+  return scopeMealResponseForViewer(user.id, saveManualMeal(user.id, parsed));
+}
+
+async function saveManualMeal(
+  userId: string,
+  parsed: SaveManualMealInput
+): Promise<ConfirmMealResponse> {
   const ids = parsed.items.map((item) => item.foodCompositionId);
   const compositionRows = await db
     .select(compositionSelection)
@@ -128,7 +136,7 @@ export async function saveManualMealAction(
         .insert(meals)
         .values({
           ...(parsed.mealId ? { id: parsed.mealId } : {}),
-          userId: user.id,
+          userId,
           rawInput,
           mealSlot,
           // User-entered exact grams from verified DB entries — no estimation.
@@ -155,7 +163,7 @@ export async function saveManualMealAction(
     // re-confirm/edit path (existing meal id).
     const share = await insertDefaultCircleShare(tx, {
       mealId: meal.id,
-      actorId: user.id,
+      actorId: userId,
       rawInput,
     });
 

@@ -1,5 +1,14 @@
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const micronutrientGate = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ locked: false })
+);
+vi.mock('@/lib/domain/billing/feature-gate', async (original) => ({
+  ...(await original<Record<string, unknown>>()),
+  checkFeatureGate: micronutrientGate,
+}));
+
 import type { PipelineResult } from '@/lib/ai/types/result';
 
 // ---------------------------------------------------------------------------
@@ -474,7 +483,11 @@ describe('confirmAndSaveMealAction', () => {
     expect(mealRow.proteinG).toBe(34);
   });
 
-  it('should persist gram-scaled micros as single values', async () => {
+  it.each([
+    false,
+    true,
+  ])('persists scaled micros and scopes the response (locked=%s)', async (locked) => {
+    micronutrientGate.mockResolvedValueOnce({ locked });
     const capturedValues: unknown[] = [];
     const pipelineResult = JSON.parse(
       JSON.stringify(samplePipelineResult)
@@ -501,10 +514,21 @@ describe('confirmAndSaveMealAction', () => {
 
     mockTxInsert.mockImplementation(mockInsertRouting(capturedValues));
 
-    await confirmAndSaveMealAction({
+    const result = await confirmAndSaveMealAction({
       analysisId: UUID_2,
       edits: [{ mealItemOrder: 0, ingredientIndex: 0, newGrams: 400 }],
     });
+    expect(result.meal.nutrition.sodiumMg).toBe(locked ? null : 240);
+    expect(result.meal.mealItemGroups[0].nutrition.sodiumMg).toBe(
+      locked ? null : 240
+    );
+    expect(
+      result.meal.mealItemGroups[0].ingredients[0].nutrition.sodiumMg
+    ).toBe(locked ? null : 240);
+    expect(micronutrientGate).toHaveBeenCalledExactlyOnceWith(
+      { userId: mockUser.id },
+      'micronutrients'
+    );
 
     const mealItemRows = capturedValues[1] as Record<string, unknown>[];
     const firstItem = mealItemRows[0] as Record<string, unknown>;

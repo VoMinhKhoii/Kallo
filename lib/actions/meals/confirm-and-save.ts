@@ -11,6 +11,7 @@ import {
   nutritionValuesToRow,
   sumAlcoholG,
 } from '@/lib/actions/logging/persisted-meal';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
@@ -89,7 +90,7 @@ export async function confirmAndSaveMealAction(input: {
   // pending row is a cheat one. See `assertCheatConfirmAllowed`.
   await assertCheatConfirmAllowed(user.id, parsed.analysisId);
 
-  return await db.transaction(async (tx) => {
+  const response = db.transaction(async (tx) => {
     // Atomically consume the pending analysis (prevents duplicate confirms)
     const [pending] = await tx
       .delete(pendingAnalyses)
@@ -372,4 +373,5 @@ export async function confirmAndSaveMealAction(input: {
     // `meal` is the authoritative payload the web client reconciles against.
     return { mealId: meal.id, meal: savedMeal };
   });
+  return scopeMealResponseForViewer(user.id, response);
 }

@@ -8,6 +8,7 @@ import { and, eq, getTableColumns, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   dateStringSchema,
@@ -53,7 +54,7 @@ export async function logSharedMealAction(input: {
   // transaction; responding to an invite stays free (see invite-response).
   await assertFeatureAccess({ userId: user.id }, 'copy_split');
 
-  return withNotifications(db, async (tx, notify) => {
+  const response = withNotifications(db, async (tx, notify) => {
     if (!(await canViewShare(user.id, parsed.shareId, tx))) {
       throw Errors.notFound('Không tìm thấy bài chia sẻ.');
     }
@@ -115,4 +116,5 @@ export async function logSharedMealAction(input: {
 
     return copied;
   });
+  return scopeMealResponseForViewer(user.id, response);
 }

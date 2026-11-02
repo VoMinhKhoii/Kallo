@@ -11,6 +11,7 @@ import {
 } from '@/lib/actions/logging/persisted-meal';
 import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import {
   type RelogItemsInput,
@@ -79,7 +80,7 @@ export async function relogMealItemsAction(
       // rather than being copied — same as duplicate/manual.
       const mealSlot = inferMealSlot(loggedAt);
 
-      return await db.transaction(async (tx) => {
+      const response = db.transaction(async (tx) => {
         // Lock the sources (FOR UPDATE) so a concurrent delete can't land between
         // this read and the copy below (mirrors duplicateMealAction).
         const { dishes, sourceConfidences } = await resolveRelogSources(
@@ -184,6 +185,7 @@ export async function relogMealItemsAction(
           }),
         };
       });
+      return scopeMealResponseForViewer(user.id, response);
     }
   );
 }

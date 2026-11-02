@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const gate = vi.hoisted(() => vi.fn().mockResolvedValue({ locked: false }));
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  checkFeatureGate: gate,
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks — the day reads run on the `db` singleton only.
 // ---------------------------------------------------------------------------
@@ -55,12 +60,28 @@ import {
   UUID_MEAL,
 } from './meal-doubles';
 
+const GATE_CASES = [
+  ['unlocked', () => gate.mockResolvedValueOnce({ locked: false }), false],
+  ['locked', () => gate.mockResolvedValueOnce({ locked: true }), true],
+  [
+    'gate failure hides micros',
+    () => {
+      vi.spyOn(console, 'error').mockImplementationOnce(() => {});
+      gate.mockRejectedValueOnce(new Error('entitlements unavailable'));
+    },
+    true,
+  ],
+] as const;
+
 describe('loadMealsByDate', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('returns flat persisted nutrition for meals, groups, and ingredients', async () => {
+  it.each(
+    GATE_CASES
+  )('scopes meals, groups, and ingredients (%s)', async (_, arrangeGate, locked) => {
+    arrangeGate();
     mockDbSelect
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
@@ -138,7 +159,14 @@ describe('loadMealsByDate', () => {
     expect(meals[0]?.nutrition.caloriesKcal).toBe(830);
     expect(meals[0]?.nutrition.proteinG).toBe(34);
     expect(meals[0]?.mealItemGroups[0]?.nutrition.caloriesKcal).toBe(830);
-    expect(meals[0]?.mealItemGroups[0]?.nutrition.sodiumMg).toBe(240);
+    expect(meals[0]?.mealItemGroups[0]?.nutrition.sodiumMg).toBe(
+      locked ? null : 240
+    );
+    expect(meals[0]?.nutrition.sodiumMg).toBe(locked ? null : 240);
+    expect(
+      meals[0]?.mealItemGroups[0]?.ingredients[0]?.nutrition.sodiumMg
+    ).toBe(locked ? null : 240);
+    expect(gate).toHaveBeenCalledTimes(1);
     expect(
       meals[0]?.mealItemGroups[0]?.ingredients[0]?.nutrition.proteinG
     ).toBe(9);
@@ -401,6 +429,20 @@ describe('loadLoggingDay', () => {
     });
 
     expect(day.pendingConfirmations.map((p) => p.id)).toEqual([UUID_2]);
+  });
+
+  it('still returns the day when the micronutrient gate fails', async () => {
+    vi.spyOn(console, 'error').mockImplementationOnce(() => {});
+    gate.mockRejectedValueOnce(new Error('entitlements unavailable'));
+    queueDay([pendingRow(UUID_1)]);
+
+    const day = await loadLoggingDay({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(day.persistedMeals).toEqual([]);
+    expect(day.pendingConfirmations.map((p) => p.id)).toEqual([UUID_1]);
   });
 
   it('keeps every card when the sweep reaped nothing', async () => {
