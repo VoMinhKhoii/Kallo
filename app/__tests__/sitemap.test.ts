@@ -79,4 +79,18 @@ describe('sitemap', () => {
       }
     }
   });
+
+  it('lists the meal data page once per locale, paired as alternates', async () => {
+    const entries = await sitemap();
+    for (const locale of ['en', 'vi']) {
+      const hits = entries.filter(
+        (e) => e.url === `${SITE_URL}/${locale}/data/meal-calorie-variation`
+      );
+      expect(hits).toHaveLength(1);
+      expect(hits[0].alternates?.languages).toMatchObject({
+        en: `${SITE_URL}/en/data/meal-calorie-variation`,
+        vi: `${SITE_URL}/vi/data/meal-calorie-variation`,
+      });
+    }
+  });
 });

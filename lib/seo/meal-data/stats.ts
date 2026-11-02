@@ -1,0 +1,216 @@
+import { type FoodPage, mealKcal, pagesOf } from '@/lib/seo/food-pages/pages';
+import type { FoodLocale } from '@/lib/seo/food-pages/slugs';
+
+/**
+ * What the food pages' real logged meals show when read together: how far
+ * the same dish swings, which ingredients move it, and how often Kallo counts
+ * cooking oil nobody typed. Computed from the committed captures at build
+ * time, so this page can never disagree with the food pages it summarises.
+ *
+ * The four meals per dish were written to span how people commonly eat it,
+ * not drawn from users' logs; the page says so.
+ */
+
+export interface MealSwing {
+  page: FoodPage;
+  low: number;
+  high: number;
+  /** Heaviest meal ÷ lightest meal. */
+  ratio: number;
+  lowLabel: string;
+  highLabel: string;
+}
+
+export function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2
+    ? sorted[mid]
+    : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+}
+
+/** Every dish's lightest and heaviest meal, biggest swing first. */
+export function mealSwings(locale: FoodLocale): MealSwing[] {
+  return pagesOf(locale)
+    .map((page) => {
+      const meals = page.capture.variants.map((v) => ({
+        kcal: mealKcal(v),
+        label: page.meals.find((m) => m.key === v.key)?.label ?? v.key,
+      }));
+      const lightest = meals.reduce((a, b) => (b.kcal < a.kcal ? b : a));
+      const heaviest = meals.reduce((a, b) => (b.kcal > a.kcal ? b : a));
+      return {
+        page,
+        low: lightest.kcal,
+        high: heaviest.kcal,
+        ratio: heaviest.kcal / Math.max(lightest.kcal, 1),
+        lowLabel: lightest.label,
+        highLabel: heaviest.label,
+      };
+    })
+    .sort((a, b) => b.ratio - a.ratio);
+}
+
+/** Any of `alternatives` as whole words, Unicode-aware. */
+function words(alternatives: string): RegExp {
+  return new RegExp(`(?:^|[^\\p{L}])(?:${alternatives})(?=[^\\p{L}]|$)`, 'u');
+}
+
+/**
+ * Ingredient kinds by name, per locale. Order matters: first match wins, so
+ * noodles come before rice ("rice noodles") and sauces before oil ("dầu hào"
+ * is oyster sauce). Names match whole words only: JavaScript's
+ * `\b` treats accented letters as non-word characters, and a substring would
+ * read "miến" inside "miếng" (a piece of chả) or "mì" inside "bánh mì". English captures can carry Vietnamese oil names ("Dầu
+ * ăn"), so the English oil pattern accepts them.
+ */
+export const KIND_KEYS = [
+  'noodles',
+  'rice',
+  'bread',
+  'cheese',
+  'oil',
+  'butter',
+  'sauce',
+  'sugar',
+  'broth',
+] as const;
+
+export type KindKey = (typeof KIND_KEYS)[number];
+
+const KINDS: Record<
+  FoodLocale,
+  { key: KindKey; pattern: RegExp; not?: RegExp }[]
+> = {
+  en: [
+    {
+      key: 'noodles',
+      pattern: words(
+        'pasta|spaghetti|noodles?|ramen|linguine|fettuccine|macaroni|udon|soba|penne'
+      ),
+      // A whole soup, a vegetable "noodle" or a seasoning packet is not pasta.
+      not: words('soup|zucchini|seasoning|packet'),
+    },
+    {
+      key: 'sauce',
+      pattern: words(
+        'sauce|dressing|mayo|mayonnaise|aioli|gravy|ketchup|dầu hào'
+      ),
+    },
+    { key: 'oil', pattern: words('oil|dầu|mỡ') },
+    { key: 'butter', pattern: /^(?!.*peanut).*\bbutter\b/ },
+    {
+      key: 'cheese',
+      pattern: words(
+        'cheese|parmesan|mozzarella|cheddar|feta|halloumi|ricotta'
+      ),
+    },
+    { key: 'rice', pattern: words('rice'), not: words('cauliflower') },
+    {
+      // Whole words ("breaded chicken" is meat), and not crumbs or chips.
+      key: 'bread',
+      pattern: words(
+        'bread|tortillas?|buns?|bagel|toast|pita|wraps?|naan|rolls?|brioche|baguette'
+      ),
+      not: /crumb|chips/,
+    },
+  ],
+  vi: [
+    { key: 'bread', pattern: words('bánh mì|ổ bánh') },
+    {
+      key: 'noodles',
+      pattern: words('bún|phở|hủ tiếu|bánh canh|miến|mì'),
+    },
+    { key: 'sauce', pattern: words('nước mắm|nước chấm|mắm|tương|dầu hào') },
+    { key: 'oil', pattern: words('dầu|mỡ') },
+    { key: 'sugar', pattern: words('đường|sữa đặc') },
+    { key: 'rice', pattern: words('cơm|gạo'), not: words('bột') },
+    { key: 'broth', pattern: words('nước dùng|nước lèo') },
+  ],
+};
+
+/** The kind an ingredient name belongs to, or null. */
+export function kindOf(locale: FoodLocale, name: string): KindKey | null {
+  const lower = name.toLowerCase();
+  return (
+    KINDS[locale].find((k) => k.pattern.test(lower) && !k.not?.test(lower))
+      ?.key ?? null
+  );
+}
+
+/** "The text never mentions oil or frying", per locale. */
+const MENTIONS_FAT: Record<FoodLocale, RegExp> = {
+  en: /\boil\b|fried|\bfry|fries|butter/,
+  vi: /dầu|mỡ|chiên|rán|xào/,
+};
+
+export interface IngredientStat {
+  key: KindKey;
+  /** Meals with at least one line of this kind. */
+  meals: number;
+  medianKcal: number;
+  maxKcal: number;
+}
+
+/** Per kind: how many meals carry it and what a line of it costs. */
+export function ingredientStats(locale: FoodLocale): IngredientStat[] {
+  const byKind = new Map<KindKey, { kcal: number[]; meals: number }>();
+  for (const page of pagesOf(locale)) {
+    for (const variant of page.capture.variants) {
+      const seen = new Set<KindKey>();
+      for (const ingredient of variant.ingredients) {
+        const kind = kindOf(locale, ingredient.name);
+        if (!kind) continue;
+        const entry = byKind.get(kind) ?? { kcal: [], meals: 0 };
+        entry.kcal.push(ingredient.kcal);
+        byKind.set(kind, entry);
+        seen.add(kind);
+      }
+      for (const kind of seen)
+        (byKind.get(kind) as { meals: number }).meals += 1;
+    }
+  }
+  return [...byKind.entries()]
+    .map(([key, { kcal, meals }]) => ({
+      key,
+      meals,
+      medianKcal: median(kcal),
+      maxKcal: Math.max(...kcal),
+    }))
+    .sort((a, b) => b.medianKcal - a.medianKcal);
+}
+
+export interface HiddenOil {
+  /** All meals read. */
+  total: number;
+  /** Meals Kallo counted cooking oil or fat in. */
+  withOil: number;
+  /** Of those, meals whose text never mentions oil, fat or frying. */
+  unnamed: number;
+  /** Median kcal of that unnamed oil, per meal. */
+  medianKcal: number;
+}
+
+export function hiddenOil(locale: FoodLocale): HiddenOil {
+  let total = 0;
+  let withOil = 0;
+  const unnamed: number[] = [];
+  for (const page of pagesOf(locale)) {
+    for (const variant of page.capture.variants) {
+      total += 1;
+      const kcal = variant.ingredients
+        .filter((i) => kindOf(locale, i.name) === 'oil')
+        .reduce((sum, i) => sum + i.kcal, 0);
+      if (kcal === 0) continue;
+      withOil += 1;
+      if (!MENTIONS_FAT[locale].test(variant.text.toLowerCase()))
+        unnamed.push(kcal);
+    }
+  }
+  return {
+    total,
+    withOil,
+    unnamed: unnamed.length,
+    medianKcal: unnamed.length ? median(unnamed) : 0,
+  };
+}

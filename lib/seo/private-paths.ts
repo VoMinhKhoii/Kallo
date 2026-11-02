@@ -1,4 +1,5 @@
 import { FOOD_PAGE_PREFIX } from '@/lib/seo/food-pages/slugs';
+import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
 
 /**
@@ -36,6 +37,7 @@ export const PUBLIC_NON_MARKDOWN_PREFIXES = [
   '/reset-password',
   '/design-system',
   FOOD_PAGE_PREFIX,
+  MEAL_DATA_PATH,
   TOOLS_PREFIX,
 ] as const;
 
