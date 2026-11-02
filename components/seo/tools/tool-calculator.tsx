@@ -62,7 +62,7 @@ export function ToolCalculator({
   const tag = locale === 'vi' ? 'vi-VN' : 'en-US';
   const format = (n: number, digits = 0) =>
     n.toLocaleString(tag, {
-      minimumFractionDigits: digits === 2 ? 0 : digits,
+      minimumFractionDigits: digits,
       maximumFractionDigits: digits,
     });
   const formatDate = (d: Date) =>

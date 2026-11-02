@@ -6,9 +6,15 @@ import type {
   BiologicalSex,
   BodyMetrics,
 } from '@/lib/domain/onboarding/types';
-import { ftInToCm, kgToLb, lbToKg, valid } from '@/lib/seo/tools/math';
+import { ftInToCm, valid } from '@/lib/seo/tools/math';
 import type { ToolUi } from '@/lib/seo/tools/types';
-import { ChoiceField, NumberField, SelectField } from './fields';
+import {
+  ChoiceField,
+  NumberField,
+  SelectField,
+  UnitsField,
+  WeightField,
+} from './fields';
 
 /**
  * The body every calorie calculator starts from: sex, age, weight, height and
@@ -33,8 +39,6 @@ const ACTIVITY: ActivityLevel[] = [
   'moderate',
   'very_active',
 ];
-
-const round1 = (n: number) => Math.round(n * 10) / 10;
 
 interface FtIn {
   ft?: number;
@@ -102,16 +106,7 @@ export function BodyFields({
   return (
     <div className="grid grid-cols-2 gap-4">
       {allowImperial ? (
-        <ChoiceField
-          className="col-span-2"
-          label={ui.units}
-          onChange={setUnits}
-          options={[
-            { value: 'metric', label: ui.metric },
-            { value: 'imperial', label: ui.imperial },
-          ]}
-          value={units}
-        />
+        <UnitsField onChange={setUnits} ui={ui} value={units} />
       ) : null}
       {withSex ? (
         <ChoiceField
@@ -134,19 +129,11 @@ export function BodyFields({
           value={body.age}
         />
       ) : null}
-      <NumberField
+      <WeightField
+        imperial={imperial}
+        kg={body.weightKg}
         label={ui.weight}
-        onChange={(w) =>
-          set({ weightKg: w === undefined ? w : imperial ? lbToKg(w) : w })
-        }
-        unit={imperial ? 'lb' : 'kg'}
-        value={
-          body.weightKg === undefined
-            ? undefined
-            : imperial
-              ? round1(kgToLb(body.weightKg))
-              : body.weightKg
-        }
+        onKg={(weightKg) => set({ weightKg })}
       />
       {imperial ? (
         <div className="grid grid-cols-2 gap-2">

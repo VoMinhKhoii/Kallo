@@ -1,15 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  kgToLb,
-  lbToKg,
-  type ProteinGoal,
-  proteinRange,
-  valid,
-} from '@/lib/seo/tools/math';
+import { type ProteinGoal, proteinRange, valid } from '@/lib/seo/tools/math';
 import type { ToolUi } from '@/lib/seo/tools/types';
-import { ChoiceField, NumberField } from './fields';
+import { ChoiceField, NumberField, UnitsField, WeightField } from './fields';
 import { NoResult, Result } from './result';
 
 const GOALS: ProteinGoal[] = ['health', 'muscle', 'cut'];
@@ -46,16 +40,7 @@ export function ProteinCalculator({
     <div>
       <div className="grid grid-cols-2 gap-4">
         {allowImperial ? (
-          <ChoiceField
-            className="col-span-2"
-            label={ui.units}
-            onChange={setUnits}
-            options={[
-              { value: 'metric', label: ui.metric },
-              { value: 'imperial', label: ui.imperial },
-            ]}
-            value={units}
-          />
+          <UnitsField onChange={setUnits} ui={ui} value={units} />
         ) : null}
         <ChoiceField
           className="col-span-2"
@@ -64,19 +49,11 @@ export function ProteinCalculator({
           options={GOALS.map((g) => ({ value: g, label: ui.proteinGoals[g] }))}
           value={goal}
         />
-        <NumberField
+        <WeightField
+          imperial={imperial}
+          kg={kg}
           label={ui.weight}
-          onChange={(w) =>
-            setKg(w === undefined ? w : imperial ? lbToKg(w) : w)
-          }
-          unit={imperial ? 'lb' : 'kg'}
-          value={
-            kg === undefined
-              ? undefined
-              : imperial
-                ? Math.round(kgToLb(kg) * 10) / 10
-                : kg
-          }
+          onKg={setKg}
         />
         {goal === 'cut' ? (
           <NumberField

@@ -1,6 +1,6 @@
-import type { ToolSource } from '../../types';
+import type { ToolSource } from '../types';
 
-/** The papers the English pages cite, checked against PubMed on 2026-11-02. */
+/** The papers both locales cite, checked against PubMed and WHO IRIS on 2026-11-02. */
 export const SOURCES = {
   mifflin: {
     label:

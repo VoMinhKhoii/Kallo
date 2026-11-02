@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { DocsLink, DocsParagraph } from '@/components/docs/mdx/prose';
 import { ToolLinkList } from '@/components/seo/tools/tool-link-list';
-import { type Locale, locales } from '@/i18n/config';
+import { isLocale, locales } from '@/i18n/config';
 import { alternateLanguages } from '@/lib/seo/alternates';
 import { FOOD_PAGE_LOCALE, FOOD_PAGE_PREFIX } from '@/lib/seo/food-pages/slugs';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
@@ -15,9 +15,6 @@ import { TOOL_SLUGS, TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
 interface ToolsHubProps {
   params: Promise<{ locale: string }>;
 }
-
-const isLocale = (l: string): l is Locale =>
-  (locales as readonly string[]).includes(l);
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));

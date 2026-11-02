@@ -15,7 +15,7 @@ import {
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
 import { ToolCalculator } from '@/components/seo/tools/tool-calculator';
 import { ToolLinkList } from '@/components/seo/tools/tool-link-list';
-import { type Locale, locales } from '@/i18n/config';
+import { isLocale, locales } from '@/i18n/config';
 import { alternateLanguages } from '@/lib/seo/alternates';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
@@ -38,9 +38,6 @@ import {
 interface ToolPageProps {
   params: Promise<{ locale: string; tool: string }>;
 }
-
-const isLocale = (l: string): l is Locale =>
-  (locales as readonly string[]).includes(l);
 
 export function generateStaticParams() {
   return locales.flatMap((locale) =>

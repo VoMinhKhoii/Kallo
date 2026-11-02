@@ -1,5 +1,5 @@
 import type { ToolCopy } from '../../types';
-import { SOURCES } from './sources';
+import { SOURCES } from '../sources';
 
 export const bmiCopy: ToolCopy = {
   name: 'BMI calculator',

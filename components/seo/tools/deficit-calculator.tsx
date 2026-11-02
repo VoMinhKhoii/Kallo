@@ -1,15 +1,11 @@
 'use client';
 
 import { useState, useSyncExternalStore } from 'react';
-import {
-  calcBMR,
-  calcCalorieFloor,
-  calcTDEE,
-} from '@/lib/domain/onboarding/tdee';
-import { goalPlan, kgToLb, lbToKg, valid } from '@/lib/seo/tools/math';
+import { calcBMR, calcTDEE } from '@/lib/domain/onboarding/tdee';
+import { goalPlan, valid } from '@/lib/seo/tools/math';
 import type { ToolUi } from '@/lib/seo/tools/types';
 import { BodyFields, type BodyState, useBody } from './body-fields';
-import { ChoiceField, NumberField } from './fields';
+import { ChoiceField, WeightField } from './fields';
 import { NoResult, Result } from './result';
 
 const PACES = ['0.25', '0.5', '0.75'] as const;
@@ -67,32 +63,23 @@ export function DeficitCalculator({
     plan?.weeks != null && today !== null
       ? formatDate(new Date((today + plan.weeks * 7) * DAY_MS))
       : null;
-  const sameWeight = metrics !== null && goal === metrics.weightKg;
 
   return (
     <div>
       <BodyFields allowImperial={allowImperial} state={state} ui={ui} />
       <div className="mt-4 grid grid-cols-2 gap-4">
-        <NumberField
+        <WeightField
+          imperial={imperial}
+          kg={goalKg}
           label={ui.goalWeight}
-          onChange={(w) =>
-            setGoalKg(w === undefined ? w : imperial ? lbToKg(w) : w)
-          }
-          unit={imperial ? 'lb' : 'kg'}
-          value={
-            goalKg === undefined
-              ? undefined
-              : imperial
-                ? Math.round(kgToLb(goalKg) * 10) / 10
-                : goalKg
-          }
+          onKg={setGoalKg}
         />
         <ChoiceField
           label={`${ui.pace} (kg ${ui.perWeek})`}
           onChange={setPace}
           options={PACES.map((p) => ({
             value: p,
-            label: format(Number(p), 2),
+            label: format(Number(p), p.length - 2),
           }))}
           value={pace}
         />
@@ -102,23 +89,14 @@ export function DeficitCalculator({
       ) : (
         <Result
           label={ui.dailyTarget}
-          note={
-            sameWeight
-              ? ui.sameWeight
-              : plan.weeks === null
-                ? ui.unreachable.replace(
-                    '{floor}',
-                    format(calcCalorieFloor(metrics.biologicalSex, tdee))
-                  )
-                : plan.floored
-                  ? ui.floored
-                      .replace(
-                        '{floor}',
-                        format(calcCalorieFloor(metrics.biologicalSex, tdee))
-                      )
-                      .replace('{pace}', format(plan.paceKgPerWeek, 2))
-                  : undefined
-          }
+          note={{
+            same: ui.sameWeight,
+            unreachable: ui.unreachable,
+            floored: ui.floored,
+            open: undefined,
+          }[plan.kind]
+            ?.replace('{floor}', format(plan.floorKcal))
+            .replace('{pace}', format(plan.paceKgPerWeek, 2))}
           rows={[
             { label: ui.tdee, value: `${format(tdee)} kcal` },
             ...(plan.weeks !== null

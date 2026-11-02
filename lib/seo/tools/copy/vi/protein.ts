@@ -1,5 +1,5 @@
 import type { ToolCopy } from '../../types';
-import { SOURCES } from '../en/sources';
+import { SOURCES } from '../sources';
 
 export const protein: ToolCopy = {
   name: 'Tính protein',

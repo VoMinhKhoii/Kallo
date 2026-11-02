@@ -1,5 +1,8 @@
 import { AGGRESSION_KCAL_PER_KG } from '@/lib/domain/onboarding/constants';
-import { calcDailyTargets } from '@/lib/domain/onboarding/tdee';
+import {
+  calcCalorieFloor,
+  calcDailyTargets,
+} from '@/lib/domain/onboarding/tdee';
 import type { BiologicalSex } from '@/lib/domain/onboarding/types';
 
 /**
@@ -10,13 +13,20 @@ import type { BiologicalSex } from '@/lib/domain/onboarding/types';
  */
 
 export interface GoalPlan {
+  /**
+   * - same: the goal is the current weight; eat at maintenance.
+   * - unreachable: the floor leaves no deficit at all (TDEE at or under it).
+   * - floored: the floor stopped the asked pace; `paceKgPerWeek` is the real one.
+   * - open: the asked pace, as asked.
+   */
+  kind: 'same' | 'unreachable' | 'floored' | 'open';
   /** Daily calories to eat, after the app's floor. */
   targetKcal: number;
+  /** The lowest target a cut may reach for this person (calcCalorieFloor). */
+  floorKcal: number;
   /** kg per week the target really delivers (slower than asked when floored). */
   paceKgPerWeek: number;
-  /** True when the floor stopped the asked pace. */
-  floored: boolean;
-  /** Whole weeks to the goal weight, or null when there is nothing to change. */
+  /** Whole weeks to the goal weight; null for `same` and `unreachable`. */
   weeks: number | null;
 }
 
@@ -34,8 +44,15 @@ export function goalPlan(input: {
   paceKgPerWeek: number;
 }): GoalPlan {
   const { tdee, sex, weightKg, goalKg, paceKgPerWeek } = input;
+  const floorKcal = calcCalorieFloor(sex, tdee);
   if (goalKg === weightKg) {
-    return { targetKcal: tdee, paceKgPerWeek: 0, floored: false, weeks: null };
+    return {
+      kind: 'same',
+      targetKcal: tdee,
+      floorKcal,
+      paceKgPerWeek: 0,
+      weeks: null,
+    };
   }
   const losing = goalKg < weightKg;
   const { calories } = calcDailyTargets(
@@ -48,11 +65,21 @@ export function goalPlan(input: {
   // AGGRESSION_KCAL_PER_KG is daily kcal per kg/week (7,700 / 7).
   const pace = Math.abs(tdee - calories) / AGGRESSION_KCAL_PER_KG;
   const floored = losing && pace < paceKgPerWeek - 0.005;
+  if (pace <= 0) {
+    return {
+      kind: 'unreachable',
+      targetKcal: calories,
+      floorKcal,
+      paceKgPerWeek: 0,
+      weeks: null,
+    };
+  }
   return {
+    kind: floored ? 'floored' : 'open',
     targetKcal: calories,
+    floorKcal,
     paceKgPerWeek: pace,
-    floored,
-    weeks: pace > 0 ? Math.ceil(Math.abs(weightKg - goalKg) / pace) : null,
+    weeks: Math.ceil(Math.abs(weightKg - goalKg) / pace),
   };
 }
 

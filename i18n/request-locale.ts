@@ -1,5 +1,5 @@
 import * as rootParams from 'next/root-params';
-import { defaultLocale, type Locale, locales } from './config';
+import { defaultLocale, isLocale, type Locale } from './config';
 
 /**
  * Which locale a server render uses, for `i18n/request.ts`.
@@ -45,8 +45,4 @@ export async function resolveRequestLocale({
   // An unknown segment (`/xx/...`) still renders something: the locale layout
   // calls notFound() for it, and that page needs messages too.
   return isLocale(candidate) ? candidate : defaultLocale;
-}
-
-function isLocale(value: string | undefined): value is Locale {
-  return (locales as readonly (string | undefined)[]).includes(value);
 }

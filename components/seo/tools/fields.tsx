@@ -3,6 +3,8 @@
 import { useId } from 'react';
 import { DecimalInput } from '@/components/shared/decimal-input';
 import { cn } from '@/lib/core/ui/cn';
+import { kgToLb, lbToKg } from '@/lib/seo/tools/math';
+import type { ToolUi } from '@/lib/seo/tools/types';
 
 /**
  * The calculators' inputs: a labelled number, a native select, and a row of
@@ -125,5 +127,56 @@ export function ChoiceField<T extends string>({
         ))}
       </div>
     </fieldset>
+  );
+}
+
+/** The metric / imperial switch the English calculators show. */
+export function UnitsField({
+  ui,
+  value,
+  onChange,
+}: {
+  ui: ToolUi;
+  value: 'metric' | 'imperial';
+  onChange: (value: 'metric' | 'imperial') => void;
+}) {
+  return (
+    <ChoiceField
+      className="col-span-2"
+      label={ui.units}
+      onChange={onChange}
+      options={[
+        { value: 'metric', label: ui.metric },
+        { value: 'imperial', label: ui.imperial },
+      ]}
+      value={value}
+    />
+  );
+}
+
+/**
+ * A weight kept in kg whatever the view: typed and shown in lb (to 0.1) when
+ * `imperial`, so a unit switch never rounds the stored value.
+ */
+export function WeightField({
+  label,
+  kg,
+  onKg,
+  imperial,
+}: {
+  label: string;
+  kg: number | undefined;
+  onKg: (kg: number | undefined) => void;
+  imperial: boolean;
+}) {
+  return (
+    <NumberField
+      label={label}
+      onChange={(w) => onKg(w === undefined || !imperial ? w : lbToKg(w))}
+      unit={imperial ? 'lb' : 'kg'}
+      value={
+        kg === undefined || !imperial ? kg : Math.round(kgToLb(kg) * 10) / 10
+      }
+    />
   );
 }

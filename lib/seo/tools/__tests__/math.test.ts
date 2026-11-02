@@ -63,9 +63,10 @@ describe('goalPlan', () => {
       paceKgPerWeek: 0.5,
     });
     expect(plan).toEqual({
+      kind: 'open',
       targetKcal: 1334,
+      floorKcal: 1200,
       paceKgPerWeek: 0.5,
-      floored: false,
       weeks: 10,
     });
   });
@@ -79,7 +80,8 @@ describe('goalPlan', () => {
       paceKgPerWeek: 0.5,
     });
     expect(plan.targetKcal).toBe(1200);
-    expect(plan.floored).toBe(true);
+    expect(plan.kind).toBe('floored');
+    expect(plan.floorKcal).toBe(1200);
     expect(plan.paceKgPerWeek).toBeCloseTo(0.2745, 3);
     expect(plan.weeks).toBe(19);
   });
@@ -102,12 +104,7 @@ describe('goalPlan', () => {
         goalKg: 60,
         paceKgPerWeek: 0.5,
       })
-    ).toEqual({
-      targetKcal: 2000,
-      paceKgPerWeek: 0,
-      floored: false,
-      weeks: null,
-    });
+    ).toMatchObject({ kind: 'same', targetKcal: 2000, weeks: null });
   });
 });
 
@@ -133,9 +130,10 @@ describe('goalPlan at the floor with no deficit left', () => {
       paceKgPerWeek: 0.5,
     });
     expect(plan).toMatchObject({
+      kind: 'unreachable',
       targetKcal: tdee,
+      floorKcal: tdee,
       paceKgPerWeek: 0,
-      floored: true,
       weeks: null,
     });
   });
