@@ -34,6 +34,12 @@ function post(ip: string | null, email = 'person@example.test') {
   );
 }
 
+function throttledFlags() {
+  return signup.mock.calls.map(
+    (call) => (call[1] as { mailboxThrottled?: boolean }).mailboxThrottled
+  );
+}
+
 function globalCount() {
   return (
     [...consumer.rows.entries()].find(([key]) =>
@@ -82,9 +88,10 @@ it('keeps global and mailbox controls for a null IP', async () => {
 
 it('shares a recipient budget across Gmail dot and plus spellings from distinct IPs', async () => {
   expect((await post('203.0.113.1', 'person@gmail.com')).status).toBe(200);
-  expect((await post('203.0.113.2', 'person+news@gmail.com')).status).toBe(429);
-  expect((await post('203.0.113.3', 'p.er.son@gmail.com')).status).toBe(429);
-  expect(signup).toHaveBeenCalledTimes(1);
+  expect((await post('203.0.113.2', 'person+news@gmail.com')).status).toBe(200);
+  expect((await post('203.0.113.3', 'p.er.son@gmail.com')).status).toBe(200);
+  // A refused mailbox answers like a signup; the domain stores nothing.
+  expect(throttledFlags()).toEqual([false, true, true]);
 });
 
 it('keeps distinct non-Gmail plus mailboxes on separate budgets', async () => {
@@ -100,8 +107,8 @@ it('caps a canonical mailbox daily even when each rolling cooldown has passed', 
     expect((await post(null, `person+${index}@gmail.com`)).status).toBe(200);
     vi.advanceTimersByTime(5 * 60 * 1000);
   }
-  expect((await post(null, 'p.erson@gmail.com')).status).toBe(429);
-  expect(signup).toHaveBeenCalledTimes(5);
+  expect((await post(null, 'p.erson@gmail.com')).status).toBe(200);
+  expect(throttledFlags()).toEqual([false, false, false, false, false, true]);
 });
 
 it('does not spend a recipient budget when the earlier global policy refuses', async () => {

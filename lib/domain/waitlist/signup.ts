@@ -50,6 +50,12 @@ export interface WaitlistSignupDeps {
 export interface WaitlistSignupContext {
   /** Raw client IP; hashed before it touches the database. */
   ip?: string | null;
+  /**
+   * The mailbox's own limiter refused this request. Nothing is stored or sent,
+   * but the caller still gets the same answer after the same floor: the
+   * refusal is about one address, so it must not read differently.
+   */
+  mailboxThrottled?: boolean;
 }
 
 /** Build the link that confirms a signup. */
@@ -66,7 +72,7 @@ export async function signUpForWaitlist(
 ): Promise<void> {
   const startedAt = performance.now();
   try {
-    await storeAndSend(input, context, deps);
+    if (!context.mailboxThrottled) await storeAndSend(input, context, deps);
   } finally {
     // Keep sending inside the request: Cloud Run throttles CPU after response.
     // Every branch waits to the same floor, including confirmed and cooldown.

@@ -231,6 +231,25 @@ describe('signUpForWaitlist', () => {
     expect(fake.inserts).toHaveLength(0);
   });
 
+  it('a throttled mailbox stores and sends nothing but waits the same floor', async () => {
+    const database = createFakeDb();
+    let settledAt: number | undefined;
+    void signUpForWaitlist(
+      { email: 'a@example.test' },
+      { ip: '203.0.113.4', mailboxThrottled: true },
+      { db: database.db, sendEmail }
+    ).then(() => {
+      settledAt = Date.now();
+    });
+    await vi.advanceTimersByTimeAsync(4499);
+    expect(settledAt).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(settledAt).toBe(NOW.getTime() + 4500);
+    expect(database.inserts).toHaveLength(0);
+    expect(database.updates).toHaveLength(0);
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
   it('sends nothing for an already-confirmed address', async () => {
     fake.queueSelect([{ count: 0 }]);
     fake.queueSelect([

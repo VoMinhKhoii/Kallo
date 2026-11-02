@@ -4,6 +4,7 @@ import {
   waitlistSignupSchema,
 } from '@/lib/api/contracts/waitlist';
 import { handleRouteError } from '@/lib/api/respond';
+import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { canonicalizeEmailForKey } from '@/lib/core/text/email';
 import { signUpForWaitlist } from '@/lib/domain/waitlist/signup';
 import { readBoundedJson } from '@/lib/infra/http/bounded-body';
@@ -50,12 +51,20 @@ export async function POST(req: NextRequest) {
       kind: 'global',
       value: 'waitlist',
     });
-    await assertRateLimit('waitlistSignupRecipient', {
-      kind: 'recipient',
-      value: canonicalizeEmailForKey(body.email),
-    });
+    // The mailbox limit is about one address, so its refusal must answer like
+    // a signup; the IP and global refusals above say nothing about anyone.
+    let mailboxThrottled = false;
+    try {
+      await assertRateLimit('waitlistSignupRecipient', {
+        kind: 'recipient',
+        value: canonicalizeEmailForKey(body.email),
+      });
+    } catch (error) {
+      if (!(error instanceof RateLimitedError)) throw error;
+      mailboxThrottled = true;
+    }
 
-    await signUpForWaitlist(body, { ip });
+    await signUpForWaitlist(body, { ip, mailboxThrottled });
     return Response.json({ ok: true } satisfies WaitlistSignupResponse);
   } catch (error) {
     return handleRouteError(error);
