@@ -177,8 +177,21 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261027110720_rate_limit_slot_expiries.sql` | A (Drizzle) | `rate_limit_counters.slot_expiries timestamptz[]` (default `{}`): one expiry per slot holder |
 | `20261027110730_rate_limit_slot_holders.sql` | B (Manual) | Replaces `rate_limit_consume()` (11-arg) and `rate_limit_release()`, same signatures: the slot counts only live `slot_expiries` entries and each holder keeps its own expiry, so a leaked slot frees on time. Push together with the rows above and below, in order |
 | `20261027110836_drop_rate_limit_slot_count.sql` | A (Drizzle) | Drops `slot_count` / `slot_expires_at` and their CHECK, unread since the row above |
+| `20261102173000_bind_social_helpers_to_viewer.sql` | B (Manual) | Binds `is_accepted_friend`, `is_active_coach_of` and `is_friend_since` to `auth.uid()` through their first argument; preserves existing function signatures, attributes and grants |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
+
+### Relationship helpers and caller identity
+
+The three relationship predicates above are `STABLE SECURITY DEFINER` SQL
+functions with `search_path = public`. They return false unless their first
+argument equals `auth.uid()` (including false for a missing session). Every
+RLS policy passes `auth.uid()` first; server code uses explicit Drizzle
+predicates instead. Policy-shaped calls retain their relationship and time
+checks. The migration replaces only function bodies and preserves all existing
+EXECUTE grants; do not add permission-denied function paths (see
+`docs/RATE_LIMITING.md`, "Do not execute a denied function AS anon"). No tables,
+columns, indexes or stored rows are added.
 
 ### Retiring `friendships.status = 'blocked'` (follow-up, not yet written)
 

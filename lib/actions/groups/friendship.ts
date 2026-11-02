@@ -50,10 +50,16 @@ export async function acceptInvite(
 
   const inviter = await getProfileBySlug(parsed.slug, db);
   if (!inviter) {
-    throw Errors.notFound('Liên kết mời không hợp lệ.');
+    throw invalidInvite();
   }
   if (inviter.userId === actorId) {
     throw Errors.validationFailed('Không thể kết nối với chính mình.');
+  }
+  // A blocked pair is answered exactly like an unknown slug, and before the
+  // profile write below so it leaves no trace an unknown slug would not. The
+  // locked re-check inside the transaction covers a block committed meanwhile.
+  if ((await getFriendshipStatus(actorId, inviter.userId, db)) === 'blocked') {
+    throw invalidInvite();
   }
 
   // Provision the recipient's own link profile so they carry a circle label in
@@ -71,7 +77,7 @@ export async function acceptInvite(
     // friends despite the block (there may be no row yet to lock).
     await tx.execute(lockPairSql(userLow, userHigh));
     if (await isBlockedPair(tx, actorId, inviter.userId)) {
-      throw Errors.conflict('Không thể kết nối.');
+      throw invalidInvite();
     }
 
     // Lock the canonical edge row for the duration of the transaction so a
@@ -92,7 +98,7 @@ export async function acceptInvite(
     // be a leftover from the revision serving while the migration applied. It
     // is honoured as a block rather than promoted.
     if (existing[0]?.status === 'blocked') {
-      throw Errors.conflict('Không thể kết nối.');
+      throw invalidInvite();
     }
     if (existing[0]?.status === 'accepted') {
       return { status: 'accepted' as const, inviter };
@@ -175,7 +181,7 @@ export async function acceptInvite(
           )
           .limit(1);
         if (reconciled[0]?.status === 'blocked') {
-          throw Errors.conflict('Không thể kết nối.');
+          throw invalidInvite();
         }
       }
     }
@@ -187,6 +193,12 @@ export async function acceptInvite(
 
     return { status: 'accepted' as const, inviter };
   });
+}
+
+// The invalid-link answer, shared by an unknown slug and a blocked pair so the
+// two cannot drift apart in code, status or message.
+function invalidInvite() {
+  return Errors.notFound('Liên kết mời không hợp lệ.');
 }
 
 // Tell the inviter their link landed — the one signal the Locket-style
@@ -254,7 +266,8 @@ export async function getFriendshipStatus(
   db: Db = defaultDb
 ): Promise<string | null> {
   // A block in either direction reads as 'blocked' — callers (the invite
-  // preview route and page) answer it exactly like an invalid link.
+  // preview route and page) answer it like an invalid link for this session.
+  // Slugs still resolve publicly; comparing another session can distinguish it.
   if (await isBlockedPair(db, actorId, otherUserId)) return 'blocked';
   const { userLow, userHigh } = orderedPair(actorId, otherUserId);
   const rows = await db

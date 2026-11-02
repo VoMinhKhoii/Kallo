@@ -12,7 +12,7 @@ import {
   shareAccessSql,
   shareVisibleIgnoringBlocksSql,
 } from '@/lib/domain/social/shares/share-visibility';
-import { mealShares } from '@/lib/infra/db/schema';
+import { chatGroups, mealShares } from '@/lib/infra/db/schema';
 
 const VIEWER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const OWNER_ID = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
@@ -310,7 +310,18 @@ describe('groupShareVisibleSql', () => {
     expect(flat).toContain(
       '"share_owner_membership"."joined_at" <= "meal_shares"."shared_at"'
     );
-    expect(flat).not.toContain('"chat_groups"."kind"');
+    expect(flat).toContain('FROM "chat_groups" AS "share_scoped_group"');
+    expect(flat).toContain(`"share_scoped_group"."kind" = 'group'`);
+    expect(flat).toContain(
+      '"friendships"."accepted_at" <= "meal_shares"."shared_at"'
+    );
     expect(params).toContain(GROUP_ID);
+  });
+
+  it('correlates an outer chat_groups id through a distinct inner alias', () => {
+    const { sql } = new PgDialect().sqlToQuery(
+      groupShareVisibleSql(VIEWER_ID, chatGroups.id, mealShares)
+    );
+    expect(sql).toContain('"share_scoped_group"."id" = "chat_groups"."id"');
   });
 });
