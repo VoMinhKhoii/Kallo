@@ -144,8 +144,7 @@ describe('composer account exits', () => {
         });
       else expect(mocks.signOut).toHaveBeenCalledOnce();
     }
-    if (exit !== 'auth-event')
-      expect(mocks.assign).toHaveBeenCalledExactlyOnceWith('/');
+    expect(mocks.assign).toHaveBeenCalledExactlyOnceWith('/');
     act(() => {
       window.dispatchEvent(new Event('beforeunload'));
       vi.advanceTimersByTime(600);

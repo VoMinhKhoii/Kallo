@@ -113,7 +113,7 @@ document, never assigned to whoever signs in next. `clearComposerDrafts()` purge
 every key with that prefix on successful menu sign-out, Settings sign-out,
 account deletion, and any `SIGNED_OUT` auth event, including another tab's. It
 also blocks writes for the rest of the document so pending debounce, unmount and
-`beforeunload` flushes cannot restore departing drafts. Explicit exits hard-navigate;
+`beforeunload` flushes cannot restore departing drafts. All exits hard-navigate;
 a new document starts with persistence enabled. `FeedArea` is keyed by user id so
 an account change replaces its in-memory composer and staged picks too. Flutter's
 composer state already watches `loggingUiOwnerProvider` and resets on owner change.

@@ -10,7 +10,11 @@ export function ComposerDraftSession() {
     const {
       data: { subscription },
     } = createClient().auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') clearComposerDrafts();
+      if (event !== 'SIGNED_OUT') return;
+      clearComposerDrafts();
+      // Drop live composer state too, and let the next sign-in start with a
+      // fresh document whose draft persistence is enabled.
+      window.location.assign('/');
     });
     return () => subscription.unsubscribe();
   }, []);
