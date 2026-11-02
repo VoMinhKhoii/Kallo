@@ -1,3 +1,4 @@
+// CI timing probe (do not merge).
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
