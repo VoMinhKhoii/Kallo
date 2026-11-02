@@ -14,6 +14,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Which job groups this PR needs (scripts/ci/affected/affected.mjs): the web
+  # jobs skip when a PR touches only Flutter, docs or agent files, and the
+  # migrations job skips unless a PR touches supabase/ or what the database
+  # suites load. Pushes run everything. `CI passed` checks every skip was meant.
+  changes:
+    name: Affected jobs
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.affected.outputs.web }}
+      migrations: ${{ steps.affected.outputs.migrations }}
+    steps:
+      # Full history so the PR's merge base is here; blobless, so that costs
+      # commits and trees, not old file contents.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - id: affected
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/ci/affected/affected.mjs
+
   lint:
     name: Lint (Biome)
     runs-on: ubuntu-latest
@@ -31,6 +54,8 @@ jobs:
 
   typecheck:
     name: Type Check
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +65,8 @@ jobs:
 
   test-shard:
     name: Unit Test (${{ matrix.shard }}/3)
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -62,18 +89,10 @@ jobs:
         if: matrix.shard == 1
         run: bun scripts/ci/check-card-artifact-runtime.ts
 
-  # The staging ruleset requires a check named "Unit Test"; a matrix reports
-  # one check per shard instead, so this job passes only when every shard did.
-  test:
-    name: Unit Test
-    needs: test-shard
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: test "${{ needs.test-shard.result }}" = success
-
   build:
     name: Build
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
@@ -85,6 +104,8 @@ jobs:
 
   e2e:
     name: E2E (Playwright)
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     # Non-blocking while the suite is new: it runs against `next dev` with
     # placeholder Supabase settings, so only signed-out surfaces are covered.
@@ -103,8 +124,10 @@ jobs:
 
   migrations:
     name: Validate Migrations
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
     runs-on: ubuntu-latest
-    # This job runs `supabase start` (Postgres only; gotrue is excluded), which
+    # This job runs `supabase start` (Postgres and the pooler only), which
     # still parses the whole config.toml up front. The [auth.hook.send_email]
     # block declares secrets = "env(SEND_EMAIL_HOOK_SECRET)", so the CLI rejects
     # the config unless that var is a well-formed "v1,whsec_<base64>" value. The
@@ -120,10 +143,23 @@ jobs:
       - uses: supabase/setup-cli@v3
         with:
           version: 2.90.0
-      - name: Start local Supabase (Postgres only)
-        run: supabase start -x realtime,storage-api,imgproxy,inbucket,postgrest,gotrue,studio,edge-runtime,vector
-      - name: Apply migrations and seed
-        run: supabase db reset
+      # `start` pulls its images one after another, and the schema setup three
+      # more once the database is up (~40s). Pull all five at once first; the
+      # versions come from the pinned CLI. Best effort: an image this misses is
+      # pulled by `start` as before.
+      - name: Pull the Supabase images in parallel
+        run: |
+          supabase services 2>/dev/null \
+            | awk -F'|' '$1 ~ /supabase\/(postgres|supavisor|realtime|storage-api|gotrue) *$/ { gsub(/ /, "", $1); gsub(/ /, "", $2); print "ghcr.io/" $1 ":" $2 }' \
+            | xargs -P 5 -n 1 docker pull --quiet || true
+      # `start` applies every migration and supabase/seed.sql to the fresh
+      # database, and fails on the first that errors, so no `db reset` follows:
+      # it would only apply them all again. Only Postgres and Supavisor (the
+      # pooler the rate limiter test goes through) start; the auth, storage and
+      # realtime schemas are still created, by running those services' images
+      # once without starting them.
+      - name: Start local Supabase, applying migrations and seed
+        run: supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector
       - name: Lint database schema
         run: supabase db lint
       # The rate limiter's correctness lives in plpgsql, not TypeScript: UTC
@@ -164,13 +200,12 @@ jobs:
           fi
           echo "rate_limit_consume present: '$present'"
           test "$present" = "t"
-      - name: Rate limiter DB test (via transaction pooler)
+      # Every `*.db.test.ts` suite: the naming affected.mjs relies on to know
+      # what this job tests. No `supabase stop` after: the runner is discarded.
+      - name: Database suites (via transaction pooler)
         env:
           DATABASE_URL: postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres
-        run: bun run test -- lib/infra/rate-limit/limiter/__tests__/rate-limit-consume.db.test.ts lib/infra/rate-limit/limiter/__tests__/rate-limit-spend.db.test.ts
-      - name: Stop Supabase
-        if: always()
-        run: supabase stop --no-backup
+        run: bun run test -- .db.test.ts
 
   dependency-review:
     name: Dependency Review
@@ -186,7 +221,7 @@ jobs:
   # runs the same steps alongside the gates instead of after them.
   container-publish:
     name: Container Publish
-    needs: [lint, typecheck, test, build, migrations]
+    needs: [lint, typecheck, test-shard, build, migrations]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -228,10 +263,16 @@ jobs:
           [ -n "${{ vars.R2_ACCOUNT_ID }}" ] || { echo "Set the R2_ACCOUNT_ID repo variable." >&2; exit 1; }
       - name: Build container image
         env:
-          # Optional: unset → the build skips the Sentry source-map upload.
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          # Only a published image uploads source maps: the upload creates a
+          # Sentry release named after package.json's version, the same name
+          # prod's carries, and took 15s of every PR build. Empty → no upload.
+          SENTRY_AUTH_TOKEN: ${{ env.PUBLISH == 'true' && secrets.SENTRY_AUTH_TOKEN || '' }}
+        # SKIP_NEXT_TYPECHECK: the Build job runs `next build` on the same code
+        # with the same tsconfig.build.json and its type check, and this image
+        # never ships without that job passing (container-publish needs it).
         run: >
           docker build
+          --build-arg SKIP_NEXT_TYPECHECK=1
           --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           --build-arg NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
@@ -263,9 +304,37 @@ jobs:
   # auth and push steps skip. Not a fork PR: those get no repo variables.
   container-build:
     name: Container Build
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: changes
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
     env: *container-env
     steps: *container-steps
+
+  # One check that passes only when every job that had to run passed and every
+  # skipped job was meant to skip (scripts/ci/affected/verify.mjs). Require this
+  # check, not the jobs one by one: a skipped job's check also reads as passing.
+  ci-passed:
+    name: CI passed
+    needs:
+      - changes
+      - lint
+      - typecheck
+      - test-shard
+      - build
+      - e2e
+      - migrations
+      - dependency-review
+      - container-build
+      - container-publish
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/ci/affected
+      - env:
+          NEEDS: ${{ toJSON(needs) }}
+          IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: node scripts/ci/affected/verify.mjs
