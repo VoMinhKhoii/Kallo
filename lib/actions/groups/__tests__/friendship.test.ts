@@ -51,6 +51,7 @@ const {
   mockTxSelect,
   mockTxInsert,
   mockTxUpdate,
+  mockTxDelete,
   mockTxExecute,
   mockTxCount,
   mockTx,
@@ -58,10 +59,14 @@ const {
   const mockTxSelect = vi.fn();
   const mockTxInsert = vi.fn();
   const mockTxUpdate = vi.fn();
+  // The actor's own friend_removals row, cleared by their accept.
+  const mockTxDelete = vi.fn(() => ({
+    where: vi.fn(async () => undefined),
+  }));
   // acceptInvite's raw statement: the pair lock.
   const mockTxExecute = vi.fn(async (..._args: unknown[]) => [] as unknown[]);
-  // The user_blocks check (isBlockedPair counts matching rows): none unless a
-  // case says otherwise.
+  // The user_blocks and friend_removals checks (each counts matching rows):
+  // none unless a case says otherwise.
   const mockTxCount = vi.fn(async (..._args: unknown[]) => 0);
   return {
     mockDbSelect: vi.fn(),
@@ -73,12 +78,14 @@ const {
     mockTxSelect,
     mockTxInsert,
     mockTxUpdate,
+    mockTxDelete,
     mockTxExecute,
     mockTxCount,
     mockTx: {
       select: mockTxSelect,
       insert: mockTxInsert,
       update: mockTxUpdate,
+      delete: mockTxDelete,
       execute: mockTxExecute,
       $count: mockTxCount,
     },
@@ -132,6 +139,7 @@ import {
   inviterProfile,
   inviterRow,
   SLUG,
+  schema,
   selectRows,
   txSelect,
 } from './circle-doubles';
@@ -464,6 +472,11 @@ describe('acceptInvite', () => {
       () =>
         mockDbSelect.mockReturnValueOnce(selectRows([{ status: 'blocked' }])),
     ],
+    // No block, but the inviter removed the actor (friend_removals).
+    [
+      'the inviter removing the actor',
+      () => mockDbCount.mockResolvedValueOnce(0).mockResolvedValueOnce(1),
+    ],
   ])('answers a pair blocked by %s exactly like an unknown slug, before any write', async (_case, arm) => {
     mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
     arm();
@@ -501,6 +514,41 @@ describe('acceptInvite', () => {
     expect(mockTxSelect).not.toHaveBeenCalled();
     expect(mockTxInsert).not.toHaveBeenCalled();
     expect(mockTxUpdate).not.toHaveBeenCalled();
+  });
+
+  it('refuses a removal committed after the pre-check, under the pair lock', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    // No user_blocks row, then the inviter's friend_removals row.
+    mockTxCount.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
+
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      status: 404,
+      message: 'Liên kết mời không hợp lệ.',
+    });
+    expect(mockTxSelect).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxDelete).not.toHaveBeenCalled();
+    expect(mockNotify).not.toHaveBeenCalled();
+  });
+
+  it("clears the actor's own removal of the inviter: accepting is fresh consent", async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([])) // locked read: no edge
+      .mockReturnValueOnce(txSelect([{ id: DIRECT_GROUP_ID }]));
+    captureInserts();
+
+    await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(mockTxDelete).toHaveBeenCalledTimes(1);
+    expect(mockTxDelete).toHaveBeenCalledWith(schema.friendRemovals);
+    // Under the pair lock, after both refusal checks.
+    expect(mockTxExecute.mock.invocationCallOrder[0]).toBeLessThan(
+      mockTxDelete.mock.invocationCallOrder[0]
+    );
+    expect(mockTxCount).toHaveBeenCalledTimes(2);
   });
 
   it('takes the pair lock before the block check and the edge read', async () => {
@@ -579,14 +627,41 @@ describe('removeFriend', () => {
     expect(mockDbDelete).not.toHaveBeenCalled();
   });
 
-  it('deletes the canonical edge', async () => {
-    mockDbDelete.mockReturnValue({
-      where: vi.fn().mockResolvedValue(undefined),
-    });
+  it('deletes the edge and records the removal under the pair lock, in one transaction', async () => {
+    const removals: Record<string, unknown>[] = [];
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn((vals: Record<string, unknown>) => {
+        removals.push(vals);
+        return { onConflictDoNothing: vi.fn(async () => undefined) };
+      }),
+    }));
 
     const result = await removeFriend(ACTOR, { targetUserId: INVITER });
 
     expect(result).toEqual({ removed: true });
-    expect(mockDbDelete).toHaveBeenCalledTimes(1);
+    expect(mockDbDelete).not.toHaveBeenCalled();
+    expect(mockTxDelete).toHaveBeenCalledWith(schema.friendships);
+    expect(mockTxInsert).toHaveBeenCalledWith(schema.friendRemovals);
+    expect(removals).toEqual([{ removerId: ACTOR, removedId: INVITER }]);
+    expect(mockTxExecute.mock.invocationCallOrder[0]).toBeLessThan(
+      mockTxDelete.mock.invocationCallOrder[0]
+    );
+  });
+
+  it('answers an unknown target with a 404, not a server error', async () => {
+    const fkViolation = Object.assign(new Error('insert failed'), {
+      cause: Object.assign(new Error('fk'), { code: '23503' }),
+    });
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing: vi.fn(async () => {
+          throw fkViolation;
+        }),
+      })),
+    }));
+
+    await expect(
+      removeFriend(ACTOR, { targetUserId: INVITER })
+    ).rejects.toMatchObject({ code: 'NOT_FOUND', status: 404 });
   });
 });

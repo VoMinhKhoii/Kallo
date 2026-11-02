@@ -76,6 +76,8 @@ const EXPECTED_SCOPE: Record<string, string> = {
     '("meal_share_invites"."from_user_id" = $1 or "meal_share_invites"."to_user_id" = $2)',
   circle_events: '"circle_events"."actor_id" = $1',
   friends_feed_read_markers: '"friends_feed_read_markers"."user_id" = $1',
+  friend_removals: '"friend_removals"."remover_id" = $1',
+  released_handles: '"released_handles"."user_id" = $1',
   coach_assignments:
     '("coach_assignments"."coach_id" = $1 or "coach_assignments"."client_id" = $2)',
   'chat_group_members ⋈ chat_groups': '"chat_group_members"."user_id" = $1',

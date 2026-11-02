@@ -36,6 +36,11 @@ export const schema = {
     blockedId: 'ub.blockedId',
     createdAt: 'ub.createdAt',
   },
+  friendRemovals: {
+    removerId: 'fr.removerId',
+    removedId: 'fr.removedId',
+    createdAt: 'fr.createdAt',
+  },
   friendsFeedReadMarkers: {
     userId: 'ffrm.userId',
     lastReadAt: 'ffrm.lastReadAt',

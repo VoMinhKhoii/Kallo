@@ -3,7 +3,7 @@ import { removeFriend } from '@/lib/actions/groups/friendship';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
 
-/** Remove a connection (deletes the edge; the pair can re-invite later). */
+/** Remove a connection (deletes the edge; the removed person cannot reconnect on the caller's link until the caller accepts theirs). */
 export async function DELETE(request: NextRequest) {
   try {
     const actorId = await requireUserId();

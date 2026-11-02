@@ -97,7 +97,9 @@ export async function upsertPublicProfile(
   } catch (error) {
     // The handle unique index is the ultimate guard: a concurrent claim of the
     // same handle by a different user (which the pre-check above can race past)
-    // surfaces as a Postgres 23505 unique violation. Map it to a clean 409
+    // surfaces as a Postgres 23505 unique violation. So does a handle another
+    // user gave up, which stays reserved for them (released_handles, refused by
+    // the public_profiles_reserve_handle trigger). Map it to a clean 409
     // instead of leaking a raw 500.
     if (isUniqueViolation(error)) {
       throw Errors.conflict('Handle này đã được sử dụng.');
@@ -223,7 +225,10 @@ export async function getProfileBySlug(
 // The invite handle follows the display name by default ("what should we call
 // you" is the one identity input), so a rename updates both in a single
 // UPDATE. Outstanding invite links stop working — same accepted consequence
-// as editing the slug directly via upsertPublicProfile.
+// as editing the slug directly via upsertPublicProfile — but the old handle
+// stays reserved for this user, so those links never reach anyone else. A
+// derived base someone else gave up is refused like a taken one (23505) and
+// gets a suffix below.
 
 export async function renameMyProfile(
   actorId: string,

@@ -1818,7 +1818,7 @@
       "unblocked": "Đã bỏ chặn {name}",
       "unblockError": "Không bỏ chặn được {name}. Hãy thử lại.",
       "removeTitle": "Xoá {name}?",
-      "removeBody": "Hai bạn sẽ không còn thấy bữa ăn của nhau. Để kết nối lại, một trong hai bạn gửi liên kết mời mới.",
+      "removeBody": "Hai bạn sẽ không còn thấy bữa ăn của nhau. Liên kết của bạn sẽ không kết nối lại với họ. Để kết nối lại, hãy chấp nhận liên kết mời của họ.",
       "removed": "Đã xoá {name} khỏi vòng kết nối"
     }
   },
