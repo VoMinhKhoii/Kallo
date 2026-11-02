@@ -139,6 +139,19 @@ describe('goalPlan at the floor with no deficit left', () => {
   });
 });
 
+describe('goalPlan when the 500 kcal backstop exceeds maintenance', () => {
+  it('never turns that surplus into a loss', () => {
+    const plan = goalPlan({
+      tdee: 479,
+      sex: 'female',
+      weightKg: 31,
+      goalKg: 30,
+      paceKgPerWeek: 0.5,
+    });
+    expect(plan).toMatchObject({ kind: 'unreachable', weeks: null });
+  });
+});
+
 describe('valid', () => {
   it('accepts values inside the limits and rejects typos', () => {
     expect(valid(65, 'weightKg')).toBe(65);

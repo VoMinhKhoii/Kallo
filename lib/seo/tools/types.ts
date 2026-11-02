@@ -74,6 +74,8 @@ export interface ToolUi {
   floored: string;
   /** The floor leaves no deficit at all: TDEE is at or under it. */
   unreachable: string;
+  /** Short form of `unreachable` for a result row. */
+  noLoss: string;
   sameWeight: string;
   calories: string;
   split: string;

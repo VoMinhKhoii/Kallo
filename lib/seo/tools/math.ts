@@ -62,8 +62,11 @@ export function goalPlan(input: {
     'moderate_carb',
     sex
   );
+  // Signed, in the goal's direction: the 500 kcal backstop can lift a cut's
+  // target above a very low TDEE, which is a surplus, not a slower loss.
   // AGGRESSION_KCAL_PER_KG is daily kcal per kg/week (7,700 / 7).
-  const pace = Math.abs(tdee - calories) / AGGRESSION_KCAL_PER_KG;
+  const pace =
+    (losing ? tdee - calories : calories - tdee) / AGGRESSION_KCAL_PER_KG;
   const floored = losing && pace < paceKgPerWeek - 0.005;
   if (pace <= 0) {
     return {

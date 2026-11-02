@@ -47,6 +47,7 @@ export const ui: ToolUi = {
     'Đã giữ ở mức tối thiểu Kallo cho phép ({floor} kcal), nên tốc độ thật khoảng {pace} kg mỗi tuần.',
   unreachable:
     'Ở mức tối thiểu Kallo cho phép ({floor} kcal) bạn sẽ không giảm được cân, vì calo duy trì của bạn đã thấp như vậy. Vận động nhiều hơn sẽ nâng mức này lên.',
+  noLoss: 'không giảm được ở mức tối thiểu',
   sameWeight: 'Mục tiêu bằng cân nặng hiện tại: ăn ở mức calo duy trì.',
   calories: 'Calo mỗi ngày',
   split: 'Cách chia',

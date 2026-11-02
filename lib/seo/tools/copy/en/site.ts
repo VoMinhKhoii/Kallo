@@ -48,6 +48,7 @@ export const ui: ToolUi = {
     'Held at the minimum Kallo allows ({floor} kcal), so the real pace is about {pace} kg a week.',
   unreachable:
     'At the minimum Kallo allows ({floor} kcal) you would not lose weight: your maintenance is already that low. Moving more raises it.',
+  noLoss: 'no loss at the minimum',
   sameWeight: 'Your goal is your current weight: eat at maintenance.',
   calories: 'Calories a day',
   split: 'Split',
