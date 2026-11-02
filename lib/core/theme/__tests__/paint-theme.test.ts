@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { paintTheme } from '../paint-theme';
 import { APP_THEMES, THEME_COLOR, THEME_STORAGE_KEY } from '../themes';

@@ -14,11 +14,31 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'jsdom',
     globals: true,
     pool: 'forks',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['**/*.test.{ts,tsx}'],
+    // Building a jsdom window was 58% of the CI test run, and most suites
+    // never touch the DOM. Component suites (.tsx) get jsdom; .ts suites run
+    // in Node, and the few that need a DOM opt in with a
+    // `// @vitest-environment jsdom` comment on their first line.
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['**/*.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          environment: 'jsdom',
+          include: ['**/*.test.tsx'],
+        },
+      },
+    ],
     exclude: [
       ...configDefaults.exclude,
       '**/.next/**',
