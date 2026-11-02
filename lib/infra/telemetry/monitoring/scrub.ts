@@ -12,6 +12,7 @@
  *   • console and ui (click / input) breadcrumbs are dropped outright, and
  *     spans named after a DOM selector lose the name.
  */
+import { stripQueryParams } from '@/lib/core/errors/safe-error';
 import { telemetryUrl } from '@/lib/infra/telemetry/telemetry-url';
 
 type Data = Record<string, unknown>;
@@ -38,6 +39,9 @@ const scrubName = (name: string) => name.replace(URL_TOKEN, telemetryUrl);
 
 /** The subset of a Sentry event the scrubbers touch. */
 interface ScrubbableEvent {
+  exception?: {
+    values?: Array<{ value?: string; type?: string; stacktrace?: unknown }>;
+  };
   request?: {
     url?: string;
     data?: unknown;
@@ -52,6 +56,22 @@ interface ScrubbableEvent {
 
 /** Error events (and the shared part of transactions). */
 export function scrubEvent<T extends ScrubbableEvent>(event: T): T {
+  const exceptions = event.exception?.values ?? [];
+  const hasQuery = exceptions.some((exception) =>
+    exception.value?.startsWith('Failed query: ')
+  );
+  for (const exception of exceptions) {
+    if (exception.value == null) continue;
+    // Raw SDK captures can parse a multiline bound value as a stack frame.
+    // Our reporting helpers supply a DatabaseQueryError with safe frames.
+    if (hasQuery && exception.type !== 'DatabaseQueryError')
+      delete exception.stacktrace;
+    // Linked postgres causes may quote bound values without a params marker.
+    exception.value =
+      hasQuery && !exception.value.startsWith('Failed query: ')
+        ? '[database error detail redacted]'
+        : stripQueryParams(exception.value);
+  }
   if (event.request) {
     if (event.request.url) event.request.url = telemetryUrl(event.request.url);
     delete event.request.data;

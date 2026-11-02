@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 export interface CanonicalNameValidationHit {
@@ -87,7 +88,7 @@ export async function loadCanonicalNameVocabulary(
         vocabularyPromise = null;
         console.warn(
           '[pipeline] canonicalName vocabulary load failed; skipping alias miss telemetry:',
-          err
+          safeError(err)
         );
         return new Set<string>();
       });

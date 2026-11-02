@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { barcodeSchema } from '@/lib/core/validation/barcode';
 import { foodItemGramsSchema } from '@/lib/core/validation/food-limits';
 import {
@@ -86,7 +87,7 @@ export async function searchBarcodeAction(input: {
     });
     return { success: true, data };
   } catch (error) {
-    console.error('Error in searchBarcodeAction:', error);
+    console.error('Error in searchBarcodeAction:', safeError(error));
     return toFailure(error);
   }
 }
@@ -109,7 +110,7 @@ export async function stageBarcodeMealAction(input: {
     const { analysisId } = await stageBarcodeMeal(user.id, parsed);
     return { success: true, analysisId };
   } catch (error) {
-    console.error('Error in stageBarcodeMealAction:', error);
+    console.error('Error in stageBarcodeMealAction:', safeError(error));
     return toFailure(error);
   }
 }

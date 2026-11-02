@@ -15,6 +15,7 @@
 
 import { and, eq, inArray } from 'drizzle-orm';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { avatarUrlFor } from '@/lib/domain/social/identity/avatar-url';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -261,7 +262,7 @@ export async function sendNotificationPush(
   } catch (error) {
     // Push is advisory. The notification row (or, for chat, the message) is
     // already committed and the in-app surfaces will show it regardless.
-    console.error('sendNotificationPush failed', error);
+    console.error('sendNotificationPush failed', safeError(error));
   }
 }
 

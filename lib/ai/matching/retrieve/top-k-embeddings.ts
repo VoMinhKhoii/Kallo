@@ -5,6 +5,7 @@ import {
 import type { IngredientWithContext } from '@/lib/ai/matching/retrieve/top-k-context';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 export interface TopKEmbeddingResult {
@@ -37,12 +38,9 @@ export async function resolveTopKEmbeddings(
     concurrency
   );
   const phase1Ms = Date.now() - tPhase1;
-  const embeddings: (number[] | null)[] = cacheSettled.map((r, i) => {
+  const embeddings: (number[] | null)[] = cacheSettled.map((r) => {
     if (r.status === 'rejected') {
-      console.warn(
-        `[v2-matching] cache lookup failed for "${pending[i].matchingName}":`,
-        r.reason
-      );
+      console.warn('[v2-matching] cache lookup failed:', safeError(r.reason));
       return null;
     }
     return r.value;
@@ -77,7 +75,7 @@ export async function resolveTopKEmbeddings(
       // lexical (fuzzy/trigram) fallback arm for them.
       console.warn(
         '[v2-matching] embedding batch failed; degrading to lexical fallback:',
-        err
+        safeError(err)
       );
     }
   }

@@ -8,6 +8,7 @@ import { logPipelineStart } from '@/lib/ai/pipeline/telemetry/logging';
 import { encodeSSE } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import { withDeadline } from '@/lib/core/async/with-deadline';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { serializeError } from '@/lib/core/errors/serialize';
 import { db } from '@/lib/infra/db/client';
 import { getAiConsentError } from './_lib/ai-consent-access';
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     return await startAnalysis(request, pending);
   } catch (error) {
     await pending.release?.();
-    console.error('[analyze-meal] Pre-stream failure:', error);
+    console.error('[analyze-meal] Pre-stream failure:', safeError(error));
     return serializeError(error);
   }
 }
@@ -161,7 +162,7 @@ async function startAnalysis(
         } catch (releaseError) {
           console.error(
             '[analyze-meal] Guard release timed out or failed:',
-            releaseError
+            safeError(releaseError)
           );
         }
         controller.close();

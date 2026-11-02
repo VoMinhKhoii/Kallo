@@ -3,6 +3,7 @@ import { logUnmatchedIngredients } from '@/lib/ai/matching/unmatched-log';
 import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import { withDeadline } from '@/lib/core/async/with-deadline';
+import { safeError } from '@/lib/core/errors/safe-error';
 import {
   buildRelogRawInput,
   capRawInput,
@@ -179,7 +180,8 @@ export async function runPreciseBranch({
   );
   if (result.data.unmatchedIngredients.length > 0) {
     logUnmatchedIngredients(result.data.unmatchedIngredients, null, db).catch(
-      (err) => console.error('Failed to log unmatched ingredients:', err)
+      (err) =>
+        console.error('Failed to log unmatched ingredients:', safeError(err))
     );
   }
 }

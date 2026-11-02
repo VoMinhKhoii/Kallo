@@ -69,6 +69,13 @@ before `bun dev:mobile` (Flutter).
   `reportError(error, scope, { redactMessage })` for errors that are caught (error
   boundaries; the analyze-meal stream, which skips expected `NonFoodError`s and redacts
   messages, since they can quote meal text). `lib/core/errors/serialize.ts` reports unknown 500s directly.
+  `lib/core/errors/safe-error.ts` strips Drizzle's bound parameters at reporting
+  and stdout call sites, retaining query text, SQLSTATE/driver code and safe
+  stack frames. `onRequestError` uses the same boundary. The final event scrubber
+  also cuts every exception value at `\nparams:` and redacts linked database
+  cause messages, which can quote values independently. Raw SDK database captures
+  drop stack traces because multiline parameters can resemble frames; errors
+  already sanitized by `safeError` retain their safe frames.
 - `lib/infra/telemetry/analytics/`: PostHog init (`before_send` rewrites every property
   whose name ends in url / referrer / pathname; `/flags` requests off), `events.ts` (the
   event list), `track()`.
@@ -130,11 +137,12 @@ using up the error quota.
 
 ## Known gaps / follow-ups
 
-- **Exception messages are sent as written**, except where `reportError` is called with
-  `redactMessage` (the analyze-meal stream). The scrubbers remove request payloads, URLs'
-  identifying parts, console and click breadcrumbs, but no scrubber can tell which words
-  in a message are the user's. Never interpolate meal text, body metrics or email into
-  an error message; log it separately (console output is not sent) if you need it.
+- **Non-database exception messages are sent as written**, except where `reportError`
+  uses `redactMessage` (the analyze-meal stream). Request payloads, identifying URL
+  parts and console/click breadcrumbs are scrubbed. Drizzle errors retain SQL and
+  driver codes only; bound values and quoted driver details must never appear in
+  error reports or stdout. Never interpolate meal text, body metrics or email into
+  other error messages: a scrubber cannot identify arbitrary user text.
 - **Account deletion** does not yet delete the PostHog person or Sentry user data for the
   account. Events carry only the opaque id, but a full erasure should call PostHog's
   person-delete API from the deletion job (`lib/domain/account-deletion/`).

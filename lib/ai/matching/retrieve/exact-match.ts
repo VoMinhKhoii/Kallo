@@ -6,6 +6,7 @@ import {
   type MatchInfo,
   normalizeState,
 } from '@/lib/ai/matching/match-constants';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /**
@@ -85,8 +86,8 @@ export async function resolveExactMatch(
     };
   } catch (err) {
     console.warn(
-      `[v2-matching] exact-match lookup failed for "${normalized}", deferring to cascade:`,
-      err
+      '[v2-matching] exact-match lookup failed, deferring to cascade:',
+      safeError(err)
     );
     return null;
   }

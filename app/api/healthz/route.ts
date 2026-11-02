@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
-
 import { probeSharedDatabaseHealth } from '@/app/api/healthz/_lib/shared-db-health';
 import { cardIndexStatus } from '@/lib/ai/matching/cards/search-index/search-index';
 import { handleRouteError } from '@/lib/api/respond';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
 
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       { status: ok ? 200 : 503 }
     );
   } catch (error) {
-    console.error('Shared database health check failed.', error);
+    console.error('Shared database health check failed.', safeError(error));
 
     return NextResponse.json(
       {

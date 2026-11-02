@@ -7,6 +7,7 @@ import type {
   MatchedIngredient,
   UnmatchedIngredient,
 } from '@/lib/ai/types/matching';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /**
@@ -31,13 +32,16 @@ export async function attachNutrition(args: {
   try {
     nutritionMap = await batchFetchNutrition(uniqueIds, db);
   } catch (err) {
-    console.warn('[matching] batchFetchNutrition failed, retrying once:', err);
+    console.warn(
+      '[matching] batchFetchNutrition failed, retrying once:',
+      safeError(err)
+    );
     try {
       nutritionMap = await batchFetchNutrition(uniqueIds, db);
     } catch (retryErr) {
       console.error(
         '[matching] batchFetchNutrition retry also failed:',
-        retryErr
+        safeError(retryErr)
       );
       nutritionMap = new Map();
     }

@@ -16,6 +16,7 @@ import {
 } from '@/lib/ai/matching/rank/candidate-ranking';
 import { rrfFuseCandidates } from '@/lib/ai/matching/rank/rrf-fusion';
 import type { MatchType } from '@/lib/ai/types/matching';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /**
@@ -122,8 +123,8 @@ export async function retrieveHybridTopK(args: {
   ] as const) {
     if (settled.status === 'rejected') {
       console.error(
-        `[v2-matching] ${arm} arm failed for "${matchingName}"; continuing with the other arm:`,
-        settled.reason
+        `[v2-matching] ${arm} arm failed; continuing with the other arm:`,
+        safeError(settled.reason)
       );
     }
   }

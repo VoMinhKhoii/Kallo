@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type * as schema from '@/lib/infra/db/schema';
 
 /**
@@ -118,7 +119,10 @@ export async function warmEmbeddingCache(
 
     console.info(`[embedding-cache] Warm-up: loaded ${loaded} embeddings`);
   } catch (err) {
-    console.warn('[embedding-cache] Warm-up failed, continuing without:', err);
+    console.warn(
+      '[embedding-cache] Warm-up failed, continuing without:',
+      safeError(err)
+    );
     warmCacheStarted = false; // allow retry on next request
   }
 }
@@ -170,10 +174,9 @@ export async function resolveQueryEmbedding(
       return promoteToMemoryCache(exactRows[0]);
     }
   } catch (err) {
-    const cause = err instanceof Error ? (err.cause ?? err.message) : err;
     console.warn(
-      `[embedding-cache] L2 lookup failed for "${normalized}", treating as miss:`,
-      cause
+      '[embedding-cache] L2 lookup failed, treating as miss:',
+      safeError(err)
     );
     return null;
   }
@@ -213,8 +216,8 @@ export function cacheQueryEmbedding(
         ON CONFLICT (name_vi) DO NOTHING`
   ).catch((err) => {
     console.error(
-      `[embedding-cache] Failed to persist embedding for "${normalized}":`,
-      err
+      '[embedding-cache] Failed to persist embedding:',
+      safeError(err)
     );
   });
 }
@@ -264,7 +267,10 @@ function logSynonymCandidateIfEnMatch(
       }
     })
     .catch((err) => {
-      console.error('[embedding-cache] Failed to log synonym candidate:', err);
+      console.error(
+        '[embedding-cache] Failed to log synonym candidate:',
+        safeError(err)
+      );
     });
 }
 

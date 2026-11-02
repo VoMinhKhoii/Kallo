@@ -7,6 +7,7 @@ import {
 import { readJsonBody } from '@/lib/api/auth';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { serializeError } from '@/lib/core/errors/serialize';
 import {
   type MealMessageInput,
@@ -33,7 +34,7 @@ export function createGuardRelease(
       } catch (error) {
         console.error(
           '[analyze-meal] Failed to release the rate-limit lease:',
-          error
+          safeError(error)
         );
       }
     })();
@@ -50,7 +51,10 @@ export function resolveGeminiConfig(): GeminiConfigResult {
   try {
     return { ok: true, config: resolveGeminiProvider() };
   } catch (error) {
-    console.error('[analyze-meal] AI provider misconfigured:', error);
+    console.error(
+      '[analyze-meal] AI provider misconfigured:',
+      safeError(error)
+    );
     return { ok: false, error: serializeError(Errors.internal()) };
   }
 }

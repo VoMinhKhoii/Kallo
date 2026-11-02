@@ -7,6 +7,43 @@ import {
 } from '../scrub';
 
 describe('scrubEvent', () => {
+  it('cuts every query exception and removes quoted linked cause details', () => {
+    const event = scrubEvent({
+      exception: {
+        values: [
+          {
+            value: 'invalid secret',
+            type: 'Error',
+            stacktrace: { frames: [{ filename: 'secret' }] },
+          },
+          { value: 'Failed query: select $1\nparams: secret' },
+          { value: 'Failed query: insert $1\nparams: other-secret' },
+        ],
+      },
+    });
+    expect(event.exception.values).toEqual([
+      { value: '[database error detail redacted]', type: 'Error' },
+      { value: 'Failed query: select $1' },
+      { value: 'Failed query: insert $1' },
+    ]);
+  });
+
+  it('preserves frames from errors sanitized before SDK capture', () => {
+    const frame = { frames: [{ filename: 'query.ts' }] };
+    const event = scrubEvent({
+      exception: {
+        values: [
+          {
+            type: 'DatabaseQueryError',
+            value: 'Failed query: select $1 [22P02]',
+            stacktrace: frame,
+          },
+        ],
+      },
+    });
+    expect(event.exception.values[0].stacktrace).toBe(frame);
+  });
+
   it('strips request payload, cookies, headers and query string', () => {
     const event = scrubEvent({
       request: {

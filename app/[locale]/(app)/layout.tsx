@@ -9,6 +9,7 @@ import { AiConsentProvider } from '@/components/privacy/ai-consent-provider';
 import { AppThemeProvider } from '@/components/providers/theme/app-theme-provider';
 import { SettingsDialog } from '@/components/settings/dialog/settings-dialog';
 import { getMyPublicProfile } from '@/lib/actions/groups/profile';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { getBillingConfig } from '@/lib/domain/billing/billing';
 import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 import { getRequestUser } from '@/lib/infra/auth/session';
@@ -66,7 +67,7 @@ async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
   try {
     profile = await getOnboardingProfile();
   } catch (error) {
-    console.error('Failed to load onboarding profile:', error);
+    console.error('Failed to load onboarding profile:', safeError(error));
   }
   const onboardingStep = profile?.onboardingStep ?? 0;
 
@@ -76,7 +77,7 @@ async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
   try {
     publicProfile = await getMyPublicProfile(user.id);
   } catch (error) {
-    console.error('Failed to load public profile:', error);
+    console.error('Failed to load public profile:', safeError(error));
   }
 
   const metadataName =

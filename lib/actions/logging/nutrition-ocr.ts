@@ -5,6 +5,7 @@ import {
   logNutritionLabelMealSchema,
   scanNutritionLabelSchema,
 } from '@/lib/api/contracts/nutrition-label';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
 import { scanWithStoredLabelImage } from '@/lib/domain/nutrition/label-images/label-images';
 import { scanErrorCode } from '@/lib/domain/nutrition/ocr/error';
@@ -98,7 +99,7 @@ export async function scanNutritionLabelAction(input: {
     // kept scan's id is not returned.
     return { success: true, data: scanned.result };
   } catch (error) {
-    console.error('Error in scanNutritionLabelAction:', error);
+    console.error('Error in scanNutritionLabelAction:', safeError(error));
     return { success: false, code: scanErrorCode(error) };
   }
 }
@@ -120,7 +121,7 @@ export async function stageOcrMealAction(
 
     return { success: true, ...(await stageOcrMeal(user.id, parsed)) };
   } catch (error) {
-    console.error('Error in stageOcrMealAction:', error);
+    console.error('Error in stageOcrMealAction:', safeError(error));
     return { success: false, code: 'server_error' };
   }
 }

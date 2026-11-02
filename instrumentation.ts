@@ -1,11 +1,15 @@
 import * as Sentry from '@sentry/nextjs';
+import { safeError } from '@/lib/core/errors/safe-error';
 import {
   serverSentryEnvironment,
   sharedSentryOptions,
 } from '@/lib/infra/telemetry/monitoring/sentry-options';
 
 /** Uncaught route / Server Component / Server Action errors → Sentry. */
-export const onRequestError = Sentry.captureRequestError;
+export const onRequestError: typeof Sentry.captureRequestError = (
+  error,
+  ...args
+) => Sentry.captureRequestError(safeError(error), ...args);
 
 /**
  * Next.js server-runtime init hook.

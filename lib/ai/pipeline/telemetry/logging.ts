@@ -9,6 +9,7 @@ import type {
 } from '@/lib/ai/types/nutrition-values';
 import type { PipelineResult } from '@/lib/ai/types/result';
 import type { UserContext } from '@/lib/ai/types/user-context';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 import { pipelineRequests } from '@/lib/infra/db/schema';
 
@@ -58,7 +59,10 @@ export async function logPipelineStart(
       ...(args.dryRun ? { dryRun: true } : {}),
     });
   } catch (err) {
-    console.error('[pipeline-logging] Failed to create request log:', err);
+    console.error(
+      '[pipeline-logging] Failed to create request log:',
+      safeError(err)
+    );
     throw err;
   }
 
@@ -137,10 +141,16 @@ export function logPipelineEnd(
       .set({ status, durationMs, error: error ?? null, ...extra, ...summary })
       .where(eq(pipelineRequests.id, requestId))
       .catch((err) => {
-        console.error('[pipeline-logging] Failed to update request log:', err);
+        console.error(
+          '[pipeline-logging] Failed to update request log:',
+          safeError(err)
+        );
       });
   } catch (err) {
-    console.error('[pipeline-logging] Failed to update request log:', err);
+    console.error(
+      '[pipeline-logging] Failed to update request log:',
+      safeError(err)
+    );
   }
 }
 

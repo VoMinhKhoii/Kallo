@@ -21,6 +21,7 @@ import { isNonFoodError } from '@/lib/ai/pipeline/contracts/failure';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import { createPipelineLlm } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 import { runCheatBranch } from './cheat-branch';
 import { runPreciseBranch } from './precise-branch';
@@ -54,7 +55,7 @@ export async function runAnalysisStream({
 
     await (ctx.mode === 'cheat' ? runCheatBranch(run) : runPreciseBranch(run));
   } catch (error) {
-    console.error('[analyze-meal] Stream error:', error);
+    console.error('[analyze-meal] Stream error:', safeError(error));
     // A non-food submission is the pipeline working, not failing — and its
     // message names the user's ingredient. Everything else is reported
     // with its message redacted: this code handles meal text.

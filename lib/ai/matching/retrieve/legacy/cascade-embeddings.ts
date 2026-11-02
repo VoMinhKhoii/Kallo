@@ -4,6 +4,7 @@ import {
 } from '@/lib/ai/cache/embedding-cache';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /**
@@ -47,11 +48,11 @@ export async function resolveMatchEmbeddings(
     (name) => resolveQueryEmbedding(name, db),
     matchConcurrency
   );
-  const cacheResults = cacheSettled.map((r, i) => {
+  const cacheResults = cacheSettled.map((r) => {
     if (r.status === 'rejected') {
       console.warn(
-        `[matching] cache lookup failed for "${matchingNames[i]}", treating as cold miss:`,
-        r.reason
+        '[matching] cache lookup failed, treating as cold miss:',
+        safeError(r.reason)
       );
     }
     return r.status === 'fulfilled' ? r.value : null;

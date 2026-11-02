@@ -2,6 +2,7 @@ import { attemptCostUsd } from '@/lib/ai/cost/pricing';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import { cloudTrace } from '@/lib/ai/pipeline/telemetry/cloud-trace/cloud-trace';
 import { isClaudeModel, type StreamOptions } from '@/lib/ai/provider/provider';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 import {
   type AnalysisModelBudgetWorkKind,
@@ -40,7 +41,10 @@ export function recordAnalysisModelBudgetEventBestEffort(
   // table writes (3/request) when chasing pool contention or DB cost spikes.
   if (!readBooleanEnv('ANALYSIS_BUDGET_EVENTS_ENABLED', true)) return;
   void recordAnalysisModelBudgetEvent(input).catch((error) => {
-    console.error('[ai/pipeline] failed to write model budget event', error);
+    console.error(
+      '[ai/pipeline] failed to write model budget event',
+      safeError(error)
+    );
   });
 }
 

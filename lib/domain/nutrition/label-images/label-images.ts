@@ -20,6 +20,7 @@
  * only when the database is (plus the photo's removal if the insert fails).
  * Otherwise the row is written after the response (`after()`).
  */
+
 import { randomUUID } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 import { after } from 'next/server';
@@ -29,6 +30,7 @@ import type {
 } from '@/lib/api/contracts/nutrition-label';
 import { AppError } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
+import { safeError } from '@/lib/core/errors/safe-error';
 import {
   LABEL_IMAGE_URL_TTL_SECONDS,
   NUTRITION_LABEL_BUCKET,
@@ -169,7 +171,7 @@ export async function linkLabelImageToMeal(
   } catch (error) {
     console.error(
       '[label-images] Linking the label to its meal failed:',
-      error
+      safeError(error)
     );
   }
 }

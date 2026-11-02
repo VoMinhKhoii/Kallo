@@ -48,8 +48,8 @@ export function buildUserContext(profile: ProfileRow): UserContext {
   return {
     goal,
     aggression,
-    countryOfOrigin: profile.countryOfOrigin ?? null,
-    countryOfResidence: profile.countryOfResidence ?? null,
+    countryOfOrigin: profile.countryOfOrigin?.slice(0, 100) ?? null,
+    countryOfResidence: profile.countryOfResidence?.slice(0, 100) ?? null,
     cookingHabits: {
       oilUsage: (profile.oilUsage ??
         NEUTRAL_COOKING_DEFAULTS.oilUsage) as UserContext['cookingHabits']['oilUsage'],

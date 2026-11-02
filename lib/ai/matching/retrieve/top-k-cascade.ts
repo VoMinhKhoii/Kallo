@@ -19,6 +19,7 @@ import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /** The legacy matcher's Call 2 view of a candidate: row name and similarity. */
@@ -168,7 +169,7 @@ export async function matchTopKPerIngredient(
       // pass silently as an ordinary no-match.
       console.error(
         '[v2-matching] retrieval task failed; ingredient proceeds unmatched:',
-        r.reason,
+        safeError(r.reason),
         { taskIdx }
       );
       continue;

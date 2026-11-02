@@ -34,6 +34,7 @@ import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineResponse } from '@/lib/ai/types/result';
 import type { UserContext } from '@/lib/ai/types/user-context';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 const MODEL_PROFILE = resolveModelProfile();
@@ -173,15 +174,17 @@ export async function analyzeMeal(
     if (error instanceof Error && error.message.includes('429')) {
       console.error(
         '[pipeline] Rate limit error — not retrying pipeline:',
-        error.message
+        safeError(error)
       );
       return handleError(error);
     }
 
     // Parse errors get one retry (LLMs are non-deterministic)
     if (isParseError(error)) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.warn('[pipeline] Parse error, retrying pipeline once:', message);
+      console.warn(
+        '[pipeline] Parse error, retrying pipeline once:',
+        safeError(error)
+      );
       try {
         return await runPipeline(
           rawInput,
@@ -193,20 +196,13 @@ export async function analyzeMeal(
           options
         );
       } catch (retryError) {
-        const retryMsg =
-          retryError instanceof Error ? retryError.message : String(retryError);
-        console.error('[pipeline] Retry also failed:', retryMsg);
+        console.error('[pipeline] Retry also failed:', safeError(retryError));
         return handleError(retryError);
       }
     }
 
     // All other errors (API errors, network, etc.) surface immediately
-    const message = error instanceof Error ? error.message : String(error);
-    const cause =
-      error instanceof Error && error.cause
-        ? ` [cause: ${error.cause instanceof Error ? error.cause.message : String(error.cause)}]`
-        : '';
-    console.error(`[pipeline] Unhandled error: ${message}${cause}`);
+    console.error('[pipeline] Unhandled error:', safeError(error));
     return handleError(error);
   }
 }

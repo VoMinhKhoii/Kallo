@@ -6,6 +6,7 @@ import type { SubmitFeedbackInput } from '@/lib/api/contracts/feedback';
 import { submitFeedbackSchema } from '@/lib/api/contracts/feedback';
 import { AppError } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { db } from '@/lib/infra/db/client';
 import { userFeedback } from '@/lib/infra/db/schema';
 import {
@@ -119,7 +120,7 @@ async function assertUploadQuota(userId: string): Promise<void> {
   try {
     objects = await listObjects(SCREENSHOT_BUCKET, `${userId}/`);
   } catch (error) {
-    console.error('[feedback] upload-quota list failed:', error);
+    console.error('[feedback] upload-quota list failed:', safeError(error));
     return;
   }
   const oneHourAgo = Date.now() - 60 * 60 * 1000;

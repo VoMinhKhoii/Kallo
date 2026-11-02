@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { releaseInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import { isAbandoned } from '@/lib/actions/meals/day/abandoned';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 
@@ -76,8 +77,7 @@ export async function reapAbandonedPendingAnalyses(
     console.error(
       '[loadLoggingDay] failed to reap abandoned pending analyses',
       {
-        userId,
-        error,
+        error: safeError(error),
       }
     );
     return NOTHING_REAPED;

@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { AppError } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { db as defaultDb } from '@/lib/infra/db/client';
 import { publicProfiles } from '@/lib/infra/db/schema';
 import {
@@ -54,7 +55,7 @@ async function removeObject(actorId: string, path: string | null) {
   try {
     await removeObjects(AVATAR_BUCKET, [path]);
   } catch (error) {
-    console.error('[avatar] cleanup of old object failed:', error);
+    console.error('[avatar] cleanup of old object failed:', safeError(error));
   }
 }
 

@@ -1,3 +1,6 @@
+import { inspect } from 'node:util';
+import * as Sentry from '@sentry/nextjs';
+import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -33,6 +36,32 @@ afterEach(() => {
 });
 
 describe('register', () => {
+  it('scrubs query params and driver details before captureRequestError', async () => {
+    const { onRequestError } = await import('@/instrumentation');
+    const error = new DrizzleQueryError(
+      'select $1',
+      ['private value'],
+      Object.assign(new Error('bad private value'), { code: '22P02' })
+    );
+    const request = { path: '/api/test', method: 'POST', headers: {} };
+    const context = {
+      routerKind: 'App Router',
+      routePath: '/api/test',
+      routeType: 'route',
+    } as const;
+    await onRequestError(error, request, context);
+    expect(Sentry.captureRequestError).toHaveBeenCalledWith(
+      expect.any(Error),
+      request,
+      context
+    );
+    expect(
+      inspect(vi.mocked(Sentry.captureRequestError).mock.calls)
+    ).not.toContain('private value');
+    expect(inspect(vi.mocked(Sentry.captureRequestError).mock.calls)).toContain(
+      '22P02'
+    );
+  });
   it('starts the card catalog load on the Node runtime without waiting for it', async () => {
     vi.stubEnv('NEXT_RUNTIME', 'nodejs');
     const { register } = await import('@/instrumentation');

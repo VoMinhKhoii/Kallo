@@ -10,6 +10,7 @@ import {
   writePipelineRun,
 } from '@/lib/ai/pipeline/telemetry/run-telemetry';
 import type { UserContext } from '@/lib/ai/types/user-context';
+import { safeError } from '@/lib/core/errors/safe-error';
 
 export interface V2TelemetryInput {
   decomposition: MealDecompositionV2;
@@ -209,12 +210,15 @@ export async function persistV2PipelineRun(args: {
       writePipelineRun(trace.db, rowWithV2).catch((err) => {
         console.error(
           '[ai/pipeline] v2 failed to write pipeline_runs row',
-          err
+          safeError(err)
         );
       });
     }
   } catch (err) {
-    console.error('[ai/pipeline] v2 failed to build pipeline_runs row', err);
+    console.error(
+      '[ai/pipeline] v2 failed to build pipeline_runs row',
+      safeError(err)
+    );
   }
 }
 

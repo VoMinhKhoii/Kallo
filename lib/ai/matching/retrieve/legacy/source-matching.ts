@@ -20,6 +20,7 @@ import {
   type MatchStateInfo,
   pickBestSource,
 } from '@/lib/ai/matching/retrieve/legacy/pick-best-source';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 export interface MatchMeasurementContext {
@@ -58,7 +59,7 @@ export async function matchSingleIngredientWithEmbedding(
     ? runFuzzySourceQueries(ingredientName, db).catch((err) => {
         console.warn(
           '[rrf] early fuzzy failed; falling back to lazy fuzzy',
-          err
+          safeError(err)
         );
         return null;
       })

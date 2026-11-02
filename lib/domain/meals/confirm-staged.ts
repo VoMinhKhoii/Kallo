@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { AppError } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { db } from '@/lib/infra/db/client';
 import { meals, pendingAnalyses } from '@/lib/infra/db/schema';
 
@@ -49,7 +50,10 @@ async function discardStaged(userId: string, analysisId: string) {
         )
       );
   } catch (cleanup) {
-    console.error('Discarding a retried staged meal failed:', cleanup);
+    console.error(
+      'Discarding a retried staged meal failed:',
+      safeError(cleanup)
+    );
   }
 }
 
@@ -63,7 +67,7 @@ async function ownsMeal(userId: string, mealId: string) {
       .limit(1);
     return own !== undefined;
   } catch (lookup) {
-    console.error('Checking a retried meal id failed:', lookup);
+    console.error('Checking a retried meal id failed:', safeError(lookup));
     return false;
   }
 }

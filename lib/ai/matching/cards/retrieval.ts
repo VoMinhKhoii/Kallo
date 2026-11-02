@@ -14,6 +14,7 @@
  *
  * Returns `null` when the card index is not ready (see `catalog.ts`).
  */
+
 import {
   attachCandidateNutrition,
   type CardRetrieval,
@@ -34,6 +35,7 @@ import { rrfOrder } from '@/lib/ai/matching/rank/rrf-fusion';
 import type { DecomposedIngredientV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import { withDeadline } from '@/lib/core/async/with-deadline';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 import type { CardCatalog, CatalogRow } from './catalog';
 import { saltVariant } from './concept-key';
@@ -105,7 +107,7 @@ async function vectorArms(
     // Matching never blanks out because one arm is down.
     console.error(
       '[card-matching] vector arm failed; using lexical arms only:',
-      err
+      safeError(err)
     );
     return { hits: queries.map(() => []), ok: false };
   }

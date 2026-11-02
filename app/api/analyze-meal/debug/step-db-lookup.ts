@@ -20,6 +20,7 @@ import type {
   MatchedIngredient,
   UnmatchedIngredient,
 } from '@/lib/ai/types/matching';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { db } from '@/lib/infra/db/client';
 
 import { type FuzzyMatchRow, pickMacros } from './debug-shared';
@@ -193,8 +194,8 @@ export async function runDbLookupDebugStep({
                 }
               } catch (vectorErr) {
                 console.error(
-                  `[debug] Vector search failed for "${searchName}":`,
-                  vectorErr
+                  '[debug] Vector search failed:',
+                  safeError(vectorErr)
                 );
                 unmatched.push({
                   ingredientName: displayName,

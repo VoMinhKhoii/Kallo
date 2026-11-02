@@ -13,6 +13,7 @@ import {
   RateLimitUnavailableError,
 } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
+import { safeError } from '@/lib/core/errors/safe-error';
 
 /**
  * Serialize any thrown value into a NextResponse JSON payload.
@@ -41,7 +42,9 @@ export function serializeError(e: unknown): NextResponse {
   // An unknown error became a generic 500 — the caller caught it, so
   // `onRequestError` never sees it. Report it here or it is invisible. Sentry
   // directly, not `lib/infra/telemetry/monitoring` — `core` never imports `infra`.
-  Sentry.captureException(e, { tags: { scope: '[serialize-error]' } });
+  Sentry.captureException(safeError(e), {
+    tags: { scope: '[serialize-error]' },
+  });
   const fallback = Errors.internal(e);
   return NextResponse.json(fallback.toJSON(), { status: fallback.status });
 }
