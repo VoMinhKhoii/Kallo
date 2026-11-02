@@ -62,7 +62,13 @@ export function mealKcal(variant: FoodPageVariant): number {
  */
 export function kcalSpan(capture: FoodPageCapture, locale: FoodLocale): string {
   const totals = capture.variants.map(mealKcal);
-  const low = Math.floor(Math.min(...totals) / 100) * 100;
+  const lightest = Math.min(...totals);
+  // Under 100 kcal, whole hundreds would round a light meal down to "0 to …"
+  // (chicken noodle soup's 72 kcal broth meal did); round to tens there.
+  const low =
+    lightest < 100
+      ? Math.floor(lightest / 10) * 10
+      : Math.floor(lightest / 100) * 100;
   const high = Math.ceil(Math.max(...totals) / 100) * 100;
   const { formatNumber, spanJoin } = FOOD_PAGE_CHROME[locale];
   return `${formatNumber(low)} ${spanJoin} ${formatNumber(high)}`;

@@ -73,6 +73,8 @@ describe('kcalSpan', () => {
   it('rounds the meals out to whole hundreds', () => {
     expect(kcalSpan(capture(310, 975), 'en')).toBe('300 to 1,000');
     expect(kcalSpan(capture(400, 400), 'en')).toBe('400 to 400');
+    // A meal under 100 kcal must not read as "0 to …".
+    expect(kcalSpan(capture(72, 457), 'en')).toBe('70 to 500');
   });
 
   it('writes the span the way the page’s language does', () => {
