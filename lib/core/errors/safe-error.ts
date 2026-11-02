@@ -1,3 +1,14 @@
+/** `name` of the sanitized error `safeError` builds; the Sentry scrubber keys on it. */
+export const DATABASE_QUERY_ERROR_NAME = 'DatabaseQueryError';
+
+/** The `at …` frame lines of a stack, without its header. */
+export function stackFrames(stack: string): string {
+  return stack
+    .split('\n')
+    .filter((line) => /^\s+at /.test(line))
+    .join('\n');
+}
+
 /** Drizzle appends every bound value to its message, including private data. */
 export function stripQueryParams(message: string): string {
   const marker = message.indexOf('\nparams:');
@@ -56,16 +67,13 @@ export function safeError(error: unknown): unknown {
   const safe = new Error(
     `${stripQueryParams(query)}${code ? ` [${code}]` : ''}`
   );
-  safe.name = 'DatabaseQueryError';
+  safe.name = DATABASE_QUERY_ERROR_NAME;
   // Remove the whole message first: a bound multiline value may itself
   // contain text shaped like a stack frame.
   const header = `${dbError.name}: ${dbError.message}`;
-  const frames = (
+  const frames = stackFrames(
     dbError.stack?.startsWith(header) ? dbError.stack.slice(header.length) : ''
-  )
-    .split('\n')
-    .filter((line) => /^\s+at /.test(line))
-    .join('\n');
+  );
   safe.stack = `${safe.name}: ${safe.message}${frames ? `\n${frames}` : ''}`;
   return safe;
 }

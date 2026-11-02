@@ -12,7 +12,10 @@
  *   • console and ui (click / input) breadcrumbs are dropped outright, and
  *     spans named after a DOM selector lose the name.
  */
-import { stripQueryParams } from '@/lib/core/errors/safe-error';
+import {
+  DATABASE_QUERY_ERROR_NAME,
+  stripQueryParams,
+} from '@/lib/core/errors/safe-error';
 import { telemetryUrl } from '@/lib/infra/telemetry/telemetry-url';
 
 type Data = Record<string, unknown>;
@@ -64,7 +67,7 @@ export function scrubEvent<T extends ScrubbableEvent>(event: T): T {
     if (exception.value == null) continue;
     // Raw SDK captures can parse a multiline bound value as a stack frame.
     // Our reporting helpers supply a DatabaseQueryError with safe frames.
-    if (hasQuery && exception.type !== 'DatabaseQueryError')
+    if (hasQuery && exception.type !== DATABASE_QUERY_ERROR_NAME)
       delete exception.stacktrace;
     // Linked postgres causes may quote bound values without a params marker.
     exception.value =

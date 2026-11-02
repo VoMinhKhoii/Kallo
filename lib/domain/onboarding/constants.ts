@@ -14,6 +14,9 @@ import type {
 // 3 = Screen 3 complete (cooking habits) — ALL SCREENS DONE
 export const ONBOARDING_TOTAL_STEPS = 3;
 
+/** Longest stored country text; also the cap where it enters AI prompts. */
+export const COUNTRY_MAX_LENGTH = 100;
+
 export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   sedentary: 1.2,
   light: 1.375,

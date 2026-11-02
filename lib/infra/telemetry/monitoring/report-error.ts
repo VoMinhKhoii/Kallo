@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
-import { safeError } from '@/lib/core/errors/safe-error';
+import { safeError, stackFrames } from '@/lib/core/errors/safe-error';
 
 /**
  * Send an error we CAUGHT to Sentry. Uncaught errors in routes, Server
@@ -52,10 +52,7 @@ function withoutMessage(error: Error): Error {
   redacted.name = error.name;
   // The stack repeats the message (over several lines if the message has
   // newlines); keep only the frame lines.
-  const frames = error.stack
-    ?.split('\n')
-    .filter((line) => /^\s+at /.test(line))
-    .join('\n');
+  const frames = stackFrames(error.stack ?? '');
   redacted.stack = frames
     ? `${error.name}: ${redacted.message}\n${frames}`
     : '';
