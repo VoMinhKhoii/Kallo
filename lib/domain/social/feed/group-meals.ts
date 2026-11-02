@@ -22,9 +22,9 @@ type Db = AppDb | AppTransaction;
 
 /** Group-scoped shared meals, newest first by `order` (see meal-feed.ts).
  * Admission is `groupShareVisibleSql` — the one group-share rule (not private,
- * not blocked, both members joined before the share) — evaluated in SQL before
- * LIMIT. The owner-membership join only drives the scan from this group's
- * members. */
+ * not blocked, both members joined before the share, and in a direct chat a
+ * friend since the share) — evaluated in SQL before LIMIT. The
+ * owner-membership join only drives the scan from this group's members. */
 export async function sharedGroupMealsBefore(
   groupId: string,
   viewerId: string,

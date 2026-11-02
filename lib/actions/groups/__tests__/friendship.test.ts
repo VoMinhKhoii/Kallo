@@ -45,6 +45,7 @@ import { Errors } from '@/lib/core/errors/catalog';
 
 const {
   mockDbSelect,
+  mockDbCount,
   mockDbInsert,
   mockDbDelete,
   mockTxSelect,
@@ -64,6 +65,9 @@ const {
   const mockTxCount = vi.fn(async (..._args: unknown[]) => 0);
   return {
     mockDbSelect: vi.fn(),
+    // The unlocked block pre-check, before any write: none unless a case says
+    // otherwise.
+    mockDbCount: vi.fn(async (..._args: unknown[]) => 0),
     mockDbInsert: vi.fn(),
     mockDbDelete: vi.fn(),
     mockTxSelect,
@@ -84,6 +88,7 @@ const {
 vi.mock('@/lib/infra/db/client', () => ({
   db: {
     select: mockDbSelect,
+    $count: mockDbCount,
     insert: mockDbInsert,
     delete: mockDbDelete,
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
@@ -104,6 +109,14 @@ const { mockAssertFriendCapacity } = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/domain/social/quota/circle-quota', () => ({
   assertFriendCapacity: mockAssertFriendCapacity,
+}));
+
+const { mockGetOrCreateMyProfile } = vi.hoisted(() => ({
+  mockGetOrCreateMyProfile: vi.fn(async () => ({})),
+}));
+vi.mock('@/lib/actions/groups/profile', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/actions/groups/profile')>()),
+  getOrCreateMyProfile: mockGetOrCreateMyProfile,
 }));
 
 // ---------------------------------------------------------------------------
@@ -158,10 +171,8 @@ function insertConflicted() {
 describe('acceptInvite', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default db.select fallback: the recipient already has a link profile, so
-    // getOrCreateMyProfile (called before the transaction) short-circuits. The
-    // first db.select per test is overridden with .mockReturnValueOnce for the
-    // getProfileBySlug lookup; this default serves the getMyPublicProfile read.
+    // Default db.select fallback after the per-test getProfileBySlug override:
+    // the pre-check's edge-status read, which finds no status on this row.
     mockDbSelect.mockReturnValue(
       selectRows([
         {
@@ -181,9 +192,12 @@ describe('acceptInvite', () => {
 
   it('rejects an unknown inviter slug', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([]));
-    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toThrow(
-      'Liên kết mời không hợp lệ.'
-    );
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      status: 404,
+      message: 'Liên kết mời không hợp lệ.',
+    });
+    expect(mockGetOrCreateMyProfile).not.toHaveBeenCalled();
   });
 
   it('rejects connecting to your own link', async () => {
@@ -234,22 +248,8 @@ describe('acceptInvite', () => {
     );
   });
 
-  it('provisions the recipient profile when they have none yet', async () => {
-    mockDbSelect
-      .mockReturnValueOnce(selectRows([inviterRow])) // getProfileBySlug
-      .mockReturnValueOnce(selectRows([])); // getMyPublicProfile: none yet
-    mockDbInsert.mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        returning: vi.fn().mockResolvedValue([
-          {
-            userId: ACTOR,
-            handle: 'mine4821',
-            displayName: null,
-            avatarSeed: 'mine4821',
-          },
-        ]),
-      }),
-    });
+  it('provisions the recipient profile before the friendship transaction', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
     mockTxSelect
       .mockReturnValueOnce(txSelect([])) // no existing edge
       .mockReturnValueOnce(txSelect([{ id: DIRECT_GROUP_ID }])); // getOrCreateDirectChatGroup's re-select
@@ -258,7 +258,15 @@ describe('acceptInvite', () => {
     const result = await acceptInvite(ACTOR, { slug: SLUG });
 
     expect(result.status).toBe('accepted');
-    expect(mockDbInsert).toHaveBeenCalledTimes(1); // recipient was provisioned
+    expect(mockGetOrCreateMyProfile).toHaveBeenCalledWith(
+      ACTOR,
+      null,
+      expect.objectContaining({ transaction: expect.any(Function) })
+    );
+    // Before the transaction, so the inviter's join push can name them.
+    expect(mockGetOrCreateMyProfile.mock.invocationCallOrder[0]).toBeLessThan(
+      mockTxExecute.mock.invocationCallOrder[0]
+    );
   });
 
   it('promotes a pending edge to accepted, and creates their direct chat', async () => {
@@ -436,23 +444,58 @@ describe('acceptInvite', () => {
       txSelect([{ id: FRIENDSHIP_ID, status: 'blocked' }])
     );
 
-    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toThrow(
-      'Không thể kết nối.'
-    );
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      status: 404,
+      message: 'Liên kết mời không hợp lệ.',
+    });
     expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
   // Blocks live in user_blocks, directed; accepting across one — in EITHER
-  // direction — is refused before the edge is even read, under the pair lock
-  // blockFriend also takes (so a block can't commit between check and write).
-  it('refuses to connect when either person blocked the other', async () => {
+  // direction — is refused before any write, and again before the edge is
+  // even read, under the pair lock blockFriend also takes (so a block can't
+  // commit between check and write).
+  it.each([
+    ['a user_blocks row', () => mockDbCount.mockResolvedValueOnce(1)],
+    [
+      'a legacy blocked edge',
+      () =>
+        mockDbSelect.mockReturnValueOnce(selectRows([{ status: 'blocked' }])),
+    ],
+  ])('answers a pair blocked by %s exactly like an unknown slug, before any write', async (_case, arm) => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    arm();
+    const blocked = await acceptInvite(ACTOR, { slug: SLUG }).catch((e) => e);
+
+    mockDbSelect.mockReturnValueOnce(selectRows([]));
+    const unknown = await acceptInvite(ACTOR, { slug: SLUG }).catch((e) => e);
+
+    expect(blocked).toMatchObject({ code: 'NOT_FOUND', status: 404 });
+    expect({
+      code: blocked.code,
+      status: blocked.status,
+      message: blocked.message,
+    }).toEqual({
+      code: unknown.code,
+      status: unknown.status,
+      message: unknown.message,
+    });
+    expect(mockGetOrCreateMyProfile).not.toHaveBeenCalled();
+    expect(mockTxExecute).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('refuses a block committed after the pre-check, under the pair lock', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
     mockTxCount.mockResolvedValueOnce(1); // one user_blocks row, either way
 
-    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toThrow(
-      'Không thể kết nối.'
-    );
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      status: 404,
+      message: 'Liên kết mời không hợp lệ.',
+    });
     expect(mockTxExecute).toHaveBeenCalledTimes(1); // the pair lock
     expect(mockTxCount).toHaveBeenCalledTimes(1);
     expect(mockTxSelect).not.toHaveBeenCalled();
@@ -504,9 +547,12 @@ describe('acceptInvite', () => {
       .mockReturnValueOnce(txSelect([{ status: 'blocked' }])); // reconcile read
     insertConflicted();
 
-    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toThrow(
-      'Không thể kết nối.'
-    );
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      status: 404,
+      message: 'Liên kết mời không hợp lệ.',
+    });
+    expect(mockNotify).not.toHaveBeenCalled();
   });
 });
 

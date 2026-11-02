@@ -419,6 +419,12 @@ SELECT ok(
   '(g) is_friend_since is FALSE for a share made before acceptance'
 );
 
+-- The helpers answer only for the caller (auth.uid()), so ask as stranger.
+SELECT set_config(
+  'request.jwt.claims',
+  json_build_object('sub', :'stranger_id', 'role', 'authenticated')::text,
+  true
+);
 SELECT ok(
   NOT public.is_friend_since(:'stranger_id', :'owner_id', now()),
   '(g) is_friend_since is FALSE with no friendship at all'

@@ -151,6 +151,8 @@ async function InviteContent({ params }: InvitePageProps) {
     );
   }
   if (status === 'blocked') {
+    // Omit a block reason for this session. The inviter's public signed-out
+    // preview still resolves, so comparing sessions can distinguish this state.
     return <Shell title={t('invalidTitle')} body={t('invalidBody')} />;
   }
 

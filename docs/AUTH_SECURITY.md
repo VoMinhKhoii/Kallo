@@ -90,6 +90,28 @@ of value, the upgrade path is:
    The 72-byte cap leaves room for this. Update all three mirrors.
 3. Offer optional MFA (TOTP) for users who want it.
 
+## Social visibility and invite responses
+
+Direct-chat meal reads require a current friendship accepted at or before a
+cross-user share, in addition to both members having joined before it. Direct
+memberships survive removal and blocking, so they alone do not admit older
+shares after reconnection. Named groups keep the membership-since-join rule.
+`groupShareVisibleSql` applies this to the feed, newest-share read marker,
+unread flag and meal activity ranking.
+
+Invite acceptance returns the same `404 NOT_FOUND` and invalid-link message
+for a blocked pair as for an unknown slug, including legacy blocked edges and
+insert-race reconciliation. The block is checked before the recipient's own
+link profile is provisioned, so a blocked accept writes nothing an unknown
+slug would not; the check repeats under the pair lock inside the friendship
+transaction. Web and Flutter show their existing localized connection error
+when accepting fails; neither branches on the former block `409`.
+
+The preview route and web invite page omit an explicit block reason for the
+signed-in viewer. Invite slugs still resolve to public identity for anonymous
+viewers, so comparison across sessions can distinguish the state. This is a
+limit of public previews, not a guarantee of hiding block existence.
+
 ## Abuse controls
 
 | Control | State | Notes |

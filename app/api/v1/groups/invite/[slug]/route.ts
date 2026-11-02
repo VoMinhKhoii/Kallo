@@ -23,8 +23,9 @@ import { createClient } from '@/lib/infra/supabase/server';
  *   - `self`     → the slug is the viewer's own link
  *   - `accepted` → already connected
  *   - `none`     → connectable (show the Accept / sign-in CTA)
- * A blocked edge responds with the same 404 as an invalid slug — the payload
- * never reveals that a block exists.
+ * A blocked edge responds with the same 404 as an invalid slug in that session.
+ * Public slug resolution still allows comparison with an anonymous or other
+ * account's preview; this response only omits an explicit block reason.
  */
 export async function GET(
   request: NextRequest,
@@ -61,8 +62,8 @@ export async function GET(
       status = 'self';
     } else {
       const friendship = await getFriendshipStatus(user.id, inviter.userId);
-      // A blocked edge is surfaced as the SAME 404 an invalid slug gets —
-      // the response must never reveal that a block exists.
+      // Omit an explicit block reason for this viewer, using the invalid-link
+      // response. Public previews in other sessions remain distinguishable.
       if (friendship === 'blocked') {
         throw Errors.notFound('That invite link is invalid.');
       }

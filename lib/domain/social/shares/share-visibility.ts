@@ -22,6 +22,7 @@ type Db = AppDb | AppTransaction;
 const viewerMembership = alias(chatGroupMembers, 'share_viewer_membership');
 const ownerMembership = alias(chatGroupMembers, 'share_owner_membership');
 const groupMembership = alias(chatGroupMembers, 'share_group_membership');
+const scopedGroup = alias(chatGroups, 'share_scoped_group');
 
 /**
  * The friend half of the access contract: an accepted friendship between the
@@ -93,7 +94,9 @@ function groupMembersSinceSql(
 /**
  * THE group-share rule, for reads scoped to one chat group: the share is not
  * private, the viewer and its owner are not blocked, and both were members of
- * `groupId` when it was shared. Every group read folds this in — the group
+ * `groupId` when it was shared. In a direct chat a cross-user share also needs
+ * a friendship accepted at or before it, because direct memberships outlive a
+ * removed or blocked friendship. Every group read folds this in — the group
  * feed, the chat list's unread flag and its last-meal activity — so none can
  * drift from another. (The share-by-id gate below composes the same pieces,
  * with blocks applied once at its top instead of per branch.)
@@ -107,6 +110,16 @@ export function groupShareVisibleSql(
     ${share.visibility} <> 'private'
     AND ${notBlockedWithSql(viewerId, share.actorId)}
     AND ${groupMembersSinceSql(viewerId, groupId, share.actorId, share.sharedAt)}
+    AND EXISTS (
+      SELECT 1
+      FROM "chat_groups" AS "share_scoped_group"
+      WHERE ${scopedGroup.id} = ${groupId}
+        AND (
+          ${scopedGroup.kind} = 'group'
+          OR ${share.actorId} = ${viewerId}
+          OR ${friendSinceSql(viewerId, share.actorId, share.sharedAt)}
+        )
+    )
   )`;
 }
 
