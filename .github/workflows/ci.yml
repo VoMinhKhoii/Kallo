@@ -27,6 +27,7 @@ jobs:
       web: ${{ steps.affected.outputs.web }}
       migrations: ${{ steps.affected.outputs.migrations }}
       image: ${{ steps.affected.outputs.image }}
+      deps: ${{ steps.affected.outputs.deps }}
     steps:
       # Full history so the PR's merge base is here; blobless, so that costs
       # commits and trees, not old file contents.
@@ -271,11 +272,14 @@ jobs:
           DATABASE_URL: postgresql://postgres.pooler-dev:postgres@127.0.0.1:54329/postgres
         run: bun run test -- .db.test.ts
 
+  # Only when a dependency manifest or an action version changes: otherwise
+  # there is nothing to review, and a skipped job costs no GitHub job lag.
   dependency-review:
     name: Dependency Review
+    needs: changes
     runs-on: ubuntu-latest
     # Dependency Review requires GitHub Code Security for private repositories.
-    if: github.event_name == 'pull_request' && github.event.repository.private == false
+    if: github.event_name == 'pull_request' && github.event.repository.private == false && needs.changes.outputs.deps == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v4

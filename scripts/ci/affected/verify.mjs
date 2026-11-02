@@ -27,7 +27,7 @@ export const JOBS = {
   build: { group: 'web', selfGated: true },
   e2e: { group: 'web', advisory: true },
   migrations: { group: 'migrations' },
-  'dependency-review': { group: 'always', ownCondition: true },
+  'dependency-review': { group: 'deps', ownCondition: true },
   'container-build': { group: 'image', on: 'pull_request', sameRepo: true },
   'container-publish': { group: 'always', on: 'push' },
 };

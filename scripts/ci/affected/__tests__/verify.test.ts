@@ -26,8 +26,18 @@ function run(
 }
 const PR = { event: 'pull_request', fork: false };
 const PUSH = { event: 'push', fork: false };
-const EVERYTHING = { web: 'true', migrations: 'true', image: 'true' };
-const NOTHING = { web: 'false', migrations: 'false', image: 'false' };
+const EVERYTHING = {
+  web: 'true',
+  migrations: 'true',
+  image: 'true',
+  deps: 'true',
+};
+const NOTHING = {
+  web: 'false',
+  migrations: 'false',
+  image: 'false',
+  deps: 'false',
+};
 
 describe('problems', () => {
   it('passes a PR where everything ran', () => {
