@@ -97,6 +97,7 @@ code.
 | `shadowDaily` (legacy shadow runs; a refusal skips the run) | global | — / — / 100 | **closed** |
 | `ocrGlobalDaily` | global | 60 / — / 5000 | **closed** |
 | `pushGlobalHourly` | global | — / 20000 / — | degraded |
+| `pushActorHourly` | user (actor) | — / 600 / — | degraded |
 
 Shape of the numbers:
 
@@ -411,7 +412,7 @@ except invite lookup (IP) and the two global budgets.
 | `toggleShareReactionAction` (`POST /api/v1/groups/shares/reaction`) | `shareReaction` | `user` (actor) | same |
 | `POST /api/v1/groups/friends/block`, `POST /api/v1/groups/friends/unblock` | `friendBlock` (one shared budget) | `user` (actor) | **429** + `Retry-After`, charged after auth and before the body is read. |
 | `POST /api/v1/reports` | `contentReport` | `user` (reporter) | **429** + `Retry-After`, charged after auth and before the body is read — it bounds the admin email each accepted report sends. |
-| Push fan-out — inside `sendNotificationPush` (both the notification path and `sendChatMessagePush`) | `pushGlobalHourly`, charged only once there are messages to send | `global:'push'` | **Skip, not block.** A block SKIPs the send and returns — the message/notification row is already committed, so the worst case is a dropped push, never a failed write. Caught locally, logged once per 30 s per instance, never propagated. Most events notify nobody with a registered device, so the charge happens AFTER `buildMessages`: charging before it made the hourly budget count recipients rather than pushes. |
+| Push fan-out — inside `sendNotificationPush` (including chat) | `pushActorHourly` **before** `pushGlobalHourly`, only after building a non-empty fan-out | `user:payload.actor.id`, then `global:'push'` | **Skip, not block.** An exhausted actor skips only their push and never charges the shared counter. Both budgets count one non-empty fan-out, not each device; the committed user action remains successful. Both blocks record limiter events and are caught locally, with skip logs throttled to one per 30 s per instance. Chat uses the sender; friend acceptance, shares, invites, reactions, replies and group changes use the user who acted. All current remote push producers have an actor; future system pushes without one must keep the global guard without assigning a recipient as actor. |
 | `searchBarcodeAction` + `GET /api/v1/barcode/search` | `barcodeSearch` | `user` | Route → **429** + `Retry-After`. Web action → typed `{success:false, code:'rate_limited'}`. |
 | `GET /api/v1/barcode/image/{code}` | `barcodeImageIp` | `ip` (skipped when null) | **429** + `Retry-After`, before the product lookup. Anonymous because `<img>` and Flutter's image cache send no bearer token; it only serves photos of barcodes already in the store, so a null IP admits. |
 | `POST /api/v1/feedback/screenshot` | `feedbackScreenshot` | `user` | **429** + `Retry-After`. Auth runs FIRST and the guard before `formData()`, so an anonymous or throttled caller never makes the server buffer the multipart body — the route previously read it before asking who was calling. A missing / non-numeric / oversized `Content-Length` is a 400 `VALIDATION_FAILED`, also pre-buffer. |
@@ -647,9 +648,15 @@ either its daily cap or its concurrency slot. It therefore refuses with 503
 while the limiter cannot answer. Auth and lightweight read policies degrade;
 `consume.test.ts` pins the complete `closed` set.
 
-`pushGlobalHourly` is `degraded` and has no `perMinute`, so during a limiter
-outage it admits. That is intentional: the guard runs inside the send path, and
-failing it closed would drop the user's message rather than a push.
+`pushActorHourly` and `pushGlobalHourly` are `degraded` and have no `perMinute`,
+so during a limiter outage they admit. Push remains best-effort: an exhausted
+budget skips delivery without failing the already-committed user's action.
+
+Push registration retains the ten most recently registered/refreshed tokens per
+user. POST serializes on a per-user transaction advisory lock, upserts the current
+token, then deletes older registrations in the same transaction. A timestamp tie
+keeps the current token first, then orders by id. The next registration also
+trims pre-existing excess rows; no migration or bulk cleanup is needed.
 
 ## Keys and hashing
 

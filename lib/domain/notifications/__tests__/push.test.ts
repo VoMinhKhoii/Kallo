@@ -123,6 +123,7 @@ const allOk = (messages: PushMessage[]) =>
 describe('sendNotificationPush', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAssertRateLimit.mockReset();
     mockDelete.mockImplementation(() => ({
       where: vi.fn().mockResolvedValue(undefined),
     }));
@@ -524,9 +525,9 @@ describe('sendNotificationPush', () => {
     const { Errors } = await import('@/lib/core/errors/catalog');
     // A block, not an outage: `pushGlobalHourly` is degraded, so only a real
     // over-budget verdict throws `RateLimitedError`.
-    mockAssertRateLimit.mockRejectedValueOnce(
-      Errors.rateLimited(undefined, 60)
-    );
+    mockAssertRateLimit
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(Errors.rateLimited(undefined, 60));
     queueSelects(
       [{ userId: OWNER, token: 'owner-phone' }],
       [{ userId: OWNER, preferredLocale: 'en' }]
@@ -546,8 +547,39 @@ describe('sendNotificationPush', () => {
     // the send — so it counts real pushes. The row is already committed, so a
     // block drops the push and returns; it never touches the sender and never
     // throws.
-    expect(mockAssertRateLimit).toHaveBeenCalledOnce();
+    expect(mockAssertRateLimit.mock.calls).toEqual([
+      ['pushActorHourly', { kind: 'user', value: FRIEND }],
+      ['pushGlobalHourly', { kind: 'global', value: 'push' }],
+    ]);
     expect(sender.send).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('skips an exhausted actor before the shared budget while another actor sends', async () => {
+    const { Errors } = await import('@/lib/core/errors/catalog');
+    mockAssertRateLimit.mockImplementation(async (policy, key) => {
+      if (policy === 'pushActorHourly' && key.value === FRIEND) {
+        throw Errors.rateLimited(undefined, 60);
+      }
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { sender, sent } = fakeSender(allOk);
+    for (const actor of [FRIEND, GROUP]) {
+      queueSelects([{ userId: OWNER, token: 'owner-phone' }], []);
+      await expect(
+        sendNotificationPush(
+          [OWNER],
+          { type: 'share.reaction', actor: { id: actor } },
+          sender
+        )
+      ).resolves.toBeUndefined();
+    }
+    expect(mockAssertRateLimit.mock.calls).toEqual([
+      ['pushActorHourly', { kind: 'user', value: FRIEND }],
+      ['pushActorHourly', { kind: 'user', value: GROUP }],
+      ['pushGlobalHourly', { kind: 'global', value: 'push' }],
+    ]);
+    expect(sent).toHaveLength(1);
     warn.mockRestore();
   });
 

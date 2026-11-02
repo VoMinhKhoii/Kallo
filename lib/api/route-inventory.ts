@@ -198,6 +198,8 @@ export const routeInventory = {
   ],
   'api/v1/meals/route.ts': ['session', false, 'none-cheap'],
   'api/v1/notifications/badge/route.ts': ['session', false, 'none-cheap'],
+  // Unlimited but bounded: POST keeps the user's ten newest tokens and prunes
+  // the rest in the same transaction, so the push fan-out stays small.
   'api/v1/notifications/push-tokens/route.ts': ['session', true, 'none-cheap'],
   'api/v1/notifications/read/route.ts': ['session', true, 'none-cheap'],
   'api/v1/notifications/route.ts': ['session', false, 'none-cheap'],

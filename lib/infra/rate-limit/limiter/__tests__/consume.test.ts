@@ -159,6 +159,53 @@ describe('failMode', () => {
     expect(
       await consumeRateLimit('pushGlobalHourly', globalKey, shared)
     ).toMatchObject({ allowed: true, source: 'degraded' });
+    expect(
+      await consumeRateLimit('pushActorHourly', userKey, shared)
+    ).toMatchObject({ allowed: true, source: 'degraded' });
+  });
+
+  it('caps each push actor at 600 per UTC hour and records exhaustion', async () => {
+    const shared = {
+      ...options(createInMemoryRateLimitConsumer()),
+      now: new Date('2026-11-03T10:30:00Z'),
+    };
+    for (let n = 0; n < 600; n++) {
+      expect(
+        (await consumeRateLimit('pushActorHourly', userKey, shared)).allowed
+      ).toBe(true);
+    }
+    expect(
+      await consumeRateLimit('pushActorHourly', userKey, shared)
+    ).toMatchObject({
+      allowed: false,
+      reason: 'hour',
+      retryAfterSeconds: 1800,
+    });
+    expect(shared.recordEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        route: 'push:actor:hour',
+        keyKind: 'user',
+        reason: 'hour',
+        source: 'db',
+      })
+    );
+    expect(
+      (
+        await consumeRateLimit(
+          'pushActorHourly',
+          { kind: 'user', value: 'user-2' },
+          shared
+        )
+      ).allowed
+    ).toBe(true);
+    expect(
+      (
+        await consumeRateLimit('pushActorHourly', userKey, {
+          ...shared,
+          now: new Date('2026-11-03T11:00:00Z'),
+        })
+      ).allowed
+    ).toBe(true);
   });
 
   it('memory: never touches the database', async () => {

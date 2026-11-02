@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
@@ -20,18 +20,46 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireUserId();
     const body = pushTokenBodySchema.parse(await readJsonBody(request));
-    await db
-      .insert(pushTokens)
-      .values({ userId, token: body.token, platform: body.platform })
-      .onConflictDoUpdate({
-        target: pushTokens.token,
-        set: {
+    await db.transaction(async (tx) => {
+      // Serialize registrations even when this user has no token rows yet.
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtext(${`push-tokens:${userId}`}))`
+      );
+      const lastSeenAt = new Date();
+      await tx
+        .insert(pushTokens)
+        .values({
           userId,
+          token: body.token,
           platform: body.platform,
-          // The liveness signal the 270-day retention reap reads.
-          lastSeenAt: new Date(),
-        },
-      });
+          lastSeenAt,
+        })
+        .onConflictDoUpdate({
+          target: pushTokens.token,
+          set: {
+            userId,
+            platform: body.platform,
+            // The liveness signal the 270-day retention reap reads.
+            lastSeenAt,
+          },
+        });
+      const oldest = tx
+        .select({ id: pushTokens.id })
+        .from(pushTokens)
+        .where(eq(pushTokens.userId, userId))
+        .orderBy(
+          desc(pushTokens.lastSeenAt),
+          // Keep this registration when two refreshes share a millisecond.
+          sql`${pushTokens.token} = ${body.token} desc`,
+          desc(pushTokens.id)
+        )
+        .offset(10);
+      await tx
+        .delete(pushTokens)
+        .where(
+          and(eq(pushTokens.userId, userId), inArray(pushTokens.id, oldest))
+        );
+    });
     return NextResponse.json({ registered: true });
   } catch (error) {
     return handleRouteError(error);

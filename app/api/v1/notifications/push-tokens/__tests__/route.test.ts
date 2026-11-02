@@ -20,7 +20,25 @@ vi.mock('@/lib/api/auth', () => ({
   readJsonBody: mockReadJsonBody,
 }));
 vi.mock('@/lib/infra/db/client', () => ({
-  db: { insert: mockInsert, delete: mockDelete },
+  db: {
+    insert: mockInsert,
+    delete: mockDelete,
+    transaction: async (run: (tx: unknown) => Promise<unknown>) =>
+      run({
+        execute: vi.fn(),
+        insert: mockInsert,
+        delete: () => ({ where: vi.fn().mockResolvedValue(undefined) }),
+        select: () => {
+          const query = {
+            from: () => query,
+            where: () => query,
+            orderBy: () => query,
+            offset: () => query,
+          };
+          return query;
+        },
+      }),
+  },
 }));
 
 import { DELETE, POST } from '@/app/api/v1/notifications/push-tokens/route';
@@ -75,6 +93,7 @@ describe('POST /api/v1/notifications/push-tokens', () => {
       userId: USER,
       token: TOKEN,
       platform: 'ios',
+      lastSeenAt: expect.any(Date),
     });
     const conflict = captured.conflict as {
       set: { userId: string; platform: string; lastSeenAt: Date };

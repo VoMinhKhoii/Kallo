@@ -165,6 +165,14 @@ export const spendPolicies = {
     failMode: 'closed',
   },
 
+  /** Actor's share, charged before the shared APNs fan-out backstop. */
+  pushActorHourly: {
+    route: 'push:actor:hour',
+    limits: { perHour: 600 },
+    keyKinds: ['user'],
+    failMode: 'degraded',
+  },
+
   /**
    * APNs fan-out backstop. Degraded on purpose: this guard runs INSIDE the send
    * path, and failing it closed would turn a limiter outage into a failure to
