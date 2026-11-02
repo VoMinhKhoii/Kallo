@@ -38,22 +38,39 @@ jobs:
       # TODO: migrate to tsgo when GA for 10x faster type checking
       - run: bunx tsc --noEmit
 
-  test:
-    name: Unit Test
+  test-shard:
+    name: Unit Test (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - uses: ./.github/actions/setup-bun
-      - run: bun run test -- --exclude '**/lib/infra/db/__tests__/**'
+      - run: bun run test -- --shard=${{ matrix.shard }}/3
+        env:
+          SKIP_DB_TESTS: '1'
       # The prod deploy runs the card search artifact builder under Bun on
       # Linux; the tests above run under Node. Build and search an index with
       # the builder's own code under Bun, so a native-binary or runtime
       # mismatch fails here, not in a deploy.
       - name: Card artifact builder runs under Bun
+        if: matrix.shard == 1
         run: bun scripts/ci/check-card-artifact-runtime.ts
+
+  # The staging ruleset requires a check named "Unit Test"; a matrix reports
+  # one check per shard instead, so this job passes only when every shard did.
+  test:
+    name: Unit Test
+    needs: test-shard
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.test-shard.result }}" = success
 
   build:
     name: Build
@@ -164,15 +181,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v4
 
+  # A push builds the image only after every gate passes: main's image is what
+  # cloud-run-prod.yml deploys. A PR never pushes its image, so the PR job below
+  # runs the same steps alongside the gates instead of after them.
   container-publish:
     name: Container Publish
     needs: [lint, typecheck, test, build, migrations]
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
-    env:
+    env: &container-env
       # Only main pushes publish: cloud-run-prod.yml deploys main SHAs and is
       # the sole consumer of these images. PR and staging runs still build the
       # image (so a broken Dockerfile fails before merge) but never push — each
@@ -181,7 +201,7 @@ jobs:
       PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       IMAGE_TAG: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       IMAGE_URI: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-    steps:
+    steps: &container-steps
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
@@ -237,3 +257,15 @@ jobs:
       - name: Push container image
         if: env.PUBLISH == 'true'
         run: docker push "$IMAGE_URI"
+
+  # The PR half of the job above: build the image and run the worker check, so
+  # a broken Dockerfile fails before merge. PUBLISH is false on a PR, so the
+  # auth and push steps skip. Not a fork PR: those get no repo variables.
+  container-build:
+    name: Container Build
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env: *container-env
+    steps: *container-steps
