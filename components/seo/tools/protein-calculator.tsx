@@ -25,23 +25,22 @@ export function ProteinCalculator({
   allowImperial: boolean;
   format: (n: number, digits?: number) => string;
 }) {
-  const [weight, setWeight] = useState<number | undefined>(initialWeightKg);
+  // Weight is kept in kg whatever the view, like the other calculators, so a
+  // unit switch never rounds an accepted weight out of range.
+  const [kg, setKg] = useState<number | undefined>(initialWeightKg);
   const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
   const [goal, setGoal] = useState<ProteinGoal>('muscle');
   const [bodyFat, setBodyFat] = useState<number | undefined>(undefined);
   const imperial = allowImperial && units === 'imperial';
-  const weightKg = valid(
-    weight === undefined ? undefined : imperial ? lbToKg(weight) : weight,
-    'weightKg'
-  );
+  const weightKg = valid(kg, 'weightKg');
+  // Body fat is optional: empty means "not given", but a typed value outside
+  // the limits withholds the result rather than quietly switching formulas.
+  const fat = goal === 'cut' ? bodyFat : undefined;
+  const fatPct = fat === undefined ? null : valid(fat, 'bodyFatPct');
   const range =
-    weightKg === null
+    weightKg === null || (fat !== undefined && fatPct === null)
       ? null
-      : proteinRange({
-          weightKg,
-          goal,
-          bodyFatPct: valid(bodyFat, 'bodyFatPct'),
-        });
+      : proteinRange({ weightKg, goal, bodyFatPct: fatPct });
 
   return (
     <div>
@@ -50,15 +49,7 @@ export function ProteinCalculator({
           <ChoiceField
             className="col-span-2"
             label={ui.units}
-            onChange={(u) => {
-              if (weight !== undefined && u !== units)
-                setWeight(
-                  Math.round(
-                    (u === 'imperial' ? kgToLb(weight) : lbToKg(weight)) * 10
-                  ) / 10
-                );
-              setUnits(u);
-            }}
+            onChange={setUnits}
             options={[
               { value: 'metric', label: ui.metric },
               { value: 'imperial', label: ui.imperial },
@@ -75,9 +66,17 @@ export function ProteinCalculator({
         />
         <NumberField
           label={ui.weight}
-          onChange={setWeight}
+          onChange={(w) =>
+            setKg(w === undefined ? w : imperial ? lbToKg(w) : w)
+          }
           unit={imperial ? 'lb' : 'kg'}
-          value={weight}
+          value={
+            kg === undefined
+              ? undefined
+              : imperial
+                ? Math.round(kgToLb(kg) * 10) / 10
+                : kg
+          }
         />
         {goal === 'cut' ? (
           <NumberField
