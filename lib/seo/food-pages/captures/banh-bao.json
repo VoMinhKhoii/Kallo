@@ -1,0 +1,169 @@
+{
+  "capturedAt": "2026-11-02T17:12:38.340Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "tho-phat",
+      "text": "1 cái bánh bao Thọ Phát nhân thịt trứng muối",
+      "ingredients": [
+        {
+          "name": "Bánh bao",
+          "grams": 100,
+          "kcal": 219,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt heo xay",
+          "grams": 22,
+          "kcal": 57,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng muối",
+          "grams": 9,
+          "kcal": 17,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh bao Thọ Phát nhân thịt trứng muối",
+          "calories": 292,
+          "protein": 14,
+          "carbs": 30,
+          "fat": 13
+        }
+      ]
+    },
+    {
+      "key": "xa-xiu",
+      "text": "1 cái bánh bao xá xíu cỡ vừa",
+      "ingredients": [
+        {
+          "name": "Bánh bao",
+          "grams": 90,
+          "kcal": 197,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt heo",
+          "grams": 25,
+          "kcal": 52,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đường",
+          "grams": 3,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước tương",
+          "grams": 4,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu hào",
+          "grams": 4,
+          "kcal": 3,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh bao xá xíu",
+          "calories": 267,
+          "protein": 13,
+          "carbs": 31,
+          "fat": 10
+        }
+      ]
+    },
+    {
+      "key": "chay",
+      "text": "2 cái bánh bao chay nhỏ, chấm nước tương",
+      "ingredients": [
+        {
+          "name": "Bánh bao chay",
+          "grams": 100,
+          "kcal": 219,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nhân chay",
+          "grams": 30,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước tương",
+          "grams": 8,
+          "kcal": 4,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh bao chay",
+          "calories": 255,
+          "protein": 12,
+          "carbs": 31,
+          "fat": 9
+        },
+        {
+          "name": "Nước tương chấm",
+          "calories": 4,
+          "protein": 1,
+          "carbs": 1,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "dac-biet",
+      "text": "1 cái bánh bao đặc biệt cỡ lớn nhân thịt, trứng cút, lạp xưởng, nấm mèo",
+      "ingredients": [
+        {
+          "name": "Bánh bao",
+          "grams": 150,
+          "kcal": 333,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt heo xay",
+          "grams": 30,
+          "kcal": 78,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng cút",
+          "grams": 9,
+          "kcal": 14,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lạp xưởng",
+          "grams": 15,
+          "kcal": 88,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nấm mèo",
+          "grams": 3,
+          "kcal": 10,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bánh bao đặc biệt",
+          "calories": 523,
+          "protein": 23,
+          "carbs": 47,
+          "fat": 27
+        }
+      ]
+    }
+  ]
+}

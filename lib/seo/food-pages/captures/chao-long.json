@@ -1,0 +1,262 @@
+{
+  "capturedAt": "2026-11-02T17:03:21.754Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "day-du",
+      "text": "Cháo lòng 1 bát đầy đủ (lòng, dồi, tim, gan, huyết), thêm 2 cái quẩy",
+      "ingredients": [
+        {
+          "name": "Gạo",
+          "grams": 80,
+          "kcal": 94,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lòng heo",
+          "grams": 40,
+          "kcal": 93,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dồi heo",
+          "grams": 25,
+          "kcal": 29,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Tim heo",
+          "grams": 25,
+          "kcal": 35,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Gan heo",
+          "grams": 25,
+          "kcal": 38,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Huyết heo",
+          "grams": 25,
+          "kcal": 11,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 9,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Quẩy",
+          "grams": 120,
+          "kcal": 351,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cháo lòng",
+          "calories": 302,
+          "protein": 25,
+          "carbs": 23,
+          "fat": 12
+        },
+        {
+          "name": "Quẩy",
+          "calories": 351,
+          "protein": 10,
+          "carbs": 49,
+          "fat": 13
+        }
+      ]
+    },
+    {
+      "key": "dia-doi",
+      "text": "Cháo lòng 1 bát, gọi thêm 1 đĩa nhỏ dồi và lòng luộc chấm mắm tôm",
+      "ingredients": [
+        {
+          "name": "Gạo",
+          "grams": 60,
+          "kcal": 76,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lòng heo",
+          "grams": 40,
+          "kcal": 92,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước dùng xương",
+          "grams": 250,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 5,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dồi heo",
+          "grams": 120,
+          "kcal": 136,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Lòng heo",
+          "grams": 100,
+          "kcal": 233,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mắm tôm",
+          "grams": 15,
+          "kcal": 11,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 3,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cháo lòng",
+          "calories": 231,
+          "protein": 12,
+          "carbs": 17,
+          "fat": 13
+        },
+        {
+          "name": "Dồi heo",
+          "calories": 136,
+          "protein": 15,
+          "carbs": 0,
+          "fat": 9
+        },
+        {
+          "name": "Lòng heo luộc chấm mắm tôm",
+          "calories": 255,
+          "protein": 15,
+          "carbs": 3,
+          "fat": 21
+        }
+      ]
+    },
+    {
+      "key": "to-nho",
+      "text": "Cháo lòng tô nhỏ chỉ có huyết và gan, không quẩy",
+      "ingredients": [
+        {
+          "name": "Cháo",
+          "grams": 200,
+          "kcal": 101,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Huyết heo",
+          "grams": 60,
+          "kcal": 27,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Gan heo",
+          "grams": 40,
+          "kcal": 62,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 5,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 5,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cháo lòng (huyết và gan heo)",
+          "calories": 193,
+          "protein": 18,
+          "carbs": 25,
+          "fat": 2
+        }
+      ]
+    },
+    {
+      "key": "sai-gon",
+      "text": "Cháo lòng tô lớn kiểu Sài Gòn, có lòng non, gan, huyết, thêm 1 cái giò cháo quẩy",
+      "ingredients": [
+        {
+          "name": "Cháo",
+          "grams": 260,
+          "kcal": 132,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Lòng non",
+          "grams": 70,
+          "kcal": 38,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Gan heo",
+          "grams": 40,
+          "kcal": 60,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Huyết heo",
+          "grams": 50,
+          "kcal": 22,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 7,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước dùng xương",
+          "grams": 500,
+          "kcal": 76,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giò cháo quẩy",
+          "grams": 60,
+          "kcal": 175,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cháo lòng",
+          "calories": 330,
+          "protein": 34,
+          "carbs": 38,
+          "fat": 5
+        },
+        {
+          "name": "Giò cháo quẩy",
+          "calories": 175,
+          "protein": 5,
+          "carbs": 24,
+          "fat": 7
+        }
+      ]
+    }
+  ]
+}

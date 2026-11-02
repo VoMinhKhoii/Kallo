@@ -1,0 +1,126 @@
+{
+  "capturedAt": "2026-11-02T17:27:48.857Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "quan-coc",
+      "text": "Ly cà phê sữa đá quán cóc, ly nhỏ, sữa đặc nhiều",
+      "ingredients": [
+        {
+          "name": "Cà phê",
+          "grams": 40,
+          "kcal": 0,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sữa đặc",
+          "grams": 30,
+          "kcal": 101,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đá",
+          "grams": 60,
+          "kcal": 0,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cà phê sữa đá",
+          "calories": 101,
+          "protein": 3,
+          "carbs": 17,
+          "fat": 3
+        }
+      ]
+    },
+    {
+      "key": "nha-pha",
+      "text": "Cà phê sữa đá nhà pha, 1 phin, 3 muỗng sữa đặc Ông Thọ",
+      "ingredients": [
+        {
+          "name": "Cà phê",
+          "grams": 15,
+          "kcal": 0,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sữa đặc Ông Thọ",
+          "grams": 45,
+          "kcal": 151,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cà phê sữa đá",
+          "calories": 151,
+          "protein": 4,
+          "carbs": 25,
+          "fat": 4
+        }
+      ]
+    },
+    {
+      "key": "highlands",
+      "text": "1 ly phin sữa đá Highlands size M",
+      "ingredients": [
+        {
+          "name": "Cà phê phin",
+          "grams": 150,
+          "kcal": 1,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sữa đặc",
+          "grams": 30,
+          "kcal": 100,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đá",
+          "grams": 60,
+          "kcal": 0,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cà phê sữa đá phin size M",
+          "calories": 101,
+          "protein": 3,
+          "carbs": 17,
+          "fat": 3
+        }
+      ]
+    },
+    {
+      "key": "ly-lon",
+      "text": "Cà phê sữa đá ly lớn ở quán, 3 muỗng sữa đặc, nhiều đá",
+      "ingredients": [
+        {
+          "name": "Cà phê",
+          "grams": 400,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Sữa đặc",
+          "grams": 45,
+          "kcal": 151,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cà phê sữa đá",
+          "calories": 154,
+          "protein": 4,
+          "carbs": 25,
+          "fat": 4
+        }
+      ]
+    }
+  ]
+}

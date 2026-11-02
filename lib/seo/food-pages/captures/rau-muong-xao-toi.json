@@ -1,0 +1,277 @@
+{
+  "capturedAt": "2026-11-02T17:19:50.834Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "trung-chien",
+      "text": "Rau muống xào tỏi 1 dĩa nhỏ ăn với 1 chén cơm và 1 quả trứng chiên",
+      "ingredients": [
+        {
+          "name": "Rau muống",
+          "grams": 160,
+          "kcal": 39,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Tỏi",
+          "grams": 7,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 49,
+          "kcal": 102,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Rau muống xào tỏi",
+          "calories": 91,
+          "protein": 6,
+          "carbs": 6,
+          "fat": 5
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 152,
+          "protein": 3,
+          "carbs": 34,
+          "fat": 0
+        },
+        {
+          "name": "Trứng chiên",
+          "calories": 102,
+          "protein": 7,
+          "carbs": 0,
+          "fat": 8
+        }
+      ]
+    },
+    {
+      "key": "com-nha",
+      "text": "Cơm nhà mẹ nấu: 2 bát cơm, 1 khúc cá thu kho, rau muống xào tỏi, canh bí nấu tôm",
+      "ingredients": [
+        {
+          "name": "Cơm",
+          "grams": 240,
+          "kcal": 303,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cá thu",
+          "grams": 91,
+          "kcal": 174,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau muống",
+          "grams": 180,
+          "kcal": 44,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Tỏi",
+          "grams": 7,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bí đao",
+          "grams": 108,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tôm",
+          "grams": 36,
+          "kcal": 38,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước dùng",
+          "grams": 150,
+          "kcal": 25,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 7,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Cơm trắng",
+          "calories": 303,
+          "protein": 6,
+          "carbs": 68,
+          "fat": 1
+        },
+        {
+          "name": "Cá thu kho",
+          "calories": 240,
+          "protein": 17,
+          "carbs": 6,
+          "fat": 17
+        },
+        {
+          "name": "Rau muống xào tỏi",
+          "calories": 96,
+          "protein": 6,
+          "carbs": 6,
+          "fat": 5
+        },
+        {
+          "name": "Canh bí nấu tôm",
+          "calories": 82,
+          "protein": 13,
+          "carbs": 4,
+          "fat": 2
+        }
+      ]
+    },
+    {
+      "key": "xao-bo",
+      "text": "Rau muống xào bò 1 đĩa (100g thịt bò), 1 bát cơm",
+      "ingredients": [
+        {
+          "name": "Rau muống",
+          "grams": 135,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt bò",
+          "grams": 100,
+          "kcal": 168,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 6,
+          "kcal": 48,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Tỏi",
+          "grams": 5,
+          "kcal": 7,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cơm",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Rau muống xào bò",
+          "calories": 261,
+          "protein": 25,
+          "carbs": 7,
+          "fat": 15
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 152,
+          "protein": 3,
+          "carbs": 34,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "nhieu-dau",
+      "text": "1 đĩa lớn rau muống xào tỏi nhiều dầu ăn một mình, 1 bát cơm",
+      "ingredients": [
+        {
+          "name": "Rau muống",
+          "grams": 225,
+          "kcal": 64,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tỏi",
+          "grams": 9,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 12,
+          "kcal": 103,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Cơm",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Rau muống xào tỏi",
+          "calories": 182,
+          "protein": 6,
+          "carbs": 10,
+          "fat": 13
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 152,
+          "protein": 3,
+          "carbs": 34,
+          "fat": 0
+        }
+      ]
+    }
+  ]
+}

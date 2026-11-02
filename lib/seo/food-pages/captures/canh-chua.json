@@ -1,0 +1,396 @@
+{
+  "capturedAt": "2026-11-02T17:19:15.808Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "ca-loc",
+      "text": "Canh chua cá lóc 1 tô (2 khúc cá, thơm, cà chua, giá, bạc hà, đậu bắp), 1 chén cơm",
+      "ingredients": [
+        {
+          "name": "Cá lóc",
+          "grams": 90,
+          "kcal": 76,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thơm",
+          "grams": 36,
+          "kcal": 14,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 57,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá",
+          "grams": 38,
+          "kcal": 17,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Bạc hà",
+          "grams": 9,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đậu bắp",
+          "grams": 36,
+          "kcal": 10,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Me",
+          "grams": 7,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cơm",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Canh chua cá lóc",
+          "calories": 157,
+          "protein": 21,
+          "carbs": 15,
+          "fat": 2
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 152,
+          "protein": 3,
+          "carbs": 34,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "tom-trung",
+      "text": "Canh chua tôm 1 tô, 1 quả trứng chiên, 1 chén cơm",
+      "ingredients": [
+        {
+          "name": "Tôm",
+          "grams": 44,
+          "kcal": 44,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Me",
+          "grams": 7,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dứa",
+          "grams": 36,
+          "kcal": 11,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 57,
+          "kcal": 13,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đậu bắp",
+          "grams": 37,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 9,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 45,
+          "kcal": 80,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Canh chua tôm",
+          "calories": 111,
+          "protein": 13,
+          "carbs": 14,
+          "fat": 1
+        },
+        {
+          "name": "Trứng chiên",
+          "calories": 121,
+          "protein": 7,
+          "carbs": 0,
+          "fat": 10
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 152,
+          "protein": 3,
+          "carbs": 34,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "bong-dien-dien",
+      "text": "Cơm trưa: canh chua bông điên điển, cá rô kho tộ 2 con nhỏ, rau đắng chấm mắm kho, 2 chén cơm",
+      "ingredients": [
+        {
+          "name": "Bông điên điển",
+          "grams": 36,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cá",
+          "grams": 72,
+          "kcal": 91,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 38,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Me",
+          "grams": 9,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đồ chua",
+          "grams": 21,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 3,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đường",
+          "grams": 3,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cá rô",
+          "grams": 103,
+          "kcal": 166,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 8,
+          "kcal": 32,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành",
+          "grams": 18,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau đắng",
+          "grams": 72,
+          "kcal": 29,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mắm kho",
+          "grams": 15,
+          "kcal": 11,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Cơm",
+          "grams": 240,
+          "kcal": 303,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Canh chua bông điên điển",
+          "calories": 167,
+          "protein": 15,
+          "carbs": 10,
+          "fat": 7
+        },
+        {
+          "name": "Cá rô kho tộ",
+          "calories": 256,
+          "protein": 21,
+          "carbs": 10,
+          "fat": 15
+        },
+        {
+          "name": "Rau đắng chấm mắm kho",
+          "calories": 40,
+          "protein": 6,
+          "carbs": 2,
+          "fat": 1
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 303,
+          "protein": 6,
+          "carbs": 68,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "chi-canh",
+      "text": "2 chén canh chua cá basa, không ăn cơm",
+      "ingredients": [
+        {
+          "name": "Cá basa",
+          "grams": 70,
+          "kcal": 82,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Dứa",
+          "grams": 30,
+          "kcal": 17,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cà chua",
+          "grams": 40,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đậu bắp",
+          "grams": 23,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá đỗ",
+          "grams": 30,
+          "kcal": 14,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Me",
+          "grams": 7,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 15,
+          "kcal": 5,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 3,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 9,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Ngò gai",
+          "grams": 4,
+          "kcal": 1,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Canh chua cá basa",
+          "calories": 188,
+          "protein": 14,
+          "carbs": 15,
+          "fat": 8
+        }
+      ]
+    }
+  ]
+}

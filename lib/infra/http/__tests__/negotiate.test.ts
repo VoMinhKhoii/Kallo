@@ -203,20 +203,39 @@ describe('unknownFoodPageTarget', () => {
     expect(unknownFoodPageTarget('/en/calories/chicken%2Dburrito')).toBeNull();
   });
 
+  it('leaves the Vietnamese hub and pages the same way', () => {
+    expect(unknownFoodPageTarget('/vi/calories')).toBeNull();
+    expect(unknownFoodPageTarget('/vi/calories/')).toBeNull();
+    expect(unknownFoodPageTarget('/vi/calories/pho-bo')).toBeNull();
+    expect(unknownFoodPageTarget('/vi/calories/pho-bo/')).toBeNull();
+    expect(unknownFoodPageTarget('/vi/calories/com-tam-suon')).toBeNull();
+  });
+
   it('gives every other /calories URL the real 404', () => {
     for (const pathname of [
-      '/en/calories/pho-bo',
       '/en/calories/Chicken-Burrito',
       '/en/calories/chicken-burrito/extra',
       '/en/calories/toString',
     ]) {
       expect(unknownFoodPageTarget(pathname), pathname).toBe('/en/not-found');
     }
-    // English only: the same paths under another locale are not pages.
+    for (const pathname of [
+      '/vi/calories/Pho-Bo',
+      '/vi/calories/phở-bò',
+      '/vi/calories/pho-bo/extra',
+      '/vi/calories/toString',
+    ]) {
+      expect(unknownFoodPageTarget(pathname), pathname).toBe('/vi/not-found');
+    }
+  });
+
+  it('serves each slug under its own locale only', () => {
+    // The two locales list different dishes, not translations of each other.
+    expect(unknownFoodPageTarget('/en/calories/pho-bo')).toBe('/en/not-found');
     expect(unknownFoodPageTarget('/vi/calories/chicken-burrito')).toBe(
       '/vi/not-found'
     );
-    expect(unknownFoodPageTarget('/vi/calories')).toBe('/vi/not-found');
+    expect(unknownFoodPageTarget('/vi/calories/pho')).toBe('/vi/not-found');
   });
 
   it('is null outside /{locale}/calories and for a malformed escape', () => {

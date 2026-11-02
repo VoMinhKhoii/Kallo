@@ -1,0 +1,234 @@
+{
+  "capturedAt": "2026-11-02T17:30:56.698Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "mot-suat",
+      "text": "Bún đậu mắm tôm 1 suất: bún lá, 4 miếng đậu rán, thịt luộc, rau kinh giới, chấm mắm tôm",
+      "ingredients": [
+        {
+          "name": "Bún lá",
+          "grams": 150,
+          "kcal": 158,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đậu phụ rán",
+          "grams": 160,
+          "kcal": 468,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt heo luộc",
+          "grams": 100,
+          "kcal": 229,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Rau kinh giới",
+          "grams": 34,
+          "kcal": 8,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Mắm tôm",
+          "grams": 15,
+          "kcal": 11,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 3,
+          "kcal": 12,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bún đậu mắm tôm",
+          "calories": 926,
+          "protein": 50,
+          "carbs": 54,
+          "fat": 57
+        }
+      ]
+    },
+    {
+      "key": "day-du",
+      "text": "Bún đậu mắm tôm suất đầy đủ: bún lá, đậu rán, chả cốm, thịt chân giò luộc, lòng dồi, nem chua rán, mắm tôm",
+      "ingredients": [
+        {
+          "name": "Bún lá",
+          "grams": 80,
+          "kcal": 280,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đậu phụ rán",
+          "grams": 120,
+          "kcal": 351,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 8,
+          "kcal": 72,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Chả cốm",
+          "grams": 40,
+          "kcal": 119,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Thịt chân giò luộc",
+          "grams": 105,
+          "kcal": 192,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Lòng dồi",
+          "grams": 60,
+          "kcal": 68,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Nem chua rán",
+          "grams": 60,
+          "kcal": 87,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Mắm tôm",
+          "grams": 15,
+          "kcal": 11,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Rau thơm",
+          "grams": 18,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bún đậu mắm tôm",
+          "calories": 1185,
+          "protein": 59,
+          "carbs": 111,
+          "fat": 56
+        }
+      ]
+    },
+    {
+      "key": "chi-dau",
+      "text": "Bún đậu mắm tôm suất nhỏ chỉ có bún lá và 5 miếng đậu rán, chấm mắm tôm",
+      "ingredients": [
+        {
+          "name": "Bún lá",
+          "grams": 180,
+          "kcal": 201,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đậu rán",
+          "grams": 125,
+          "kcal": 365,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 6,
+          "kcal": 49,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mắm tôm",
+          "grams": 15,
+          "kcal": 11,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 3,
+          "kcal": 12,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bún đậu mắm tôm",
+          "calories": 637,
+          "protein": 29,
+          "carbs": 60,
+          "fat": 31
+        }
+      ]
+    },
+    {
+      "key": "khong-thit",
+      "text": "Bún đậu mắm tôm 1 suất có bún lá, đậu rán, thêm chả cốm, không lấy thịt, chấm mắm tôm vắt chanh",
+      "ingredients": [
+        {
+          "name": "Bún lá",
+          "grams": 150,
+          "kcal": 167,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đậu rán",
+          "grams": 100,
+          "kcal": 309,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Chả cốm",
+          "grams": 60,
+          "kcal": 149,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Mắm tôm",
+          "grams": 15,
+          "kcal": 11,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 3,
+          "kcal": 12,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Chanh",
+          "grams": 7,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Bún đậu mắm tôm",
+          "calories": 691,
+          "protein": 26,
+          "carbs": 86,
+          "fat": 27
+        }
+      ]
+    }
+  ]
+}

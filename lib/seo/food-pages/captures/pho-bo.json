@@ -1,0 +1,218 @@
+{
+  "capturedAt": "2026-11-02T16:57:22.298Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "dac-biet",
+      "text": "Phở bò tái lăn tô đặc biệt, thêm 1 trứng chần và 2 cái quẩy. Ăn hết bánh với thịt, nước dùng húp khoảng nửa tô",
+      "ingredients": [
+        {
+          "name": "Bánh phở",
+          "grams": 250,
+          "kcal": 263,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt bò tái",
+          "grams": 120,
+          "kcal": 141,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước dùng bò",
+          "grams": 300,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 16,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 50,
+          "kcal": 70,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Quẩy",
+          "grams": 60,
+          "kcal": 175,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Phở bò tái đặc biệt",
+          "calories": 417,
+          "protein": 31,
+          "carbs": 62,
+          "fat": 5
+        },
+        {
+          "name": "Trứng gà chần",
+          "calories": 70,
+          "protein": 6,
+          "carbs": 0,
+          "fat": 5
+        },
+        {
+          "name": "Quẩy",
+          "calories": 175,
+          "protein": 5,
+          "carbs": 24,
+          "fat": 7
+        }
+      ]
+    },
+    {
+      "key": "to-nho",
+      "text": "Phở bò tái tô nhỏ, ít bánh, không hành, không quẩy, húp hết nước",
+      "ingredients": [
+        {
+          "name": "Bánh phở",
+          "grams": 120,
+          "kcal": 115,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt bò tái",
+          "grams": 100,
+          "kcal": 120,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước dùng bò",
+          "grams": 200,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau thơm",
+          "grams": 14,
+          "kcal": 4,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Phở bò tái",
+          "calories": 266,
+          "protein": 27,
+          "carbs": 28,
+          "fat": 5
+        }
+      ]
+    },
+    {
+      "key": "chin-nam-gau",
+      "text": "Phở bò tô lớn chín nạm gầu, thêm 1 chén nước béo, ăn kèm giá và rau quế, cho 1 muỗng tương đen",
+      "ingredients": [
+        {
+          "name": "Bánh phở",
+          "grams": 200,
+          "kcal": 210,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt bò chín nạm",
+          "grams": 100,
+          "kcal": 178,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gầu bò",
+          "grams": 60,
+          "kcal": 272,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước dùng bò",
+          "grams": 450,
+          "kcal": 62,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mỡ bò nước béo",
+          "grams": 15,
+          "kcal": 101,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 9,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá đỗ",
+          "grams": 40,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau quế",
+          "grams": 9,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tương đen",
+          "grams": 15,
+          "kcal": 33,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Phở bò chín nạm gầu",
+          "calories": 876,
+          "protein": 56,
+          "carbs": 63,
+          "fat": 44
+        }
+      ]
+    },
+    {
+      "key": "nha-nau",
+      "text": "Tự nấu phở ở nhà: 150g bánh phở tươi, 100g thăn bò sống thái mỏng chần nước dùng, 1 tô to nước dùng xương, hành ngò",
+      "ingredients": [
+        {
+          "name": "Bánh phở tươi",
+          "grams": 150,
+          "kcal": 158,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thăn bò sống",
+          "grams": 100,
+          "kcal": 128,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước dùng xương",
+          "grams": 600,
+          "kcal": 91,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành ngò",
+          "grams": 14,
+          "kcal": 5,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Phở bò tự nấu",
+          "calories": 381,
+          "protein": 38,
+          "carbs": 44,
+          "fat": 6
+        }
+      ]
+    }
+  ]
+}

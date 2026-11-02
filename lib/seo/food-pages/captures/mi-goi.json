@@ -1,0 +1,178 @@
+{
+  "capturedAt": "2026-11-02T17:29:05.915Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "hai-trung",
+      "text": "1 gói Hảo Hảo tôm chua cay, đập thêm 2 quả trứng, bỏ nửa gói dầu",
+      "ingredients": [
+        {
+          "name": "Mì Hảo Hảo tôm chua cay",
+          "grams": 80,
+          "kcal": 352,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 100,
+          "kcal": 139,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gói dầu",
+          "grams": 3,
+          "kcal": 24,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Mì Hảo Hảo tôm chua cay với trứng",
+          "calories": 515,
+          "protein": 21,
+          "carbs": 49,
+          "fat": 26
+        }
+      ]
+    },
+    {
+      "key": "hai-goi",
+      "text": "Nấu 2 gói mì Hảo Hảo tôm chua cay (mỗi gói 75g), đập 1 trứng với nắm rau muống, ăn hết mì bỏ nước",
+      "ingredients": [
+        {
+          "name": "Mì Hảo Hảo tôm chua cay",
+          "grams": 150,
+          "kcal": 661,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 49,
+          "kcal": 71,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau muống",
+          "grams": 90,
+          "kcal": 23,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Mì Hảo Hảo tôm chua cay",
+          "calories": 661,
+          "protein": 15,
+          "carbs": 91,
+          "fat": 26
+        },
+        {
+          "name": "Trứng gà chín",
+          "calories": 71,
+          "protein": 6,
+          "carbs": 1,
+          "fat": 5
+        },
+        {
+          "name": "Rau muống",
+          "calories": 23,
+          "protein": 3,
+          "carbs": 2,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "xuc-xich",
+      "text": "1 gói mì Hảo Hảo nấu với 2 cây xúc xích rán, bỏ gói dầu",
+      "ingredients": [
+        {
+          "name": "Mì Hảo Hảo",
+          "grams": 80,
+          "kcal": 352,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gói gia vị",
+          "grams": 10,
+          "kcal": 44,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Xúc xích",
+          "grams": 100,
+          "kcal": 345,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 15,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Mì Hảo Hảo nấu nước",
+          "calories": 396,
+          "protein": 9,
+          "carbs": 54,
+          "fat": 16
+        },
+        {
+          "name": "Xúc xích rán",
+          "calories": 360,
+          "protein": 19,
+          "carbs": 1,
+          "fat": 31
+        }
+      ]
+    },
+    {
+      "key": "mi-xao",
+      "text": "1 gói mì Indomie xào khô, trộn đủ gói dầu và gói sốt, thêm 1 quả trứng ốp la",
+      "ingredients": [
+        {
+          "name": "Mì Indomie",
+          "grams": 85,
+          "kcal": 394,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gói sốt",
+          "grams": 10,
+          "kcal": 34,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 44,
+          "kcal": 92,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Mì Indomie xào khô",
+          "calories": 473,
+          "protein": 7,
+          "carbs": 66,
+          "fat": 20
+        },
+        {
+          "name": "Trứng ốp la",
+          "calories": 92,
+          "protein": 6,
+          "carbs": 0,
+          "fat": 7
+        }
+      ]
+    }
+  ]
+}

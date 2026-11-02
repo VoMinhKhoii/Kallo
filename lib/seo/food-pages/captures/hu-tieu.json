@@ -1,0 +1,228 @@
+{
+  "capturedAt": "2026-11-02T17:30:20.988Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "nam-vang-kho",
+      "text": "Hủ tiếu Nam Vang khô tô lớn, có tôm, gan, cật, thịt bằm, trứng cút, trộn dầu tỏi và nước tương",
+      "ingredients": [
+        {
+          "name": "Hủ tiếu",
+          "grams": 80,
+          "kcal": 280,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tôm",
+          "grams": 28,
+          "kcal": 23,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Gan heo",
+          "grams": 25,
+          "kcal": 32,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cật heo",
+          "grams": 30,
+          "kcal": 29,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt heo bằm",
+          "grams": 50,
+          "kcal": 145,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng cút",
+          "grams": 27,
+          "kcal": 44,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu tỏi",
+          "grams": 10,
+          "kcal": 86,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tỏi",
+          "grams": 5,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước tương",
+          "grams": 15,
+          "kcal": 8,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Hủ tiếu Nam Vang khô",
+          "calories": 655,
+          "protein": 37,
+          "carbs": 68,
+          "fat": 26
+        }
+      ]
+    },
+    {
+      "key": "go",
+      "text": "Hủ tiếu gõ 1 tô nước, nửa hủ tiếu nửa mì, mấy lát xá xíu, 3 viên bò viên, hẹ, giá",
+      "ingredients": [
+        {
+          "name": "Hủ tiếu",
+          "grams": 150,
+          "kcal": 158,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Mì",
+          "grams": 75,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Xá xíu",
+          "grams": 45,
+          "kcal": 104,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bò viên",
+          "grams": 60,
+          "kcal": 143,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hẹ",
+          "grams": 7,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá",
+          "grams": 24,
+          "kcal": 9,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước dùng",
+          "grams": 400,
+          "kcal": 56,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Hủ tiếu gõ nước",
+          "calories": 576,
+          "protein": 42,
+          "carbs": 62,
+          "fat": 18
+        }
+      ]
+    },
+    {
+      "key": "nuoc-thuong",
+      "text": "Hủ tiếu Nam Vang nước tô thường, thịt bằm, 2 con tôm, giá hẹ, ăn hết bánh, húp nửa nước",
+      "ingredients": [
+        {
+          "name": "Hủ tiếu",
+          "grams": 80,
+          "kcal": 281,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt bằm",
+          "grams": 50,
+          "kcal": 145,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tôm",
+          "grams": 42,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Giá",
+          "grams": 29,
+          "kcal": 13,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Hẹ",
+          "grams": 9,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước dùng",
+          "grams": 350,
+          "kcal": 35,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Hủ tiếu Nam Vang nước",
+          "calories": 513,
+          "protein": 34,
+          "carbs": 66,
+          "fat": 13
+        }
+      ]
+    },
+    {
+      "key": "xao-nha",
+      "text": "Tự nấu hủ tiếu xào bò: 120g hủ tiếu khô (cân trước khi trụng), 100g thịt bò sống ướp tỏi, 1 nắm cải ngọt, đập 1 quả trứng đảo chung, 1 muỗng canh dầu ăn",
+      "ingredients": [
+        {
+          "name": "Hủ tiếu khô",
+          "grams": 120,
+          "kcal": 420,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt bò",
+          "grams": 100,
+          "kcal": 187,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cải ngọt",
+          "grams": 54,
+          "kcal": 10,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 45,
+          "kcal": 64,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 10,
+          "kcal": 90,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Hủ tiếu xào bò",
+          "calories": 770,
+          "protein": 34,
+          "carbs": 98,
+          "fat": 27
+        }
+      ]
+    }
+  ]
+}

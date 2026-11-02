@@ -1,0 +1,261 @@
+{
+  "capturedAt": "2026-11-02T17:02:25.797Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "ga-ta",
+      "text": "Tô mì Quảng gà ta, bẻ 1 cái bánh tráng mè vô, thêm 1 trứng cút, ít rau sống",
+      "ingredients": [
+        {
+          "name": "Mì Quảng",
+          "grams": 90,
+          "kcal": 340,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gà ta",
+          "grams": 85,
+          "kcal": 166,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Nước dùng gà",
+          "grams": 200,
+          "kcal": 66,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 3,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau sống",
+          "grams": 23,
+          "kcal": 6,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bánh tráng mè",
+          "grams": 40,
+          "kcal": 174,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Trứng cút",
+          "grams": 27,
+          "kcal": 42,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Mì Quảng gà ta",
+          "calories": 605,
+          "protein": 45,
+          "carbs": 72,
+          "fat": 15
+        },
+        {
+          "name": "Bánh tráng mè",
+          "calories": 174,
+          "protein": 2,
+          "carbs": 22,
+          "fat": 9
+        },
+        {
+          "name": "Trứng cút",
+          "calories": 42,
+          "protein": 3,
+          "carbs": 0,
+          "fat": 3
+        }
+      ]
+    },
+    {
+      "key": "tom-thit",
+      "text": "Mì Quảng tôm thịt tô thường, có trứng cút, đậu phộng rang, bánh tráng mè, rau sống",
+      "ingredients": [
+        {
+          "name": "Mì Quảng",
+          "grams": 150,
+          "kcal": 148,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Tôm",
+          "grams": 42,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt heo",
+          "grams": 60,
+          "kcal": 129,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước dùng",
+          "grams": 300,
+          "kcal": 38,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng cút",
+          "grams": 18,
+          "kcal": 28,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đậu phộng rang",
+          "grams": 8,
+          "kcal": 51,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bánh tráng mè",
+          "grams": 8,
+          "kcal": 27,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Rau sống",
+          "grams": 40,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Mì Quảng tôm thịt",
+          "calories": 468,
+          "protein": 34,
+          "carbs": 44,
+          "fat": 17
+        }
+      ]
+    },
+    {
+      "key": "dac-biet",
+      "text": "Mì Quảng tô đặc biệt tôm, thịt, gà, 2 trứng cút, thêm 1 muỗng mỡ hành, ăn với 1 cái bánh tráng mè",
+      "ingredients": [
+        {
+          "name": "Mì quảng",
+          "grams": 90,
+          "kcal": 129,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Tôm",
+          "grams": 36,
+          "kcal": 36,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Thịt heo",
+          "grams": 50,
+          "kcal": 106,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gà",
+          "grams": 42,
+          "kcal": 49,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng cút",
+          "grams": 18,
+          "kcal": 28,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Mỡ hành",
+          "grams": 7,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước dùng",
+          "grams": 500,
+          "kcal": 68,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Đậu phộng",
+          "grams": 6,
+          "kcal": 32,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Bánh tráng mè",
+          "grams": 22,
+          "kcal": 74,
+          "source": "FAO/INFOODS"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Mì quảng đặc biệt",
+          "calories": 449,
+          "protein": 45,
+          "carbs": 30,
+          "fat": 16
+        },
+        {
+          "name": "Bánh tráng mè",
+          "calories": 74,
+          "protein": 1,
+          "carbs": 17,
+          "fat": 0
+        }
+      ]
+    },
+    {
+      "key": "ca-loc",
+      "text": "Mì Quảng cá lóc tô nhỏ, ít mì, nhiều rau sống, không bánh tráng",
+      "ingredients": [
+        {
+          "name": "Mì Quảng",
+          "grams": 200,
+          "kcal": 265,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cá lóc",
+          "grams": 36,
+          "kcal": 41,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Rau sống",
+          "grams": 108,
+          "kcal": 21,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 41,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Mì Quảng cá lóc",
+          "calories": 370,
+          "protein": 18,
+          "carbs": 54,
+          "fat": 9
+        }
+      ]
+    }
+  ]
+}

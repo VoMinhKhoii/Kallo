@@ -5,7 +5,7 @@ import { DocsLink, DocsParagraph } from '@/components/docs/mdx/prose';
 import { ToolLinkList } from '@/components/seo/tools/tool-link-list';
 import { isLocale, locales } from '@/i18n/config';
 import { alternateLanguages } from '@/lib/seo/alternates';
-import { FOOD_PAGE_LOCALE, FOOD_PAGE_PREFIX } from '@/lib/seo/food-pages/slugs';
+import { FOOD_PAGE_PREFIX, isFoodLocale } from '@/lib/seo/food-pages/slugs';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 import { HUB_COPY } from '@/lib/seo/tools/content';
@@ -69,7 +69,7 @@ async function HubContent({ params }: ToolsHubProps) {
       <div className="mt-10">
         <DocsParagraph>{copy.lead}</DocsParagraph>
         <ToolLinkList locale={locale} slugs={TOOL_SLUGS} />
-        {copy.foodLine && locale === FOOD_PAGE_LOCALE ? (
+        {copy.foodLine && isFoodLocale(locale) ? (
           <DocsParagraph>
             <DocsLink href={FOOD_PAGE_PREFIX}>{copy.foodLine}</DocsLink>
           </DocsParagraph>

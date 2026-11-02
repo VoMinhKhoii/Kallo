@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import * as intlServer from 'next-intl/server';
+import { describe, expect, it, vi } from 'vitest';
 import { DocsFooter } from '@/components/docs/docs-footer';
 
 const sections = [
@@ -32,7 +33,7 @@ describe('DocsFooter', () => {
   });
 
   it('links the food pages on English pages', async () => {
-    // The setup's locale is `en`; the pages exist in English only.
+    // The setup's locale is `en`.
     render(await DocsFooter({ sections }));
 
     expect(
@@ -47,5 +48,18 @@ describe('DocsFooter', () => {
       'href',
       '/tools'
     );
+  });
+
+  it('links the Vietnamese food pages in Vietnamese', async () => {
+    vi.spyOn(intlServer, 'getLocale').mockResolvedValueOnce('vi');
+    render(await DocsFooter({ sections }));
+
+    // The navigation Link adds the current locale, so the href stays relative.
+    expect(
+      screen.getByRole('link', { name: 'Calo các món ăn' })
+    ).toHaveAttribute('href', '/calories');
+    expect(
+      screen.queryByRole('link', { name: 'Calories in meals' })
+    ).toBeNull();
   });
 });

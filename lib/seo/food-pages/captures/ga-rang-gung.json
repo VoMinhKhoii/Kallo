@@ -1,0 +1,339 @@
+{
+  "capturedAt": "2026-11-02T17:28:59.005Z",
+  "modelProfile": "haiku",
+  "variants": [
+    {
+      "key": "nam-mieng",
+      "text": "Gà rang gừng khoảng 5 miếng có xương, su su luộc chấm muối vừng, canh bí đỏ 1 bát, cơm 2 bát",
+      "ingredients": [
+        {
+          "name": "Gà",
+          "grams": 180,
+          "kcal": 362,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Gừng",
+          "grams": 9,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 8,
+          "kcal": 72,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 3,
+          "kcal": 12,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Su su",
+          "grams": 135,
+          "kcal": 33,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Muối vừng",
+          "grams": 5,
+          "kcal": 30,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Bí đỏ",
+          "grams": 150,
+          "kcal": 52,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Nước dùng",
+          "grams": 200,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 5,
+          "kcal": 2,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 240,
+          "kcal": 303,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Gà rang gừng",
+          "calories": 453,
+          "protein": 37,
+          "carbs": 4,
+          "fat": 32
+        },
+        {
+          "name": "Su su luộc chấm muối vừng",
+          "calories": 63,
+          "protein": 2,
+          "carbs": 8,
+          "fat": 3
+        },
+        {
+          "name": "Canh bí đỏ",
+          "calories": 81,
+          "protein": 5,
+          "carbs": 14,
+          "fat": 1
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 303,
+          "protein": 6,
+          "carbs": 68,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "com-rang",
+      "text": "Gà rang gừng nửa đĩa hâm lại, 1 bát cơm nguội rang với 1 quả trứng và 1 thìa dầu",
+      "ingredients": [
+        {
+          "name": "Gà",
+          "grams": 78,
+          "kcal": 115,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Gừng",
+          "grams": 7,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 36,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        },
+        {
+          "name": "Cơm nguội",
+          "grams": 120,
+          "kcal": 153,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Trứng gà",
+          "grams": 45,
+          "kcal": 61,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 40,
+          "source": "Viện Dinh dưỡng Quốc gia"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Gà rang gừng",
+          "calories": 152,
+          "protein": 14,
+          "carbs": 0,
+          "fat": 11
+        },
+        {
+          "name": "Cơm rang trứng",
+          "calories": 254,
+          "protein": 9,
+          "carbs": 34,
+          "fat": 9
+        }
+      ]
+    },
+    {
+      "key": "dui-bo-da",
+      "text": "Gà rang gừng 4 miếng đùi bỏ da, canh bí xanh nấu tôm, rau cải xào tỏi 1 đĩa nhỏ, 2 bát cơm",
+      "ingredients": [
+        {
+          "name": "Đùi gà",
+          "grams": 300,
+          "kcal": 358,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gừng",
+          "grams": 9,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 5,
+          "kcal": 20,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Bí xanh",
+          "grams": 102,
+          "kcal": 16,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Tôm",
+          "grams": 33,
+          "kcal": 33,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Hành lá",
+          "grams": 7,
+          "kcal": 3,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Nước dùng",
+          "grams": 200,
+          "kcal": 11,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cải",
+          "grams": 99,
+          "kcal": 17,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Tỏi",
+          "grams": 5,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Dầu ăn",
+          "grams": 5,
+          "kcal": 45,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 320,
+          "kcal": 404,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Gà rang gừng",
+          "calories": 384,
+          "protein": 60,
+          "carbs": 6,
+          "fat": 14
+        },
+        {
+          "name": "Canh bí xanh nấu tôm",
+          "calories": 62,
+          "protein": 9,
+          "carbs": 6,
+          "fat": 1
+        },
+        {
+          "name": "Cải xào tỏi",
+          "calories": 70,
+          "protein": 2,
+          "carbs": 4,
+          "fat": 5
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 404,
+          "protein": 9,
+          "carbs": 90,
+          "fat": 1
+        }
+      ]
+    },
+    {
+      "key": "uc-ga",
+      "text": "Gà rang gừng 3 miếng ức gà (khoảng 120g), 1 bát cơm, rau luộc",
+      "ingredients": [
+        {
+          "name": "Ức gà",
+          "grams": 120,
+          "kcal": 162,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Gừng",
+          "grams": 7,
+          "kcal": 2,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Nước mắm",
+          "grams": 10,
+          "kcal": 3,
+          "source": "FAO/INFOODS"
+        },
+        {
+          "name": "Đường",
+          "grams": 2,
+          "kcal": 8,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Cơm",
+          "grams": 120,
+          "kcal": 152,
+          "source": "USDA FoodData Central"
+        },
+        {
+          "name": "Rau luộc",
+          "grams": 90,
+          "kcal": 27,
+          "source": "USDA FoodData Central"
+        }
+      ],
+      "dishes": [
+        {
+          "name": "Gà rang gừng",
+          "calories": 176,
+          "protein": 28,
+          "carbs": 3,
+          "fat": 6
+        },
+        {
+          "name": "Cơm trắng",
+          "calories": 152,
+          "protein": 3,
+          "carbs": 34,
+          "fat": 0
+        },
+        {
+          "name": "Rau luộc",
+          "calories": 27,
+          "protein": 3,
+          "carbs": 3,
+          "fat": 0
+        }
+      ]
+    }
+  ]
+}
