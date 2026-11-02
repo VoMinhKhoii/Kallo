@@ -8,6 +8,7 @@
 
 import type { User } from '@supabase/supabase-js';
 import { Errors } from '@/lib/core/errors/catalog';
+import { externalAvatarUrl } from '@/lib/domain/social/identity/external-avatar-url';
 import { getRequestUser } from '@/lib/infra/auth/session';
 import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 import { createClient } from '@/lib/infra/supabase/server';
@@ -36,6 +37,8 @@ export async function requireUser(): Promise<User> {
  * Like requireUserId, but also pulls the OAuth avatar out of the user's auth
  * metadata (Google puts it in `avatar_url`, some providers in `picture`). Used
  * by the profile route to refresh public_profiles.avatar_url on each app load.
+ * The account owner can write that metadata, so only a URL on an allowed
+ * image host comes through (`externalAvatarUrl`); anything else is null.
  */
 export async function requireUserWithAvatar(): Promise<{
   id: string;
@@ -46,9 +49,10 @@ export async function requireUserWithAvatar(): Promise<{
     throw Errors.notAuthenticated();
   }
   const meta = user.userMetadata;
-  const raw = meta.avatar_url ?? meta.picture;
-  const avatarUrl = typeof raw === 'string' && raw.length > 0 ? raw : null;
-  return { id: user.id, avatarUrl };
+  return {
+    id: user.id,
+    avatarUrl: externalAvatarUrl(meta.avatar_url ?? meta.picture),
+  };
 }
 
 /**

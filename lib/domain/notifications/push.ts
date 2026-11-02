@@ -17,6 +17,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { safeError } from '@/lib/core/errors/safe-error';
 import { avatarUrlFor } from '@/lib/domain/social/identity/avatar-url';
+import { externalAvatarUrl } from '@/lib/domain/social/identity/external-avatar-url';
 import { db } from '@/lib/infra/db/client';
 import {
   publicProfiles,
@@ -106,7 +107,9 @@ async function resolveActor(
   const name =
     actor.name ?? (row?.displayName?.trim() || row?.handle || undefined);
   const avatarUrl =
-    avatarUrlFor(row?.avatarPath ?? null) ?? row?.avatarUrl ?? undefined;
+    avatarUrlFor(row?.avatarPath ?? null) ??
+    externalAvatarUrl(row?.avatarUrl) ??
+    undefined;
   return {
     name,
     // Only https: the extension fetches it with ATS on, and a stray http

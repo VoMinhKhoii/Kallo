@@ -42,6 +42,7 @@ import {
 // referencing it here keeps these assertions about WHICH locale reached WHICH
 // device, with no second copy of the sentences to drift.
 import { pushCopy } from '@/lib/domain/notifications/push-copy';
+import { HOSTILE_AVATAR_URLS } from '@/lib/domain/social/identity/__tests__/hostile-avatar-urls';
 import type {
   PushMessage,
   PushSender,
@@ -379,6 +380,29 @@ describe('sendNotificationPush', () => {
       id: FRIEND,
       name: 'Mai',
       tintKey: 'seed-1',
+    });
+  });
+
+  it.each(
+    Object.entries(HOSTILE_AVATAR_URLS)
+  )('never hands the device a stored picture with %s', async (_, url) => {
+    queueSelects(
+      [{ userId: OWNER, token: 'owner-phone' }],
+      [],
+      [{ displayName: 'Mai', handle: 'mai', avatarPath: null, avatarUrl: url }]
+    );
+    const { sender, sent } = fakeSender(allOk);
+
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'share.reply', actor: { id: FRIEND } },
+      sender
+    );
+
+    expect(sent[0][0].sender).toEqual({
+      id: FRIEND,
+      name: 'Mai',
+      tintKey: 'mai',
     });
   });
 

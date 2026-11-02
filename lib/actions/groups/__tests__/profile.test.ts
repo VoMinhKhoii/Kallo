@@ -34,6 +34,7 @@ import {
   renameMyProfile,
   upsertPublicProfile,
 } from '@/lib/actions/groups/profile';
+import { HOSTILE_AVATAR_URLS } from '@/lib/domain/social/identity/__tests__/hostile-avatar-urls';
 import {
   ACTOR,
   INVITER,
@@ -65,6 +66,16 @@ describe('getProfileBySlug', () => {
   it('returns null when no profile matches', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([]));
     expect(await getProfileBySlug(SLUG)).toBeNull();
+  });
+
+  // The anonymous invite preview shows this to anyone holding the link.
+  it.each(
+    Object.entries(HOSTILE_AVATAR_URLS)
+  )('drops a stored OAuth picture with %s', async (_, url) => {
+    mockDbSelect.mockReturnValueOnce(
+      selectRows([{ ...inviterRow, avatarUrl: url }])
+    );
+    expect(await getProfileBySlug(SLUG)).toEqual(inviterProfile);
   });
 });
 

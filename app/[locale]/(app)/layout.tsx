@@ -12,6 +12,7 @@ import { getMyPublicProfile } from '@/lib/actions/groups/profile';
 import { safeError } from '@/lib/core/errors/safe-error';
 import { getBillingConfig } from '@/lib/domain/billing/billing';
 import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
+import { externalAvatarUrl } from '@/lib/domain/social/identity/external-avatar-url';
 import { getRequestUser } from '@/lib/infra/auth/session';
 import {
   parseSidebarExpandMode,
@@ -90,13 +91,11 @@ async function SessionAppShell({ children }: Readonly<AppLayoutProps>) {
 
   // Effective avatar: uploaded photo / synced OAuth picture from the profile
   // row, else the raw OAuth metadata picture (pre-provision fallback).
-  const avatarSource =
-    user.userMetadata.avatar_url ?? user.userMetadata.picture;
   const avatarUrl =
     publicProfile?.avatarUrl ??
-    (typeof avatarSource === 'string' && avatarSource.length > 0
-      ? avatarSource
-      : null);
+    externalAvatarUrl(
+      user.userMetadata.avatar_url ?? user.userMetadata.picture
+    );
 
   // Read sidebar UI prefs from cookies so the first paint matches the user's
   // saved state (no flash, no hydration mismatch). Falls back to sensible
