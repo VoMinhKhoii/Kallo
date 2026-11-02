@@ -97,4 +97,55 @@ describe.skipIf(!url)('push token retention in Postgres', () => {
       await sql`SELECT id FROM push_tokens WHERE user_id = ${USER} AND token = ${token(1)}`
     ).toHaveLength(1);
   });
+
+  it('does not prune a token concurrently reassigned to another account', async () => {
+    for (let n = 1; n <= 10; n++) {
+      await sql`INSERT INTO push_tokens (user_id, token, platform, last_seen_at)
+        VALUES (${USER}, ${token(n)}, 'ios', ${new Date(2020, 0, n).toISOString()})`;
+    }
+    let release!: () => void;
+    let ready!: (pid: number) => void;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const started = new Promise<number>((resolve) => {
+      ready = resolve;
+    });
+    const transfer = sql.begin(async (tx) => {
+      await tx`UPDATE push_tokens SET user_id = ${OTHER}, last_seen_at = now()
+        WHERE token = ${token(1)}`;
+      const [row] = await tx`SELECT pg_backend_pid() AS pid`;
+      ready(row.pid);
+      await hold;
+    });
+    const pid = await started;
+    const registration = register(11);
+    try {
+      // Wait until the real DELETE has selected the old row and is waiting
+      // for the other account's ownership update to commit.
+      let blocked = false;
+      for (let n = 0; n < 300; n++) {
+        const waiting = await sql`SELECT pid FROM pg_stat_activity
+          WHERE ${pid} = ANY(pg_blocking_pids(pid))
+          AND query LIKE 'delete from "push_tokens"%'`;
+        if (waiting.length) {
+          blocked = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      expect(blocked).toBe(true);
+    } finally {
+      release();
+      await transfer;
+      await registration;
+    }
+    expect(
+      await sql`SELECT id FROM push_tokens
+      WHERE user_id = ${OTHER} AND token = ${token(1)}`
+    ).toHaveLength(1);
+    expect(
+      await sql`SELECT id FROM push_tokens WHERE user_id = ${USER}`
+    ).toHaveLength(10);
+  });
 });

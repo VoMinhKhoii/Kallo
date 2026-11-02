@@ -54,7 +54,11 @@ export async function POST(request: NextRequest) {
           desc(pushTokens.id)
         )
         .offset(10);
-      await tx.delete(pushTokens).where(inArray(pushTokens.id, oldest));
+      await tx
+        .delete(pushTokens)
+        .where(
+          and(eq(pushTokens.userId, userId), inArray(pushTokens.id, oldest))
+        );
     });
     return NextResponse.json({ registered: true });
   } catch (error) {
