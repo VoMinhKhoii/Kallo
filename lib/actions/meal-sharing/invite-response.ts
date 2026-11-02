@@ -28,6 +28,7 @@ import {
 } from '@/lib/domain/notifications/group-keys';
 import { closeAggregates } from '@/lib/domain/notifications/notify';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
+import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, mealShareInvites } from '@/lib/infra/db/schema';
@@ -47,7 +48,7 @@ export async function acceptMealShareInviteAction(input: {
   // No premium gate here on purpose: the INITIATOR pays. By the time an invite
   // exists a split has already halved the sender's meal, so refusing the
   // recipient would strand that half against an offer they can never take.
-  return withNotifications(db, async (tx, notify) => {
+  const response = withNotifications(db, async (tx, notify) => {
     // Everything up to and including the claim is shared with the cheat path —
     // see `claimPendingInvite` for the ordering rules it enforces.
     const { invite, source, copyFactor } = await claimPendingInvite(tx, {
@@ -140,6 +141,7 @@ export async function acceptMealShareInviteAction(input: {
 
     return { mealId, meal };
   });
+  return scopeMealResponseForViewer(user.id, response);
 }
 
 // ---------------------------------------------------------------------------

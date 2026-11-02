@@ -22,6 +22,7 @@ import {
   buildRelogRawInput,
   weakestConfidence,
 } from '@/lib/domain/logging/relog/relog';
+import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
@@ -79,7 +80,7 @@ export async function relogMealItemsAction(
       // rather than being copied — same as duplicate/manual.
       const mealSlot = inferMealSlot(loggedAt);
 
-      return await db.transaction(async (tx) => {
+      const response = db.transaction(async (tx) => {
         // Lock the sources (FOR UPDATE) so a concurrent delete can't land between
         // this read and the copy below (mirrors duplicateMealAction).
         const { dishes, sourceConfidences } = await resolveRelogSources(
@@ -184,6 +185,7 @@ export async function relogMealItemsAction(
           }),
         };
       });
+      return scopeMealResponseForViewer(user.id, response);
     }
   );
 }

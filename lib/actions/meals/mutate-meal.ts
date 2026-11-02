@@ -18,6 +18,7 @@ import {
   updateMealSchema,
 } from '@/lib/api/contracts/meals';
 import { Errors } from '@/lib/core/errors/catalog';
+import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -145,7 +146,7 @@ export async function updateMealAction(input: {
   const parsed = updateMealSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  return await db.transaction(async (tx) => {
+  const response = db.transaction(async (tx) => {
     // Ownership gate: load the meal scoped to the authenticated user. A meal
     // belonging to anyone else simply isn't returned, so the edit can't proceed.
     const [meal] = await tx
@@ -298,4 +299,5 @@ export async function updateMealAction(input: {
 
     return { mealId: meal.id, meal: savedMeal };
   });
+  return scopeMealResponseForViewer(user.id, response);
 }

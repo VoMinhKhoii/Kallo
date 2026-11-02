@@ -60,7 +60,13 @@ const { mockUser, mockCanViewShare, mockTxSelect, mockTxInsert, mockTx } =
 // copy_split gate. Stubbed so the locked case is reachable without an
 // entitlements fixture; the default no-op resolve mirrors an unenforced build.
 const assertFeatureAccess = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+const micronutrientGate = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ locked: false })
+);
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  assertFeatureAccess,
+  checkFeatureGate: micronutrientGate,
+}));
 
 const _PROFILE_CREATED_AT = new Date('2026-01-01T00:00:00.000Z');
 
@@ -208,9 +214,13 @@ describe('logSharedMealAction', () => {
     mockCanViewShare.mockResolvedValue(true);
   });
 
-  it('copies an authorized share verbatim at factor 1', async () => {
-    queueSource([sourceMeal()]);
-    queueItems([sourceItem()]);
+  it.each([
+    false,
+    true,
+  ])('stores copy nutrients and scopes the response (locked=%s)', async (locked) => {
+    micronutrientGate.mockResolvedValueOnce({ locked });
+    queueSource([sourceMeal({ sodiumMg: 120 })]);
+    queueItems([{ ...sourceItem(), sodiumMg: 120 }]);
     const captured = captureCopies();
 
     const result = await log(1);
@@ -227,6 +237,16 @@ describe('logSharedMealAction', () => {
       caloriesKcal: 600,
     });
     expect(result.meal.portionFactor).toBe(0.5);
+    expect(captured.meal?.sodiumMg).toBe(120);
+    expect(captured.items?.[0].sodiumMg).toBe(120);
+    expect(result.meal.nutrition.sodiumMg).toBe(locked ? null : 120);
+    expect(result.meal.mealItemGroups[0].nutrition.sodiumMg).toBe(
+      locked ? null : 120
+    );
+    expect(
+      result.meal.mealItemGroups[0].ingredients[0].nutrition.sodiumMg
+    ).toBe(locked ? null : 120);
+    expect(micronutrientGate).toHaveBeenCalledTimes(1);
   });
 
   it('stamps the copy with the source meal, not the moment I tapped', async () => {

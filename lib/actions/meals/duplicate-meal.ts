@@ -6,6 +6,7 @@ import { duplicateMealSchema } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
+import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
@@ -42,7 +43,7 @@ export async function duplicateMealAction(input: {
   // transaction — no entitlement read may happen inside an open tx (pool max 2).
   await assertFeatureAccess({ userId: user.id }, 'relog');
 
-  return await db.transaction(async (tx) => {
+  const response = db.transaction(async (tx) => {
     const [source] = await tx
       .select()
       .from(meals)
@@ -81,4 +82,5 @@ export async function duplicateMealAction(input: {
       loggedAt,
     });
   });
+  return scopeMealResponseForViewer(user.id, response);
 }

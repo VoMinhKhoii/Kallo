@@ -78,7 +78,13 @@ const { mockTxSelect, mockTxUpdate, mockTxInsert, mockTx } = vi.hoisted(() => {
 // copy_split gate. Stubbed so the locked case is reachable without an
 // entitlements fixture; the default no-op resolve mirrors an unenforced build.
 const assertFeatureAccess = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+const micronutrientGate = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ locked: false })
+);
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  assertFeatureAccess,
+  checkFeatureGate: micronutrientGate,
+}));
 
 vi.mock('@/lib/infra/auth/session', async () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
@@ -382,9 +388,13 @@ describe('shareMealWithFriendsAction', () => {
     });
   });
 
-  it('split mode: halves the meal for two participants and stores factor 0.5', async () => {
-    queueLimitSelect([sourceMeal()]);
-    queueWhereSelect([sourceItem()]);
+  it.each([
+    false,
+    true,
+  ])('stores split nutrients and scopes the response (locked=%s)', async (locked) => {
+    micronutrientGate.mockResolvedValueOnce({ locked });
+    queueLimitSelect([sourceMeal({ sodiumMg: 120 })]);
+    queueWhereSelect([sourceItem({ sodiumMg: 120 })]);
     queueLimitSelect([]); // no already-accepted invite among the recipients
     queueWhereSelect([friendEdge]);
     queueLimitSelect([]); // no existing share row (scaleOwnMealInPlace)
@@ -409,6 +419,16 @@ describe('shareMealWithFriendsAction', () => {
     expect(mealUpdate?.caloriesKcal).toBe(100);
     expect(mealUpdate?.portionFactor).toBe(0.5);
     expect(result.meal?.nutrition.caloriesKcal).toBe(100);
+    expect(itemUpdate.sodiumMg).toBe(60);
+    expect(mealUpdate.sodiumMg).toBe(60);
+    expect(result.meal?.nutrition.sodiumMg).toBe(locked ? null : 60);
+    expect(result.meal?.mealItemGroups[0].nutrition.sodiumMg).toBe(
+      locked ? null : 60
+    );
+    expect(
+      result.meal?.mealItemGroups[0].ingredients[0].nutrition.sodiumMg
+    ).toBe(locked ? null : 60);
+    expect(micronutrientGate).toHaveBeenCalledTimes(1);
     expect(result.meal?.portionFactor).toBe(0.5);
 
     const invites = captured.invites.vals as Array<Record<string, unknown>>;

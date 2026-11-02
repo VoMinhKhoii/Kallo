@@ -20,6 +20,7 @@ import type { PipelineResult } from '@/lib/ai/types/result';
 import { confirmMealSchema } from '@/lib/api/contracts/meals';
 import { Errors } from '@/lib/core/errors/catalog';
 import type { CheatSliderLevels } from '@/lib/core/types/cheat';
+import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { goalEnumSchema } from '@/lib/domain/onboarding/schemas';
 import type { Goal } from '@/lib/domain/onboarding/types';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -89,7 +90,7 @@ export async function confirmAndSaveMealAction(input: {
   // pending row is a cheat one. See `assertCheatConfirmAllowed`.
   await assertCheatConfirmAllowed(user.id, parsed.analysisId);
 
-  return await db.transaction(async (tx) => {
+  const response = db.transaction(async (tx) => {
     // Atomically consume the pending analysis (prevents duplicate confirms)
     const [pending] = await tx
       .delete(pendingAnalyses)
@@ -372,4 +373,5 @@ export async function confirmAndSaveMealAction(input: {
     // `meal` is the authoritative payload the web client reconciles against.
     return { mealId: meal.id, meal: savedMeal };
   });
+  return scopeMealResponseForViewer(user.id, response);
 }

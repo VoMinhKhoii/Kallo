@@ -1,6 +1,13 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const micronutrientGate = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ locked: false })
+);
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  checkFeatureGate: micronutrientGate,
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks — delete runs on the `db` singleton, update inside a transaction.
 // ---------------------------------------------------------------------------
@@ -330,10 +337,14 @@ describe('updateMealAction', () => {
     expect(mockTxDelete).not.toHaveBeenCalled();
   });
 
-  it('scales the edited item and recomputes meal totals', async () => {
+  it.each([
+    false,
+    true,
+  ])('scales stored micros and scopes edits (locked=%s)', async (locked) => {
+    micronutrientGate.mockResolvedValueOnce({ locked });
     queueMealLookup([mealRow()]);
     queueItemLookup([
-      itemRow(),
+      itemRow({ sodiumMg: 120, fiberG: 3 }),
       itemRow({
         id: UUID_2,
         ingredientName: 'Thịt bò',
@@ -368,6 +379,16 @@ describe('updateMealAction', () => {
     // Meal totals = scaled bánh phở (600) + untouched thịt bò (220).
     expect(mealUpdates[0]?.caloriesKcal).toBe(820);
     expect(result.meal.nutrition.caloriesKcal).toBe(820);
+    expect(itemUpdates[0]?.sodiumMg).toBe(240);
+    expect(mealUpdates[0]?.sodiumMg).toBe(240);
+    expect(result.meal.nutrition.sodiumMg).toBe(locked ? null : 240);
+    expect(result.meal.mealItemGroups[0].nutrition.fiberG).toBe(
+      locked ? null : 6
+    );
+    expect(
+      result.meal.mealItemGroups[0].ingredients[0].nutrition.sodiumMg
+    ).toBe(locked ? null : 240);
+    expect(micronutrientGate).toHaveBeenCalledTimes(1);
     expect(result.meal.mealItemGroups[0]?.ingredients).toHaveLength(2);
   });
 

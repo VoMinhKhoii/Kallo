@@ -1,6 +1,11 @@
 import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const gate = vi.hoisted(() => vi.fn().mockResolvedValue({ locked: false }));
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  checkFeatureGate: gate,
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -140,7 +145,11 @@ beforeEach(() => {
 });
 
 describe('saveManualMealAction', () => {
-  it('scales per-100g nutrition exactly and preserves null micros', async () => {
+  it.each([
+    false,
+    true,
+  ])('scopes the response, preserves stored micros (locked=%s)', async (locked) => {
+    gate.mockResolvedValueOnce({ locked });
     mockCompositionRows([riceRow]);
     const inserted = mockInserts(UUID_MEAL);
 
@@ -154,13 +163,23 @@ describe('saveManualMealAction', () => {
     expect(ingredient.nutrition.proteinG).toBeCloseTo(4.05);
     expect(ingredient.nutrition.carbohydrateG).toBeCloseTo(42);
     expect(ingredient.nutrition.fatG).toBeCloseTo(0.45);
-    expect(ingredient.nutrition.sodiumMg).toBeCloseTo(1.5);
+    expect(ingredient.nutrition.sodiumMg).toBe(locked ? null : 1.5);
+    expect(result.meal.nutrition.sodiumMg).toBe(locked ? null : 1.5);
+    expect(result.meal.mealItemGroups[0].nutrition.sodiumMg).toBe(
+      locked ? null : 1.5
+    );
+    expect(gate).toHaveBeenCalledExactlyOnceWith(
+      { userId: mockUser.id },
+      'micronutrients'
+    );
     // Unknown stays unknown — never a false zero.
     expect(ingredient.nutrition.fiberG).toBeNull();
 
     const mealRow = inserted[0] as Record<string, unknown>;
     expect(mealRow.caloriesKcal).toBeCloseTo(195);
     expect(mealRow.fiberG).toBeNull();
+    expect(mealRow.sodiumMg).toBe(1.5);
+    expect((inserted[1] as Record<string, unknown>[])[0].sodiumMg).toBe(1.5);
   });
 
   it('sums nutrition across items into the meal total', async () => {

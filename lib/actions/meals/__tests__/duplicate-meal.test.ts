@@ -33,7 +33,13 @@ const { mockTxInsert, mockTxSelect, mockTx } = vi.hoisted(() => {
 // locked case is reachable without an entitlements fixture; the default is a
 // no-op resolve, which is exactly what an unenforced build does.
 const assertFeatureAccess = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+const micronutrientGate = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ locked: false })
+);
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  assertFeatureAccess,
+  checkFeatureGate: micronutrientGate,
+}));
 
 vi.mock('@/lib/infra/auth/session', async () => {
   const { MOCK_USER, MOCK_PROFILE } = await import('./meal-doubles');
@@ -172,10 +178,14 @@ describe('duplicateMealAction', () => {
     expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
-  it('copies the items verbatim into a new meal with fresh ids', async () => {
-    queueMealLookup([sourceMeal()]);
+  it.each([
+    false,
+    true,
+  ])('copies all nutrients but scopes the response (locked=%s)', async (locked) => {
+    micronutrientGate.mockResolvedValueOnce({ locked });
+    queueMealLookup([sourceMeal({ sodiumMg: 120 })]);
     queueItemLookup([
-      sourceItem(),
+      sourceItem({ sodiumMg: 120 }),
       sourceItem({
         id: UUID_2,
         ingredientName: 'Thịt bò',
@@ -219,6 +229,16 @@ describe('duplicateMealAction', () => {
     // The returned meal reconstructs both ingredients under the new id.
     expect(result.meal.id).toBe(UUID_2);
     expect(result.meal.nutrition.caloriesKcal).toBe(520);
+    expect(mealInsert.sodiumMg).toBe(120);
+    expect(itemInserts[0].sodiumMg).toBe(120);
+    expect(result.meal.nutrition.sodiumMg).toBe(locked ? null : 120);
+    expect(result.meal.mealItemGroups[0].nutrition.sodiumMg).toBe(
+      locked ? null : 120
+    );
+    expect(
+      result.meal.mealItemGroups[0].ingredients[0].nutrition.sodiumMg
+    ).toBe(locked ? null : 120);
+    expect(micronutrientGate).toHaveBeenCalledTimes(1);
     expect(result.meal.mealItemGroups[0]?.ingredients).toHaveLength(2);
     // A re-log is a brand-new meal, auto-shared because this owner opted in.
     expect(result.meal.share).toEqual({

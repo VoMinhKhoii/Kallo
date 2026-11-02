@@ -19,11 +19,13 @@ import {
 } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
+import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
 import {
   manualDishOf,
   manualMealTitle,
   scaleNutritionValues,
 } from '@/lib/domain/logging/manual-logging';
+import { scopePersistedMealForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -62,10 +64,13 @@ export async function saveManualMealAction(
   const { user } = await requireAuthAndProfile();
 
   const ids = parsed.items.map((item) => item.foodCompositionId);
-  const compositionRows = await db
-    .select(compositionSelection)
-    .from(vietnameseFoodComposition)
-    .where(inArray(vietnameseFoodComposition.id, ids));
+  const [gate, compositionRows] = await Promise.all([
+    checkFeatureGate({ userId: user.id }, 'micronutrients'),
+    db
+      .select(compositionSelection)
+      .from(vietnameseFoodComposition)
+      .where(inArray(vietnameseFoodComposition.id, ids)),
+  ]);
   const compositionById = new Map(compositionRows.map((row) => [row.id, row]));
 
   const missing = ids.filter((id) => !compositionById.has(id));
@@ -182,5 +187,5 @@ export async function saveManualMealAction(
     share,
   });
 
-  return { mealId, meal: savedMeal };
+  return { mealId, meal: scopePersistedMealForViewer(savedMeal, gate.locked) };
 }

@@ -228,7 +228,7 @@ entitled" from "nothing is being enforced yet" without guessing from env.
 |---|---|---|
 | `ai_analysis` | Text meal analysis, including fresh cheat-meal estimates and natural-language refinement | `POST /api/analyze-meal` |
 | `label_scan` | Nutrition-label OCR scan and the log that follows it | `scanNutritionLabelAction`, `stageOcrMealAction` (`lib/actions/logging/nutrition-ocr.ts`); `POST /api/v1/nutrition-label/scan`, `POST /api/v1/nutrition-label/log` |
-| `micronutrients` | The micronutrient sections of the nutrition overview and the food-source candidates behind them | `getNutritionOverview` (response stripped by `stripMicronutrients` in `lib/domain/nutrition/premium-scope.ts`, flagged `micronutrientsLocked`); `POST /api/v1/nutrition/candidates` |
+| `micronutrients` | Viewing any nutrient beyond calories/protein/carbohydrate/fat, including fiber and sodium; computation and storage remain complete for every user | `getNutritionOverview` (`stripMicronutrients`, flagged `micronutrientsLocked`); `POST /api/v1/nutrition/candidates`; barcode search (`searchBarcodeProductForViewer`); persisted-meal readers and mutations via `scopePersistedMealForViewer` / `scopeMealResponseForViewer` in `lib/domain/nutrition/premium-scope.ts` (inventory below) |
 | `relog` | Duplicate / log-again, and relog from the slash picker | `duplicateMealAction`, `stageRelogAnalysisAction`, `relogMealItemsAction` (reading the relog candidates stays open; a scan-only submit through `stageRelogAnalysisAction` is NOT gated — barcode carries no key) |
 | `cheat_meal` | Cheat repeat and cheat confirm | `stageCheatRepeatAction`; `assertCheatConfirmAllowed` in `lib/actions/meals/cheat/confirm.ts`, called from `confirmAndSaveMealAction` (reading cheat occasions stays open) |
 | `copy_split` | Sending a copy/split offer, and "log this too" from the wall | `shareMealWithFriendsAction`, `logSharedMealAction` |
@@ -236,11 +236,28 @@ entitled" from "nothing is being enforced yet" without guessing from env.
 
 Notes the table cannot hold:
 
+- **Persisted meals are scoped only on return.** `loadMealsByDate`,
+  `loadLoggingDay`, `saveManualMealAction`, `confirmAndSaveMealAction`,
+  `updateMealAction`, `duplicateMealAction`, `relogMealItemsAction`,
+  `logSharedMealAction`, `acceptMealShareInviteAction`, and
+  `shareMealWithFriendsAction` resolve the viewer's micronutrient gate once,
+  alongside their reads/transaction and outside its connection. Locked responses
+  set all other nutrient keys to `null` on the meal, each dish and each ingredient.
+  This covers `/api/v1/meals`, `/logging/day`, `/dashboard`, `/meals/manual`,
+  `/meals/confirm`, `/barcode/log`, `/nutrition-label/log`, `/meals/[mealId]`
+  (PATCH), `/meals/[mealId]/duplicate`, `/meals/relog`, `/groups/shares/log`,
+  `/groups/invites/accept`, and `/groups/meal-share` (all under `/api/v1`).
+  Staged `parsedMeal` cards already expose only the four macros. All nutrients
+  are always computed and saved, including when editing, copying or splitting;
+  upgrading reveals existing history on the next read. `null` means hidden or
+  unknown, never zero. The web and Flutter meal cards and dashboard use only
+  the four macros from these responses.
 - **"Visual edit" has no key.** The pre-confirm portion ruler is only reachable
   from the AI-analysis and relog flows, both gated, so it is premium
   transitively; a dedicated gate would be a second lock on the same door.
-- **Accepting a meal share is free.** `acceptMealShareInviteAction` is
-  deliberately ungated: the sender already paid for the copy/split and their
+- **Accepting a meal share is free.** `acceptMealShareInviteAction` never
+  requires Premium to accept (its response still respects the viewer's
+  micronutrient access): the sender already paid for the copy/split and their
   meal has already been halved, so gating the recipient would strand a premium
   user's split with no one able to take the other half.
 - **Group messages only.** `sendChatGroupMessage` gates `kind = 'group'`; direct

@@ -16,6 +16,7 @@ import {
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { shareLoggedKey } from '@/lib/domain/notifications/group-keys';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
+import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { canViewShare } from '@/lib/domain/social/shares/share-visibility';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
@@ -53,7 +54,7 @@ export async function logSharedMealAction(input: {
   // transaction; responding to an invite stays free (see invite-response).
   await assertFeatureAccess({ userId: user.id }, 'copy_split');
 
-  return withNotifications(db, async (tx, notify) => {
+  const response = withNotifications(db, async (tx, notify) => {
     if (!(await canViewShare(user.id, parsed.shareId, tx))) {
       throw Errors.notFound('Không tìm thấy bài chia sẻ.');
     }
@@ -115,4 +116,5 @@ export async function logSharedMealAction(input: {
 
     return copied;
   });
+  return scopeMealResponseForViewer(user.id, response);
 }

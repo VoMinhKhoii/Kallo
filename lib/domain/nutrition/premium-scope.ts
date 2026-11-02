@@ -1,4 +1,60 @@
+import type { PersistedMeal } from '@/lib/actions/meals/types';
+import {
+  NUTRITION_KEYS,
+  type NutritionValues,
+} from '@/lib/ai/types/nutrition-values';
+import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
 import type { DaySeriesMetricKey, MacroKey, NutritionOverview } from './types';
+
+/** Response-only projection. Stored nutrition must always remain complete. */
+export function scopeNutritionForViewer(
+  values: NutritionValues,
+  locked: boolean
+): NutritionValues {
+  if (!locked) return values;
+  const scoped = { ...values };
+  for (const key of NUTRITION_KEYS) scoped[key] = null;
+  scoped.caloriesKcal = values.caloriesKcal;
+  scoped.proteinG = values.proteinG;
+  scoped.carbohydrateG = values.carbohydrateG;
+  scoped.fatG = values.fatG;
+  return scoped;
+}
+
+export function scopePersistedMealForViewer(
+  meal: PersistedMeal,
+  locked: boolean
+): PersistedMeal {
+  if (!locked) return meal;
+  return {
+    ...meal,
+    nutrition: scopeNutritionForViewer(meal.nutrition, locked),
+    mealItemGroups: meal.mealItemGroups.map((group) => ({
+      ...group,
+      nutrition: scopeNutritionForViewer(group.nutrition, locked),
+      ingredients: group.ingredients.map((ingredient) => ({
+        ...ingredient,
+        nutrition: scopeNutritionForViewer(ingredient.nutrition, locked),
+      })),
+    })),
+  };
+}
+
+/** Resolve once alongside the operation, outside its transaction/pool slot. */
+export async function scopeMealResponseForViewer<
+  T extends { meal: PersistedMeal | null },
+>(userId: string, response: Promise<T>): Promise<T> {
+  const [gate, result] = await Promise.all([
+    checkFeatureGate({ userId }, 'micronutrients'),
+    response,
+  ]);
+  return {
+    ...result,
+    meal: result.meal
+      ? scopePersistedMealForViewer(result.meal, gate.locked)
+      : null,
+  };
+}
 
 /**
  * The macro/calorie metrics a non-entitled viewer keeps on the time axis —

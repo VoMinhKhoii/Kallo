@@ -37,7 +37,13 @@ vi.mock('@/lib/infra/rate-limit/limiter/limiter', () => ({
     }
   },
 }));
-vi.mock('@/lib/domain/billing/feature-gate', () => ({ assertFeatureAccess }));
+const micronutrientGate = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ locked: false })
+);
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  assertFeatureAccess,
+  checkFeatureGate: micronutrientGate,
+}));
 vi.mock('@/lib/infra/auth/session', () => ({ requireAuthAndProfile }));
 vi.mock('@/lib/domain/logging/relog/dish-query', () => ({
   loadRelogDishCandidates,

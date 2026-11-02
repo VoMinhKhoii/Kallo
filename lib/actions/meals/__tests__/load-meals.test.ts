@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const gate = vi.hoisted(() => vi.fn().mockResolvedValue({ locked: false }));
+vi.mock('@/lib/domain/billing/feature-gate', () => ({
+  checkFeatureGate: gate,
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks — the day reads run on the `db` singleton only.
 // ---------------------------------------------------------------------------
@@ -60,7 +65,11 @@ describe('loadMealsByDate', () => {
     vi.clearAllMocks();
   });
 
-  it('returns flat persisted nutrition for meals, groups, and ingredients', async () => {
+  it.each([
+    false,
+    true,
+  ])('scopes meals, groups, and ingredients (locked=%s)', async (locked) => {
+    gate.mockResolvedValueOnce({ locked });
     mockDbSelect
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
@@ -138,7 +147,14 @@ describe('loadMealsByDate', () => {
     expect(meals[0]?.nutrition.caloriesKcal).toBe(830);
     expect(meals[0]?.nutrition.proteinG).toBe(34);
     expect(meals[0]?.mealItemGroups[0]?.nutrition.caloriesKcal).toBe(830);
-    expect(meals[0]?.mealItemGroups[0]?.nutrition.sodiumMg).toBe(240);
+    expect(meals[0]?.mealItemGroups[0]?.nutrition.sodiumMg).toBe(
+      locked ? null : 240
+    );
+    expect(meals[0]?.nutrition.sodiumMg).toBe(locked ? null : 240);
+    expect(
+      meals[0]?.mealItemGroups[0]?.ingredients[0]?.nutrition.sodiumMg
+    ).toBe(locked ? null : 240);
+    expect(gate).toHaveBeenCalledTimes(1);
     expect(
       meals[0]?.mealItemGroups[0]?.ingredients[0]?.nutrition.proteinG
     ).toBe(9);

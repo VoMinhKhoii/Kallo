@@ -16,6 +16,8 @@ import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
+import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
+import { scopePersistedMealForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -47,7 +49,11 @@ export async function loadMealsByDate(input: {
   const parsed = loadMealsByDateSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  return loadMealsByDateForUser(user.id, parsed);
+  const [gate, meals] = await Promise.all([
+    checkFeatureGate({ userId: user.id }, 'micronutrients'),
+    loadMealsByDateForUser(user.id, parsed),
+  ]);
+  return meals.map((meal) => scopePersistedMealForViewer(meal, gate.locked));
 }
 
 async function loadMealsByDateForUser(
@@ -210,7 +216,7 @@ export async function loadLoggingDay(input: {
 }): Promise<LoggingDayData> {
   const parsed = loadMealsByDateSchema.parse(input);
   const { user } = await requireAuthAndProfile();
-  const [persistedMeals, pendingConfirmations, marks, reaped] =
+  const [persistedMeals, pendingConfirmations, marks, reaped, gate] =
     await Promise.all([
       loadMealsByDateForUser(user.id, parsed),
       loadPendingAnalysesByDateForUser(user.id, parsed),
@@ -239,10 +245,13 @@ export async function loadLoggingDay(input: {
       //  - runs CONCURRENTLY with the reads above, which is why its outcome is
       //    reconciled below rather than ignored.
       reapAbandonedPendingAnalyses(user.id),
+      checkFeatureGate({ userId: user.id }, 'micronutrients'),
     ]);
 
   return {
-    persistedMeals,
+    persistedMeals: persistedMeals.map((meal) =>
+      scopePersistedMealForViewer(meal, gate.locked)
+    ),
     // Subtract what the sweep just deleted. The pending read does not filter on
     // `expiresAt` at all (deliberately — see `loadPendingAnalysesByDateForUser`),
     // so a row a full week past expiry is returned by the SELECT while the sweep

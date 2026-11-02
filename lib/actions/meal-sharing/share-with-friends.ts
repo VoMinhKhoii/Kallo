@@ -26,6 +26,7 @@ import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { shareInviteKey } from '@/lib/domain/notifications/group-keys';
 import { closeAggregates } from '@/lib/domain/notifications/notify';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
+import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { assertShareableMealText } from '@/lib/domain/social/shares/shareable-meal';
 import { resolveShareAllocation } from '@/lib/domain/social/splits/parts';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -70,7 +71,7 @@ export async function shareMealWithFriendsAction(input: {
     throw Errors.validationFailed('Hãy chọn ít nhất một người bạn.');
   }
 
-  return withNotifications(db, async (tx, notify) => {
+  const response = withNotifications(db, async (tx, notify) => {
     // Ownership gate (mirrors duplicateMealAction). Locked FOR UPDATE so two
     // concurrent splits can't both read portionFactor = 1 and each scale the
     // same meal from the stale full portion.
@@ -299,4 +300,5 @@ export async function shareMealWithFriendsAction(input: {
     // because it is indistinguishable from success and they stop trying.
     return { invitedCount: offered.length, portionFactor, meal };
   });
+  return scopeMealResponseForViewer(user.id, response);
 }
