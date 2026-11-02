@@ -1,7 +1,14 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
-import ts from 'typescript';
+import type { File, Node } from '@babel/types';
 import { describe, expect, it } from 'vitest';
+import {
+  directive,
+  isCall,
+  memberObject,
+  parseSource,
+  walk,
+} from '@/lib/__test-utils__/source-ast';
 
 // Latency ratchets: deterministic counts that stand in for two measured
 // costs, so a later change cannot quietly bring either back (PRs #499, #500).
@@ -30,30 +37,9 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
 }
 
 const files = SOURCE_DIRS.flatMap((dir) => sourceFiles(path.join(ROOT, dir)));
-const parsed = new Map(
-  files.map((file) => [
-    file,
-    ts.createSourceFile(
-      file,
-      readFileSync(file, 'utf8'),
-      ts.ScriptTarget.Latest,
-      true,
-      file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-    ),
-  ])
-);
+const parsed = new Map(files.map((file) => [file, parseSource(file)]));
 const rel = (file: string) => path.relative(ROOT, file);
-
-/** A module whose first statement is the `'use server'` directive. */
-function isServerActionModule(source: ts.SourceFile) {
-  const first = source.statements[0];
-  return (
-    first !== undefined &&
-    ts.isExpressionStatement(first) &&
-    ts.isStringLiteral(first.expression) &&
-    first.expression.text === 'use server'
-  );
-}
+const lineOf = (node: Node) => node.loc?.start.line ?? 0;
 
 function resolveAlias(specifier: string): string | undefined {
   if (!specifier.startsWith('@/')) return undefined;
@@ -62,29 +48,21 @@ function resolveAlias(specifier: string): string | undefined {
 }
 
 /** Local names this file imports from Server Action modules. */
-function serverActionImports(source: ts.SourceFile) {
+function serverActionImports(source: File) {
   const names = new Map<string, string>();
-  for (const statement of source.statements) {
-    if (!ts.isImportDeclaration(statement)) continue;
-    if (statement.importClause?.isTypeOnly) continue;
-    const target = resolveAlias(
-      (statement.moduleSpecifier as ts.StringLiteral).text
-    );
+  for (const statement of source.program.body) {
+    if (statement.type !== 'ImportDeclaration') continue;
+    if (statement.importKind === 'type') continue;
+    const target = resolveAlias(statement.source.value);
     const targetSource = target && parsed.get(target);
-    if (!targetSource || !isServerActionModule(targetSource)) continue;
-    const bindings = statement.importClause?.namedBindings;
-    if (!bindings || !ts.isNamedImports(bindings)) continue;
-    for (const element of bindings.elements) {
-      if (element.isTypeOnly) continue;
-      names.set(element.name.text, rel(target));
+    if (!targetSource || directive(targetSource) !== 'use server') continue;
+    for (const specifier of statement.specifiers) {
+      if (specifier.type !== 'ImportSpecifier') continue;
+      if (specifier.importKind === 'type') continue;
+      names.set(specifier.local.name, rel(target));
     }
   }
   return names;
-}
-
-function walk(node: ts.Node, visit: (node: ts.Node) => void) {
-  visit(node);
-  node.forEachChild((child) => walk(child, visit));
 }
 
 /** Every `queryFn` property whose body calls a Server Action directly. */
@@ -95,22 +73,22 @@ function queryFnsCallingServerActions() {
     if (actions.size === 0) continue;
     walk(source, (node) => {
       if (
-        !ts.isPropertyAssignment(node) ||
-        node.name.getText(source) !== 'queryFn'
+        node.type !== 'ObjectProperty' ||
+        node.computed ||
+        node.shorthand ||
+        node.key.type !== 'Identifier' ||
+        node.key.name !== 'queryFn'
       ) {
         return;
       }
-      walk(node.initializer, (inner) => {
+      walk(node.value, (inner) => {
         if (
-          ts.isCallExpression(inner) &&
-          ts.isIdentifier(inner.expression) &&
-          actions.has(inner.expression.text)
+          isCall(inner) &&
+          inner.callee.type === 'Identifier' &&
+          actions.has(inner.callee.name)
         ) {
-          const { line } = source.getLineAndCharacterOfPosition(
-            inner.getStart(source)
-          );
           hits.push(
-            `${rel(file)}:${line + 1} calls ${inner.expression.text} (${actions.get(inner.expression.text)})`
+            `${rel(file)}:${lineOf(inner)} calls ${inner.callee.name} (${actions.get(inner.callee.name)})`
           );
         }
       });
@@ -120,33 +98,22 @@ function queryFnsCallingServerActions() {
 }
 
 /** `<x>.auth.getUser(...)` call sites, as `file:line`. */
-function getUserCalls(within?: (node: ts.Node) => boolean) {
+function getUserCalls(within?: (node: Node) => boolean) {
   const hits: string[] = [];
   for (const [file, source] of parsed) {
-    walk(source, (node) => {
+    walk(source, (node, ancestors) => {
+      if (!isCall(node)) return;
+      const auth = memberObject(node.callee, 'getUser');
       if (
-        ts.isCallExpression(node) &&
-        ts.isPropertyAccessExpression(node.expression) &&
-        node.expression.name.text === 'getUser' &&
-        ts.isPropertyAccessExpression(node.expression.expression) &&
-        node.expression.expression.name.text === 'auth' &&
-        (!within || hasAncestor(node, within))
+        auth &&
+        memberObject(auth, 'auth') &&
+        (!within || ancestors.some(within))
       ) {
-        const { line } = source.getLineAndCharacterOfPosition(
-          node.getStart(source)
-        );
-        hits.push(`${rel(file)}:${line + 1}`);
+        hits.push(`${rel(file)}:${lineOf(node)}`);
       }
     });
   }
   return hits;
-}
-
-function hasAncestor(node: ts.Node, match: (node: ts.Node) => boolean) {
-  for (let current = node.parent; current; current = current.parent) {
-    if (match(current)) return true;
-  }
-  return false;
 }
 
 /** The request paths every signed-in API call, page load or page render
@@ -164,18 +131,28 @@ const HOT_AUTH_FUNCTIONS = new Set([
   'getAuthUser',
 ]);
 
-function inHotAuthFunction(node: ts.Node) {
+function inHotAuthFunction(node: Node) {
+  if (node.type === 'FunctionDeclaration') {
+    return (
+      node.id !== null &&
+      node.id !== undefined &&
+      HOT_AUTH_FUNCTIONS.has(node.id.name)
+    );
+  }
   if (
-    (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) &&
-    node.name &&
-    HOT_AUTH_FUNCTIONS.has(node.name.getText())
+    (node.type === 'ClassMethod' || node.type === 'ObjectMethod') &&
+    node.kind === 'method'
   ) {
-    return true;
+    return (
+      !node.computed &&
+      node.key.type === 'Identifier' &&
+      HOT_AUTH_FUNCTIONS.has(node.key.name)
+    );
   }
   return (
-    ts.isVariableDeclaration(node) &&
-    ts.isIdentifier(node.name) &&
-    HOT_AUTH_FUNCTIONS.has(node.name.text)
+    node.type === 'VariableDeclarator' &&
+    node.id.type === 'Identifier' &&
+    HOT_AUTH_FUNCTIONS.has(node.id.name)
   );
 }
 
