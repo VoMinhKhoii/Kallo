@@ -1,6 +1,10 @@
 'use server';
 
 import { eq } from 'drizzle-orm';
+import {
+  onboardingStepSchema,
+  profileSettingsSchema,
+} from '@/lib/api/contracts/onboarding';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   buildScreenUpdate,
@@ -34,6 +38,10 @@ export async function saveOnboardingScreen(
 ) {
   const user = await getAuthUser();
 
+  const parsed = onboardingStepSchema.parse({ step, data });
+  step = parsed.step;
+  data = parsed.data;
+
   const [existing] = await db
     .select()
     .from(userProfiles)
@@ -54,6 +62,7 @@ export async function saveOnboardingScreen(
 
 export async function saveProfileSettings(data: Record<string, unknown>) {
   const user = await getAuthUser();
+  data = profileSettingsSchema.parse(data);
   const floored = floorSubmittedTarget(data);
 
   const updateObj = {

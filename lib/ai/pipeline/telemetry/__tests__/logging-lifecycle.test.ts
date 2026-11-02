@@ -1,3 +1,5 @@
+import { inspect } from 'node:util';
+import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   logPipelineEnd,
@@ -53,6 +55,29 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('logPipelineStart', () => {
+  it('logs SQL and code without bound values, then rethrows the original error', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = new DrizzleQueryError(
+      'insert into pipeline_requests values ($1)',
+      ['private meal'],
+      Object.assign(new Error('bad private meal'), { code: '22P02' })
+    );
+    const db = createMockInsertDb();
+    db.values.mockRejectedValue(error);
+    await expect(
+      logPipelineStart({
+        userId: 'test',
+        rawInput: 'meal',
+        userContext: MOCK_USER_CONTEXT,
+        db: db.asAppDb,
+      })
+    ).rejects.toBe(error);
+    expect(inspect(logged.mock.calls)).toContain(
+      'insert into pipeline_requests'
+    );
+    expect(inspect(logged.mock.calls)).toContain('22P02');
+    expect(inspect(logged.mock.calls)).not.toContain('private meal');
+  });
   it('returns a UUID after awaiting DB write', async () => {
     const db = createMockInsertDb();
     const id = await logPipelineStart({

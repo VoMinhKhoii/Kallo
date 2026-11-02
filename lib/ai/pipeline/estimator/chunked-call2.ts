@@ -34,6 +34,7 @@ import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-can
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import { fetchWithTimeout } from '@/lib/core/async/fetch-with-timeout';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
+import { safeError } from '@/lib/core/errors/safe-error';
 import {
   CHUNK_CONCURRENCY,
   CHUNK_MAX_ATTEMPTS,
@@ -212,7 +213,7 @@ async function runOneChunk(args: {
       } catch (callbackErr) {
         console.error(
           '[v2-pipeline] chunk onChunkComplete callback failed (chunk kept):',
-          callbackErr
+          safeError(callbackErr)
         );
       }
       return { items: result.estimation.mealItems, failed: [] };
@@ -221,7 +222,7 @@ async function runOneChunk(args: {
       console.warn(
         `[v2-pipeline] Call-2 chunk attempt ${attempt}/${args.maxAttempts} failed` +
           `${isLast ? ' (degrading its items to unresolved)' : ', retrying'}:`,
-        err instanceof Error ? err.message : err
+        safeError(err)
       );
       if (isLast) return { items: [], failed: args.chunk };
       // A chunk of several dishes is re-asked as two halves side by side:

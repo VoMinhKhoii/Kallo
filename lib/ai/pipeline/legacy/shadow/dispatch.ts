@@ -8,6 +8,7 @@ import {
   recordAnalysisModelBudgetEventBestEffort,
 } from '@/lib/ai/pipeline/telemetry/budget';
 import type { PipelineResponse } from '@/lib/ai/types/result';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 import { consumeRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import {
@@ -159,7 +160,10 @@ async function checkShadowQuota(args: {
       };
     }
   } catch (error) {
-    console.error('[shadow] quota check failed; skipping the run:', error);
+    console.error(
+      '[shadow] quota check failed; skipping the run:',
+      safeError(error)
+    );
     return { allowed: false, reason: 'shadow_quota', retryAfterSeconds: 60 };
   }
   // The run's request row in the cost telemetry, as before.

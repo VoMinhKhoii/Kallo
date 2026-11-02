@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { cardDisplayFields } from '@/lib/domain/ingredients/display/card-display';
 import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
 import { db } from '@/lib/infra/db/client';
@@ -41,7 +42,10 @@ export async function attachCardDisplay(
     if (!Array.isArray(found)) return results;
     rows = found;
   } catch (error) {
-    console.error('[ingredient-search] card display lookup failed', error);
+    console.error(
+      '[ingredient-search] card display lookup failed',
+      safeError(error)
+    );
     return results;
   }
 

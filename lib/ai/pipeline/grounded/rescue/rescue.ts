@@ -35,6 +35,7 @@ import {
   pairIngredientsWithGrounded,
 } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { PortionResolution } from '@/lib/ai/portion/types';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { nameKey } from '@/lib/core/text/name-key';
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
 import { rejectWrongFormRows } from '../review';
@@ -254,7 +255,7 @@ export function startDishRescue(args: {
         (parts) => {
           if (parts?.length) ready.set(f, parts);
         },
-        (err) => console.warn('[rescue] mini-meal failed:', err)
+        (err) => console.warn('[rescue] mini-meal failed:', safeError(err))
       )
     );
   };

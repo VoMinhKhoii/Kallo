@@ -9,6 +9,7 @@ import {
 import type { AmbiguityFlag } from '@/lib/ai/types/decomposition';
 import type { PipelineResponse, PipelineResult } from '@/lib/ai/types/result';
 import type { UserContext } from '@/lib/ai/types/user-context';
+import { safeError } from '@/lib/core/errors/safe-error';
 import {
   DECOMPOSITION_MODEL,
   type DecompositionStageResult,
@@ -158,13 +159,16 @@ export async function finalizePipelineRun(args: {
           (err) => {
             console.error(
               '[ai/pipeline] failed to write pipeline_runs row',
-              err
+              safeError(err)
             );
           }
         );
       }
     } catch (err) {
-      console.error('[ai/pipeline] failed to build pipeline_runs row', err);
+      console.error(
+        '[ai/pipeline] failed to build pipeline_runs row',
+        safeError(err)
+      );
     }
   }
 

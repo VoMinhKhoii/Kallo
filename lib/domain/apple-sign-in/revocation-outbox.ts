@@ -14,6 +14,7 @@
 
 import 'server-only';
 import { and, asc, eq, isNull, lte, sql } from 'drizzle-orm';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { authUserIsConfirmedAbsent } from '@/lib/domain/account-deletion/jobs';
 import { revokeAppleRefreshToken } from '@/lib/infra/apple-auth/apple-auth';
 import { type AppDb, db as appDb } from '@/lib/infra/db/client';
@@ -161,8 +162,9 @@ export async function processAppleRevocation(
     }
     return 'completed';
   } catch (error) {
+    const reported = safeError(error);
     const message = (
-      error instanceof Error ? error.message : String(error)
+      reported instanceof Error ? reported.message : String(reported)
     ).slice(0, 500);
     const rows = await database
       .update(appleTokenRevocations)

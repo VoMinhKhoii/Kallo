@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { z } from 'zod';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { Errors } from '@/lib/core/errors/catalog';
+import { safeError } from '@/lib/core/errors/safe-error';
 import {
   authUserIsConfirmedAbsent,
   claimAccountDeletionJob,
@@ -264,7 +265,7 @@ export async function deleteAccountAction(
       (jobError) => {
         console.error(
           '[account-delete] Failed to mark erasure job ready:',
-          jobError
+          safeError(jobError)
         );
         return null;
       }
@@ -274,7 +275,7 @@ export async function deleteAccountAction(
         (providerError) => {
           console.error(
             '[account-delete] RevenueCat erasure queued for retry:',
-            providerError
+            safeError(providerError)
           );
         }
       );
@@ -297,7 +298,7 @@ export async function deleteAccountAction(
   } catch (cleanupError) {
     console.error(
       '[account-delete] Failed to remove billing webhook audit rows:',
-      cleanupError
+      safeError(cleanupError)
     );
   }
 
@@ -317,7 +318,7 @@ async function revokeAppleTokenNow(revocationId: string): Promise<void> {
   } catch (appleError) {
     console.error(
       '[account-delete] Apple token revocation queued for retry:',
-      appleError
+      safeError(appleError)
     );
   }
 }

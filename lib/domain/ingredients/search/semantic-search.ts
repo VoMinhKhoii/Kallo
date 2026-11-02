@@ -7,6 +7,7 @@ import {
   createGeminiClient,
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { IngredientSearchResult } from '@/lib/domain/logging/manual-logging';
 import { db } from '@/lib/infra/db/client';
 import { type IngredientSearchRow, toSearchResult } from './search-rows';
@@ -64,7 +65,7 @@ export async function semanticSupplement(
   } catch (error) {
     console.warn(
       '[ingredient-search] semantic supplement failed; lexical results only:',
-      error
+      safeError(error)
     );
     return [];
   }

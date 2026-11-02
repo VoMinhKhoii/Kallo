@@ -37,6 +37,7 @@ import { buildMealItemOffsetByName } from '@/lib/ai/streaming/grounded-parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineResponse } from '@/lib/ai/types/result';
 import type { UserContext } from '@/lib/ai/types/user-context';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 import { runAssemblyStage } from './assembly';
 import { runCallTwoStage } from './call-two/call-two';
@@ -351,7 +352,7 @@ export async function analyzeMealV2(
   } catch (error) {
     closeRescue();
     // The user only sees a generic "try again"; keep the cause in the logs.
-    console.error('[v2-pipeline] analysis failed:', error);
+    console.error('[v2-pipeline] analysis failed:', safeError(error));
     budget.recordCatchError(error);
     return handleError(error);
   }

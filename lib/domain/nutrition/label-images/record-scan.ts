@@ -4,9 +4,11 @@
  * through `label-images.ts`. Neither write ever rejects: keeping a scan is
  * best-effort, so every failure is logged and swallowed here.
  */
+
 import sharp from 'sharp';
 import { NUTRITION_LABEL_OCR_MODEL } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
 import { AppError } from '@/lib/core/errors/app-error';
+import { safeError } from '@/lib/core/errors/safe-error';
 import {
   labelImagePath,
   NUTRITION_LABEL_BUCKET,
@@ -105,7 +107,10 @@ export async function uploadLabelImage(
       byteSize: bytes.byteLength,
     };
   } catch (error) {
-    console.error('[label-images] Uploading the scanned label failed:', error);
+    console.error(
+      '[label-images] Uploading the scanned label failed:',
+      safeError(error)
+    );
     return null;
   }
 }
@@ -123,7 +128,7 @@ async function removeOrphanedImage(stored: StoredLabelImage): Promise<void> {
     console.error(
       '[label-images] Removing a label photo without a row failed:',
       stored.storagePath,
-      error
+      safeError(error)
     );
   }
 }
@@ -151,7 +156,10 @@ export async function insertScanRow(
     });
     return true;
   } catch (error) {
-    console.error('[label-images] Recording the scanned label failed:', error);
+    console.error(
+      '[label-images] Recording the scanned label failed:',
+      safeError(error)
+    );
     await removeOrphanedImage(stored);
     return false;
   }

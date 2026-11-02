@@ -31,10 +31,8 @@ import {
  * onboarding step (1 = region/locale, 2 = body metrics + goal + computed
  * targets, 3 = cooking habits); `ONBOARDING_TOTAL_STEPS` is 3.
  *
- * `data` is intentionally a LOOSE passthrough record: the action does its own
- * step-keyed field extraction with NO internal validation, and treats an empty
- * object `{}` as the "Skip" action. Tightening `data` here would reject
- * payloads the action currently accepts.
+ * The action validates `step` and `data` together with `onboardingStepSchema`.
+ * Partial step payloads support Settings edits and the empty "Skip" object.
  */
 export const onboardingScreenSchema = z.object({
   step: z.number().int().min(1).max(ONBOARDING_TOTAL_STEPS),
@@ -96,6 +94,37 @@ export const profileSettingsSchema = z.object({
 });
 
 export type ProfileSettingsInput = z.infer<typeof profileSettingsSchema>;
+
+/** Authoritative action boundary: only a step's own fields are accepted. */
+export const onboardingStepSchema = z.discriminatedUnion('step', [
+  z.object({
+    step: z.literal(1),
+    data: countrySchema
+      .extend({ preferredLocale: profileSettingsSchema.shape.preferredLocale })
+      .partial(),
+  }),
+  z.object({
+    step: z.literal(2),
+    data: profileSettingsSchema
+      .pick({
+        biologicalSex: true,
+        weightKg: true,
+        heightCm: true,
+        age: true,
+        activityLevel: true,
+        goal: true,
+        aggression: true,
+        carbSplit: true,
+        tdeeKcal: true,
+        calorieTarget: true,
+        proteinTargetG: true,
+        carbsTargetG: true,
+        fatTargetG: true,
+      })
+      .partial(),
+  }),
+  z.object({ step: z.literal(3), data: cookingHabitsSchema.partial() }),
+]);
 
 /** Request body for `PUT /api/v1/profile/sharing`. */
 export const sharingPreferencesSchema = z.object({

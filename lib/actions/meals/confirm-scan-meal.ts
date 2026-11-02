@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { AppError } from '@/lib/core/errors/app-error';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { confirmStagedMeal } from '@/lib/domain/meals/confirm-staged';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 
@@ -31,7 +32,7 @@ export async function confirmScanMealAction(input: {
     if (error instanceof AppError && error.code === 'MEAL_ALREADY_SAVED') {
       return { success: true };
     }
-    console.error('Error in confirmScanMealAction:', error);
+    console.error('Error in confirmScanMealAction:', safeError(error));
     return { success: false, code: 'server_error' };
   }
 }

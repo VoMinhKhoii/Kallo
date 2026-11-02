@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { defaultLocale } from '@/i18n/config';
+import { safeError } from '@/lib/core/errors/safe-error';
 import { getOnboardingProfile } from '@/lib/domain/onboarding/actions';
 import { resolveRootLocale } from '@/lib/i18n/root-locale';
 import { createClient } from '@/lib/infra/supabase/server';
@@ -26,7 +27,7 @@ export default async function RootPage() {
     try {
       profileLocale = (await getOnboardingProfile())?.preferredLocale ?? null;
     } catch (error) {
-      console.error('Failed to load onboarding profile:', error);
+      console.error('Failed to load onboarding profile:', safeError(error));
     }
   }
 

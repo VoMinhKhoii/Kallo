@@ -1,3 +1,4 @@
+import { safeError } from '@/lib/core/errors/safe-error';
 import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
@@ -80,7 +81,7 @@ export async function recordPromptVersion(args: {
     }
     return id ?? null;
   } catch (e) {
-    console.error('[trace] recordPromptVersion failed', e);
+    console.error('[trace] recordPromptVersion failed', safeError(e));
     return null;
   }
 }
@@ -123,7 +124,7 @@ export function logStage(a: StageLogArgs): void {
       error: a.error ?? null,
       durationMs: a.durationMs,
     })
-    .catch((e) => console.error('[trace] logStage failed', e));
+    .catch((e) => console.error('[trace] logStage failed', safeError(e)));
 }
 
 export interface LlmCallArgs {
@@ -198,7 +199,7 @@ export function logLlmCall(a: LlmCallArgs): void {
         schemaChars: a.metadata?.schemaChars ?? null,
       });
     })
-    .catch((e) => console.error('[trace] logLlmCall failed', e));
+    .catch((e) => console.error('[trace] logLlmCall failed', safeError(e)));
 }
 
 // Test-only escape hatch.

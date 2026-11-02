@@ -11,9 +11,11 @@
  * answer is re-checked after a minute, so a fresh backfill is picked up
  * without a restart.
  */
+
 import { sql } from 'drizzle-orm';
 import { sourceBucket } from '@/lib/ai/matching/match-constants';
 import type { MatchSource } from '@/lib/ai/types/matching';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 import { type Bm25Index, buildBm25Index } from './bm25-index';
 import { CATALOG_ROWS_SQL, type CatalogQueryRow } from './catalog-sql';
@@ -76,7 +78,7 @@ export function getCardCatalog(db: AppDb): Promise<CardCatalog | null> {
     catalog: loadCatalog(db).catch((err) => {
       console.error(
         '[card-matching] catalog load failed; using legacy matcher:',
-        err
+        safeError(err)
       );
       return null;
     }),
@@ -107,7 +109,7 @@ function refresh(db: AppDb): void {
     .catch((err) => {
       console.error(
         '[card-matching] catalog refresh failed; keeping the loaded catalog:',
-        err
+        safeError(err)
       );
       // Retry after the not-ready interval, not a full refresh interval.
       if (state.cache)

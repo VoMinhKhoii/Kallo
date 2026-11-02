@@ -15,6 +15,7 @@ import { logUnmatchedIngredients } from '@/lib/ai/matching/unmatched-log';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineUnresolved } from '@/lib/ai/types/result';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { db as appDb } from '@/lib/infra/db/client';
 
 export async function emitPartialFailure(args: {
@@ -58,7 +59,7 @@ export async function emitPartialFailure(args: {
         null,
         args.db
       ).catch((err) =>
-        console.error('Failed to log carved-out ingredients:', err)
+        console.error('Failed to log carved-out ingredients:', safeError(err))
       );
     }
     const name = args.unresolved?.ingredientName;

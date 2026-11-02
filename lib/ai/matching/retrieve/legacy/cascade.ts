@@ -23,6 +23,7 @@ import type {
   UnmatchedIngredient,
 } from '@/lib/ai/types/matching';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 export interface MatchResult {
@@ -143,8 +144,8 @@ export async function matchIngredients(
     } else {
       if (result.status === 'rejected') {
         console.error(
-          `[matching] Failed to match "${ingredientRawName(ingredients[i])}":`,
-          result.reason
+          '[matching] Failed to match ingredient:',
+          safeError(result.reason)
         );
       }
       unmatchedWithIndex.push({ ingredient: ingredients[i], index: i });

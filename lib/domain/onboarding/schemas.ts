@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { COUNTRY_MAX_LENGTH } from '@/lib/domain/onboarding/constants';
 
 // ---------------------------------------------------------------------------
 // Standalone enum schemas (source of truth for enum values)
@@ -38,7 +39,7 @@ export const BROTH_CONSUMPTION_VALUES = brothConsumptionSchema.options;
 const countryFieldSchema = z
   .string()
   .trim()
-  .max(100)
+  .max(COUNTRY_MAX_LENGTH)
   .regex(/^[^<>\r\n]*$/, 'Country contains invalid characters')
   .nullable();
 

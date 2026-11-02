@@ -1,3 +1,5 @@
+import { inspect } from 'node:util';
+import { DrizzleQueryError } from 'drizzle-orm/errors';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import {
   afterEach,
@@ -289,6 +291,22 @@ describe('resolveQueryEmbedding', () => {
 
     const result = await resolveQueryEmbedding('thịt bò', asDb(db));
     expect(result).toBeNull();
+  });
+
+  it('keeps bound names out of the whole database failure log', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const name = `private-food-${crypto.randomUUID()}`;
+    const error = new DrizzleQueryError(
+      'select $1',
+      [name],
+      Object.assign(new Error(`bad ${name}`), { code: '22P02' })
+    );
+    const db = createMockDb();
+    db.execute.mockRejectedValue(error);
+    expect(await resolveQueryEmbedding(name, asDb(db))).toBeNull();
+    expect(inspect(warn.mock.calls)).not.toContain(name);
+    expect(inspect(warn.mock.calls)).toContain('select $1');
+    expect(inspect(warn.mock.calls)).toContain('22P02');
   });
 
   it('handles empty string input without crashing', async () => {

@@ -3,7 +3,10 @@ import {
   type SupportedOutputLanguage,
 } from '@/lib/ai/language/detect';
 import type { UserContext } from '@/lib/ai/types/user-context';
-import { NEUTRAL_COOKING_DEFAULTS } from '@/lib/domain/onboarding/constants';
+import {
+  COUNTRY_MAX_LENGTH,
+  NEUTRAL_COOKING_DEFAULTS,
+} from '@/lib/domain/onboarding/constants';
 import type { userProfiles } from '@/lib/infra/db/schema';
 
 type ProfileRow = typeof userProfiles.$inferSelect;
@@ -48,8 +51,10 @@ export function buildUserContext(profile: ProfileRow): UserContext {
   return {
     goal,
     aggression,
-    countryOfOrigin: profile.countryOfOrigin ?? null,
-    countryOfResidence: profile.countryOfResidence ?? null,
+    countryOfOrigin:
+      profile.countryOfOrigin?.slice(0, COUNTRY_MAX_LENGTH) ?? null,
+    countryOfResidence:
+      profile.countryOfResidence?.slice(0, COUNTRY_MAX_LENGTH) ?? null,
     cookingHabits: {
       oilUsage: (profile.oilUsage ??
         NEUTRAL_COOKING_DEFAULTS.oilUsage) as UserContext['cookingHabits']['oilUsage'],

@@ -11,6 +11,8 @@
  * the point is to stop ONE instance from turning an outage into a log flood.
  */
 
+import { safeError } from '@/lib/core/errors/safe-error';
+
 const LOG_THROTTLE_MS = 30_000;
 
 const lastLoggedAtMsByScope = new Map<string, number>();
@@ -29,7 +31,7 @@ export function logThrottled(
   lastLoggedAtMsByScope.set(scope, now);
 
   if (error === undefined) console.error(message);
-  else console.error(message, error);
+  else console.error(message, safeError(error));
 
   return true;
 }

@@ -15,7 +15,9 @@
  * The state lives on globalThis: Next bundles this module separately into the
  * boot hook and each route, as separate instances (see `catalog.ts`).
  */
+
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 import { buildCardCatalog, type CardCatalog, getCardCatalog } from '../catalog';
@@ -95,7 +97,10 @@ function fail(scope: string, err: unknown) {
   }
   s.readySince = null;
   s.status = 'failed';
-  console.error(`[card-index] ${scope} failed; using the database path:`, err);
+  console.error(
+    `[card-index] ${scope} failed; using the database path:`,
+    safeError(err)
+  );
   reportError(err, 'card-index');
   if (s.retries >= MAX_RETRIES) {
     s.gaveUp = true;

@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { safeError, stackFrames } from '@/lib/core/errors/safe-error';
 
 /**
  * Send an error we CAUGHT to Sentry. Uncaught errors in routes, Server
@@ -15,8 +16,8 @@ import * as Sentry from '@sentry/nextjs';
  * sent verbatim (no scrubber can know which words in it are the user's), and
  * input-derived text gets into messages easily — V8's `JSON.parse` error
  * quotes the start of its input. With it set, the report keeps the error's
- * type and stack frames and loses only the message; the full message stays
- * in the server log next to it.
+ * type and stack frames and loses only the message. Database errors always
+ * pass through safeError, which excludes bound values and driver details.
  *
  * A no-op when Sentry is not initialised (no DSN).
  */
@@ -37,7 +38,9 @@ export function reportError(
   } = {}
 ): void {
   const reported =
-    redactMessage && error instanceof Error ? withoutMessage(error) : error;
+    redactMessage && error instanceof Error
+      ? withoutMessage(error)
+      : safeError(error);
   Sentry.captureException(reported, {
     tags: { scope },
     ...(fingerprint ? { fingerprint } : {}),
@@ -49,10 +52,7 @@ function withoutMessage(error: Error): Error {
   redacted.name = error.name;
   // The stack repeats the message (over several lines if the message has
   // newlines); keep only the frame lines.
-  const frames = error.stack
-    ?.split('\n')
-    .filter((line) => /^\s+at /.test(line))
-    .join('\n');
+  const frames = stackFrames(error.stack ?? '');
   redacted.stack = frames
     ? `${error.name}: ${redacted.message}\n${frames}`
     : '';

@@ -17,6 +17,7 @@ import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { DecomposedIngredient } from '@/lib/ai/types/decomposition';
 import type { UnmatchedIngredient } from '@/lib/ai/types/matching';
 import { mapWithConcurrency } from '@/lib/core/async/map-with-concurrency';
+import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
 
 /**
@@ -75,11 +76,11 @@ export async function runAliasFallback(args: {
         (r) => resolveQueryEmbedding(r.aliasName, db),
         matchConcurrency
       );
-      const aliasCacheResults = aliasCacheSettled.map((r, i) => {
+      const aliasCacheResults = aliasCacheSettled.map((r) => {
         if (r.status === 'rejected') {
           console.warn(
-            `[matching] alias cache lookup failed for "${aliasRetries[i].aliasName}", treating as cold miss:`,
-            r.reason
+            '[matching] alias cache lookup failed, treating as cold miss:',
+            safeError(r.reason)
           );
         }
         return r.status === 'fulfilled' ? r.value : null;
@@ -155,15 +156,15 @@ export async function runAliasFallback(args: {
           );
         } else if (result.status === 'rejected') {
           console.error(
-            `[matching] alias fallback failed for "${ingredientCanonicalName(retry.original)}":`,
-            result.reason
+            '[matching] alias fallback failed:',
+            safeError(result.reason)
           );
         }
       }
     } catch (err) {
       console.warn(
         '[matching] alias fallback aborted; keeping original ingredients unmatched:',
-        err
+        safeError(err)
       );
     }
 
