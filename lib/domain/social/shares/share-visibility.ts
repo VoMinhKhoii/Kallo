@@ -110,16 +110,26 @@ export function groupShareVisibleSql(
     ${share.visibility} <> 'private'
     AND ${notBlockedWithSql(viewerId, share.actorId)}
     AND ${groupMembersSinceSql(viewerId, groupId, share.actorId, share.sharedAt)}
-    AND EXISTS (
-      SELECT 1
-      FROM "chat_groups" AS "share_scoped_group"
-      WHERE ${scopedGroup.id} = ${groupId}
-        AND (
-          ${scopedGroup.kind} = 'group'
-          OR ${share.actorId} = ${viewerId}
-          OR ${friendSinceSql(viewerId, share.actorId, share.sharedAt)}
-        )
-    )
+    AND ${directChatFriendSinceSql(viewerId, groupId, share)}
+  )`;
+}
+
+/** Named groups pass; in a direct chat a cross-user share also needs a
+ * friendship accepted at or before it. Pure: no visibility, no blocks. */
+function directChatFriendSinceSql(
+  viewerId: string,
+  groupId: SQLWrapper | string,
+  share: ShareColumns
+): SQL<boolean> {
+  return sql<boolean>`EXISTS (
+    SELECT 1
+    FROM "chat_groups" AS "share_scoped_group"
+    WHERE ${scopedGroup.id} = ${groupId}
+      AND (
+        ${scopedGroup.kind} = 'group'
+        OR ${share.actorId} = ${viewerId}
+        OR ${friendSinceSql(viewerId, share.actorId, share.sharedAt)}
+      )
   )`;
 }
 
