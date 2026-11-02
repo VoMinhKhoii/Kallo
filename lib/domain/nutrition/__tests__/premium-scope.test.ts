@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { PersistedMeal } from '@/lib/actions/meals/types';
 import {
   NUTRITION_KEYS,
   type NutritionValues,
 } from '@/lib/ai/types/nutrition-values';
 import {
-  scopePersistedMealForViewer,
+  scopeNutritionForViewer,
   stripMicronutrients,
 } from '@/lib/domain/nutrition/premium-scope';
 import type {
@@ -17,65 +16,27 @@ import type {
   NutritionOverview,
 } from '@/lib/domain/nutrition/types';
 
-describe('persisted meal viewer projection', () => {
+describe('scopeNutritionForViewer', () => {
   const values = Object.fromEntries(
     NUTRITION_KEYS.map((key) => [key, 12])
   ) as unknown as NutritionValues;
   values.proteinG = null;
-  const meal: PersistedMeal = {
-    id: 'meal',
-    rawInput: 'Sữa',
-    mealSlot: null,
-    confidenceOverall: 'high',
-    loggedAt: '2026-11-01T12:00:00Z',
-    entryMode: 'precise',
-    alcoholG: null,
-    cheatSliders: null,
-    share: null,
-    nutrition: values,
-    mealItemGroups: [
-      {
-        name: 'Sữa',
-        order: 0,
-        nutrition: values,
-        ingredients: [
-          {
-            id: 'item',
-            ingredientName: 'Sữa',
-            foodCompositionId: null,
-            estimatedGrams: 100,
-            userFacingUnit: 'g',
-            cookingMethod: null,
-            matchConfidence: 1,
-            nutrition: values,
-          },
-        ],
-      },
-    ],
-  };
 
-  it('nulls all non-macros at every level without mutating stored objects', () => {
-    const before = structuredClone(meal);
-    const scoped = scopePersistedMealForViewer(meal, true);
-    for (const nutrition of [
-      scoped.nutrition,
-      scoped.mealItemGroups[0].nutrition,
-      scoped.mealItemGroups[0].ingredients[0].nutrition,
-    ]) {
-      for (const key of NUTRITION_KEYS) {
-        expect(nutrition[key]).toBe(
-          ['caloriesKcal', 'proteinG', 'carbohydrateG', 'fatG'].includes(key)
-            ? values[key]
-            : null
-        );
-      }
+  it('keeps only calories and the three macros for a locked viewer', () => {
+    const before = structuredClone(values);
+    const scoped = scopeNutritionForViewer(values, true);
+    for (const key of NUTRITION_KEYS) {
+      expect(scoped[key]).toBe(
+        ['caloriesKcal', 'proteinG', 'carbohydrateG', 'fatG'].includes(key)
+          ? values[key]
+          : null
+      );
     }
-    expect(meal).toEqual(before);
-    expect(scoped.mealItemGroups[0].ingredients[0].estimatedGrams).toBe(100);
-    // An upgrade reads the same complete history, with no recomputation.
-    expect(scopePersistedMealForViewer(meal, false)).toBe(meal);
-    expect(meal.nutrition.fiberG).toBe(12);
-    expect(meal.nutrition.sodiumMg).toBe(12);
+    expect(values).toEqual(before);
+  });
+
+  it('returns the same values for an entitled viewer', () => {
+    expect(scopeNutritionForViewer(values, false)).toBe(values);
   });
 });
 

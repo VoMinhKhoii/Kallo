@@ -10,14 +10,13 @@ import {
 import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
 import { reapAbandonedPendingAnalyses } from '@/lib/actions/meals/day/reap-abandoned';
 import { toStagedCard } from '@/lib/actions/meals/day/staged-card';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { getUtcDayRangeForLocalDate } from '@/lib/core/date/local-day';
 import type { CheatSlidersPersisted } from '@/lib/core/types/cheat';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
-import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
-import { scopePersistedMealForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -49,11 +48,10 @@ export async function loadMealsByDate(input: {
   const parsed = loadMealsByDateSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  const [gate, meals] = await Promise.all([
-    checkFeatureGate({ userId: user.id }, 'micronutrients'),
-    loadMealsByDateForUser(user.id, parsed),
-  ]);
-  return meals.map((meal) => scopePersistedMealForViewer(meal, gate.locked));
+  return scopeMealResponseForViewer(
+    user.id,
+    loadMealsByDateForUser(user.id, parsed)
+  );
 }
 
 async function loadMealsByDateForUser(
@@ -216,9 +214,12 @@ export async function loadLoggingDay(input: {
 }): Promise<LoggingDayData> {
   const parsed = loadMealsByDateSchema.parse(input);
   const { user } = await requireAuthAndProfile();
-  const [persistedMeals, pendingConfirmations, marks, reaped, gate] =
+  const [persistedMeals, pendingConfirmations, marks, reaped] =
     await Promise.all([
-      loadMealsByDateForUser(user.id, parsed),
+      scopeMealResponseForViewer(
+        user.id,
+        loadMealsByDateForUser(user.id, parsed)
+      ),
       loadPendingAnalysesByDateForUser(user.id, parsed),
       db
         .select({ id: dayCompletionMarks.id })
@@ -245,13 +246,10 @@ export async function loadLoggingDay(input: {
       //  - runs CONCURRENTLY with the reads above, which is why its outcome is
       //    reconciled below rather than ignored.
       reapAbandonedPendingAnalyses(user.id),
-      checkFeatureGate({ userId: user.id }, 'micronutrients'),
     ]);
 
   return {
-    persistedMeals: persistedMeals.map((meal) =>
-      scopePersistedMealForViewer(meal, gate.locked)
-    ),
+    persistedMeals,
     // Subtract what the sweep just deleted. The pending read does not filter on
     // `expiresAt` at all (deliberately — see `loadPendingAnalysesByDateForUser`),
     // so a row a full week past expiry is returned by the SELECT while the sweep

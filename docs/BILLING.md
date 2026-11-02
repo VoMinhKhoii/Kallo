@@ -228,7 +228,7 @@ entitled" from "nothing is being enforced yet" without guessing from env.
 |---|---|---|
 | `ai_analysis` | Text meal analysis, including fresh cheat-meal estimates and natural-language refinement | `POST /api/analyze-meal` |
 | `label_scan` | Nutrition-label OCR scan and the log that follows it | `scanNutritionLabelAction`, `stageOcrMealAction` (`lib/actions/logging/nutrition-ocr.ts`); `POST /api/v1/nutrition-label/scan`, `POST /api/v1/nutrition-label/log` |
-| `micronutrients` | Viewing any nutrient beyond calories/protein/carbohydrate/fat, including fiber and sodium; computation and storage remain complete for every user | `getNutritionOverview` (`stripMicronutrients`, flagged `micronutrientsLocked`); `POST /api/v1/nutrition/candidates`; barcode search (`searchBarcodeProductForViewer`); persisted-meal readers and mutations via `scopePersistedMealForViewer` / `scopeMealResponseForViewer` in `lib/domain/nutrition/premium-scope.ts` (inventory below) |
+| `micronutrients` | Viewing any nutrient beyond calories/protein/carbohydrate/fat, including fiber and sodium; computation and storage remain complete for every user | `getNutritionOverview` (`stripMicronutrients`, flagged `micronutrientsLocked`); `POST /api/v1/nutrition/candidates`; barcode search (`searchBarcodeProductForViewer`); persisted-meal readers and mutations via `scopeMealResponseForViewer` in `lib/actions/meals/viewer-scope/viewer-scope.ts` (inventory below) |
 | `relog` | Duplicate / log-again, and relog from the slash picker | `duplicateMealAction`, `stageRelogAnalysisAction`, `relogMealItemsAction` (reading the relog candidates stays open; a scan-only submit through `stageRelogAnalysisAction` is NOT gated — barcode carries no key) |
 | `cheat_meal` | Cheat repeat and cheat confirm | `stageCheatRepeatAction`; `assertCheatConfirmAllowed` in `lib/actions/meals/cheat/confirm.ts`, called from `confirmAndSaveMealAction` (reading cheat occasions stays open) |
 | `copy_split` | Sending a copy/split offer, and "log this too" from the wall | `shareMealWithFriendsAction`, `logSharedMealAction` |
@@ -252,8 +252,9 @@ Notes the table cannot hold:
   upgrading reveals existing history on the next read. `null` means hidden or
   unknown, never zero. The web and Flutter meal cards and dashboard use only
   the four macros from these responses.
-  If the parallel entitlement lookup fails during a mutation, its successful
-  write still returns success with micronutrients hidden; the failure is logged.
+  If the parallel entitlement lookup fails, the response degrades to locked:
+  the read or the committed write still returns, with micronutrients hidden,
+  and the failure is logged.
 - **"Visual edit" has no key.** The pre-confirm portion ruler is only reachable
   from the AI-analysis and relog flows, both gated, so it is premium
   transitively; a dedicated gate would be a second lock on the same door.

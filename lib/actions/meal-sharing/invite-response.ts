@@ -17,6 +17,7 @@ import {
 } from '@/lib/actions/meal-sharing/invite-lifecycle';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   acceptMealShareInviteSchema,
@@ -28,7 +29,6 @@ import {
 } from '@/lib/domain/notifications/group-keys';
 import { closeAggregates } from '@/lib/domain/notifications/notify';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
-import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, mealShareInvites } from '@/lib/infra/db/schema';

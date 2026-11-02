@@ -11,6 +11,7 @@ import {
 } from '@/lib/actions/logging/persisted-meal';
 import { resolveRelogSources } from '@/lib/actions/meals/relog/resolve-sources';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import {
   type RelogItemsInput,
@@ -22,7 +23,6 @@ import {
   buildRelogRawInput,
   weakestConfidence,
 } from '@/lib/domain/logging/relog/relog';
-import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';

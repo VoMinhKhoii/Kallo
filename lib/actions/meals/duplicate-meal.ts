@@ -2,11 +2,11 @@
 
 import { and, eq } from 'drizzle-orm';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { duplicateMealSchema } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
-import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';

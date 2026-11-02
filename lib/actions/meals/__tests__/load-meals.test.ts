@@ -60,16 +60,28 @@ import {
   UUID_MEAL,
 } from './meal-doubles';
 
+const GATE_CASES = [
+  ['unlocked', () => gate.mockResolvedValueOnce({ locked: false }), false],
+  ['locked', () => gate.mockResolvedValueOnce({ locked: true }), true],
+  [
+    'gate failure hides micros',
+    () => {
+      vi.spyOn(console, 'error').mockImplementationOnce(() => {});
+      gate.mockRejectedValueOnce(new Error('entitlements unavailable'));
+    },
+    true,
+  ],
+] as const;
+
 describe('loadMealsByDate', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it.each([
-    false,
-    true,
-  ])('scopes meals, groups, and ingredients (locked=%s)', async (locked) => {
-    gate.mockResolvedValueOnce({ locked });
+  it.each(
+    GATE_CASES
+  )('scopes meals, groups, and ingredients (%s)', async (_, arrangeGate, locked) => {
+    arrangeGate();
     mockDbSelect
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
@@ -417,6 +429,20 @@ describe('loadLoggingDay', () => {
     });
 
     expect(day.pendingConfirmations.map((p) => p.id)).toEqual([UUID_2]);
+  });
+
+  it('still returns the day when the micronutrient gate fails', async () => {
+    vi.spyOn(console, 'error').mockImplementationOnce(() => {});
+    gate.mockRejectedValueOnce(new Error('entitlements unavailable'));
+    queueDay([pendingRow(UUID_1)]);
+
+    const day = await loadLoggingDay({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(day.persistedMeals).toEqual([]);
+    expect(day.pendingConfirmations.map((p) => p.id)).toEqual([UUID_1]);
   });
 
   it('keeps every card when the sweep reaped nothing', async () => {

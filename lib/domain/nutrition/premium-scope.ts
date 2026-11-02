@@ -1,10 +1,17 @@
-import type { PersistedMeal } from '@/lib/actions/meals/types';
 import {
+  type GoalAdjustedNutrient,
   NUTRITION_KEYS,
   type NutritionValues,
 } from '@/lib/ai/types/nutrition-values';
-import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
 import type { DaySeriesMetricKey, MacroKey, NutritionOverview } from './types';
+
+/** The calorie/macro values every viewer sees; everything else is Premium. */
+const MACRO_NUTRIENTS = new Set<keyof NutritionValues>([
+  'caloriesKcal',
+  'proteinG',
+  'carbohydrateG',
+  'fatG',
+] satisfies GoalAdjustedNutrient[]);
 
 /** Response-only projection. Stored nutrition must always remain complete. */
 export function scopeNutritionForViewer(
@@ -13,52 +20,10 @@ export function scopeNutritionForViewer(
 ): NutritionValues {
   if (!locked) return values;
   const scoped = { ...values };
-  for (const key of NUTRITION_KEYS) scoped[key] = null;
-  scoped.caloriesKcal = values.caloriesKcal;
-  scoped.proteinG = values.proteinG;
-  scoped.carbohydrateG = values.carbohydrateG;
-  scoped.fatG = values.fatG;
+  for (const key of NUTRITION_KEYS) {
+    if (!MACRO_NUTRIENTS.has(key)) scoped[key] = null;
+  }
   return scoped;
-}
-
-export function scopePersistedMealForViewer(
-  meal: PersistedMeal,
-  locked: boolean
-): PersistedMeal {
-  if (!locked) return meal;
-  return {
-    ...meal,
-    nutrition: scopeNutritionForViewer(meal.nutrition, locked),
-    mealItemGroups: meal.mealItemGroups.map((group) => ({
-      ...group,
-      nutrition: scopeNutritionForViewer(group.nutrition, locked),
-      ingredients: group.ingredients.map((ingredient) => ({
-        ...ingredient,
-        nutrition: scopeNutritionForViewer(ingredient.nutrition, locked),
-      })),
-    })),
-  };
-}
-
-/** Resolve once alongside the operation, outside its transaction/pool slot. */
-export async function scopeMealResponseForViewer<
-  T extends { meal: PersistedMeal | null },
->(userId: string, response: Promise<T>): Promise<T> {
-  const [gate, result] = await Promise.all([
-    checkFeatureGate({ userId }, 'micronutrients').catch((error) => {
-      // The write may already have committed. Preserve its success while
-      // hiding paid figures when access cannot be established.
-      console.error('Failed to resolve meal micronutrient access:', error);
-      return { locked: true } as const;
-    }),
-    response,
-  ]);
-  return {
-    ...result,
-    meal: result.meal
-      ? scopePersistedMealForViewer(result.meal, gate.locked)
-      : null,
-  };
 }
 
 /**

@@ -144,12 +144,24 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('saveManualMealAction', () => {
-  it.each([
-    false,
+const GATE_CASES = [
+  ['unlocked', () => gate.mockResolvedValueOnce({ locked: false }), false],
+  ['locked', () => gate.mockResolvedValueOnce({ locked: true }), true],
+  [
+    'gate failure hides micros',
+    () => {
+      vi.spyOn(console, 'error').mockImplementationOnce(() => {});
+      gate.mockRejectedValueOnce(new Error('entitlements unavailable'));
+    },
     true,
-  ])('scopes the response, preserves stored micros (locked=%s)', async (locked) => {
-    gate.mockResolvedValueOnce({ locked });
+  ],
+] as const;
+
+describe('saveManualMealAction', () => {
+  it.each(
+    GATE_CASES
+  )('scopes the response, preserves stored micros (%s)', async (_, arrangeGate, locked) => {
+    arrangeGate();
     mockCompositionRows([riceRow]);
     const inserted = mockInserts(UUID_MEAL);
 

@@ -20,13 +20,13 @@
 
 import { and, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { Errors } from '@/lib/core/errors/catalog';
 import { shareMealWithFriendsSchema } from '@/lib/core/validation/social';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { shareInviteKey } from '@/lib/domain/notifications/group-keys';
 import { closeAggregates } from '@/lib/domain/notifications/notify';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
-import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { assertShareableMealText } from '@/lib/domain/social/shares/shareable-meal';
 import { resolveShareAllocation } from '@/lib/domain/social/splits/parts';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';

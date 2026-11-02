@@ -11,6 +11,7 @@ import {
   nutritionValuesToRow,
   sumAlcoholG,
 } from '@/lib/actions/logging/persisted-meal';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
@@ -20,7 +21,6 @@ import type { PipelineResult } from '@/lib/ai/types/result';
 import { confirmMealSchema } from '@/lib/api/contracts/meals';
 import { Errors } from '@/lib/core/errors/catalog';
 import type { CheatSliderLevels } from '@/lib/core/types/cheat';
-import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { goalEnumSchema } from '@/lib/domain/onboarding/schemas';
 import type { Goal } from '@/lib/domain/onboarding/types';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';

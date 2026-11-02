@@ -11,6 +11,7 @@ import {
 } from '@/lib/actions/logging/persisted-meal';
 import { insertDefaultCircleShare } from '@/lib/actions/meals/insert-default-share';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import {
@@ -19,13 +20,11 @@ import {
 } from '@/lib/api/contracts/meals';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
-import { checkFeatureGate } from '@/lib/domain/billing/feature-gate';
 import {
   manualDishOf,
   manualMealTitle,
   scaleNutritionValues,
 } from '@/lib/domain/logging/manual-logging';
-import { scopePersistedMealForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -63,14 +62,18 @@ export async function saveManualMealAction(
   const parsed = saveManualMealSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
+  return scopeMealResponseForViewer(user.id, saveManualMeal(user.id, parsed));
+}
+
+async function saveManualMeal(
+  userId: string,
+  parsed: SaveManualMealInput
+): Promise<ConfirmMealResponse> {
   const ids = parsed.items.map((item) => item.foodCompositionId);
-  const [gate, compositionRows] = await Promise.all([
-    checkFeatureGate({ userId: user.id }, 'micronutrients'),
-    db
-      .select(compositionSelection)
-      .from(vietnameseFoodComposition)
-      .where(inArray(vietnameseFoodComposition.id, ids)),
-  ]);
+  const compositionRows = await db
+    .select(compositionSelection)
+    .from(vietnameseFoodComposition)
+    .where(inArray(vietnameseFoodComposition.id, ids));
   const compositionById = new Map(compositionRows.map((row) => [row.id, row]));
 
   const missing = ids.filter((id) => !compositionById.has(id));
@@ -133,7 +136,7 @@ export async function saveManualMealAction(
         .insert(meals)
         .values({
           ...(parsed.mealId ? { id: parsed.mealId } : {}),
-          userId: user.id,
+          userId,
           rawInput,
           mealSlot,
           // User-entered exact grams from verified DB entries — no estimation.
@@ -160,7 +163,7 @@ export async function saveManualMealAction(
     // re-confirm/edit path (existing meal id).
     const share = await insertDefaultCircleShare(tx, {
       mealId: meal.id,
-      actorId: user.id,
+      actorId: userId,
       rawInput,
     });
 
@@ -187,5 +190,5 @@ export async function saveManualMealAction(
     share,
   });
 
-  return { mealId, meal: scopePersistedMealForViewer(savedMeal, gate.locked) };
+  return { mealId, meal: savedMeal };
 }

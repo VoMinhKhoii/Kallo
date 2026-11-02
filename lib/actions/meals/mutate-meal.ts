@@ -11,6 +11,7 @@ import {
   sumAlcoholG,
 } from '@/lib/actions/logging/persisted-meal';
 import { releaseInvite } from '@/lib/actions/meal-sharing/invite-lifecycle';
+import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
 import {
@@ -18,7 +19,6 @@ import {
   updateMealSchema,
 } from '@/lib/api/contracts/meals';
 import { Errors } from '@/lib/core/errors/catalog';
-import { scopeMealResponseForViewer } from '@/lib/domain/nutrition/premium-scope';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
