@@ -1821,7 +1821,7 @@
       "unblocked": "{name} is unblocked",
       "unblockError": "Couldn't unblock {name}. Try again.",
       "removeTitle": "Remove {name}?",
-      "removeBody": "You'll stop seeing each other's meals. To reconnect, one of you shares a new invite link.",
+      "removeBody": "You'll stop seeing each other's meals. Your link won't reconnect them. To reconnect, accept their invite link.",
       "removed": "Removed {name} from your circle"
     }
   },

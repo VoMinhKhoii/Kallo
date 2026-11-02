@@ -43,6 +43,8 @@ const EXPORT_LOOKUPS: ReadonlyArray<readonly [PgTable, string]> = [
   [schema.mealShareInvites, 'to_user_id'],
   [schema.circleEvents, 'actor_id'],
   [schema.friendsFeedReadMarkers, 'user_id'],
+  [schema.friendRemovals, 'remover_id'],
+  [schema.releasedHandles, 'user_id'],
   [schema.userFeedback, 'user_id'],
   [schema.coachAssignments, 'coach_id'],
   [schema.coachAssignments, 'client_id'],

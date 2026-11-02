@@ -110,7 +110,7 @@ The full module map — one line per folder stating its single concern — is `d
 | `BoundedNutrition {low,mid,high}` in the pipeline; flat numerics in persisted meal history | Uncertainty preserved during estimation without bloating rows |
 | One-shot SSE ReadableStream (no WebSocket); raw fetch for the SSE consumer (no TanStack) | Serverless-compatible; purpose-built state machine beats fighting the abstraction |
 | 768-dim `gemini-embedding-001` vectors | Better multilingual quality |
-| Locket-style link invites instead of `@handle` search | No discovery surface; forwarded-link risk mitigated by remove-friend |
+| Locket-style link invites instead of `@handle` search | No discovery surface; forwarded-link risk mitigated by remove-friend, which withdraws consent (`friend_removals`: the removed person's accept of the remover's link is refused until the remover accepts theirs). A handle someone gave up is never reissued to anyone else (`released_handles`), so an old link cannot reach a stranger |
 
 ## Code Review Rules
 

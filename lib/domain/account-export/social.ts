@@ -3,6 +3,7 @@ import type { AppDb } from '@/lib/infra/db/client';
 import {
   circleEvents,
   coachAssignments,
+  friendRemovals,
   friendsFeedReadMarkers,
   friendships,
   mealShareInvites,
@@ -10,6 +11,7 @@ import {
   mealShareReplies,
   mealShares,
   publicProfiles,
+  releasedHandles,
 } from '@/lib/infra/db/schema';
 
 /**
@@ -24,7 +26,9 @@ import {
  * Blocks live in user_blocks, which is not exported (see coverage.ts). A
  * friendships row can only still read 'blocked' as a leftover of the retired
  * status (schema.ts), and those stay out: the row does not record who blocked,
- * and the product never tells a blocked person they were blocked.
+ * and the product never tells a blocked person they were blocked. Removals
+ * follow the same rule: the people the user removed are exported, never the
+ * removals of the user by others.
  */
 export async function loadSocialExport(
   db: Pick<AppDb, 'select'>,
@@ -113,6 +117,22 @@ export async function loadSocialExport(
     .from(friendsFeedReadMarkers)
     .where(eq(friendsFeedReadMarkers.userId, userId))
     .limit(1);
+  const removalRows = await db
+    .select({
+      removedUserId: friendRemovals.removedId,
+      createdAt: friendRemovals.createdAt,
+    })
+    .from(friendRemovals)
+    .where(eq(friendRemovals.removerId, userId));
+  // Handles the user gave up: still reserved for them, never issued to anyone
+  // else (schema.ts).
+  const releasedHandleRows = await db
+    .select({
+      handle: releasedHandles.handle,
+      releasedAt: releasedHandles.releasedAt,
+    })
+    .from(releasedHandles)
+    .where(eq(releasedHandles.userId, userId));
   const coachRows = await db
     .select()
     .from(coachAssignments)
@@ -150,6 +170,8 @@ export async function loadSocialExport(
     }),
     circleEvents: eventRows,
     feedLastReadAt: readMarkerRows[0]?.lastReadAt ?? null,
+    friendRemovals: removalRows,
+    releasedHandles: releasedHandleRows,
     coachAssignments: coachRows.map((row) => {
       const asCoach = row.coachId === userId;
       return {

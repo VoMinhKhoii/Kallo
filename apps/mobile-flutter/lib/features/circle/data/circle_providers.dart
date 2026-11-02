@@ -268,8 +268,9 @@ Future<CircleProfile> acceptCircleInvite(WidgetRef ref, String slug) async {
   return inviter;
 }
 
-/// Remove a connection (`DELETE /api/v1/groups/friends/remove`). The pair can
-/// re-invite later. Throws [ApiError] on failure.
+/// Remove a connection (`DELETE /api/v1/groups/friends/remove`). The removed
+/// person can no longer connect through the viewer's link; the pair reconnects
+/// only when the viewer accepts theirs. Throws [ApiError] on failure.
 ///
 /// Invalidates the friends list, the ambient feed AND the rendered post feed
 /// ([sharedMealFeedProvider], every scope): the Circle tab stays mounted in

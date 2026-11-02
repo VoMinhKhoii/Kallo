@@ -18,9 +18,15 @@ import {
   isBlockedPair,
   lockPairSql,
 } from '@/lib/domain/social/moderation/blocks';
+import { hasRemoved } from '@/lib/domain/social/moderation/removals';
 import { assertFriendCapacity } from '@/lib/domain/social/quota/circle-quota';
 import { db as defaultDb } from '@/lib/infra/db/client';
-import { circleEvents, friendships } from '@/lib/infra/db/schema';
+import {
+  circleEvents,
+  friendRemovals,
+  friendships,
+} from '@/lib/infra/db/schema';
+import { isForeignKeyViolation } from '@/lib/infra/db/sql-state';
 
 import { getOrCreateMyProfile, getProfileBySlug } from './profile';
 import type { Db, PublicProfile } from './types';
@@ -55,9 +61,10 @@ export async function acceptInvite(
   if (inviter.userId === actorId) {
     throw Errors.validationFailed('Không thể kết nối với chính mình.');
   }
-  // A blocked pair is answered exactly like an unknown slug, and before the
-  // profile write below so it leaves no trace an unknown slug would not. The
-  // locked re-check inside the transaction covers a block committed meanwhile.
+  // A blocked pair, or an inviter who removed the actor, is answered exactly
+  // like an unknown slug, and before the profile write below so it leaves no
+  // trace an unknown slug would not. The locked re-checks inside the
+  // transaction cover a block or removal committed meanwhile.
   if ((await getFriendshipStatus(actorId, inviter.userId, db)) === 'blocked') {
     throw invalidInvite();
   }
@@ -79,6 +86,22 @@ export async function acceptInvite(
     if (await isBlockedPair(tx, actorId, inviter.userId)) {
       throw invalidInvite();
     }
+    // The inviter removed the actor: their link no longer stands as consent
+    // to connect with this person (moderation/removals.ts).
+    if (await hasRemoved(tx, inviter.userId, actorId)) {
+      throw invalidInvite();
+    }
+    // The actor accepting the link of someone THEY removed is their fresh
+    // consent, so their removal row goes. Rolled back with everything else if
+    // the accept fails below.
+    await tx
+      .delete(friendRemovals)
+      .where(
+        and(
+          eq(friendRemovals.removerId, actorId),
+          eq(friendRemovals.removedId, inviter.userId)
+        )
+      );
 
     // Lock the canonical edge row for the duration of the transaction so a
     // concurrent writer can't interleave between this read and the promote.
@@ -195,8 +218,8 @@ export async function acceptInvite(
   });
 }
 
-// The invalid-link answer, shared by an unknown slug and a blocked pair so the
-// two cannot drift apart in code, status or message.
+// The invalid-link answer, shared by an unknown slug, a blocked pair and a
+// removed friend so they cannot drift apart in code, status or message.
 function invalidInvite() {
   return Errors.notFound('Liên kết mời không hợp lệ.');
 }
@@ -225,9 +248,13 @@ function notifyInviterOfJoin(
 }
 
 // ---------------------------------------------------------------------------
-// removeFriend — drop a connection (re-invitable later)
+// removeFriend — drop a connection and withdraw the actor's consent
 // ---------------------------------------------------------------------------
-// Deletes the canonical edge so the pair can reconnect via a new invite. Blocks
+// Deletes the canonical edge and records a friend_removals row (actor → target)
+// in one transaction, under the pair lock acceptInvite takes, so an accept
+// racing the removal either lands before it (and is removed) or sees the row.
+// From then on the removed person's accept of the actor's link is refused; the
+// pair reconnects only when the actor accepts the other person's link. Blocks
 // live in user_blocks and are untouched; a leftover 'blocked' edge (the retired
 // status, see acceptInvite) is still never cleared by a remove.
 
@@ -243,15 +270,33 @@ export async function removeFriend(
 
   const { userLow, userHigh } = orderedPair(actorId, parsed.targetUserId);
 
-  await db
-    .delete(friendships)
-    .where(
-      and(
-        eq(friendships.userLow, userLow),
-        eq(friendships.userHigh, userHigh),
-        sql`${friendships.status} <> 'blocked'`
-      )
-    );
+  try {
+    await db.transaction(async (tx) => {
+      await tx.execute(lockPairSql(userLow, userHigh));
+      await tx
+        .delete(friendships)
+        .where(
+          and(
+            eq(friendships.userLow, userLow),
+            eq(friendships.userHigh, userHigh),
+            sql`${friendships.status} <> 'blocked'`
+          )
+        );
+      await tx
+        .insert(friendRemovals)
+        .values({ removerId: actorId, removedId: parsed.targetUserId })
+        .onConflictDoNothing({
+          target: [friendRemovals.removerId, friendRemovals.removedId],
+        });
+    });
+  } catch (error) {
+    // No such user: the friend_removals FK to auth.users refuses the row and
+    // the transaction rolls back. A 404, as blockFriend answers.
+    if (isForeignKeyViolation(error)) {
+      throw Errors.notFound('Không tìm thấy người dùng.');
+    }
+    throw error;
+  }
 
   return { removed: true };
 }
@@ -265,10 +310,16 @@ export async function getFriendshipStatus(
   otherUserId: string,
   db: Db = defaultDb
 ): Promise<string | null> {
-  // A block in either direction reads as 'blocked' — callers (the invite
-  // preview route and page) answer it like an invalid link for this session.
+  // A block in either direction, or the other person having removed the
+  // actor, reads as 'blocked' — callers (the invite preview route and page)
+  // answer it like an invalid link for this session, as acceptInvite does.
   // Slugs still resolve publicly; comparing another session can distinguish it.
-  if (await isBlockedPair(db, actorId, otherUserId)) return 'blocked';
+  if (
+    (await isBlockedPair(db, actorId, otherUserId)) ||
+    (await hasRemoved(db, otherUserId, actorId))
+  ) {
+    return 'blocked';
+  }
   const { userLow, userHigh } = orderedPair(actorId, otherUserId);
   const rows = await db
     .select({ status: friendships.status })

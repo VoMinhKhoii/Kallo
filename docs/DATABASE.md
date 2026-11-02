@@ -178,6 +178,8 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261027110730_rate_limit_slot_holders.sql` | B (Manual) | Replaces `rate_limit_consume()` (11-arg) and `rate_limit_release()`, same signatures: the slot counts only live `slot_expiries` entries and each holder keeps its own expiry, so a leaked slot frees on time. Push together with the rows above and below, in order |
 | `20261027110836_drop_rate_limit_slot_count.sql` | A (Drizzle) | Drops `slot_count` / `slot_expires_at` and their CHECK, unread since the row above |
 | `20261102173000_bind_social_helpers_to_viewer.sql` | B (Manual) | Binds `is_accepted_friend`, `is_active_coach_of` and `is_friend_since` to `auth.uid()` through their first argument; preserves existing function signatures, attributes and grants |
+| `20261102191800_add_friend_removals_and_released_handles.sql` | A (Drizzle) | `friend_removals` (directed remover → removed, PK on the pair, `removed_id` index, no-self CHECK, both FKs cascade on account delete); `released_handles` (handle PK, previous `user_id` with NO foreign key so the reservation outlives the account, `released_at`, `user_id` index) |
+| `20261102191900_invite_consent_rls_and_handle_reservation.sql` | B (Manual) | RLS on both tables, every `anon`/`authenticated` grant revoked, one owner-only SELECT policy each; `public_profiles_reserve_handle` trigger (`BEFORE INSERT OR UPDATE OF handle OR DELETE` on `public_profiles`): records a handle given up by a rename, slug edit or account delete, refuses a reserved handle to anyone else as a 23505, deletes the reservation when its owner takes it back. See "Invite consent" below |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
@@ -193,6 +195,33 @@ EXECUTE grants; do not add permission-denied function paths (see
 `docs/RATE_LIMITING.md`, "Do not execute a denied function AS anon"). No tables,
 columns, indexes or stored rows are added.
 
+### Invite consent: removals and released handles
+
+An invite link is the inviter's `public_profiles.handle`, and accepting it is the
+inviter's standing consent to connect. Two tables keep that consent honest:
+
+- `friend_removals` — `removeFriend` deletes the edge and inserts (remover →
+  removed) in one transaction under the pair lock (`lockPairSql`). Under the
+  same lock, `acceptInvite` refuses the removed person with the invalid-link
+  404, and the invite preview answers it the same way (`getFriendshipStatus`
+  returns `'blocked'`). The row is deleted only when the remover accepts the
+  removed person's link. Exported under `social.friendRemovals` (the user's own
+  removals only).
+- `released_handles` — the `public_profiles_reserve_handle` trigger records
+  every handle a profile gives up and refuses it to anyone else, raising a
+  unique violation on `public_profiles_handle_uniq` so the app answers it like
+  a taken handle: `upsertPublicProfile` returns its 409, `renameMyProfile` and
+  `getOrCreateMyProfile` retry with another handle. Each claimed and released
+  handle is locked (transaction-scoped advisory lock, sorted) before the check,
+  so a claim racing a release waits and then sees the reservation. The
+  reservation is permanent; the previous owner may reclaim it, which deletes
+  the row. It records the account-delete cascade too: referential actions run
+  as the table owner, so Supabase Auth's role needs no grant. Exported under
+  `social.releasedHandles`.
+
+Neither table has client grants; both are read and written only on the owner
+connection.
+
 ### Retiring `friendships.status = 'blocked'` (follow-up, not yet written)
 
 Blocks moved to `user_blocks` in `20260925125100`. Prod migrations apply before the new Cloud Run revision is promoted, so the previous revision keeps serving for a while and still blocks by writing the pair's `friendships` row as `'blocked'`. Two things cover that window:
@@ -204,7 +233,7 @@ Blocks moved to `user_blocks` in `20260925125100`. Prod migrations apply before 
 Once the new revision is fully promoted and no older revision can serve traffic, ship one follow-up change:
 
 1. A Domain B migration that drops both triggers and their functions (`DROP TRIGGER convert_legacy_friendship_block ON public.friendships; DROP FUNCTION public.convert_legacy_friendship_block();`, and the same for `drop_friendship_of_blocked_pair`), deletes any stray `'blocked'` rows, and a schema change that removes `'blocked'` from `friendships_status_check` (Drizzle, `lib/infra/db/schema.ts`).
-2. Code: delete the leftover `<> 'blocked'` / `=== 'blocked'` guards on `friendships.status`: `lib/actions/groups/feed.ts` (the friend-list filter), `lib/actions/groups/friendship.ts` (`acceptInvite`'s edge read, promote and reconcile, and `removeFriend`), and `lib/domain/account-export/social.ts`. `getFriendshipStatus`'s `'blocked'` return comes from `user_blocks` and stays.
+2. Code: delete the leftover `<> 'blocked'` / `=== 'blocked'` guards on `friendships.status`: `lib/actions/groups/feed.ts` (the friend-list filter), `lib/actions/groups/friendship.ts` (`acceptInvite`'s edge read, promote and reconcile, and `removeFriend`), and `lib/domain/account-export/social.ts`. `getFriendshipStatus`'s `'blocked'` return comes from `user_blocks` and `friend_removals` and stays.
 
 ## Meal Persistence Contract
 

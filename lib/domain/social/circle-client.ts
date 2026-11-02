@@ -126,7 +126,7 @@ export function acceptInvite(slug: string) {
   );
 }
 
-/** Remove a connection (the pair can re-invite later). */
+/** Remove a connection (they can reconnect only if you accept their link). */
 export function removeFriend(targetUserId: string) {
   return request<{ removed: boolean }>('/api/v1/groups/friends/remove', {
     method: 'DELETE',

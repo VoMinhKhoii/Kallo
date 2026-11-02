@@ -58,8 +58,8 @@ async function befriend(tx: AppTransaction, viewer: string, owner: string) {
   });
 }
 
-// The real removeFriend, inside the fixture transaction: it only issues a
-// delete, which a transaction handle serves the same as the app db.
+// The real removeFriend, inside the fixture transaction: its own transaction
+// (pair lock, edge delete, removal row) nests as a savepoint.
 function unfriend(tx: AppTransaction, viewer: string, owner: string) {
   return removeFriend(
     viewer,

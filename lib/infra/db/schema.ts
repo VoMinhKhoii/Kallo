@@ -1291,6 +1291,64 @@ export const userBlocks = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Friend removals — one DIRECTED row per remover → removed person
+// ---------------------------------------------------------------------------
+// Removing a friend withdraws the remover's consent to be connected: the
+// removed person's acceptInvite on the remover's link is refused while the row
+// exists. Only fresh consent from the remover clears it — the remover
+// accepting the removed person's link (lib/actions/groups/friendship.ts).
+// Written under the pair lock with the edge delete. Server-only (no client
+// grants, 20261102191900). The primary key serves the accept check and the
+// export; the removed_id index serves the account-delete cascade.
+
+export const friendRemovals = pgTable(
+  'friend_removals',
+  {
+    removerId: uuid('remover_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    removedId: uuid('removed_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.removerId, table.removedId] }),
+    index('friend_removals_removed_id_idx').on(table.removedId),
+    check(
+      'friend_removals_not_self_check',
+      sql`${table.removerId} <> ${table.removedId}`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Released handles — a handle stays with the person who gave it up
+// ---------------------------------------------------------------------------
+// The handle is the invite link, so a released handle reissued to someone else
+// would connect visitors of the old link to a stranger. A handle given up by a
+// rename, a slug edit or account deletion is recorded here and never issued to
+// anyone else; its previous owner may take it back, which deletes the row.
+// Both the record and the refusal live in the public_profiles_reserve_handle
+// trigger (20261102191900), so every write path is covered. `user_id` has NO
+// foreign key on purpose: the reservation must outlive the account. Same
+// normalization as public_profiles.handle (it is copied from that column).
+
+export const releasedHandles = pgTable(
+  'released_handles',
+  {
+    handle: text('handle').primaryKey(),
+    userId: uuid('user_id').notNull(),
+    releasedAt: timestamp('released_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index('released_handles_user_id_idx').on(table.userId)]
+);
+
+// ---------------------------------------------------------------------------
 // Group Tracking — Meal Shares
 // ---------------------------------------------------------------------------
 // At most one row per meal (unique on meal_id). A meal with no row, or a

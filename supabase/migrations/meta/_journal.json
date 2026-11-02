@@ -680,6 +680,13 @@
       "when": 1793099316920,
       "tag": "20261027110836_drop_rate_limit_slot_count",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1793647095239,
+      "tag": "20261102191800_add_friend_removals_and_released_handles",
+      "breakpoints": true
     }
   ]
 }

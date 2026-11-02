@@ -19,6 +19,7 @@ import {
   coachAssignments,
   dayCompletionMarks,
   entitlementGrants,
+  friendRemovals,
   friendships,
   mealItems,
   mealShareInvites,
@@ -33,6 +34,7 @@ import {
   productTelemetryEvents,
   publicProfiles,
   pushTokens,
+  releasedHandles,
   unmatchedIngredients,
   userFeedback,
   userProfiles,
@@ -192,6 +194,17 @@ export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
           )
         ),
         feedLastReadAt: nullable(dateTime),
+        friendRemovals: list(
+          object({
+            removedUserId: uuid,
+            ...columns(friendRemovals, ['createdAt']),
+          }),
+          'People the caller removed who cannot reconnect through the caller’s link until the caller accepts theirs.'
+        ),
+        releasedHandles: list(
+          object(columns(releasedHandles, ['handle', 'releasedAt'])),
+          'Handles the caller gave up. Each stays reserved for the caller and is never issued to anyone else.'
+        ),
         coachAssignments: list(
           object({
             id: uuid,

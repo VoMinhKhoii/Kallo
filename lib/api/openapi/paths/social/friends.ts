@@ -128,7 +128,7 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
       operationId: 'removeFriend',
       summary: 'Disconnect from someone',
       description:
-        'Deletes the connection. Unlike a block, either side can re-invite the other afterwards.',
+        'Deletes the connection and withdraws the caller’s consent to it: the removed person accepting the caller’s invite link is answered exactly as an invalid slug is. The pair reconnects only when the caller accepts the other person’s link. Unlike a block, nothing is hidden. Idempotent.',
       tags: TAGS,
       body: targetUserBody,
       ok: ref('Acknowledgement'),
@@ -140,7 +140,8 @@ export const FRIEND_PATHS: Record<string, PathItem> = {
     post: authed({
       operationId: 'acceptFriendInvite',
       summary: 'Accept a friend-invite link',
-      description: 'Connects the caller to whoever owns the slug.',
+      description:
+        'Connects the caller to whoever owns the slug. A blocked pair, or an owner who removed the caller, gets the same 404 as an unknown slug.',
       tags: TAGS,
       body: {
         type: 'object',
