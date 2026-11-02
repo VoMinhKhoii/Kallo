@@ -23,8 +23,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  analyze-test:
-    name: Analyze & Test
+  analyze:
+    name: Analyze
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -58,5 +58,33 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+  # `flutter test` was 383 of this workflow's 462s in one job. Each shard runs
+  # every Nth test file (sorted), so it compiles only its own files; the
+  # `--total-shards` flag splits tests, not files.
+  test:
+    name: Test (${{ matrix.shard }}/${{ strategy.job-total }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    defaults:
+      run:
+        working-directory: apps/mobile-flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
       - name: Test
-        run: flutter test
+        env:
+          SHARD: ${{ matrix.shard }}
+          SHARDS: ${{ strategy.job-total }}
+        run: |
+          mapfile -t files < <(find test -name '*_test.dart' | LC_ALL=C sort | awk -v n="$SHARDS" -v i="$SHARD" '(NR - 1) % n == i - 1')
+          echo "Shard $SHARD/$SHARDS: ${#files[@]} test files"
+          flutter test "${files[@]}"
