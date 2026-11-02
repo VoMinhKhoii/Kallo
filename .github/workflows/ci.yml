@@ -135,6 +135,9 @@ jobs:
     # placeholder Supabase settings, so only signed-out surfaces are covered.
     # `CI passed` does not wait for it; its own check reports the result.
     continue-on-error: true
+    # A hung `playwright install` once held a runner for over 5 minutes
+    # (2026-11-02), and the free plan shares its job slots across every run.
+    timeout-minutes: 10
     env:
       NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "placeholder"
