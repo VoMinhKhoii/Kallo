@@ -143,6 +143,15 @@ jobs:
       - uses: supabase/setup-cli@v3
         with:
           version: 2.90.0
+      # `start` pulls its images one after another, and the schema setup three
+      # more once the database is up (~40s). Pull all five at once first; the
+      # versions come from the pinned CLI. Best effort: an image this misses is
+      # pulled by `start` as before.
+      - name: Pull the Supabase images in parallel
+        run: |
+          supabase services 2>/dev/null \
+            | awk -F'|' '$1 ~ /supabase\/(postgres|supavisor|realtime|storage-api|gotrue) *$/ { gsub(/ /, "", $1); gsub(/ /, "", $2); print "ghcr.io/" $1 ":" $2 }' \
+            | xargs -P 5 -n 1 docker pull --quiet || true
       # `start` applies every migration and supabase/seed.sql to the fresh
       # database, and fails on the first that errors, so no `db reset` follows:
       # it would only apply them all again. Only Postgres and Supavisor (the
