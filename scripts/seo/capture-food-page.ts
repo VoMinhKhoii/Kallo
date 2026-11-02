@@ -24,7 +24,12 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { buildAiRequestContext } from '@/lib/ai/adapters/user-context';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { FOODS } from '@/lib/seo/food-pages/food-registry';
-import { type FoodLocale, foodLocaleOf } from '@/lib/seo/food-pages/slugs';
+import {
+  type FoodLocale,
+  type FoodPageKey,
+  foodLocaleOf,
+  foodPageKey,
+} from '@/lib/seo/food-pages/slugs';
 import type {
   FoodPageCapture,
   FoodPageVariant,
@@ -48,7 +53,11 @@ const SOURCE_NAMES: Record<FoodLocale, Record<string, string>> = {
  * The food table a composition row came from, by its id prefix. A public page
  * never shows an ingredient Kallo could not match, so no row stops the run.
  */
-function sourceOf(foodCompositionId: string | null, name: string): string {
+function sourceOf(
+  foodCompositionId: string | null,
+  name: string,
+  locale: FoodLocale
+): string {
   if (!foodCompositionId) {
     throw new Error(`"${name}" matched no food row: reword the meal`);
   }
@@ -67,7 +76,8 @@ if (!found) {
   throw new Error(`unknown food page "${slug}": add it to slugs.ts`);
 }
 const locale: FoodLocale = found;
-const { meals } = FOODS[slug as keyof typeof FOODS];
+// Non-null: `found` is the locale that publishes `slug`.
+const { meals } = FOODS[(foodPageKey(locale, slug) as FoodPageKey).slug];
 const CACHE = `.cache/food-pages/${slug}.capture.json`;
 const OUT = `lib/seo/food-pages/captures/${slug}.json`;
 
@@ -141,7 +151,8 @@ function toVariant(
         kcal: Math.round(ingredient.displayedNutrition.caloriesKcal ?? 0),
         source: sourceOf(
           ingredient.foodCompositionId,
-          ingredient.ingredientName
+          ingredient.ingredientName,
+          locale
         ),
       }))
     ),

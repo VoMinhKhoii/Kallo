@@ -3,9 +3,7 @@ import { isKnownDocSlug } from '@/lib/domain/docs/navigation';
 import { MEDIA_MARKDOWN, preferredType } from '@/lib/infra/http/accept';
 import {
   FOOD_PAGE_PREFIX,
-  FOOD_SLUGS,
-  foodHubPath,
-  foodPagePath,
+  foodPageKey,
   isFoodLocale,
 } from '@/lib/seo/food-pages/slugs';
 import { isKnownNonMarkdownPath } from '@/lib/seo/private-paths';
@@ -114,11 +112,11 @@ export function unknownFoodPageTarget(pathname: string): string | null {
     return null;
   const decoded = pagePath(rest);
   if (decoded === null) return null;
-  const path = `/${locale}${decoded}`;
   const known =
-    isFoodLocale(locale) &&
-    (path === foodHubPath(locale) ||
-      FOOD_SLUGS[locale].some((slug) => foodPagePath(locale, slug) === path));
+    decoded === FOOD_PAGE_PREFIX
+      ? isFoodLocale(locale)
+      : foodPageKey(locale, decoded.slice(FOOD_PAGE_PREFIX.length + 1)) !==
+        null;
   return known ? null : `/${locale}/not-found`;
 }
 

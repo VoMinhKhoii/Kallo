@@ -113,6 +113,23 @@ export function isFoodSlug<L extends FoodLocale>(
   return (FOOD_SLUGS[locale] as readonly string[]).includes(slug);
 }
 
+/** A published food page: a food locale and one of that locale's slugs. */
+export interface FoodPageKey<L extends FoodLocale = FoodLocale> {
+  locale: L;
+  slug: FoodSlugOf<L>;
+}
+
+/**
+ * The page at `locale` + `slug`, or null when that locale publishes no such
+ * dish. The one check the proxy, the route, the locale switch and the capture
+ * script share, so "is this a real food page" cannot drift between them.
+ */
+export function foodPageKey(locale: string, slug: string): FoodPageKey | null {
+  return isFoodLocale(locale) && isFoodSlug(locale, slug)
+    ? ({ locale, slug } as FoodPageKey)
+    : null;
+}
+
 /** The locale a slug is published in, or null for no page. */
 export function foodLocaleOf(slug: string): FoodLocale | null {
   return FOOD_PAGE_LOCALES.find((locale) => isFoodSlug(locale, slug)) ?? null;
@@ -139,7 +156,5 @@ export function foodPagePath<L extends FoodLocale>(
 export function switchedFoodPath(pathname: string, nextLocale: string): string {
   if (!pathname.startsWith(`${FOOD_PAGE_PREFIX}/`)) return pathname;
   const slug = pathname.slice(FOOD_PAGE_PREFIX.length + 1).replace(/\/$/, '');
-  return isFoodLocale(nextLocale) && isFoodSlug(nextLocale, slug)
-    ? pathname
-    : FOOD_PAGE_PREFIX;
+  return foodPageKey(nextLocale, slug) ? pathname : FOOD_PAGE_PREFIX;
 }

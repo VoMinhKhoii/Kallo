@@ -14,7 +14,7 @@ import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
 import {
   breakdownOf,
   FOOD_PAGES,
-  type FoodPage as FoodPageData,
+  type FoodPage,
   kcalSpan,
   relatedPages,
   sourcesOf,
@@ -23,9 +23,8 @@ import {
   FOOD_PAGE_LOCALES,
   FOOD_PAGE_PREFIX,
   FOOD_SLUGS,
+  foodPageKey,
   foodPagePath,
-  isFoodLocale,
-  isFoodSlug,
 } from '@/lib/seo/food-pages/slugs';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
@@ -50,9 +49,9 @@ export function generateStaticParams() {
 }
 
 /** The page a URL names, or null when its locale has no such page. */
-function pageAt(locale: string, food: string): FoodPageData | null {
-  if (!isFoodLocale(locale) || !isFoodSlug(locale, food)) return null;
-  return FOOD_PAGES[food];
+function pageAt(locale: string, food: string): FoodPage | null {
+  const key = foodPageKey(locale, food);
+  return key ? FOOD_PAGES[key.slug] : null;
 }
 
 export async function generateMetadata({
@@ -78,7 +77,7 @@ export async function generateMetadata({
   };
 }
 
-export default function FoodPage({ params }: FoodPageProps) {
+export default function FoodPageRoute({ params }: FoodPageProps) {
   return (
     <Suspense fallback={null}>
       <FoodContent params={params} />
