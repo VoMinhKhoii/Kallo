@@ -40,10 +40,12 @@ if (jobs.length === 0) throw new Error(`Run ${runId} has no unit test shards.`);
 // (the duration is left out for very fast files).
 const LINE =
   /[✓×↓]\s+\|?(?:node|dom)\|?\s+(\S+\.test\.tsx?)\s+\(\d+ tests?[^)]*\)(?:\s+(\d+)ms)?/;
+// ANSI colour codes, built from the escape character's code.
+const COLOUR = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
 const timings = {};
 for (const job of jobs) {
   const log = gh('api', `repos/{owner}/{repo}/actions/jobs/${job.id}/logs`);
-  for (const line of log.replace(/\x1b\[[0-9;]*m/g, '').split('\n')) {
+  for (const line of log.replace(COLOUR, '').split('\n')) {
     const match = line.match(LINE);
     if (match) timings[match[1]] = Number(match[2] ?? 0);
   }
