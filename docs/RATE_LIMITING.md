@@ -68,7 +68,7 @@ code.
 | `authOther` | ip | 60 / — / — | memory |
 | `authLinkIp` (emailed verify links + the OAuth callback) | ip | 20 / 100 / — | degraded |
 | `waitlistSignupIp` | ip | 5 / 20 / 50 | degraded |
-| `waitlistSignupRecipient` (canonical mailbox; domain also enforces a rolling 5-minute send gap) | recipient | 1 / 12 / 5 | degraded |
+| `waitlistSignupRecipient` (canonical mailbox; domain also enforces a rolling 5-minute send gap) | recipient | 1 / — / 5 | degraded |
 | `waitlistConfirmIp` | ip | 20 / 100 / — | degraded |
 | `waitlistGlobal` (app-wide backstop after per-IP admission; still runs with a null IP) | global | 30 / 300 / — | degraded |
 | `healthzIp` | ip | 30 / — / — | memory |

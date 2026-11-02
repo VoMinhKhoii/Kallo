@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalizeEmailForKey, normaliseEmail } from '@/lib/core/text/email';
+import {
+  canonicalizeEmailForKey,
+  hasAliasSpellings,
+  normaliseEmail,
+} from '@/lib/core/text/email';
 
 describe('normaliseEmail', () => {
   it('lowercases, trims, and NFC-normalises', () => {
@@ -72,5 +76,14 @@ describe('canonicalizeEmailForKey', () => {
     expect(canonicalizeEmailForKey('+tag@example.com')).toBe(
       '+tag@example.com'
     );
+  });
+});
+
+describe('hasAliasSpellings', () => {
+  it('is true only on the verified alias domains', () => {
+    expect(hasAliasSpellings('a.b+x@gmail.com')).toBe(true);
+    expect(hasAliasSpellings(' A@GoogleMail.COM ')).toBe(true);
+    expect(hasAliasSpellings('a+x@example.com')).toBe(false);
+    expect(hasAliasSpellings('a@notgmail.com')).toBe(false);
   });
 });

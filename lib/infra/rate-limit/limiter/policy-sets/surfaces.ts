@@ -21,10 +21,11 @@ export const surfacePolicies = {
    * Canonical mailbox budget, after IP and global admission. The signup
    * transaction enforces the rolling five-minute gap across alias rows;
    * this policy caps attempts independently of spelling and membership.
+   * No hour window: the day cap is lower than any hourly one would be.
    */
   waitlistSignupRecipient: {
     route: 'waitlist:signup:recipient',
-    limits: { perMinute: 1, perHour: 12, perDay: 5 },
+    limits: { perMinute: 1, perDay: 5 },
     keyKinds: ['recipient'],
     failMode: 'degraded',
   },

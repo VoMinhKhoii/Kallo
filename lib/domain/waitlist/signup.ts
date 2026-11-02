@@ -1,7 +1,11 @@
 import { and, eq, gt, gte, sql } from 'drizzle-orm';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
 import { Errors } from '@/lib/core/errors/catalog';
-import { canonicalizeEmailForKey, normaliseEmail } from '@/lib/core/text/email';
+import {
+  canonicalizeEmailForKey,
+  hasAliasSpellings,
+  normaliseEmail,
+} from '@/lib/core/text/email';
 import { hashIp, issueConfirmationToken } from '@/lib/domain/waitlist/token';
 import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 import { waitlistSignups } from '@/lib/infra/db/schema';
@@ -201,9 +205,7 @@ async function mailboxCoolingDown(
 ): Promise<boolean> {
   // Other providers keep distinct plus/dot mailboxes; their exact-address
   // cooldown below already covers the canonical key.
-  if (!email.endsWith('@gmail.com') && !email.endsWith('@googlemail.com')) {
-    return false;
-  }
+  if (!hasAliasSpellings(email)) return false;
   const recent = await tx
     .select({ email: waitlistSignups.email })
     .from(waitlistSignups)
