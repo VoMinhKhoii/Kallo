@@ -9,11 +9,12 @@ import { pathToFileURL } from 'node:url';
 /**
  * Every job in ci.yml except this one, and when it is meant to run: `group` is
  * the affected.mjs output gating it ('always' for none), `on` limits it to one
- * event, `sameRepo` to non-fork PRs. `mayFail` is for continue-on-error jobs;
+ * event, `sameRepo` to non-fork PRs. `advisory` is for a non-blocking
+ * (continue-on-error) job that `CI passed` neither waits for nor judges;
  * `ownCondition` for a job whose `if` has inputs this cannot see.
  *
  * @type {Record<string, { group: string, on?: string, sameRepo?: boolean,
- *   mayFail?: boolean, ownCondition?: boolean }>}
+ *   advisory?: boolean, ownCondition?: boolean }>}
  */
 export const JOBS = {
   changes: { group: 'always' },
@@ -21,10 +22,10 @@ export const JOBS = {
   typecheck: { group: 'web' },
   'test-shard': { group: 'web' },
   build: { group: 'web' },
-  e2e: { group: 'web', mayFail: true },
+  e2e: { group: 'web', advisory: true },
   migrations: { group: 'migrations' },
   'dependency-review': { group: 'always', ownCondition: true },
-  'container-build': { group: 'web', on: 'pull_request', sameRepo: true },
+  'container-build': { group: 'image', on: 'pull_request', sameRepo: true },
   'container-publish': { group: 'always', on: 'push' },
 };
 
@@ -45,6 +46,7 @@ export function problems(needs, run) {
   const outputs = changes.outputs ?? {};
   const found = [];
   for (const [name, job] of Object.entries(JOBS)) {
+    if (job.advisory) continue;
     const result = needs[name]?.result;
     if (result === undefined) {
       found.push(`${name}: not in this job's needs`);
@@ -55,7 +57,6 @@ export function problems(needs, run) {
       !(job.sameRepo && run.fork) &&
       (job.group === 'always' || outputs[job.group] === 'true');
     if (result === 'success') continue;
-    if (result === 'failure' && job.mayFail) continue;
     if (result === 'skipped' && (!shouldRun || job.ownCondition)) continue;
     found.push(
       shouldRun

@@ -13,6 +13,8 @@ if [ "${2:-}" = "--expect-card-index" ]; then
   expect_card_index=true
 fi
 card_index_wait_seconds="${CARD_INDEX_WAIT_SECONDS:-60}"
+# Seconds between attempts. Tests shorten it; a deploy keeps the default.
+poll_seconds="${SMOKE_POLL_SECONDS:-2}"
 healthz_body_file="$(mktemp "${TMPDIR:-/tmp}/kallo-healthz-body.XXXXXX")"
 curl_config_file=""
 cleanup() {
@@ -74,7 +76,7 @@ check_card_index() {
     # "failed" is not final yet: the app retries a failed load a few times
     # (2, 4 and 8 s apart), so a transient storage error at cold start can
     # still turn into "ready" within the wait.
-    sleep 2
+    sleep "$poll_seconds"
   done
   echo "Card search index not ready after ${card_index_wait_seconds}s: $body" >&2
   return 1
@@ -116,7 +118,7 @@ for _ in 1 2 3 4 5; do
     fi
   fi
 
-  sleep 2
+  sleep "$poll_seconds"
 done
 
 echo "Smoke check failed for $base_url" >&2

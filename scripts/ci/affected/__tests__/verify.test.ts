@@ -13,7 +13,8 @@ function run(
   overrides: Record<string, string> = {}
 ): Needs {
   const needs: Needs = {};
-  for (const name of Object.keys(JOBS)) {
+  for (const [name, job] of Object.entries(JOBS)) {
+    if (job.advisory) continue;
     needs[name] = { result: overrides[name] ?? 'success' };
   }
   needs.changes = { result: overrides.changes ?? 'success', outputs };
@@ -21,8 +22,8 @@ function run(
 }
 const PR = { event: 'pull_request', fork: false };
 const PUSH = { event: 'push', fork: false };
-const EVERYTHING = { web: 'true', migrations: 'true' };
-const NOTHING = { web: 'false', migrations: 'false' };
+const EVERYTHING = { web: 'true', migrations: 'true', image: 'true' };
+const NOTHING = { web: 'false', migrations: 'false', image: 'false' };
 
 describe('problems', () => {
   it('passes a PR where everything ran', () => {
@@ -79,13 +80,25 @@ describe('problems', () => {
     ).toEqual(['lint: cancelled', 'migrations: failure']);
   });
 
-  it('lets the non-blocking E2E job fail', () => {
-    expect(
-      problems(
-        run(EVERYTHING, { e2e: 'failure', 'container-publish': 'skipped' }),
-        PR
-      )
-    ).toEqual([]);
+  // E2E is non-blocking: CI passed does not wait for it, so it is not in the
+  // needs at all, and its own check reports how it went.
+  it('neither waits for nor judges the advisory E2E job', () => {
+    const needs = run(EVERYTHING, { 'container-publish': 'skipped' });
+    expect(needs.e2e).toBeUndefined();
+    expect(problems(needs, PR)).toEqual([]);
+  });
+
+  it('skips the PR image build only when nothing image-related changed', () => {
+    const web = { web: 'true', migrations: 'false', image: 'false' };
+    const skipped = {
+      migrations: 'skipped',
+      'container-build': 'skipped',
+      'container-publish': 'skipped',
+    };
+    expect(problems(run(web, skipped), PR)).toEqual([]);
+    expect(problems(run({ ...web, image: 'true' }, skipped), PR)).toEqual([
+      'container-build: skipped',
+    ]);
   });
 
   it('expects no PR image build on a fork, and no publish on a PR', () => {

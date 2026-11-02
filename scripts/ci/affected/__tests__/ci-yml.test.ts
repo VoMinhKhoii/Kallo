@@ -40,9 +40,12 @@ describe('ci.yml agrees with the skip rules', () => {
     expect(Object.keys(JOBS).sort()).toEqual(gated.sort());
   });
 
-  it('makes CI passed wait for every job', () => {
+  it('makes CI passed wait for every blocking job, and only those', () => {
+    const blocking = Object.entries(JOBS)
+      .filter(([, job]) => !job.advisory)
+      .map(([name]) => name);
     expect(needsOf(blocks.get('ci-passed') ?? '').sort()).toEqual(
-      Object.keys(JOBS).sort()
+      blocking.sort()
     );
   });
 

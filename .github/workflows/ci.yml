@@ -17,13 +17,16 @@ jobs:
   # Which job groups this PR needs (scripts/ci/affected/affected.mjs): the web
   # jobs skip when a PR touches only Flutter, docs or agent files, and the
   # migrations job skips unless a PR touches supabase/ or what the database
-  # suites load. Pushes run everything. `CI passed` checks every skip was meant.
+  # suites load, and the PR image build unless a PR touches what only the
+  # Docker build reads. Pushes run everything. `CI passed` checks every skip
+  # was meant.
   changes:
     name: Affected jobs
     runs-on: ubuntu-latest
     outputs:
       web: ${{ steps.affected.outputs.web }}
       migrations: ${{ steps.affected.outputs.migrations }}
+      image: ${{ steps.affected.outputs.image }}
     steps:
       # Full history so the PR's merge base is here; blobless, so that costs
       # commits and trees, not old file contents.
@@ -64,21 +67,21 @@ jobs:
       - run: bunx tsc --noEmit
 
   test-shard:
-    name: Unit Test (${{ matrix.shard }}/3)
+    name: Unit Test (${{ matrix.shard }}/${{ strategy.job-total }})
     needs: changes
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - uses: ./.github/actions/setup-bun
-      - run: bun run test -- --shard=${{ matrix.shard }}/3
+      - run: bun run test -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
         env:
           SKIP_DB_TESTS: '1'
       # The prod deploy runs the card search artifact builder under Bun on
@@ -89,18 +92,39 @@ jobs:
         if: matrix.shard == 1
         run: bun scripts/ci/check-card-artifact-runtime.ts
 
+  # The same `next build` the image runs, with the image's public build
+  # settings (placeholders where a fork PR gets no repo variables), so a PR
+  # needs the image build only when something Docker-specific changes.
   build:
     name: Build
     needs: changes
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "placeholder"
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'placeholder' }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+      NEXT_PUBLIC_POSTHOG_KEY: ${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
+      NEXT_PUBLIC_PADDLE_CLIENT_TOKEN: ${{ vars.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN }}
+      NEXT_PUBLIC_AVATAR_BASE_URL: ${{ vars.NEXT_PUBLIC_AVATAR_BASE_URL }}
+      R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-bun
+      # Turbopack keeps its build cache in .next/cache (on by default since
+      # Next 16.3). PRs restore main's latest; only main saves one, so PR runs
+      # do not crowd the repo's 10 GB cache.
+      - uses: actions/cache/restore@v4
+        with:
+          path: .next/cache
+          key: next-build-${{ runner.os }}-${{ github.sha }}
+          restore-keys: next-build-${{ runner.os }}-
       - run: bun run build
+      - if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v4
+        with:
+          path: .next/cache
+          key: next-build-${{ runner.os }}-${{ github.sha }}
 
   e2e:
     name: E2E (Playwright)
@@ -109,6 +133,7 @@ jobs:
     runs-on: ubuntu-latest
     # Non-blocking while the suite is new: it runs against `next dev` with
     # placeholder Supabase settings, so only signed-out surfaces are covered.
+    # `CI passed` does not wait for it; its own check reports the result.
     continue-on-error: true
     env:
       NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
@@ -305,7 +330,7 @@ jobs:
   container-build:
     name: Container Build
     needs: changes
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && needs.changes.outputs.web == 'true'
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && needs.changes.outputs.image == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -323,7 +348,6 @@ jobs:
       - typecheck
       - test-shard
       - build
-      - e2e
       - migrations
       - dependency-review
       - container-build
