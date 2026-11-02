@@ -5,6 +5,10 @@ import type { RateLimitPolicy } from '../types';
  * budgets. Registry: `../policies.ts`.
  */
 export const spendPolicies = {
+  // ---------------------------------------------------------------------
+  // Per-user work with a one-at-a-time slot (`acquireRateLimit`)
+  // ---------------------------------------------------------------------
+
   /**
    * Full account exports share one budget across web and mobile. The slot
    * outlives all 28 sequential reads at their 15 s statement deadline, even
@@ -18,9 +22,6 @@ export const spendPolicies = {
     keyKinds: ['user'],
     failMode: 'closed',
   },
-  // ---------------------------------------------------------------------
-  // Per-user work with a one-at-a-time slot (`acquireRateLimit`)
-  // ---------------------------------------------------------------------
 
   /**
    * Meal analysis (`/api/analyze-meal`), typed meals and cheat mode alike:
