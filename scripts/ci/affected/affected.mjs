@@ -13,9 +13,6 @@ import { appendFileSync, existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const GROUPS = ['web', 'migrations'];
-const ALL = Object.fromEntries(GROUPS.map((group) => [group, true]));
-
 // A change to how CI runs, or to the dependency set, can break any job.
 const RUNS_EVERYTHING = [
   /^\.github\/workflows\/ci\.yml$/,
@@ -25,12 +22,12 @@ const RUNS_EVERYTHING = [
   /^bun\.lock$/,
 ];
 
-// Paths no web job builds, imports or reads, except a folder under one that
-// holds a unit test (repoFacts()). MDX is not prose (the docs pages import
-// it), and neither is Markdown under .github/ (the security review reads its
-// prompt from there).
-const NOT_WEB = [
-  /^apps\/mobile-flutter\//,
+// Paths no web job builds, imports or reads: the Flutter app, and prose and
+// agent files unless a unit test lives in their folder (repoFacts()). MDX is
+// not prose (the docs pages import it), and neither is Markdown under .github/
+// (the security review reads its prompt from there).
+const FLUTTER = /^apps\/mobile-flutter\//;
+const PROSE = [
   /^docs\//,
   /^\.claude\//,
   /^\.agents\//,
@@ -48,14 +45,30 @@ const MIGRATIONS = [
   /^tsconfig\.json$/,
 ];
 
-const isNotWeb = (file) => NOT_WEB.some((rule) => rule.test(file));
+const isProse = (file) => PROSE.some((rule) => rule.test(file));
+
+/**
+ * Whether one changed file needs each group. `repo` comes from repoFacts().
+ *
+ * @type {Record<string, (file: string, repo: { dbFiles: Set<string>,
+ *   testDirs: string[] }) => boolean>}
+ */
+const RULES = {
+  web: (file, repo) =>
+    !(FLUTTER.test(file) || isProse(file)) ||
+    repo.testDirs.some((dir) => file.startsWith(dir)),
+  migrations: (file, repo) =>
+    repo.dbFiles.has(file) || MIGRATIONS.some((rule) => rule.test(file)),
+};
+export const GROUPS = Object.keys(RULES);
+const ALL = Object.fromEntries(GROUPS.map((group) => [group, true]));
 
 /**
  * The groups `files` (repo-relative paths) need. `files` is null when the diff
  * is unknown, and `repo` (repoFacts()) when the checkout could not be listed.
  *
  * @param {string[] | null} files
- * @param {{ dbFiles: Iterable<string>, testDirs: string[] } | null} repo
+ * @param {{ dbFiles: Set<string>, testDirs: string[] } | null} repo
  * @returns {Record<string, boolean>}
  */
 export function groupsFor(files, repo) {
@@ -63,14 +76,12 @@ export function groupsFor(files, repo) {
   if (files.some((file) => RUNS_EVERYTHING.some((rule) => rule.test(file)))) {
     return { ...ALL };
   }
-  const db = new Set(repo.dbFiles);
-  const tested = (file) => repo.testDirs.some((dir) => file.startsWith(dir));
-  return {
-    web: files.some((file) => !isNotWeb(file) || tested(file)),
-    migrations: files.some(
-      (file) => db.has(file) || MIGRATIONS.some((rule) => rule.test(file))
-    ),
-  };
+  return Object.fromEntries(
+    GROUPS.map((group) => [
+      group,
+      files.some((file) => RULES[group](file, repo)),
+    ])
+  );
 }
 
 // `from '…'`, `import '…'`, `import('…')`, `vi.mock('…')`, `require('…')`.
@@ -120,25 +131,18 @@ export function importClosure(root, entries) {
 /**
  * What groupsFor() needs from the checkout, or null when git cannot list it.
  * `dbFiles`: every file the `*.db.test.ts` suites load, test config included.
- * `testDirs`: each folder under a NOT_WEB path that holds a unit test (the
- * folder above `__tests__`), since the test may read any file in it. Vitest
- * does not collect Flutter's tests, so those are left out.
+ * `testDirs`: each prose or agent folder that holds a unit test (the folder
+ * above `__tests__`), since the test may read any file in it.
  */
 export function repoFacts(root) {
   const tests = git(root, ['ls-files', '-z', '*.test.ts', '*.test.tsx']);
   if (tests === null) return null;
-  const testDirs = tests
-    .filter(
-      (test) => isNotWeb(test) && !test.startsWith('apps/mobile-flutter/')
-    )
-    .map((test) => {
-      const dir = path.posix.dirname(test);
-      const owner =
-        path.posix.basename(dir) === '__tests__'
-          ? path.posix.dirname(dir)
-          : dir;
-      return `${owner}/`;
-    });
+  const testDirs = tests.filter(isProse).map((test) => {
+    const dir = path.posix.dirname(test);
+    const owner =
+      path.posix.basename(dir) === '__tests__' ? path.posix.dirname(dir) : dir;
+    return `${owner}/`;
+  });
   const suites = tests.filter((test) => test.endsWith('.db.test.ts'));
   return {
     dbFiles: importClosure(root, [
