@@ -51,7 +51,9 @@ jobs:
         with:
           node-version: 22
       - uses: ./.github/actions/setup-bun
-      - run: bun run test -- --exclude '**/lib/infra/db/__tests__/**' --shard=${{ matrix.shard }}/3
+      - run: bun run test -- --shard=${{ matrix.shard }}/3
+        env:
+          SKIP_DB_TESTS: '1'
       # The prod deploy runs the card search artifact builder under Bun on
       # Linux; the tests above run under Node. Build and search an index with
       # the builder's own code under Bun, so a native-binary or runtime

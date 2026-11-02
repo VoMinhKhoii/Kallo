@@ -51,6 +51,9 @@ export default defineConfig({
       // phantom failures, and a run slow enough to look hung.
       '.claude/worktrees/**',
       ...(process.env.RUN_LIVE_OCR_TESTS ? [] : ['**/label-ocr-live.test.ts']),
+      // CI's unit test job has no database. A CLI `--exclude` cannot do this:
+      // vitest applies it to the root config only, not to the projects above.
+      ...(process.env.SKIP_DB_TESTS ? ['**/lib/infra/db/__tests__/**'] : []),
     ],
   },
 });
