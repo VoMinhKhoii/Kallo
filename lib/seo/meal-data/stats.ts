@@ -51,32 +51,47 @@ export function mealSwings(locale: FoodLocale): MealSwing[] {
     .sort((a, b) => b.ratio - a.ratio);
 }
 
-/** Ingredient kinds by name, per locale. Order matters: first match wins. */
+/**
+ * Ingredient kinds by name, per locale. Order matters: first match wins, so
+ * noodles come before rice ("rice noodles") and sauces before oil ("dầu hào"
+ * is oyster sauce). Plain substrings, not `\b`: JavaScript's word boundary
+ * treats accented letters (the ì in "mì") as non-word characters. English captures can carry Vietnamese oil names ("Dầu
+ * ăn"), so the English oil pattern accepts them.
+ */
 const KINDS: Record<FoodLocale, { key: string; pattern: RegExp }[]> = {
   en: [
-    { key: 'oil', pattern: /\boil\b/ },
-    { key: 'butter', pattern: /^(?!.*peanut).*\bbutter\b/ },
-    { key: 'cheese', pattern: /cheese|parmesan|mozzarella|cheddar|feta/ },
-    { key: 'rice', pattern: /\brice\b/ },
     {
       key: 'noodles',
       pattern: /pasta|spaghetti|noodle|ramen|linguine|fettuccine|macaroni/,
     },
     {
+      key: 'sauce',
+      pattern: /sauce|dressing|mayo|aioli|gravy|ketchup|dầu hào/,
+    },
+    { key: 'oil', pattern: /\boil\b|dầu|mỡ/ },
+    { key: 'butter', pattern: /^(?!.*peanut).*\bbutter\b/ },
+    { key: 'cheese', pattern: /cheese|parmesan|mozzarella|cheddar|feta/ },
+    { key: 'rice', pattern: /\brice\b/ },
+    {
       key: 'bread',
       pattern: /tortilla|bread|\bbun\b|bagel|toast|pita|wrap|naan|\broll\b/,
     },
-    { key: 'sauce', pattern: /sauce|dressing|mayo|aioli|gravy|ketchup/ },
   ],
   vi: [
+    { key: 'noodles', pattern: /bún|phở|hủ tiếu|bánh canh|miến|mì/ },
+    { key: 'sauce', pattern: /nước mắm|nước chấm|mắm|tương|dầu hào/ },
     { key: 'oil', pattern: /dầu|mỡ/ },
     { key: 'sugar', pattern: /đường|sữa đặc/ },
     { key: 'rice', pattern: /^cơm|gạo/ },
-    { key: 'noodles', pattern: /bún|phở|\bmì\b|hủ tiếu|bánh canh/ },
-    { key: 'broth', pattern: /nước dùng|nước lèo|nước phở/ },
-    { key: 'sauce', pattern: /nước mắm|nước chấm|mắm|tương/ },
+    { key: 'broth', pattern: /nước dùng|nước lèo/ },
   ],
 };
+
+/** The kind an ingredient name belongs to, or null. */
+export function kindOf(locale: FoodLocale, name: string): string | null {
+  const lower = name.toLowerCase();
+  return KINDS[locale].find((k) => k.pattern.test(lower))?.key ?? null;
+}
 
 /** "The text never mentions oil or frying", per locale. */
 const MENTIONS_FAT: Record<FoodLocale, RegExp> = {
@@ -100,8 +115,7 @@ export function ingredientStats(locale: FoodLocale): IngredientStat[] {
     for (const variant of page.capture.variants) {
       const seen = new Set<string>();
       for (const ingredient of variant.ingredients) {
-        const name = ingredient.name.toLowerCase();
-        const kind = KINDS[locale].find((k) => k.pattern.test(name))?.key;
+        const kind = kindOf(locale, ingredient.name);
         if (!kind) continue;
         lines.set(kind, [...(lines.get(kind) ?? []), ingredient.kcal]);
         seen.add(kind);
@@ -135,7 +149,6 @@ export interface HiddenOil {
 }
 
 export function hiddenOil(locale: FoodLocale): HiddenOil {
-  const oil = KINDS[locale][0].pattern;
   let total = 0;
   let withOil = 0;
   const unnamed: number[] = [];
@@ -143,7 +156,7 @@ export function hiddenOil(locale: FoodLocale): HiddenOil {
     for (const variant of page.capture.variants) {
       total += 1;
       const kcal = variant.ingredients
-        .filter((i) => oil.test(i.name.toLowerCase()))
+        .filter((i) => kindOf(locale, i.name) === 'oil')
         .reduce((sum, i) => sum + i.kcal, 0);
       if (kcal === 0) continue;
       withOil += 1;

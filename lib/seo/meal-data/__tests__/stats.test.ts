@@ -4,6 +4,7 @@ import { MEAL_DATA_COPY } from '@/lib/seo/meal-data/copy';
 import {
   hiddenOil,
   ingredientStats,
+  kindOf,
   mealSwings,
   median,
 } from '@/lib/seo/meal-data/stats';
@@ -12,6 +13,23 @@ describe('median', () => {
   it('takes the middle value, averaging the two middles of an even list', () => {
     expect(median([3, 1, 2])).toBe(2);
     expect(median([4, 1, 3, 2])).toBe(3);
+  });
+});
+
+describe('kindOf', () => {
+  it('puts noodles before rice and sauces before oil', () => {
+    expect(kindOf('en', 'Rice noodles')).toBe('noodles');
+    expect(kindOf('en', 'White rice')).toBe('rice');
+    expect(kindOf('vi', 'Mì gói')).toBe('noodles');
+    expect(kindOf('vi', 'Dầu hào')).toBe('sauce');
+    expect(kindOf('vi', 'Dầu ăn')).toBe('oil');
+  });
+
+  it('reads the Vietnamese oil names English captures carry', () => {
+    expect(kindOf('en', 'Dầu ăn')).toBe('oil');
+    expect(kindOf('en', 'Olive oil')).toBe('oil');
+    expect(kindOf('en', 'Boiled egg')).toBeNull();
+    expect(kindOf('en', 'Peanut butter')).toBeNull();
   });
 });
 

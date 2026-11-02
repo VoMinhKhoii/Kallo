@@ -46,10 +46,9 @@ function factsOf(locale: FoodLocale): MealDataFacts {
   const swings = mealSwings(locale);
   const oil = hiddenOil(locale);
   const chrome = FOOD_PAGE_CHROME[locale];
-  const newest = pagesOf(locale)
+  const days = pagesOf(locale)
     .map((p) => p.capture.capturedAt)
-    .sort()
-    .at(-1) as string;
+    .sort();
   const ratio = median(swings.map((s) => Math.round(s.ratio * 10))) / 10;
   return {
     meals: oil.total,
@@ -61,7 +60,10 @@ function factsOf(locale: FoodLocale): MealDataFacts {
     withOil: oil.withOil,
     unnamed: oil.unnamed,
     oilKcal: oil.medianKcal,
-    date: chrome.formatDate(new Date(newest)),
+    dates: {
+      from: chrome.formatDate(new Date(days[0])),
+      to: chrome.formatDate(new Date(days.at(-1) as string)),
+    },
   };
 }
 

@@ -8,7 +8,8 @@ export interface MealDataFacts {
   withOil: number;
   unnamed: number;
   oilKcal: number;
-  date: string;
+  /** When the meals were captured: one day, or the first and last. */
+  dates: { from: string; to: string };
 }
 
 export interface MealDataCopy {
@@ -71,7 +72,7 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
     methodHeading: 'How this was measured',
     method: (f) => [
       `Each dish has ${f.meals / f.dishes} meals written to span how people commonly eat it: smaller and larger portions, with and without the usual extras, homemade and from a restaurant. They are not a random sample of what Kallo's users log, and no user's data is in them.`,
-      `Every meal was typed into Kallo once, on ${f.date}, and run through the same pipeline the app uses: it splits the meal into ingredients, estimates the grams, and takes calories from food composition tables (USDA FoodData Central and others). Each dish's page shows its four meals and every ingredient.`,
+      `Every meal was typed into Kallo once, ${f.dates.from === f.dates.to ? `on ${f.dates.from}` : `between ${f.dates.from} and ${f.dates.to}`}, and run through the same pipeline the app uses: it splits the meal into ingredients, estimates the grams, and takes calories from food composition tables (USDA FoodData Central and others). Each dish's page shows its four meals and every ingredient.`,
       'Ratios compare the heaviest and lightest meal of one dish; "median" is the middle value across dishes or ingredient servings.',
     ],
     citeHeading: 'Using these numbers',
@@ -114,7 +115,7 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
     methodHeading: 'Cách đo',
     method: (f) => [
       `Mỗi món có ${f.meals / f.dishes} bữa được viết để phủ các cách ăn phổ biến: phần nhỏ và lớn, có và không có đồ thêm, ở nhà và ngoài quán. Đây không phải mẫu ngẫu nhiên từ người dùng Kallo, và không có dữ liệu của người dùng nào trong đó.`,
-      `Mỗi bữa được gõ vào Kallo một lần, ngày ${f.date}, và chạy qua đúng quy trình app dùng: tách món thành nguyên liệu, ước lượng gram, lấy calo từ bảng thành phần thực phẩm (Viện Dinh dưỡng Quốc gia, USDA và các nguồn khác). Trang của từng món cho thấy bốn bữa và từng nguyên liệu.`,
+      `Mỗi bữa được gõ vào Kallo một lần, ${f.dates.from === f.dates.to ? `ngày ${f.dates.from}` : `từ ngày ${f.dates.from} đến ngày ${f.dates.to}`}, và chạy qua đúng quy trình app dùng: tách món thành nguyên liệu, ước lượng gram, lấy calo từ bảng thành phần thực phẩm (Viện Dinh dưỡng Quốc gia, USDA và các nguồn khác). Trang của từng món cho thấy bốn bữa và từng nguyên liệu.`,
       'Tỷ lệ so sánh bữa nặng nhất và nhẹ nhất của cùng một món; "trung bình" ở đây là giá trị giữa (trung vị) qua các món hoặc các phần nguyên liệu.',
     ],
     citeHeading: 'Dùng lại số liệu',
