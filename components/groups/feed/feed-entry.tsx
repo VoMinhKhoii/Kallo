@@ -6,7 +6,10 @@ import { PremiumChip } from '@/components/billing/premium-chip';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { FeedEntryIdentity } from '@/components/groups/feed/feed-entry-identity';
 import { labelFor } from '@/components/groups/invite/profile-identity';
-import { compositionFromGrams } from '@/components/shared/nutrition/composition';
+import {
+  compositionFromGrams,
+  wholeGrams,
+} from '@/components/shared/nutrition/composition';
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
 import { MacroScale } from '@/components/shared/nutrition/macro-scale';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
@@ -95,11 +98,17 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             {/* Meal-text size, under the bar, leading the legend — the same
                 anatomy as mobile's MealBlock, where kcal is `dashBody()` at the
                 head of a spaceBetween row. Figure and unit are ONE string
-                (mobile's `fmtKcal`), so the two can never wrap apart. */}
+                (mobile's `fmtKcal`), so the two can never wrap apart.
+                `flex-wrap` is the last resort for a row that still does not
+                fit (a cheat "≈ 1,234 kcal" over 3-digit grams): the last
+                figure drops a line instead of running past the column. */}
             <MacroScale
-              grams={grams}
+              className="flex-wrap gap-y-1"
+              // Whole grams: a phone's post column is ~278px, and kcal plus
+              // three one-decimal figures broke "716 kcal" onto two lines.
+              grams={wholeGrams(grams)}
               leading={
-                <span className="font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
+                <span className="whitespace-nowrap font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
                   {kcalLabel}
                 </span>
               }
