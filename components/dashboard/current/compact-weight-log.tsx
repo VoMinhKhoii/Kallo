@@ -111,7 +111,10 @@ export function CompactWeightLog({
             aria-describedby={errorId}
             className={cn(
               'h-11 rounded-xl border-kallo-border bg-card pr-10 font-mono text-base shadow-none transition-colors hover:border-kallo-accent/50',
-              errors.weightKg && 'border-kallo-danger hover:border-kallo-danger'
+              // Half-strength at rest so focus (the Input's full-strength invalid
+              // border) still reads as a change: the border is the only focus cue.
+              errors.weightKg &&
+                'border-kallo-danger/50 hover:border-kallo-danger/50'
             )}
           />
           <span className="absolute top-1/2 right-3 -translate-y-1/2 text-kallo-text-muted text-xs">
