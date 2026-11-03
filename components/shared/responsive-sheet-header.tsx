@@ -53,7 +53,7 @@ export function ResponsiveSheetHeader({
         onClick={onBack ?? onClose}
         className="flex size-9 items-center justify-center justify-self-start rounded-full bg-kallo-segment text-kallo-text transition-colors hover:bg-kallo-border disabled:opacity-40"
       >
-        <Glyph className="size-[18px]" strokeWidth={1.75} />
+        <Glyph className="size-icon-action" strokeWidth={1.75} />
       </button>
 
       <p className="truncate pt-2 text-center font-semibold text-[17px] text-kallo-text leading-5">

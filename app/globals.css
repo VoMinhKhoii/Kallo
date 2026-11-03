@@ -133,8 +133,8 @@
        primary 20  the sidebar: nav, page-header and dialog-header controls,
                    settings row icons
        action  18  a control ON a card or row (mobile's `tertiary`); the
-                   Circle post's heart / reply / copy sit here, optically
-                   adjusted in `feed-entry.tsx` as mobile's `_optical` table
+                   Circle post's heart / reply / copy derive from it, set to
+                   optical sizes in `feed-entry.tsx` (mobile's `_optical`)
        inline  16  inside a button, menu item, input or a 14–15px line
        small   14  beside 12–13px text: macro glyphs, small chevrons
        micro   12  inside a 10–11px chip or badge
