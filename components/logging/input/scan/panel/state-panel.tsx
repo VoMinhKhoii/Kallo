@@ -70,7 +70,7 @@ export function ScanStatePanel({
                   : 'hover:bg-kallo-hover'
               )}
             >
-              <Icon className="size-5" strokeWidth={1.75} />
+              <Icon className="size-icon-primary" strokeWidth={1.75} />
               {label}
             </button>
           ))}

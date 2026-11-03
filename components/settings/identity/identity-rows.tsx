@@ -93,9 +93,9 @@ export function IdentityRows() {
             className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-kallo-btn font-medium text-kallo-btn-ink transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {rename.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="size-icon-inline animate-spin" />
             ) : (
-              <Check className="h-4 w-4" />
+              <Check className="size-icon-inline" />
             )}
           </button>
         </div>

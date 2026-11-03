@@ -16,7 +16,7 @@ export function ExportRow({ userId }: { userId: string }) {
       <RowButton
         pending={exportPending}
         onClick={handleExport}
-        icon={<Download className="h-3.5 w-3.5" />}
+        icon={<Download className="size-icon-small" />}
       >
         {exportPending ? t('exporting') : t('exportAction')}
       </RowButton>

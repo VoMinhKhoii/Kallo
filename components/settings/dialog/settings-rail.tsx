@@ -45,7 +45,7 @@ export function SettingsRail({
           )}
         >
           <Icon
-            className="size-[18px] shrink-0"
+            className="size-icon-primary shrink-0"
             strokeWidth={1.75}
             aria-hidden="true"
           />

@@ -18,7 +18,7 @@ export function CheatChip() {
 
   return (
     <span className="ml-auto flex shrink-0 items-center gap-1 rounded-full bg-kallo-accent/15 px-2 py-0.5 font-medium font-sans-display text-[10px] text-kallo-text">
-      <PartyPopper className="h-3 w-3" />
+      <PartyPopper className="size-icon-micro" />
       {t('badge')}
     </span>
   );

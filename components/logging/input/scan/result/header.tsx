@@ -66,7 +66,7 @@ export function ScanResultHeader({
               className="flex items-center gap-[5px] text-[14px] text-kallo-text tabular-nums"
             >
               <Icon
-                className="size-3.5"
+                className="size-icon-small"
                 style={{ color: COMPOSITION_COLORS[key] }}
               />
               {labels[key]} {formatFigure(grams[key])} g

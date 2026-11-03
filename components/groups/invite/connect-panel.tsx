@@ -92,9 +92,9 @@ export function ConnectPanel({
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-kallo-btn px-6 py-3 font-medium font-sans-display text-[15px] text-kallo-btn-ink shadow-kallo-btn/20 shadow-sm transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {accept.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="size-icon-inline animate-spin" />
             ) : (
-              <Check className="h-4 w-4" />
+              <Check className="size-icon-inline" />
             )}
             {t('accept')}
           </button>

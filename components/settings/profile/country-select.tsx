@@ -32,7 +32,7 @@ export function CountrySelect({
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         className={cn(
-          'flex h-9 w-full items-center justify-between gap-2 rounded-lg border pl-3 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30',
+          'flex h-9 w-full items-center justify-between gap-2 rounded-lg border pl-3 text-left text-[14px] transition-colors focus-visible:border-kallo-accent focus-visible:outline-none',
           value ? 'pr-10' : 'pr-3',
           isOpen
             ? 'border-kallo-accent bg-card'

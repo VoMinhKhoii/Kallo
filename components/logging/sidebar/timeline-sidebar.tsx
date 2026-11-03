@@ -145,7 +145,7 @@ export function TimelineSidebar({
         {isError && (
           <div className="ml-3 flex flex-col gap-2 rounded-lg border border-kallo-danger/30 bg-kallo-danger/10 p-3">
             <div className="flex items-center gap-2 text-kallo-danger text-sm">
-              <AlertCircle className="h-4 w-4" aria-hidden="true" />
+              <AlertCircle className="size-icon-inline" aria-hidden="true" />
               <span className="flex-1 font-medium">
                 {t('failedToLoadDates')}
               </span>
@@ -185,9 +185,9 @@ export function TimelineSidebar({
                   {month.month}/{month.year}
                 </span>
                 {isMonthExpanded ? (
-                  <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+                  <ChevronUp className="size-icon-small" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                  <ChevronDown className="size-icon-small" aria-hidden="true" />
                 )}
               </button>
 
@@ -230,12 +230,12 @@ export function TimelineSidebar({
                           </span>
                           {isWeekExpanded ? (
                             <ChevronUp
-                              className="h-3.5 w-3.5 shrink-0"
+                              className="size-icon-small shrink-0"
                               aria-hidden="true"
                             />
                           ) : (
                             <ChevronDown
-                              className="h-3.5 w-3.5 shrink-0"
+                              className="size-icon-small shrink-0"
                               aria-hidden="true"
                             />
                           )}

@@ -13,8 +13,8 @@ import { useShareThread } from '@/hooks/social/circle/use-share-thread';
 import { Link } from '@/i18n/navigation';
 
 /**
- * One post's own page: the post exactly as the feed draws it, then its whole
- * conversation and the composer. Reached from a feed row's reply glyph and
+ * One post's own page: the post exactly as the feed draws it, then the reply
+ * field, then its whole conversation. Reached from a feed row's reply glyph and
  * from every share notification, so it must answer three states honestly —
  * loading, a failed read (retryable), and a share that is genuinely gone,
  * which is a destination, not an error.
@@ -32,7 +32,7 @@ export function ShareThread({ shareId }: { shareId: string }) {
           aria-label={t('back')}
           className="-ml-1 inline-flex size-8 items-center justify-center rounded-full text-kallo-text transition-colors hover:bg-kallo-track"
         >
-          <ArrowLeft className="size-[18px]" />
+          <ArrowLeft className="size-icon-primary" />
         </Link>
         <h2 className="font-bold font-sans-display text-[15px] text-kallo-text">
           {t('title')}
@@ -45,12 +45,13 @@ export function ShareThread({ shareId }: { shareId: string }) {
         ) : isError ? (
           <CircleError onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : data ? (
+          // Post, then the reply field, then the conversation — the Threads
+          // web order: the field sits where the eye already is after reading
+          // the meal, instead of at the foot of a page that is usually empty.
+          //
           // A column that FILLS the scroll area rather than one that
           // shrink-wraps: it is what gives an empty thread's state room to
-          // centre in, and it pins the composer to the bottom edge while it
-          // does (the same shape mobile's docked composer gives that page).
-          // With replies, nothing takes the spare room and the composer
-          // follows the conversation as before.
+          // centre in, under the field.
           //
           // The page does NOT branch on how many replies there are — that is
           // `ShareReplies`' own question, and asking it here too meant one
@@ -58,13 +59,13 @@ export function ShareThread({ shareId }: { shareId: string }) {
           // spare room itself when it has nothing to list.
           <div className="flex min-h-full flex-col gap-3 p-4">
             <FeedEntry entry={data.entry} />
-            <ShareReplies replies={data.entry.replies} />
             <ReplyComposer
               authorName={
                 data.entry.isSelf ? undefined : labelFor(data.entry.friend)
               }
               shareId={shareId}
             />
+            <ShareReplies replies={data.entry.replies} />
           </div>
         ) : (
           <SurfaceState

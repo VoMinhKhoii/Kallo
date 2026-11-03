@@ -21,7 +21,7 @@ export function MobileAddRow({
         className="flex min-h-16 w-full items-center gap-3 py-2 text-left transition-colors active:bg-kallo-hover"
       >
         <Icon
-          className="size-6 shrink-0 text-kallo-text"
+          className="size-icon-touch shrink-0 text-kallo-text"
           strokeWidth={1.5}
           aria-hidden="true"
         />
@@ -34,7 +34,7 @@ export function MobileAddRow({
           </span>
         </span>
         <ChevronRight
-          className="size-4 shrink-0 text-kallo-text-muted"
+          className="size-icon-inline shrink-0 text-kallo-text-muted"
           aria-hidden="true"
         />
       </button>

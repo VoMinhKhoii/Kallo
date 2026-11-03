@@ -26,6 +26,17 @@ function withCount(label: string, count: number): string {
   return count > 0 ? `${label} ${count}` : label;
 }
 
+/** The action tier (`size-icon-action`, 18), optically adjusted per glyph —
+ * mobile's `KalloIcons._optical`. `message-circle` and `copy` fill ~20 of
+ * Lucide's 24 grid while `heart` tapers to a point, so at one number the heart
+ * reads a size smaller than the two beside it. A fourth glyph in this row
+ * gets an entry here, not its own number at the call site. */
+const ACTION_GLYPH = {
+  heart: 'size-[20px]',
+  reply: 'size-[17px]',
+  copy: 'size-[17px]',
+} as const;
+
 /** One flat Threads-style meal post with portion and share-scoped actions. */
 export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
   const tWall = useTranslations('groups.wall');
@@ -95,7 +106,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             />
           </div>
         )}
-        <div className="mt-2.5 flex items-center gap-[18px] font-sans-display text-[11.5px] text-kallo-text-muted tabular-nums">
+        <div className="mt-2.5 flex items-center gap-6 font-sans-display text-[14px] text-kallo-text-muted tabular-nums">
           <button
             type="button"
             aria-label={heartLabel}
@@ -103,7 +114,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             disabled={toggleReaction.isPending}
             onClick={() => toggleReaction.mutate(meal.shareId)}
             className={cn(
-              'inline-flex items-center gap-1.5 transition-colors disabled:opacity-50',
+              'inline-flex items-center gap-1 transition-colors hover:text-kallo-text disabled:opacity-50',
               entry.reactions.mine && 'text-kallo-text'
             )}
           >
@@ -116,7 +127,7 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                 canvas, not a shared value. */}
             <Heart
               className={cn(
-                'size-[15px]',
+                ACTION_GLYPH.heart,
                 entry.reactions.mine && 'fill-kallo-danger text-kallo-danger'
               )}
             />
@@ -132,9 +143,9 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
           <Link
             href={circleThreadHref(meal.shareId)}
             aria-label={replyLabel}
-            className="inline-flex items-center gap-1.5 transition-colors hover:text-kallo-text"
+            className="inline-flex items-center gap-1 transition-colors hover:text-kallo-text"
           >
-            <MessageCircle className="size-[15px]" />
+            <MessageCircle className={ACTION_GLYPH.reply} />
             {entry.repliesTotal > 0 && <span>{entry.repliesTotal}</span>}
           </Link>
           {/* Split half is still deferred — it needs a confirmation step.
@@ -143,7 +154,9 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
               error. A cheat meal travels as a directed invite instead, where
               the recipient can set their own amounts. */}
           {!(entry.isSelf || meal.entryMode === 'cheat') && (
-            <>
+            // One group so the chip stays beside its button: the row's
+            // 24px gap separates actions, not an action from its own chip.
+            <span className="inline-flex items-center gap-2">
               <button
                 type="button"
                 disabled={logSharedMeal.isPending}
@@ -151,13 +164,13 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                   if (!requirePremium('copy_split')) return;
                   logSharedMeal.mutate({ shareId: meal.shareId, factor: 1 });
                 }}
-                className="inline-flex items-center gap-1.5 transition-colors hover:text-kallo-text disabled:opacity-50"
+                className="inline-flex items-center gap-1 transition-colors hover:text-kallo-text disabled:opacity-50"
               >
-                <Copy className="size-[15px]" />
+                <Copy className={ACTION_GLYPH.copy} />
                 <span>{t('logCopy')}</span>
               </button>
               {copyLocked && <PremiumChip />}
-            </>
+            </span>
           )}
         </div>
       </div>

@@ -34,7 +34,7 @@ export function OptionStrip({ options, value, onChange }: OptionStripProps) {
           )}
         >
           <span className="flex items-center gap-1.5 font-medium text-[13px]">
-            {opt.icon && <opt.icon className="size-3.5" aria-hidden />}
+            {opt.icon && <opt.icon className="size-icon-small" aria-hidden />}
             {opt.label}
           </span>
           {opt.description && (

@@ -49,14 +49,14 @@ export function SettingsMenu({ onShow, hasProfile }: SettingsMenuProps) {
                   >
                     <span className="flex items-center gap-3">
                       <Icon
-                        className="size-5 shrink-0 text-kallo-text-muted"
+                        className="size-icon-primary shrink-0 text-kallo-text-muted"
                         strokeWidth={1.75}
                         aria-hidden="true"
                       />
                       {t(`pages.${page}.title`)}
                     </span>
                     <ChevronRight
-                      className="size-4 text-kallo-text-muted"
+                      className="size-icon-inline text-kallo-text-muted"
                       aria-hidden="true"
                     />
                   </button>

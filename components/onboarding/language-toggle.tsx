@@ -36,7 +36,7 @@ export function LanguageToggle({ value, onChange }: LanguageToggleProps) {
               {label}
             </span>
             {selected && (
-              <Check className="ml-auto h-4 w-4 shrink-0 text-kallo-text" />
+              <Check className="ml-auto size-icon-inline shrink-0 text-kallo-text" />
             )}
           </button>
         );

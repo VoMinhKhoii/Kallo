@@ -97,7 +97,7 @@ export function FeedbackForm({
           maxLength={MAX_LENGTH}
           rows={3}
           aria-required="true"
-          className="mt-2 w-full resize-y rounded-lg border border-kallo-border bg-card px-3 py-2.5 text-[14px] text-kallo-text placeholder:text-kallo-text-muted focus-visible:border-kallo-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/60"
+          className="mt-2 w-full resize-y rounded-lg border border-kallo-border bg-card px-3 py-2.5 text-[14px] text-kallo-text placeholder:text-kallo-text-muted focus-visible:border-kallo-accent focus-visible:outline-none"
         />
       </div>
 
@@ -119,7 +119,7 @@ export function FeedbackForm({
         {file ? (
           <div className="flex min-w-0 items-center gap-2 rounded-lg border border-kallo-border bg-card px-3 py-1.5 text-[13px]">
             <ImageIcon
-              className="size-4 shrink-0 text-kallo-text-muted"
+              className="size-icon-inline shrink-0 text-kallo-text-muted"
               aria-hidden
             />
             <span className="min-w-0 flex-1 truncate text-kallo-text">
@@ -131,7 +131,7 @@ export function FeedbackForm({
               aria-label={t('removeScreenshot')}
               className="shrink-0 rounded-md p-1 text-kallo-text-muted transition-colors hover:text-kallo-text"
             >
-              <X className="size-4" aria-hidden />
+              <X className="size-icon-inline" aria-hidden />
             </button>
           </div>
         ) : (
@@ -140,7 +140,7 @@ export function FeedbackForm({
             onClick={() => fileInput.current?.click()}
             className="flex h-8 items-center gap-2 rounded-lg border border-kallo-border border-dashed bg-card px-3 text-[13px] text-kallo-text-muted transition-colors hover:border-kallo-accent/50 hover:text-kallo-text"
           >
-            <ImagePlus className="size-4" aria-hidden />
+            <ImagePlus className="size-icon-inline" aria-hidden />
             {t('addScreenshot')}
           </button>
         )}

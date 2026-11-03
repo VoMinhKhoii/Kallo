@@ -47,7 +47,7 @@ export function AccountPanel({
           <RowButton
             pending={signOutPending}
             onClick={handleSignOut}
-            icon={<LogOut className="h-3.5 w-3.5" />}
+            icon={<LogOut className="size-icon-small" />}
           >
             {t('signOutAction')}
           </RowButton>

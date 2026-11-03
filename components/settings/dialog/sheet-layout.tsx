@@ -53,7 +53,7 @@ export function SheetLayout({
             onClick={() => onShow(null)}
             className="flex h-10 items-center gap-0.5 rounded-lg pr-3 pl-1 text-[16px] text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
           >
-            <ChevronLeft className="size-5" aria-hidden="true" />
+            <ChevronLeft className="size-icon-primary" aria-hidden="true" />
             {t('title')}
           </button>
         ) : (
@@ -63,7 +63,7 @@ export function SheetLayout({
           aria-label={tc('close')}
           className="flex size-10 items-center justify-center rounded-lg text-kallo-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
         >
-          <X className="size-5" aria-hidden="true" />
+          <X className="size-icon-primary" aria-hidden="true" />
         </DialogPrimitive.Close>
       </div>
       <div className="relative min-h-0 flex-1 overflow-hidden">

@@ -149,7 +149,7 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
           disabled={busy}
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text-muted/80 transition-colors hover:bg-kallo-hover/40 hover:text-kallo-text disabled:opacity-60"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="size-icon-small" />
           {t('dismiss')}
         </button>
         <button
@@ -160,9 +160,9 @@ export function InviteCard({ invite }: { invite: MealShareInvite }) {
           className="inline-flex items-center gap-1.5 rounded-full bg-kallo-hover px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-kallo-text transition-colors hover:bg-kallo-hover/70 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {accepting ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="size-icon-small animate-spin" />
           ) : (
-            <Check className="h-3.5 w-3.5" />
+            <Check className="size-icon-small" />
           )}
           {isCheat ? t('acceptCheat') : t('accept')}
         </button>

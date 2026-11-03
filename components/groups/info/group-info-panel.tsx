@@ -36,7 +36,7 @@ function Section({
         </span>
         <ChevronDown
           className={cn(
-            'size-4 text-kallo-text-muted transition-transform',
+            'size-icon-inline text-kallo-text-muted transition-transform',
             open && 'rotate-180'
           )}
         />
@@ -109,7 +109,7 @@ export function GroupInfoPanel({ group }: { group: ChatGroupDetail }) {
                 }}
                 className="flex size-6 shrink-0 items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-kallo-ink/[0.05] hover:text-kallo-text"
               >
-                <Pencil className="size-3.5" />
+                <Pencil className="size-icon-small" />
               </button>
             )}
           </span>

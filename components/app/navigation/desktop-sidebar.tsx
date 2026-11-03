@@ -155,7 +155,7 @@ export function DesktopSidebar({
       id: item.id,
       label: t(item.labelKey),
       href: item.href,
-      icon: <Icon className="h-5 w-5" />,
+      icon: <Icon className="size-icon-primary" />,
       // Resolved here, where `item.id` is still the nav-id union: a
       // SidebarNavItem widens it to string.
       showBadge: (badgeCounts[item.id] ?? 0) > 0,

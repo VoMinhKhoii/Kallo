@@ -154,7 +154,7 @@ function CountryPicker({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cn(
-          'flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30',
+          'flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:border-kallo-accent focus-visible:outline-none',
           isOpen
             ? 'border-kallo-accent bg-card'
             : 'border-kallo-border bg-card hover:border-kallo-accent/50'
@@ -294,7 +294,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
       {/* Language preference */}
       <div className="rounded-[24px] border border-kallo-border bg-card p-5 sm:p-6">
         <label className="mb-3 flex items-center gap-2 font-bold text-[13px] text-kallo-text">
-          <Languages className="h-4 w-4 text-kallo-text-muted" />
+          <Languages className="size-icon-inline text-kallo-text-muted" />
           {t('origin.preferredLanguage')}
         </label>
         <LanguageToggle
@@ -323,7 +323,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
           <CountryPicker
             label={t('origin.countryOfOrigin')}
             hint={t('origin.countryOfOriginHint')}
-            icon={<Globe className="h-4 w-4 text-kallo-text-muted" />}
+            icon={<Globe className="size-icon-inline text-kallo-text-muted" />}
             value={origin}
             onChange={(v) => {
               setOrigin(v);
@@ -337,7 +337,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
           <CountryPicker
             label={t('origin.countryOfResidence')}
             hint={t('origin.countryOfResidenceHint')}
-            icon={<MapPin className="h-4 w-4 text-kallo-text-muted" />}
+            icon={<MapPin className="size-icon-inline text-kallo-text-muted" />}
             value={residence}
             onChange={(v) => {
               setResidence(v);

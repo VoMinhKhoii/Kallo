@@ -125,7 +125,7 @@ export function LoggedMealCard({
             className="shrink-0 rounded-full p-1 text-kallo-text"
           >
             <ChevronDown
-              className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
+              className={`size-icon-inline transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
             />
           </span>
         </div>

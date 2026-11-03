@@ -55,10 +55,10 @@ export function SidebarBrandHeader({
           {collapsed ? (
             <>
               <KalloMark className="h-5 w-auto text-kallo-text transition-opacity duration-150 group-hover/toggle:opacity-0 group-focus-visible/toggle:opacity-0" />
-              <PanelLeftOpen className="absolute h-4 w-4 opacity-0 transition-opacity duration-150 group-hover/toggle:opacity-100 group-focus-visible/toggle:opacity-100" />
+              <PanelLeftOpen className="absolute size-icon-inline opacity-0 transition-opacity duration-150 group-hover/toggle:opacity-100 group-focus-visible/toggle:opacity-100" />
             </>
           ) : (
-            <PanelLeftClose className="h-4 w-4" />
+            <PanelLeftClose className="size-icon-inline" />
           )}
         </button>
       </SidebarTooltip>

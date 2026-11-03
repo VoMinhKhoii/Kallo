@@ -55,7 +55,9 @@ export function SaveBar({ isPending, onSave, onCancel }: SaveBarProps) {
               disabled={isPending}
               className={PRIMARY_BUTTON}
             >
-              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isPending && (
+                <Loader2 className="size-icon-inline animate-spin" />
+              )}
               {pendingTarget !== null
                 ? t('saveWithTarget', {
                     target: pendingTarget.toLocaleString(),

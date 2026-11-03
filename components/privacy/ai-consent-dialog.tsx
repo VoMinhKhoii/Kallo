@@ -67,7 +67,7 @@ export function AiConsentDialog({
           {/* A plain button, not AlertDialogAction: the action closes the
               dialog on click, and it must stay open until the write lands. */}
           <Button onClick={onContinue} disabled={isSaving} aria-busy={isSaving}>
-            {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {isSaving && <Loader2 className="size-icon-inline animate-spin" />}
             {t('continue')}
           </Button>
         </AlertDialogFooter>

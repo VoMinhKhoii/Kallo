@@ -86,9 +86,9 @@ export function CalorieScopeStats({
                 {t(diff >= 0 ? 'rhythm.diffUp' : 'rhythm.diffDown')}{' '}
               </span>
               {diff >= 0 ? (
-                <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+                <ArrowUp className="size-icon-small" aria-hidden="true" />
               ) : (
-                <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+                <ArrowDown className="size-icon-small" aria-hidden="true" />
               )}
               {formatLocalizedNumber(Math.abs(diff), locale)}
             </span>
@@ -104,11 +104,11 @@ export function CalorieScopeStats({
             {/* The arrow points the way the card moves: complete days sit to
                 the left of all days, so each label leads with its direction. */}
             {onComplete ? null : (
-              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+              <ArrowLeft className="size-icon-small" aria-hidden="true" />
             )}
             {t(onComplete ? 'rhythm.loggedDays' : 'rhythm.completeDays')}
             {onComplete ? (
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              <ArrowRight className="size-icon-small" aria-hidden="true" />
             ) : null}
           </button>
         )}

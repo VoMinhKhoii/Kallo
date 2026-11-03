@@ -38,7 +38,7 @@ export function WeightLogDialog({
           size="xs"
           className="h-9 shrink-0 gap-1.5 rounded-xl bg-kallo-btn px-3 text-kallo-btn-ink hover:bg-kallo-btn-hover"
         >
-          <Plus aria-hidden className="h-4 w-4" />
+          <Plus aria-hidden className="size-icon-inline" />
           {hasTodayWeight ? t('weightCard.update') : t('weightCard.logWeight')}
         </Button>
       }

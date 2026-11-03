@@ -40,7 +40,7 @@ export function MealEditStepperRow({
           onClick={onMinus}
           className={BUTTON}
         >
-          <MinusIcon className="h-3 w-3" />
+          <MinusIcon className="size-icon-micro" />
         </button>
         <span className="min-w-[76px] whitespace-nowrap text-center tabular-nums">
           {value}
@@ -52,7 +52,7 @@ export function MealEditStepperRow({
           onClick={onPlus}
           className={BUTTON}
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="size-icon-micro" />
         </button>
       </div>
     </div>

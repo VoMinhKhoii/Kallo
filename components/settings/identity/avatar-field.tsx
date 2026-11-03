@@ -71,9 +71,9 @@ export function AvatarField({ profile }: { profile: PublicProfile }) {
           className={SECONDARY_BUTTON}
         >
           {upload.isPending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="size-icon-small animate-spin" />
           ) : (
-            <Upload className="h-3.5 w-3.5" />
+            <Upload className="size-icon-small" />
           )}
           {profile.hasCustomAvatar ? t('avatarChange') : t('avatarUpload')}
         </button>
@@ -86,9 +86,9 @@ export function AvatarField({ profile }: { profile: PublicProfile }) {
             className={GHOST_BUTTON}
           >
             {remove.isPending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="size-icon-small animate-spin" />
             ) : (
-              <X className="h-3.5 w-3.5" />
+              <X className="size-icon-small" />
             )}
             {t('avatarRemove')}
           </button>

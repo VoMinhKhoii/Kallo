@@ -37,7 +37,7 @@ export function MobileTabLink({
       >
         <span className="relative">
           <Icon
-            className="size-6"
+            className="size-icon-touch"
             strokeWidth={active ? 2 : 1.5}
             aria-hidden="true"
           />

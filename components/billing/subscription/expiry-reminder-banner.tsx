@@ -23,7 +23,7 @@ export function ExpiryReminderBanner({
     <div className="flex items-start gap-3 rounded-2xl border border-kallo-danger/30 bg-kallo-danger/5 px-4 py-3.5">
       <CalendarClock
         aria-hidden="true"
-        className="mt-0.5 h-4 w-4 shrink-0 text-kallo-danger"
+        className="mt-0.5 size-icon-inline shrink-0 text-kallo-danger"
       />
       <div className="min-w-0">
         <p className="text-[14px] text-kallo-text">

@@ -68,7 +68,7 @@ export function ScanAmountCard({
               className="flex items-center gap-1 text-[16px] text-kallo-text outline-none"
             >
               {current.display}
-              <ChevronsUpDown className="size-4 text-kallo-text-muted" />
+              <ChevronsUpDown className="size-icon-inline text-kallo-text-muted" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-56 rounded-2xl">
               {choices.map((choice) => (
@@ -81,7 +81,9 @@ export function ScanAmountCard({
                 >
                   <Check
                     className={
-                      choice.value === selected ? 'size-4' : 'size-4 opacity-0'
+                      choice.value === selected
+                        ? 'size-icon-inline'
+                        : 'size-icon-inline opacity-0'
                     }
                   />
                   <span className="flex-1">{choice.label}</span>
@@ -108,7 +110,7 @@ export function ScanAmountCard({
             onClick={() => onStep(-1)}
             className={STEP}
           >
-            <Minus className="size-4" />
+            <Minus className="size-icon-inline" />
           </button>
           <div className="min-w-16 text-center">{amount}</div>
           <button
@@ -118,7 +120,7 @@ export function ScanAmountCard({
             onClick={() => onStep(1)}
             className={STEP}
           >
-            <Plus className="size-4" />
+            <Plus className="size-icon-inline" />
           </button>
         </div>
       </div>

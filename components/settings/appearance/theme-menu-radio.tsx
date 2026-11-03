@@ -22,7 +22,7 @@ export function ThemeMenuRadio() {
   return (
     <div className="px-2 pt-1.5 pb-2">
       <span className="flex items-center gap-2.5 pb-2 text-[14px] text-kallo-text">
-        <SunMoon className="size-4 shrink-0 text-kallo-text-muted" />
+        <SunMoon className="size-icon-inline shrink-0 text-kallo-text-muted" />
         {t('label')}
       </span>
       <DropdownMenuPrimitive.RadioGroup
@@ -49,7 +49,7 @@ export function ThemeMenuRadio() {
                 option === theme && SEGMENT_ON
               )}
             >
-              <Icon className="size-4" aria-hidden="true" />
+              <Icon className="size-icon-inline" aria-hidden="true" />
             </DropdownMenuPrimitive.RadioItem>
           );
         })}

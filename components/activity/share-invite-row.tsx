@@ -135,7 +135,7 @@ export function ShareInviteRow({
               className="inline-flex items-center gap-1.5 rounded-full bg-kallo-text px-4 py-1.5 font-sans-display text-[12px] text-kallo-surface transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
             >
               {accept.isPending && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="size-icon-small animate-spin" />
               )}
               {t('invite.accept')}
             </button>

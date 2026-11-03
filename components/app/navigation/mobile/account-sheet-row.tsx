@@ -26,7 +26,7 @@ export function AccountSheetRow({
           {label}
         </span>
         <ChevronRight
-          className="size-4 text-kallo-text-muted"
+          className="size-icon-inline text-kallo-text-muted"
           aria-hidden="true"
         />
       </Link>

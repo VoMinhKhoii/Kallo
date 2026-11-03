@@ -48,7 +48,10 @@ export function MealCardMenuButton({ items }: { items: MealCardMenuItem[] }) {
             <span className="flex-1">{item.label}</span>
             <item.icon
               aria-hidden="true"
-              className={cn('h-4 w-4', item.danger && 'text-kallo-error')}
+              className={cn(
+                'size-icon-inline',
+                item.danger && 'text-kallo-error'
+              )}
             />
           </DropdownMenuItem>
         ))}

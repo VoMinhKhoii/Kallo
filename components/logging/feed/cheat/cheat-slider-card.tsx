@@ -124,7 +124,7 @@ export function CheatSliderCard({
             </p>
           )}
           <Badge className="shrink-0 gap-1 border-transparent bg-kallo-accent/15 font-sans-display text-kallo-text">
-            <PartyPopper className="h-3 w-3" />
+            <PartyPopper className="size-icon-micro" />
             {t('badge')}
           </Badge>
         </div>
@@ -249,8 +249,8 @@ function CheatSliderRow({
 
   return (
     <div className="font-sans-display">
-      <div className="mb-1 flex items-center gap-1.5">
-        <Icon aria-hidden className="h-4 w-4 shrink-0" style={{ color }} />
+      <div className="mb-1 flex items-center gap-1.5 [&>svg]:size-icon-inline [&>svg]:shrink-0">
+        <Icon aria-hidden style={{ color }} />
         <span className="font-medium text-kallo-text text-sm">
           {slider.label}
         </span>

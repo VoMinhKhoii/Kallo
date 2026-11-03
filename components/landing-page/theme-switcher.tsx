@@ -28,7 +28,7 @@ export function ThemeSwitcher() {
         title={t('label')}
         className="flex size-8 cursor-pointer items-center justify-center rounded-full text-kallo-text-soft transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
       >
-        <Icon className="size-4" aria-hidden="true" />
+        <Icon className="size-icon-inline" aria-hidden="true" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"

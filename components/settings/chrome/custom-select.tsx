@@ -86,9 +86,9 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
-        className={`flex h-9 w-full items-center justify-between rounded-lg border bg-card px-3 text-[14px] text-kallo-text transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 ${
+        className={`flex h-9 w-full items-center justify-between rounded-lg border bg-card px-3 text-[14px] text-kallo-text transition-all focus:outline-none focus-visible:border-kallo-accent ${
           isOpen
-            ? 'border-kallo-accent shadow-sm ring-1 ring-kallo-accent/20'
+            ? 'border-kallo-accent'
             : 'border-kallo-border hover:border-kallo-accent/50'
         }`}
       >
@@ -97,7 +97,7 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
           <span className="truncate">{selectedOption?.label}</span>
         </span>
         <ChevronDown
-          className={`h-4 w-4 shrink-0 text-kallo-text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          className={`size-icon-inline shrink-0 text-kallo-text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
       <AnimatePresence>
@@ -137,7 +137,7 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
                   </span>
                 </span>
                 {value === opt.value && (
-                  <Check className="h-4 w-4 shrink-0 text-kallo-text" />
+                  <Check className="size-icon-inline shrink-0 text-kallo-text" />
                 )}
               </button>
             ))}

@@ -27,7 +27,7 @@ function PortalLink({
       className={danger ? DANGER_BUTTON : SECONDARY_BUTTON}
     >
       {children}
-      <ExternalLink aria-hidden="true" className="size-3.5" />
+      <ExternalLink aria-hidden="true" className="size-icon-small" />
     </a>
   );
 }

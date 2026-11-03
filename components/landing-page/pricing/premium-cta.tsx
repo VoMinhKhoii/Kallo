@@ -54,7 +54,10 @@ export function PremiumCta({
           className="pointer-events-none absolute inset-0 bg-linear-115 from-35% from-transparent via-50% via-white/45 to-62% to-transparent"
         />
         {busy && (
-          <Loader2 aria-hidden className="relative h-4 w-4 animate-spin" />
+          <Loader2
+            aria-hidden
+            className="relative size-icon-inline animate-spin"
+          />
         )}
         <span className="relative">{label}</span>
       </button>

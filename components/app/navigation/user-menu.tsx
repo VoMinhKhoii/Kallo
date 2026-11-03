@@ -187,7 +187,7 @@ export function UserMenu({
             'text-kallo-danger focus:bg-kallo-danger/10 focus:text-kallo-danger data-[highlighted]:bg-kallo-danger/10'
           )}
         >
-          <LogOut className="size-4 shrink-0" />
+          <LogOut className="size-icon-inline shrink-0" />
           {t('signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>

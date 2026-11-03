@@ -44,7 +44,7 @@ export function FriendsFeed() {
         <AddFriendDialog
           trigger={
             <Button size="sm" variant="ink">
-              <UserPlus className="h-3.5 w-3.5" />
+              <UserPlus className="size-icon-small" />
               {t('addFriend')}
             </Button>
           }

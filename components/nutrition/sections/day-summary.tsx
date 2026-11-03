@@ -166,7 +166,7 @@ export function DaySummary({
               >
                 <Icon
                   aria-hidden="true"
-                  className="h-3.5 w-3.5 shrink-0"
+                  className="size-icon-small shrink-0"
                   style={{ color: COMPOSITION_COLORS[segment.key] }}
                 />
                 {segment.label} {formatLocalizedNumber(segment.grams, locale)}g

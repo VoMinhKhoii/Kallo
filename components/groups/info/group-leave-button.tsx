@@ -21,7 +21,7 @@ export function GroupLeaveButton({ groupId }: { groupId: string }) {
           type="button"
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-kallo-text-muted transition-colors duration-200 hover:bg-kallo-hover hover:text-kallo-text"
         >
-          <LogOut className="h-4 w-4" aria-hidden="true" />
+          <LogOut className="size-icon-inline" aria-hidden="true" />
           <span className="font-medium font-sans-display text-[13px] tracking-tight">
             {t('leave')}
           </span>

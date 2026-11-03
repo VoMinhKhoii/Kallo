@@ -11,7 +11,7 @@ export function ScanBusyOverlay({ text }: { text: string }) {
       aria-live="polite"
       className="absolute inset-x-0 top-[64%] flex items-center justify-center gap-2.5 text-[16px] text-white"
     >
-      <Loader2 className="size-[18px] animate-spin" />
+      <Loader2 className="size-icon-action animate-spin" />
       {text}
     </p>
   );

@@ -95,7 +95,7 @@ export default function ResetPasswordPage() {
 
         {status === 'checking' && (
           <div className="flex justify-center py-6">
-            <Loader2 className="h-5 w-5 animate-spin text-kallo-text-muted" />
+            <Loader2 className="size-icon-primary animate-spin text-kallo-text-muted" />
           </div>
         )}
 
@@ -134,7 +134,7 @@ export default function ResetPasswordPage() {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-kallo-ink px-4 py-3 font-medium text-kallo-surface text-sm transition-colors hover:bg-kallo-ink-hover disabled:opacity-60"
             >
               {(loading || done) && (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="size-icon-inline animate-spin" />
               )}
               {t('submit')}
             </button>

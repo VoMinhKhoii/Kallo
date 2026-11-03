@@ -74,7 +74,11 @@ export function ManualMealItems({
         onClick={onAdd}
         className="mt-3 flex min-h-[52px] w-full items-center gap-3 rounded-[22px] bg-card px-4 py-2 text-left text-[16px] text-kallo-text transition-colors hover:bg-kallo-hover/40 disabled:opacity-60"
       >
-        <Plus aria-hidden className="size-6 shrink-0" strokeWidth={1.5} />
+        <Plus
+          aria-hidden
+          className="size-icon-touch shrink-0"
+          strokeWidth={1.5}
+        />
         <span className="flex flex-col">
           {t('addIngredient')}
           {full && (

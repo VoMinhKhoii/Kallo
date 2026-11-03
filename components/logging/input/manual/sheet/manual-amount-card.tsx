@@ -88,7 +88,7 @@ export function ManualAmountCard({
             onClick={() => less !== null && onGrams(less)}
             className={STEP}
           >
-            <Minus className="size-4" />
+            <Minus className="size-icon-inline" />
           </button>
           <div className="min-w-[76px] text-center">
             <ScanAmountInput
@@ -118,7 +118,7 @@ export function ManualAmountCard({
             onClick={() => more !== null && onGrams(more)}
             className={STEP}
           >
-            <Plus className="size-4" />
+            <Plus className="size-icon-inline" />
           </button>
         </div>
       </div>

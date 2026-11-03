@@ -41,7 +41,11 @@ export function MobileAddSheet() {
             aria-label={tTab('add')}
             className="flex size-12 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--kallo-brand-apricot),var(--kallo-brand-lilac))] text-kallo-text shadow-[0_4px_12px_rgba(20,20,19,0.14)] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent active:scale-95"
           >
-            <Plus className="size-6" strokeWidth={2} aria-hidden="true" />
+            <Plus
+              className="size-icon-touch"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
           </button>
         }
       >

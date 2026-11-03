@@ -104,7 +104,7 @@ export function DocsSearch({ entries }: DocsSearchProps) {
         onClick={() => setOpen(true)}
         type="button"
       >
-        <Search aria-hidden className="h-4 w-4 shrink-0" />
+        <Search aria-hidden className="size-icon-inline shrink-0" />
         <span className="hidden sm:inline">{t('trigger')}</span>
         <span
           aria-hidden

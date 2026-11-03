@@ -90,7 +90,7 @@ export function EmailStep() {
           disabled={loading || waitingForCheck}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-kallo-ink px-4 py-3 font-medium font-sans-display text-kallo-surface text-sm tracking-tight transition-all duration-200 hover:bg-kallo-ink-hover disabled:opacity-60"
         >
-          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {loading && <Loader2 className="size-icon-inline animate-spin" />}
           {t('sendCode')}
         </button>
       </div>

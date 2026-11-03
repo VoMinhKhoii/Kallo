@@ -5,7 +5,7 @@
 
 /** A text or number field. */
 export const FIELD_CLASS =
-  'h-9 w-full rounded-lg border border-kallo-border bg-card px-3 text-[14px] text-kallo-text outline-none transition-colors placeholder:text-kallo-text-muted hover:border-kallo-accent/50 focus:border-kallo-accent focus-visible:ring-2 focus-visible:ring-kallo-accent/40';
+  'h-9 w-full rounded-lg border border-kallo-border bg-card px-3 text-[14px] text-kallo-text outline-none transition-colors placeholder:text-kallo-text-muted hover:border-kallo-accent/50 focus:border-kallo-accent';
 
 /**
  * The page's one filled action (Save, Send feedback, Start setup), in the

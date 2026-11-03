@@ -39,7 +39,7 @@ export function StagedRow({ entry, disabled, onRemove }: StagedRowProps) {
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-kallo-text-muted/40 transition-colors hover:bg-kallo-hover/30 hover:text-kallo-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/40 disabled:opacity-40"
         aria-label={t('removeStaged', { name: entry.label })}
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="size-icon-small" />
       </button>
     </div>
   );

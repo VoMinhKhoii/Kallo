@@ -32,7 +32,11 @@ export function ManualSheetLauncher({
         onClick={() => onOpenChange(true)}
         className="flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-xl px-1 text-left text-[16px] text-kallo-text-muted transition-colors hover:text-kallo-text disabled:opacity-50"
       >
-        <Plus aria-hidden className="size-5 shrink-0" strokeWidth={1.5} />
+        <Plus
+          aria-hidden
+          className="size-icon-primary shrink-0"
+          strokeWidth={1.5}
+        />
         <span className="truncate">{t('sheetTitle')}</span>
       </button>
       <ManualMealSheet

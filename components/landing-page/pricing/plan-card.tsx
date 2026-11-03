@@ -88,7 +88,7 @@ export function PlanCard({
             <li key={id} className="flex items-start gap-2.5">
               <Check
                 aria-hidden
-                className="mt-0.5 h-4 w-4 shrink-0 text-kallo-text-soft"
+                className="mt-0.5 size-icon-inline shrink-0 text-kallo-text-soft"
               />
               <span className="font-sans-display text-kallo-text-soft text-sm leading-snug">
                 {t(`features.${id}`)}

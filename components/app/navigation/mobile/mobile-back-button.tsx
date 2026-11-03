@@ -33,7 +33,11 @@ export function MobileBackButton() {
       onClick={goBack}
       className="-ml-2 flex size-11 shrink-0 items-center justify-center rounded-full text-kallo-text transition-colors hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
     >
-      <ChevronLeft className="size-6" strokeWidth={1.75} aria-hidden="true" />
+      <ChevronLeft
+        className="size-icon-touch"
+        strokeWidth={1.75}
+        aria-hidden="true"
+      />
     </button>
   );
 }

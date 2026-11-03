@@ -22,7 +22,7 @@ export function PricingBackLink() {
         className="inline-flex items-center gap-1.5 font-sans-display text-kallo-text-soft text-sm transition-colors hover:text-kallo-text"
         data-testid="pricing-back-link"
       >
-        <ArrowLeft aria-hidden className="h-4 w-4" />
+        <ArrowLeft aria-hidden className="size-icon-inline" />
         {t('back')}
       </NextLink>
     </div>

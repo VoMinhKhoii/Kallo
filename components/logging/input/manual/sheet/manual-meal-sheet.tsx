@@ -115,7 +115,7 @@ export function ManualMealSheet({
             onClick={save}
             className="flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-kallo-hover font-semibold text-[16px] text-kallo-text transition-colors hover:bg-kallo-border disabled:opacity-55"
           >
-            {saving && <Loader2 className="size-4 animate-spin" />}
+            {saving && <Loader2 className="size-icon-inline animate-spin" />}
             {t('save')}
           </button>
         </div>
