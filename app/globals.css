@@ -292,12 +292,12 @@
   --kallo-stone: #a8a29e;
   --kallo-btn: #695e4e;
   --kallo-btn-hover: #5a5043;
-  /* The label on a `bg-kallo-btn` fill. White on umber here; cream on the
-     Graphite fill; ink on Aurora's light gradient, where white would vanish. */
+  /* The label on a `bg-kallo-btn` fill. White on umber here; ink on Graphite's
+     cream fill and on Aurora's light gradient, where white would vanish. */
   --kallo-btn-ink: #ffffff;
   /* The umber as running text or a glyph (the analysis ticker, a link, an
      outline button). The dark themes swap it for a tone that reads on the
-     page, since their button fill is too dark to be text. */
+     page: Graphite's text cream, Aurora's light apricot. */
   --kallo-umber-text: #695e4e;
   /* The user's sent meal in the logging thread. */
   --kallo-bubble: #695e4e;
@@ -429,10 +429,10 @@
   --kallo-hover: #31312e;
   --kallo-track: #2a2a27;
   --kallo-stone: #8a8580;
-  --kallo-btn: #f2f1ec;
-  --kallo-btn-hover: #dcdad3;
+  --kallo-btn: var(--kallo-ink);
+  --kallo-btn-hover: var(--kallo-ink-hover);
   --kallo-btn-ink: #141413;
-  --kallo-umber-text: #f2f1ec;
+  --kallo-umber-text: var(--kallo-text);
   --kallo-bubble: #31312e;
   --kallo-bubble-ink: #f2f1ec;
   --kallo-mention: #6fa8f0;
