@@ -107,8 +107,12 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
             {/* Meal-text size, under the bar, leading the legend — the same
                 anatomy as mobile's MealBlock, where kcal is `dashBody()` at the
                 head of a spaceBetween row. Figure and unit are ONE string
-                (mobile's `fmtKcal`), so the two can never wrap apart. */}
+                (mobile's `fmtKcal`), so the two can never wrap apart.
+                `flex-wrap` is the last resort for a row that still does not
+                fit (a cheat "≈ 1,234 kcal" over 3-digit grams): the last
+                figure drops a line instead of running past the column. */}
             <MacroScale
+              className="flex-wrap gap-y-1"
               grams={shownGrams}
               leading={
                 <span className="whitespace-nowrap font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
