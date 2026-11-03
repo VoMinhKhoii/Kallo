@@ -249,12 +249,8 @@ function CheatSliderRow({
 
   return (
     <div className="font-sans-display">
-      <div className="mb-1 flex items-center gap-1.5">
-        <Icon
-          aria-hidden
-          className="size-icon-inline shrink-0"
-          style={{ color }}
-        />
+      <div className="mb-1 flex items-center gap-1.5 [&>svg]:size-icon-inline [&>svg]:shrink-0">
+        <Icon aria-hidden style={{ color }} />
         <span className="font-medium text-kallo-text text-sm">
           {slider.label}
         </span>

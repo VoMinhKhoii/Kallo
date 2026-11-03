@@ -398,10 +398,7 @@ export function MobileTimelinePicker({
                     )}
                     aria-label={t('previousWeek')}
                   >
-                    <ChevronLeft
-                      className="size-icon-inline"
-                      aria-hidden="true"
-                    />
+                    <ChevronLeft className="size-icon-inline" aria-hidden />
                   </button>
 
                   <div
@@ -460,10 +457,7 @@ export function MobileTimelinePicker({
                     )}
                     aria-label={t('nextWeek')}
                   >
-                    <ChevronRight
-                      className="size-icon-inline"
-                      aria-hidden="true"
-                    />
+                    <ChevronRight className="size-icon-inline" aria-hidden />
                   </button>
                 </motion.div>
               )}
@@ -480,10 +474,7 @@ export function MobileTimelinePicker({
             role="alert"
           >
             <div className="flex flex-1 items-center gap-1.5 text-kallo-danger text-xs">
-              <AlertCircle
-                className="size-icon-small shrink-0"
-                aria-hidden="true"
-              />
+              <AlertCircle className="size-icon-small shrink-0" aria-hidden />
               <span>{t('failedToLoadDates')}</span>
             </div>
             <Button
