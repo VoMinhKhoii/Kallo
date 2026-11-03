@@ -62,6 +62,28 @@ describe('FeedEntry', () => {
     ).toBeTruthy();
   });
 
+  it('prints whole grams and keeps the kcal on one line', () => {
+    // A phone's post column is ~278px: kcal plus three one-decimal figures
+    // ran past it and broke "716 kcal" in two. Mobile's MacroScale rounds.
+    render(
+      <FeedEntry
+        entry={entryFixture({
+          meal: {
+            ...entryFixture().meal,
+            proteinG: 5.5,
+            carbohydrateG: 94.4,
+            fatG: 35.1,
+          },
+        })}
+      />
+    );
+
+    expect(screen.getByText(/P:\s*6g/)).toBeInTheDocument();
+    expect(screen.getByText(/C:\s*94g/)).toBeInTheDocument();
+    expect(screen.getByText(/F:\s*35g/)).toBeInTheDocument();
+    expect(screen.getByText('420 kcal')).toHaveClass('whitespace-nowrap');
+  });
+
   it('says the kcal is unmeasured without dropping the unit', () => {
     render(
       <FeedEntry

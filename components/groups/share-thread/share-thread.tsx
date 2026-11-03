@@ -57,7 +57,7 @@ export function ShareThread({ shareId }: { shareId: string }) {
           // `ShareReplies`' own question, and asking it here too meant one
           // predicate in two files kept in sync by comments. It takes the
           // spare room itself when it has nothing to list.
-          <div className="flex min-h-full flex-col gap-3 p-4">
+          <div className="flex min-h-full flex-col gap-4 p-4">
             <FeedEntry entry={data.entry} />
             <ReplyComposer
               authorName={

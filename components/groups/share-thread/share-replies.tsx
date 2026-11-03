@@ -48,7 +48,7 @@ export function ShareReplies({ replies }: { replies: ShareReply[] }) {
   }
 
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-4">
       {replies.map((reply) => {
         const name = reply.isSelf ? tWall('you') : labelFor(reply.author);
         return (

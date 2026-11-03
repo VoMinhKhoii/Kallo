@@ -26,6 +26,10 @@ function withCount(label: string, count: number): string {
   return count > 0 ? `${label} ${count}` : label;
 }
 
+function wholeGrams(value: number | null | undefined): number | null {
+  return value == null ? null : Math.round(value);
+}
+
 /** The action tier (`size-icon-action`, 18), optically adjusted per glyph —
  * mobile's `KalloIcons._optical`. `message-circle` and `copy` fill ~20 of
  * Lucide's 24 grid while `heart` tapers to a point, so at one number the heart
@@ -58,6 +62,14 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
     fat: meal.fatG,
   };
   const composition = compositionFromGrams(grams);
+  // Whole grams under the bar, as mobile's MacroScale prints them. A post's
+  // column is ~278px on a phone: kcal plus three one-decimal figures ran past
+  // it and broke "716 kcal" onto two lines. The bar keeps the exact values.
+  const shownGrams = {
+    protein: wholeGrams(grams.protein),
+    carbohydrate: wholeGrams(grams.carbohydrate),
+    fat: wholeGrams(grams.fat),
+  };
   // Nothing measured at all — draw nothing rather than a row of dashes over an
   // empty bar.
   const hasNutrition = meal.caloriesKcal != null || composition.totalKcal > 0;
@@ -97,9 +109,9 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                 head of a spaceBetween row. Figure and unit are ONE string
                 (mobile's `fmtKcal`), so the two can never wrap apart. */}
             <MacroScale
-              grams={grams}
+              grams={shownGrams}
               leading={
-                <span className="font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
+                <span className="whitespace-nowrap font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
                   {kcalLabel}
                 </span>
               }
