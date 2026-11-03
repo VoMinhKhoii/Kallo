@@ -416,23 +416,24 @@
   --kallo-accent-hover: #d4b88c;
   --kallo-gold-wash: #2a2410;
   --kallo-segment: #1f1f1d;
-  --kallo-thumb: #3d352b;
+  --kallo-thumb: #3a3a37;
   --kallo-premium-fill: #16213a;
   --kallo-premium-edge: #3b5a9a;
   --kallo-premium-ink: #9db8f5;
   --kallo-premium-dot: #6c93f0;
   --kallo-border: #2c2b28;
-  /* Selection, the sent-message bubble and hover washes: a warm fill bright
-     enough to find at a glance (owner, 2026-10-22). The primary button is the
-     same family one step brighter, so the action still reads first. */
-  --kallo-hover: #3d352b;
+  /* Selection, the sent-message bubble and hover washes: a neutral grey fill
+     bright enough to find at a glance. The primary button is the inverse —
+     cream fill, ink label — so the action reads first (owner, 2026-11-03:
+     no brown fills on Graphite; the page stays as it is). */
+  --kallo-hover: #31312e;
   --kallo-track: #2a2a27;
   --kallo-stone: #8a8580;
-  --kallo-btn: #524636;
-  --kallo-btn-hover: #5e513f;
-  --kallo-btn-ink: #f2f1ec;
-  --kallo-umber-text: #c9a87c;
-  --kallo-bubble: #3d352b;
+  --kallo-btn: #f2f1ec;
+  --kallo-btn-hover: #dcdad3;
+  --kallo-btn-ink: #141413;
+  --kallo-umber-text: #f2f1ec;
+  --kallo-bubble: #31312e;
   --kallo-bubble-ink: #f2f1ec;
   --kallo-mention: #6fa8f0;
   /* Macros lifted a step so they hold their hue on near-black. */
