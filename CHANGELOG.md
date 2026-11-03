@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.22.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.21.0...v1.22.0) (2026-11-02)
+
+
+### Features
+
+* **seo:** 25 Vietnamese food calorie pages and a /vi/calories hub ([#534](https://github.com/VoMinhKhoii/Kallo/issues/534)) ([f51babf](https://github.com/VoMinhKhoii/Kallo/commit/f51babf765641b1a251936e274c564d56fdaf6e8))
+* **seo:** 50 food calorie pages and a /calories hub ([#514](https://github.com/VoMinhKhoii/Kallo/issues/514)) ([b48df5c](https://github.com/VoMinhKhoii/Kallo/commit/b48df5cf56970018d0554c7702b3470bd731e23e))
+* **seo:** add a chicken burrito calories page and one header style ([#513](https://github.com/VoMinhKhoii/Kallo/issues/513)) ([0d5fe3d](https://github.com/VoMinhKhoii/Kallo/commit/0d5fe3da542ad81aa2cc4140ca7df84fd381ebc2))
+* **seo:** an original-data page on how much the same meal varies (EN + VI) ([#537](https://github.com/VoMinhKhoii/Kallo/issues/537)) ([2096c72](https://github.com/VoMinhKhoii/Kallo/commit/2096c72e1082d72d389c478c980c10496680c83d))
+* **seo:** free TDEE, deficit, macro, protein and BMI calculators (EN + VI) ([#522](https://github.com/VoMinhKhoii/Kallo/issues/522)) ([cd990a7](https://github.com/VoMinhKhoii/Kallo/commit/cd990a7e0d4831a47a001b2a2801252e0c69a7ff))
+* **settings:** open settings as a dialog over the app ([#512](https://github.com/VoMinhKhoii/Kallo/issues/512)) ([026ffb3](https://github.com/VoMinhKhoii/Kallo/commit/026ffb3cd3e2409a99908bd449939534cd8e195a))
+
+
+### Bug Fixes
+
+* **account:** bound and rate limit complete data exports ([#530](https://github.com/VoMinhKhoii/Kallo/issues/530)) ([c3c915c](https://github.com/VoMinhKhoii/Kallo/commit/c3c915c5c5c2251df58e75351f956c3d0762907c))
+* **auth:** charge caller budgets before shared limits ([#528](https://github.com/VoMinhKhoii/Kallo/issues/528)) ([a4f6764](https://github.com/VoMinhKhoii/Kallo/commit/a4f67640d78b430b098ea3e102349aa960abc492))
+* **logging:** prefill-only meal links and per-account composer drafts ([#540](https://github.com/VoMinhKhoii/Kallo/issues/540)) ([bd1284e](https://github.com/VoMinhKhoii/Kallo/commit/bd1284ebc632745e6728a3f417e3e0ee7f88acfa))
+* **mobile:** draw the composer's focus ring over its content ([#509](https://github.com/VoMinhKhoii/Kallo/issues/509)) ([d340db4](https://github.com/VoMinhKhoii/Kallo/commit/d340db424834690d94d2b5686bf54a28826c5e1d))
+* **mobile:** stop sign-out crashing in the router's redirect refresh ([#510](https://github.com/VoMinhKhoii/Kallo/issues/510)) ([c62180d](https://github.com/VoMinhKhoii/Kallo/commit/c62180d85b541041aef2ef43f30a7334a31dd2aa))
+* **notifications:** charge the actor's push budget before the shared one ([#539](https://github.com/VoMinhKhoii/Kallo/issues/539)) ([a648ec2](https://github.com/VoMinhKhoii/Kallo/commit/a648ec2078b2f861896ae932ac1e248eec222314))
+* **profile:** pass a sign-in picture on only from an allowed image host ([#542](https://github.com/VoMinhKhoii/Kallo/issues/542)) ([27f5e1a](https://github.com/VoMinhKhoii/Kallo/commit/27f5e1a560b6a388aed35550f72b201c63a5c323))
+* **rate-limit:** stop leaked slots from locking people out of relog ([#502](https://github.com/VoMinhKhoii/Kallo/issues/502)) ([dc4d1a2](https://github.com/VoMinhKhoii/Kallo/commit/dc4d1a2d28d2f1a08b2902c84cc5d4f425e69cb5))
+* scope persisted meal nutrients to viewer access ([#529](https://github.com/VoMinhKhoii/Kallo/issues/529)) ([8bfd6e2](https://github.com/VoMinhKhoii/Kallo/commit/8bfd6e2f15bed8abc27355792be45c16ecc83b88))
+* scrub database errors and validate profile countries ([#533](https://github.com/VoMinhKhoii/Kallo/issues/533)) ([33b78c9](https://github.com/VoMinhKhoii/Kallo/commit/33b78c9beb75db94b114f56213e8c9ef32cb8990))
+* **sentry:** ignore the iOS in-app browser's missing webkit bridge error ([#505](https://github.com/VoMinhKhoii/Kallo/issues/505)) ([67db194](https://github.com/VoMinhKhoii/Kallo/commit/67db19497ec3be80192565a0d335d3f87992fb7f))
+* **social:** check friend-since in direct chats, answer blocked invites like invalid ones, bind relationship helpers to the caller ([#532](https://github.com/VoMinhKhoii/Kallo/issues/532)) ([fd94d36](https://github.com/VoMinhKhoii/Kallo/commit/fd94d36f84692c719611cd274e80615e67b45f2e))
+* **social:** invite links connect only with the owner's consent ([#543](https://github.com/VoMinhKhoii/Kallo/issues/543)) ([7836374](https://github.com/VoMinhKhoii/Kallo/commit/7836374b85f98b4a3daea7e58559bd545d0968f3))
+* **waitlist:** answer every signup the same way and budget mail per mailbox ([#541](https://github.com/VoMinhKhoii/Kallo/issues/541)) ([571dfa6](https://github.com/VoMinhKhoii/Kallo/commit/571dfa6c2a4b50e524245e20620bbff5ab999524))
+
 ## [1.21.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.20.0...v1.21.0) (2026-10-28)
 
 
