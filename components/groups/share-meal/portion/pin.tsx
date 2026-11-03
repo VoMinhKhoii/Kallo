@@ -77,7 +77,7 @@ export function PortionPin({
             onClick={onRemove}
             type="button"
           >
-            <X className="h-2.5 w-2.5 text-kallo-text-muted" />
+            <X className="size-icon-micro text-kallo-text-muted" />
           </button>
         )}
       </span>

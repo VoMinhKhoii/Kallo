@@ -46,7 +46,7 @@ export function CheatOccasionChips({
             title={occasion.rawInput}
             className="flex max-w-[14rem] items-center gap-1.5 rounded-full border border-kallo-border/60 px-3 py-1.5 font-sans-display text-kallo-text text-xs transition-colors hover:border-kallo-accent/60 hover:bg-kallo-hover/40 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Cookie className="h-3 w-3 shrink-0 text-kallo-text-muted" />
+            <Cookie className="size-icon-micro shrink-0 text-kallo-text-muted" />
             <span className="truncate">{occasion.rawInput}</span>
           </button>
         ))}

@@ -364,7 +364,7 @@ export function MobileTimelinePicker({
                   aria-expanded={false}
                 >
                   <CalendarIcon
-                    className="size-3.5 shrink-0 text-kallo-text-muted"
+                    className="size-icon-small shrink-0 text-kallo-text-muted"
                     aria-hidden="true"
                   />
                   <span className="min-w-0 truncate">{formattedDate}</span>
@@ -398,7 +398,10 @@ export function MobileTimelinePicker({
                     )}
                     aria-label={t('previousWeek')}
                   >
-                    <ChevronLeft className="size-4" aria-hidden="true" />
+                    <ChevronLeft
+                      className="size-icon-inline"
+                      aria-hidden="true"
+                    />
                   </button>
 
                   <div
@@ -457,7 +460,10 @@ export function MobileTimelinePicker({
                     )}
                     aria-label={t('nextWeek')}
                   >
-                    <ChevronRight className="size-4" aria-hidden="true" />
+                    <ChevronRight
+                      className="size-icon-inline"
+                      aria-hidden="true"
+                    />
                   </button>
                 </motion.div>
               )}
@@ -474,7 +480,10 @@ export function MobileTimelinePicker({
             role="alert"
           >
             <div className="flex flex-1 items-center gap-1.5 text-kallo-danger text-xs">
-              <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
+              <AlertCircle
+                className="size-icon-small shrink-0"
+                aria-hidden="true"
+              />
               <span>{t('failedToLoadDates')}</span>
             </div>
             <Button

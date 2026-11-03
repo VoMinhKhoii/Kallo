@@ -46,7 +46,7 @@ export function SubscriptionSettings({
   if (isPending) {
     return (
       <p className="flex items-center gap-2 text-[14px] text-kallo-text-muted">
-        <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+        <Loader2 aria-hidden="true" className="size-icon-inline animate-spin" />
         {t('loading')}
       </p>
     );

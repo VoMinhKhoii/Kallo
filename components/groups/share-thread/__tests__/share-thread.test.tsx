@@ -100,6 +100,25 @@ describe('ShareThread', () => {
     expect(container.querySelector('.mt-3')).toBeNull();
   });
 
+  it('puts the reply field between the post and the conversation', () => {
+    // Threads web order: post, field, replies (or the empty state). The field
+    // used to trail the thread, pinned to the foot of a mostly empty page.
+    state({
+      data: {
+        entry: sharedMealEntryFixture({ replies: [shareReplyFixture()] }),
+      },
+    });
+
+    render(<ShareThread shareId={SHARE_ID} />);
+
+    const column = screen.getByTestId('feed-entry').parentElement;
+    expect(
+      Array.from(column?.children ?? []).map((el) =>
+        el.getAttribute('data-testid')
+      )
+    ).toEqual(['feed-entry', 'reply-composer', 'share-replies']);
+  });
+
   it('never asks how many replies there are', () => {
     // Emptiness is `ShareReplies`' own question. The page rendered it in both
     // arms of a ternary, which put one predicate in two files kept in sync by

@@ -91,13 +91,13 @@ export function ManualFoodRow({
         {added ? (
           <Check
             aria-label={addedLabel}
-            className="size-[18px] text-kallo-text"
+            className="size-icon-action text-kallo-text"
             strokeWidth={1.5}
           />
         ) : (
           <ChevronRight
             aria-hidden
-            className="size-[18px] text-kallo-text-muted"
+            className="size-icon-action text-kallo-text-muted"
             strokeWidth={1.5}
           />
         )}

@@ -25,7 +25,7 @@ export function SheetCapsuleButton({
       disabled={disabled}
       className="inline-flex h-9 items-center gap-1.5 rounded-full bg-kallo-segment px-3.5 font-semibold text-[16px] text-kallo-text transition-colors hover:bg-kallo-border disabled:text-kallo-text-muted disabled:opacity-60"
     >
-      {Icon && <Icon className="size-4" strokeWidth={1.75} />}
+      {Icon && <Icon className="size-icon-inline" strokeWidth={1.75} />}
       {label}
     </button>
   );

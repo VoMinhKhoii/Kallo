@@ -33,8 +33,8 @@ export function FormInput({
           className={cn(
             'w-full rounded-xl border bg-card px-4 py-3 text-kallo-text text-sm outline-none transition-all duration-200 placeholder:text-kallo-text-muted/70',
             error
-              ? 'border-kallo-danger/50 focus:border-kallo-danger focus:ring-2 focus:ring-kallo-danger/10'
-              : 'border-kallo-border/60 focus:border-kallo-accent focus:ring-2 focus:ring-kallo-accent/10',
+              ? 'border-kallo-danger/50 focus:border-kallo-danger'
+              : 'border-kallo-border/60 focus:border-kallo-accent',
             'font-sans-display'
           )}
           {...props}
@@ -46,9 +46,9 @@ export function FormInput({
             className="absolute top-1/2 right-3 -translate-y-1/2 text-kallo-text-muted/50 transition-colors hover:text-kallo-text-muted"
           >
             {showPassword ? (
-              <EyeOff className="h-4 w-4" />
+              <EyeOff className="size-icon-inline" />
             ) : (
-              <Eye className="h-4 w-4" />
+              <Eye className="size-icon-inline" />
             )}
           </button>
         )}

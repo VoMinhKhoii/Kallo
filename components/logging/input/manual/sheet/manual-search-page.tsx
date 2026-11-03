@@ -70,7 +70,10 @@ export function ManualSearchPage({
       />
       <div className="px-4">
         <label className="flex h-[52px] items-center gap-2.5 rounded-full bg-card px-[18px]">
-          <Search aria-hidden className="size-[18px] text-kallo-text-muted" />
+          <Search
+            aria-hidden
+            className="size-icon-action text-kallo-text-muted"
+          />
           <input
             ref={inputRef}
             type="search"
@@ -91,7 +94,7 @@ export function ManualSearchPage({
               onClick={() => onQuery('')}
               className="flex size-8 items-center justify-center text-kallo-text-muted"
             >
-              <X className="size-[18px]" />
+              <X className="size-icon-action" />
             </button>
           )}
         </label>

@@ -68,7 +68,7 @@ export function CheatModePicker({
         className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 font-medium font-sans-display text-kallo-text text-xs transition-colors hover:bg-kallo-hover/50 disabled:opacity-50"
       >
         <span className="max-w-[8rem] truncate">{triggerLabel}</span>
-        <ChevronDown className="h-3 w-3 text-kallo-text-muted/70" />
+        <ChevronDown className="size-icon-micro text-kallo-text-muted/70" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
@@ -97,7 +97,7 @@ export function CheatModePicker({
                 </span>
               </span>
               {selected && (
-                <Check className="mt-0.5 size-4 shrink-0 text-kallo-text" />
+                <Check className="mt-0.5 size-icon-inline shrink-0 text-kallo-text" />
               )}
             </DropdownMenuItem>
           );
@@ -124,7 +124,7 @@ export function CheatModePicker({
                     {t(`cheatIntensity.${level}`)}
                   </span>
                   {selected && (
-                    <Check className="size-4 shrink-0 text-kallo-text" />
+                    <Check className="size-icon-inline shrink-0 text-kallo-text" />
                   )}
                 </DropdownMenuItem>
               );

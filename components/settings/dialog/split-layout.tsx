@@ -46,7 +46,7 @@ export function SplitLayout({
           aria-label={tc('close')}
           className="absolute top-3 right-3 z-30 flex size-8 items-center justify-center rounded-lg text-kallo-text-muted transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
         >
-          <X className="size-[18px]" aria-hidden="true" />
+          <X className="size-icon-primary" aria-hidden="true" />
         </DialogPrimitive.Close>
         <div
           ref={scrollRef}

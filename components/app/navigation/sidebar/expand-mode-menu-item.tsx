@@ -8,7 +8,7 @@ import type { SidebarExpandMode } from '@/lib/sidebar/types';
 /** An account-menu row: 14px text, a muted 16px icon, a soft wash when highlighted. */
 export const MENU_ROW =
   'flex cursor-default select-none items-center gap-2.5 rounded-md px-2 py-2 text-[14px] text-kallo-text outline-none transition-colors focus:bg-kallo-ink/[0.05] focus:text-kallo-text data-[highlighted]:bg-kallo-ink/[0.05]';
-export const MENU_ROW_ICON = 'size-4 shrink-0 text-kallo-text-muted';
+export const MENU_ROW_ICON = 'size-icon-inline shrink-0 text-kallo-text-muted';
 
 /**
  * "Expand on hover" in the account menu, as a row with a switch. Toggling

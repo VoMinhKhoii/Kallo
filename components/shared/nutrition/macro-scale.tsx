@@ -99,7 +99,7 @@ export function MacroScale({
           >
             <Icon
               aria-hidden="true"
-              className="h-3.5 w-3.5 shrink-0"
+              className="size-icon-small shrink-0"
               style={{ color: COMPOSITION_COLORS[key] }}
             />
             {LABELS[key]}:{' '}

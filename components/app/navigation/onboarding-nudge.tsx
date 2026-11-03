@@ -90,7 +90,7 @@ export function OnboardingNudge({
           aria-hidden="true"
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-kallo-ink/[0.06] text-kallo-text"
         >
-          <Sparkles className="h-3 w-3" />
+          <Sparkles className="size-icon-micro" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium font-sans-display text-[11px] text-kallo-text leading-tight">
@@ -120,7 +120,7 @@ export function OnboardingNudge({
         aria-label={t('minimize')}
         className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-md text-kallo-text-muted/70 opacity-0 transition-all duration-200 hover:bg-kallo-hover/70 hover:text-kallo-text focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent group-hover:opacity-100"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="size-icon-small" />
       </button>
 
       <div className="mb-2 flex items-center gap-1.5">
@@ -128,7 +128,7 @@ export function OnboardingNudge({
           className="flex h-5 w-5 items-center justify-center rounded-md bg-kallo-ink/[0.06] text-kallo-text"
           aria-hidden="true"
         >
-          <Sparkles className="h-3 w-3" />
+          <Sparkles className="size-icon-micro" />
         </span>
         <span className="font-medium font-sans-display text-[10px] text-kallo-text-muted uppercase tracking-[0.06em]">
           {t('stepCounter', { current: currentStepLabel, total })}

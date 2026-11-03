@@ -62,7 +62,7 @@ export function ManualMealTotals({
             >
               <Icon
                 aria-hidden
-                className="size-3.5 shrink-0"
+                className="size-icon-small shrink-0"
                 strokeWidth={1.5}
                 style={{ color: COMPOSITION_COLORS[key] }}
               />

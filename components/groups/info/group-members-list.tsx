@@ -43,7 +43,7 @@ export function GroupMembersList({ group }: { group: ChatGroupDetail }) {
                       aria-label={t('removeLabel', { name })}
                       className="flex size-6 shrink-0 items-center justify-center rounded-md text-kallo-text-muted opacity-0 transition-all hover:bg-kallo-danger/10 hover:text-kallo-danger focus-visible:opacity-100 group-hover/member:opacity-100"
                     >
-                      <X className="size-3.5" />
+                      <X className="size-icon-small" />
                     </button>
                   }
                   title={t('removeTitle', { name })}

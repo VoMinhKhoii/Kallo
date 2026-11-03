@@ -58,7 +58,7 @@ export function NewPasswordField({
             <Check
               aria-hidden
               className={cn(
-                'h-3 w-3',
+                'size-icon-micro',
                 met[rule] ? 'opacity-100' : 'opacity-30'
               )}
             />

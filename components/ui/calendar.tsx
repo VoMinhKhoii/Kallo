@@ -73,7 +73,7 @@ function Calendar({
           defaultClassNames.dropdowns
         ),
         dropdown_root: cn(
-          'relative rounded-md border border-input shadow-xs has-focus:border-ring has-focus:ring-[3px] has-focus:ring-ring/50',
+          'relative rounded-md border border-input shadow-xs has-focus:border-ring',
           defaultClassNames.dropdown_root
         ),
         dropdown: cn(
@@ -84,7 +84,7 @@ function Calendar({
           'select-none font-medium',
           captionLayout === 'label'
             ? 'text-sm'
-            : 'flex h-8 items-center gap-1 rounded-md pr-1 pl-2 text-sm [&>svg]:size-3.5 [&>svg]:text-muted-foreground',
+            : 'flex h-8 items-center gap-1 rounded-md pr-1 pl-2 text-sm [&>svg]:size-icon-small [&>svg]:text-muted-foreground',
           defaultClassNames.caption_label
         ),
         month_grid: cn('w-full border-collapse', defaultClassNames.month_grid),
@@ -144,21 +144,27 @@ function Calendar({
         Chevron: ({ className, orientation, ...props }) => {
           if (orientation === 'left') {
             return (
-              <ChevronLeftIcon className={cn('size-4', className)} {...props} />
+              <ChevronLeftIcon
+                className={cn('size-icon-inline', className)}
+                {...props}
+              />
             );
           }
 
           if (orientation === 'right') {
             return (
               <ChevronRightIcon
-                className={cn('size-4', className)}
+                className={cn('size-icon-inline', className)}
                 {...props}
               />
             );
           }
 
           return (
-            <ChevronDownIcon className={cn('size-4', className)} {...props} />
+            <ChevronDownIcon
+              className={cn('size-icon-inline', className)}
+              {...props}
+            />
           );
         },
         DayButton: CalendarDayButton,

@@ -159,7 +159,7 @@ export function ScanResultBody({
           className="mt-3 flex min-h-[52px] w-full items-center justify-between rounded-[22px] bg-card px-4 text-[16px] text-kallo-text"
         >
           {t('otherNutrients')}
-          <ChevronRight className="size-4 text-kallo-text-muted" />
+          <ChevronRight className="size-icon-inline text-kallo-text-muted" />
         </button>
       )}
     </>

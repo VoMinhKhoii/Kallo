@@ -15,7 +15,7 @@ import type { ToolUi } from '@/lib/seo/tools/types';
 const labelClass =
   'mb-1.5 block font-sans-display text-kallo-text-muted text-sm';
 const controlClass =
-  'h-11 w-full rounded-lg border border-kallo-border bg-card px-3 text-base text-kallo-text transition-colors focus-visible:border-kallo-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/20';
+  'h-11 w-full rounded-lg border border-kallo-border bg-card px-3 text-base text-kallo-text transition-colors focus-visible:border-kallo-accent focus-visible:outline-none';
 
 export function NumberField({
   label,

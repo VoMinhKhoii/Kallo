@@ -93,15 +93,15 @@ export function CustomSelect({
         }}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between rounded-lg border bg-card px-3 py-2 text-[14px] text-kallo-text transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30 ${
+        className={`flex w-full items-center justify-between rounded-lg border bg-card px-3 py-2 text-[14px] text-kallo-text transition-all focus-visible:border-kallo-accent focus-visible:outline-none ${
           isOpen
-            ? 'border-kallo-accent shadow-sm ring-1 ring-kallo-accent/20'
+            ? 'border-kallo-accent'
             : 'border-kallo-border hover:border-kallo-accent/50'
         }`}
       >
         <span className="truncate pr-2">{selectedOption?.label}</span>
         <ChevronDown
-          className={`h-4 w-4 text-[#8B8682] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          className={`size-icon-inline text-[#8B8682] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
       {typeof document !== 'undefined' &&
@@ -140,7 +140,7 @@ export function CustomSelect({
                       {opt.label}
                     </span>
                     {value === opt.value && (
-                      <Check className="h-4 w-4 text-kallo-text" />
+                      <Check className="size-icon-inline text-kallo-text" />
                     )}
                   </button>
                 ))}

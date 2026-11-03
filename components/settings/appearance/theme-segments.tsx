@@ -47,7 +47,7 @@ export function ThemeSegments({ className }: { className?: string }) {
               on && SEGMENT_ON
             )}
           >
-            <Icon className="size-4" aria-hidden="true" />
+            <Icon className="size-icon-inline" aria-hidden="true" />
           </button>
         );
       })}

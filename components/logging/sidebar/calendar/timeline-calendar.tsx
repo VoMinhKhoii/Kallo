@@ -77,7 +77,7 @@ export function TimelineCalendar({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger className="ml-3 flex w-[calc(100%-0.75rem)] min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border border-kallo-border/60 px-2.5 py-2 font-medium font-sans-display text-kallo-text text-xs transition-colors hover:border-kallo-accent/50 hover:bg-kallo-hover/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 dark:border-kallo-border dark:bg-kallo-track/70 dark:hover:bg-kallo-hover">
         <CalendarDays
-          className="h-3.5 w-3.5 shrink-0 text-kallo-text-muted dark:text-kallo-text-soft"
+          className="size-icon-small shrink-0 text-kallo-text-muted dark:text-kallo-text-soft"
           aria-hidden="true"
         />
         <span className="min-w-0 truncate">{t('openCalendar')}</span>
@@ -106,7 +106,7 @@ export function TimelineCalendar({
           </DialogDescription>
         </DialogHeader>
         <DialogClose className="absolute top-3.5 right-3.5 flex size-8 items-center justify-center rounded-full text-kallo-text-muted transition-colors hover:bg-kallo-hover/60 hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2">
-          <X className="size-4" aria-hidden="true" />
+          <X className="size-icon-inline" aria-hidden="true" />
           <span className="sr-only">{tCommon('close')}</span>
         </DialogClose>
         <div className="px-5 pt-4 pb-1">

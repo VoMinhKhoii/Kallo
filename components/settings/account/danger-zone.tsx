@@ -70,7 +70,10 @@ export function DangerZone({
                   className="mt-2 inline-flex items-center gap-1 font-medium text-kallo-danger underline-offset-2 hover:underline"
                 >
                   {t('deleteManageSubscription')}
-                  <ExternalLink aria-hidden="true" className="size-3.5" />
+                  <ExternalLink
+                    aria-hidden="true"
+                    className="size-icon-small"
+                  />
                 </a>
               </div>
             )}

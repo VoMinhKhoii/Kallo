@@ -89,7 +89,7 @@ export function InviteLinkSection() {
   return (
     <div className="space-y-1.5">
       <p className="flex items-center gap-1.5 px-1 font-medium font-sans-display text-[10px] text-kallo-text-muted uppercase tracking-[0.08em]">
-        <Link2 className="h-3.5 w-3.5" />
+        <Link2 className="size-icon-small" />
         {t('yourLink')}
       </p>
 
@@ -138,9 +138,9 @@ export function InviteLinkSection() {
               className="inline-flex shrink-0 items-center rounded-lg bg-kallo-btn px-3 text-kallo-btn-ink transition-colors hover:bg-kallo-btn/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {saveProfile.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="size-icon-inline animate-spin" />
               ) : (
-                <Check className="h-4 w-4" />
+                <Check className="size-icon-inline" />
               )}
             </button>
             <button
@@ -149,7 +149,7 @@ export function InviteLinkSection() {
               aria-label={t('cancel')}
               className="inline-flex shrink-0 items-center rounded-lg border border-kallo-border bg-card px-3 text-kallo-text-muted transition-colors hover:text-kallo-text"
             >
-              <X className="h-4 w-4" />
+              <X className="size-icon-inline" />
             </button>
           </>
         ) : (
@@ -160,7 +160,7 @@ export function InviteLinkSection() {
               aria-label={t('editLink')}
               className="inline-flex shrink-0 items-center rounded-lg border border-kallo-border bg-card px-3 text-kallo-text-muted transition-colors hover:text-kallo-text"
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className="size-icon-small" />
             </button>
             <button
               type="button"
@@ -169,12 +169,12 @@ export function InviteLinkSection() {
             >
               {copied ? (
                 <>
-                  <Check className="h-3.5 w-3.5" />
+                  <Check className="size-icon-small" />
                   {t('copied')}
                 </>
               ) : (
                 <>
-                  <Copy className="h-3.5 w-3.5" />
+                  <Copy className="size-icon-small" />
                   {t('copy')}
                 </>
               )}

@@ -272,7 +272,7 @@ export function WizardShell({
               aria-label={tCommon('close')}
               className="-mr-2 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-kallo-border/50 hover:text-kallo-text"
             >
-              <X className="h-5 w-5" />
+              <X className="size-icon-primary" />
             </button>
           )}
         </div>
@@ -349,7 +349,7 @@ export function WizardShell({
                 : 'text-[#8B8682] hover:text-kallo-text'
             }`}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-icon-inline" />
             {t('back')}
           </button>
 
@@ -361,7 +361,7 @@ export function WizardShell({
               className="flex touch-manipulation items-center gap-1.5 rounded-xl px-4 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-kallo-border/50 hover:text-kallo-text disabled:opacity-50"
             >
               {t('skip')}
-              <SkipForward className="h-3.5 w-3.5" />
+              <SkipForward className="size-icon-small" />
             </button>
             <button
               type="button"
@@ -369,9 +369,11 @@ export function WizardShell({
               disabled={isNextDisabled}
               className="flex touch-manipulation items-center gap-2 rounded-xl bg-kallo-ink px-5 py-2.5 font-medium text-[14px] text-kallo-surface shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50 dark:hover:bg-kallo-ink-hover"
             >
-              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isPending && (
+                <Loader2 className="size-icon-inline animate-spin" />
+              )}
               {currentStep >= TOTAL_STEPS ? t('finish') : t('next')}
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="size-icon-inline" />
             </button>
           </div>
         </div>

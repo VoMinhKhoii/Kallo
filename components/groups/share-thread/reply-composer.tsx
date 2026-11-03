@@ -10,7 +10,7 @@ import { useCreateReply } from '@/hooks/social/sharing/use-create-reply';
 import { cn } from '@/lib/core/ui/cn';
 
 /**
- * The always-open reply field at the foot of a post's thread: a pill holding
+ * The always-open reply field under a post, above its thread: a pill holding
  * your own avatar and a field addressed to the author ("Reply to Minh…"), with
  * the send button beside it. No toggle — a thread page you opened to read the
  * conversation is a page you came to answer, and a link that only reveals an
@@ -130,15 +130,15 @@ export function ReplyComposer({
             stands exactly as tall as the field it sends, so it is larger than
             the 28px disc inside the pill. `ml-2` above is the same step as the
             pill's `px-2`, so field-to-button and disc-to-border read as one
-            gap. `size-5` is a step under the nav 24 — mobile's `action` tier —
-            because at 24 the arrow filled too much of the disc. */}
+            gap. The arrow is `size-icon-primary` (20), a step under the touch 24,
+            because at 24 it filled too much of the disc. */}
         <button
           aria-label={t('send')}
           className="flex size-11 shrink-0 items-center justify-center rounded-full bg-kallo-btn text-kallo-btn-ink transition-colors hover:bg-kallo-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent/30 active:scale-95 disabled:opacity-50"
           disabled={createReply.isPending || !hasDraft}
           type="submit"
         >
-          <ArrowUp className="size-5" />
+          <ArrowUp className="size-icon-primary" />
         </button>
       </span>
     </form>

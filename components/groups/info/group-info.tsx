@@ -98,7 +98,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
             onClick={toggleCollapsed}
             className="flex size-8 items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-kallo-ink/[0.06] hover:text-kallo-text"
           >
-            <PanelRightOpen className="size-4" />
+            <PanelRightOpen className="size-icon-inline" />
           </button>
           <div className="flex min-h-0 flex-col items-center gap-2 overflow-hidden">
             {group.members.slice(0, STACK_LIMIT).map((member) => (
@@ -125,7 +125,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
               onClick={toggleCollapsed}
               className="flex size-7 items-center justify-center rounded-md text-kallo-text-muted transition-colors hover:bg-kallo-ink/[0.06] hover:text-kallo-text"
             >
-              <PanelRightClose className="size-4" />
+              <PanelRightClose className="size-icon-inline" />
             </button>
           </div>
           <GroupInfoPanel group={group} />
@@ -146,7 +146,7 @@ export function GroupInfo({ group }: { group: ChatGroupDetail | undefined }) {
               className="flex items-center gap-1.5 rounded-full py-0.5 pr-1 pl-2 transition-colors hover:bg-kallo-ink/[0.04]"
             >
               <AvatarStack members={group.members} size="size-6" />
-              <ChevronRight className="size-3.5 text-kallo-text-muted" />
+              <ChevronRight className="size-icon-small text-kallo-text-muted" />
             </button>
           </SheetTrigger>
           <SheetContent

@@ -32,7 +32,7 @@ export function PlanFeatures({ plan }: { plan: PlanId }) {
           >
             <Check
               aria-hidden="true"
-              className="size-4 shrink-0 text-kallo-text-muted"
+              className="size-icon-inline shrink-0 text-kallo-text-muted"
             />
             {t(`features.${id}`)}
           </li>

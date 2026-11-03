@@ -20,7 +20,7 @@ export function MobileActivityButton() {
       aria-label={t('mobileButton')}
       className="relative flex size-11 shrink-0 items-center justify-center rounded-xl text-kallo-text transition-colors hover:bg-kallo-hover group-has-[[data-strip-mode=true]]/mobileheader:hidden"
     >
-      <Heart className="h-5 w-5" aria-hidden="true" />
+      <Heart className="size-icon-primary" aria-hidden="true" />
       {unseenCount > 0 && (
         <span
           aria-hidden="true"

@@ -58,7 +58,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <Badge className="mb-2 gap-1 border-transparent bg-kallo-accent/15 font-sans-display text-kallo-text">
-              <PartyPopper className="h-3 w-3" />
+              <PartyPopper className="size-icon-micro" />
               {t('badge')}
             </Badge>
             <p className="font-sans-display text-kallo-text text-sm leading-relaxed">

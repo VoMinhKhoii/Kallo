@@ -39,7 +39,7 @@ export function WebviewGoogleNotice() {
     <div className="rounded-xl border border-kallo-border bg-kallo-hover/50 px-4 py-3">
       <div className="flex gap-2.5">
         <Globe
-          className="mt-0.5 h-4 w-4 shrink-0 text-kallo-text-muted"
+          className="mt-0.5 size-icon-inline shrink-0 text-kallo-text-muted"
           aria-hidden="true"
         />
         <div className="space-y-1.5">

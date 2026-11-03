@@ -39,7 +39,10 @@ export function ManualPeekStrip({ peek }: { peek: ManualPeek }) {
         {text}
         {after && (
           <>
-            <ArrowRight className="size-3 shrink-0" strokeWidth={1.5} />
+            <ArrowRight
+              className="size-icon-micro shrink-0"
+              strokeWidth={1.5}
+            />
             <span className="truncate">{after}</span>
           </>
         )}

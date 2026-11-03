@@ -56,7 +56,7 @@ export function ActionIconButton({
             {...props}
           >
             {pending ? (
-              <Loader2 className="size-3.5 animate-spin" />
+              <Loader2 className="size-icon-small animate-spin" />
             ) : (
               <span className="relative inline-flex">
                 <IconComponent className="size-3.5" />

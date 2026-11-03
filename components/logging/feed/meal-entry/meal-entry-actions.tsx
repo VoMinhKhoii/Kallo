@@ -27,7 +27,7 @@ export function MealEntryActions({
           'font-sans-display'
         )}
       >
-        <Check className="h-3.5 w-3.5 shrink-0" />
+        <Check className="size-icon-small shrink-0" />
         {t('confirm')}
       </button>
     </div>

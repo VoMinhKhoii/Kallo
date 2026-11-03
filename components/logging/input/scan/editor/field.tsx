@@ -28,7 +28,10 @@ export function ScanEditorField({
   return (
     <label className="flex min-h-[52px] items-center gap-2 border-kallo-border not-first:border-t px-4">
       {Icon && (
-        <Icon className="size-4 shrink-0" style={{ color: iconColor }} />
+        <Icon
+          className="size-icon-inline shrink-0"
+          style={{ color: iconColor }}
+        />
       )}
       <span className="flex-1 text-[16px] text-kallo-text">{label}</span>
       <input

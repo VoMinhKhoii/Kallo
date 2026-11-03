@@ -26,7 +26,7 @@ export function ComposerBarcode({
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-kallo-border/40 text-kallo-text-muted transition-all duration-200 hover:bg-kallo-hover hover:text-kallo-text active:scale-95 disabled:opacity-30"
         aria-label={t('barcodeScan')}
       >
-        <Barcode className="h-4 w-4" />
+        <Barcode className="size-icon-inline" />
       </button>
       <ScanDialog
         isOpen={isOpen}

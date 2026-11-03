@@ -50,7 +50,7 @@ export function PremiumState({
         rel="noopener noreferrer"
         className={SECONDARY_BUTTON}
       >
-        <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+        <ExternalLink aria-hidden="true" className="size-icon-small" />
         {data.managementStore === 'app_store'
           ? t('manageAppStore')
           : data.managementStore === 'play_store'

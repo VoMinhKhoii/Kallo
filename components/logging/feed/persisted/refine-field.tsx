@@ -80,7 +80,7 @@ export function RefineField({
           disabled={correction.trim().length === 0}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-kallo-hover px-3 font-medium font-sans-display text-[12px] text-kallo-text transition-colors hover:bg-kallo-hover/70 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Sparkles className="h-3.5 w-3.5" />
+          <Sparkles className="size-icon-small" />
           {t('refineSubmit')}
         </button>
       </div>

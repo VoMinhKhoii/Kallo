@@ -37,7 +37,7 @@ export function WaitlistPill() {
         aria-live="polite"
         className="mx-auto flex w-full max-w-2xl items-start gap-3 rounded-[1.75rem] border border-kallo-border bg-card px-5 py-4 text-left"
       >
-        <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-kallo-text" />
+        <MailCheck className="mt-0.5 size-icon-primary shrink-0 text-kallo-text" />
         <div>
           <p className="font-medium font-sans-display text-kallo-text text-sm">
             {t('success')}
@@ -75,7 +75,7 @@ export function WaitlistPill() {
         // the order they are written here — the error border was a coin toss.
         // tailwind-merge drops the loser instead.
         className={cn(
-          'flex w-full flex-col gap-3 rounded-[1.75rem] border border-kallo-border bg-card p-3 shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)] transition-colors focus-within:border-kallo-accent focus-within:ring-[3px] focus-within:ring-kallo-accent/25 sm:h-16 sm:flex-row sm:items-center sm:gap-3 sm:rounded-full sm:py-2 sm:pr-2 sm:pl-6',
+          'flex w-full flex-col gap-3 rounded-[1.75rem] border border-kallo-border bg-card p-3 shadow-[0_20px_50px_-20px_rgba(105,94,78,0.35)] transition-colors focus-within:border-kallo-accent sm:h-16 sm:flex-row sm:items-center sm:gap-3 sm:rounded-full sm:py-2 sm:pr-2 sm:pl-6',
           errors.email && 'border-kallo-danger/60'
         )}
       >
@@ -102,7 +102,7 @@ export function WaitlistPill() {
           <span className="whitespace-nowrap">
             {signup.isPending ? t('submitting') : t('submit')}
           </span>
-          <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5" />
+          <ArrowRight className="size-icon-inline shrink-0 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5" />
         </button>
       </div>
 

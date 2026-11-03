@@ -46,7 +46,7 @@ export function ScanGlassButton({
         )}
         style={{ width: size, height: size }}
       >
-        <Icon className="size-5" strokeWidth={1.75} />
+        <Icon className="size-icon-primary" strokeWidth={1.75} />
       </span>
       {captioned && (
         <span aria-hidden className="truncate text-[12px] leading-4">

@@ -124,6 +124,28 @@
   --spacing-card-lg: 2rem;
   --spacing-section: 2rem;
   --spacing-band: 6rem;
+  /* ---------- Icon sizes — the web twin of mobile's `KalloIcons` ----------
+     Every Lucide glyph takes one of these through `size-icon-*`; no raw
+     `size-4` / `h-5 w-5` on an icon. Each tier is a ROLE, not a number to
+     pick by eye:
+       touch   24  phone-width chrome (tab bar, back, add sheet) — mobile's
+                   `KalloIcons.primary`, so the phone web reads like the app
+       primary 20  the sidebar: nav, page-header and dialog-header controls,
+                   settings row icons
+       action  18  a control ON a card or row (mobile's `tertiary`); the
+                   Circle post's heart / reply / copy sit here, optically
+                   adjusted in `feed-entry.tsx` as mobile's `_optical` table
+       inline  16  inside a button, menu item, input or a 14–15px line
+       small   14  beside 12–13px text: macro glyphs, small chevrons
+       micro   12  inside a 10–11px chip or badge
+     Named `size-*` on purpose: shadcn's `[&_svg:not([class*='size-'])]`
+     default reads any `size-` class as an override. */
+  --spacing-icon-touch: 1.5rem;
+  --spacing-icon-primary: 1.25rem;
+  --spacing-icon-action: 1.125rem;
+  --spacing-icon-inline: 1rem;
+  --spacing-icon-small: 0.875rem;
+  --spacing-icon-micro: 0.75rem;
   /* ---------- Warm elevation — espresso-tinted, minimal ----------
      Anthropic's minimal-shadow philosophy: depth comes from surface
      color-blocking and hairline borders, shadows only confirm it. All
@@ -705,14 +727,19 @@ body[data-meal-streaming] [data-app-sidebar] {
   pointer-events: none;
 }
 
-/* [TRIAL — icon weight] Lucide ships a default 2px stroke, which reads heavy
-   next to our 14px calm type and is inconsistent with the mobile app (which
-   uses the thin weight-300 glyphs). Render every Lucide glyph at 1.5px to match
-   the Claude/Threads/Linear look. Inline `stroke-width="2"` is a presentation
-   attribute, so this stylesheet rule wins without touching any call site.
-   Delete this block to revert. */
+/* Icon line weight: ONE drawn line, the sidebar's, at every icon size.
+   Lucide's stroke is in its 24-unit viewBox, so a fixed `stroke-width: 1.5`
+   drew 1.25px at the 20px sidebar but 0.94px on the 15px Circle actions and
+   0.88px on 14px glyphs — small icons went faint beside big ones. Threads
+   keeps one line across sizes. `non-scaling-stroke` measures the width in
+   screen pixels instead, so 1.25px is 1.25px on every glyph. Inline
+   `stroke-width` / `strokeWidth` is a presentation attribute; this rule wins
+   without touching any call site. */
 svg.lucide {
-  stroke-width: 1.5;
+  stroke-width: 1.25px;
+}
+svg.lucide * {
+  vector-effect: non-scaling-stroke;
 }
 
 /* Toasts float above the mobile tab bar (its 64px pill plus 6px/8px insets)

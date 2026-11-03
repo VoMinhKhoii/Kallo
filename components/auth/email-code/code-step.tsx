@@ -128,7 +128,7 @@ export function CodeStep() {
           // biome-ignore lint/a11y/noAutofocus: the code field is this step's only task, reached by the user's own "Send code".
           autoFocus
           aria-invalid={error ? true : undefined}
-          className="w-full rounded-xl border border-kallo-border/60 bg-card px-4 py-3 text-center font-sans-display text-kallo-text text-xl tracking-[0.4em] outline-none transition-all duration-200 focus:border-kallo-accent focus:ring-2 focus:ring-kallo-accent/10"
+          className="w-full rounded-xl border border-kallo-border/60 bg-card px-4 py-3 text-center font-sans-display text-kallo-text text-xl tracking-[0.4em] outline-none transition-all duration-200 focus:border-kallo-accent"
         />
         {error && (
           <p
@@ -152,7 +152,7 @@ export function CodeStep() {
           disabled={verifying || !complete}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-kallo-ink px-4 py-3 font-medium font-sans-display text-kallo-surface text-sm tracking-tight transition-all duration-200 hover:bg-kallo-ink-hover disabled:opacity-60"
         >
-          {verifying && <Loader2 className="h-4 w-4 animate-spin" />}
+          {verifying && <Loader2 className="size-icon-inline animate-spin" />}
           {t('verify')}
         </button>
       </div>
@@ -173,7 +173,7 @@ export function CodeStep() {
           onClick={showAuth}
           className="mx-auto flex items-center gap-1.5 font-sans-display text-kallo-text-muted text-sm transition-colors hover:text-kallo-text"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeft className="size-icon-small" />
           {t('back')}
         </button>
       </div>

@@ -127,7 +127,7 @@ export function ScanResultPanel({
             onClick={() => onAdd(resolved)}
             className="flex h-[52px] items-center justify-center gap-2 rounded-full bg-kallo-hover font-semibold text-[16px] text-kallo-text transition-colors hover:bg-kallo-border disabled:opacity-70"
           >
-            {saving && <Loader2 className="size-4 animate-spin" />}
+            {saving && <Loader2 className="size-icon-inline animate-spin" />}
             {t('scan.addMeal')}
           </button>
         </div>

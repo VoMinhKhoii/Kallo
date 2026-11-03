@@ -127,7 +127,7 @@ export function ScanFoodEditor({
             className="flex items-center gap-1 text-[16px] text-kallo-text outline-none"
           >
             {basisLabel(basis)}
-            <ChevronsUpDown className="size-4 text-kallo-text-muted" />
+            <ChevronsUpDown className="size-icon-inline text-kallo-text-muted" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-48 rounded-2xl">
             {basesFor({ amount: food.basisAmount, unit: food.unit }).map(
@@ -140,8 +140,8 @@ export function ScanFoodEditor({
                   <Check
                     className={
                       b.amount === basis.amount && b.unit === basis.unit
-                        ? 'size-4'
-                        : 'size-4 opacity-0'
+                        ? 'size-icon-inline'
+                        : 'size-icon-inline opacity-0'
                     }
                   />
                   {basisLabel(b)}

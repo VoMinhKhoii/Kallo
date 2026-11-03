@@ -39,7 +39,7 @@ export function MarkDayCompleteButton({
           disabled={isPending}
           className="mt-3 inline-flex min-h-8 touch-manipulation items-center gap-2 rounded-full border border-kallo-border/60 px-3 py-1.5 font-medium font-sans-display text-kallo-text text-sm transition-colors hover:border-kallo-accent/50 hover:bg-kallo-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent focus-visible:ring-offset-2 focus-visible:ring-offset-kallo-surface disabled:opacity-60"
         >
-          <Check className="size-4" aria-hidden="true" />
+          <Check className="size-icon-inline" aria-hidden="true" />
           {t('markComplete')}
         </button>
       }

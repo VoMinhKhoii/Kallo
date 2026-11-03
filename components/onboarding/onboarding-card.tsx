@@ -38,7 +38,7 @@ export function OnboardingCard({
         className="absolute top-4 right-4 z-20 rounded-full p-2 text-kallo-text-muted transition-colors hover:bg-kallo-hover/60 hover:text-kallo-text"
         aria-label={t('close')}
       >
-        <X className="h-4 w-4" />
+        <X className="size-icon-inline" />
       </button>
 
       <div className="mr-8 flex flex-col justify-between gap-6 md:flex-row md:items-center">
@@ -62,7 +62,7 @@ export function OnboardingCard({
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-kallo-ink px-6 font-medium font-sans-display text-kallo-surface text-sm transition-colors hover:bg-kallo-ink-hover"
           >
             Tiếp tục thiết lập
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="size-icon-inline" />
           </Link>
         </div>
       </div>

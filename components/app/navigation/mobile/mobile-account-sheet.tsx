@@ -106,7 +106,7 @@ export function MobileAccountSheet({
         <ul className="divide-y divide-kallo-border/70 overflow-hidden rounded-2xl bg-card">
           <li className="flex min-h-12 items-center gap-3 px-4">
             <SunMoon
-              className="size-[18px] text-kallo-text-muted"
+              className="size-icon-action text-kallo-text-muted"
               aria-hidden="true"
             />
             <span className="flex-1 font-medium text-[15px] text-kallo-text">
@@ -116,7 +116,7 @@ export function MobileAccountSheet({
           </li>
           <AccountSheetRow
             href={settingsLink.href}
-            icon={<Settings className="size-[18px]" aria-hidden="true" />}
+            icon={<Settings className="size-icon-action" aria-hidden="true" />}
             label={tNav('settings')}
             onClick={settingsLink.onClick}
           />
@@ -130,7 +130,7 @@ export function MobileAccountSheet({
             aria-busy={signingOut}
             className={cn(ACCOUNT_ROW, 'text-kallo-danger disabled:opacity-60')}
           >
-            <LogOut className="size-[18px]" aria-hidden="true" />
+            <LogOut className="size-icon-action" aria-hidden="true" />
             <span className="font-medium text-[15px]">{tMenu('signOut')}</span>
           </button>
         </div>

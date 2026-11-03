@@ -89,7 +89,7 @@ export function ManualLoggingControls({
           }}
           className="flex items-center gap-1.5 px-1 py-1 font-sans-display text-kallo-text-muted/60 text-sm transition-colors hover:text-kallo-text-muted focus-visible:outline-none disabled:opacity-40"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="size-icon-small" />
           {full
             ? t('manualLogging.mealFull', { count: MANUAL_MEAL_MAX_ITEMS })
             : t('manualLogging.addItem')}
@@ -158,7 +158,7 @@ export function ManualLoggingControls({
                 )}
                 aria-label={t('manualLogging.removeItem')}
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="size-icon-small" />
               </button>
             </div>
           );

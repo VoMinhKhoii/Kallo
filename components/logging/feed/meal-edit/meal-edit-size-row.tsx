@@ -48,7 +48,10 @@ export function MealEditSizeRow({
           <span>{t('size')}</span>
           <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-kallo-text-muted">
             <span className="truncate first-letter:uppercase">{label}</span>
-            <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <ChevronDown
+              className="size-icon-inline shrink-0"
+              aria-hidden="true"
+            />
           </span>
         </button>
       }
