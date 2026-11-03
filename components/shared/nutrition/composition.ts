@@ -89,3 +89,16 @@ export function compositionFromGrams(grams: MacroGramsInput): Composition {
     fat: (grams.fat ?? 0) * KCAL_PER_GRAM.fat,
   });
 }
+
+/** The same record in whole grams, for figures printed under a bar — mobile's
+ * MacroScale prints them so. Display only: the bar takes the exact grams. A
+ * missing macro stays missing (an em dash), never a confident 0. */
+export function wholeGrams(grams: MacroGramsInput): MacroGramsInput {
+  const round = (value: number | null | undefined) =>
+    value == null ? null : Math.round(value);
+  return {
+    protein: round(grams.protein),
+    carbohydrate: round(grams.carbohydrate),
+    fat: round(grams.fat),
+  };
+}

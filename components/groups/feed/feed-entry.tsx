@@ -6,7 +6,10 @@ import { PremiumChip } from '@/components/billing/premium-chip';
 import { usePremiumGuard } from '@/components/billing/premium-guard-provider';
 import { FeedEntryIdentity } from '@/components/groups/feed/feed-entry-identity';
 import { labelFor } from '@/components/groups/invite/profile-identity';
-import { compositionFromGrams } from '@/components/shared/nutrition/composition';
+import {
+  compositionFromGrams,
+  wholeGrams,
+} from '@/components/shared/nutrition/composition';
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
 import { MacroScale } from '@/components/shared/nutrition/macro-scale';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
@@ -24,10 +27,6 @@ import { circleThreadHref } from '@/lib/domain/social/circle-routes';
  * a screen reader must hear "Reply 3", not a bare "Reply". */
 function withCount(label: string, count: number): string {
   return count > 0 ? `${label} ${count}` : label;
-}
-
-function wholeGrams(value: number | null | undefined): number | null {
-  return value == null ? null : Math.round(value);
 }
 
 /** The action tier (`size-icon-action`, 18), optically adjusted per glyph —
@@ -62,14 +61,6 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
     fat: meal.fatG,
   };
   const composition = compositionFromGrams(grams);
-  // Whole grams under the bar, as mobile's MacroScale prints them. A post's
-  // column is ~278px on a phone: kcal plus three one-decimal figures ran past
-  // it and broke "716 kcal" onto two lines. The bar keeps the exact values.
-  const shownGrams = {
-    protein: wholeGrams(grams.protein),
-    carbohydrate: wholeGrams(grams.carbohydrate),
-    fat: wholeGrams(grams.fat),
-  };
   // Nothing measured at all — draw nothing rather than a row of dashes over an
   // empty bar.
   const hasNutrition = meal.caloriesKcal != null || composition.totalKcal > 0;
@@ -113,7 +104,9 @@ export function FeedEntry({ entry }: { entry: CircleFeedEntry }) {
                 figure drops a line instead of running past the column. */}
             <MacroScale
               className="flex-wrap gap-y-1"
-              grams={shownGrams}
+              // Whole grams: a phone's post column is ~278px, and kcal plus
+              // three one-decimal figures broke "716 kcal" onto two lines.
+              grams={wholeGrams(grams)}
               leading={
                 <span className="whitespace-nowrap font-medium font-sans-display text-[15px] text-kallo-text tabular-nums">
                   {kcalLabel}

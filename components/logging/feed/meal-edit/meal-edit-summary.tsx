@@ -1,7 +1,10 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { compositionFromGrams } from '@/components/shared/nutrition/composition';
+import {
+  compositionFromGrams,
+  wholeGrams,
+} from '@/components/shared/nutrition/composition';
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
 import { MacroScale } from '@/components/shared/nutrition/macro-scale';
 import { formatLocalizedNumber } from '@/lib/core/text/format-number';
@@ -22,12 +25,6 @@ export function MealEditSummary({ totals }: { totals: EditTotals }) {
     fat: totals.fat,
   };
   const composition = compositionFromGrams(grams);
-  const round = (v: number | null) => (v == null ? null : Math.round(v));
-  const rounded = {
-    protein: round(totals.protein),
-    carbohydrate: round(totals.carbs),
-    fat: round(totals.fat),
-  };
   return (
     <div className="font-sans-display">
       <p className="mt-1 mb-3.5 text-center text-kallo-text tabular-nums">
@@ -41,7 +38,7 @@ export function MealEditSummary({ totals }: { totals: EditTotals }) {
       {composition.totalKcal > 0 && (
         <CompositionBar segments={composition.segments} variant="compact" />
       )}
-      <MacroScale grams={rounded} spread="columns" className="mt-2" />
+      <MacroScale grams={wholeGrams(grams)} spread="columns" className="mt-2" />
     </div>
   );
 }

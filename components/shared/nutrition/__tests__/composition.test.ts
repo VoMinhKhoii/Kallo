@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compositionFromGrams } from '../composition';
+import { compositionFromGrams, wholeGrams } from '../composition';
 
 describe('compositionFromGrams', () => {
   it('splits by calorie share, not gram weight', () => {
@@ -34,5 +34,13 @@ describe('compositionFromGrams', () => {
 
     expect(totalKcal).toBe(0);
     expect(segments.every((s) => s.pct === 0)).toBe(true);
+  });
+});
+
+describe('wholeGrams', () => {
+  it('rounds each macro and keeps a missing one missing', () => {
+    expect(
+      wholeGrams({ protein: 5.5, carbohydrate: 94.4, fat: undefined })
+    ).toEqual({ protein: 6, carbohydrate: 94, fat: null });
   });
 });
