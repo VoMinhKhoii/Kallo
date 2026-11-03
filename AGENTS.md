@@ -130,6 +130,7 @@ Read by the Codex GitHub reviewer and by `/ship`'s local Codex pass (the heading
 - Text matching: every keyword test uses word boundaries (`miến` matched `miếng` and shipped null macros, #247); compare NFC/NFD-normalized strings (#424, #426); never unaccent Vietnamese (§7).
 - Parity: a user-facing string or behavior added on web exists on Flutter and in both `messages/` locales, and the other way round (#447, #453). Layout on a device cannot be judged from source: ask for the screenshot.
 - Migrations: pgvector/pg_trgm need `SET search_path TO public, extensions;` (§7); a new table or vector column states rows × bytes against the 500 MB plan (#431).
+- Security: the classes in `docs/LESSONS.md` keep coming back: a check on one path but not its siblings, a shared budget charged before the caller's own, an undo path (remove, sign-out, delete) left open, a user-settable value trusted. Report every site of the class (#332 → #528).
 
 **AI pipeline (`lib/ai/prompts/`, `lib/ai/pipeline/`, `lib/ai/matching/`).** Two kinds of finding:
 - Code bugs, fixed in the PR with a test: a keyword matched without a word boundary, two prompt rules that contradict, wrong arithmetic in a rule ("half of 400 g" must be 200 g, #441), deadlines, cancellation, dropped fields, raw/cooked mass conversion, provider routing.
