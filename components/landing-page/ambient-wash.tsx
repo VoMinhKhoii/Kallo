@@ -1,12 +1,12 @@
-'use client';
-
-import { motion, useReducedMotion } from 'motion/react';
+import type { CSSProperties } from 'react';
 
 /**
  * Slow beige drift, so the page is never quite still.
  *
  * Three radial gradients rather than blurred divs: same softness, none of the
- * repaint cost of a large `filter: blur()`. Only `transform` is animated.
+ * repaint cost of a large `filter: blur()`. Only `transform` is animated, by a
+ * CSS keyframe loop (`animate-drift`, globals.css) on the compositor: no
+ * script runs per frame, and none ships for this component at all.
  */
 const WASHES = [
   {
@@ -57,35 +57,26 @@ const WASHES = [
  * edges.
  */
 export function AmbientWash() {
-  const reduced = useReducedMotion() ?? false;
-
   return (
     <div
       aria-hidden
       className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
     >
       {WASHES.map((wash) => (
-        <motion.div
+        <div
           key={wash.id}
-          className="absolute"
-          style={{
-            width: wash.size,
-            height: wash.size,
-            top: wash.top,
-            left: wash.left,
-            background: `radial-gradient(closest-side, rgba(${wash.tint},0.26), rgba(${wash.tint},0) 72%)`,
-          }}
-          animate={
-            reduced ? undefined : { x: [0, wash.dx, 0], y: [0, wash.dy, 0] }
-          }
-          transition={
-            reduced
-              ? undefined
-              : {
-                  duration: wash.seconds,
-                  repeat: Number.POSITIVE_INFINITY,
-                  ease: [0.45, 0, 0.55, 1],
-                }
+          className="absolute animate-drift"
+          style={
+            {
+              width: wash.size,
+              height: wash.size,
+              top: wash.top,
+              left: wash.left,
+              background: `radial-gradient(closest-side, rgba(${wash.tint},0.26), rgba(${wash.tint},0) 72%)`,
+              '--drift-x': `${wash.dx}px`,
+              '--drift-y': `${wash.dy}px`,
+              '--drift-duration': `${wash.seconds}s`,
+            } as CSSProperties
           }
         />
       ))}

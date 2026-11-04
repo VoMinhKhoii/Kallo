@@ -1,9 +1,10 @@
 'use client';
 
-import { motion, useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { PaywallStatus } from '@/components/billing/activation/paywall-status';
+import { useScrollReveal } from '@/hooks/landing/use-scroll-reveal';
 import { usePricingCheckout } from './checkout/checkout-context';
 import { PlanCard } from './plan-card';
 import { PLAN_IDS } from './plans';
@@ -31,19 +32,11 @@ export function PricingSection({
   titleAs?: 'h1' | 'h2';
 } = {}) {
   const t = useTranslations('landing.pricing');
-  const Title = titleAs === 'h1' ? motion.h1 : motion.h2;
+  const Title = titleAs;
   const { openDialog } = useAuthDialog();
   const { status } = usePricingCheckout();
-  const reduced = useReducedMotion() ?? false;
-
-  const reveal = reduced
-    ? {}
-    : {
-        initial: { opacity: 0, y: 24 },
-        whileInView: { opacity: 1, y: 0 },
-        viewport: { once: true, margin: '-80px' },
-        transition: { duration: 0.7, ease: [0.32, 0.72, 0, 1] as const },
-      };
+  const sectionRef = useRef<HTMLElement>(null);
+  useScrollReveal(sectionRef);
 
   return (
     // Beige ground, the same `--kallo-hover` the comparison panels above use.
@@ -54,13 +47,17 @@ export function PricingSection({
     // instead of fading out under the footer. On /pricing in a dark theme the
     // band drops away and the page's own surface shows.
     <section
+      ref={sectionRef}
       aria-labelledby="landing-pricing"
       id="pricing"
       className="relative scroll-mt-20 border-kallo-border/40 border-t bg-kallo-hover pt-8 pb-8 md:pt-10 md:pb-10 dark:bg-transparent"
     >
       <div className="mx-auto max-w-[92rem] px-6 sm:px-12 lg:px-20">
+        {/* `data-reveal` fades each block up as it scrolls into view
+            (globals.css, `useScrollReveal`). It is visible in the server's
+            HTML, so on /pricing the title and plans no longer wait for JS. */}
         <Title
-          {...reveal}
+          data-reveal=""
           className="text-center font-normal font-serif text-4xl text-kallo-text tracking-[-0.02em] sm:text-5xl md:text-6xl"
           id="landing-pricing"
         >
@@ -86,8 +83,8 @@ export function PricingSection({
             />
           </div>
         ) : (
-          <motion.div
-            {...reveal}
+          <div
+            data-reveal=""
             className="mt-10 grid gap-x-5 gap-y-5 md:mt-12 md:max-w-[54rem] md:grid-cols-2 md:grid-rows-[auto_auto_auto_1fr] md:gap-y-0 lg:mx-auto"
           >
             {PLAN_IDS.map((plan) => (
@@ -97,18 +94,18 @@ export function PricingSection({
                 onSignUp={() => openDialog('sign-up')}
               />
             ))}
-          </motion.div>
+          </div>
         )}
 
         {/* Not beside a checkout status: "free while in beta" would
             contradict the charge the user just made. */}
         {!status && (
-          <motion.p
-            {...reveal}
+          <p
+            data-reveal=""
             className="mt-8 text-center font-sans-display text-kallo-text-soft text-xs leading-relaxed"
           >
             {t('betaNote')}
-          </motion.p>
+          </p>
         )}
       </div>
     </section>

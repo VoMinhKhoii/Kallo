@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
@@ -44,16 +43,15 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
     };
 
   return (
-    <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6 }}
+    <header
+      // Drops in with CSS (`animate-header-drop`, globals.css), so it is in
+      // the server's HTML rather than waiting for JS to fade it in.
       // No fill, so the page runs up behind it; the blur keeps the nav
       // readable over scrolled content. The fill comes back only over the
       // footer, which in Light is the same ink as the header's type.
       ref={headerRef}
       className={cn(
-        'fixed top-0 right-0 left-0 z-50 backdrop-blur-xl transition-colors',
+        'fixed top-0 right-0 left-0 z-50 animate-header-drop backdrop-blur-xl transition-colors',
         overFooter && 'bg-kallo-surface/80'
       )}
     >
@@ -124,6 +122,6 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
           </Button>
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 }

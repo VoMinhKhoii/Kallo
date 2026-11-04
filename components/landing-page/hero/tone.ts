@@ -22,6 +22,3 @@ export const HERO_GROUND = {
   ink: 'text-kallo-text',
   body: 'text-kallo-text-soft',
 } as const;
-
-/** The one easing curve every hero motion uses — heavy, decelerating. */
-export const HERO_EASE = [0.32, 0.72, 0, 1] as const;
