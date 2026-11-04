@@ -331,6 +331,29 @@ void main() {
       expect(tester.getRect(bubbleBoxes()).width, closeTo(resting.width, 0.5));
     });
 
+    testWidgets('dismissing it while it opens starts back from full size', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrapLocalized(sent));
+      await tester.pumpAndSettle();
+      final resting = tester.getRect(bubbleBoxes());
+
+      // The menu is part-way through its 200ms open when the tap lands.
+      await tester.longPress(find.byType(UserMessageBubble));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tapAt(const Offset(8, 8));
+      await tester.pump();
+
+      // The copy was drawn at the held size all through the open, so the
+      // close begins there too, not part of the way down.
+      expect(
+        tester.getRect(bubbleBoxes().last).width,
+        closeTo(resting.width * 1.05, 0.5),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.getRect(bubbleBoxes()).width, closeTo(resting.width, 0.5));
+    });
+
     testWidgets("the menu hangs off the bubble's trailing edge", (
       tester,
     ) async {
