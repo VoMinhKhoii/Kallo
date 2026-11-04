@@ -79,10 +79,10 @@ function pageBody(
           {/* A device setting, not a profile one: the theme applies before
               a profile exists. */}
           <AppearanceRow />
+          {profile && <RegionalRows />}
           {profile && (
             <RemindersRow initialValue={profile.mealRemindersEnabled} />
           )}
-          {profile && <RegionalRows />}
         </SettingsGroup>
       );
     case 'cooking':

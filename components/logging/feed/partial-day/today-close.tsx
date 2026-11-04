@@ -32,7 +32,7 @@ export function TodayClose({
     return (
       <p
         role="status"
-        className="inline-flex min-h-8 items-center gap-2 font-sans-display text-kallo-text-muted text-sm"
+        className="mt-3 inline-flex min-h-8 items-center gap-2 font-sans-display text-kallo-text-muted text-sm"
       >
         <Check className="size-icon-inline" aria-hidden="true" />
         {t('closed')}
