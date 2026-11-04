@@ -150,6 +150,31 @@ App Store builds (distribution signing) use **production**; since dev builds poi
 hosts (Xcode 14+, iOS 16+, Apple silicon or T2, macOS 13+); verify production delivery and
 device-specific behavior on a physical device.
 
+### Home-screen widget (App Group) — what CI cannot do for you
+
+The widget adds a third bundle, the WidgetKit extension
+`com.khoivo.nham.TodayWidget` (`ios/TodayWidget/`, embedded in Runner), and an **App Group**
+the app and the widget share (`group.com.khoivo.nham`). One-time, by a human, before the next
+TestFlight build:
+
+1. Apple Developer → Identifiers → the **App Groups** filter → **+** → App Group, description
+   "Kallo widget", identifier `group.com.khoivo.nham`.
+2. Identifiers → `com.khoivo.nham` → enable **App Groups** → Configure → tick
+   `group.com.khoivo.nham` → Save. The entitlement is already in `Runner.entitlements`; a profile
+   without it fails codesign.
+3. Identifiers → **+** → App ID `com.khoivo.nham.TodayWidget` → enable **App Groups** → Configure
+   → tick `group.com.khoivo.nham` → Save (`TodayWidget.entitlements` carries it).
+4. From `apps/mobile-flutter/ios`, with `MATCH_GIT_URL` / `MATCH_PASSWORD` exported:
+   `bundle exec fastlane match appstore --force`. The Matchfile now lists all three bundle ids, so
+   this regenerates the app's profile (new capability) and mints the widget's. CI fails at `match`
+   until this has run.
+
+The lane signs the widget with its own profile and `ExportOptions.plist` maps it;
+`test/ios/today_widget_test.dart` guards the wiring. Debug builds sign it automatically with the
+same team. The widget needs iOS 17 (its deployment target); on iOS 15–16 the app runs as before and
+the widget is simply not offered. How the widget works and how to test it:
+[today-widget.md](./today-widget.md).
+
 ## Export compliance
 
 `ios/Runner/Info.plist` sets `ITSAppUsesNonExemptEncryption = false` — Kallo uses only standard

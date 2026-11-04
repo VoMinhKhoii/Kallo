@@ -308,6 +308,22 @@ class LoggingProfile {
     this.goal,
   });
 
+  /// Read off the `/api/v1/onboarding/profile` row. The defaults mirror the
+  /// web's DEFAULT_PROFILE, so an incomplete-onboarding profile shows sensible
+  /// targets, never /0g. The Log screen and the home-screen widget both build
+  /// from here, so the two can never disagree about a missing target.
+  factory LoggingProfile.fromProfileRow(
+    String userId,
+    Map<String, dynamic>? data,
+  ) => LoggingProfile(
+    userId: userId,
+    calorieTarget: (data?['calorieTarget'] as num?)?.toInt() ?? 2000,
+    proteinTargetG: (data?['proteinTargetG'] as num?)?.toInt() ?? 150,
+    carbsTargetG: (data?['carbsTargetG'] as num?)?.toInt() ?? 250,
+    fatTargetG: (data?['fatTargetG'] as num?)?.toInt() ?? 65,
+    goal: macroGoalFromWire(data?['goal'] as String?),
+  );
+
   // Value equality: the logging screen rebuilds this from the profile query on
   // every build, so without it two identical profiles compare unequal and
   // anything downstream that diffs on the value sees a change that never

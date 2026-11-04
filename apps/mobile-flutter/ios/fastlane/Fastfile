@@ -21,6 +21,10 @@ APP_ID            = ENV["ASC_APP_IDENTIFIER"] || "com.khoivo.nham"
 # The notification service extension (ios/NotificationService/) is its own
 # bundle, so it needs its own App ID and App Store profile — see Matchfile.
 NSE_ID            = "#{APP_ID}.NotificationService"
+# The home-screen widget (ios/TodayWidget/) — a third bundle and profile. It
+# shares the App Group `group.#{APP_ID}` with the app, so both App IDs carry
+# the App Groups capability in the developer portal.
+WIDGET_ID         = "#{APP_ID}.TodayWidget"
 TEAM_ID           = ENV["ASC_TEAM_ID"]        || "ZNG57U88R5"
 API_BASE_URL      = ENV["KALLO_API_BASE_URL"] || ENV["NHAM_API_BASE_URL"] ||
                     "https://kallo.fit"
@@ -113,7 +117,7 @@ platform :ios do
 
     # match names its profile "match AppStore <bundle>"; hand it to the build +
     # ExportOptions.plist (which references the same names).
-    [APP_ID, NSE_ID].to_h do |bundle|
+    [APP_ID, NSE_ID, WIDGET_ID].to_h do |bundle|
       [bundle, ENV["sigh_#{bundle}_appstore_profile-name"] || "match AppStore #{bundle}"]
     end
   end
@@ -177,7 +181,8 @@ platform :ios do
 
     # Manual signing per target, each with its own profile — never global,
     # which breaks the Pod/SwiftPM dependency targets.
-    { "Runner" => APP_ID, "NotificationService" => NSE_ID }.each do |target, bundle|
+    { "Runner" => APP_ID, "NotificationService" => NSE_ID,
+      "TodayWidget" => WIDGET_ID }.each do |target, bundle|
       update_code_signing_settings(
         use_automatic_signing: false, path: "Runner.xcodeproj",
         team_id: TEAM_ID, code_sign_identity: "Apple Distribution",
