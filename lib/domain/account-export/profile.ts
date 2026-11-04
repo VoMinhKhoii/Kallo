@@ -38,6 +38,9 @@ function pickProfileExport(row: typeof userProfiles.$inferSelect) {
     autoShareUpdatedAt: row.autoShareUpdatedAt,
     // When the user agreed to third-party AI processing; null if never/withdrawn.
     aiProcessingConsentedAt: row.aiProcessingConsentedAt,
+    // Meal reminders: the switch, and the time zone they run on.
+    mealRemindersEnabled: row.mealRemindersEnabled,
+    timeZone: row.timeZone,
     // Cooking habits
     oilUsage: row.oilUsage,
     defaultRicePortion: row.defaultRicePortion,

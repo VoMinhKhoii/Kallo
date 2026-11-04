@@ -288,6 +288,16 @@ export function useFeedController(args: {
       profile.calorieTarget,
       day.markedComplete
     );
+  // Today's "I've eaten enough": offered once today holds a saved meal (an
+  // empty day cannot be closed) and nothing is still on its way in, so the
+  // calories the confirm quotes are the ones that will count.
+  const showTodayClose =
+    isToday &&
+    !day.isDayLoading &&
+    !day.isDayError &&
+    hasPersistedMeals &&
+    !hasPendingMessages &&
+    !hasStreamingMessages;
 
   return {
     day,
@@ -322,6 +332,7 @@ export function useFeedController(args: {
     animateComposerLayout,
     isToday,
     showPartialDayNotice,
+    showTodayClose,
     markDayComplete,
   };
 }

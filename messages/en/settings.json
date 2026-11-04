@@ -167,6 +167,11 @@
     "autoShareHint": "Off unless you turn it on. When on, each new meal is shared with your circle as you save it. Friends only see meals shared after you connected.",
     "error": "Couldn't update your sharing preference. Please try again."
   },
+  "reminders": {
+    "label": "Meal reminders",
+    "hint": "A nudge on your iPhone when today is behind your target, at most four a day. Closing the day with “I've eaten enough” stops them until tomorrow.",
+    "error": "Couldn't update meal reminders. Please try again."
+  },
   "aiConsent": {
     "label": "AI meal analysis",
     "hint": "Sends the meals you type, the label photos you scan and your ingredient searches to Google Gemini to estimate nutrition. While off, AI logging and label scanning stay paused.",

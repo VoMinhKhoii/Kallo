@@ -319,6 +319,22 @@ describe('createApnsSender', () => {
     expect(payload.aps['mutable-content']).toBe(1);
   });
 
+  it('sends a title-less alert with its action category', async () => {
+    await createApnsSender(CONFIG).send([
+      message({
+        title: '',
+        body: 'What have you had so far today?',
+        category: 'REMINDER_LOG',
+      }),
+    ]);
+
+    expect(JSON.parse(requests[0].body).aps).toEqual({
+      alert: { body: 'What have you had so far today?' },
+      sound: 'default',
+      category: 'REMINDER_LOG',
+    });
+  });
+
   it('includes the badge only when one was asked for', async () => {
     await createApnsSender(CONFIG).send([message({ badge: 4 })]);
 

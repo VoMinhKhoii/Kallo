@@ -28,6 +28,7 @@ export interface PushSenderIdentity {
 export interface PushMessage {
   /** The APNs device token this goes to. */
   token: string;
+  /** Empty → no title line: iOS heads the notice with the app name alone. */
   title: string;
   body: string;
   /** Deep-link payload, merged alongside `aps`. Flat strings only. */
@@ -42,6 +43,9 @@ export interface PushMessage {
   /** Which conversation this belongs to (a chat group, or the person for
    *  activity). iOS uses it to thread the sender's notices together. */
   conversationId?: string;
+  /** The registered notification category (iOS `aps.category`): which action
+   *  buttons the notice offers when it is long-pressed. */
+  category?: string;
 }
 
 export interface PushSendResult {

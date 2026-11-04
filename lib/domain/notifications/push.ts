@@ -40,6 +40,7 @@ import {
   pushCopy,
   toPushLocale,
 } from './push-copy';
+import { recordPushResults } from './push-delivery';
 
 /** Longest chat preview that still reads as one glance on a lock screen. */
 const PREVIEW_MAX = 140;
@@ -230,12 +231,6 @@ async function pushBudgetExhausted(
   }
 }
 
-/** Drop registrations APNs has told us are permanently dead. */
-async function pruneTokens(dead: string[]): Promise<void> {
-  if (dead.length === 0) return;
-  await db.delete(pushTokens).where(inArray(pushTokens.token, dead));
-}
-
 /**
  * Deliver one notification to every device of every recipient. Safe to call
  * with an empty recipient list (the common case — most events notify nobody
@@ -275,10 +270,7 @@ export async function sendNotificationPush(
     // APNS_KEY_P8 would throw past this boundary and reject the
     // after() task on an already-successful request.
     const resolved = sender ?? getPushSender();
-    const results = await resolved.send(messages);
-    await pruneTokens(
-      results.filter((result) => result.shouldPrune).map((r) => r.token)
-    );
+    await recordPushResults(await resolved.send(messages));
   } catch (error) {
     // Push is advisory. The notification row (or, for chat, the message) is
     // already committed and the in-app surfaces will show it regardless.

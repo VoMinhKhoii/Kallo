@@ -7,14 +7,16 @@ import {
   pushTokenBodySchema,
 } from '@/lib/domain/notifications/contracts';
 import { db } from '@/lib/infra/db/client';
-import { pushTokens } from '@/lib/infra/db/schema';
+import { pushTokens, userProfiles } from '@/lib/infra/db/schema';
 
 /**
  * Register (or refresh) this device. The APNs token is unique across the
  * table because the OS hands the same string to whoever signs in on that
  * handset next: the conflict update REASSIGNS the row to the caller rather
  * than leaving a stale owner receiving the new user's notifications.
- * Idempotent, so the client can post on every launch and token refresh.
+ * Idempotent, so the client can post on every launch and token refresh —
+ * and the app does, on every return to the foreground too: `last_seen_at` is
+ * the "opened Kallo" signal the reminder gates read.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +61,19 @@ export async function POST(request: NextRequest) {
         .where(
           and(eq(pushTokens.userId, userId), inArray(pushTokens.id, oldest))
         );
+      // The newest device to check in sets the clock reminders run on, so a
+      // trip abroad moves them with the phone. Written only on a change.
+      if (body.timeZone) {
+        await tx
+          .update(userProfiles)
+          .set({ timeZone: body.timeZone })
+          .where(
+            and(
+              eq(userProfiles.userId, userId),
+              sql`${userProfiles.timeZone} IS DISTINCT FROM ${body.timeZone}`
+            )
+          );
+      }
     });
     return NextResponse.json({ registered: true });
   } catch (error) {

@@ -394,6 +394,91 @@ Request headers, for reference: `:method POST`, `:path /3/device/<hex token>`, `
 
 ---
 
+## Reminders (v2) — the notifications Kallo sends on its own
+
+Status: server + web implemented (`feat/meal-reminders`); the iOS half (categories, buttons, permission timing, time zone report) ships on `feat/meal-reminders-ios`. Design approved 2026-11-04.
+
+Everything above starts with a person doing something. Reminders start with a clock. There are **no meal slots**: at four fixed LOCAL times Kallo checks how much of the day's calorie target (`user_profiles.calorie_target`) is logged. Four checkpoints means **at most four reminders a day** by construction. No target → no reminders.
+
+| Local time | Fires when | Type | Copy (EN) | iOS category → buttons |
+|---|---|---|---|---|
+| 08:00 | yesterday has ≥1 meal, is not closed, ended under `PARTIAL_DAY_FRACTION` (85%) of target | `reminder.yesterday` | "Yesterday ended at 1,243 kcal. Anything missing?" | `REMINDER_YESTERDAY` → Add to yesterday (opens logging on yesterday) · That was all (closes yesterday, no UI) |
+| 10:00 | today under 1/4 | `reminder.checkpoint` | "What have you had so far today?" | `REMINDER_LOG` → Log a meal |
+| 15:00 | today under 2/4 | `reminder.checkpoint` | "Anything since this morning? You're at 540 kcal." | `REMINDER_LOG` → Log a meal |
+| 21:00 | today under 3/4 | `reminder.checkpoint` | "689 kcal left today. Anything else, or done for today?" | `REMINDER_EVENING` → Log more · I'm done for today (closes today, no UI) |
+
+Copy lives in `messages/{en,vi}/activity.json` → `reminder.*`, rendered server-side in `preferred_locale` (`lib/domain/reminders/copy.ts`); numbers are live and locale-grouped (`1,243` / `1.243`). No title line: the notice is headed by the app. Button titles are NOT on the wire — iOS draws them from the category the app registers on the device in its own language.
+
+### Gates (`lib/domain/reminders/gates.ts`, pure)
+
+In order; each failing gate skips the checkpoint for the day, except the last, which waits:
+
+1. Reminders on (`user_profiles.meal_reminders_enabled`, default true; Settings on web and iOS, `PUT /api/v1/profile/reminders`) — applied by the candidate query, with "has a target", "has a time zone" and "has an iOS device".
+2. The day the reminder is about is still open (no `day_completion_marks` row) → else `closed`.
+3. Behind the checkpoint's line (table above) → else `on_pace`; an empty yesterday → `empty_day`.
+4. Today checkpoints only: no meal created in the last 3 h → else `recent_meal`. (The 08:00 question is about yesterday; a breakfast just logged does not answer it.)
+5. Kallo not opened in the last 45 min → else `recently_opened`.
+6. Not two reminders ignored in a row today → else `ignored`. Ignored = no app open and no meal logged between the push and now; with only "last opened" stored, "the last two both ignored" is exactly "nothing since the earlier of them went out".
+7. No other push to this user in the last 30 min → else **wait**: no row is written, the next 15-minute tick rechecks, and the checkpoint gives up when its 90-minute window closes.
+
+"Opened Kallo" is the newest `push_tokens.last_seen_at`: the iOS app re-posts its registration on launch and on every return to the foreground. Web visits are not counted (web has no push). "Another push" is the newest `push_tokens.last_pushed_at`, stamped by `recordPushResults` (`lib/domain/notifications/push-delivery.ts`) on every device APNs accepted — activity, chat and reminders alike.
+
+### Tick (`lib/domain/reminders/tick.ts`)
+
+`POST /api/v1/reminders/tick` (`app/api/v1/reminders/tick/route.ts`), `Authorization: Bearer $REMINDER_TICK_SECRET`, no body, every 15 minutes from the `kallo-proxy` Worker's cron trigger (`apps/kallo-proxy/README.md` → "Reminder cron"; Cloudflare crons fire on time, GitHub Actions' schedule does not). 503 until both reminder secrets exist (`docs/GOOGLE_CLOUD_RUN.md` → "Meal reminders"). Everything runs inside the request — Cloud Run throttles CPU outside one.
+
+1. `loadCandidates` — `push_tokens` (ios) ⋈ `user_profiles` by primary key, grouped per user: switch on, target > 0, time zone set, newest `last_seen_at` / `last_pushed_at`. Driven from the small token table, never a scan of every account.
+2. In JS, per user: the wall clock in their IANA zone (`lib/core/date/zoned.ts`, DST-safe), the checkpoint whose 90-minute window it is inside, today's local date, the date the reminder is about and that day's UTC bounds.
+3. `loadDecided` — today's `meal_reminders` rows; a decided checkpoint is dropped, and the `sent` ones feed gate 6.
+4. `loadRecentMeals` (rides `meals_user_logged_at_idx`, ~2 days per user) and `loadClosedDays` (`day_completion_marks` unique index), in parallel.
+5. Decide, then `claimReminders`: one multi-row `INSERT … ON CONFLICT DO NOTHING RETURNING`. The primary key `(user_id, local_date, checkpoint_hour)` is the lock — only claims this tick won are sent, so overlapping ticks never double-push. Claimed before sending: a crash in between loses one reminder rather than sending two.
+6. `sendReminders` — every iOS token of the winners, 100 messages per APNs batch, then `recordPushResults`. Not charged to the push fan-out budgets: reminders are server-initiated and bounded at four per user per day by the claim.
+
+Five statements per tick however many users share a checkpoint (most VN users hit the same UTC tick). Response: `{candidates, due, sent, skipped, waiting, delivered}`, logged by the Worker.
+
+### Push payload (APNs)
+
+Push only, like `chat.message`: **no notifications row, no badge**. `apns-collapse-id: reminder:<local date sent>`, so a new reminder replaces an unanswered one; `thread-id: reminders`; no `sender` (so no `mutable-content` — a plain app notice).
+
+```jsonc
+{
+  "aps": {
+    "alert": { "body": "689 kcal left today. Anything else, or done for today?" },
+    "sound": "default",
+    "thread-id": "reminders",
+    "category": "REMINDER_EVENING"   // REMINDER_YESTERDAY | REMINDER_LOG | REMINDER_EVENING
+  },
+  "type": "reminder.checkpoint",     // or reminder.yesterday
+  "date": "2026-11-04",              // the LOCAL day the reminder is about (yesterday for 08:00)
+  "checkpoint": "21",                // 8 | 10 | 15 | 21
+  "actionToken": "<uuid>.<date>.<exp>.<sig>" // 08:00 and 21:00 only
+}
+```
+
+Tap / "Add to yesterday" / "Log a meal" / "Log more" open the app on the Today logging screen for `date`. "That was all" / "I'm done for today" run in the background: the app POSTs `{token: actionToken}` to `POST /api/v1/reminders/close-day` natively, without the user's session (refreshing a Supabase session from native code would rotate the refresh token out from under the app). The token is `HMAC-SHA256(REMINDER_ACTION_SECRET, "close-day|<userId>.<date>.<exp>")`, valid 36 h (`lib/domain/reminders/action-token.ts`): a forged or expired one is a 401 before any database read; a leaked one can only close that one day of that account, which is what its button does anyway.
+
+### Closing a day
+
+Closing reuses the existing "Mình ăn đủ rồi" mark: one `day_completion_marks` row per day, one-way, `closeDay` in `lib/domain/meals/day-completion.ts` shared by `POST /api/v1/logging/day/complete` and the reminder button. **Today may now be closed** (a day that has not started may not; an empty day still may not). The Today screen offers "I've eaten enough" / "Mình ăn đủ rồi" once it holds a saved meal and nothing is still analyzing, and shows "Done for today" after. A mark on today means the progress views grade today at its real calories instead of setting it aside as partial — the attestation's whole point — and stops that day's reminders; meals logged after closing still count.
+
+### Data
+
+- `meal_reminders` (`20261104044856_add_meal_reminders`): `user_id, local_date, checkpoint_hour (8|10|15|21), outcome (sent|skipped), reason, created_at`, PK `(user_id, local_date, checkpoint_hour)`, RLS on with no policies (server-only, failure-boundary REVOKE in the same file), reaped after 14 days (`20261104044900_meal_reminders_retention`). ≤4 rows per user per day, ~120 B per row with its index → ~7 KB per iOS user at steady state; 1,000 iOS users ≈ 7 MB of the 500 MB Free plan. Exported under `mealReminders`.
+- `user_profiles.meal_reminders_enabled` (bool, default true) and `user_profiles.time_zone` (IANA text, NULL until a device reports one). The iOS app sends `timeZone` with every `POST /api/v1/notifications/push-tokens`; the newest device's zone wins, so a trip moves the reminders with the phone. A zone the server cannot resolve is dropped without failing the registration.
+- `push_tokens.last_pushed_at` (timestamptz, NULL until the first accepted push).
+
+### Permission
+
+iOS asks for notification permission the first time a person logs a meal, not at sign-in (`feat/meal-reminders-ios`). An app start with permission already granted still registers silently, so existing installs keep their tokens.
+
+### Known gaps (deliberate)
+
+- A web visit is not an "open": a person logging on the web at 09:50 can still get the 10:00 push if nothing was saved in the last 3 h.
+- A meal backdated to an older day counts for gate 4 only when its meal time is within the last two days.
+- The spacing gate reads the stamp of pushes APNs *accepted*; an attempt that failed does not hold a reminder back.
+
+---
+
 ## Verification (every phase)
 
 1. `bun run test` — new suites + untouched suites green.
@@ -412,7 +497,7 @@ The rule governs **new fan-out**, at write time: a notification (and its `data` 
 
 ## Deferred decisions (deliberate in v1, named so they are not rediscovered as bugs)
 
-- **No mute / preferences for `chat.message` push.** A group member with a registered device is pushed for every message in every group; there is no per-group mute, no quiet hours, no channel toggle. V1 ships to a handful of small groups, and the dot-namespaced type taxonomy exists precisely so a `notification_prefs(user_id, category, channel)` table can bolt onto **gate 5** later as a filter — no data migration, no change to gates 1–4, no producer edits.
+- **No mute / preferences for `chat.message` push.** (Meal reminders have their own single switch, `meal_reminders_enabled`; nothing else does.) A group member with a registered device is pushed for every message in every group; there is no per-group mute, no quiet hours, no channel toggle. V1 ships to a handful of small groups, and the dot-namespaced type taxonomy exists precisely so a `notification_prefs(user_id, category, channel)` table can bolt onto **gate 5** later as a filter — no data migration, no change to gates 1–4, no producer edits.
 - **Auto-dismissed invites render a neutral chip.** A sender splitting a meal with someone else auto-dismisses other pending invites, and the client cannot distinguish that from a self-dismiss, so every non-accepted terminal state (dismissed here, dismissed elsewhere, auto-dismissed, or gone) collapses to one "No longer available" / "Không còn hiệu lực" chip. Naming the act ("Dismissed") would tell a third party they did something they never did.
 
 ## Known risks

@@ -7,6 +7,9 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog
 interface MarkDayCompleteButtonProps {
   /** The day's logged calories — what the trends will count it at. */
   calories: number;
+  /** Which copy: a past day's "That's everything I ate", or today's "I've
+   *  eaten enough" (which also stops today's reminders). Same one-way write. */
+  copy?: 'partialDayNotice' | 'todayClose';
   onConfirm: () => void;
   isPending: boolean;
 }
@@ -26,10 +29,11 @@ interface MarkDayCompleteButtonProps {
  */
 export function MarkDayCompleteButton({
   calories,
+  copy = 'partialDayNotice',
   onConfirm,
   isPending,
 }: MarkDayCompleteButtonProps) {
-  const t = useTranslations('logging.feedArea.partialDayNotice');
+  const t = useTranslations(`logging.feedArea.${copy}`);
 
   return (
     <ConfirmDialog

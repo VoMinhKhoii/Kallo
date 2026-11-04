@@ -52,6 +52,35 @@ an independently configured sandbox key and `APNS_PRODUCTION=false`; do not use
 the production-only key for local sandbox delivery. Apple capability and signing
 profile requirements are in [mobile releasing](../apps/docs/mobile/releasing.md#push-notifications-apns--what-ci-cannot-do-for-you).
 
+## Meal reminders (optional until configured)
+
+The reminder scheduler (`docs/NOTIFICATIONS.md` → "Reminders") needs two
+secrets, mounted as a pair by the "Detect the optional meal-reminder secrets"
+step of `cloud-run-prod.yml`; a deploy with only one of them fails on purpose:
+
+- `kallo-prod-reminder-tick-secret` → `REMINDER_TICK_SECRET`: the bearer
+  `POST /api/v1/reminders/tick` requires. The same value is set on the
+  `kallo-proxy` Worker (`apps/kallo-proxy/README.md` → "Reminder cron"), whose
+  cron trigger calls the route every 15 minutes.
+- `kallo-prod-reminder-action-secret` → `REMINDER_ACTION_SECRET`: the HMAC key
+  for the signed token a reminder's lock-screen "That was all" / "I'm done for
+  today" button posts to `POST /api/v1/reminders/close-day`. Server-only; never
+  give it to the Worker. Rotating it voids the buttons on reminders already
+  delivered (at most 36 hours' worth).
+
+```bash
+ openssl rand -base64 32 | tr -d '\n' | gcloud secrets create \
+  kallo-prod-reminder-tick-secret --data-file=-
+ openssl rand -base64 32 | tr -d '\n' | gcloud secrets create \
+  kallo-prod-reminder-action-secret --data-file=-
+# Grant roles/secretmanager.secretAccessor on both to the runtime and the
+# deployer service accounts, like every other kallo-prod-* secret.
+```
+
+Without them the tick route answers 503 and no reminder is sent; nothing
+else changes. The reminders also need the `20261104044856_add_meal_reminders`
+and `20261104044900_meal_reminders_retention` migrations applied first.
+
 ## Sign in with Apple token revocation (optional until configured)
 
 Apple requires apps that offer Sign in with Apple to revoke the user's tokens
@@ -140,6 +169,9 @@ Create or confirm these resources:
     (see "Sign in with Apple token revocation")
   - only for the Haiku trial: `kallo-prod-anthropic-api-key` (see "Meal
     pipeline model")
+  - optional: `kallo-prod-reminder-tick-secret` and
+    `kallo-prod-reminder-action-secret` — mounted only when both exist (see
+    "Meal reminders")
   - optional: `kallo-prod-turnstile-secret-key` (`TURNSTILE_SECRET_KEY`) —
     mounted only when it exists, and then the `TURNSTILE_SITE_KEY` repo
     variable must be set too. `TURNSTILE_MODE` (repo variable, unset =

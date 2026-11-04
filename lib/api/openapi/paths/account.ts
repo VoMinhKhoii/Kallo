@@ -1,6 +1,7 @@
 import {
   aiConsentSchema,
   profileSettingsSchema,
+  reminderPreferencesSchema,
   sharingPreferencesSchema,
 } from '@/lib/api/contracts/onboarding';
 import {
@@ -116,6 +117,22 @@ export const ACCOUNT_PATHS: Record<string, PathItem> = {
       extraErrors: PAYLOAD_TOO_LARGE_ERROR,
       body: fromZod(sharingPreferencesSchema),
       ok: ref('Acknowledgement'),
+    }),
+  },
+
+  '/api/v1/profile/reminders': {
+    put: authed({
+      operationId: 'updateMealReminders',
+      summary: 'Turn meal reminders on or off',
+      description:
+        'Meal reminders are iOS pushes at 10:00, 15:00 and 21:00 local time when the day is behind its share of the calorie target, plus one at 08:00 about a light, unclosed yesterday. On by default. Off stops them from the next scheduler tick; nothing else about notifications changes.',
+      tags: TAGS,
+      extraErrors: PAYLOAD_TOO_LARGE_ERROR,
+      body: fromZod(reminderPreferencesSchema),
+      ok: {
+        type: 'object',
+        properties: { mealReminders: { type: 'boolean' } },
+      },
     }),
   },
 

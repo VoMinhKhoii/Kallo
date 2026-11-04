@@ -193,6 +193,7 @@ export async function buildDataExport(db: AppDb, user: ExportAccountSource) {
     chat,
     notifications: inbox.notifications,
     pushDevices: inbox.pushDevices,
+    mealReminders: inbox.mealReminders,
     support,
     billingSyncs: billing.billingSyncs,
     analysis: activity.analysis,

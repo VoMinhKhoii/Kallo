@@ -74,6 +74,15 @@ export const userProfiles = pgTable(
     aiProcessingConsentedAt: timestamp('ai_processing_consented_at', {
       withTimezone: true,
     }),
+    // Meal reminders (docs/NOTIFICATIONS.md → "Reminders"): on by default, one
+    // switch in Settings. `time_zone` is the IANA zone the iOS app reports with
+    // its push registration — the reminder tick reads the user's local clock
+    // from it, DST included. NULL until a device reports one, and a user with
+    // no zone gets no reminders.
+    mealRemindersEnabled: boolean('meal_reminders_enabled')
+      .notNull()
+      .default(true),
+    timeZone: text('time_zone'),
 
     // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),
@@ -563,6 +572,51 @@ export const dayCompletionMarks = pgTable(
     unique('day_completion_marks_user_date_uniq').on(
       table.userId,
       table.localDate
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Meal reminders (lib/domain/reminders/)
+//
+// One row per reminder checkpoint the tick DECIDED for a user on a local day:
+// either sent, or skipped by a gate. The primary key is the claim — the tick
+// inserts before it sends, so two overlapping ticks can never push the same
+// checkpoint twice — and a decided checkpoint is never re-evaluated. A
+// checkpoint held back by another recent push writes nothing until it is
+// sent or its window passes. Server-only (RLS on, no policies); reaped after
+// 14 days. ≤4 rows per user per day.
+// ---------------------------------------------------------------------------
+
+export const mealReminders = pgTable(
+  'meal_reminders',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    // The user's LOCAL date the reminder was decided on (the 08:00 reminder is
+    // ABOUT the day before, but belongs to the day it was sent).
+    localDate: date('local_date').notNull(),
+    // 8 (about yesterday), 10, 15 or 21 — the local hour of the checkpoint.
+    checkpointHour: smallint('checkpoint_hour').notNull(),
+    outcome: text('outcome').notNull(),
+    // Which gate skipped it; NULL when sent.
+    reason: text('reason'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.userId, table.localDate, table.checkpointHour],
+    }),
+    check(
+      'meal_reminders_checkpoint_hour_check',
+      sql`${table.checkpointHour} IN (8, 10, 15, 21)`
+    ),
+    check(
+      'meal_reminders_outcome_check',
+      sql`${table.outcome} IN ('sent', 'skipped')`
     ),
   ]
 );
@@ -2398,9 +2452,15 @@ export const pushTokens = pgTable(
       .references(() => authUsers.id, { onDelete: 'cascade' }),
     token: text('token').notNull().unique(),
     platform: text('platform').notNull(),
+    // Refreshed by every registration POST, which the app sends on launch and
+    // on each return to the foreground — so it doubles as "last opened Kallo"
+    // for the reminder gates.
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // When APNs last accepted a push for this device. The reminder tick holds a
+    // reminder back while another push landed in the last 30 minutes.
+    lastPushedAt: timestamp('last_pushed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

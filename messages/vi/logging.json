@@ -133,6 +133,14 @@
       "confirmCancel": "Để sau",
       "markError": "Chưa xác nhận được ngày này. Thử lại nhé."
     },
+    "todayClose": {
+      "markComplete": "Mình ăn đủ rồi",
+      "confirmTitle": "Hôm nay vậy là đủ?",
+      "confirmBody": "Kallo sẽ tính hôm nay với {calories, number} kcal đã ghi và ngừng nhắc trong hôm nay. Bạn vẫn ghi thêm được. Không hoàn tác được.",
+      "confirmAccept": "Mình ăn đủ rồi",
+      "confirmCancel": "Để sau",
+      "closed": "Hôm nay đủ rồi"
+    },
     "partialYesterdayPrompt": {
       "title": "Hôm qua có vẻ ghi chưa đủ",
       "body": "Mới ghi {calories, number}/{target, number} kcal mục tiêu.",
