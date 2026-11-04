@@ -67,9 +67,13 @@ class KalloMenuAction<T> {
 /// coordinates). Resolves with the chosen value, or null on dismiss.
 ///
 /// [header] prints one muted line above the rows — the message's time, for the
-/// sent-message menu. [pinned] is drawn at EXACTLY [anchor], unscaled and
-/// unshadowed, so a caller can float a crisp copy of the thing it anchored to
-/// above the blur without moving it by a pixel. [edge] picks which vertical
+/// sent-message menu. [pinned] is drawn at EXACTLY [anchor], unshadowed, so a
+/// caller can float a crisp copy of the thing it anchored to above the blur
+/// without moving it. [pinnedScale] is the size the caller had already grown
+/// its own copy to while the press was held: the pinned copy holds that scale
+/// from the anchor's [edge] side for as long as the menu is open, the card
+/// hangs off the grown rect, and the copy settles back to 1 as the menu
+/// closes. [edge] picks which vertical
 /// edge the card shares with the anchor: [KalloMenuEdge.trailing] hangs it off
 /// the trailing edge (the default), [KalloMenuEdge.leading] off the leading
 /// one. [backdrop] false drops the blur and scrim behind the card: a
@@ -81,6 +85,7 @@ Future<T?> showKalloAnchoredMenu<T>(
   required List<KalloMenuAction<T>> actions,
   String? header,
   Widget? pinned,
+  double pinnedScale = 1,
   KalloMenuEdge edge = KalloMenuEdge.trailing,
   bool backdrop = true,
 }) {
@@ -107,6 +112,7 @@ Future<T?> showKalloAnchoredMenu<T>(
           edge: edge,
           header: header,
           pinned: pinned,
+          pinnedScale: pinnedScale,
           backdrop: backdrop,
           rows: [
             for (final action in actions)

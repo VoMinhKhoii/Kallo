@@ -253,27 +253,82 @@ void main() {
       expect(find.byType(KalloMenuActionRow), findsNWidgets(2));
     });
 
-    testWidgets('the bubble stays exactly where it was', (tester) async {
+    testWidgets('the bubble lifts in place, about its right edge', (
+      tester,
+    ) async {
       await tester.pumpWidget(_wrapLocalized(sent));
       await tester.pumpAndSettle();
       final resting = tester.getRect(bubbleBoxes());
 
       await holdBubble(tester);
 
-      // The entire reason the app owns this menu. `CupertinoContextMenu`
-      // relocated the bubble into a preview slot of its own and scaled it
-      // 1.15x, so the message the user was pressing slid out from under their
-      // finger. Here the page's own bubble never moves and the menu pins a
-      // still copy at exactly its rect.
-      final copies = tester.widgetList<Container>(bubbleBoxes()).length;
-      expect(copies, 2, reason: 'the page bubble and the menu pinned copy');
-      for (var i = 0; i < copies; i++) {
-        final rect = tester.getRect(bubbleBoxes().at(i));
-        expect(rect.left, closeTo(resting.left, 0.5));
-        expect(rect.top, closeTo(resting.top, 0.5));
-        expect(rect.right, closeTo(resting.right, 0.5));
-        expect(rect.bottom, closeTo(resting.bottom, 0.5));
-      }
+      // `CupertinoContextMenu` relocated the bubble into a preview slot of
+      // its own and scaled it 1.15x, so the message the user was pressing
+      // slid out from under their finger. Here the page's own bubble is back
+      // at rest under the blur, and the pinned copy over it is the held lift:
+      // 1.05x, right edge and vertical centre exactly where they were.
+      expect(bubbleBoxes(), findsNWidgets(2));
+      final page = tester.getRect(bubbleBoxes().first);
+      final pinned = tester.getRect(bubbleBoxes().last);
+      expect(page.left, closeTo(resting.left, 0.5));
+      expect(page.top, closeTo(resting.top, 0.5));
+      expect(page.size.width, closeTo(resting.width, 0.5));
+      expect(page.size.height, closeTo(resting.height, 0.5));
+      expect(pinned.right, closeTo(resting.right, 0.5));
+      expect(pinned.center.dy, closeTo(resting.center.dy, 0.5));
+      expect(pinned.width, closeTo(resting.width * 1.05, 0.5));
+      expect(pinned.height, closeTo(resting.height * 1.05, 0.5));
+    });
+
+    testWidgets('it grows from the first touch, before the menu opens', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrapLocalized(sent));
+      await tester.pumpAndSettle();
+      final resting = tester.getRect(bubbleBoxes());
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(UserMessageBubble)),
+      );
+      // A short pause first, so a scroll that starts on the bubble never
+      // flickers it…
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(tester.getRect(bubbleBoxes()).width, closeTo(resting.width, 0.5));
+      // …then the meal card's lift, under the finger, while it is held.
+      await tester.pump(const Duration(milliseconds: 300));
+      final held = tester.getRect(bubbleBoxes());
+      expect(held.width, greaterThan(resting.width + 1));
+      expect(held.right, closeTo(resting.right, 0.5));
+      expect(find.text('Copy'), findsNothing);
+
+      // Let go early: it settles back and nothing opens.
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(find.text('Copy'), findsNothing);
+      final after = tester.getRect(bubbleBoxes());
+      expect(after.width, closeTo(resting.width, 0.5));
+      expect(after.height, closeTo(resting.height, 0.5));
+    });
+
+    testWidgets('the lifted copy eases back as the menu closes', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrapLocalized(sent));
+      await tester.pumpAndSettle();
+      final resting = tester.getRect(bubbleBoxes());
+
+      await holdBubble(tester);
+      await tester.tapAt(const Offset(8, 8));
+      // Mid-close: the pinned copy is on its way back to the page's size.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final closing = tester.getRect(bubbleBoxes().last);
+      expect(closing.width, greaterThan(resting.width));
+      expect(closing.width, lessThan(resting.width * 1.05));
+
+      await tester.pumpAndSettle();
+      expect(bubbleBoxes(), findsOneWidget);
+      expect(tester.getRect(bubbleBoxes()).width, closeTo(resting.width, 0.5));
     });
 
     testWidgets("the menu hangs off the bubble's trailing edge", (

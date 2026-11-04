@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -7,10 +8,15 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../shared/widgets/menu/kallo_anchored_menu.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
+import '../../../../theme/kallo_motion.dart';
 import 'sent_bubble.dart';
 import '../../data/handoff_slots.dart';
 
 enum _Action { copy, edit }
+
+/// How far the bubble grows while it is held: the meal card's lift, kept
+/// small because the bubble grows in place rather than moving to a preview.
+const double _kHeldScale = 1.05;
 
 /// The user's meal, as a sent chat message.
 ///
@@ -53,6 +59,14 @@ enum _Action { copy, edit }
 /// The exception is recorded under boundary 3 of *Cupertino wherever it
 /// exists* in `.agents/skills/kallo-design/mobile.md`.
 ///
+/// **It grows while held** (owner, 2026-11-04): the meal card's lift on the
+/// bubble's 500ms hold. From the first touch the pill swells to
+/// [_kHeldScale] about its right edge — a short pause first, as
+/// `CupertinoContextMenu` has, so a scroll that starts on it never flickers —
+/// and lands there as the menu opens. The menu's pinned copy holds that size
+/// and eases back as the menu closes. Lifting the finger early shrinks it
+/// back without opening anything.
+///
 /// The action glyphs come from Lucide, the one icon font this app bundles.
 /// `CupertinoIcons.doc_on_clipboard` sat here until 2026-09-05 and painted as
 /// a tofu box: its font ships in the `cupertino_icons` package, which is not a
@@ -72,10 +86,38 @@ class UserMessageBubble extends ConsumerStatefulWidget {
   ConsumerState<UserMessageBubble> createState() => _UserMessageBubbleState();
 }
 
-class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
+class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
+    with SingleTickerProviderStateMixin {
   /// On the pill, not on this widget: the menu anchors to the BUBBLE's rect,
   /// and this widget's own box is the full-width row it is aligned inside.
+  /// It sits OUTSIDE the grow transform, so it always measures the resting
+  /// rect the menu scales from.
   final GlobalKey _pill = GlobalKey();
+
+  /// The held-press grow, run over exactly the long-press timeout so the
+  /// bubble reaches full size as the menu opens.
+  late final AnimationController _hold = AnimationController(
+    vsync: this,
+    duration: kLongPressTimeout,
+    reverseDuration: KalloMotion.quick,
+  );
+
+  late final Animation<double> _scale = Tween<double>(
+    begin: 1,
+    end: _kHeldScale,
+  ).animate(
+    CurvedAnimation(
+      parent: _hold,
+      // Cupertino's own pause-then-grow: a sixth of the hold standing still.
+      curve: const Interval(1 / 6, 1, curve: Curves.easeOutSine),
+    ),
+  );
+
+  @override
+  void dispose() {
+    _hold.dispose();
+    super.dispose();
+  }
 
   /// Park the message for the composer to pick up — the composer applies it
   /// and says what it displaced ([listenForComposerRefill]).
@@ -96,9 +138,15 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
     final overlay =
         Overlay.of(context, rootOverlay: true).context.findRenderObject()
             as RenderBox?;
-    if (pill == null || overlay == null) return;
+    if (pill == null || overlay == null) {
+      _hold.reverse();
+      return;
+    }
     final anchor =
         pill.localToGlobal(Offset.zero, ancestor: overlay) & pill.size;
+    // The menu's pinned copy takes over at the grown size, drawn over this
+    // one, so the page's own bubble can drop back to rest unseen.
+    _hold.value = 0;
 
     final action = await showKalloAnchoredMenu<_Action>(
       context,
@@ -108,6 +156,7 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
       // bubble occupies — which is what lets the page's blur run underneath it
       // without the message itself going soft.
       pinned: SentBubble(text: widget.text, pageWidth: pageWidth),
+      pinnedScale: _kHeldScale,
       actions: [
         KalloMenuAction(
           label: 'logging.copyMessage'.tr(),
@@ -160,11 +209,19 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
                   // Opaque: the whole pill answers the hold, not just the glyph
                   // run of text under the finger.
                   behavior: HitTestBehavior.opaque,
+                  onLongPressDown: (_) => _hold.forward(),
+                  onLongPressCancel: _hold.reverse,
                   onLongPress: () => _openMenu(page.maxWidth),
-                  child: SentBubble(
+                  child: KeyedSubtree(
                     key: _pill,
-                    text: widget.text,
-                    pageWidth: page.maxWidth,
+                    child: ScaleTransition(
+                      scale: _scale,
+                      alignment: Alignment.centerRight,
+                      child: SentBubble(
+                        text: widget.text,
+                        pageWidth: page.maxWidth,
+                      ),
+                    ),
                   ),
                 ),
               ),

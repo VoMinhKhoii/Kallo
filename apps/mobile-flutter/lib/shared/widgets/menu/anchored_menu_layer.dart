@@ -50,6 +50,7 @@ class AnchoredMenuLayer extends StatefulWidget {
     required this.rows,
     this.header,
     this.pinned,
+    this.pinnedScale = 1,
     this.backdrop = true,
     super.key,
   });
@@ -61,6 +62,10 @@ class AnchoredMenuLayer extends StatefulWidget {
   final List<KalloMenuActionRow> rows;
   final String? header;
   final Widget? pinned;
+
+  /// The scale [pinned] is held at while the menu is open, grown from the
+  /// [edge] side of [anchor] — see [showKalloAnchoredMenu].
+  final double pinnedScale;
 
   /// Blur and dim the page behind the card — a context menu's backdrop. A
   /// pull-down ([showKalloAnchoredMenu]'s `backdrop: false`) leaves the page
@@ -97,7 +102,19 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
 
   @override
   Widget build(BuildContext context) {
-    final anchor = widget.anchor;
+    final leadingEdge = widget.edge == KalloMenuEdge.leading;
+    // The grown copy keeps the [edge] side flush and its vertical centre, so
+    // the card measured off THIS rect still shares that edge with it.
+    final growFrom = leadingEdge ? Alignment.centerLeft : Alignment.centerRight;
+    final resting = widget.anchor;
+    final anchor = _grown(resting, widget.pinnedScale, leadingEdge);
+    // Held at full size while the menu opens and stays open, and eased back
+    // to the resting size on the way out, so the copy the route drops at the
+    // end matches the page's own bubble under it.
+    final lift =
+        widget.animation.status == AnimationStatus.reverse
+            ? 1 + (widget.pinnedScale - 1) * _curved.value
+            : widget.pinnedScale;
     final overlaySize = widget.overlaySize;
     final pinned = widget.pinned;
     final height = kalloMenuCardHeight(
@@ -135,7 +152,6 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
             ? ceiling
             : wantedTop.clamp(ceiling, floor - height);
 
-    final leadingEdge = widget.edge == KalloMenuEdge.leading;
     final wanted = leadingEdge ? anchor.left : anchor.right - kKalloMenuWidth;
     final maxLeft = overlaySize.width - kKalloMenuWidth - KalloSpacing.sp3;
     final left =
@@ -149,8 +165,14 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
           Positioned.fill(child: AnchoredMenuBackdrop(opacity: _curved)),
         if (pinned != null)
           Positioned.fromRect(
-            rect: anchor,
-            child: IgnorePointer(child: pinned),
+            rect: resting,
+            child: IgnorePointer(
+              child: Transform.scale(
+                scale: lift,
+                alignment: growFrom,
+                child: pinned,
+              ),
+            ),
           ),
         Positioned(
           left: left,
@@ -183,4 +205,16 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
       ],
     );
   }
+}
+
+/// [rect] scaled by [scale] about its leading or trailing edge's midpoint.
+Rect _grown(Rect rect, double scale, bool leadingEdge) {
+  final width = rect.width * scale;
+  final height = rect.height * scale;
+  return Rect.fromLTWH(
+    leadingEdge ? rect.left : rect.right - width,
+    rect.center.dy - height / 2,
+    width,
+    height,
+  );
 }
