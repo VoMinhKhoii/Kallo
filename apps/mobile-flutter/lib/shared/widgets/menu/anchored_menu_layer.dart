@@ -38,10 +38,9 @@ enum KalloMenuEdge {
 /// and [overlaySize] is that overlay's own size — both measured by the caller,
 /// because nothing here may reach into the tree the menu was opened from.
 ///
-/// Stateful for two reasons. The [CurvedAnimation]: the route rebuilds this
+/// Stateful for ONE reason: the [CurvedAnimation]. The route rebuilds this
 /// widget on every frame of its transition, so a curve built in `build` meant a
-/// status listener per frame on the route's animation, none ever disposed. And
-/// the point the close started from, which the pinned copy eases back from.
+/// status listener per frame on the route's animation, none ever disposed.
 class AnchoredMenuLayer extends StatefulWidget {
   const AnchoredMenuLayer({
     required this.anchor,
@@ -64,8 +63,9 @@ class AnchoredMenuLayer extends StatefulWidget {
   final String? header;
   final Widget? pinned;
 
-  /// The scale [pinned] is held at while the menu is open, grown from the
-  /// [edge] side of [anchor] — see [showKalloAnchoredMenu].
+  /// The scale the caller draws [pinned] at, grown about the midpoint of the
+  /// [edge] side of [anchor]. The layer does not scale [pinned] itself; it
+  /// hangs the card off the grown rect so the gap is measured from what shows.
   final double pinnedScale;
 
   /// Blur and dim the page behind the card — a context menu's backdrop. A
@@ -80,22 +80,10 @@ class AnchoredMenuLayer extends StatefulWidget {
 class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
   late CurvedAnimation _curved = _curve();
 
-  /// The route's value when the close began: 1 after a full open, less when
-  /// the menu is dismissed while still opening.
-  double _closeFrom = 1;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.animation.addStatusListener(_onStatus);
-  }
-
   @override
   void didUpdateWidget(AnchoredMenuLayer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.animation != oldWidget.animation) {
-      oldWidget.animation.removeStatusListener(_onStatus);
-      widget.animation.addStatusListener(_onStatus);
       _curved.dispose();
       _curved = _curve();
     }
@@ -103,15 +91,8 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
 
   @override
   void dispose() {
-    widget.animation.removeStatusListener(_onStatus);
     _curved.dispose();
     super.dispose();
-  }
-
-  void _onStatus(AnimationStatus status) {
-    if (status == AnimationStatus.reverse) {
-      _closeFrom = widget.animation.value;
-    }
   }
 
   CurvedAnimation _curve() => CurvedAnimation(
@@ -123,24 +104,11 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
   @override
   Widget build(BuildContext context) {
     final leadingEdge = widget.edge == KalloMenuEdge.leading;
-    // The grown copy keeps the [edge] side flush and its vertical centre, so
-    // the card measured off THIS rect still shares that edge with it.
     final growFrom = leadingEdge ? Alignment.centerLeft : Alignment.centerRight;
-    final resting = widget.anchor;
-    final anchor = _grown(resting, widget.pinnedScale, leadingEdge);
-    // Held at full size while the menu opens and stays open, and eased back
-    // to the resting size on the way out, so the copy the route drops at the
-    // end matches the page's own bubble under it. The way back is measured
-    // from wherever the close began, so a dismiss mid-open still starts at
-    // full size rather than snapping part of the way down.
-    final lift =
-        widget.animation.status == AnimationStatus.reverse && _closeFrom > 0
-            ? 1 +
-                (widget.pinnedScale - 1) *
-                    KalloEase.exit.transform(
-                      (widget.animation.value / _closeFrom).clamp(0.0, 1.0),
-                    )
-            : widget.pinnedScale;
+    final anchor = growFrom.inscribe(
+      widget.anchor.size * widget.pinnedScale,
+      widget.anchor,
+    );
     final overlaySize = widget.overlaySize;
     final pinned = widget.pinned;
     final height = kalloMenuCardHeight(
@@ -191,14 +159,8 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
           Positioned.fill(child: AnchoredMenuBackdrop(opacity: _curved)),
         if (pinned != null)
           Positioned.fromRect(
-            rect: resting,
-            child: IgnorePointer(
-              child: Transform.scale(
-                scale: lift,
-                alignment: growFrom,
-                child: pinned,
-              ),
-            ),
+            rect: widget.anchor,
+            child: IgnorePointer(child: pinned),
           ),
         Positioned(
           left: left,
@@ -231,16 +193,4 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
       ],
     );
   }
-}
-
-/// [rect] scaled by [scale] about its leading or trailing edge's midpoint.
-Rect _grown(Rect rect, double scale, bool leadingEdge) {
-  final width = rect.width * scale;
-  final height = rect.height * scale;
-  return Rect.fromLTWH(
-    leadingEdge ? rect.left : rect.right - width,
-    rect.center.dy - height / 2,
-    width,
-    height,
-  );
 }

@@ -63,9 +63,10 @@ const double _kHeldScale = 1.05;
 /// bubble's 500ms hold. From the first touch the pill swells to
 /// [_kHeldScale] about its right edge — a short pause first, as
 /// `CupertinoContextMenu` has, so a scroll that starts on it never flickers —
-/// and lands there as the menu opens. The menu's pinned copy holds that size
-/// and eases back as the menu closes. Lifting the finger early shrinks it
-/// back without opening anything.
+/// and lands there as the menu opens. The menu's pinned copy is driven by the
+/// same animation, so both stay at that size while the menu is open and ease
+/// back together as it closes. Lifting the finger early shrinks it back
+/// without opening anything.
 ///
 /// The action glyphs come from Lucide, the one icon font this app bundles.
 /// `CupertinoIcons.doc_on_clipboard` sat here until 2026-09-05 and painted as
@@ -90,12 +91,13 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
     with SingleTickerProviderStateMixin {
   /// On the pill, not on this widget: the menu anchors to the BUBBLE's rect,
   /// and this widget's own box is the full-width row it is aligned inside.
-  /// It sits OUTSIDE the grow transform, so it always measures the resting
-  /// rect the menu scales from.
+  /// It sits on the grow transform, whose own box is the resting rect (the
+  /// scale is paint-only), so it measures the rect the menu scales from.
   final GlobalKey _pill = GlobalKey();
 
   /// The held-press grow, run over exactly the long-press timeout so the
-  /// bubble reaches full size as the menu opens.
+  /// bubble reaches full size as the menu opens. It drives the menu's pinned
+  /// copy too, and runs back when the menu closes.
   late final AnimationController _hold = AnimationController(
     vsync: this,
     duration: kLongPressTimeout,
@@ -110,8 +112,22 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
       parent: _hold,
       // Cupertino's own pause-then-grow: a sixth of the hold standing still.
       curve: const Interval(1 / 6, 1, curve: Curves.easeOutSine),
+      // The way back takes the whole close, on the menu's own exit curve.
+      reverseCurve: KalloEase.exit,
     ),
   );
+
+  /// Set from the moment the hold opens the menu until the menu resolves.
+  /// Pushing the menu's route cancels the pointer still holding the bubble
+  /// (the navigator cancels active pointers on a push), which reaches
+  /// [_release] as a cancelled long press — and must not shrink a bubble
+  /// whose menu is opening.
+  bool _menuOpen = false;
+
+  /// The finger left before the menu opened: settle back.
+  void _release() {
+    if (!_menuOpen) _hold.reverse();
+  }
 
   @override
   void dispose() {
@@ -142,11 +158,9 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
       _hold.reverse();
       return;
     }
+    _menuOpen = true;
     final anchor =
         pill.localToGlobal(Offset.zero, ancestor: overlay) & pill.size;
-    // The menu's pinned copy takes over at the grown size, drawn over this
-    // one, so the page's own bubble can drop back to rest unseen.
-    _hold.value = 0;
 
     final action = await showKalloAnchoredMenu<_Action>(
       context,
@@ -155,7 +169,11 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
       // The still copy, floated over the blur at the rect the page's own
       // bubble occupies — which is what lets the page's blur run underneath it
       // without the message itself going soft.
-      pinned: SentBubble(text: widget.text, pageWidth: pageWidth),
+      pinned: ScaleTransition(
+        scale: _scale,
+        alignment: Alignment.centerRight,
+        child: SentBubble(text: widget.text, pageWidth: pageWidth),
+      ),
       pinnedScale: _kHeldScale,
       actions: [
         KalloMenuAction(
@@ -171,6 +189,9 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
       ],
     );
     if (!mounted) return;
+    // The menu resolves as its close begins: both copies ease back with it.
+    _menuOpen = false;
+    _hold.reverse();
     // Awaiting the menu is what puts these AFTER the route has popped: the
     // copy toast is an OverlayEntry and would otherwise land under the scrim.
     switch (action) {
@@ -210,17 +231,15 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
                   // run of text under the finger.
                   behavior: HitTestBehavior.opaque,
                   onLongPressDown: (_) => _hold.forward(),
-                  onLongPressCancel: _hold.reverse,
+                  onLongPressCancel: _release,
                   onLongPress: () => _openMenu(page.maxWidth),
-                  child: KeyedSubtree(
+                  child: ScaleTransition(
                     key: _pill,
-                    child: ScaleTransition(
-                      scale: _scale,
-                      alignment: Alignment.centerRight,
-                      child: SentBubble(
-                        text: widget.text,
-                        pageWidth: page.maxWidth,
-                      ),
+                    scale: _scale,
+                    alignment: Alignment.centerRight,
+                    child: SentBubble(
+                      text: widget.text,
+                      pageWidth: page.maxWidth,
                     ),
                   ),
                 ),

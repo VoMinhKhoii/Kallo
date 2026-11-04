@@ -144,14 +144,21 @@ void main() {
 
     /// Hold the bubble until the menu opens.
     ///
-    /// A plain `tester.longPress`: the menu is the app's own
-    /// ([showKalloAnchoredMenu]) and opens on Material's 500ms `onLongPress`.
-    /// It used to be a hand-rolled gesture that outlasted
-    /// `CupertinoContextMenu`'s 800ms preview timeout, which is the one thing
-    /// that route made the user wait for.
-    Future<void> holdBubble(WidgetTester tester) async {
-      await tester.longPress(find.byType(UserMessageBubble));
-      await tester.pumpAndSettle();
+    /// 600ms is enough: the menu is the app's own ([showKalloAnchoredMenu])
+    /// and opens on Material's 500ms `onLongPress`, not `CupertinoContextMenu`'s
+    /// 800ms preview timeout, which is the one thing that route made the user
+    /// wait for. Held frame by frame rather than with `tester.longPress`, whose single
+    /// 600ms pump gives the bubble's grow no frames before the menu opens —
+    /// a finger on a device does.
+    Future<void> holdBubble(WidgetTester tester, {bool settle = true}) async {
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(UserMessageBubble)),
+      );
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await gesture.up();
+      if (settle) await tester.pumpAndSettle();
     }
 
     /// Capture what the app hands the platform clipboard.
@@ -264,20 +271,17 @@ void main() {
 
       // `CupertinoContextMenu` relocated the bubble into a preview slot of
       // its own and scaled it 1.15x, so the message the user was pressing
-      // slid out from under their finger. Here the page's own bubble is back
-      // at rest under the blur, and the pinned copy over it is the held lift:
+      // slid out from under their finger. Here both copies — the page's own
+      // under the blur and the pinned one over it — hold the same lift:
       // 1.05x, right edge and vertical centre exactly where they were.
       expect(bubbleBoxes(), findsNWidgets(2));
-      final page = tester.getRect(bubbleBoxes().first);
-      final pinned = tester.getRect(bubbleBoxes().last);
-      expect(page.left, closeTo(resting.left, 0.5));
-      expect(page.top, closeTo(resting.top, 0.5));
-      expect(page.size.width, closeTo(resting.width, 0.5));
-      expect(page.size.height, closeTo(resting.height, 0.5));
-      expect(pinned.right, closeTo(resting.right, 0.5));
-      expect(pinned.center.dy, closeTo(resting.center.dy, 0.5));
-      expect(pinned.width, closeTo(resting.width * 1.05, 0.5));
-      expect(pinned.height, closeTo(resting.height * 1.05, 0.5));
+      for (var i = 0; i < 2; i++) {
+        final rect = tester.getRect(bubbleBoxes().at(i));
+        expect(rect.right, closeTo(resting.right, 0.5));
+        expect(rect.center.dy, closeTo(resting.center.dy, 0.5));
+        expect(rect.width, closeTo(resting.width * 1.05, 0.5));
+        expect(rect.height, closeTo(resting.height * 1.05, 0.5));
+      }
     });
 
     testWidgets('it grows from the first touch, before the menu opens', (
@@ -339,7 +343,7 @@ void main() {
       final resting = tester.getRect(bubbleBoxes());
 
       // The menu is part-way through its 200ms open when the tap lands.
-      await tester.longPress(find.byType(UserMessageBubble));
+      await holdBubble(tester, settle: false);
       await tester.pump(const Duration(milliseconds: 50));
       await tester.tapAt(const Offset(8, 8));
       await tester.pump();

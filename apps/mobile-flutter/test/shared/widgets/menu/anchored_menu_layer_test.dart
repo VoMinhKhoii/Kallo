@@ -210,7 +210,7 @@ void main() {
     );
   });
 
-  testWidgets('a grown pinned copy keeps its edge, and the card hangs off it', (
+  testWidgets('a grown pinned copy moves the card down by its growth', (
     tester,
   ) async {
     _usePhone(tester);
@@ -227,12 +227,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final pinned = tester.getRect(find.byKey(pin));
-    expect(pinned.right, closeTo(anchor.right, 0.5));
-    expect(pinned.center.dy, closeTo(anchor.center.dy, 0.5));
-    expect(pinned.width, closeTo(anchor.width * 1.05, 0.5));
+    // The caller scales its own copy; the layer lays it out at the resting
+    // rect and hangs the card off the GROWN one, right edges still flush.
+    expect(tester.getRect(find.byKey(pin)), anchor);
+    final grownBottom = anchor.center.dy + anchor.height * 1.05 / 2;
     final card = tester.getRect(find.byType(KalloMenuCard));
     expect(card.right, closeTo(anchor.right, 0.5));
-    expect(card.top, closeTo(pinned.bottom + KalloSpacing.sp2, 0.5));
+    expect(card.top, closeTo(grownBottom + KalloSpacing.sp2, 0.5));
   });
 }
