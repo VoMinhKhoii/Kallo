@@ -10,6 +10,7 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../logging_keys.dart';
 import '../logging_models.dart';
 import '../logging_providers.dart';
+import '../../../../services/push/ask_after_save.dart';
 
 const _uuid = Uuid();
 
@@ -108,6 +109,7 @@ Future<void> logMealAgain(
     return;
   }
 
+  askForNotificationsAfterSave(ref.read);
   // The duplicate landed — heal the date-keyed surfaces, then refetch the day so
   // the copied meal appears in the feed. A refetch failure must NOT surface as
   // an error (the meal really was saved); invalidate instead so a later fetch

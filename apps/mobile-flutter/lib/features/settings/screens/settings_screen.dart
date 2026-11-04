@@ -20,7 +20,8 @@ import '../../onboarding/widgets/onboarding_nudge.dart';
 import '../logic/profile_summaries.dart';
 import '../logic/settings_spacing.dart';
 import '../widgets/account/ai_consent_toggle.dart';
-import '../widgets/account/auto_share_to_circle_toggle.dart';
+import '../data/profile_preferences.dart';
+import '../widgets/account/profile_switch_row.dart';
 import '../widgets/account/sign_out_row.dart';
 import '../widgets/account/subscription_section.dart';
 import '../widgets/appearance/appearance_row.dart';
@@ -87,7 +88,7 @@ class _SettingsList extends ConsumerWidget {
       _NutritionProfileGroup(profile: profile),
 
       // ── Preferences ─────────────────────────────────────────────────────
-      // Appearance is a device setting and shows at once. The two switches
+      // Appearance is a device setting and shows at once. The switches
       // wait for the profile (web parity) — an enabled switch with no profile
       // row can only produce an error.
       SettingsGroup(
@@ -95,7 +96,20 @@ class _SettingsList extends ConsumerWidget {
         children: [
           const AppearanceRow(),
           if (profile != null) ...[
-            AutoShareToCircleToggle(value: profile.autoShareToCircle),
+            ProfileSwitchRow(
+              value: profile.autoShareToCircle,
+              icon: LucideIcons.users300,
+              labelKey: 'settings.sharing.autoShareLabel',
+              errorKey: 'settings.sharing.error',
+              save: setAutoShareToCircle,
+            ),
+            ProfileSwitchRow(
+              value: profile.mealRemindersEnabled,
+              icon: LucideIcons.bell300,
+              labelKey: 'settings.reminders.label',
+              errorKey: 'settings.reminders.error',
+              save: setMealReminders,
+            ),
             const AiConsentToggle(),
           ],
         ],

@@ -26,6 +26,7 @@ class PushChannel {
     required void Function(String token) onToken,
     required void Function(String message) onTokenError,
     required void Function(PushPayload payload) onTap,
+    void Function()? onDayClosed,
   }) {
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
@@ -37,17 +38,54 @@ class PushChannel {
         case 'onTap':
           final payload = _asPayload(call.arguments);
           if (payload != null) onTap(payload);
+        case 'onDayClosed':
+          onDayClosed?.call();
       }
       return null;
     });
   }
 
   /// Request alert/badge/sound authorization and, on grant, register with APNs.
-  /// The token itself arrives later through `onToken`.
+  /// The token itself arrives later through `onToken`. Shows the system prompt
+  /// only while the user has never answered it; after that iOS returns the
+  /// stored answer silently.
   Future<bool> requestPermission() async {
     final granted = await channel.invokeMethod<bool>('registerForPush');
     return granted ?? false;
   }
+
+  /// Register with APNs only if notifications are ALREADY allowed. Never shows
+  /// the prompt — that waits for the first logged meal.
+  Future<bool> registerIfAuthorized() async {
+    final allowed = await channel.invokeMethod<bool>('registerIfAuthorized');
+    return allowed ?? false;
+  }
+
+  /// The device's IANA time zone (`Asia/Ho_Chi_Minh`) — the clock the server
+  /// runs this user's meal reminders on.
+  Future<String?> timeZone() => channel.invokeMethod<String>('getTimeZone');
+
+  /// The days a reminder's lock-screen button closed since the last call
+  /// (drained natively), so the app can refresh what it shows for them.
+  Future<List<String>> takeClosedDays() async {
+    final days = await channel.invokeMethod<List<Object?>>('takeClosedDays');
+    return [
+      for (final day in days ?? const <Object?>[])
+        if (day is String) day,
+    ];
+  }
+
+  /// Register the meal-reminder notification categories with their button
+  /// [titles] in the app's language (keys `addToYesterday`, `thatWasAll`,
+  /// `logMeal`, `logMore`, `doneForToday`), and the [apiBase] the background
+  /// "close the day" button posts to.
+  Future<void> setReminderCategories({
+    required Map<String, String> titles,
+    required String apiBase,
+  }) => channel.invokeMethod<void>('setReminderCategories', {
+    'titles': titles,
+    'apiBase': apiBase,
+  });
 
   /// The tap that cold-started the app, if any. Drained once, natively.
   Future<PushPayload?> initialTap() async {

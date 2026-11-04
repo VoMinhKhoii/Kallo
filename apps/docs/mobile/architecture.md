@@ -172,7 +172,8 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   `/start → /sign-in` are **pushes**, so back works by gesture and by chevron; the
   exits that enter the app (`/welcome`, `/dashboard`) stay `go`. A notification tap
   seeds `/circle` and pushes the thread over it (`nav_actions.openPushDestination`)
-  so a cold tap still has something underneath.
+  so a cold tap still has something underneath; a meal-reminder tap pushes
+  `/logging` on the reminder's day over the current tab (Dashboard on a cold tap).
 - **Motion:** durations and curves are tokens (`theme/kallo_motion.dart`: `KalloMotion`,
   `KalloEase`), named by role. Full rules, and the traps behind them, in `kallo-design/mobile.md`.
 - **Dialogs:** one confirmation surface, `shared/widgets/dialog/kallo_confirm.dart`

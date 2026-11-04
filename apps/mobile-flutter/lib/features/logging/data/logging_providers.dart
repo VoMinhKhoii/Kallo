@@ -27,6 +27,7 @@ import '../logic/meal_log_mode.dart';
 import 'logging_keys.dart';
 import 'logging_models.dart';
 import 'handoff_slots.dart';
+import '../../../services/push/ask_after_save.dart';
 
 /// Identity for the day query family: (userId, date). The timezone offset is
 /// derived at fetch time (it's constant within a session), matching the RN hook
@@ -357,6 +358,7 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
         if (edits != null && edits.isNotEmpty) 'edits': edits,
         if (levels != null) 'levels': levels,
       });
+      askForNotificationsAfterSave(ref.read);
     } finally {
       // onSettled: refetch the day (awaited — the feed swaps the pending card
       // for the saved one) + invalidate the other meal-keyed surfaces. The busy

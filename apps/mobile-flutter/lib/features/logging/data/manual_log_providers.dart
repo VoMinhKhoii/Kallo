@@ -13,6 +13,7 @@ import '../../../models/nutrition/ingredient.dart';
 import '../logic/manual/manual_amount.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
+import '../../../services/push/ask_after_save.dart';
 
 const _uuid = Uuid();
 
@@ -153,6 +154,7 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
         'timezoneOffset': timezoneOffsetMinutes(),
       });
       state = const ManualLogState();
+      askForNotificationsAfterSave(ref.read);
       invalidateMealSurfaces(ref.invalidate, userId, date);
     } finally {
       if (state.isSaving) state = state.copyWith(isSaving: false);
