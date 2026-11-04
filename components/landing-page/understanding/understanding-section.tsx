@@ -1,6 +1,5 @@
 'use client';
 
-import { motion, useReducedMotion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { COMPARISONS_BY_LOCALE } from './comparisons';
 import { stackReleaseRem } from './stack-geometry';
@@ -49,7 +48,6 @@ const HEADING_REM = 9.5;
 export function UnderstandingSection() {
   const t = useTranslations('landing.understanding');
   const locale = useLocale();
-  const reduced = useReducedMotion() ?? false;
 
   const comparisons = COMPARISONS_BY_LOCALE[locale] ?? COMPARISONS_BY_LOCALE.en;
 
@@ -67,22 +65,6 @@ export function UnderstandingSection() {
   // for the sticky calculation, but occupies no visible space.
   const headingMarginRem =
     stackReleaseRem(comparisons.length) - HEADING_TOP_REM - HEADING_REM;
-
-  // Opacity only — no `y` rise, unlike the other sections.
-  //
-  // This heading is sticky, and the first card sits flush under it. A 24px rise
-  // moves the heading but not the card, so the gap between them opened and shut
-  // as the animation played, which read as the whole section stuttering on
-  // arrival. Animating a transform on a sticky element is a bad idea besides:
-  // it shifts the box the sticky offset is measured against.
-  const reveal = reduced
-    ? {}
-    : {
-        initial: { opacity: 0 },
-        whileInView: { opacity: 1 },
-        viewport: { once: true, margin: '-80px' },
-        transition: { duration: 0.7, ease: [0.32, 0.72, 0, 1] as const },
-      };
 
   return (
     <section
@@ -103,13 +85,18 @@ export function UnderstandingSection() {
             Sticky, and pinned on exactly the same release threshold as the
             cards — see `headingMarginRem` for why that matters and what the
             margin below is doing. */}
-        <motion.div
-          {...reveal}
-          className="text-center md:sticky md:top-24 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)]"
+        <div
+          className="animate-reveal text-center md:sticky md:top-24 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)]"
           style={
             {
               '--heading-h': `${HEADING_REM}rem`,
               '--heading-mb': `${headingMarginRem}rem`,
+              // The scroll reveal (`animate-reveal`, globals.css) fades
+              // only: no `y` rise, unlike the other sections. This heading is
+              // sticky and the first card sits flush under it, so a rise opened
+              // and shut the gap between them, and a transform on a sticky
+              // element shifts the box its sticky offset is measured against.
+              '--reveal-y': '0px',
             } as React.CSSProperties
           }
         >
@@ -122,7 +109,7 @@ export function UnderstandingSection() {
               {t('titleUnderlined')}
             </span>
           </h2>
-        </motion.div>
+        </div>
 
         {/* The pile. Sticky children release when their PARENT's bottom reaches
             them, so this container decides when the stack breaks up.

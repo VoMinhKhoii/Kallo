@@ -642,6 +642,63 @@
       animation: none;
     }
   }
+
+  /* The public pages' entrance and scroll reveals, in CSS so they play from
+     the server-rendered HTML. Driven from JS (motion's `initial`), the server
+     sent the landing hero at opacity 0 and it stayed invisible until every
+     script had loaded and run: about 9 s on Fast 3G. Reduced motion gets the
+     content with no animation at all. */
+
+  /* Staggered rise on first paint. `--rise-step` sets the order (90 ms apart);
+     the curve is the hero's heavy, decelerating one. */
+  @keyframes kallo-rise {
+    from {
+      opacity: 0;
+      transform: translateY(var(--rise-y, 18px));
+      filter: blur(var(--rise-blur, 6px));
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-rise {
+      animation: kallo-rise var(--rise-duration, 0.85s)
+        cubic-bezier(0.32, 0.72, 0, 1) backwards;
+      animation-delay: calc(var(--rise-step, 0) * 90ms);
+    }
+  }
+
+  /* Fade-up as a section scrolls in, tied to its scroll position: done 240px
+     after its top edge enters, however tall it is. Browsers without scroll
+     timelines (Firefox today) show it with no animation; nothing waits on JS. */
+  @keyframes kallo-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(var(--reveal-y, 24px));
+    }
+  }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .animate-reveal {
+        animation: kallo-reveal linear backwards;
+        animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+        animation-timeline: view();
+        animation-range: entry 40px entry 240px;
+      }
+    }
+  }
+
+  /* The landing page's ambient blobs: out to (--drift-x, --drift-y) and back,
+     forever, on the compositor. */
+  @keyframes kallo-drift {
+    50% {
+      transform: translate(var(--drift-x), var(--drift-y));
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-drift {
+      animation: kallo-drift var(--drift-duration)
+        cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    }
+  }
 }
 
 /* Eyebrow — the 10px uppercase section label. The one place UPPERCASE

@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
 import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
 import { Header } from '@/components/landing-page/header';
 import { PricingBackLink } from '@/components/landing-page/pricing/checkout/back-link';
@@ -94,7 +94,7 @@ export default function PricingPage({
           <PricingBackLink />
           <PricingSection titleAs="h1" />
         </main>
-        <AuthDialog />
+        <LazyAuthDialog />
         {/* The runtime Google client ID; the rest of the page is prerendered. */}
         <Suspense fallback={null}>
           <AuthRequestConfig />
