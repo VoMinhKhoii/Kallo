@@ -41,10 +41,10 @@ class TodayCloseRow extends StatelessWidget {
           closed
               ? Semantics(
                 liveRegion: true,
-                child: SizedBox(
-                  height: LoggingIcons.hit,
-                  child: Center(child: label),
-                ),
+                // No Center here: it would stretch to the full width and
+                // pull the line to the middle, off the trailing edge the
+                // button sits on. The row centres itself vertically.
+                child: SizedBox(height: LoggingIcons.hit, child: label),
               )
               : CupertinoButton(
                 minimumSize: const Size(LoggingIcons.hit, LoggingIcons.hit),
