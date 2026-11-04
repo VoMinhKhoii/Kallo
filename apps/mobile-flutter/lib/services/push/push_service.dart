@@ -130,6 +130,15 @@ class PushService {
     await _postToken(token);
   }
 
+  /// Days closed from the lock screen since the last call. Never throws.
+  Future<List<String>> takeClosedDays() async {
+    try {
+      return await _channel.takeClosedDays();
+    } catch (_) {
+      return const [];
+    }
+  }
+
   /// Register the reminder categories with titles in the app's language.
   Future<void> setReminderCategories(Map<String, String> titles) async {
     try {

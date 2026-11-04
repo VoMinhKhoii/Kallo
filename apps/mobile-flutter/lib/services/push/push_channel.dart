@@ -62,6 +62,16 @@ class PushChannel {
   /// runs this user's meal reminders on.
   Future<String?> timeZone() => channel.invokeMethod<String>('getTimeZone');
 
+  /// The days a reminder's lock-screen button closed since the last call
+  /// (drained natively), so the app can refresh what it shows for them.
+  Future<List<String>> takeClosedDays() async {
+    final days = await channel.invokeMethod<List<Object?>>('takeClosedDays');
+    return [
+      for (final day in days ?? const <Object?>[])
+        if (day is String) day,
+    ];
+  }
+
   /// Register the meal-reminder notification categories with their button
   /// titles in the app's language, and the API base the background "close the
   /// day" button posts to. Keys: `addToYesterday`, `thatWasAll`, `logMeal`,

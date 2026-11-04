@@ -40,7 +40,7 @@ class _MealRemindersToggleState extends ConsumerState<MealRemindersToggle> {
       _pending = true;
     });
     try {
-      final persisted = await setMealReminders(ref, enabled);
+      final persisted = await setMealReminders(context, enabled);
       if (!mounted) return;
       setState(() {
         _enabled = persisted;

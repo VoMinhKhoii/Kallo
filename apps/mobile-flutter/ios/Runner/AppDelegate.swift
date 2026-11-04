@@ -17,6 +17,8 @@ import UserNotifications
 ///                   `getTimeZone`      → String (IANA, e.g. Asia/Ho_Chi_Minh)
 ///                   `setReminderCategories` (Map: localized button titles +
 ///                                         the API base the close button posts to)
+///                   `takeClosedDays`   → [String] (days the lock-screen button
+///                                         closed since the last call; drained)
 ///                   `getInitialTap`    → [String: Any]? (cold-start tap)
 ///   native → Dart   `onToken`      (String, lowercase hex device token)
 ///                   `onTokenError` (String, failure description)
@@ -31,6 +33,9 @@ private let kReminderCloseAction = "REMINDER_CLOSE_DAY"
 /// Where the close button posts, saved by `setReminderCategories`: a button
 /// pressed after the app was killed is answered before Dart ever runs.
 private let kReminderApiBaseKey = "kallo.reminders.apiBase"
+/// Days a close button closed while Dart was not looking; drained by
+/// `takeClosedDays` so the app refreshes what it shows for them.
+private let kReminderClosedDaysKey = "kallo.reminders.closedDays"
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -73,6 +78,10 @@ private let kReminderApiBaseKey = "kallo.reminders.apiBase"
       case "setReminderCategories":
         Self.setReminderCategories(call.arguments as? [String: Any] ?? [:])
         result(nil)
+      case "takeClosedDays":
+        let days = UserDefaults.standard.stringArray(forKey: kReminderClosedDaysKey) ?? []
+        UserDefaults.standard.removeObject(forKey: kReminderClosedDaysKey)
+        result(days)
       case "getInitialTap":
         // Drained once: a later re-registration must not re-route an old tap.
         let payload = self?.initialTapConsumed == true ? nil : self?.initialTapPayload
@@ -190,7 +199,20 @@ private let kReminderApiBaseKey = "kallo.reminders.apiBase"
     task = UIApplication.shared.beginBackgroundTask(withName: "reminder-close-day") {
       finish()
     }
-    URLSession.shared.dataTask(with: request) { _, _, _ in finish() }.resume()
+    let day = userInfo["date"] as? String
+    URLSession.shared.dataTask(with: request) { _, response, _ in
+      // Remember a closed day, so a still-running app refreshes it on resume.
+      if let day = day, let http = response as? HTTPURLResponse,
+        (200..<300).contains(http.statusCode)
+      {
+        DispatchQueue.main.async {
+          var days = UserDefaults.standard.stringArray(forKey: kReminderClosedDaysKey) ?? []
+          if !days.contains(day) { days.append(day) }
+          UserDefaults.standard.set(days, forKey: kReminderClosedDaysKey)
+        }
+      }
+      finish()
+    }.resume()
   }
 
   override func application(

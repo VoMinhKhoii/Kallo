@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../services/auth/session_provider.dart';
 import '../../../services/env/env.dart';
 import '../../../services/push/push_service.dart';
+import '../../logging/data/logging_providers.dart' show invalidateMealSurfaces;
 import 'push_tap_routing.dart';
 
 /// Keeps the APNs device token in sync with the auth session, and routes taps.
@@ -69,7 +70,22 @@ class _PushRegistrationListenerState
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(ref.read(pushServiceProvider).checkIn());
+      final push = ref.read(pushServiceProvider);
+      unawaited(push.checkIn());
+      unawaited(_refreshClosedDays(push));
+    }
+  }
+
+  /// A reminder's "close the day" button runs natively while the app sits in
+  /// the background, so the day it closed is refreshed here: otherwise the
+  /// still-cached feed keeps offering "I've eaten enough" for it.
+  Future<void> _refreshClosedDays(PushService push) async {
+    final days = await push.takeClosedDays();
+    final userId = _registeredUserId;
+    if (!mounted || userId == null) return;
+    final container = ProviderScope.containerOf(context, listen: false);
+    for (final day in days) {
+      invalidateMealSurfaces(container.invalidate, userId, day);
     }
   }
 

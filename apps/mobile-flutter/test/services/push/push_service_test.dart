@@ -77,6 +77,7 @@ void main() {
         'registerForPush' => granted,
         'registerIfAuthorized' => granted,
         'getTimeZone' => timeZone,
+        'takeClosedDays' => ['2026-11-04'],
         'getInitialTap' => initialTap,
         _ => null,
       };
@@ -318,6 +319,17 @@ void main() {
     expect(api.requests.length, 2);
     expect(api.requests.last.body, {'token': 'abcd', 'platform': 'ios'});
   });
+
+  test(
+    'hands over the days closed from the lock screen, and survives no bridge',
+    () async {
+      final service = PushService(FakeApiClient());
+      expect(await service.takeClosedDays(), ['2026-11-04']);
+
+      messenger.setMockMethodCallHandler(kPushMethodChannel, null);
+      expect(await service.takeClosedDays(), isEmpty);
+    },
+  );
 
   test('denied authorization is survivable and posts nothing', () async {
     granted = false;
