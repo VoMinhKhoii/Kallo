@@ -24,7 +24,7 @@ function setReadyState(state: DocumentReadyState) {
   });
 }
 
-describe('track (PostHog loaded after the page has loaded)', () => {
+describe('track (PostHog loaded on first use)', () => {
   beforeEach(() => {
     vi.resetModules();
     calls.length = 0;
@@ -57,17 +57,11 @@ describe('track (PostHog loaded after the page has loaded)', () => {
     expect(posthog.init).toHaveBeenCalledTimes(1);
   });
 
-  it("waits for the page's load event before importing PostHog", async () => {
+  it("does not wait for the page's load event, so a visitor who leaves the first page early is counted", async () => {
     setReadyState('loading');
     const { trackPageview } = await import('../track');
 
     trackPageview();
-    await settle();
-    expect(factory).not.toHaveBeenCalled();
-    expect(calls).toEqual([]);
-
-    setReadyState('complete');
-    window.dispatchEvent(new Event('load'));
     await settle();
 
     expect(calls).toEqual(['init', 'register', 'capture:$pageview']);

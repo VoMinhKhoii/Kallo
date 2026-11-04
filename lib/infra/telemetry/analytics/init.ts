@@ -5,13 +5,13 @@ import { telemetryUrl } from '@/lib/infra/telemetry/telemetry-url';
  * PostHog, EU cloud. OFF unless `NEXT_PUBLIC_POSTHOG_KEY` was set at build
  * time; without it `posthog.init` never runs and every `track` call is a no-op.
  *
- * Loaded late, never up front: `posthog-js` is ~100 KB gzipped, more than any
- * other library on the landing page, and nothing it does is needed to show or
- * hydrate a page. The first call (in practice `TelemetryIdentity`'s identify or
- * pageview, right after hydration) starts the load, which waits for the page's
- * `load` event and an idle moment so it never competes with the page's own
- * images and fonts for bandwidth; calls made meanwhile run in order once it has
- * loaded. A visitor who leaves before that point is not counted.
+ * Loaded on first use, never up front: `posthog-js` is ~100 KB gzipped, more
+ * than any other library on the landing page, and nothing it does is needed to
+ * show or hydrate a page. The first call (in practice `TelemetryIdentity`'s
+ * identify or pageview, right after hydration) fetches it; calls made while it
+ * loads run in order once it has. It is NOT held back to the page's `load`
+ * event: that loses every visitor who leaves the first page before it finishes
+ * loading, and the owner wants those counted (2026-11-04, PR #552).
  *
  * Deliberately narrow:
  *   • no autocapture — only the typed events in `events.ts` are sent, so no
@@ -71,31 +71,10 @@ let client: Promise<PostHog> | undefined;
 export function loadPosthog(): Promise<PostHog> | undefined {
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   if (!key || typeof window === 'undefined') return undefined;
-  client ??= afterPageLoad()
-    .then(() => import('posthog-js'))
-    .then(({ default: posthog }) => initPosthog(posthog, key));
-  return client;
-}
-
-/** Resolves once the page has loaded and the browser has a spare moment. */
-function afterPageLoad(): Promise<void> {
-  const loaded =
-    document.readyState === 'complete'
-      ? Promise.resolve()
-      : new Promise<void>((resolve) =>
-          window.addEventListener('load', () => resolve(), { once: true })
-        );
-  return loaded.then(
-    () =>
-      new Promise<void>((resolve) => {
-        // Safari has no requestIdleCallback.
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(() => resolve(), { timeout: 2000 });
-        } else {
-          setTimeout(resolve, 0);
-        }
-      })
+  client ??= import('posthog-js').then(({ default: posthog }) =>
+    initPosthog(posthog, key)
   );
+  return client;
 }
 
 function initPosthog(posthog: PostHog, key: string): PostHog {
