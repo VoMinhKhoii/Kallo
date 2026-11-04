@@ -14,10 +14,17 @@ const posthog = {
 const factory = vi.fn(() => ({ default: posthog }));
 vi.mock('posthog-js', () => factory());
 
-/** Lets the dynamic import and every `.then` queued on it settle. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+/** Lets timers, the dynamic import and every `.then` queued on them settle. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
-describe('track (PostHog loaded on first use)', () => {
+function setReadyState(state: DocumentReadyState) {
+  Object.defineProperty(document, 'readyState', {
+    configurable: true,
+    get: () => state,
+  });
+}
+
+describe('track (PostHog loaded after the page has loaded)', () => {
   beforeEach(() => {
     vi.resetModules();
     calls.length = 0;
@@ -27,6 +34,7 @@ describe('track (PostHog loaded on first use)', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    setReadyState('complete');
   });
 
   it('initialises once, then runs the calls made while loading in order', async () => {
@@ -47,6 +55,22 @@ describe('track (PostHog loaded on first use)', () => {
       'capture:meal_logged',
     ]);
     expect(posthog.init).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits for the page's load event before importing PostHog", async () => {
+    setReadyState('loading');
+    const { trackPageview } = await import('../track');
+
+    trackPageview();
+    await settle();
+    expect(factory).not.toHaveBeenCalled();
+    expect(calls).toEqual([]);
+
+    setReadyState('complete');
+    window.dispatchEvent(new Event('load'));
+    await settle();
+
+    expect(calls).toEqual(['init', 'register', 'capture:$pageview']);
   });
 
   it('never imports PostHog when analytics is off', async () => {
