@@ -14,8 +14,13 @@ import { timingSafeMatch } from '@/lib/infra/security/webhook-request';
  * day of one account is marked complete before it expires, which is exactly
  * what its owner's button would have done.
  *
- * Format: `<userId>.<YYYY-MM-DD>.<expires unix s>.<base64url HMAC-SHA256>`,
- * keyed by `REMINDER_ACTION_SECRET`.
+ * The day's UTC bounds travel signed in the token, fixed when the reminder was
+ * scheduled: a device reporting another time zone afterwards must not move
+ * which meals "that day" means for a button already on the lock screen.
+ *
+ * Format: `<userId>.<YYYY-MM-DD>.<day start s>.<day end s>.<expires s>.<sig>`
+ * (seconds since the epoch; base64url HMAC-SHA256 keyed by
+ * `REMINDER_ACTION_SECRET`).
  */
 
 /** Long enough to answer the 21:00 reminder the next morning. */
@@ -30,14 +35,28 @@ function signature(secret: string, payload: string): string {
     .digest('base64url');
 }
 
+const SECONDS = /^\d{1,12}$/;
+
+export interface CloseDayClaim {
+  userId: string;
+  date: string;
+  dayStart: Date;
+  dayEnd: Date;
+}
+
 export function signCloseDayToken(
   secret: string,
-  input: { userId: string; date: string; now: Date }
+  input: CloseDayClaim & { now: Date }
 ): string {
-  const expires = Math.floor(
-    (input.now.getTime() + ACTION_TOKEN_TTL_MS) / 1000
-  );
-  const payload = `${input.userId}.${input.date}.${expires}`;
+  const seconds = (at: number) => Math.floor(at / 1000);
+  const expires = seconds(input.now.getTime() + ACTION_TOKEN_TTL_MS);
+  const payload = [
+    input.userId,
+    input.date,
+    seconds(input.dayStart.getTime()),
+    seconds(input.dayEnd.getTime()),
+    expires,
+  ].join('.');
   return `${payload}.${signature(secret, payload)}`;
 }
 
@@ -46,15 +65,24 @@ export function verifyCloseDayToken(
   secret: string,
   token: string,
   now: Date
-): { userId: string; date: string } | null {
+): CloseDayClaim | null {
   const parts = token.split('.');
-  if (parts.length !== 4) return null;
-  const [userId, date, expires, sig] = parts;
-  if (!UUID.test(userId) || !DATE.test(date) || !/^\d{1,12}$/.test(expires)) {
+  if (parts.length !== 6) return null;
+  const [userId, date, start, end, expires, sig] = parts;
+  if (
+    !UUID.test(userId) ||
+    !DATE.test(date) ||
+    ![start, end, expires].every((part) => SECONDS.test(part))
+  ) {
     return null;
   }
-  const payload = `${userId}.${date}.${expires}`;
+  const payload = parts.slice(0, 5).join('.');
   if (!timingSafeMatch(sig, signature(secret, payload))) return null;
   if (Number(expires) * 1000 <= now.getTime()) return null;
-  return { userId, date };
+  return {
+    userId,
+    date,
+    dayStart: new Date(Number(start) * 1000),
+    dayEnd: new Date(Number(end) * 1000),
+  };
 }

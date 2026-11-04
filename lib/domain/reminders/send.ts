@@ -15,8 +15,11 @@ export interface OutgoingReminder {
   preferredLocale: string | null;
   /** The user's local date today — the collapse key's day. */
   today: string;
-  /** The day the reminder is about (yesterday for 08:00). */
+  /** The day the reminder is about (yesterday for 08:00), and its UTC
+   *  bounds in the zone it was scheduled in — signed into the close button. */
   aboutDate: string;
+  dayStart: Date;
+  dayEnd: Date;
   dayCalories: number;
   calorieTarget: number;
 }
@@ -49,6 +52,8 @@ function messagesFor(
     data.actionToken = signCloseDayToken(actionSecret, {
       userId: reminder.userId,
       date: reminder.aboutDate,
+      dayStart: reminder.dayStart,
+      dayEnd: reminder.dayEnd,
       now,
     });
   }

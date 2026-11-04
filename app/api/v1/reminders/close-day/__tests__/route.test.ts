@@ -1,18 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
-const { closeDay, selectProfile } = vi.hoisted(() => ({
-  closeDay: vi.fn(),
-  selectProfile: vi.fn(),
-}));
+const { closeDay } = vi.hoisted(() => ({ closeDay: vi.fn() }));
 vi.mock('@/lib/domain/meals/day-completion', () => ({ closeDay }));
-vi.mock('@/lib/infra/db/client', () => ({
-  db: {
-    select: () => ({
-      from: () => ({ where: () => ({ limit: selectProfile }) }),
-    }),
-  },
-}));
 
 import { POST } from '@/app/api/v1/reminders/close-day/route';
 import { signCloseDayToken } from '@/lib/domain/reminders/action-token';
@@ -33,14 +23,15 @@ describe('POST /api/v1/reminders/close-day', () => {
     vi.stubEnv('REMINDER_ACTION_SECRET', SECRET);
     closeDay.mockReset();
     closeDay.mockResolvedValue(undefined);
-    selectProfile.mockResolvedValue([{ timeZone: 'Asia/Ho_Chi_Minh' }]);
   });
   afterEach(() => vi.unstubAllEnvs());
 
-  it('closes the signed day in the user’s own time zone', async () => {
+  it('closes the signed day, with the bounds the reminder was sent for', async () => {
     const token = signCloseDayToken(SECRET, {
       userId: USER,
       date: '2026-11-04',
+      dayStart: new Date('2026-11-03T17:00:00Z'),
+      dayEnd: new Date('2026-11-04T17:00:00Z'),
       now: new Date(),
     });
 
@@ -62,17 +53,18 @@ describe('POST /api/v1/reminders/close-day', () => {
     );
   });
 
-  it('refuses a forged token before reading the database', async () => {
+  it('refuses a forged token without closing anything', async () => {
     const forged = signCloseDayToken('not-the-secret', {
       userId: USER,
       date: '2026-11-04',
+      dayStart: new Date('2026-11-03T17:00:00Z'),
+      dayEnd: new Date('2026-11-04T17:00:00Z'),
       now: new Date(),
     });
 
     const response = await POST(request({ token: forged }));
 
     expect(response.status).toBe(401);
-    expect(selectProfile).not.toHaveBeenCalled();
     expect(closeDay).not.toHaveBeenCalled();
   });
 

@@ -63,6 +63,17 @@ describe('zonedDayRange', () => {
     expect(dayEnd.toISOString()).toBe('2026-03-09T04:00:00.000Z');
   });
 
+  it('starts a day whose midnight DST skips at its first real instant', () => {
+    // Santiago springs from 23:59:59 (-4) to 01:00 (-3) on 6 Sep 2026: no
+    // instant reads 00:00 that day.
+    const { dayStart } = zonedDayRange('2026-09-06', 'America/Santiago');
+    expect(dayStart.toISOString()).toBe('2026-09-06T04:00:00.000Z');
+    expect(zonedClock(dayStart, 'America/Santiago').date).toBe('2026-09-06');
+    expect(
+      zonedClock(new Date(dayStart.getTime() - 1000), 'America/Santiago').date
+    ).toBe('2026-09-05');
+  });
+
   it('is 25 hours when the clocks fall back', () => {
     const { dayStart, dayEnd } = zonedDayRange(
       '2026-11-01',

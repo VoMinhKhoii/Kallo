@@ -69,6 +69,8 @@ function offsetMs(instant: Date, timeZone: string): number {
   return wall - Math.floor(instant.getTime() / 1000) * 1000;
 }
 
+const QUARTER_HOUR_MS = 15 * 60 * 1000;
+
 /** The UTC instant at which local `date` begins in `timeZone`. */
 function startOfZonedDay(date: string, timeZone: string): Date {
   const [year, month, day] = date.split('-').map(Number);
@@ -77,6 +79,17 @@ function startOfZonedDay(date: string, timeZone: string): Date {
   // on the other side of a DST change from local midnight.
   let start = wallMidnight - offsetMs(new Date(wallMidnight), timeZone);
   start = wallMidnight - offsetMs(new Date(start), timeZone);
+  // Where a DST change skips midnight itself (Santiago, Havana: 23:59 → 01:00)
+  // no instant reads 00:00, and the passes above land in the day before. The
+  // day then starts at its first instant: step forward to it. Every offset in
+  // use is a whole number of quarter hours, and no change exceeds 2 h.
+  for (
+    let i = 0;
+    i < 12 && zonedClock(new Date(start), timeZone).date < date;
+    i++
+  ) {
+    start += QUARTER_HOUR_MS;
+  }
   return new Date(start);
 }
 

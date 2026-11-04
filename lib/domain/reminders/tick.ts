@@ -146,6 +146,8 @@ export async function runReminderTick(input: {
       calorieTarget: d.candidate.calorieTarget,
       dayCalories,
       dayHasMeal: ofDay.length > 0,
+      // A meal with no calorie figure makes the total a floor, never a sum.
+      dayCaloriesKnown: ofDay.every((m) => m.calories !== null),
       dayClosed: myMarks.some((m) => m.localDate === d.aboutDate),
       lastMealAt,
       lastClosedAt,
@@ -174,6 +176,8 @@ export async function runReminderTick(input: {
         preferredLocale: d.candidate.preferredLocale,
         today: d.today,
         aboutDate: d.aboutDate,
+        dayStart: d.dayStart,
+        dayEnd: d.dayEnd,
         dayCalories,
         calorieTarget: d.candidate.calorieTarget,
       });

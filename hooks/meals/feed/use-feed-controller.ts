@@ -290,14 +290,19 @@ export function useFeedController(args: {
     );
   // Today's "I've eaten enough": offered once today holds a saved meal (an
   // empty day cannot be closed) and nothing is still on its way in, so the
-  // calories the confirm quotes are the ones that will count.
+  // calories the confirm quotes are the ones that will count — and not while
+  // a meal's calories are unknown, since the quote would then be a floor
+  // dressed as a total (the past-day notice's guard). A closed day always
+  // says so.
   const showTodayClose =
     isToday &&
     !day.isDayLoading &&
     !day.isDayError &&
     hasPersistedMeals &&
-    !hasPendingMessages &&
-    !hasStreamingMessages;
+    (day.markedComplete ||
+      (!day.incompleteTotals.calories &&
+        !hasPendingMessages &&
+        !hasStreamingMessages));
 
   return {
     day,

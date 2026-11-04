@@ -18,6 +18,7 @@ export const PUSH_SPACING_MS = 30 * MINUTE;
 
 export type SkipReason =
   | 'closed'
+  | 'unknown_total'
   | 'empty_day'
   | 'on_pace'
   | 'recent_meal'
@@ -37,6 +38,9 @@ export interface ReminderFacts {
   dayCalories: number;
   /** Whether that day has at least one meal. */
   dayHasMeal: boolean;
+  /** False when one of its meals has no calorie figure: the total is then
+   *  only a floor, and a floor cannot say the day is behind, nor be quoted. */
+  dayCaloriesKnown: boolean;
   /** Whether that day is closed ("I've eaten enough"). */
   dayClosed: boolean;
   /** When the user last logged a meal (its creation, not its meal time). */
@@ -90,6 +94,11 @@ function twoIgnored(facts: ReminderFacts): boolean {
 export function decideReminder(facts: ReminderFacts): ReminderDecision {
   const { now } = facts;
   if (facts.dayClosed) return { action: 'skip', reason: 'closed' };
+  // Same rule as the in-app "may be under-logged" notice: a missing calorie
+  // figure is unknown, not zero (AGENTS.md, "Null is not zero").
+  if (!facts.dayCaloriesKnown) {
+    return { action: 'skip', reason: 'unknown_total' };
+  }
   const pace = behind(facts);
   if (pace) return { action: 'skip', reason: pace };
   if (

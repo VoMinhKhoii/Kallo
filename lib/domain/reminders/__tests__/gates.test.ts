@@ -20,6 +20,7 @@ function facts(overrides: Partial<ReminderFacts> = {}): ReminderFacts {
     calorieTarget: 1932,
     dayCalories: 0,
     dayHasMeal: false,
+    dayCaloriesKnown: true,
     dayClosed: false,
     lastMealAt: null,
     lastClosedAt: null,
@@ -89,6 +90,21 @@ describe('decideReminder — the other gates, in order', () => {
       action: 'skip',
       reason: 'closed',
     });
+  });
+
+  it('never reminds about, or quotes, a total that holds an unknown meal', () => {
+    for (const hour of [8, 10, 15, 21]) {
+      expect(
+        decideReminder(
+          facts({
+            checkpoint: at(hour),
+            dayHasMeal: true,
+            dayCalories: 200,
+            dayCaloriesKnown: false,
+          })
+        )
+      ).toEqual({ action: 'skip', reason: 'unknown_total' });
+    }
   });
 
   it('leaves someone who logged in the last 3 hours alone (today only)', () => {

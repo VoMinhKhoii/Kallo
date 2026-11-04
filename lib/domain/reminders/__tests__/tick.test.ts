@@ -146,6 +146,9 @@ describe('runReminderTick', () => {
     expect(verifyCloseDayToken(SECRET, message.data.actionToken, NOW)).toEqual({
       userId: HANOI,
       date: '2026-11-04',
+      // Ho Chi Minh City's 4 November, as the reminder computed it.
+      dayStart: new Date('2026-11-03T17:00:00Z'),
+      dayEnd: new Date('2026-11-04T17:00:00Z'),
     });
     expect(recordPushResults).toHaveBeenCalledTimes(1);
   });

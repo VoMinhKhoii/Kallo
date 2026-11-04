@@ -415,7 +415,7 @@ In order; each failing gate skips the checkpoint for the day, except the last, w
 
 1. Reminders on (`user_profiles.meal_reminders_enabled`, default true; Settings on web and iOS, `PUT /api/v1/profile/reminders`) — applied by the candidate query, with "has a target", "has a time zone" and "has an iOS device".
 2. The day the reminder is about is still open (no `day_completion_marks` row) → else `closed`.
-3. Behind the checkpoint's line (table above) → else `on_pace`; an empty yesterday → `empty_day`.
+3. Behind the checkpoint's line (table above) → else `on_pace`; an empty yesterday → `empty_day`; a day holding a meal with no calorie figure → `unknown_total` (its total is a floor: it can neither say the day is behind nor be quoted — the same guard as the in-app "may be under-logged" notice).
 4. Today checkpoints only: no meal created in the last 3 h → else `recent_meal`. (The 08:00 question is about yesterday; a breakfast just logged does not answer it.)
 5. Kallo not opened in the last 45 min → else `recently_opened`.
 6. Not two reminders ignored in a row today → else `ignored`. Ignored = no app open, no meal logged and no day closed (today or yesterday — the lock-screen buttons close a day without opening the app) between the push and now; with only the newest of each stored, "the last two both ignored" is exactly "nothing since the earlier of them went out".
@@ -455,11 +455,11 @@ Push only, like `chat.message`: **no notifications row, no badge**. `apns-collap
 }
 ```
 
-Tap / "Add to yesterday" / "Log a meal" / "Log more" open the app on the Today logging screen for `date`. "That was all" / "I'm done for today" run in the background: the app POSTs `{token: actionToken}` to `POST /api/v1/reminders/close-day` natively, without the user's session (refreshing a Supabase session from native code would rotate the refresh token out from under the app). The token is `HMAC-SHA256(REMINDER_ACTION_SECRET, "close-day|<userId>.<date>.<exp>")`, valid 36 h (`lib/domain/reminders/action-token.ts`): a forged or expired one is a 401 before any database read; a leaked one can only close that one day of that account, which is what its button does anyway.
+Tap / "Add to yesterday" / "Log a meal" / "Log more" open the app on the Today logging screen for `date`. "That was all" / "I'm done for today" run in the background: the app POSTs `{token: actionToken}` to `POST /api/v1/reminders/close-day` natively, without the user's session (refreshing a Supabase session from native code would rotate the refresh token out from under the app). The token is `<userId>.<date>.<dayStart s>.<dayEnd s>.<exp s>.<HMAC-SHA256(REMINDER_ACTION_SECRET, "close-day|" + the first five)>`, valid 36 h (`lib/domain/reminders/action-token.ts`). The day's UTC bounds are signed in as the reminder computed them, so a device reporting another zone afterwards cannot change which meals that button's day covers. A forged or expired token is a 401 before any database read; a leaked one can only close that one day of that account, which is what its button does anyway.
 
 ### Closing a day
 
-Closing reuses the existing "Mình ăn đủ rồi" mark: one `day_completion_marks` row per day, one-way, `closeDay` in `lib/domain/meals/day-completion.ts` shared by `POST /api/v1/logging/day/complete` and the reminder button. **Today may now be closed** (a day that has not started may not; an empty day still may not). The Today screen offers "I've eaten enough" / "Mình ăn đủ rồi" once it holds a saved meal and nothing is still analyzing, and shows "Done for today" after. A mark on today means the progress views grade today at its real calories instead of setting it aside as partial — the attestation's whole point — and stops that day's reminders; meals logged after closing still count.
+Closing reuses the existing "Mình ăn đủ rồi" mark: one `day_completion_marks` row per day, one-way, `closeDay` in `lib/domain/meals/day-completion.ts` shared by `POST /api/v1/logging/day/complete` and the reminder button. **Today may now be closed** (a day that has not started may not; an empty day still may not). The Today screen offers "I've eaten enough" / "Mình ăn đủ rồi" once it holds a saved meal, nothing is still analyzing and no meal's calories are unknown, and shows "Done for today" after. A mark on today means the progress views grade today at its real calories instead of setting it aside as partial — the attestation's whole point — and stops that day's reminders; meals logged after closing still count.
 
 ### Data
 
