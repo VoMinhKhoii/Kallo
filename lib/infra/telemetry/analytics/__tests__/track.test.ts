@@ -73,6 +73,23 @@ describe('track (PostHog loaded after the page has loaded)', () => {
     expect(calls).toEqual(['init', 'register', 'capture:$pageview']);
   });
 
+  it('stays off after a failed load, so nothing is captured without its identify', async () => {
+    const failingImport = vi.fn(() => {
+      throw new Error('ChunkLoadError');
+    });
+    vi.doMock('posthog-js', failingImport);
+    const { identifyUser, trackPageview } = await import('../track');
+
+    identifyUser('user-1');
+    await settle();
+    trackPageview();
+    await settle();
+    vi.doUnmock('posthog-js');
+
+    expect(failingImport).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual([]);
+  });
+
   it('never imports PostHog when analytics is off', async () => {
     vi.stubEnv('NEXT_PUBLIC_POSTHOG_KEY', '');
     const { trackPageview } = await import('../track');

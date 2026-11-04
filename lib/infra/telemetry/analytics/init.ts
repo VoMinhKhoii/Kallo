@@ -61,21 +61,19 @@ let client: Promise<PostHog> | undefined;
 
 /**
  * The initialised PostHog client, imported and set up on the first call.
- * `undefined` when analytics is off or outside the browser. A failed chunk
- * load is dropped (those events are lost) and the next call tries again.
+ * `undefined` when analytics is off or outside the browser.
+ *
+ * A failed chunk load is NOT retried: analytics stays off until the next full
+ * page load. A retry would capture under whatever identity PostHog persisted,
+ * because the identify/reset `TelemetryIdentity` queued on the failed load is
+ * gone and it does not run again until the next auth event.
  */
 export function loadPosthog(): Promise<PostHog> | undefined {
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   if (!key || typeof window === 'undefined') return undefined;
   client ??= afterPageLoad()
     .then(() => import('posthog-js'))
-    .then(
-      ({ default: posthog }) => initPosthog(posthog, key),
-      (error: unknown) => {
-        client = undefined;
-        throw error;
-      }
-    );
+    .then(({ default: posthog }) => initPosthog(posthog, key));
   return client;
 }
 

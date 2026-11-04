@@ -5,11 +5,13 @@ import { loadPosthog } from './init';
 /**
  * Runs `use` once PostHog has loaded (`loadPosthog`); a no-op when analytics
  * is off. Calls queue on the same promise, so they reach PostHog in the order
- * they were made. A failed load drops the call quietly: analytics must never
- * surface as an app error.
+ * they were made. A failed load drops this call and every later one quietly
+ * (see `loadPosthog`): analytics must never surface as an app error.
  */
 function withPosthog(use: (posthog: PostHog) => void): void {
-  loadPosthog()?.then(use, () => {});
+  loadPosthog()
+    ?.then(use)
+    .catch(() => {});
 }
 
 /**
