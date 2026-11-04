@@ -1,8 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { PaywallStatus } from '@/components/billing/activation/paywall-status';
+import { useScrollReveal } from '@/hooks/landing/use-scroll-reveal';
 import { usePricingCheckout } from './checkout/checkout-context';
 import { PlanCard } from './plan-card';
 import { PLAN_IDS } from './plans';
@@ -33,6 +35,8 @@ export function PricingSection({
   const Title = titleAs;
   const { openDialog } = useAuthDialog();
   const { status } = usePricingCheckout();
+  const sectionRef = useRef<HTMLElement>(null);
+  useScrollReveal(sectionRef);
 
   return (
     // Beige ground, the same `--kallo-hover` the comparison panels above use.
@@ -43,16 +47,18 @@ export function PricingSection({
     // instead of fading out under the footer. On /pricing in a dark theme the
     // band drops away and the page's own surface shows.
     <section
+      ref={sectionRef}
       aria-labelledby="landing-pricing"
       id="pricing"
       className="relative scroll-mt-20 border-kallo-border/40 border-t bg-kallo-hover pt-8 pb-8 md:pt-10 md:pb-10 dark:bg-transparent"
     >
       <div className="mx-auto max-w-[92rem] px-6 sm:px-12 lg:px-20">
-        {/* `animate-reveal` (globals.css) fades each block up as it scrolls
-            in, in CSS: the server's HTML has it visible, so on /pricing the
-            title and plans no longer wait for JS to appear. */}
+        {/* `data-reveal` fades each block up as it scrolls into view
+            (globals.css, `useScrollReveal`). It is visible in the server's
+            HTML, so on /pricing the title and plans no longer wait for JS. */}
         <Title
-          className="animate-reveal text-center font-normal font-serif text-4xl text-kallo-text tracking-[-0.02em] sm:text-5xl md:text-6xl"
+          data-reveal=""
+          className="text-center font-normal font-serif text-4xl text-kallo-text tracking-[-0.02em] sm:text-5xl md:text-6xl"
           id="landing-pricing"
         >
           {t('title')}
@@ -77,7 +83,10 @@ export function PricingSection({
             />
           </div>
         ) : (
-          <div className="mt-10 grid animate-reveal gap-x-5 gap-y-5 md:mt-12 md:max-w-[54rem] md:grid-cols-2 md:grid-rows-[auto_auto_auto_1fr] md:gap-y-0 lg:mx-auto">
+          <div
+            data-reveal=""
+            className="mt-10 grid gap-x-5 gap-y-5 md:mt-12 md:max-w-[54rem] md:grid-cols-2 md:grid-rows-[auto_auto_auto_1fr] md:gap-y-0 lg:mx-auto"
+          >
             {PLAN_IDS.map((plan) => (
               <PlanCard
                 key={plan}
@@ -91,7 +100,10 @@ export function PricingSection({
         {/* Not beside a checkout status: "free while in beta" would
             contradict the charge the user just made. */}
         {!status && (
-          <p className="mt-8 animate-reveal text-center font-sans-display text-kallo-text-soft text-xs leading-relaxed">
+          <p
+            data-reveal=""
+            className="mt-8 text-center font-sans-display text-kallo-text-soft text-xs leading-relaxed"
+          >
             {t('betaNote')}
           </p>
         )}

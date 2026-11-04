@@ -646,43 +646,56 @@
   /* The public pages' entrance and scroll reveals, in CSS so they play from
      the server-rendered HTML. Driven from JS (motion's `initial`), the server
      sent the landing hero at opacity 0 and it stayed invisible until every
-     script had loaded and run: about 9 s on Fast 3G. Reduced motion gets the
-     content with no animation at all. */
+     script had loaded and run: about 9 s on Fast 3G. Each one keeps the
+     curve, distance, duration and reduced-motion behaviour it had in motion. */
 
-  /* Staggered rise on first paint. `--rise-step` sets the order (90 ms apart);
-     the curve is the hero's heavy, decelerating one. */
+  /* The hero's staggered rise on first paint. `--rise-step` sets the order
+     (90 ms apart). Reduced motion gets the hero with no animation. */
   @keyframes kallo-rise {
     from {
       opacity: 0;
-      transform: translateY(var(--rise-y, 18px));
-      filter: blur(var(--rise-blur, 6px));
+      transform: translateY(18px);
+      filter: blur(6px);
     }
   }
   @media (prefers-reduced-motion: no-preference) {
     .animate-rise {
-      animation: kallo-rise var(--rise-duration, 0.85s)
-        cubic-bezier(0.32, 0.72, 0, 1) backwards;
+      animation: kallo-rise 0.85s cubic-bezier(0.32, 0.72, 0, 1) backwards;
       animation-delay: calc(var(--rise-step, 0) * 90ms);
     }
   }
 
-  /* Fade-up as a section scrolls in, tied to its scroll position: done 240px
-     after its top edge enters, however tall it is. Browsers without scroll
-     timelines (Firefox today) show it with no animation; nothing waits on JS. */
+  /* The landing header's drop-in: motion's default tween (ease-in-out). It
+     runs under reduced motion too, as it always has: the header never read
+     the setting. */
+  @keyframes kallo-header-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+  }
+  .animate-header-drop {
+    animation: kallo-header-drop 0.6s ease-in-out backwards;
+  }
+
+  /* Fade-up for blocks marked `data-reveal`. Visible in the HTML: a block in
+     view on first paint (or with no JS) plays it straight away, and
+     `useScrollReveal` sets `pending` on blocks still below the fold, then
+     `shown` once one is 80px into the viewport, which plays it again (motion's
+     `whileInView`, once). Reduced motion: no animation, never hidden. */
   @keyframes kallo-reveal {
     from {
       opacity: 0;
       transform: translateY(var(--reveal-y, 24px));
     }
   }
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .animate-reveal {
-        animation: kallo-reveal linear backwards;
-        animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-        animation-timeline: view();
-        animation-range: entry 40px entry 240px;
-      }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-reveal] {
+      animation: kallo-reveal 0.7s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+    }
+    [data-reveal="pending"] {
+      animation: none;
+      opacity: 0;
     }
   }
 

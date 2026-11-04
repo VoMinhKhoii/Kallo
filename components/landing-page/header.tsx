@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { type CSSProperties, useRef } from 'react';
+import { useRef } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Button } from '@/components/ui/button';
@@ -44,21 +44,14 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
 
   return (
     <header
-      // Drops in with CSS (`animate-rise`, globals.css), so it is in the
-      // server's HTML visible rather than waiting for JS to fade it in.
-      style={
-        {
-          '--rise-y': '-20px',
-          '--rise-blur': '0px',
-          '--rise-duration': '0.6s',
-        } as CSSProperties
-      }
+      // Drops in with CSS (`animate-header-drop`, globals.css), so it is in
+      // the server's HTML rather than waiting for JS to fade it in.
       // No fill, so the page runs up behind it; the blur keeps the nav
       // readable over scrolled content. The fill comes back only over the
       // footer, which in Light is the same ink as the header's type.
       ref={headerRef}
       className={cn(
-        'fixed top-0 right-0 left-0 z-50 animate-rise backdrop-blur-xl transition-colors',
+        'fixed top-0 right-0 left-0 z-50 animate-header-drop backdrop-blur-xl transition-colors',
         overFooter && 'bg-kallo-surface/80'
       )}
     >

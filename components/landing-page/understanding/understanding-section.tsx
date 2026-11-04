@@ -1,6 +1,8 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import { useRef } from 'react';
+import { useScrollReveal } from '@/hooks/landing/use-scroll-reveal';
 import { COMPARISONS_BY_LOCALE } from './comparisons';
 import { stackReleaseRem } from './stack-geometry';
 import { StackedComparison } from './stacked-comparison';
@@ -48,6 +50,8 @@ const HEADING_REM = 9.5;
 export function UnderstandingSection() {
   const t = useTranslations('landing.understanding');
   const locale = useLocale();
+  const sectionRef = useRef<HTMLElement>(null);
+  useScrollReveal(sectionRef);
 
   const comparisons = COMPARISONS_BY_LOCALE[locale] ?? COMPARISONS_BY_LOCALE.en;
 
@@ -68,6 +72,7 @@ export function UnderstandingSection() {
 
   return (
     <section
+      ref={sectionRef}
       aria-labelledby="landing-understanding"
       id="how"
       className="relative scroll-mt-20 border-kallo-border/40 border-t py-8 md:py-10"
@@ -86,12 +91,13 @@ export function UnderstandingSection() {
             cards — see `headingMarginRem` for why that matters and what the
             margin below is doing. */}
         <div
-          className="animate-reveal text-center md:sticky md:top-24 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)]"
+          data-reveal=""
+          className="text-center md:sticky md:top-24 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)]"
           style={
             {
               '--heading-h': `${HEADING_REM}rem`,
               '--heading-mb': `${headingMarginRem}rem`,
-              // The scroll reveal (`animate-reveal`, globals.css) fades
+              // The scroll reveal (`data-reveal`, globals.css) fades
               // only: no `y` rise, unlike the other sections. This heading is
               // sticky and the first card sits flush under it, so a rise opened
               // and shut the gap between them, and a transform on a sticky
