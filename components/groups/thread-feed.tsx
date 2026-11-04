@@ -9,6 +9,7 @@ import {
   threadDayLabel,
 } from '@/components/groups/timeline/thread-day';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
 
 export interface ThreadFeedItem {
   id: string;
@@ -146,7 +147,7 @@ export function ThreadFeed({
           <div className="flex h-full items-center justify-center">
             <SurfaceState
               action={emptyAction}
-              area="circle"
+              cast={CIRCLE_CAST}
               kind={emptyPose}
               subtitle={emptyTitle ? emptyMessage : undefined}
               title={emptyTitle ?? emptyMessage}

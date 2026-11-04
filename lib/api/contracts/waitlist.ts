@@ -27,13 +27,3 @@ export type WaitlistSignupInput = z.infer<typeof waitlistSignupSchema>;
 export interface WaitlistSignupResponse {
   ok: true;
 }
-
-/** Outcomes the confirm link can produce, surfaced as `?waitlist=<status>`. */
-export const WAITLIST_STATUSES = [
-  'confirmed',
-  'already',
-  'expired',
-  'invalid',
-] as const;
-
-export type WaitlistStatus = (typeof WAITLIST_STATUSES)[number];

@@ -2,11 +2,12 @@
 
 import type { ReactNode } from 'react';
 import { SurfaceIllustration } from '@/components/shared/surface-state/surface-illustration';
-import type { SurfaceArea, SurfaceKind } from '@/lib/brand/illustrations/cast';
+import type { AreaCast, SurfaceKind } from '@/lib/brand/illustrations/cast';
 import { cn } from '@/lib/core/ui/cn';
 
 interface SurfaceStateProps {
-  area: SurfaceArea;
+  /** The area's animal, from `lib/brand/illustrations/casts/`. */
+  cast: AreaCast;
   kind: SurfaceKind;
   title: string;
   subtitle?: string;
@@ -26,7 +27,7 @@ interface SurfaceStateProps {
  * subtitle → action 24 / 16.
  */
 export function SurfaceState({
-  area,
+  cast,
   kind,
   title,
   subtitle,
@@ -47,7 +48,7 @@ export function SurfaceState({
       role={kind === 'error' ? 'alert' : undefined}
     >
       <div className={compact ? 'mb-4' : 'mb-6'}>
-        <SurfaceIllustration area={area} compact={compact} kind={kind} />
+        <SurfaceIllustration cast={cast} compact={compact} kind={kind} />
       </div>
       <Tag
         className={cn(

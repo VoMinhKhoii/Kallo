@@ -4,6 +4,7 @@ import { LightOnly } from '@/components/providers/theme/light-only';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
+import { SYSTEM_CAST } from '@/lib/brand/illustrations/casts/system';
 import { SITE_URL } from '@/lib/seo/site';
 
 export const metadata: Metadata = {
@@ -53,7 +54,7 @@ export default function NotFound() {
               <Link href="/">{t('notFoundHome')}</Link>
             </Button>
           }
-          area="system"
+          cast={SYSTEM_CAST}
           as="h1"
           kind="notFound"
           subtitle={t('notFoundBody')}

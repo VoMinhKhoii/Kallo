@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { RetryAction } from '@/components/shared/surface-state/retry-action';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { LOGGING_CAST } from '@/lib/brand/illustrations/casts/logging';
 import { gaugeHeight } from '@/lib/core/ui/gauge-arc-geometry';
 import {
   FEED_MACRO_CAP,
@@ -160,7 +161,7 @@ export function LoggingDayErrorState({
           onRetry={onRetry}
         />
       }
-      area="logging"
+      cast={LOGGING_CAST}
       className="flex-1"
       kind="error"
       subtitle={t('loadErrorDescription')}

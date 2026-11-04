@@ -1,9 +1,15 @@
-import posthog, { type CaptureResult } from 'posthog-js';
+import type { CaptureResult, PostHog } from 'posthog-js';
 import { telemetryUrl } from '@/lib/infra/telemetry/telemetry-url';
 
 /**
  * PostHog, EU cloud. OFF unless `NEXT_PUBLIC_POSTHOG_KEY` was set at build
  * time; without it `posthog.init` never runs and every `track` call is a no-op.
+ *
+ * Loaded on first use, never up front: `posthog-js` is ~100 KB gzipped, more
+ * than any other library on the landing page, and nothing it does is needed to
+ * show or hydrate a page. The first call (in practice `TelemetryIdentity`'s
+ * identify or pageview, right after hydration) fetches it; calls made while it
+ * loads run in order once it has.
  *
  * Deliberately narrow:
  *   • no autocapture — only the typed events in `events.ts` are sent, so no
@@ -49,10 +55,27 @@ export function analyticsEnabled(): boolean {
   return Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY);
 }
 
-export function initAnalytics(): void {
-  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  if (!key || typeof window === 'undefined') return;
+let client: Promise<PostHog> | undefined;
 
+/**
+ * The initialised PostHog client, imported and set up on the first call.
+ * `undefined` when analytics is off or outside the browser. A failed chunk
+ * load is dropped (those events are lost) and the next call tries again.
+ */
+export function loadPosthog(): Promise<PostHog> | undefined {
+  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+  if (!key || typeof window === 'undefined') return undefined;
+  client ??= import('posthog-js').then(
+    ({ default: posthog }) => initPosthog(posthog, key),
+    (error: unknown) => {
+      client = undefined;
+      throw error;
+    }
+  );
+  return client;
+}
+
+function initPosthog(posthog: PostHog, key: string): PostHog {
   posthog.init(key, {
     api_host: POSTHOG_HOST,
     autocapture: false,
@@ -88,4 +111,5 @@ export function initAnalytics(): void {
     before_send: sanitizeCapture,
   });
   posthog.register({ app_version: process.env.NEXT_PUBLIC_APP_VERSION });
+  return posthog;
 }

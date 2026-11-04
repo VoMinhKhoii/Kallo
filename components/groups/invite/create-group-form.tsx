@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCreateChatGroup } from '@/hooks/social/circle/use-chat-groups';
 import { useFriends } from '@/hooks/social/circle/use-friends';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
 import { ApiError } from '@/lib/core/errors/client';
 import { GroupMemberRow } from './group-member-row';
 import { labelFor } from './profile-identity';
@@ -119,7 +120,7 @@ export function CreateGroupForm({
               </Button>
             ) : undefined
           }
-          area="circle"
+          cast={CIRCLE_CAST}
           compact
           kind="empty"
           subtitle={t('noFriends')}

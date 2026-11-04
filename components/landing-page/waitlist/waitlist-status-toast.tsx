@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import {
   WAITLIST_STATUSES,
   type WaitlistStatus,
-} from '@/lib/api/contracts/waitlist';
+} from '@/lib/domain/waitlist/status';
 
 const HANDLED = new Set<string>(WAITLIST_STATUSES);
 

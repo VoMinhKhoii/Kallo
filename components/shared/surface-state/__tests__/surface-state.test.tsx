@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
+import { SYSTEM_CAST } from '@/lib/brand/illustrations/casts/system';
 
 const DAYTIME = new Date(2026, 0, 15, 12, 0, 0);
 const LATE_NIGHT = new Date(2026, 0, 15, 23, 0, 0);
@@ -25,7 +27,7 @@ describe('SurfaceState', () => {
     render(
       <SurfaceState
         action={<button type="button">Try again</button>}
-        area="circle"
+        cast={CIRCLE_CAST}
         kind="error"
         subtitle="Something went wrong on our side."
         title="This didn't load."
@@ -43,20 +45,22 @@ describe('SurfaceState', () => {
 
   it('announces an error, and only an error', () => {
     const { unmount } = render(
-      <SurfaceState area="circle" kind="error" title="This didn't load." />
+      <SurfaceState cast={CIRCLE_CAST} kind="error" title="This didn't load." />
     );
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
     unmount();
 
-    render(<SurfaceState area="circle" kind="empty" title="Nothing yet" />);
+    render(
+      <SurfaceState cast={CIRCLE_CAST} kind="empty" title="Nothing yet" />
+    );
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('hides the illustration from assistive tech', () => {
     const { container } = render(
-      <SurfaceState area="circle" kind="error" title="This didn't load." />
+      <SurfaceState cast={CIRCLE_CAST} kind="error" title="This didn't load." />
     );
 
     expect(illustration(container)).toHaveAttribute('aria-hidden', 'true');
@@ -64,7 +68,7 @@ describe('SurfaceState', () => {
 
   it('draws the awake pose during the day', () => {
     const { container } = render(
-      <SurfaceState area="circle" kind="error" title="This didn't load." />
+      <SurfaceState cast={CIRCLE_CAST} kind="error" title="This didn't load." />
     );
 
     expect(illustration(container)).toHaveAttribute(
@@ -77,7 +81,7 @@ describe('SurfaceState', () => {
     vi.setSystemTime(LATE_NIGHT);
 
     const { container } = render(
-      <SurfaceState area="circle" kind="error" title="This didn't load." />
+      <SurfaceState cast={CIRCLE_CAST} kind="error" title="This didn't load." />
     );
 
     expect(illustration(container)).toHaveAttribute(
@@ -88,7 +92,12 @@ describe('SurfaceState', () => {
 
   it('shrinks the art in a card', () => {
     const { container } = render(
-      <SurfaceState area="circle" compact kind="empty" title="Nothing yet" />
+      <SurfaceState
+        cast={CIRCLE_CAST}
+        compact
+        kind="empty"
+        title="Nothing yet"
+      />
     );
 
     expect(illustration(container)).toHaveClass('h-16');
@@ -96,7 +105,7 @@ describe('SurfaceState', () => {
 
   it('draws the art full height on a whole surface', () => {
     const { container } = render(
-      <SurfaceState area="circle" kind="empty" title="Nothing yet" />
+      <SurfaceState cast={CIRCLE_CAST} kind="empty" title="Nothing yet" />
     );
 
     expect(illustration(container)).toHaveClass('h-[120px]');
@@ -104,7 +113,12 @@ describe('SurfaceState', () => {
 
   it('lets a page own its heading level', () => {
     render(
-      <SurfaceState as="h1" area="system" kind="notFound" title="Not found" />
+      <SurfaceState
+        as="h1"
+        cast={SYSTEM_CAST}
+        kind="notFound"
+        title="Not found"
+      />
     );
 
     expect(

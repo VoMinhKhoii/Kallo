@@ -59,7 +59,8 @@ before `bun dev:mobile` (Flutter).
 **Web**
 - `instrumentation.ts`: server + Edge Sentry init, `onRequestError` (uncaught route /
   Server Component / Server Action errors).
-- `instrumentation-client.ts`: browser Sentry init + `initAnalytics()`.
+- `instrumentation-client.ts`: browser Sentry init. PostHog is not started here: it
+  is imported and initialised on the first `track`/identify call (`loadPosthog`).
 - `lib/infra/telemetry/telemetry-url.ts`: every outgoing URL → origin + route template
   (`/vi/invite/abc?ref=x` → `/vi/invite/:param`), built on `routeTemplate`
   (`lib/infra/route-template/`), the same position-based redaction CSP reports use.
