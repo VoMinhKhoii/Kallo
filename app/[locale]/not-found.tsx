@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
 import { LightOnly } from '@/components/providers/theme/light-only';
-import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { SystemSurfaceState } from '@/components/shared/surface-state/system-surface-state';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
-import { SYSTEM_CAST } from '@/lib/brand/illustrations/casts/system';
 import { SITE_URL } from '@/lib/seo/site';
 
 export const metadata: Metadata = {
@@ -48,13 +47,12 @@ export default function NotFound() {
     <main className="flex min-h-screen items-center justify-center px-6 py-16">
       <LightOnly />
       <div className="w-full max-w-md text-center">
-        <SurfaceState
+        <SystemSurfaceState
           action={
             <Button asChild size="sm" variant="ink">
               <Link href="/">{t('notFoundHome')}</Link>
             </Button>
           }
-          cast={SYSTEM_CAST}
           as="h1"
           kind="notFound"
           subtitle={t('notFoundBody')}
