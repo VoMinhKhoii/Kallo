@@ -30,9 +30,10 @@ import '../../../../theme/kallo_theme.dart';
 /// **Zoom, don't grow** is the one that went. `CupertinoContextMenu` laid the
 /// lift out in a TIGHT box 1.15x the bubble's own rect, so the pill had to be
 /// scaled into it (`FittedBox`, `BoxFit.cover`) rather than re-flow 15% wider.
-/// Nothing scales the bubble now — the whole point of the owned menu is that
-/// the message does not move — and the only tight box it ever sees is
-/// `Positioned.fromRect` at its own resting size, which it fills exactly.
+/// The held-press grow (2026-11-04) is a paint-only `Transform.scale` over
+/// the laid-out pill, in the page and in the menu alike, so the text still
+/// never re-flows; the only tight box the pill sees is `Positioned.fromRect`
+/// at its own resting size, which it fills exactly.
 class SentBubble extends StatelessWidget {
   const SentBubble({super.key, required this.text, required this.pageWidth});
 
