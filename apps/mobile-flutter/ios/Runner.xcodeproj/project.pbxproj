@@ -12,7 +12,6 @@
 		11B4B2C3BF3524F4D0B4E809 /* NotificationService.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 802C96FEB7DA7CFE2F7F7D81 /* NotificationService.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		13F429E5C386627169C25336 /* GaugeDialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A1FCF0AE6F6AA1AA4CCAEA /* GaugeDialView.swift */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
-		18425B4CF060FEE78157A869 /* TodayWidgetChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E6BD5F23BCFA000EFDD966F /* TodayWidgetChannel.swift */; };
 		2839E02F17DA08541F4F212D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 781799C5BA243363EA331617 /* Assets.xcassets */; };
 		2A35ABF170B41EAFA4B21202 /* TodaySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB25C103DA28670941A23C09 /* TodaySnapshot.swift */; };
 		330E3E6ACCA9686D6BE22FB3 /* BeVietnamPro-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 29E432E41648AEBC2817AF02 /* BeVietnamPro-SemiBold.ttf */; };
@@ -40,6 +39,7 @@
 		D7B201AC95BF1B838AD2E79A /* TodayWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 199F1A9C6F60673CA24BBB9B /* TodayWidgetBundle.swift */; };
 		EAF4A7C7B243D8F125C95780 /* TodayWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BAA109B397C85F9860B4E36 /* TodayWidgetView.swift */; };
 		ECD243C48A3E26429EA0BE8F /* MealList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BC626ECC0FCBB40E637C77 /* MealList.swift */; };
+		FE7CDE37B1B2C2AA0B811AFE /* MealFit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C71627CFF2BA8131B023DDD /* MealFit.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -110,7 +110,7 @@
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
-		3E6BD5F23BCFA000EFDD966F /* TodayWidgetChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayWidgetChannel.swift; sourceTree = "<group>"; };
+		3C71627CFF2BA8131B023DDD /* MealFit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MealFit.swift; sourceTree = "<group>"; };
 		513EFBA38192B9502D755FF4 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		53579A3BAD201B391A0F7F38 /* DialRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DialRow.swift; sourceTree = "<group>"; };
 		54D65C02C76275BA4408EEBD /* GaugeGeometry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GaugeGeometry.swift; sourceTree = "<group>"; };
@@ -260,7 +260,6 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
-				3E6BD5F23BCFA000EFDD966F /* TodayWidgetChannel.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -282,6 +281,7 @@
 				781799C5BA243363EA331617 /* Assets.xcassets */,
 				D97623EB8B3405FAB3D5B8E9 /* Localizable.strings */,
 				B806A9C9B7AB3D11AB51FB5F /* Fonts */,
+				3C71627CFF2BA8131B023DDD /* MealFit.swift */,
 			);
 			name = TodayWidget;
 			path = TodayWidget;
@@ -620,7 +620,6 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
-				18425B4CF060FEE78157A869 /* TodayWidgetChannel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -639,6 +638,7 @@
 				8DCDA4296DF1C1C797893E6E /* GaugeReadout.swift in Sources */,
 				13F429E5C386627169C25336 /* GaugeDialView.swift in Sources */,
 				81779147F0723E2A6D3541D1 /* DialRow.swift in Sources */,
+				FE7CDE37B1B2C2AA0B811AFE /* MealFit.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

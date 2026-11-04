@@ -26,7 +26,7 @@ import '../../logging/data/logging_keys.dart';
 import '../../logging/data/logging_models.dart';
 import '../../logging/data/logging_providers.dart';
 import '../../onboarding/providers/onboarding_providers.dart';
-import '../data/today_widget_channel.dart';
+import '../data/today_widget_store.dart';
 import 'today_widget_snapshot.dart';
 
 /// The widget's tap target (`TodayWidgetView.swift` → `widgetURL`).
@@ -89,11 +89,9 @@ class _TodayWidgetSyncState extends ConsumerState<TodayWidgetSync>
   Widget build(BuildContext context) {
     final snapshot = _snapshot(context.locale.toString());
     if (snapshot != null) {
-      // After the frame: a write is a side effect, and the channel drops a
+      // After the frame: a write is a side effect, and the store drops a
       // snapshot identical to the last one, so rebuilds cost nothing.
-      Future.microtask(
-        () => ref.read(todayWidgetChannelProvider).save(snapshot),
-      );
+      Future.microtask(() => ref.read(todayWidgetStoreProvider).save(snapshot));
     }
     // The same child instance every build, so a rebuild here never rebuilds
     // the routed app under it.

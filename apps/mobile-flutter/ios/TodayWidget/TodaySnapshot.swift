@@ -3,7 +3,7 @@ import Foundation
 /// What the app hands the widget: one JSON string in the shared App Group.
 ///
 /// Written by `lib/features/today_widget/` (Dart) after anything changes
-/// today's meals or targets, through `Runner/TodayWidgetChannel.swift`. The
+/// today's meals or targets, through the `home_widget` package. The
 /// widget never calls the network and never formats a sentence of its own:
 /// every word arrives here, in the language the user chose in Kallo.
 struct TodaySnapshot: Codable, Equatable {
@@ -70,7 +70,8 @@ struct TodaySnapshot: Codable, Equatable {
 }
 
 enum TodaySnapshotStore {
-  /// Shared with the app: `Runner.entitlements` and `TodayWidget.entitlements`
+  /// Shared with the app (`kTodayWidgetAppGroup` in Dart, which `home_widget`
+  /// writes through): `Runner.entitlements` and `TodayWidget.entitlements`
   /// both carry it, and both App IDs need it in the developer portal.
   static let appGroup = "group.com.khoivo.nham"
   static let key = "today.snapshot"

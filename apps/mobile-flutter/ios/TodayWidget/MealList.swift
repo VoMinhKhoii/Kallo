@@ -49,49 +49,41 @@ struct MealRow: View {
   }
 }
 
-/// A column that keeps the LAST rows that fit its height and drops the
-/// earliest: the newest meal is the one a glance at the home screen is for.
-/// Dropped rows are placed off the card (the view clips) — WidgetKit has no
-/// way to remove a view after measuring it.
+/// A column that keeps the newest rows that fit its height and drops the
+/// earliest (`MealFit` decides which). Dropped rows are placed off the card
+/// (the view clips): WidgetKit has no way to remove a view after measuring it.
 struct NewestThatFit: Layout {
   let spacing: Double
 
   func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
     let width = proposal.width ?? 0
-    let kept = keep(subviews, width: width, height: proposal.height ?? .infinity)
-    let height = kept.reduce(0) { $0 + $1.height } + spacing * Double(max(kept.count - 1, 0))
+    let heights = measure(subviews, width: width)
+    let first = MealFit.firstShown(
+      heights: heights, spacing: spacing, room: proposal.height ?? .infinity)
+    let kept = heights[first...]
+    let height = kept.reduce(0, +) + spacing * Double(max(kept.count - 1, 0))
     return CGSize(width: width, height: height)
   }
 
   func placeSubviews(
     in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()
   ) {
-    let kept = keep(subviews, width: bounds.width, height: bounds.height)
-    let first = subviews.count - kept.count
+    let heights = measure(subviews, width: bounds.width)
+    let first = MealFit.firstShown(heights: heights, spacing: spacing, room: bounds.height)
+    let size = ProposedViewSize(width: bounds.width, height: nil)
     var y = bounds.minY
     for (i, subview) in subviews.enumerated() {
-      let size = ProposedViewSize(width: bounds.width, height: nil)
       guard i >= first else {
         subview.place(at: CGPoint(x: bounds.minX, y: bounds.maxY + 1000), proposal: size)
         continue
       }
-      let height = kept[i - first].height
       subview.place(at: CGPoint(x: bounds.minX, y: y), proposal: size)
-      y += height + spacing
+      y += heights[i] + spacing
     }
   }
 
-  /// The heights of the newest rows that fit, oldest of them first.
-  private func keep(_ subviews: Subviews, width: Double, height: Double) -> [CGSize] {
-    var kept: [CGSize] = []
-    var used = 0.0
-    for subview in subviews.reversed() {
-      let size = subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
-      let next = used + size.height + (kept.isEmpty ? 0 : spacing)
-      if next > height { break }
-      kept.insert(size, at: 0)
-      used = next
-    }
-    return kept
+  /// Each row's height at `width`, oldest first.
+  private func measure(_ subviews: Subviews, width: Double) -> [Double] {
+    subviews.map { Double($0.sizeThatFits(ProposedViewSize(width: width, height: nil)).height) }
   }
 }

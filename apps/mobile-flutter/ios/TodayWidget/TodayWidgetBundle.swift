@@ -13,8 +13,8 @@ struct TodayWidgetBundle: WidgetBundle {
 }
 
 struct TodayWidget: Widget {
-  /// Must match `TodayWidgetChannel.kind` (Runner): the app reloads this
-  /// timeline by name after every write.
+  /// Must match `kTodayWidgetKind` in Dart: the app reloads this timeline by
+  /// name (`HomeWidget.updateWidget`) after every write.
   static let kind = "TodayWidget"
 
   var body: some WidgetConfiguration {

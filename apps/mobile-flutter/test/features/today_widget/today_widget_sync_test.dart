@@ -7,16 +7,16 @@ import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
-import 'package:kallo_mobile/features/today_widget/data/today_widget_channel.dart';
+import 'package:kallo_mobile/features/today_widget/data/today_widget_store.dart';
 import 'package:kallo_mobile/features/today_widget/logic/today_widget_sync.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 
 import '../../l10n_test_loader.dart';
 
-/// Records what would cross the channel instead of crossing it.
-class _RecordingChannel extends TodayWidgetChannel {
-  _RecordingChannel() : super(isIOS: true);
+/// Records what would reach the widget instead of writing it.
+class _RecordingStore extends TodayWidgetStore {
+  _RecordingStore() : super(isIOS: true);
   final List<Map<String, Object?>> saved = [];
 
   @override
@@ -91,12 +91,12 @@ void main() {
 
   ProviderContainer container({
     required String? userId,
-    required _RecordingChannel channel,
+    required _RecordingStore store,
   }) => ProviderContainer(
     overrides: [
       sessionProvider.overrideWith((ref) => Stream<Session?>.value(null)),
       signedInUserIdProvider.overrideWithValue(userId),
-      todayWidgetChannelProvider.overrideWithValue(channel),
+      todayWidgetStoreProvider.overrideWithValue(store),
       loggingDayProvider.overrideWith(_Day.new),
       profileProvider.overrideWith(
         (ref) async => const ProfileRow({
@@ -112,13 +112,13 @@ void main() {
   testWidgets('signed in: writes today, in words, from the day and profile', (
     tester,
   ) async {
-    final channel = _RecordingChannel();
-    final c = container(userId: 'u1', channel: channel);
+    final store = _RecordingStore();
+    final c = container(userId: 'u1', store: store);
     addTearDown(c.dispose);
     await tester.pumpWidget(_app(c));
     await tester.pumpAndSettle();
 
-    final last = channel.saved.last;
+    final last = store.saved.last;
     expect(last['signedIn'], isTrue);
     expect(last['eaten'], {'kcal': 450, 'protein': 30, 'carbs': 55, 'fat': 12});
     expect((last['target']! as Map)['kcal'], 1932);
@@ -130,13 +130,13 @@ void main() {
   testWidgets('signed out: writes the signed-out card and no day', (
     tester,
   ) async {
-    final channel = _RecordingChannel();
-    final c = container(userId: null, channel: channel);
+    final store = _RecordingStore();
+    final c = container(userId: null, store: store);
     addTearDown(c.dispose);
     await tester.pumpWidget(_app(c));
     await tester.pumpAndSettle();
 
-    final last = channel.saved.last;
+    final last = store.saved.last;
     expect(last['signedIn'], isFalse);
     expect(last['meals'], isEmpty);
     expect((last['eaten']! as Map)['kcal'], 0);

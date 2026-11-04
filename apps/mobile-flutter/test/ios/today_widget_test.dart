@@ -12,7 +12,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
-import 'package:kallo_mobile/features/today_widget/data/today_widget_channel.dart';
+import 'package:kallo_mobile/features/today_widget/data/today_widget_store.dart';
 import 'package:kallo_mobile/features/today_widget/logic/today_widget_snapshot.dart';
 import 'package:kallo_mobile/features/today_widget/logic/today_widget_sync.dart';
 
@@ -234,7 +234,7 @@ void main() {
     },
   );
 
-  test('one App Group, one key, one kind, one channel, one tap link', () {
+  test('one App Group, one key, one kind, one tap link', () {
     for (final path in [
       'ios/Runner/Runner.entitlements',
       '$widgetDir/TodayWidget.entitlements',
@@ -249,21 +249,21 @@ void main() {
         reason: path,
       );
     }
-    final channel = read('ios/Runner/TodayWidgetChannel.swift');
+    // The app writes through home_widget with these; the extension reads them.
+    expect(kTodayWidgetAppGroup, appGroup);
     final snapshot = read('$widgetDir/TodaySnapshot.swift');
-    expect(channel, contains('appGroup = "$appGroup"'));
-    expect(snapshot, contains('appGroup = "$appGroup"'));
-    expect(channel, contains('key = "today.snapshot"'));
-    expect(snapshot, contains('key = "today.snapshot"'));
-    expect(channel, contains('kind = "TodayWidget"'));
+    expect(snapshot, contains('appGroup = "$kTodayWidgetAppGroup"'));
+    expect(snapshot, contains('key = "$kTodayWidgetKey"'));
     expect(
       read('$widgetDir/TodayWidgetBundle.swift'),
-      contains('kind = "TodayWidget"'),
+      contains('kind = "$kTodayWidgetKind"'),
     );
-    expect(channel, contains('name = "${TodayWidgetChannel.kChannelName}"'));
+    // home_widget stores into `UserDefaults(suiteName:)` — the suite the
+    // extension opens — and reloads by kind; no channel of our own.
+    expect(read('pubspec.yaml'), contains('home_widget: ^0.10.0'));
     expect(
       read('ios/Runner/AppDelegate.swift'),
-      contains('TodayWidgetChannel.register(with:'),
+      isNot(contains('TodayWidget')),
     );
     final link =
         RegExp(

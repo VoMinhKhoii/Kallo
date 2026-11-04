@@ -7,9 +7,9 @@ no l10n and no business rule in the extension.
 ## Data flow
 
 ```
-loggingDayProvider(today) ─┐                              App Group group.com.khoivo.nham
-profileProvider ───────────┼─► TodayWidgetSync ─► channel ─► UserDefaults "today.snapshot" (JSON)
-signed-in user, locale ────┘   (lib/features/today_widget)   + WidgetCenter.reloadTimelines
+loggingDayProvider(today) ─┐                                  App Group group.com.khoivo.nham
+profileProvider ───────────┼─► TodayWidgetSync ─► home_widget ─► UserDefaults "today.snapshot" (JSON)
+signed-in user, locale ────┘   (lib/features/today_widget)       + WidgetCenter.reloadTimelines
                                                                        │
                                      ios/TodayWidget  ◄── reads ───────┘
 ```
@@ -18,7 +18,7 @@ signed-in user, locale ────┘   (lib/features/today_widget)   + WidgetC
   *watches* the day's saved meals and the profile's targets, the same providers the Today and Log
   screens read. Logging, editing, deleting, a refetch and a target edit all change one of them, so
   there is no list of call sites to keep. An identical snapshot is not re-sent
-  (`TodayWidgetChannel` remembers the last one), so rebuilds cost nothing and WidgetKit's reload
+  (`TodayWidgetStore` remembers the last one), so rebuilds cost nothing and WidgetKit's reload
   budget is spent only on real changes.
 - **Below the localizations, on purpose.** easy_localization's `tr()` returns the bare key above
   `MaterialApp`'s Localizations. Mounted in `main.dart`, the widget would print `dashboard.protein`.
@@ -36,11 +36,12 @@ signed-in user, locale ────┘   (lib/features/today_widget)   + WidgetC
 - **Tap.** `widgetURL("nham://today")`. `TodayWidgetSync` listens with `app_links` and routes
   to `/dashboard`; signed out, the router's redirect takes it to sign-in.
 
-Why a platform channel and not `home_widget`: the widget needs two native calls, a
-`UserDefaults(suiteName:)` write and `reloadTimelines(ofKind:)`. `home_widget` 0.10.0 (checked
-2026-11-04) is maintained, but brings AppIntents, a background Flutter engine for interactivity,
-an event channel and its own URL interception for those two calls. The channel is
-`Runner/TodayWidgetChannel.swift` plus one registration line in `AppDelegate`.
+**The bridge is `home_widget`** (0.10.0; owner ruling, 2026-11-04). `TodayWidgetStore` calls
+`HomeWidget.saveWidgetData<String>('today.snapshot', json, appGroupId: 'group.com.khoivo.nham')`,
+which the plugin stores with `UserDefaults(suiteName:)`, then `HomeWidget.updateWidget(iOSName:
+'TodayWidget')`, which is `WidgetCenter.reloadTimelines(ofKind:)`. The widget UI is native SwiftUI;
+the extension links nothing from the plugin and reads the suite directly. The plugin only claims
+URLs carrying a `homeWidget` query item, so the plain `nham://today` tap still reaches `app_links`.
 
 ## The drawing
 
@@ -65,7 +66,13 @@ Two rules differ from the app's, and why:
   ("kcal remaining", 6.876em) fits 90% of the tip opening. The widget asks the same question of
   the words it will draw, so the 53pt dial keeps "Kcal eaten" and "{left}/{target} left".
 
-Themes follow the hour, not the app's Appearance: the light card 06:00–18:00, Aurora (with the
+**More meals than fit** (owner ruling, 2026-11-04): WidgetKit cannot scroll, so the large widget
+reads as if its list were scrolled to the bottom: the newest meals that fit, oldest first, newest
+last, the oldest dropped, with no "+N more" and no count. A tap opens Today, which has the whole
+day. The rule is `MealFit.firstShown` (`ios/TodayWidget/MealFit.swift`), run for real by
+`test/ios/meal_fit_test.dart`.
+
+Themes follow the hour, not the app's Appearance (owner ruling, 2026-11-04): the light card 06:00–18:00, Aurora (with the
 board's two corner lights) otherwise. The timeline schedules entries at 06:00, 18:00 and
 midnight, so the theme, the date and the empty new day all change with the app closed. On iOS 26
 the system lifts the top of a dark widget a little on its own (measured +23 on #131114). That

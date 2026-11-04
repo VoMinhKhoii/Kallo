@@ -42,7 +42,6 @@ private let kPushChannelName = "com.khoivo.nham/push"
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-    TodayWidgetChannel.register(with: engineBridge.applicationRegistrar.messenger())
 
     let channel = FlutterMethodChannel(
       name: kPushChannelName,
