@@ -1042,6 +1042,7 @@
       }
     },
     "caloriesLogged": "Kcal eaten",
+    "signInToTrack": "Sign in to track",
     "mealReceiptsHint": "Your meal receipts will show up here",
     "firstRunQuestion": "What did you eat today?",
     "firstRunHint": "Describe your first meal — Kallo estimates the rest.",

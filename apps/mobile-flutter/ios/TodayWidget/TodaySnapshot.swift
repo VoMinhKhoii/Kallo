@@ -17,7 +17,7 @@ struct TodaySnapshot: Codable, Equatable {
   }
 
   struct Meal: Codable, Equatable {
-    /// Already in the locale's short time ("8:12 AM", "08:12").
+    /// Already formatted, 24-hour in every language ("8:12", "19:05").
     let time: String
     let text: String
     /// "380 kcal" — formatted by the app.

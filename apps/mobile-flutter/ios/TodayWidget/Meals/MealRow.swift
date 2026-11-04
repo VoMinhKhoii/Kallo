@@ -6,16 +6,18 @@ import SwiftUI
 struct MealRow: View {
   static let size: Double = 14
   static let lineBox: Double = 18
-  static let timeWidth: Double = 64
   private static let fontLine = size * 1.265
 
   let meal: TodaySnapshot.Meal
+  /// The day's widest time, so every row's meal text starts on one edge
+  /// (`MealList`).
+  let timeWidth: Double
   let theme: WidgetTheme
 
   var body: some View {
     HStack(alignment: .top, spacing: 12) {
       line(meal.time, color: theme.muted)
-        .frame(width: Self.timeWidth, alignment: .leading)
+        .frame(width: timeWidth, alignment: .leading)
       Text(meal.text)
         .font(WidgetFont.regular(Self.size))
         .foregroundStyle(theme.ink)

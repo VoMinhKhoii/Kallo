@@ -25,14 +25,15 @@ signed-in user, locale ────┘   (lib/features/today_widget)       + Wid
 - **The snapshot** (`logic/today_widget_snapshot.dart` ↔ `TodayWidget/TodaySnapshot.swift`): the
   local date, the locale the user chose in Kallo, targets, totals (rounded once, as the dials
   round), `floors` for totals that left out a meal's unknown value (drawn `≥`), today's saved meals
-  oldest first (time already in the locale's `jm`, text capitalised as `MealBlock` does, kcal
+  oldest first (time in 24-hour `H:mm` in both languages, text capitalised as `MealBlock` does, kcal
   through `fmtKcal`), and the dial wording with its `{placeholders}` still in place. Staged,
   unconfirmed analyses are left out, as the dials leave them out.
 - **A new day.** The widget compares the snapshot's date with its own entry's date. A snapshot
   from an earlier day renders as an empty day with the same targets, never yesterday's meals.
   The app writes the new day the next time it is resumed.
-- **Sign-out** writes the signed-out card: no targets, no totals, no meals, only the app's
-  "Not signed in." in the last language used.
+- **Sign-out** writes the signed-out card: no targets, no totals, no meals. The widget still
+  draws its dials, empty, with "—" for every figure and "Sign in to track" under the calorie
+  dial, in the last language used.
 - **Tap.** `widgetURL("nham://today")`. `TodayWidgetSync` listens with `app_links` and routes
   to `/dashboard`; signed out, the router's redirect takes it to sign-in.
 

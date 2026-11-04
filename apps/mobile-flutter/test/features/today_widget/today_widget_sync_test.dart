@@ -153,7 +153,7 @@ void main() {
     expect(last['signedIn'], isFalse);
     expect(last['meals'], isEmpty);
     expect((last['eaten']! as Map)['kcal'], 0);
-    expect((last['copy']! as Map)['signedOut'], 'Not signed in.');
+    expect((last['copy']! as Map)['signedOut'], 'Sign in to track');
   });
 
   testWidgets('a pull-to-refresh on Today, landing later, is what it writes', (

@@ -90,7 +90,7 @@ void main() {
     expect((meals[1] as Map)['kcal'], 'N/A');
   });
 
-  test('meals run oldest first, in the locale time and grouping', () {
+  test('meals run oldest first, in 24-hour time and the locale grouping', () {
     final first = DateTime(2026, 11, 4, 8, 12).toUtc().toIso8601String();
     final second = DateTime(2026, 11, 4, 12, 40).toUtc().toIso8601String();
     final snapshot = build([
@@ -98,13 +98,9 @@ void main() {
       _meal('early', first, text: 'Oats with banana', kcal: 380),
     ]);
     expect(snapshot['meals'], [
-      {'time': '8:12\u202fAM', 'text': 'Oats with banana', 'kcal': '380 kcal'},
+      {'time': '8:12', 'text': 'Oats with banana', 'kcal': '380 kcal'},
       // Capitalised at render, as MealBlock does; the raw input stays intact.
-      {
-        'time': '12:40\u202fPM',
-        'text': 'Chicken rice bowl',
-        'kcal': '1,863 kcal',
-      },
+      {'time': '12:40', 'text': 'Chicken rice bowl', 'kcal': '1,863 kcal'},
     ]);
   });
 
@@ -116,10 +112,7 @@ void main() {
       final at = DateTime(2026, 11, 4, 8, 12).toUtc().toIso8601String();
       final snapshot = build([_meal('a', at, kcal: 1863)], locale: 'vi');
       final meal = (snapshot['meals']! as List).single as Map;
-      expect(
-        meal['time'],
-        DateFormat.jm('vi').format(DateTime(2026, 11, 4, 8, 12)),
-      );
+      expect(meal['time'], '8:12');
       expect(meal['kcal'], '1.863 kcal');
       final copy = snapshot['copy']! as Map;
       expect(copy['kcalEaten'], 'Kcal đã ghi');
@@ -139,7 +132,7 @@ void main() {
       'protein': 'Protein',
       'carbs': 'Carbs',
       'fat': 'Fat',
-      'signedOut': 'Not signed in.',
+      'signedOut': 'Sign in to track',
     });
   });
 
@@ -153,6 +146,6 @@ void main() {
     expect(snapshot['meals'], isEmpty);
     expect(snapshot['eaten'], {'kcal': 0, 'protein': 0, 'carbs': 0, 'fat': 0});
     expect(snapshot['target'], {'kcal': 0, 'protein': 0, 'carbs': 0, 'fat': 0});
-    expect((snapshot['copy']! as Map)['signedOut'], 'Not signed in.');
+    expect((snapshot['copy']! as Map)['signedOut'], 'Sign in to track');
   });
 }

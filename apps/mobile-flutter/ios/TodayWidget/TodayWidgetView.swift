@@ -44,7 +44,8 @@ struct TodayWidgetView: View {
 
   @ViewBuilder
   private func content(theme: WidgetTheme, room: Double) -> some View {
-    if let day = entry.day, day.signedIn {
+    // Signed out draws the same dials, empty and dashed (`CalorieWording`).
+    if let day = entry.day {
       let radius = GaugeReadout.calorieRadius(fitting: room, cap: Self.calorieRadiusCap)
       switch family {
       case .systemSmall:
@@ -58,11 +59,6 @@ struct TodayWidgetView: View {
       default:
         DialRow(calorieRadius: radius, day: day, theme: theme)
       }
-    } else if let day = entry.day {
-      // Signed out: the app cleared the day and left only its own words.
-      ReadoutText(
-        text: day.copy.signedOut, font: WidgetFont.regular(14), color: theme.muted,
-        height: 18)
     }
   }
 }

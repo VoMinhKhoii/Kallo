@@ -28,7 +28,7 @@ const Map<String, String> kTodayWidgetCopyKeys = {
   'protein': 'dashboard.protein',
   'carbs': 'dashboard.carbs',
   'fat': 'dashboard.fat',
-  'signedOut': 'common.notSignedIn',
+  'signedOut': 'dashboard.signInToTrack',
 };
 
 /// Resolves an l10n key with its `{placeholders}` left in place — the widget
@@ -68,7 +68,8 @@ Map<String, Object?> todayWidgetSnapshot({
   required CopyLookup tr,
 }) {
   final saved = [...meals]..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
-  final time = DateFormat.jm(locale);
+  // 24-hour in both languages ("8:12", "19:05"): no AM/PM to make room for.
+  final time = DateFormat('H:mm');
   return _envelope(
     date: date,
     locale: locale,

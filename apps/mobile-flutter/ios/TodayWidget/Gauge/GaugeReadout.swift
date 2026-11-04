@@ -42,6 +42,10 @@ enum GaugeReadout {
 
   static func metaSize(_ r: Double) -> Double { clamp(jsRound(0.25 * r), 10, 14) }
 
+  /// A number the widget does not have (signed out): the app's own mark for
+  /// an unknown value (`MacroRing`).
+  static let noValue = "—"
+
   /// Every figure line is set at 1.15, so the stack measures before it paints.
   static func lineHeight(_ fontSize: Double) -> Double { jsRound(fontSize * 1.15) }
 

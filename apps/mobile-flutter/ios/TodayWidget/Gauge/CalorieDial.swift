@@ -10,12 +10,14 @@ struct CalorieDialView: View {
   var body: some View {
     let format = WidgetFormat(day.locale)
     let m = GaugeReadout.calorieLines(radius)
-    let wording = CalorieWording(
-      eaten: day.eaten.kcal, target: day.target.kcal,
-      atLeast: day.floors.contains("kcal"),
-      long: GaugeReadout.fitsUnit(
-        width: WidgetFont.width(day.copy.kcalEaten, regular: m[1].size), radius: radius),
-      copy: day.copy, format: format)
+    let long = GaugeReadout.fitsUnit(
+      width: WidgetFont.width(day.copy.kcalEaten, regular: m[1].size), radius: radius)
+    let wording =
+      day.signedIn
+      ? CalorieWording(
+        eaten: day.eaten.kcal, target: day.target.kcal,
+        atLeast: day.floors.contains("kcal"), long: long, copy: day.copy, format: format)
+      : CalorieWording.signedOut(long: long, copy: day.copy)
     GaugeDialView(
       radius: radius,
       progress: day.target.kcal > 0 ? Double(day.eaten.kcal) / Double(day.target.kcal) : 0,
@@ -41,6 +43,21 @@ struct CalorieWording: Equatable {
   let unit: String
   let detail: String
   let isOver: Bool
+
+  /// Signed out: the same dial, empty, with a dash for the figure (the app's
+  /// mark for a number it does not have) and "Sign in to track" under it.
+  static func signedOut(long: Bool, copy: TodaySnapshot.Copy) -> CalorieWording {
+    CalorieWording(
+      figure: GaugeReadout.noValue, unit: long ? copy.kcalEaten : copy.eatenShort,
+      detail: copy.signedOut, isOver: false)
+  }
+
+  private init(figure: String, unit: String, detail: String, isOver: Bool) {
+    self.figure = figure
+    self.unit = unit
+    self.detail = detail
+    self.isOver = isOver
+  }
 
   init(eaten: Int, target: Int, atLeast: Bool, long: Bool,
        copy: TodaySnapshot.Copy, format: WidgetFormat) {
