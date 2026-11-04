@@ -153,7 +153,9 @@ void _routeTo(ProviderContainer container, PushDestination destination) {
   final day = destination.loggingDay;
   if (day != null) {
     // Park the day first so the screen lands on it even when it is already
-    // open on another one. Dashboard goes underneath: back returns to Today.
+    // open on another one. Like every "open logging" path (`openLogging`), a
+    // shell branch the user is on stays underneath; Dashboard is seeded only
+    // on a cold tap, so back always has somewhere to go.
     container.read(pendingLoggingDayProvider.notifier).state = day;
     pushOverShell(
       container.read(routerProvider),

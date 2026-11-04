@@ -26,6 +26,7 @@ class PushChannel {
     required void Function(String token) onToken,
     required void Function(String message) onTokenError,
     required void Function(PushPayload payload) onTap,
+    void Function()? onDayClosed,
   }) {
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
@@ -37,6 +38,8 @@ class PushChannel {
         case 'onTap':
           final payload = _asPayload(call.arguments);
           if (payload != null) onTap(payload);
+        case 'onDayClosed':
+          onDayClosed?.call();
       }
       return null;
     });

@@ -21,7 +21,9 @@ import UserNotifications
 ///                   `takeClosedDays`   → [String] (days the lock-screen button
 ///                                         closed since the last call; drained)
 ///                   `getInitialTap`    → [String: Any]? (cold-start tap)
-///   native → Dart   `onToken`      (String, lowercase hex device token)
+///   native → Dart   `onDayClosed`  (String, a day the close button just
+///                                   closed — Dart drains `takeClosedDays`)
+///                   `onToken`      (String, lowercase hex device token)
 ///                   `onTokenError` (String, failure description)
 ///                   `onTap`        (Map, the notification's userInfo)
 private let kPushChannelName = "com.khoivo.nham/push"
@@ -168,7 +170,7 @@ private let kReminderClosedDaysKey = "kallo.reminders.closedDays"
   /// code would rotate its refresh token out from under the app. Kept alive
   /// with a background task, and the system's completion handler is called
   /// only once the request settles (it allows about 30 s).
-  private static func closeDayInBackground(
+  private func closeDayInBackground(
     userInfo: [AnyHashable: Any], completion: @escaping () -> Void
   ) {
     guard
@@ -211,6 +213,9 @@ private let kReminderClosedDaysKey = "kallo.reminders.closedDays"
           var days = UserDefaults.standard.stringArray(forKey: kReminderClosedDaysKey) ?? []
           if !days.contains(day) { days.append(day) }
           UserDefaults.standard.set(days, forKey: kReminderClosedDaysKey)
+          // The app may already be back in the foreground (opened while this
+          // request was in flight), past the resume that drains the list.
+          self.pushChannel?.invokeMethod("onDayClosed", arguments: day)
         }
       }
       finish()
@@ -259,7 +264,7 @@ private let kReminderClosedDaysKey = "kallo.reminders.closedDays"
     let userInfo = response.notification.request.content.userInfo
     if response.actionIdentifier == kReminderCloseAction {
       // Background only: the day is closed without showing the app.
-      Self.closeDayInBackground(userInfo: userInfo, completion: completionHandler)
+      closeDayInBackground(userInfo: userInfo, completion: completionHandler)
       return
     }
     let payload = Self.sanitize(userInfo)

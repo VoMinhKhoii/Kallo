@@ -66,6 +66,10 @@ class PushService {
   /// shows it once, so a second ask would only be a wasted channel call.
   bool _askedPermission = false;
 
+  /// A reminder's lock-screen button closed a day while the app runs; the
+  /// listener then refreshes what it shows ([takeClosedDays] has the days).
+  void Function()? onDayClosed;
+
   PushPayload? _bufferedTap;
   void Function(PushPayload payload)? _onTap;
 
@@ -94,6 +98,7 @@ class PushService {
           onToken: _handleToken,
           onTokenError: _handleTokenError,
           onTap: _handleTap,
+          onDayClosed: () => onDayClosed?.call(),
         );
         _listening = true;
       }

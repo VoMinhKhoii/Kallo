@@ -394,7 +394,7 @@ Request headers, for reference: `:method POST`, `:path /3/device/<hex token>`, `
 
 **Collapse keys**: the notification's `groupKey` (`share.reaction:<shareId>`, `group.added:<groupId>`, …) for activity events, `chat:<groupId>` for messages — sent as `apns-collapse-id` (truncated to Apple's 64-byte limit), so a burst on one object supersedes itself in the shade rather than stacking.
 
-**Deep-link map**: `group.added` and `chat.message` → the group screen (`targetId`), the share events → that share (`/circle/<objectId>`), `reminder.checkpoint` / `reminder.yesterday` → the logging feed on `date` (parked in `pendingLoggingDayProvider`, Dashboard underneath), everything else → circle. The Activity tab later consumes the same `/api/v1/notifications*` endpoints. APNs badge = unseen count at send time is supported by `PushMessage.badge` but not yet populated (nice-to-have). Flutter nav parity for the new entry is part of this phase.
+**Deep-link map**: `group.added` and `chat.message` → the group screen (`targetId`), the share events → that share (`/circle/<objectId>`), `reminder.checkpoint` / `reminder.yesterday` → the logging feed on `date` (parked in `pendingLoggingDayProvider`, pushed over the tab the user is on — Dashboard on a cold tap), everything else → circle. The Activity tab later consumes the same `/api/v1/notifications*` endpoints. APNs badge = unseen count at send time is supported by `PushMessage.badge` but not yet populated (nice-to-have). Flutter nav parity for the new entry is part of this phase.
 
 ---
 

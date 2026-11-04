@@ -52,6 +52,9 @@ class _PushRegistrationListenerState
       final push = ref.read(pushServiceProvider);
       _push = push;
       push.onTap = (payload) => routePushTap(container, payload);
+      // A close that finished after the resume drain (the app was opened while
+      // the request was in flight) is refreshed when it lands.
+      push.onDayClosed = () => unawaited(_refreshClosedDays(push));
       unawaited(push.deliverInitialTap());
     });
   }
@@ -60,6 +63,7 @@ class _PushRegistrationListenerState
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _push?.onTap = null;
+    _push?.onDayClosed = null;
     super.dispose();
   }
 

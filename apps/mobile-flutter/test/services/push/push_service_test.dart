@@ -331,6 +331,17 @@ void main() {
     },
   );
 
+  test('a close that lands while the app runs pings the listener', () async {
+    final service = PushService(FakeApiClient());
+    var pings = 0;
+    service.onDayClosed = () => pings++;
+    await service.registerForPush();
+
+    await fromNative('onDayClosed', '2026-11-04');
+
+    expect(pings, 1);
+  });
+
   test('denied authorization is survivable and posts nothing', () async {
     granted = false;
     final api = FakeApiClient();
