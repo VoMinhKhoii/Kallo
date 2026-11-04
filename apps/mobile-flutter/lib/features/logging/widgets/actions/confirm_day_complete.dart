@@ -11,8 +11,18 @@ import '../../../../shared/widgets/dialog/kallo_confirm.dart';
 /// for "something is gone", never for "your numbers are off". The fact that it
 /// cannot be undone is carried by the body copy instead, which is where a user
 /// actually reads it.
-Future<bool> confirmDayComplete(BuildContext context, {required int calories}) {
-  const t = 'logging.feedArea.partialDayNotice';
+///
+/// [today] switches to today's copy ("Done for today?"), which also says the
+/// day's reminders stop. Same one-way write either way.
+Future<bool> confirmDayComplete(
+  BuildContext context, {
+  required int calories,
+  bool today = false,
+}) {
+  final t =
+      today
+          ? 'logging.feedArea.todayClose'
+          : 'logging.feedArea.partialDayNotice';
   return showKalloConfirm(
     context,
     title: '$t.confirmTitle'.tr(),

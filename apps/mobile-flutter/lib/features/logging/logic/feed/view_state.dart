@@ -33,6 +33,8 @@ class FeedViewState {
     required this.isEmpty,
     required this.hasLiveTail,
     required this.showPartialDayNotice,
+    this.showTodayClose = false,
+    this.isDayClosed = false,
   });
 
   factory FeedViewState.from({
@@ -182,6 +184,23 @@ class FeedViewState {
           isMarked: day?.markedComplete ?? false,
         );
 
+    // Today's "I've eaten enough" (web parity, `use-feed-controller.ts`): once
+    // today holds a saved meal, nothing is mid-flight and no meal's calories
+    // are unknown — the confirm quotes the total the day will count at. A
+    // closed day always says so.
+    final isDayClosed = day?.markedComplete ?? false;
+    final showTodayClose =
+        date == todayDateString() &&
+        !isLoading &&
+        !dayHasError &&
+        persistedMeals.isNotEmpty &&
+        (isDayClosed ||
+            (!incompleteTotals.contains('calories') &&
+                pendingConfirmations.isEmpty &&
+                !isStreaming &&
+                !isRevealing &&
+                !isCheatRevealing));
+
     return FeedViewState(
       date: date,
       persistedMeals: persistedMeals,
@@ -201,6 +220,8 @@ class FeedViewState {
       isEmpty: isEmpty,
       hasLiveTail: hasLiveTail,
       showPartialDayNotice: showPartialDayNotice,
+      showTodayClose: showTodayClose,
+      isDayClosed: isDayClosed,
     );
   }
 
@@ -247,4 +268,10 @@ class FeedViewState {
   final bool hasLiveTail;
 
   final bool showPartialDayNotice;
+
+  /// Today with a saved meal: offer "I've eaten enough", or say it is done.
+  final bool showTodayClose;
+
+  /// The server's `markedComplete` for this day.
+  final bool isDayClosed;
 }

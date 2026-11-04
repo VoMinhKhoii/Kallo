@@ -78,6 +78,11 @@ class ProfileRow {
   /// in.
   bool get autoShareToCircle => raw['autoShareToCircle'] == true;
 
+  // ── Meal reminders ─────────────────────────────────────────────────────
+  /// Mirrors the server default (on): only an explicit `false` reads as off,
+  /// so a server that predates the column shows the switch on, like it is.
+  bool get mealRemindersEnabled => raw['mealRemindersEnabled'] != false;
+
   // ── AI-processing consent (App Store 5.1.2(i)) ─────────────────────────
   /// When the user agreed to send meal text and label photos to the AI
   /// provider; null when they never did or withdrew.

@@ -1232,6 +1232,14 @@
         "confirmCancel": "Để sau",
         "markError": "Chưa xác nhận được ngày này. Thử lại nhé."
       },
+      "todayClose": {
+        "markComplete": "Mình ăn đủ rồi",
+        "confirmTitle": "Hôm nay vậy là đủ?",
+        "confirmBody": "Kallo sẽ tính hôm nay với {calories} kcal đã ghi và ngừng nhắc trong hôm nay. Bạn vẫn ghi thêm được. Không hoàn tác được.",
+        "confirmAccept": "Mình ăn đủ rồi",
+        "confirmCancel": "Để sau",
+        "closed": "Hôm nay đủ rồi"
+      },
       "partialYesterdayPrompt": {
         "title": "Hôm qua có vẻ ghi chưa đủ",
         "body": "Mới ghi {calories}/{target} kcal mục tiêu.",
@@ -1971,6 +1979,10 @@
       "friendsLabel": "{count} bạn bè trong vòng kết nối",
       "editProfile": "Sửa hồ sơ",
       "editCircle": "Sửa vòng kết nối"
+    },
+    "reminders": {
+      "label": "Nhắc ghi bữa ăn",
+      "error": "Không thể cập nhật nhắc ghi bữa ăn. Vui lòng thử lại."
     }
   },
   "errors": {
@@ -2073,5 +2085,14 @@
     "consentPrivacy": "Chính sách riêng tư",
     "premiumChip": "Premium",
     "premiumFeature": "Tính năng Premium"
+  },
+  "notifications": {
+    "reminderActions": {
+      "addToYesterday": "Ghi cho hôm qua",
+      "thatWasAll": "Vậy là đủ",
+      "logMeal": "Ghi món",
+      "logMore": "Ghi thêm",
+      "doneForToday": "Hôm nay đủ rồi"
+    }
   }
 }

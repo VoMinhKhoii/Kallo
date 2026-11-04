@@ -43,11 +43,31 @@ class PushChannel {
   }
 
   /// Request alert/badge/sound authorization and, on grant, register with APNs.
-  /// The token itself arrives later through `onToken`.
+  /// The token itself arrives later through `onToken`. Shows the system prompt
+  /// only while the user has never answered it; after that iOS returns the
+  /// stored answer silently.
   Future<bool> requestPermission() async {
     final granted = await channel.invokeMethod<bool>('registerForPush');
     return granted ?? false;
   }
+
+  /// Register with APNs only if notifications are ALREADY allowed. Never shows
+  /// the prompt — that waits for the first logged meal.
+  Future<bool> registerIfAuthorized() async {
+    final allowed = await channel.invokeMethod<bool>('registerIfAuthorized');
+    return allowed ?? false;
+  }
+
+  /// The device's IANA time zone (`Asia/Ho_Chi_Minh`) — the clock the server
+  /// runs this user's meal reminders on.
+  Future<String?> timeZone() => channel.invokeMethod<String>('getTimeZone');
+
+  /// Register the meal-reminder notification categories with their button
+  /// titles in the app's language, and the API base the background "close the
+  /// day" button posts to. Keys: `addToYesterday`, `thatWasAll`, `logMeal`,
+  /// `logMore`, `doneForToday`, `apiBase`.
+  Future<void> setReminderCategories(Map<String, String> titles) =>
+      channel.invokeMethod<void>('setReminderCategories', titles);
 
   /// The tap that cold-started the app, if any. Drained once, natively.
   Future<PushPayload?> initialTap() async {

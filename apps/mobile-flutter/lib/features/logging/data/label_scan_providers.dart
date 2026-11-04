@@ -21,6 +21,7 @@ import '../logic/scan/food.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 import '../../../models/http/api_error.dart';
+import '../../notifications/logic/ask_after_save.dart';
 
 /// How the controller gets a photo. Behind a provider purely so tests can
 /// stand in for the platform picker, which has no test surface of its own.
@@ -310,6 +311,7 @@ class LabelScanController extends AutoDisposeNotifier<LabelScanState> {
     // The meal COMMITTED the moment the POST returned, so nothing below may
     // turn a saved meal into a failed save — [settleAfterMealWrite] sits
     // outside the try that owns the return value and never throws.
+    askForNotificationsAfterSave(ref.read);
     await settleAfterMealWrite(
       ref.read,
       ref.invalidate,

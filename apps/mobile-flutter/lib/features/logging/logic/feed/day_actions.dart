@@ -30,3 +30,20 @@ Future<void> confirmAndMarkDay(
   if (!confirmed || !context.mounted) return;
   await markDayComplete(context, userId: userId, date: view.date);
 }
+
+/// Today's "I've eaten enough": confirm with today's copy, then close today.
+/// It stops today's reminders and lets the progress views count today at its
+/// real calories (docs/NOTIFICATIONS.md → "Reminders", "Closing a day").
+Future<void> confirmAndCloseToday(
+  BuildContext context,
+  FeedViewState view,
+  String userId,
+) async {
+  final confirmed = await confirmDayComplete(
+    context,
+    calories: view.dailyCalories,
+    today: true,
+  );
+  if (!confirmed || !context.mounted) return;
+  await markDayComplete(context, userId: userId, date: view.date);
+}

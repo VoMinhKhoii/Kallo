@@ -21,6 +21,7 @@ import '../logic/profile_summaries.dart';
 import '../logic/settings_spacing.dart';
 import '../widgets/account/ai_consent_toggle.dart';
 import '../widgets/account/auto_share_to_circle_toggle.dart';
+import '../widgets/account/meal_reminders_toggle.dart';
 import '../widgets/account/sign_out_row.dart';
 import '../widgets/account/subscription_section.dart';
 import '../widgets/appearance/appearance_row.dart';
@@ -87,7 +88,7 @@ class _SettingsList extends ConsumerWidget {
       _NutritionProfileGroup(profile: profile),
 
       // ── Preferences ─────────────────────────────────────────────────────
-      // Appearance is a device setting and shows at once. The two switches
+      // Appearance is a device setting and shows at once. The switches
       // wait for the profile (web parity) — an enabled switch with no profile
       // row can only produce an error.
       SettingsGroup(
@@ -96,6 +97,7 @@ class _SettingsList extends ConsumerWidget {
           const AppearanceRow(),
           if (profile != null) ...[
             AutoShareToCircleToggle(value: profile.autoShareToCircle),
+            MealRemindersToggle(value: profile.mealRemindersEnabled),
             const AiConsentToggle(),
           ],
         ],

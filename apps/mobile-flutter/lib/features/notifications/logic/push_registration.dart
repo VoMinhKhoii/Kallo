@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/auth/session_provider.dart';
+import '../../../services/env/env.dart';
 import '../../../services/push/push_service.dart';
 import 'push_tap_routing.dart';
 
@@ -16,6 +18,11 @@ import 'push_tap_routing.dart';
 /// any time, and the OS reissues it on every `registerForRemoteNotifications`).
 /// Sign-out is NOT handled here: releasing the token needs the Bearer token, so
 /// it runs at the sign-out call site, before the session is torn down.
+///
+/// Also the app's half of meal reminders: it registers the reminder
+/// notification categories in the app's language (again whenever the language
+/// changes), and checks in on every return to the foreground — the server's
+/// "opened Kallo" signal (`PushService.checkIn`).
 class PushRegistrationListener extends ConsumerStatefulWidget {
   const PushRegistrationListener({required this.child, super.key});
 
@@ -27,8 +34,12 @@ class PushRegistrationListener extends ConsumerStatefulWidget {
 }
 
 class _PushRegistrationListenerState
-    extends ConsumerState<PushRegistrationListener> {
+    extends ConsumerState<PushRegistrationListener>
+    with WidgetsBindingObserver {
   String? _registeredUserId;
+
+  /// The language the reminder buttons were last registered in.
+  String? _categoriesLocale;
 
   /// Held rather than re-read in [dispose] — `ref` is already gone by then.
   PushService? _push;
@@ -36,6 +47,7 @@ class _PushRegistrationListenerState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Deferred a frame so the router is mounted before a cold-start tap routes.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -49,8 +61,35 @@ class _PushRegistrationListenerState
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _push?.onTap = null;
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(ref.read(pushServiceProvider).checkIn());
+    }
+  }
+
+  /// iOS draws a notification's buttons from categories the app registers, so
+  /// their titles follow the app's language, not the push.
+  void _syncReminderCategories(BuildContext context) {
+    final locale = context.locale.toString();
+    if (locale == _categoriesLocale) return;
+    _categoriesLocale = locale;
+    const t = 'notifications.reminderActions';
+    unawaited(
+      ref.read(pushServiceProvider).setReminderCategories({
+        'addToYesterday': '$t.addToYesterday'.tr(),
+        'thatWasAll': '$t.thatWasAll'.tr(),
+        'logMeal': '$t.logMeal'.tr(),
+        'logMore': '$t.logMore'.tr(),
+        'doneForToday': '$t.doneForToday'.tr(),
+        'apiBase': Env.apiBaseUrl,
+      }),
+    );
   }
 
   @override
@@ -61,6 +100,7 @@ class _PushRegistrationListenerState
     // App start with a restored session: the stream may have already emitted
     // before this widget mounted, so seed from the resolved value once.
     _sync(ref.read(currentSessionProvider)?.user.id);
+    _syncReminderCategories(context);
     return widget.child;
   }
 

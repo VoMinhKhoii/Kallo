@@ -10,12 +10,27 @@ import UserNotifications
 /// `POST /api/v1/notifications/push-tokens`.
 ///
 /// Channel contract (mirrored by `PushChannel` in Dart):
-///   Dart → native   `registerForPush`  → Bool (authorization granted)
+///   Dart → native   `registerForPush`  → Bool (asks for authorization, then
+///                                         registers on grant)
+///                   `registerIfAuthorized` → Bool (never asks: registers only
+///                                         when already authorized)
+///                   `getTimeZone`      → String (IANA, e.g. Asia/Ho_Chi_Minh)
+///                   `setReminderCategories` (Map: localized button titles +
+///                                         the API base the close button posts to)
 ///                   `getInitialTap`    → [String: Any]? (cold-start tap)
 ///   native → Dart   `onToken`      (String, lowercase hex device token)
 ///                   `onTokenError` (String, failure description)
 ///                   `onTap`        (Map, the notification's userInfo)
 private let kPushChannelName = "com.khoivo.nham/push"
+
+/// Meal-reminder action ids (docs/NOTIFICATIONS.md → "Reminders"). OPEN
+/// launches the app (tap routing takes it from there, like a plain tap);
+/// CLOSE runs in the background and never shows the app.
+private let kReminderOpenAction = "REMINDER_OPEN"
+private let kReminderCloseAction = "REMINDER_CLOSE_DAY"
+/// Where the close button posts, saved by `setReminderCategories`: a button
+/// pressed after the app was killed is answered before Dart ever runs.
+private let kReminderApiBaseKey = "kallo.reminders.apiBase"
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -51,6 +66,13 @@ private let kPushChannelName = "com.khoivo.nham/push"
       switch call.method {
       case "registerForPush":
         self?.requestAuthorization(result: result)
+      case "registerIfAuthorized":
+        self?.registerIfAuthorized(result: result)
+      case "getTimeZone":
+        result(TimeZone.current.identifier)
+      case "setReminderCategories":
+        Self.setReminderCategories(call.arguments as? [String: Any] ?? [:])
+        result(nil)
       case "getInitialTap":
         // Drained once: a later re-registration must not re-route an old tap.
         let payload = self?.initialTapConsumed == true ? nil : self?.initialTapPayload
@@ -79,6 +101,96 @@ private let kPushChannelName = "com.khoivo.nham/push"
           result(granted)
         }
       }
+  }
+
+  /// The app-start path: registers a device that already said yes, and never
+  /// shows the permission prompt — that waits for the first logged meal.
+  private func registerIfAuthorized(result: @escaping FlutterResult) {
+    UNUserNotificationCenter.current().getNotificationSettings { settings in
+      DispatchQueue.main.async {
+        let allowed: Bool
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+          allowed = true
+        default:
+          allowed = false
+        }
+        if allowed {
+          UIApplication.shared.registerForRemoteNotifications()
+        }
+        result(allowed)
+      }
+    }
+  }
+
+  /// The three reminder categories, titled in the app's language (iOS draws
+  /// action buttons from the device, never from the push).
+  private static func setReminderCategories(_ args: [String: Any]) {
+    if let base = args["apiBase"] as? String, !base.isEmpty {
+      UserDefaults.standard.set(base, forKey: kReminderApiBaseKey)
+    }
+    func title(_ key: String) -> String { args[key] as? String ?? key }
+    func open(_ key: String) -> UNNotificationAction {
+      UNNotificationAction(
+        identifier: kReminderOpenAction, title: title(key), options: [.foreground])
+    }
+    func close(_ key: String) -> UNNotificationAction {
+      UNNotificationAction(identifier: kReminderCloseAction, title: title(key), options: [])
+    }
+    let categories: Set<UNNotificationCategory> = [
+      UNNotificationCategory(
+        identifier: "REMINDER_YESTERDAY",
+        actions: [open("addToYesterday"), close("thatWasAll")],
+        intentIdentifiers: []),
+      UNNotificationCategory(
+        identifier: "REMINDER_LOG", actions: [open("logMeal")], intentIdentifiers: []),
+      UNNotificationCategory(
+        identifier: "REMINDER_EVENING",
+        actions: [open("logMore"), close("doneForToday")],
+        intentIdentifiers: []),
+    ]
+    UNUserNotificationCenter.current().setNotificationCategories(categories)
+  }
+
+  /// "That was all" / "I'm done for today": post the signed token the push
+  /// carried. No session — refreshing the user's Supabase session from native
+  /// code would rotate its refresh token out from under the app. Kept alive
+  /// with a background task, and the system's completion handler is called
+  /// only once the request settles (it allows about 30 s).
+  private static func closeDayInBackground(
+    userInfo: [AnyHashable: Any], completion: @escaping () -> Void
+  ) {
+    guard
+      let token = userInfo["actionToken"] as? String,
+      let base = UserDefaults.standard.string(forKey: kReminderApiBaseKey),
+      let url = URL(string: base + "/api/v1/reminders/close-day")
+    else {
+      completion()
+      return
+    }
+    var request = URLRequest(url: url, timeoutInterval: 20)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.httpBody = try? JSONSerialization.data(withJSONObject: ["token": token])
+    var task: UIBackgroundTaskIdentifier = .invalid
+    var done = false
+    // Runs on the main queue only, and once: the response and the background
+    // task's expiry can both arrive, and the system handler must be called once.
+    let finish = {
+      DispatchQueue.main.async {
+        guard !done else { return }
+        done = true
+        if task != .invalid {
+          UIApplication.shared.endBackgroundTask(task)
+          task = .invalid
+        }
+        completion()
+      }
+    }
+    task = UIApplication.shared.beginBackgroundTask(withName: "reminder-close-day") {
+      finish()
+    }
+    URLSession.shared.dataTask(with: request) { _, _, _ in finish() }.resume()
   }
 
   override func application(
@@ -120,7 +232,13 @@ private let kPushChannelName = "com.khoivo.nham/push"
     didReceive response: UNNotificationResponse,
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
-    let payload = Self.sanitize(response.notification.request.content.userInfo)
+    let userInfo = response.notification.request.content.userInfo
+    if response.actionIdentifier == kReminderCloseAction {
+      // Background only: the day is closed without showing the app.
+      Self.closeDayInBackground(userInfo: userInfo, completion: completionHandler)
+      return
+    }
+    let payload = Self.sanitize(userInfo)
     if let channel = pushChannel {
       channel.invokeMethod("onTap", arguments: payload)
     } else {
