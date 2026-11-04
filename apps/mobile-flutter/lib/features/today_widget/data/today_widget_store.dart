@@ -55,8 +55,12 @@ class TodayWidgetStore {
     try {
       while (_wanted != null && _wanted != _written) {
         final json = _wanted!;
-        // A failed write stops here and is retried by the next save.
-        if (!await _write(json)) return;
+        if (!await _write(json)) {
+          // Nothing newer waiting: stop, and the next save retries this one.
+          // Something newer asked for while this failed: write that instead.
+          if (_wanted == json) return;
+          continue;
+        }
         _written = json;
       }
     } finally {

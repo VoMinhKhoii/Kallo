@@ -89,6 +89,27 @@ void main() {
     ]);
   });
 
+  test('a newer day asked for while a write fails is still written', () async {
+    final store = TodayWidgetStore(isIOS: true);
+    final gate = Completer<void>();
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      if (call.method == 'saveWidgetData' &&
+          jsonDecode((call.arguments as Map)['data'] as String)['eaten'] ==
+              'A') {
+        await gate.future;
+        throw PlatformException(code: '-7');
+      }
+      return true;
+    });
+    final a = store.save({'eaten': 'A'});
+    final b = store.save({'eaten': 'B'});
+    gate.complete();
+    await Future.wait([a, b]);
+    expect(saved().last, {'eaten': 'B'});
+    expect(calls.last.method, 'updateWidget');
+  });
+
   test('off iOS there is no widget to write to', () async {
     await TodayWidgetStore(isIOS: false).save({'eaten': 470});
     expect(calls, isEmpty);
