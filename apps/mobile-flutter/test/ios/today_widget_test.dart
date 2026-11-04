@@ -14,7 +14,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/today_widget/data/today_widget_store.dart';
 import 'package:kallo_mobile/features/today_widget/logic/today_widget_snapshot.dart';
-import 'package:kallo_mobile/features/today_widget/logic/today_widget_sync.dart';
+import 'package:kallo_mobile/features/today_widget/logic/today_widget_link.dart';
 
 String read(String path) => File(path).readAsStringSync();
 

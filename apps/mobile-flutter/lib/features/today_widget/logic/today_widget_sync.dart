@@ -1,5 +1,5 @@
 /// Keeps the home-screen widget's day in step with the app, for the whole
-/// session, and routes a tap on the widget to Today.
+/// session. (A tap on the widget is [TodayWidgetLink]'s, mounted from here.)
 ///
 /// It WATCHES what the Today and Log screens already read — the day's saved
 /// meals (both screens' copies, see [_TodayWidgetSyncState._newestDay]) and
@@ -15,12 +15,10 @@ library;
 
 import 'dart:async';
 
-import 'package:app_links/app_links.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../router.dart';
 import '../../../services/auth/session_provider.dart';
 import '../../dashboard/data/dashboard_providers.dart' as dash;
 import '../../dashboard/data/logging_day.dart' as dash_day;
@@ -29,10 +27,8 @@ import '../../logging/data/logging_models.dart';
 import '../../logging/data/logging_providers.dart';
 import '../../onboarding/providers/onboarding_providers.dart';
 import '../data/today_widget_store.dart';
+import 'today_widget_link.dart';
 import 'today_widget_snapshot.dart';
-
-/// The widget's tap target (`TodayWidgetView.swift` → `widgetURL`).
-bool isTodayWidgetLink(Uri uri) => uri.scheme == 'nham' && uri.host == 'today';
 
 class TodayWidgetSync extends ConsumerStatefulWidget {
   const TodayWidgetSync({required this.child, super.key});
@@ -45,9 +41,6 @@ class TodayWidgetSync extends ConsumerStatefulWidget {
 
 class _TodayWidgetSyncState extends ConsumerState<TodayWidgetSync>
     with WidgetsBindingObserver {
-  final AppLinks _appLinks = AppLinks();
-  StreamSubscription<Uri>? _links;
-
   /// The day the snapshot is for. Re-read on resume, so an app left open
   /// overnight writes the new day once it is back in front.
   String _today = todayDateString();
@@ -56,18 +49,11 @@ class _TodayWidgetSyncState extends ConsumerState<TodayWidgetSync>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(
-      _appLinks.getInitialLink().then((uri) {
-        if (uri != null) _open(uri);
-      }),
-    );
-    _links = _appLinks.uriLinkStream.listen(_open, onError: (_) {});
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _links?.cancel();
     super.dispose();
   }
 
@@ -76,15 +62,6 @@ class _TodayWidgetSyncState extends ConsumerState<TodayWidgetSync>
     if (state != AppLifecycleState.resumed) return;
     final today = todayDateString();
     if (today != _today) setState(() => _today = today);
-  }
-
-  void _open(Uri uri) {
-    if (!isTodayWidgetLink(uri)) return;
-    // Next frame, so the router is mounted on a cold start. Signed out, the
-    // router's redirect sends this on to sign-in like any other location.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) ref.read(routerProvider).go('/dashboard');
-    });
   }
 
   @override
@@ -97,7 +74,7 @@ class _TodayWidgetSyncState extends ConsumerState<TodayWidgetSync>
     }
     // The same child instance every build, so a rebuild here never rebuilds
     // the routed app under it.
-    return widget.child;
+    return TodayWidgetLink(child: widget.child);
   }
 
   /// Today as the app last heard it, from whichever of its two copies changed

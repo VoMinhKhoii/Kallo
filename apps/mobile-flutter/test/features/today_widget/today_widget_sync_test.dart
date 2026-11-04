@@ -14,6 +14,7 @@ import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
 import 'package:kallo_mobile/features/today_widget/data/today_widget_store.dart';
+import 'package:kallo_mobile/features/today_widget/logic/today_widget_link.dart';
 import 'package:kallo_mobile/features/today_widget/logic/today_widget_sync.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Session;
