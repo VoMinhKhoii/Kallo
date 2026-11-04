@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { shiftDayKey } from '@/lib/core/date/day-key';
 import {
   isValidTimeZone,
-  shiftDayKey,
   zonedClock,
   zonedDayRange,
 } from '@/lib/core/date/zoned';

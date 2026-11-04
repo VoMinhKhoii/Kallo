@@ -1,5 +1,4 @@
-import { dayKeyToUtcDate, toUtcDayKey } from '@/lib/core/date/day-key';
-import { MS_PER_DAY } from '@/lib/core/date/ms';
+import { shiftDayKey } from '@/lib/core/date/day-key';
 
 /**
  * Wall-clock reads in a named IANA zone — the server-side counterpart of the
@@ -102,9 +101,4 @@ export function zonedDayRange(
     dayStart: startOfZonedDay(date, timeZone),
     dayEnd: startOfZonedDay(shiftDayKey(date, 1), timeZone),
   };
-}
-
-/** `YYYY-MM-DD` moved by whole calendar days. */
-export function shiftDayKey(date: string, days: number): string {
-  return toUtcDayKey(dayKeyToUtcDate(date).getTime() + days * MS_PER_DAY);
 }

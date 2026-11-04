@@ -194,16 +194,3 @@ export async function claimReminders(
     claimed.filter((row) => row.outcome === 'sent').map((row) => row.userId)
   );
 }
-
-/** Every iOS device of these users. */
-export async function loadTokens(
-  userIds: string[]
-): Promise<{ userId: string; token: string }[]> {
-  if (userIds.length === 0) return [];
-  return db
-    .select({ userId: pushTokens.userId, token: pushTokens.token })
-    .from(pushTokens)
-    .where(
-      and(inArray(pushTokens.userId, userIds), eq(pushTokens.platform, 'ios'))
-    );
-}

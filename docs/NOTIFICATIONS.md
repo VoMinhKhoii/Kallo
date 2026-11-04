@@ -421,7 +421,7 @@ In order; each failing gate skips the checkpoint for the day, except the last, w
 6. Not two reminders ignored in a row today → else `ignored`. Ignored = no app open, no meal logged and no day closed (today or yesterday — the lock-screen buttons close a day without opening the app) between the push and now; with only the newest of each stored, "the last two both ignored" is exactly "nothing since the earlier of them went out".
 7. No other push to this user in the last 30 min → else **wait**: no row is written, the next 15-minute tick rechecks, and the checkpoint gives up when its 90-minute window closes.
 
-"Opened Kallo" is the newest `push_tokens.last_seen_at`: the iOS app re-posts its registration on launch and on every return to the foreground. Web visits are not counted (web has no push). "Another push" is the newest `push_tokens.last_pushed_at`, stamped by `recordPushResults` (`lib/domain/notifications/push-delivery.ts`) on every device APNs accepted — activity, chat and reminders alike.
+"Opened Kallo" is the newest `push_tokens.last_seen_at`: the iOS app re-posts its registration on launch and on every return to the foreground. Web visits are not counted (web has no push). "Another push" is the newest `push_tokens.last_pushed_at`, stamped by `recordPushResults` (`lib/domain/notifications/push-devices.ts`, the one owner of `push_tokens` rows) on every device APNs accepted — activity, chat and reminders alike.
 
 ### Tick (`lib/domain/reminders/tick.ts`)
 

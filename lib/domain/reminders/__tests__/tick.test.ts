@@ -13,13 +13,13 @@ const load = vi.hoisted(() => ({
   loadRecentMeals: vi.fn(),
   loadDayMarks: vi.fn(),
   claimReminders: vi.fn(),
-  loadTokens: vi.fn(),
 }));
 vi.mock('@/lib/domain/reminders/load', () => load);
-const recordPushResults = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/domain/notifications/push-delivery', () => ({
-  recordPushResults,
+const devices = vi.hoisted(() => ({
+  loadIosTokens: vi.fn(),
+  recordPushResults: vi.fn(),
 }));
+vi.mock('@/lib/domain/notifications/push-devices', () => devices);
 
 import { verifyCloseDayToken } from '@/lib/domain/reminders/action-token';
 import { runReminderTick } from '@/lib/domain/reminders/tick';
@@ -64,7 +64,7 @@ describe('runReminderTick', () => {
     load.loadDecided.mockResolvedValue([]);
     load.loadRecentMeals.mockResolvedValue([]);
     load.loadDayMarks.mockResolvedValue([]);
-    load.loadTokens.mockResolvedValue([{ userId: HANOI, token: 'aa' }]);
+    devices.loadIosTokens.mockResolvedValue([{ userId: HANOI, token: 'aa' }]);
     load.claimReminders.mockImplementation(
       async (rows: { userId: string; outcome: string }[]) =>
         new Set(rows.filter((r) => r.outcome === 'sent').map((r) => r.userId))
@@ -150,7 +150,7 @@ describe('runReminderTick', () => {
       dayStart: new Date('2026-11-03T17:00:00Z'),
       dayEnd: new Date('2026-11-04T17:00:00Z'),
     });
-    expect(recordPushResults).toHaveBeenCalledTimes(1);
+    expect(devices.recordPushResults).toHaveBeenCalledTimes(1);
   });
 
   it('never decides a checkpoint twice', async () => {

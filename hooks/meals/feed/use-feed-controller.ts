@@ -274,35 +274,29 @@ export function useFeedController(args: {
   const isToday = selectedDate === today;
   const isPastDay = selectedDate < today;
   const markDayComplete = useMarkDayComplete(profile.userId, selectedDate);
+  // The day has loaded and holds a saved meal (an empty day is "unlogged",
+  // never under-logged, and cannot be closed).
+  const dayLoaded = !day.isDayLoading && !day.isDayError && hasPersistedMeals;
+  // Its calorie total is the one that will count: no meal's calories unknown
+  // (the total would be a floor, which reads as under-logged when it is not)
+  // and nothing still on its way in.
+  const totalIsFinal =
+    !day.incompleteTotals.calories &&
+    !hasPendingMessages &&
+    !hasStreamingMessages;
   const showPartialDayNotice =
     isPastDay &&
-    !day.isDayLoading &&
-    !day.isDayError &&
-    // A calorie total missing a meal would read as under-logged when it is not.
-    !day.incompleteTotals.calories &&
-    hasPersistedMeals &&
-    !hasPendingMessages &&
-    !hasStreamingMessages &&
+    dayLoaded &&
+    totalIsFinal &&
     isLikelyPartialDay(
       day.dailyTotals.calories,
       profile.calorieTarget,
       day.markedComplete
     );
-  // Today's "I've eaten enough": offered once today holds a saved meal (an
-  // empty day cannot be closed) and nothing is still on its way in, so the
-  // calories the confirm quotes are the ones that will count — and not while
-  // a meal's calories are unknown, since the quote would then be a floor
-  // dressed as a total (the past-day notice's guard). A closed day always
-  // says so.
+  // Today's "I've eaten enough", quoting that final total; a closed day
+  // always says so.
   const showTodayClose =
-    isToday &&
-    !day.isDayLoading &&
-    !day.isDayError &&
-    hasPersistedMeals &&
-    (day.markedComplete ||
-      (!day.incompleteTotals.calories &&
-        !hasPendingMessages &&
-        !hasStreamingMessages));
+    isToday && dayLoaded && (day.markedComplete || totalIsFinal);
 
   return {
     day,

@@ -1,59 +1,52 @@
 import 'server-only';
 import { safeError } from '@/lib/core/errors/safe-error';
 import { toPushLocale } from '@/lib/domain/notifications/push-copy';
-import { recordPushResults } from '@/lib/domain/notifications/push-delivery';
+import {
+  loadIosTokens,
+  recordPushResults,
+} from '@/lib/domain/notifications/push-devices';
 import type { PushMessage, PushSender } from '@/lib/infra/push/types';
 import { signCloseDayToken } from './action-token';
 import { reminderCopy } from './copy';
-import { loadTokens } from './load';
-import { CHECKPOINTS, type CheckpointHour, reminderTypeFor } from './schedule';
+import type { DueReminder } from './facts';
 
 /** One reminder that won its claim and now goes to every device of its user. */
 export interface OutgoingReminder {
-  userId: string;
-  hour: CheckpointHour;
-  preferredLocale: string | null;
-  /** The user's local date today — the collapse key's day. */
-  today: string;
-  /** The day the reminder is about (yesterday for 08:00), and its UTC
-   *  bounds in the zone it was scheduled in — signed into the close button. */
-  aboutDate: string;
-  dayStart: Date;
-  dayEnd: Date;
+  due: DueReminder;
+  /** The total the copy quotes — known, never a floor (gate 3). */
   dayCalories: number;
-  calorieTarget: number;
 }
 
 /** HTTP/2 streams per batch — well under APNs' concurrent-stream ceiling. */
 const SEND_CHUNK = 100;
 
-/** The two checkpoints whose notice carries a "close the day" button. */
-const CLOSES_DAY = new Set<CheckpointHour>([8, 21]);
-
 function messagesFor(
-  reminder: OutgoingReminder,
+  { due, dayCalories }: OutgoingReminder,
   tokens: string[],
   actionSecret: string,
   now: Date
 ): PushMessage[] {
-  const checkpoint = CHECKPOINTS.find((c) => c.hour === reminder.hour);
-  if (!checkpoint) return [];
-  const { body, category } = reminderCopy(
-    reminder.hour,
-    toPushLocale(reminder.preferredLocale),
-    reminder
+  const { checkpoint, candidate } = due;
+  const body = reminderCopy(
+    checkpoint,
+    toPushLocale(candidate.preferredLocale),
+    {
+      dayCalories,
+      calorieTarget: candidate.calorieTarget,
+    }
   );
   const data: Record<string, string> = {
-    type: reminderTypeFor(checkpoint),
-    date: reminder.aboutDate,
-    checkpoint: String(reminder.hour),
+    type: checkpoint.type,
+    date: due.aboutDate,
+    checkpoint: String(checkpoint.hour),
   };
-  if (CLOSES_DAY.has(reminder.hour)) {
+  if (checkpoint.closesDay) {
+    // The day's bounds as computed now, in the zone it was scheduled in.
     data.actionToken = signCloseDayToken(actionSecret, {
-      userId: reminder.userId,
-      date: reminder.aboutDate,
-      dayStart: reminder.dayStart,
-      dayEnd: reminder.dayEnd,
+      userId: candidate.userId,
+      date: due.aboutDate,
+      dayStart: due.dayStart,
+      dayEnd: due.dayEnd,
       now,
     });
   }
@@ -62,10 +55,10 @@ function messagesFor(
     title: '',
     body,
     data,
-    category,
+    category: checkpoint.category,
     conversationId: 'reminders',
     // One live reminder per day: a new one replaces an unanswered one.
-    collapseKey: `reminder:${reminder.today}`,
+    collapseKey: `reminder:${due.today}`,
   }));
 }
 
@@ -82,7 +75,9 @@ export async function sendReminders(
 ): Promise<number> {
   if (reminders.length === 0) return 0;
   try {
-    const tokens = await loadTokens(reminders.map((r) => r.userId));
+    const tokens = await loadIosTokens(
+      reminders.map((r) => r.due.candidate.userId)
+    );
     const byUser = new Map<string, string[]>();
     for (const row of tokens) {
       byUser.set(row.userId, [...(byUser.get(row.userId) ?? []), row.token]);
@@ -90,7 +85,7 @@ export async function sendReminders(
     const messages = reminders.flatMap((reminder) =>
       messagesFor(
         reminder,
-        byUser.get(reminder.userId) ?? [],
+        byUser.get(reminder.due.candidate.userId) ?? [],
         actionSecret,
         now
       )

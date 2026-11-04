@@ -13,17 +13,13 @@
 // for the row-less chat push, from the producer's own membership read at write
 // time; this module only ever reads tokens/locales FOR those ids.
 
-import { and, eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { safeError } from '@/lib/core/errors/safe-error';
 import { avatarUrlFor } from '@/lib/domain/social/identity/avatar-url';
 import { externalAvatarUrl } from '@/lib/domain/social/identity/external-avatar-url';
 import { db } from '@/lib/infra/db/client';
-import {
-  publicProfiles,
-  pushTokens,
-  userProfiles,
-} from '@/lib/infra/db/schema';
+import { publicProfiles, userProfiles } from '@/lib/infra/db/schema';
 import { getPushSender } from '@/lib/infra/push/sender';
 import type {
   PushMessage,
@@ -40,7 +36,7 @@ import {
   pushCopy,
   toPushLocale,
 } from './push-copy';
-import { recordPushResults } from './push-delivery';
+import { loadIosTokens, recordPushResults } from './push-devices';
 
 /** Longest chat preview that still reads as one glance on a lock screen. */
 const PREVIEW_MAX = 140;
@@ -132,18 +128,7 @@ async function buildMessages(
   recipientIds: string[],
   payload: NotificationPushPayload
 ): Promise<PushMessage[]> {
-  // APNs is the only transport; the column CHECK still admits other
-  // platforms, so filter here rather than let a stray row spend fan-out budget
-  // on a token Apple would reject.
-  const tokens = await db
-    .select({ userId: pushTokens.userId, token: pushTokens.token })
-    .from(pushTokens)
-    .where(
-      and(
-        inArray(pushTokens.userId, recipientIds),
-        eq(pushTokens.platform, 'ios')
-      )
-    );
+  const tokens = await loadIosTokens(recipientIds);
   if (tokens.length === 0) return [];
 
   const profiles = await db
