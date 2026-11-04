@@ -10,7 +10,7 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../logging_keys.dart';
 import '../logging_models.dart';
 import '../logging_providers.dart';
-import '../../../notifications/logic/ask_after_save.dart';
+import '../../../../services/push/ask_after_save.dart';
 
 const _uuid = Uuid();
 

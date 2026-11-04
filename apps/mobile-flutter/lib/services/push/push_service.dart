@@ -140,9 +140,12 @@ class PushService {
   }
 
   /// Register the reminder categories with titles in the app's language.
-  Future<void> setReminderCategories(Map<String, String> titles) async {
+  Future<void> setReminderCategories({
+    required Map<String, String> titles,
+    required String apiBase,
+  }) async {
     try {
-      await _channel.setReminderCategories(titles);
+      await _channel.setReminderCategories(titles: titles, apiBase: apiBase);
     } catch (error) {
       debugPrint('[push] reminder categories failed: $error');
     }

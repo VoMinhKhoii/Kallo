@@ -20,8 +20,8 @@ import '../../onboarding/widgets/onboarding_nudge.dart';
 import '../logic/profile_summaries.dart';
 import '../logic/settings_spacing.dart';
 import '../widgets/account/ai_consent_toggle.dart';
-import '../widgets/account/auto_share_to_circle_toggle.dart';
-import '../widgets/account/meal_reminders_toggle.dart';
+import '../data/profile_preferences.dart';
+import '../widgets/account/profile_switch_row.dart';
 import '../widgets/account/sign_out_row.dart';
 import '../widgets/account/subscription_section.dart';
 import '../widgets/appearance/appearance_row.dart';
@@ -96,8 +96,20 @@ class _SettingsList extends ConsumerWidget {
         children: [
           const AppearanceRow(),
           if (profile != null) ...[
-            AutoShareToCircleToggle(value: profile.autoShareToCircle),
-            MealRemindersToggle(value: profile.mealRemindersEnabled),
+            ProfileSwitchRow(
+              value: profile.autoShareToCircle,
+              icon: LucideIcons.users300,
+              labelKey: 'settings.sharing.autoShareLabel',
+              errorKey: 'settings.sharing.error',
+              save: setAutoShareToCircle,
+            ),
+            ProfileSwitchRow(
+              value: profile.mealRemindersEnabled,
+              icon: LucideIcons.bell300,
+              labelKey: 'settings.reminders.label',
+              errorKey: 'settings.reminders.error',
+              save: setMealReminders,
+            ),
             const AiConsentToggle(),
           ],
         ],

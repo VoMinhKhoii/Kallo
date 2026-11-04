@@ -11,7 +11,7 @@ import '../../../models/nutrition/barcode_product.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 import '../../../models/http/api_error.dart';
-import '../../notifications/logic/ask_after_save.dart';
+import '../../../services/push/ask_after_save.dart';
 
 /// Where the sheet is in the scan → search → quantity → save flow.
 enum BarcodeFlowPhase { scanning, searching, product, saving }

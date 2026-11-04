@@ -35,6 +35,7 @@ class FeedViewState {
     required this.showPartialDayNotice,
     this.showTodayClose = false,
     this.isDayClosed = false,
+    this.isToday = false,
   });
 
   factory FeedViewState.from({
@@ -162,44 +163,38 @@ class FeedViewState {
 
     final isEmpty = !isLoading && entries.isEmpty && !hasLiveTail;
 
-    // A past day with real meals but under the target fraction reads as
-    // under-logged; the trends set it aside, so we say so — and offer the two
-    // ways out: add what was missed, or attest the day was already complete.
-    // Only when nothing is mid-flight, and never once attested.
-    final isPastDay = date.compareTo(todayDateString()) < 0;
-    final showPartialDayNotice =
-        isPastDay &&
-        !isLoading &&
-        !dayHasError &&
-        // A calorie total missing a meal would read as under-logged.
+    // The day has loaded and holds a saved meal (an empty day is "unlogged",
+    // never under-logged, and cannot be closed).
+    final hasSavedDay = !isLoading && !dayHasError && persistedMeals.isNotEmpty;
+    // Its calorie total is the one that will count: no meal's calories unknown
+    // (a floor reads as under-logged when it is not) and nothing mid-flight.
+    final totalIsFinal =
         !incompleteTotals.contains('calories') &&
-        persistedMeals.isNotEmpty &&
         pendingConfirmations.isEmpty &&
         !isStreaming &&
         !isRevealing &&
-        !isCheatRevealing &&
+        !isCheatRevealing;
+    final today = todayDateString();
+    final isToday = date == today;
+    final isDayClosed = day?.markedComplete ?? false;
+
+    // A past day under the target fraction reads as under-logged; the trends
+    // set it aside, so we say so — and offer the two ways out: add what was
+    // missed, or attest the day was already complete. Never once attested.
+    final showPartialDayNotice =
+        date.compareTo(today) < 0 &&
+        hasSavedDay &&
+        totalIsFinal &&
         isLikelyPartialDay(
           dailyCalories.toDouble(),
           profile.calorieTarget,
-          isMarked: day?.markedComplete ?? false,
+          isMarked: isDayClosed,
         );
 
-    // Today's "I've eaten enough" (web parity, `use-feed-controller.ts`): once
-    // today holds a saved meal, nothing is mid-flight and no meal's calories
-    // are unknown — the confirm quotes the total the day will count at. A
-    // closed day always says so.
-    final isDayClosed = day?.markedComplete ?? false;
+    // Today's "I've eaten enough" (web parity, `use-feed-controller.ts`),
+    // quoting that final total; a closed day always says so.
     final showTodayClose =
-        date == todayDateString() &&
-        !isLoading &&
-        !dayHasError &&
-        persistedMeals.isNotEmpty &&
-        (isDayClosed ||
-            (!incompleteTotals.contains('calories') &&
-                pendingConfirmations.isEmpty &&
-                !isStreaming &&
-                !isRevealing &&
-                !isCheatRevealing));
+        isToday && hasSavedDay && (isDayClosed || totalIsFinal);
 
     return FeedViewState(
       date: date,
@@ -222,6 +217,7 @@ class FeedViewState {
       showPartialDayNotice: showPartialDayNotice,
       showTodayClose: showTodayClose,
       isDayClosed: isDayClosed,
+      isToday: isToday,
     );
   }
 
@@ -274,4 +270,7 @@ class FeedViewState {
 
   /// The server's `markedComplete` for this day.
   final bool isDayClosed;
+
+  /// This state describes the user's local today.
+  final bool isToday;
 }

@@ -85,11 +85,12 @@ PushDestination? pushDestinationFor(PushPayload payload) {
 
   if (kReminderTypes.contains(type)) {
     // A missing or malformed day still opens logging — on today, the day a
-    // reminder is almost always about.
+    // reminder is almost always about. Resolved here, once.
     final day = _stringAt(data, 'date');
     return PushDestination(
       path: '/logging',
-      loggingDay: day != null && _dayKey.hasMatch(day) ? day : null,
+      loggingDay:
+          day != null && _dayKey.hasMatch(day) ? day : todayDateString(),
     );
   }
 
@@ -149,11 +150,11 @@ void _whenReady(ValueListenable<bool> ready, VoidCallback run) {
 }
 
 void _routeTo(ProviderContainer container, PushDestination destination) {
-  if (destination.path == '/logging') {
+  final day = destination.loggingDay;
+  if (day != null) {
     // Park the day first so the screen lands on it even when it is already
     // open on another one. Dashboard goes underneath: back returns to Today.
-    container.read(pendingLoggingDayProvider.notifier).state =
-        destination.loggingDay ?? todayDateString();
+    container.read(pendingLoggingDayProvider.notifier).state = day;
     pushOverShell(
       container.read(routerProvider),
       base: '/dashboard',

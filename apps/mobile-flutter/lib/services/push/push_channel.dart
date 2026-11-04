@@ -73,11 +73,16 @@ class PushChannel {
   }
 
   /// Register the meal-reminder notification categories with their button
-  /// titles in the app's language, and the API base the background "close the
-  /// day" button posts to. Keys: `addToYesterday`, `thatWasAll`, `logMeal`,
-  /// `logMore`, `doneForToday`, `apiBase`.
-  Future<void> setReminderCategories(Map<String, String> titles) =>
-      channel.invokeMethod<void>('setReminderCategories', titles);
+  /// [titles] in the app's language (keys `addToYesterday`, `thatWasAll`,
+  /// `logMeal`, `logMore`, `doneForToday`), and the [apiBase] the background
+  /// "close the day" button posts to.
+  Future<void> setReminderCategories({
+    required Map<String, String> titles,
+    required String apiBase,
+  }) => channel.invokeMethod<void>('setReminderCategories', {
+    'titles': titles,
+    'apiBase': apiBase,
+  });
 
   /// The tap that cold-started the app, if any. Drained once, natively.
   Future<PushPayload?> initialTap() async {

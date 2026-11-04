@@ -51,10 +51,9 @@ class _ReminderCategoriesState extends ConsumerState<ReminderCategories> {
     if (titles.entries.any((e) => e.value == '$_t.${e.key}')) return;
     _registeredLocale = locale;
     unawaited(
-      ref.read(pushServiceProvider).setReminderCategories({
-        ...titles,
-        'apiBase': Env.apiBaseUrl,
-      }),
+      ref
+          .read(pushServiceProvider)
+          .setReminderCategories(titles: titles, apiBase: Env.apiBaseUrl),
     );
   }
 

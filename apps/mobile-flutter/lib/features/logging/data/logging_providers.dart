@@ -27,7 +27,7 @@ import '../logic/meal_log_mode.dart';
 import 'logging_keys.dart';
 import 'logging_models.dart';
 import 'handoff_slots.dart';
-import '../../notifications/logic/ask_after_save.dart';
+import '../../../services/push/ask_after_save.dart';
 
 /// Identity for the day query family: (userId, date). The timezone offset is
 /// derived at fetch time (it's constant within a session), matching the RN hook

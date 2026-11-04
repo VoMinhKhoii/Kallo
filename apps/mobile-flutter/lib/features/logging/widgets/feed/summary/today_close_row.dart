@@ -49,7 +49,7 @@ class TodayCloseRow extends StatelessWidget {
               : CupertinoButton(
                 minimumSize: const Size(LoggingIcons.hit, LoggingIcons.hit),
                 padding: EdgeInsets.zero,
-                onPressed: () => confirmAndCloseToday(context, view, userId),
+                onPressed: () => confirmAndMarkDay(context, view, userId),
                 child: label,
               ),
     );

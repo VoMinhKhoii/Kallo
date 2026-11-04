@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../services/push/push_service.dart';
+import 'push_service.dart';
 
 /// A meal was saved: the one moment the app asks for notification permission
 /// (docs/NOTIFICATIONS.md → "Reminders", "Permission"), so the prompt arrives

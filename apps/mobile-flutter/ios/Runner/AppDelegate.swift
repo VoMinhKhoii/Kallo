@@ -15,8 +15,9 @@ import UserNotifications
 ///                   `registerIfAuthorized` → Bool (never asks: registers only
 ///                                         when already authorized)
 ///                   `getTimeZone`      → String (IANA, e.g. Asia/Ho_Chi_Minh)
-///                   `setReminderCategories` (Map: localized button titles +
-///                                         the API base the close button posts to)
+///                   `setReminderCategories` ({titles: localized button
+///                                         titles, apiBase: where the close
+///                                         button posts})
 ///                   `takeClosedDays`   → [String] (days the lock-screen button
 ///                                         closed since the last call; drained)
 ///                   `getInitialTap`    → [String: Any]? (cold-start tap)
@@ -138,7 +139,8 @@ private let kReminderClosedDaysKey = "kallo.reminders.closedDays"
     if let base = args["apiBase"] as? String, !base.isEmpty {
       UserDefaults.standard.set(base, forKey: kReminderApiBaseKey)
     }
-    func title(_ key: String) -> String { args[key] as? String ?? key }
+    let titles = args["titles"] as? [String: Any] ?? [:]
+    func title(_ key: String) -> String { titles[key] as? String ?? key }
     func open(_ key: String) -> UNNotificationAction {
       UNNotificationAction(
         identifier: kReminderOpenAction, title: title(key), options: [.foreground])

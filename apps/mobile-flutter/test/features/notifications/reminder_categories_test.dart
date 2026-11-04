@@ -63,13 +63,12 @@ void main() {
 
     final registered = calls.where((c) => c.method == 'setReminderCategories');
     expect(registered.length, 1);
-    final titles = Map<String, Object?>.from(
-      registered.single.arguments as Map,
-    );
+    final args = Map<String, Object?>.from(registered.single.arguments as Map);
+    expect(args['apiBase'], isA<String>());
+    final titles = Map<String, Object?>.from(args['titles']! as Map);
     expect(titles, containsPair('logMeal', 'Log a meal'));
     expect(titles, containsPair('thatWasAll', 'That was all'));
     expect(titles, containsPair('doneForToday', "I'm done for today"));
-    expect(titles.keys, contains('apiBase'));
     for (final value in titles.values) {
       expect(value.toString(), isNot(startsWith('notifications.')));
     }

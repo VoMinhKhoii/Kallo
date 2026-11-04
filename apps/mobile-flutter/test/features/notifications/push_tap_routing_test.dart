@@ -6,6 +6,7 @@ import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
 import 'package:kallo_mobile/features/logging/data/handoff_slots.dart';
 import 'package:kallo_mobile/features/notifications/logic/push_tap_routing.dart';
 import 'package:kallo_mobile/router.dart';
+import 'package:kallo_mobile/shared/logic/display_format.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -137,10 +138,10 @@ void main() {
       );
     });
 
-    test('a reminder with a malformed day still opens logging', () {
+    test('a reminder with a malformed day opens logging on today', () {
       expect(
         pushDestinationFor({'type': 'reminder.checkpoint', 'date': 'soon'}),
-        const PushDestination(path: '/logging'),
+        PushDestination(path: '/logging', loggingDay: todayDateString()),
       );
     });
 

@@ -13,7 +13,7 @@ import '../../../models/nutrition/ingredient.dart';
 import '../logic/manual/manual_amount.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
-import '../../notifications/logic/ask_after_save.dart';
+import '../../../services/push/ask_after_save.dart';
 
 const _uuid = Uuid();
 
