@@ -9,6 +9,8 @@ struct TodayEntry: TimelineEntry {
   /// phone. The large widget draws the medium's row, so it must not size the
   /// dials from its own, much taller, box.
   let rowHeight: Double
+  /// The look for `date`'s hour, decided once per entry.
+  let theme: WidgetTheme
 }
 
 /// Reads the app's snapshot and lays out the next day of entries: one now,
@@ -17,7 +19,9 @@ struct TodayEntry: TimelineEntry {
 /// app closed. The app asks for a reload after every change it writes.
 struct TodayTimeline: TimelineProvider {
   func placeholder(in context: Context) -> TodayEntry {
-    TodayEntry(date: Date(), day: nil, rowHeight: Self.rowHeight(context))
+    let now = Date()
+    return TodayEntry(
+      date: now, day: nil, rowHeight: Self.rowHeight(context), theme: WidgetTheme.at(now))
   }
 
   func getSnapshot(in context: Context, completion: @escaping (TodayEntry) -> Void) {
@@ -39,7 +43,8 @@ struct TodayTimeline: TimelineProvider {
 
   static func entry(at date: Date, snapshot: TodaySnapshot?, rowHeight: Double) -> TodayEntry {
     TodayEntry(
-      date: date, day: snapshot?.shown(on: TodaySnapshotStore.dayKey(date)), rowHeight: rowHeight)
+      date: date, day: snapshot?.shown(on: TodaySnapshotStore.dayKey(date)), rowHeight: rowHeight,
+      theme: WidgetTheme.at(date))
   }
 
   private static let rowHeightKey = "today.rowHeight"

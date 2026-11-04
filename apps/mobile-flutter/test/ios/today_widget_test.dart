@@ -236,7 +236,7 @@ void main() {
         }
       }
       // …and those are the names the widget fills.
-      final format = read('$widgetDir/WidgetFormat.swift');
+      final format = read('$widgetDir/Gauge/CalorieDial.swift');
       for (final name in ['left', 'over', 'logged', 'target']) {
         expect(format, contains('"$name":'));
       }

@@ -17,7 +17,7 @@ struct TodayWidgetView: View {
   @Environment(\.widgetFamily) private var family
 
   var body: some View {
-    let theme = WidgetTheme.at(entry.date)
+    let theme = entry.theme
     GeometryReader { geo in
       VStack(alignment: .leading, spacing: 0) {
         ReadoutText(
@@ -74,7 +74,7 @@ struct TodayWidgetContainer: View {
   var body: some View {
     TodayWidgetView(entry: entry)
       .containerBackground(for: .widget) {
-        WidgetBackground(theme: WidgetTheme.at(entry.date))
+        WidgetBackground(theme: entry.theme)
       }
       // Tap anywhere: open the app on Today (`TodayWidgetSync` routes it).
       .widgetURL(URL(string: "nham://today"))

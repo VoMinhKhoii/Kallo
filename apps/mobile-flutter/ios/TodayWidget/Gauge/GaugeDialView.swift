@@ -1,43 +1,4 @@
 import SwiftUI
-import UIKit
-
-/// Be Vietnam Pro, bundled into the extension (the same TTFs the app ships,
-/// referenced from `assets/google_fonts/`). Fixed sizes: every line box below
-/// is measured from the font size before it is laid out, so the type must not
-/// grow underneath the arithmetic.
-enum WidgetFont {
-  static func regular(_ size: Double) -> Font { .custom("BeVietnamPro-Regular", fixedSize: size) }
-  static func medium(_ size: Double) -> Font { .custom("BeVietnamPro-Medium", fixedSize: size) }
-  static func semibold(_ size: Double) -> Font { .custom("BeVietnamPro-SemiBold", fixedSize: size) }
-
-  /// How wide `text` sets in the regular weight — the measure the unit line's
-  /// fit test needs before anything is laid out.
-  static func width(_ text: String, regular size: Double) -> Double {
-    let font = UIFont(name: "BeVietnamPro-Regular", size: size) ?? .systemFont(ofSize: size)
-    return Double((text as NSString).size(withAttributes: [.font: font]).width)
-  }
-}
-
-/// One line of a readout: a single line of text centred in its own line box,
-/// as CSS sets it — the box is the height the layout measured, and the glyphs
-/// sit in its middle whether they are taller or shorter than it.
-struct ReadoutText: View {
-  let text: String
-  let font: Font
-  let color: Color
-  let height: Double
-  var tracking: Double = 0
-
-  var body: some View {
-    Text(text)
-      .font(font)
-      .tracking(tracking)
-      .foregroundStyle(color)
-      .lineLimit(1)
-      .fixedSize()
-      .frame(height: height)
-  }
-}
 
 /// A dial: the 240° arc with its readout nested in the mouth, the second line
 /// sitting on the arc's tips (`GaugeDial` in Dart, `GaugeDial` on the web).

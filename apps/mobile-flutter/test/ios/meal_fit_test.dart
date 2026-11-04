@@ -1,4 +1,4 @@
-// The large widget's "newest meals that fit" rule (ios/TodayWidget/MealFit.swift),
+// The large widget's "newest meals that fit" rule (ios/TodayWidget/Meals/MealFit.swift),
 // run for real: the Swift is compiled with test/ios/meal_fit_check.swift and its
 // cases executed. Swift ships on macOS and on GitHub's Ubuntu runners; where
 // `swiftc` is missing the test says so and skips rather than passing silently.
@@ -17,7 +17,7 @@ void main() {
       addTearDown(() => out.deleteSync(recursive: true));
       final binary = '${out.path}/meal_fit_check';
       final build = await Process.run('swiftc', [
-        'ios/TodayWidget/MealFit.swift',
+        'ios/TodayWidget/Meals/MealFit.swift',
         'test/ios/meal_fit_check.swift',
         '-o',
         binary,

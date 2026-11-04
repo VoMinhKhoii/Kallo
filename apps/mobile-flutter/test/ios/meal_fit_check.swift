@@ -1,4 +1,4 @@
-// Compiled with ios/TodayWidget/MealFit.swift and run by meal_fit_test.dart.
+// Compiled with ios/TodayWidget/Meals/MealFit.swift and run by meal_fit_test.dart.
 // Each case prints "ok <name>" or "FAIL <name>: <got> != <want>"; exit 1 on any failure.
 import Foundation
 

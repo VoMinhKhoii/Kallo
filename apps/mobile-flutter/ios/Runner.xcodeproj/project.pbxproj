@@ -20,6 +20,8 @@
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		3C8FF46FEE86EFF1C90B99E6 /* WidgetFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A296A16B280C2604348229 /* WidgetFormat.swift */; };
 		3D03087D3D8D6C7717B162F9 /* BeVietnamPro-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C2C4D3E9DBB88AFE5E5B2234 /* BeVietnamPro-Medium.ttf */; };
+		3DD1AEABD7E002D517900184 /* ReadoutText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D1A6F81BFEC2CD1A3503E6 /* ReadoutText.swift */; };
+		61F913C40FAE5280937834EC /* WidgetFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC0B4E5DDD2A3B25A142AF2 /* WidgetFont.swift */; };
 		639F7374696D7809F73D99DA /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3197E46321716B94A6D01BBD /* Pods_RunnerTests.framework */; };
 		6F118534A6328ED135E83FDF /* PushSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1216E24CF479A84D9EC31D48 /* PushSender.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
@@ -28,18 +30,22 @@
 		7921359C11D2F9E6B881658D /* TodayTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E8535DD55A078DC416A9EC /* TodayTimeline.swift */; };
 		81779147F0723E2A6D3541D1 /* DialRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53579A3BAD201B391A0F7F38 /* DialRow.swift */; };
 		8DCDA4296DF1C1C797893E6E /* GaugeReadout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD09D08B52AC32716811678 /* GaugeReadout.swift */; };
+		93B44D32037E4A9C33B8DC63 /* MealFit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 410959DCFE7380840895A9C3 /* MealFit.swift */; };
+		96CAB30E1731CDF3CE46C29D /* MealList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5792FD61FA217C0D010624BA /* MealList.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		A7D7EE73853E7F04E90B9BA4 /* BeVietnamPro-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1F700F80F3684E97FDEDF709 /* BeVietnamPro-Regular.ttf */; };
 		AB96F4C790BEE08322A944F3 /* GaugeGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D65C02C76275BA4408EEBD /* GaugeGeometry.swift */; };
 		B07DAB0510D1E21E340E4F28 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9340EBFA73B286B3DA1E27AE /* NotificationService.swift */; };
+		B45916B7814399777822CB96 /* NewestThatFit.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60B60282E641937F25B784B /* NewestThatFit.swift */; };
 		B710442F679C672B312FD738 /* SenderAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D55D3ECCB1512209855613 /* SenderAvatar.swift */; };
+		C4B46831A591F1289EFF0533 /* CalorieDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7988E6B858AE46797EEA806 /* CalorieDial.swift */; };
 		D09020CC9AC9C7F31760F979 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BB923ACC90444E11382CA87 /* Pods_Runner.framework */; };
 		D7B201AC95BF1B838AD2E79A /* TodayWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 199F1A9C6F60673CA24BBB9B /* TodayWidgetBundle.swift */; };
 		EAF4A7C7B243D8F125C95780 /* TodayWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BAA109B397C85F9860B4E36 /* TodayWidgetView.swift */; };
-		ECD243C48A3E26429EA0BE8F /* MealList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0BC626ECC0FCBB40E637C77 /* MealList.swift */; };
-		FE7CDE37B1B2C2AA0B811AFE /* MealFit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C71627CFF2BA8131B023DDD /* MealFit.swift */; };
+		F38926F750705962B6939D50 /* MealRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B905ED4EABDCBA046D5852A8 /* MealRow.swift */; };
+		FE71DA2F2216544AF61B0660 /* MacroDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = E28A5F7DC7F52138A9B496F5 /* MacroDial.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,7 +98,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		02D1A6F81BFEC2CD1A3503E6 /* ReadoutText.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadoutText.swift; sourceTree = "<group>"; };
 		08B225D2707CE1E2AFF90BF2 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
+		0AC0B4E5DDD2A3B25A142AF2 /* WidgetFont.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetFont.swift; sourceTree = "<group>"; };
 		0E0954F88CC0BD8D87208BC3 /* vi */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		12001A47F42469DFBBA119B6 /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		1216E24CF479A84D9EC31D48 /* PushSender.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PushSender.swift; sourceTree = "<group>"; };
@@ -110,10 +118,11 @@
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
-		3C71627CFF2BA8131B023DDD /* MealFit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MealFit.swift; sourceTree = "<group>"; };
+		410959DCFE7380840895A9C3 /* MealFit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MealFit.swift; sourceTree = "<group>"; };
 		513EFBA38192B9502D755FF4 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		53579A3BAD201B391A0F7F38 /* DialRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DialRow.swift; sourceTree = "<group>"; };
 		54D65C02C76275BA4408EEBD /* GaugeGeometry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GaugeGeometry.swift; sourceTree = "<group>"; };
+		5792FD61FA217C0D010624BA /* MealList.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MealList.swift; sourceTree = "<group>"; };
 		70D55D3ECCB1512209855613 /* SenderAvatar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SenderAvatar.swift; sourceTree = "<group>"; };
 		70E8535DD55A078DC416A9EC /* TodayTimeline.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayTimeline.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -137,11 +146,14 @@
 		A3A296A16B280C2604348229 /* WidgetFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetFormat.swift; sourceTree = "<group>"; };
 		AB7A4CF1E45C04B354598C39 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B0A1FCF0AE6F6AA1AA4CCAEA /* GaugeDialView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GaugeDialView.swift; sourceTree = "<group>"; };
-		B0BC626ECC0FCBB40E637C77 /* MealList.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MealList.swift; sourceTree = "<group>"; };
+		B905ED4EABDCBA046D5852A8 /* MealRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MealRow.swift; sourceTree = "<group>"; };
 		BF5E868506989EA91C7204FC /* en */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C2C4D3E9DBB88AFE5E5B2234 /* BeVietnamPro-Medium.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "BeVietnamPro-Medium.ttf"; sourceTree = "<group>"; };
+		C7988E6B858AE46797EEA806 /* CalorieDial.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalorieDial.swift; sourceTree = "<group>"; };
+		D60B60282E641937F25B784B /* NewestThatFit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewestThatFit.swift; sourceTree = "<group>"; };
 		DB63DB6EADD87F04291485DE /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E1E7F1E185CEFE846343C5A4 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		E28A5F7DC7F52138A9B496F5 /* MacroDial.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MacroDial.swift; sourceTree = "<group>"; };
 		E92C1A489FDB93244001AF24 /* TodayWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = TodayWidget.entitlements; sourceTree = "<group>"; };
 		EB25C103DA28670941A23C09 /* TodaySnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodaySnapshot.swift; sourceTree = "<group>"; };
 		ED80885317A62A583896CD98 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -182,6 +194,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		177B5AF25F3FF06A90612A23 /* Meals */ = {
+			isa = PBXGroup;
+			children = (
+				5792FD61FA217C0D010624BA /* MealList.swift */,
+				B905ED4EABDCBA046D5852A8 /* MealRow.swift */,
+				D60B60282E641937F25B784B /* NewestThatFit.swift */,
+				410959DCFE7380840895A9C3 /* MealFit.swift */,
+			);
+			name = Meals;
+			path = Meals;
+			sourceTree = "<group>";
+		};
 		331C8082294A63A400263BE5 /* RunnerTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -197,6 +221,8 @@
 				1CD09D08B52AC32716811678 /* GaugeReadout.swift */,
 				B0A1FCF0AE6F6AA1AA4CCAEA /* GaugeDialView.swift */,
 				53579A3BAD201B391A0F7F38 /* DialRow.swift */,
+				C7988E6B858AE46797EEA806 /* CalorieDial.swift */,
+				E28A5F7DC7F52138A9B496F5 /* MacroDial.swift */,
 			);
 			name = Gauge;
 			path = Gauge;
@@ -274,14 +300,15 @@
 				A3A296A16B280C2604348229 /* WidgetFormat.swift */,
 				9B0EEAEC510E862017F2A7B5 /* WidgetTheme.swift */,
 				2BAA109B397C85F9860B4E36 /* TodayWidgetView.swift */,
-				B0BC626ECC0FCBB40E637C77 /* MealList.swift */,
 				58A3FDC3809673EA89B15E47 /* Gauge */,
 				DB63DB6EADD87F04291485DE /* Info.plist */,
 				E92C1A489FDB93244001AF24 /* TodayWidget.entitlements */,
 				781799C5BA243363EA331617 /* Assets.xcassets */,
 				D97623EB8B3405FAB3D5B8E9 /* Localizable.strings */,
 				B806A9C9B7AB3D11AB51FB5F /* Fonts */,
-				3C71627CFF2BA8131B023DDD /* MealFit.swift */,
+				0AC0B4E5DDD2A3B25A142AF2 /* WidgetFont.swift */,
+				02D1A6F81BFEC2CD1A3503E6 /* ReadoutText.swift */,
+				177B5AF25F3FF06A90612A23 /* Meals */,
 			);
 			name = TodayWidget;
 			path = TodayWidget;
@@ -633,12 +660,18 @@
 				3C8FF46FEE86EFF1C90B99E6 /* WidgetFormat.swift in Sources */,
 				05F2C8E47B8CA7EEA255503B /* WidgetTheme.swift in Sources */,
 				EAF4A7C7B243D8F125C95780 /* TodayWidgetView.swift in Sources */,
-				ECD243C48A3E26429EA0BE8F /* MealList.swift in Sources */,
 				AB96F4C790BEE08322A944F3 /* GaugeGeometry.swift in Sources */,
 				8DCDA4296DF1C1C797893E6E /* GaugeReadout.swift in Sources */,
 				13F429E5C386627169C25336 /* GaugeDialView.swift in Sources */,
 				81779147F0723E2A6D3541D1 /* DialRow.swift in Sources */,
-				FE7CDE37B1B2C2AA0B811AFE /* MealFit.swift in Sources */,
+				61F913C40FAE5280937834EC /* WidgetFont.swift in Sources */,
+				3DD1AEABD7E002D517900184 /* ReadoutText.swift in Sources */,
+				C4B46831A591F1289EFF0533 /* CalorieDial.swift in Sources */,
+				FE71DA2F2216544AF61B0660 /* MacroDial.swift in Sources */,
+				96CAB30E1731CDF3CE46C29D /* MealList.swift in Sources */,
+				F38926F750705962B6939D50 /* MealRow.swift in Sources */,
+				B45916B7814399777822CB96 /* NewestThatFit.swift in Sources */,
+				93B44D32037E4A9C33B8DC63 /* MealFit.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

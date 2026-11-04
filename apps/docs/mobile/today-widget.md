@@ -69,7 +69,7 @@ Two rules differ from the app's, and why:
 **More meals than fit** (owner ruling, 2026-11-04): WidgetKit cannot scroll, so the large widget
 reads as if its list were scrolled to the bottom: the newest meals that fit, oldest first, newest
 last, the oldest dropped, with no "+N more" and no count. A tap opens Today, which has the whole
-day. The rule is `MealFit.firstShown` (`ios/TodayWidget/MealFit.swift`), run for real by
+day. The rule is `MealFit.firstShown` (`ios/TodayWidget/Meals/MealFit.swift`), run for real by
 `test/ios/meal_fit_test.dart`.
 
 Themes follow the hour, not the app's Appearance (owner ruling, 2026-11-04): the light card 06:00–18:00, Aurora (with the
