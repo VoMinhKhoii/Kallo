@@ -110,6 +110,55 @@ void main() {
     expect(calls.last.method, 'updateWidget');
   });
 
+  test('a half-done write is not trusted to have left the old day', () async {
+    // A (signed out) lands; B (a user's day) is stored but the reload fails;
+    // A is asked for again while B is in flight. B is now in the App Group,
+    // so A must be written again — never skipped as "already there".
+    final store = TodayWidgetStore(isIOS: true);
+    await store.save({'eaten': 'A'});
+    final gate = Completer<void>();
+    var reloads = 0;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      if (call.method == 'saveWidgetData' &&
+          jsonDecode((call.arguments as Map)['data'] as String)['eaten'] ==
+              'B') {
+        await gate.future;
+      }
+      if (call.method == 'updateWidget' && ++reloads == 1) {
+        throw PlatformException(code: '-7');
+      }
+      return true;
+    });
+    final b = store.save({'eaten': 'B'});
+    final a = store.save({'eaten': 'A'});
+    gate.complete();
+    await Future.wait([a, b]);
+    expect(saved(), [
+      {'eaten': 'A'},
+      {'eaten': 'B'},
+      {'eaten': 'A'},
+    ]);
+    expect(calls.last.method, 'updateWidget');
+  });
+
+  test(
+    'a failed write is retried even when the same day was written before',
+    () async {
+      final store = TodayWidgetStore(isIOS: true);
+      await store.save({'eaten': 'A'});
+      fail = PlatformException(code: '-7');
+      await store.save({'eaten': 'B'});
+      fail = null;
+      await store.save({'eaten': 'A'});
+      expect(saved(), [
+        {'eaten': 'A'},
+        {'eaten': 'B'},
+        {'eaten': 'A'},
+      ]);
+    },
+  );
+
   test('off iOS there is no widget to write to', () async {
     await TodayWidgetStore(isIOS: false).save({'eaten': 470});
     expect(calls, isEmpty);

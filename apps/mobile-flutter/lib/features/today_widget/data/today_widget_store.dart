@@ -30,7 +30,8 @@ class TodayWidgetStore {
 
   final bool _isIOS;
 
-  /// The JSON that last LANDED, and the latest one asked for. Writes run one
+  /// The JSON that last LANDED (null once a write failed part-way), and the
+  /// latest one asked for. Writes run one
   /// at a time and the latest request wins: a rebuild asking for A again
   /// while B is still in flight must end on A, not on B.
   String? _written;
@@ -56,6 +57,9 @@ class TodayWidgetStore {
       while (_wanted != null && _wanted != _written) {
         final json = _wanted!;
         if (!await _write(json)) {
+          // The store may have landed before the reload threw, so what the
+          // App Group holds is unknown: never skip a day as already written.
+          _written = null;
           // Nothing newer waiting: stop, and the next save retries this one.
           // Something newer asked for while this failed: write that instead.
           if (_wanted == json) return;
