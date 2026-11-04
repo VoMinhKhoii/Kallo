@@ -26,6 +26,8 @@ Widget _layer({
   String? header,
   KalloMenuEdge edge = KalloMenuEdge.trailing,
   Animation<double> animation = const AlwaysStoppedAnimation<double>(1),
+  Widget? pinned,
+  double pinnedScale = 1,
 }) => MaterialApp(
   home: MediaQuery(
     data: media,
@@ -35,6 +37,8 @@ Widget _layer({
       animation: animation,
       edge: edge,
       header: header,
+      pinned: pinned,
+      pinnedScale: pinnedScale,
       rows: _rows(),
     ),
   ),
@@ -204,5 +208,31 @@ void main() {
       tester.getRect(find.byType(KalloMenuCard)).left,
       closeTo(anchor.left, 0.5),
     );
+  });
+
+  testWidgets('a grown pinned copy moves the card down by its growth', (
+    tester,
+  ) async {
+    _usePhone(tester);
+    const anchor = Rect.fromLTWH(100, 100, 240, 40);
+    const pin = Key('pin');
+    await tester.pumpWidget(
+      _layer(
+        anchor: anchor,
+        overlaySize: _phone,
+        media: const MediaQueryData(size: _phone),
+        pinned: const ColoredBox(key: pin, color: Color(0xFF000000)),
+        pinnedScale: 1.05,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The caller scales its own copy; the layer lays it out at the resting
+    // rect and hangs the card off the GROWN one, right edges still flush.
+    expect(tester.getRect(find.byKey(pin)), anchor);
+    final grownBottom = anchor.center.dy + anchor.height * 1.05 / 2;
+    final card = tester.getRect(find.byType(KalloMenuCard));
+    expect(card.right, closeTo(anchor.right, 0.5));
+    expect(card.top, closeTo(grownBottom + KalloSpacing.sp2, 0.5));
   });
 }
