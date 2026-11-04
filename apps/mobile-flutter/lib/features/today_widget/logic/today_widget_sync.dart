@@ -1,11 +1,11 @@
 /// Keeps the home-screen widget's day in step with the app, for the whole
 /// session, and routes a tap on the widget to Today.
 ///
-/// It WATCHES the two sources the Today and Log screens already read — the
-/// day's saved meals ([loggingDayProvider], which every log / edit / delete /
-/// refetch updates) and the profile's targets ([profileProvider], dropped by
-/// every target edit) — so there is no list of call sites to remember: any
-/// change to either rewrites the snapshot. Signed out, it writes the
+/// It WATCHES what the Today and Log screens already read — the day's saved
+/// meals (both screens' copies, see [_TodayWidgetSyncState._newestDay]) and
+/// the profile's targets ([profileProvider], dropped by every target edit) —
+/// so there is no list of call sites to remember: any change rewrites the
+/// snapshot. Signed out, it writes the
 /// signed-out card, which carries no day at all.
 ///
 /// Mounted once, in `MaterialApp.builder` (`app.dart`) — BELOW the
@@ -22,6 +22,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../router.dart';
 import '../../../services/auth/session_provider.dart';
+import '../../dashboard/data/dashboard_providers.dart' as dash;
+import '../../dashboard/data/logging_day.dart' as dash_day;
 import '../../logging/data/logging_keys.dart';
 import '../../logging/data/logging_models.dart';
 import '../../logging/data/logging_providers.dart';
@@ -98,6 +100,66 @@ class _TodayWidgetSyncState extends ConsumerState<TodayWidgetSync>
     return widget.child;
   }
 
+  /// Today as the app last heard it, from whichever of its two copies changed
+  /// last.
+  ///
+  /// The Log screen's day ([loggingDayProvider]) moves first on a log, edit or
+  /// delete (optimistically); Today's own copy — the dashboard bundle's slice,
+  /// [dash.loggingDayProvider] — is the one a pull-to-refresh renews after a
+  /// meal logged on the web. Every meal write invalidates both, but only the
+  /// newer answer is the day the user is looking at.
+  List<TodayWidgetMeal>? _newestDay(String userId) {
+    final key = '$userId|$_today';
+    if (key != _dayKey) {
+      _dayKey = key;
+      _seenLog = _seenToday = _newest = null;
+    }
+    final today =
+        ref
+            .watch(dash.loggingDayProvider((userId: userId, date: _today)))
+            .valueOrNull;
+    final log =
+        ref
+            .watch(loggingDayProvider(LoggingDayArgs(userId, _today)))
+            .valueOrNull;
+    // A new instance is a new answer (a refetch builds one even when nothing
+    // changed). Checked log last, so it wins when both land in one frame.
+    if (today != null && !identical(today, _seenToday)) {
+      _newest = [
+        for (final m in today.persistedMeals)
+          (
+            loggedAt: m.loggedAt,
+            rawInput: m.rawInput,
+            kcal: m.nutrition.caloriesKcal,
+            protein: m.nutrition.proteinG,
+            carbs: m.nutrition.carbohydrateG,
+            fat: m.nutrition.fatG,
+          ),
+      ];
+    }
+    if (log != null && !identical(log, _seenLog)) {
+      _newest = [
+        for (final m in log.persistedMeals)
+          (
+            loggedAt: m.loggedAt,
+            rawInput: m.rawInput,
+            kcal: m.nutrition.caloriesKcal,
+            protein: m.nutrition.proteinG,
+            carbs: m.nutrition.carbohydrateG,
+            fat: m.nutrition.fatG,
+          ),
+      ];
+    }
+    _seenToday = today;
+    _seenLog = log;
+    return _newest;
+  }
+
+  String? _dayKey;
+  LoggingDayData? _seenLog;
+  dash_day.LoggingDayData? _seenToday;
+  List<TodayWidgetMeal>? _newest;
+
   /// The day to write, or null while there is nothing settled to say.
   Map<String, Object?>? _snapshot(String locale) {
     final session = ref.watch(sessionProvider);
@@ -108,11 +170,10 @@ class _TodayWidgetSyncState extends ConsumerState<TodayWidgetSync>
       // the account that left alive.
       return todayWidgetSignedOut(date: _today, locale: locale, tr: tr);
     }
-    final day = ref.watch(loggingDayProvider(LoggingDayArgs(userId, _today)));
+    final meals = _newestDay(userId);
     final profile = ref.watch(profileProvider);
     // A failed or first load keeps whatever the widget last showed: an error
     // is not an empty day.
-    final meals = day.valueOrNull?.persistedMeals;
     if (meals == null || !profile.hasValue) return null;
     return todayWidgetSnapshot(
       date: _today,

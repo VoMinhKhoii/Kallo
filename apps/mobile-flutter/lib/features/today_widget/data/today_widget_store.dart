@@ -30,14 +30,41 @@ class TodayWidgetStore {
 
   final bool _isIOS;
 
-  /// The JSON last handed over, so an unchanged day is not written again.
-  /// Every write asks WidgetKit for a reload, and its daily budget is finite.
-  String? _last;
+  /// The JSON that last LANDED, and the latest one asked for. Writes run one
+  /// at a time and the latest request wins: a rebuild asking for A again
+  /// while B is still in flight must end on A, not on B.
+  String? _written;
+  String? _wanted;
+  Future<void>? _draining;
 
-  Future<void> save(Map<String, Object?> snapshot) async {
-    if (!_isIOS) return;
-    final json = jsonEncode(snapshot);
-    if (json == _last) return;
+  /// Asks for [snapshot] to be the widget's day. An unchanged day is not
+  /// written again — every write asks WidgetKit for a reload, and its daily
+  /// budget is finite.
+  Future<void> save(Map<String, Object?> snapshot) {
+    if (!_isIOS) return Future.value();
+    _wanted = jsonEncode(snapshot);
+    final running = _draining;
+    if (running != null) return running;
+    if (_wanted == _written) return Future.value();
+    // Only started with something to write, so it always awaits a write
+    // before its `finally` clears [_draining] — never before it is assigned.
+    return _draining = _drain();
+  }
+
+  Future<void> _drain() async {
+    try {
+      while (_wanted != null && _wanted != _written) {
+        final json = _wanted!;
+        // A failed write stops here and is retried by the next save.
+        if (!await _write(json)) return;
+        _written = json;
+      }
+    } finally {
+      _draining = null;
+    }
+  }
+
+  Future<bool> _write(String json) async {
     try {
       await HomeWidget.saveWidgetData<String>(
         kTodayWidgetKey,
@@ -45,13 +72,14 @@ class TodayWidgetStore {
         appGroupId: kTodayWidgetAppGroup,
       );
       await HomeWidget.updateWidget(iOSName: kTodayWidgetKind);
-      // Remembered only once it landed, so a failed write is retried next time.
-      _last = json;
+      return true;
     } on MissingPluginException {
       // A host without the native half (widget tests, an old build) — the
       // widget is a nicety, never a reason for the app to fail.
+      return false;
     } on PlatformException catch (error) {
       debugPrint('today widget save failed: ${error.code}');
+      return false;
     }
   }
 }

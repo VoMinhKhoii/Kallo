@@ -1,6 +1,6 @@
 /// The day the home-screen widget draws, as the JSON it reads.
 ///
-/// Pure: no ref, no context, no channel. The widget extension
+/// Pure: no ref, no context, no plugin. The widget extension
 /// (`ios/TodayWidget/TodaySnapshot.swift`) decodes exactly this shape; change
 /// a key here and change it there, and bump [kTodayWidgetSnapshotVersion]
 /// so an old extension shows its signed-out card rather than misreading.
@@ -35,8 +35,24 @@ const Map<String, String> kTodayWidgetCopyKeys = {
 /// fills them itself, because at midnight it must say "0" with the app closed.
 typedef CopyLookup = String Function(String key);
 
-Map<String, String> _copy(CopyLookup tr) => {
-  for (final entry in kTodayWidgetCopyKeys.entries) entry.key: tr(entry.value),
+/// One saved meal, as the widget needs it. The Log screen and Today each keep
+/// their own meal model; both map onto this.
+typedef TodayWidgetMeal =
+    ({
+      String loggedAt,
+      String rawInput,
+      double? kcal,
+      double? protein,
+      double? carbs,
+      double? fat,
+    });
+
+/// The snapshot's macro keys and where each meal keeps its value.
+final Map<String, double? Function(TodayWidgetMeal m)> _macros = {
+  'kcal': (m) => m.kcal,
+  'protein': (m) => m.protein,
+  'carbs': (m) => m.carbs,
+  'fat': (m) => m.fat,
 };
 
 /// The day for a signed-in user: [date]'s saved meals against [profile].
@@ -48,49 +64,39 @@ Map<String, Object?> todayWidgetSnapshot({
   required String date,
   required String locale,
   required LoggingProfile profile,
-  required List<PersistedMeal> meals,
+  required List<TodayWidgetMeal> meals,
   required CopyLookup tr,
 }) {
   final saved = [...meals]..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
-  int total(double? Function(MealNutrition n) pick) =>
-      round0(saved.fold<double>(0, (sum, m) => sum + (pick(m.nutrition) ?? 0)));
-  bool hasGap(double? Function(MealNutrition n) pick) =>
-      saved.any((m) => pick(m.nutrition) == null);
   final time = DateFormat.jm(locale);
-
-  return {
-    'v': kTodayWidgetSnapshotVersion,
-    'date': date,
-    'locale': locale,
-    'signedIn': true,
-    'target': {
+  return _envelope(
+    date: date,
+    locale: locale,
+    signedIn: true,
+    target: {
       'kcal': profile.calorieTarget,
       'protein': profile.proteinTargetG,
       'carbs': profile.carbsTargetG,
       'fat': profile.fatTargetG,
     },
-    'eaten': {
-      'kcal': total((n) => n.caloriesKcal),
-      'protein': total((n) => n.proteinG),
-      'carbs': total((n) => n.carbohydrateG),
-      'fat': total((n) => n.fatG),
+    eaten: {
+      for (final MapEntry(key: key, value: pick) in _macros.entries)
+        key: round0(saved.fold<double>(0, (sum, m) => sum + (pick(m) ?? 0))),
     },
-    'floors': [
-      if (hasGap((n) => n.caloriesKcal)) 'kcal',
-      if (hasGap((n) => n.proteinG)) 'protein',
-      if (hasGap((n) => n.carbohydrateG)) 'carbs',
-      if (hasGap((n) => n.fatG)) 'fat',
+    floors: [
+      for (final MapEntry(key: key, value: pick) in _macros.entries)
+        if (saved.any((m) => pick(m) == null)) key,
     ],
-    'meals': [
+    meals: [
       for (final m in saved)
         {
           'time': time.format(DateTime.parse(m.loggedAt).toLocal()),
           'text': capitalizeFirst(m.rawInput),
-          'kcal': fmtKcal(m.nutrition.caloriesKcal, locale: locale),
+          'kcal': fmtKcal(m.kcal, locale: locale),
         },
     ],
-    'copy': _copy(tr),
-  };
+    tr: tr,
+  );
 }
 
 /// What a signed-out phone shows: no day at all, only the app's own words.
@@ -98,16 +104,40 @@ Map<String, Object?> todayWidgetSignedOut({
   required String date,
   required String locale,
   required CopyLookup tr,
+}) => _envelope(
+  date: date,
+  locale: locale,
+  signedIn: false,
+  target: _zero,
+  eaten: _zero,
+  floors: const [],
+  meals: const [],
+  tr: tr,
+);
+
+/// The one shape both cards share, so neither can drift from the Swift.
+Map<String, Object?> _envelope({
+  required String date,
+  required String locale,
+  required bool signedIn,
+  required Map<String, int> target,
+  required Map<String, int> eaten,
+  required List<String> floors,
+  required List<Map<String, String>> meals,
+  required CopyLookup tr,
 }) => {
   'v': kTodayWidgetSnapshotVersion,
   'date': date,
   'locale': locale,
-  'signedIn': false,
-  'target': _zero,
-  'eaten': _zero,
-  'floors': const <String>[],
-  'meals': const <Object>[],
-  'copy': _copy(tr),
+  'signedIn': signedIn,
+  'target': target,
+  'eaten': eaten,
+  'floors': floors,
+  'meals': meals,
+  'copy': {
+    for (final MapEntry(key: field, value: key) in kTodayWidgetCopyKeys.entries)
+      field: tr(key),
+  },
 };
 
 const Map<String, int> _zero = {'kcal': 0, 'protein': 0, 'carbs': 0, 'fat': 0};

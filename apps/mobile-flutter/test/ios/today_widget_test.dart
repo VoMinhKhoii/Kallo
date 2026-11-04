@@ -193,6 +193,15 @@ void main() {
       tr: (key) => key,
     );
     expect(topFields.toSet(), snapshot.keys.toSet());
+    // The signed-out card is decoded by the same struct.
+    expect(
+      todayWidgetSignedOut(
+        date: '2026-11-04',
+        locale: 'en',
+        tr: (k) => k,
+      ).keys.toSet(),
+      topFields.toSet(),
+    );
     expect(fields('Copy').toSet(), kTodayWidgetCopyKeys.keys.toSet());
     expect(fields('Macros').toSet(), (snapshot['target']! as Map).keys.toSet());
     expect(fields('Meal').toSet(), {'time', 'text', 'kcal'});

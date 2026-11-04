@@ -11,7 +11,7 @@ import 'package:kallo_mobile/features/today_widget/logic/today_widget_snapshot.d
 
 import '../../l10n_test_loader.dart';
 
-PersistedMeal _meal(
+TodayWidgetMeal _meal(
   String id,
   String loggedAt, {
   String text = 'phở bò',
@@ -19,17 +19,13 @@ PersistedMeal _meal(
   double? protein = 20,
   double? carbs = 50,
   double? fat = 10,
-}) => PersistedMeal(
-  id: id,
-  rawInput: text,
+}) => (
   loggedAt: loggedAt,
-  nutrition: MealNutrition(
-    caloriesKcal: kcal,
-    proteinG: protein,
-    carbohydrateG: carbs,
-    fatG: fat,
-  ),
-  mealItemGroups: const [],
+  rawInput: text,
+  kcal: kcal,
+  protein: protein,
+  carbs: carbs,
+  fat: fat,
 );
 
 const _profile = LoggingProfile(
@@ -51,7 +47,7 @@ void main() {
   setUpAll(() => _load('en'));
 
   Map<String, Object?> build(
-    List<PersistedMeal> meals, {
+    List<TodayWidgetMeal> meals, {
     String locale = 'en',
   }) => todayWidgetSnapshot(
     date: '2026-11-04',

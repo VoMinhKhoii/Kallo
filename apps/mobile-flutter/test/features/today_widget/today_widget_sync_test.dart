@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:async';
+
+import 'package:kallo_mobile/features/dashboard/data/dashboard_providers.dart'
+    as dash;
+import 'package:kallo_mobile/features/dashboard/data/logging_day.dart'
+    as dash_day;
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
 import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
@@ -92,8 +98,14 @@ void main() {
   ProviderContainer container({
     required String? userId,
     required _RecordingStore store,
+    Future<dash_day.LoggingDayData>? todayCopy,
   }) => ProviderContainer(
     overrides: [
+      // Today's own copy of the day (the dashboard bundle's slice). Unless a
+      // test hands one over, it never arrives.
+      dash.loggingDayProvider.overrideWith(
+        (ref, args) => todayCopy ?? Completer<dash_day.LoggingDayData>().future,
+      ),
       sessionProvider.overrideWith((ref) => Stream<Session?>.value(null)),
       signedInUserIdProvider.overrideWithValue(userId),
       todayWidgetStoreProvider.overrideWithValue(store),
@@ -141,6 +153,46 @@ void main() {
     expect(last['meals'], isEmpty);
     expect((last['eaten']! as Map)['kcal'], 0);
     expect((last['copy']! as Map)['signedOut'], 'Not signed in.');
+  });
+
+  testWidgets('a pull-to-refresh on Today, landing later, is what it writes', (
+    tester,
+  ) async {
+    // The Log copy loads first; then Today's copy arrives with a meal logged
+    // on the web meanwhile. The widget must follow the newer answer.
+    final store = _RecordingStore();
+    final refreshed = Completer<dash_day.LoggingDayData>();
+    final c = container(
+      userId: 'u1',
+      store: store,
+      todayCopy: refreshed.future,
+    );
+    addTearDown(c.dispose);
+    await tester.pumpWidget(_app(c));
+    await tester.pumpAndSettle();
+    expect((store.saved.last['eaten']! as Map)['kcal'], 450);
+
+    refreshed.complete(
+      dash_day.LoggingDayData.fromJson({
+        'persistedMeals': [
+          for (final (id, kcal) in [('m1', 450), ('w1', 300)])
+            {
+              'id': id,
+              'rawInput': 'bánh mì',
+              'loggedAt': DateTime.now().toUtc().toIso8601String(),
+              'nutrition': {
+                'caloriesKcal': kcal,
+                'proteinG': 10,
+                'carbohydrateG': 40,
+                'fatG': 8,
+              },
+            },
+        ],
+      }),
+    );
+    await tester.pumpAndSettle();
+    expect((store.saved.last['eaten']! as Map)['kcal'], 750);
+    expect(store.saved.last['meals'], hasLength(2));
   });
 
   test('the widget tap link is the Today link, and only that', () {

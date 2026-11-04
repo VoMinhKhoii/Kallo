@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
@@ -59,6 +60,33 @@ void main() {
     fail = null;
     await store.save({'eaten': 470});
     expect(saved(), hasLength(2));
+  });
+
+  test('the latest request wins over a write still in flight', () async {
+    // A lands; B is slow; A is asked for again while B is in flight. The
+    // widget must end on A, the last thing asked for.
+    final store = TodayWidgetStore(isIOS: true);
+    await store.save({'eaten': 'A'});
+    final gate = Completer<void>();
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      if (call.method == 'saveWidgetData' &&
+          jsonDecode((call.arguments as Map)['data'] as String)['eaten'] ==
+              'B') {
+        await gate.future;
+      }
+      return true;
+    });
+    final b = store.save({'eaten': 'B'});
+    final a = store.save({'eaten': 'A'});
+    gate.complete();
+    await Future.wait([a, b]);
+    expect(saved().last, {'eaten': 'A'});
+    expect(saved(), [
+      {'eaten': 'A'},
+      {'eaten': 'B'},
+      {'eaten': 'A'},
+    ]);
   });
 
   test('off iOS there is no widget to write to', () async {
