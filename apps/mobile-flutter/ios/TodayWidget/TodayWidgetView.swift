@@ -53,9 +53,19 @@ struct TodayWidgetView: View {
           .frame(maxWidth: .infinity)
       case .systemLarge:
         VStack(alignment: .leading, spacing: Self.mealsGap) {
-          DialRow(calorieRadius: radius, day: day, theme: theme)
-          MealList(meals: day.meals, theme: theme)
+          DialRow(calorieRadius: radius, day: day, theme: theme, signInBelow: false)
+          if day.signedIn {
+            MealList(meals: day.meals, theme: theme)
+          } else {
+            // Signed out: "Sign in to track" in the middle of where the meals go.
+            ReadoutText(
+              text: day.copy.signedOut, font: WidgetFont.regular(MealRow.size),
+              color: theme.muted, height: MealRow.lineBox)
+              .frame(maxWidth: .infinity, maxHeight: .infinity)
+          }
         }
+        .frame(maxHeight: .infinity, alignment: .top)
+        .layoutPriority(1)
       default:
         DialRow(calorieRadius: radius, day: day, theme: theme)
       }

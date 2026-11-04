@@ -8,11 +8,12 @@ struct DialRow: View {
   let calorieRadius: Double
   let day: TodaySnapshot
   let theme: WidgetTheme
+  var signInBelow = true
 
   var body: some View {
     let shift = GaugeReadout.alignCentres(calorie: calorieRadius, macro: Self.macroRadius)
     HStack(alignment: .top, spacing: 0) {
-      CalorieDialView(radius: calorieRadius, day: day, theme: theme)
+      CalorieDialView(radius: calorieRadius, day: day, theme: theme, signInBelow: signInBelow)
         .padding(.top, shift.calorieShift)
       ForEach(MacroDialView.Macro.allCases, id: \.self) { macro in
         Spacer(minLength: 0)

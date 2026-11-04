@@ -32,8 +32,9 @@ signed-in user, locale ────┘   (lib/features/today_widget)       + Wid
   from an earlier day renders as an empty day with the same targets, never yesterday's meals.
   The app writes the new day the next time it is resumed.
 - **Sign-out** writes the signed-out card: no targets, no totals, no meals. The widget still
-  draws its dials, empty, with "—" for every figure and "Sign in to track" under the calorie
-  dial, in the last language used.
+  draws its dials, empty, with "—" for every number ("—g", "/—g", "—/— left"), and "Sign in to
+  track" under the calorie dial (small, medium) or in the middle of the meal area (large), in the
+  last language used.
 - **Tap.** `widgetURL("nham://today")`. `TodayWidgetSync` listens with `app_links` and routes
   to `/dashboard`; signed out, the router's redirect takes it to sign-in.
 

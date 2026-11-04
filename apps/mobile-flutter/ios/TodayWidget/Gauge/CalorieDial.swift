@@ -6,6 +6,9 @@ struct CalorieDialView: View {
   let radius: Double
   let day: TodaySnapshot
   let theme: WidgetTheme
+  /// Signed out: "Sign in to track" under the dial. False on the large
+  /// widget, which says it in its empty meal area instead.
+  var signInBelow = true
 
   var body: some View {
     let format = WidgetFormat(day.locale)
@@ -17,7 +20,7 @@ struct CalorieDialView: View {
       ? CalorieWording(
         eaten: day.eaten.kcal, target: day.target.kcal,
         atLeast: day.floors.contains("kcal"), long: long, copy: day.copy, format: format)
-      : CalorieWording.signedOut(long: long, copy: day.copy)
+      : CalorieWording.signedOut(long: long, signInBelow: signInBelow, copy: day.copy)
     GaugeDialView(
       radius: radius,
       progress: day.target.kcal > 0 ? Double(day.eaten.kcal) / Double(day.target.kcal) : 0,
@@ -44,12 +47,22 @@ struct CalorieWording: Equatable {
   let detail: String
   let isOver: Bool
 
-  /// Signed out: the same dial, empty, with a dash for the figure (the app's
-  /// mark for a number it does not have) and "Sign in to track" under it.
-  static func signedOut(long: Bool, copy: TodaySnapshot.Copy) -> CalorieWording {
-    CalorieWording(
-      figure: GaugeReadout.noValue, unit: long ? copy.kcalEaten : copy.eatenShort,
-      detail: copy.signedOut, isOver: false)
+  /// Signed out: the same dial, empty, with a dash for every number (the
+  /// app's mark for a value it does not have). The detail line is either
+  /// "Sign in to track" or the usual wording, dashed: "—/— left".
+  static func signedOut(long: Bool, signInBelow: Bool, copy: TodaySnapshot.Copy)
+    -> CalorieWording
+  {
+    let dash = GaugeReadout.noValue
+    let detail =
+      signInBelow
+      ? copy.signedOut
+      : long
+        ? WidgetFormat.fill(copy.leftOfTarget, ["left": dash, "target": dash])
+        : WidgetFormat.fill(copy.fraction, ["logged": dash, "target": dash])
+    return CalorieWording(
+      figure: dash, unit: long ? copy.kcalEaten : copy.eatenShort, detail: detail,
+      isOver: false)
   }
 
   private init(figure: String, unit: String, detail: String, isOver: Bool) {

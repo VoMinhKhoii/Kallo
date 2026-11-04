@@ -34,10 +34,10 @@ struct MacroDialView: View {
         lines: [
           .init(text: day.signedIn
                   ? (day.floors.contains(macro.rawValue) ? "≥" : "") + "\(eaten)g"
-                  : GaugeReadout.noValue,
+                  : "\(GaugeReadout.noValue)g",
                 metrics: m[0], font: WidgetFont.medium(m[0].size), color: theme.ink,
                 tracking: -0.02 * m[0].size),
-          .init(text: day.signedIn ? "/\(target)g" : "", metrics: m[1], font: WidgetFont.regular(m[1].size),
+          .init(text: day.signedIn ? "/\(target)g" : "/\(GaugeReadout.noValue)g", metrics: m[1], font: WidgetFont.regular(m[1].size),
                 color: theme.muted),
         ])
     }
