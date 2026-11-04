@@ -665,9 +665,9 @@
     }
   }
 
-  /* The landing header's drop-in: motion's default tween (ease-in-out). It
-     runs under reduced motion too, as it always has: the header never read
-     the setting. */
+  /* The landing header's drop-in, on the curve motion played it with
+     (measured frame by frame: ease-out). It runs under reduced motion too, as
+     it always has: the header never read the setting. */
   @keyframes kallo-header-drop {
     from {
       opacity: 0;
@@ -675,7 +675,7 @@
     }
   }
   .animate-header-drop {
-    animation: kallo-header-drop 0.6s ease-in-out backwards;
+    animation: kallo-header-drop 0.6s ease-out backwards;
   }
 
   /* Fade-up for blocks marked `data-reveal`. Visible in the HTML: a block in
