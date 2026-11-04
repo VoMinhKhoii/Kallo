@@ -1,5 +1,4 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -8,15 +7,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../shared/widgets/menu/kallo_anchored_menu.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
-import '../../../../theme/kallo_motion.dart';
+import 'bubble_lift.dart';
 import 'sent_bubble.dart';
 import '../../data/handoff_slots.dart';
 
 enum _Action { copy, edit }
-
-/// How far the bubble grows while it is held: the meal card's lift, kept
-/// small because the bubble grows in place rather than moving to a preview.
-const double _kHeldScale = 1.05;
 
 /// The user's meal, as a sent chat message.
 ///
@@ -59,14 +54,7 @@ const double _kHeldScale = 1.05;
 /// The exception is recorded under boundary 3 of *Cupertino wherever it
 /// exists* in `.agents/skills/kallo-design/mobile.md`.
 ///
-/// **It grows while held** (owner, 2026-11-04): the meal card's lift on the
-/// bubble's 500ms hold. From the first touch the pill swells to
-/// [_kHeldScale] about its right edge — a short pause first, as
-/// `CupertinoContextMenu` has, so a scroll that starts on it never flickers —
-/// and lands there as the menu opens. The menu's pinned copy is driven by the
-/// same animation, so both stay at that size while the menu is open and ease
-/// back together as it closes. Lifting the finger early shrinks it back
-/// without opening anything.
+/// **It grows while held**, in place — [BubbleLift].
 ///
 /// The action glyphs come from Lucide, the one icon font this app bundles.
 /// `CupertinoIcons.doc_on_clipboard` sat here until 2026-09-05 and painted as
@@ -91,47 +79,13 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
     with SingleTickerProviderStateMixin {
   /// On the pill, not on this widget: the menu anchors to the BUBBLE's rect,
   /// and this widget's own box is the full-width row it is aligned inside.
-  /// It sits on the grow transform, whose own box is the resting rect (the
-  /// scale is paint-only), so it measures the rect the menu scales from.
   final GlobalKey _pill = GlobalKey();
 
-  /// The held-press grow, run over exactly the long-press timeout so the
-  /// bubble reaches full size as the menu opens. It drives the menu's pinned
-  /// copy too, and runs back when the menu closes.
-  late final AnimationController _hold = AnimationController(
-    vsync: this,
-    duration: kLongPressTimeout,
-    reverseDuration: KalloMotion.quick,
-  );
-
-  late final Animation<double> _scale = Tween<double>(
-    begin: 1,
-    end: _kHeldScale,
-  ).animate(
-    CurvedAnimation(
-      parent: _hold,
-      // Cupertino's own pause-then-grow: a sixth of the hold standing still.
-      curve: const Interval(1 / 6, 1, curve: Curves.easeOutSine),
-      // The way back takes the whole close, on the menu's own exit curve.
-      reverseCurve: KalloEase.exit,
-    ),
-  );
-
-  /// Set from the moment the hold opens the menu until the menu resolves.
-  /// Pushing the menu's route cancels the pointer still holding the bubble
-  /// (the navigator cancels active pointers on a push), which reaches
-  /// [_release] as a cancelled long press — and must not shrink a bubble
-  /// whose menu is opening.
-  bool _menuOpen = false;
-
-  /// The finger left before the menu opened: settle back.
-  void _release() {
-    if (!_menuOpen) _hold.reverse();
-  }
+  late final BubbleLift _lift = BubbleLift(vsync: this);
 
   @override
   void dispose() {
-    _hold.dispose();
+    _lift.dispose();
     super.dispose();
   }
 
@@ -155,10 +109,10 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
         Overlay.of(context, rootOverlay: true).context.findRenderObject()
             as RenderBox?;
     if (pill == null || overlay == null) {
-      _hold.reverse();
+      _lift.menuClosed();
       return;
     }
-    _menuOpen = true;
+    _lift.menuOpened();
     final anchor =
         pill.localToGlobal(Offset.zero, ancestor: overlay) & pill.size;
 
@@ -169,12 +123,8 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
       // The still copy, floated over the blur at the rect the page's own
       // bubble occupies — which is what lets the page's blur run underneath it
       // without the message itself going soft.
-      pinned: ScaleTransition(
-        scale: _scale,
-        alignment: Alignment.centerRight,
-        child: SentBubble(text: widget.text, pageWidth: pageWidth),
-      ),
-      pinnedScale: _kHeldScale,
+      pinned: _lift.wrap(SentBubble(text: widget.text, pageWidth: pageWidth)),
+      pinnedScale: BubbleLift.scale,
       actions: [
         KalloMenuAction(
           label: 'logging.copyMessage'.tr(),
@@ -190,8 +140,7 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
     );
     if (!mounted) return;
     // The menu resolves as its close begins: both copies ease back with it.
-    _menuOpen = false;
-    _hold.reverse();
+    _lift.menuClosed();
     // Awaiting the menu is what puts these AFTER the route has popped: the
     // copy toast is an OverlayEntry and would otherwise land under the scrim.
     switch (action) {
@@ -230,17 +179,12 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
                   // Opaque: the whole pill answers the hold, not just the glyph
                   // run of text under the finger.
                   behavior: HitTestBehavior.opaque,
-                  onLongPressDown: (_) => _hold.forward(),
-                  onLongPressCancel: _release,
+                  onLongPressDown: (_) => _lift.press(),
+                  onLongPressCancel: _lift.release,
                   onLongPress: () => _openMenu(page.maxWidth),
-                  child: ScaleTransition(
+                  child: _lift.wrap(
                     key: _pill,
-                    scale: _scale,
-                    alignment: Alignment.centerRight,
-                    child: SentBubble(
-                      text: widget.text,
-                      pageWidth: page.maxWidth,
-                    ),
+                    SentBubble(text: widget.text, pageWidth: page.maxWidth),
                   ),
                 ),
               ),
