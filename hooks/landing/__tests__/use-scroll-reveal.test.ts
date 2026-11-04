@@ -67,6 +67,22 @@ describe('useScrollReveal', () => {
     expect(observed.size).toBe(0);
   });
 
+  it('shows a block left pending when the page is hidden and shown again with it on screen', () => {
+    // Cache Components keeps a route's DOM under <Activity> while it is hidden:
+    // the effect is cleaned up (observer gone) and runs again on return.
+    const root = document.createElement('section');
+    const el = block(root, 1400);
+    const first = renderHook(() => useScrollReveal({ current: root }));
+    expect(el.dataset.reveal).toBe('pending');
+
+    first.unmount();
+    el.getBoundingClientRect = () => ({ top: 200 }) as DOMRect;
+    renderHook(() => useScrollReveal({ current: root }));
+
+    expect(el.dataset.reveal).toBe('shown');
+    expect(observed.size).toBe(0);
+  });
+
   it('leaves every block visible without IntersectionObserver', () => {
     vi.stubGlobal('IntersectionObserver', undefined);
     const root = document.createElement('section');

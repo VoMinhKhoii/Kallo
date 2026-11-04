@@ -31,7 +31,14 @@ export function useScrollReveal(root: RefObject<HTMLElement | null>): void {
 
     for (const block of blocks) {
       if (block.dataset.reveal === 'shown') continue;
-      if (block.getBoundingClientRect().top < window.innerHeight) continue;
+      if (block.getBoundingClientRect().top < window.innerHeight) {
+        // On screen (or above it) now. A block an earlier run left `pending`
+        // is shown, not skipped: Cache Components keeps a hidden route's DOM
+        // under <Activity> and runs this again on return, by which time the
+        // block may be on screen with nothing left observing it.
+        if (block.dataset.reveal === 'pending') block.dataset.reveal = 'shown';
+        continue;
+      }
       block.dataset.reveal = 'pending';
       observer.observe(block);
     }
