@@ -418,7 +418,7 @@ In order; each failing gate skips the checkpoint for the day, except the last, w
 3. Behind the checkpoint's line (table above) → else `on_pace`; an empty yesterday → `empty_day`.
 4. Today checkpoints only: no meal created in the last 3 h → else `recent_meal`. (The 08:00 question is about yesterday; a breakfast just logged does not answer it.)
 5. Kallo not opened in the last 45 min → else `recently_opened`.
-6. Not two reminders ignored in a row today → else `ignored`. Ignored = no app open and no meal logged between the push and now; with only "last opened" stored, "the last two both ignored" is exactly "nothing since the earlier of them went out".
+6. Not two reminders ignored in a row today → else `ignored`. Ignored = no app open, no meal logged and no day closed (today or yesterday — the lock-screen buttons close a day without opening the app) between the push and now; with only the newest of each stored, "the last two both ignored" is exactly "nothing since the earlier of them went out".
 7. No other push to this user in the last 30 min → else **wait**: no row is written, the next 15-minute tick rechecks, and the checkpoint gives up when its 90-minute window closes.
 
 "Opened Kallo" is the newest `push_tokens.last_seen_at`: the iOS app re-posts its registration on launch and on every return to the foreground. Web visits are not counted (web has no push). "Another push" is the newest `push_tokens.last_pushed_at`, stamped by `recordPushResults` (`lib/domain/notifications/push-delivery.ts`) on every device APNs accepted — activity, chat and reminders alike.

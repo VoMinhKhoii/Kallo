@@ -136,16 +136,23 @@ export async function loadRecentMeals(
     );
 }
 
-/** `${userId}|${date}` for every closed day among these users and dates. */
-export async function loadClosedDays(
+export interface DayMark {
+  userId: string;
+  localDate: string;
+  createdAt: Date;
+}
+
+/** The closed-day marks among these users and dates, with when each was made. */
+export async function loadDayMarks(
   userIds: string[],
   dates: string[]
-): Promise<Set<string>> {
-  if (userIds.length === 0) return new Set();
-  const rows = await db
+): Promise<DayMark[]> {
+  if (userIds.length === 0) return [];
+  return db
     .select({
       userId: dayCompletionMarks.userId,
       localDate: dayCompletionMarks.localDate,
+      createdAt: dayCompletionMarks.createdAt,
     })
     .from(dayCompletionMarks)
     .where(
@@ -154,7 +161,6 @@ export async function loadClosedDays(
         inArray(dayCompletionMarks.localDate, dates)
       )
     );
-  return new Set(rows.map((row) => `${row.userId}|${row.localDate}`));
 }
 
 export interface ReminderRow {

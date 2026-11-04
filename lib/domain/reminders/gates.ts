@@ -41,6 +41,9 @@ export interface ReminderFacts {
   dayClosed: boolean;
   /** When the user last logged a meal (its creation, not its meal time). */
   lastMealAt: Date | null;
+  /** When the user last closed today or yesterday (in the app or from a
+   *  reminder's lock-screen button, which leaves no other trace). */
+  lastClosedAt: Date | null;
   /** When the app last checked in from any of the user's devices. */
   lastOpenedAt: Date | null;
   /** When any push last reached any of the user's devices. */
@@ -68,17 +71,19 @@ function behind(facts: ReminderFacts): SkipReason | null {
 }
 
 /**
- * Two reminders in a row went unanswered today: no app open and no meal since
- * the earlier of the last two went out (answering either one moves one of
- * those past it).
+ * Two reminders in a row went unanswered today: no app open, no meal and no
+ * day closed since the earlier of the last two went out (answering either one
+ * moves one of those past it).
  */
 function twoIgnored(facts: ReminderFacts): boolean {
   const { sentToday } = facts;
   if (sentToday.length < 2) return false;
   const earlier = sentToday[sentToday.length - 2].getTime();
-  const answered = [facts.lastOpenedAt, facts.lastMealAt].some(
-    (at) => at !== null && at.getTime() >= earlier
-  );
+  const answered = [
+    facts.lastOpenedAt,
+    facts.lastMealAt,
+    facts.lastClosedAt,
+  ].some((at) => at !== null && at.getTime() >= earlier);
   return !answered;
 }
 

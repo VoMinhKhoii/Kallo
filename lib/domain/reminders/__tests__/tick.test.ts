@@ -11,7 +11,7 @@ const load = vi.hoisted(() => ({
   loadCandidates: vi.fn(),
   loadDecided: vi.fn(),
   loadRecentMeals: vi.fn(),
-  loadClosedDays: vi.fn(),
+  loadDayMarks: vi.fn(),
   claimReminders: vi.fn(),
   loadTokens: vi.fn(),
 }));
@@ -63,7 +63,7 @@ describe('runReminderTick', () => {
     vi.clearAllMocks();
     load.loadDecided.mockResolvedValue([]);
     load.loadRecentMeals.mockResolvedValue([]);
-    load.loadClosedDays.mockResolvedValue(new Set());
+    load.loadDayMarks.mockResolvedValue([]);
     load.loadTokens.mockResolvedValue([{ userId: HANOI, token: 'aa' }]);
     load.claimReminders.mockImplementation(
       async (rows: { userId: string; outcome: string }[]) =>
@@ -215,7 +215,13 @@ describe('runReminderTick', () => {
     load.loadCandidates.mockResolvedValue([
       candidate(HANOI, 'Asia/Ho_Chi_Minh'),
     ]);
-    load.loadClosedDays.mockResolvedValue(new Set([`${HANOI}|2026-11-04`]));
+    load.loadDayMarks.mockResolvedValue([
+      {
+        userId: HANOI,
+        localDate: '2026-11-04',
+        createdAt: new Date('2026-11-04T13:00:00Z'),
+      },
+    ]);
     const { push, sent } = sender();
 
     await runReminderTick({ sender: push, actionSecret: SECRET, now: NOW });

@@ -22,6 +22,7 @@ function facts(overrides: Partial<ReminderFacts> = {}): ReminderFacts {
     dayHasMeal: false,
     dayClosed: false,
     lastMealAt: null,
+    lastClosedAt: null,
     lastOpenedAt: null,
     lastPushedAt: null,
     sentToday: [],
@@ -135,6 +136,11 @@ describe('decideReminder — the other gates, in order', () => {
     // So did logging a meal after it.
     expect(
       decideReminder(facts({ sentToday, lastMealAt: minutesAgo(200) })).action
+    ).toBe('send');
+    // So did closing a day from a reminder's lock-screen button, which
+    // leaves no app open and no meal behind.
+    expect(
+      decideReminder(facts({ sentToday, lastClosedAt: minutesAgo(200) })).action
     ).toBe('send');
     // One unanswered reminder is not two.
     expect(decideReminder(facts({ sentToday: [minutesAgo(60)] })).action).toBe(

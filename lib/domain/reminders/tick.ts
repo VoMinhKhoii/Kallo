@@ -10,7 +10,7 @@ import { decideReminder } from './gates';
 import {
   claimReminders,
   loadCandidates,
-  loadClosedDays,
+  loadDayMarks,
   loadDecided,
   loadRecentMeals,
   type ReminderCandidate,
@@ -113,9 +113,14 @@ export async function runReminderTick(input: {
   const until = new Date(
     Math.max(now.getTime() + 1, ...due.map((d) => d.dayEnd.getTime()))
   );
-  const [recentMeals, closed] = await Promise.all([
+  // Today's and yesterday's marks: the one the reminder is about decides gate
+  // 2, and any of them made after a reminder went out answered it (the
+  // lock-screen buttons close a day without opening the app).
+  const [recentMeals, marks] = await Promise.all([
     loadRecentMeals(remaining, since, until),
-    loadClosedDays(remaining, [...new Set(due.map((d) => d.aboutDate))]),
+    loadDayMarks(remaining, [
+      ...new Set(due.flatMap((d) => [d.today, shiftDayKey(d.today, -1)])),
+    ]),
   ]);
 
   const rows: ReminderRow[] = [];
@@ -131,13 +136,19 @@ export async function runReminderTick(input: {
       (latest, m) => (!latest || m.createdAt > latest ? m.createdAt : latest),
       null
     );
+    const myMarks = marks.filter((m) => m.userId === userId);
+    const lastClosedAt = myMarks.reduce<Date | null>(
+      (latest, m) => (!latest || m.createdAt > latest ? m.createdAt : latest),
+      null
+    );
     const decision = decideReminder({
       checkpoint: d.checkpoint,
       calorieTarget: d.candidate.calorieTarget,
       dayCalories,
       dayHasMeal: ofDay.length > 0,
-      dayClosed: closed.has(`${userId}|${d.aboutDate}`),
+      dayClosed: myMarks.some((m) => m.localDate === d.aboutDate),
       lastMealAt,
+      lastClosedAt,
       lastOpenedAt: d.candidate.lastOpenedAt,
       lastPushedAt: d.candidate.lastPushedAt,
       sentToday: (sentToday.get(`${userId}|${d.today}`) ?? []).sort(
