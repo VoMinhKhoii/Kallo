@@ -62,7 +62,9 @@ type Loose = Record<string, unknown>;
 /**
  * Fix the value slips seen from Claude on the two pipeline schemas
  * (decomposition and grounded estimation) before the Zod parse: an explicit
- * mass of 0 g means no mass; a missing dish `cookingMethod` is ""; over-long `rejectReason` /
+ * mass or a dish `servedMassG` of 0 g means no weight was typed (Haiku writes
+ * `servedMassG: 0` for "no weight", and the schema's > 0 rule then failed the
+ * whole Call 1); a missing dish `cookingMethod` is ""; over-long `rejectReason` /
  * `prepNotes` are cut to the schema's lengths; `refusePct` is clamped to
  * 0-80; a meal item with no ingredients is dropped. Fields a schema does not
  * have are left alone.
@@ -80,6 +82,8 @@ export function repairPipelineOutput(raw: unknown): unknown {
       typeof m.cookingMethod !== 'string'
     )
       m.cookingMethod = '';
+    if ('servedMassG' in m && !(Number(m.servedMassG) > 0))
+      delete m.servedMassG;
     for (const g of (m.ingredients as Loose[] | undefined) ?? []) {
       const mass = g.explicitMass as Loose | undefined;
       if (mass && !(Number(mass.grams) > 0)) delete g.explicitMass;
