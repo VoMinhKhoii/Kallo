@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
+import * as z from 'zod/mini';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { TurnstileField } from '@/components/auth/email-code/turnstile-field';
 import { FormInput } from '@/components/auth/form-input';

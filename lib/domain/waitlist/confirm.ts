@@ -1,5 +1,5 @@
 import { and, eq, isNotNull } from 'drizzle-orm';
-import type { WaitlistStatus } from '@/lib/api/contracts/waitlist';
+import type { WaitlistStatus } from '@/lib/domain/waitlist/status';
 import { hashConfirmationToken } from '@/lib/domain/waitlist/token';
 import { type AppDb, db as appDb } from '@/lib/infra/db/client';
 import { waitlistSignups } from '@/lib/infra/db/schema';

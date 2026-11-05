@@ -5,6 +5,7 @@ import { compositionFromGrams } from '@/components/shared/nutrition/composition'
 import { CompositionBar } from '@/components/shared/nutrition/composition-bar';
 import { MacroScale } from '@/components/shared/nutrition/macro-scale';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { DASHBOARD_CAST } from '@/lib/brand/illustrations/casts/dashboard';
 import { formatTime } from '@/lib/core/date/format-time';
 import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import type { MealEntry } from '@/lib/core/types/dashboard';
@@ -20,7 +21,7 @@ export function MealList({ meals }: MealListProps) {
   if (meals.length === 0) {
     return (
       <SurfaceState
-        area="dashboard"
+        cast={DASHBOARD_CAST}
         className="h-full min-h-[96px]"
         compact
         kind="empty"

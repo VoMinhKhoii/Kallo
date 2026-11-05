@@ -7,6 +7,7 @@ import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-head
 import { SheetCapsuleButton } from '@/components/shared/sheet-capsule-button';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import type { SurfaceKind } from '@/lib/brand/illustrations/cast';
+import { LOGGING_CAST } from '@/lib/brand/illustrations/casts/logging';
 import { cn } from '@/lib/core/ui/cn';
 import { ScanPanel } from './panel';
 
@@ -78,7 +79,7 @@ export function ScanStatePanel({
       }
     >
       <SurfaceState
-        area="logging"
+        cast={LOGGING_CAST}
         kind={kind}
         title={title}
         subtitle={message}

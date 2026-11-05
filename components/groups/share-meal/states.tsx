@@ -3,6 +3,7 @@
 import { ShareMealDialogSkeleton } from '@/components/groups/share-meal/add-lane';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
 
 /**
  * The dialog's async surfaces.
@@ -48,7 +49,7 @@ export function ShareMealDialogStates({
               {retryLabel}
             </Button>
           }
-          area="circle"
+          cast={CIRCLE_CAST}
           compact
           kind="error"
           subtitle={errorBody}
@@ -61,7 +62,7 @@ export function ShareMealDialogStates({
     return (
       <div className="py-2">
         <SurfaceState
-          area="circle"
+          cast={CIRCLE_CAST}
           compact
           kind="empty"
           subtitle={emptyBody}

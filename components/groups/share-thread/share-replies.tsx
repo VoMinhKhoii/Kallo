@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
 import { formatElapsed } from '@/lib/core/date/format-elapsed';
 import type { ShareReply } from '@/lib/domain/social/shares/replies';
 
@@ -36,7 +37,7 @@ export function ShareReplies({ replies }: { replies: ShareReply[] }) {
     return (
       <div className="flex flex-1" role="status">
         <SurfaceState
-          area="circle"
+          cast={CIRCLE_CAST}
           className="flex-1"
           compact
           kind="empty"

@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
+import { SYSTEM_CAST } from '@/lib/brand/illustrations/casts/system';
 import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 
 /**
@@ -36,7 +37,7 @@ export default function AppError({
           {t('route.retry')}
         </Button>
       }
-      area="system"
+      cast={SYSTEM_CAST}
       className="min-h-[60vh] flex-1"
       kind="error"
       subtitle={t('route.body')}

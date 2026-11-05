@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { RetryAction } from '@/components/shared/surface-state/retry-action';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
 
 /**
  * Retryable error state for the Circle read surfaces (wall + circle list). A
@@ -30,7 +31,7 @@ export function CircleError({
           onRetry={onRetry}
         />
       }
-      area="circle"
+      cast={CIRCLE_CAST}
       compact={compact}
       kind="error"
       subtitle={t('body')}

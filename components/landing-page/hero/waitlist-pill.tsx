@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, MailCheck } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import { useWaitlistSignup } from '@/hooks/auth/use-waitlist-signup';
 import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
 import { ApiError } from '@/lib/core/errors/client';
