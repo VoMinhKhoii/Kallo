@@ -46,17 +46,14 @@ jobs:
       SERVICE_NAME: kallo-prod
       # Prod runs in Singapore to co-locate with the Supabase DB (AWS
       # ap-southeast-1) — DB-query latency dominates for this app, and Cloudflare's
-      # edge absorbs user-facing latency regardless. This deliberately differs from
-      # vars.GCP_REGION (asia-southeast3 / Bangkok), where the Artifact Registry is.
+      # edge absorbs user-facing latency regardless. The Artifact Registry
+      # (vars.GCP_REGION) is in the same region.
       PROD_REGION: asia-southeast1
-      # IMAGE_TAG stays on vars.GCP_REGION: the image is built + pushed to the
-      # Bangkok Artifact Registry by CI. Cloud Run in Singapore pulls it
-      # cross-region (a minor cold-start cost only).
       # The commit being deployed: the dispatcher's explicit sha input, or the
       # tip of the dispatched ref (main). Referenced everywhere the old
       # workflow_run trigger supplied head_sha.
       DEPLOY_SHA: ${{ inputs.sha != '' && inputs.sha || github.sha }}
-      IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ inputs.sha != '' && inputs.sha || github.sha }}
+      IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/kallo:${{ inputs.sha != '' && inputs.sha || github.sha }}
       # deploy-lease.sh takes its lock object from LEASE_BUCKET/LEASE_OBJECT;
       # translate-usda.yml holds the same lock while it writes to the prod DB.
       LEASE_BUCKET: ${{ vars.GCS_PROD_LEASE_BUCKET }}

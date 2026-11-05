@@ -10,7 +10,7 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
 
 1. A pull request runs CI, including a `docker build` (not pushed).
 2. After review and verification, merge to `main`; its CI run pushes
-   `nham:<sha>`.
+   `kallo:<sha>`.
 3. Dispatch `cloud-run-prod.yml` from `main` (optionally with a `sha`).
 4. The prod job acquires its GCS lease, tags the image `prod-<sha>`
    (exempting it from cleanup), applies pending migrations, deploys a
@@ -400,10 +400,10 @@ Set these once in your shell before running the setup commands below:
 ```bash
 export GCP_PROJECT_ID="your-project-id"
 export GCP_PROJECT_NUMBER="your-project-number"
-# The Artifact Registry repo lives in Bangkok; kallo-prod overrides this with
-# asia-southeast1 (Singapore) in cloud-run-prod.yml and pulls cross-region.
-export GCP_REGION="asia-southeast3"
-export GCP_ARTIFACT_REPO="nham"
+# Singapore, next to the Supabase database. The Artifact Registry repo and
+# kallo-prod both live here (moved from Bangkok, asia-southeast3, 2026-11-05).
+export GCP_REGION="asia-southeast1"
+export GCP_ARTIFACT_REPO="kallo"
 export GCP_WIF_POOL_ID="github-actions"
 export GCP_WIF_PROVIDER_ID="github"
 export GCP_DEPLOYER_SA_ID="github-deployer"
@@ -443,6 +443,11 @@ gcloud artifacts repositories set-cleanup-policies "$GCP_ARTIFACT_REPO" \
   --policy=scripts/cloud-run/artifact-cleanup-policy.json \
   --no-dry-run   # --dry-run logs would-be deletions (needs AR Data Write audit logs)
 ```
+
+`--no-dry-run` is required: a repo left in dry-run deletes nothing. The Bangkok
+repo sat in dry-run from 2026-09 to 2026-11 and grew to 36 GB / 1,178 images.
+Check with `gcloud artifacts repositories describe "$GCP_ARTIFACT_REPO"
+--location="$GCP_REGION" --format='value(cleanupPolicyDryRun)'` (empty = live).
 
 ## 2. Create service accounts
 
@@ -729,8 +734,8 @@ Prerequisites the Cloud Run service account needs **before** flipping
    model-availability skew across our STABLE models (`gemini-3.1-flash-lite`,
    `gemini-2.5-flash-lite`, `gemini-embedding-001`). For the record, Cloud Run
    itself runs **prod in `asia-southeast1` (Singapore)**, co-located with the
-   Supabase database, while the Artifact Registry is in `asia-southeast3`
-   (Bangkok, Thailand) — see `docs/PROD_DOMAIN_SETUP.md`.
+   Supabase database, and so is the Artifact Registry — see
+   `docs/PROD_DOMAIN_SETUP.md`.
 4. `GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1` (optional; defaults to
    `GOOGLE_CLOUD_LOCATION`). Query embeddings (`gemini-embedding-001`) use their
    own client on this location. Measured 2026-10-08: 0.27–0.49 s per warm call
@@ -757,7 +762,7 @@ fallback works without re-issuing the secret.
 Find the image digest for a known commit SHA:
 
 ```bash
-export IMAGE_TAG="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPO/nham:<commit-sha>"
+export IMAGE_TAG="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPO/kallo:<commit-sha>"
 gcloud artifacts docker images describe "$IMAGE_TAG" \
   --format='value(image_summary.digest)'
 ```
