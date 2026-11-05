@@ -128,23 +128,30 @@ export function relatedPages(page: FoodPage): FoodPage[] {
  */
 export const FOOD_PAGE_LAYOUT_REVISED = '2026-11-05';
 
-/** A page's middle meal: the median of its meals' totals. */
-function middleKcal(page: FoodPage): number {
-  const totals = page.capture.variants.map(mealKcal).sort((a, b) => a - b);
-  return totals[Math.floor(totals.length / 2)];
+/**
+ * The median of a capture's meal totals: the middle one, or the mean of the
+ * two middle ones when the count is even (every page has four meals).
+ */
+export function medianMealKcal(capture: FoodPageCapture): number {
+  const totals = capture.variants.map(mealKcal).sort((a, b) => a - b);
+  const mid = Math.floor(totals.length / 2);
+  return totals.length % 2 ? totals[mid] : (totals[mid - 1] + totals[mid]) / 2;
 }
 
 /**
- * Pages from other groups whose middle meal is closest in calories, for a
+ * Pages from other groups whose median meal is closest in calories, for a
  * page's "similar calories" links. Same-group pages are already linked as
  * "more meals"; these reach across groups, so a small group (three salads)
  * is not linked only by its own two siblings.
  */
 export function similarCaloriePages(page: FoodPage, count = 3): FoodPage[] {
-  const target = middleKcal(page);
+  const target = medianMealKcal(page.capture);
   return pagesOf(page.locale)
     .filter((other) => other.group !== page.group)
-    .map((other) => ({ other, gap: Math.abs(middleKcal(other) - target) }))
+    .map((other) => ({
+      other,
+      gap: Math.abs(medianMealKcal(other.capture) - target),
+    }))
     .sort((a, b) => a.gap - b.gap)
     .slice(0, count)
     .map(({ other }) => other);
