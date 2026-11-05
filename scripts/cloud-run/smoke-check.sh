@@ -74,8 +74,9 @@ check_card_index() {
       return 0
     fi
     # "failed" is not final yet: the app retries a failed load a few times
-    # (2, 4 and 8 s apart), so a transient storage error at cold start can
-    # still turn into "ready" within the wait.
+    # (on requests, these polls included, 2, 4 and 8 s apart), so a
+    # transient storage error at cold start can still turn into "ready"
+    # within the wait.
     sleep "$poll_seconds"
   done
   echo "Card search index not ready after ${card_index_wait_seconds}s: $body" >&2
