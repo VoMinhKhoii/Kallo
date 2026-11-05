@@ -10,7 +10,7 @@
  *   loading   the build is being read; a call waits briefly for its catalog
  *   ready     catalog and worker loaded, and the worker's self-test passed
  *   failed    the build or the worker failed: the database path, while the
- *             load is retried (at most 3 times, with backoff)
+ *             load is retried (at most 3 times, with backoff; see retryIfDue)
  *
  * The state lives on globalThis: Next bundles this module separately into the
  * boot hook and each route, as separate instances (see `catalog.ts`).
@@ -54,6 +54,8 @@ interface State {
   worker: SearchWorker | null;
   workerReady: Promise<boolean> | null;
   retries: number;
+  /** When the next retry may start; null when none is due. */
+  retryAt: number | null;
   /** The retries ran out: this process serves from the database for good. */
   gaveUp: boolean;
   readySince: number | null;
@@ -71,6 +73,7 @@ const fresh = (): State => ({
   worker: null,
   workerReady: null,
   retries: 0,
+  retryAt: null,
   gaveUp: false,
   readySince: null,
 });
@@ -101,20 +104,34 @@ function fail(scope: string, err: unknown) {
     `[card-index] ${scope} failed; using the database path:`,
     safeError(err)
   );
-  reportError(err, 'card-index');
   if (s.retries >= MAX_RETRIES) {
     s.gaveUp = true;
+    // Only now does a user feel it: this process searches the database for
+    // the rest of its life. A failure that a retry can still repair is a log
+    // line, not an alert (an idle container's loads time out routinely).
+    reportError(err, 'card-index');
     return;
   }
-  const delay = 2_000 * 2 ** s.retries;
+  s.retryAt = Date.now() + 2_000 * 2 ** s.retries;
   s.retries++;
-  // Unref'd: a pending retry never keeps the process alive. A retry that
-  // outlives its state (reset in tests) does nothing.
-  setTimeout(() => {
-    if (state() !== s) return;
-    if (s.catalog) spawnWorker();
-    else loadBuild();
-  }, delay).unref();
+}
+
+/**
+ * Starts a due retry. Called on every entry point, so a retry runs when a
+ * request arrives, never from a timer: Cloud Run gives a serving container
+ * CPU only while a request is in flight, and a timer-started retry on an idle
+ * container timed out every read (fetch timeouts run on the wall clock) and
+ * burnt the whole allowance in minutes (2026-11-03, 2026-11-05). During
+ * startup the probe asks every second, at full CPU, as before.
+ */
+function retryIfDue() {
+  const s = state();
+  if (s.status !== 'failed' || s.retryAt === null || Date.now() < s.retryAt) {
+    return;
+  }
+  s.retryAt = null;
+  if (s.catalog) spawnWorker();
+  else loadBuild();
 }
 
 function spawnWorker() {
@@ -187,10 +204,16 @@ function loadBuild() {
   });
 }
 
-/** Start loading the pinned build, once per process. Safe to call often. */
+/**
+ * Start loading the pinned build, once per process, and start a due retry.
+ * Safe to call often.
+ */
 export function startCardIndex(): void {
   const s = state();
-  if (s.started) return;
+  if (s.started) {
+    retryIfDue();
+    return;
+  }
   s.started = true;
   const cfg = config();
   if ('reason' in cfg) {
@@ -260,9 +283,14 @@ function within<T>(p: Promise<T>, ms: number): Promise<T | typeof TIMED_OUT> {
 export async function cardIndexCatalog(
   waitMs: number
 ): Promise<CardCatalog | null> {
+  // A retry this call starts is for the calls after it: this one takes the
+  // database path at once rather than wait on the load.
+  const wasFailed = state().status === 'failed';
   startCardIndex();
   const s = state();
-  if (s.status === 'disabled' || s.status === 'failed') return null;
+  if (wasFailed || s.status === 'disabled' || s.status === 'failed') {
+    return null;
+  }
   if (s.catalog) return s.catalog;
   const loaded = await within(s.catalogLoad ?? Promise.resolve(null), waitMs);
   return loaded === TIMED_OUT || state().status === 'failed' ? null : loaded;

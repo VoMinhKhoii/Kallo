@@ -186,9 +186,18 @@ failure, or with no build pinned, it uses the database path
 (`match_food_card_texts`). `/api/healthz` reports one word for it,
 `"cardIndex":"disabled|loading|ready|failed"`, without changing its status
 code. The deploy's smoke check requires a healthy `ready` answer within 60 s
-(polling through `failed`, which the app retries 2, 4 and 8 s later) when the
-checked-out commit has the runtime, a build was pinned, and the kill switch is
-not set; otherwise it smokes as before.
+(polling through `failed`: the app retries a failed load up to three times, on
+the first request at least 2, 4 and 8 s after each failure, so the smoke check's
+own polls start them) when the checked-out commit has the runtime, a build was
+pinned, and the kill switch is not set; otherwise it smokes as before.
+
+Retries start on requests, never on a timer: a serving container has CPU only
+while a request is in flight, and a timer-started retry on an idle container
+timed out every read and used up all three retries within minutes (2026-11-03
+and 2026-11-05, on containers started by a crawler burst that then got no
+traffic). A failure is a log line; only running out of retries goes to Sentry,
+because only then does the container search the database for the rest of its
+life.
 
 A new container loads the build **before it takes traffic**. Cloud Run gives a
 starting container full CPU (plus the startup boost) and a serving one CPU only
