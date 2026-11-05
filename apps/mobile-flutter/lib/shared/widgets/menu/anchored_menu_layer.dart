@@ -117,9 +117,9 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
     final (:ceiling, :floor) = menuBounds(context, overlaySize);
     // The card hangs off the rect the pinned copy LIFTS to, so the gap is
     // measured from what shows.
-    final anchor =
+    final lifted =
         pinned == null
-            ? widget.anchor
+            ? null
             : liftedAnchor(
               anchor: widget.anchor,
               lift: widget.lift,
@@ -129,7 +129,9 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
               floor: floor,
               menuHeight: height,
             );
-    final flipped = anchor.bottom + KalloSpacing.sp2 + height > floor;
+    final anchor = lifted?.rect ?? widget.anchor;
+    final flipped =
+        lifted?.above ?? anchor.bottom + KalloSpacing.sp2 + height > floor;
     final wantedTop =
         flipped
             ? anchor.top - KalloSpacing.sp2 - height

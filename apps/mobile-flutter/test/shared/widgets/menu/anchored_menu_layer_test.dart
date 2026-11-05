@@ -331,4 +331,40 @@ void main() {
     }
     expect(lifted.overlaps(card.deflate(0.5)), isFalse);
   });
+
+  // Both found by review: each put the card over the item it belongs to.
+  for (final (name, anchor) in [
+    // Lifted flush against the keyboard, a rounding error past it.
+    ('a card flush against the floor', const Rect.fromLTWH(16, 76, 358, 332)),
+    // Needs a scale under the quarter a floor on it once allowed.
+    ('a very long expanded card', const Rect.fromLTWH(16, 100, 358, 2000)),
+  ]) {
+    testWidgets('$name keeps the menu off it', (tester) async {
+      _usePhone(tester);
+      const media = MediaQueryData(
+        size: _phone,
+        padding: EdgeInsets.only(top: 47, bottom: 34),
+        viewInsets: EdgeInsets.only(bottom: 340),
+      );
+      const pin = Key('pin');
+      await tester.pumpWidget(
+        _layer(
+          anchor: anchor,
+          overlaySize: _phone,
+          media: media,
+          pinned: const ColoredBox(key: pin, color: Color(0xFF000000)),
+          lift: 1.05,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final lifted = tester.getRect(find.byKey(pin));
+      final card = tester.getRect(find.byType(KalloMenuCard));
+      for (final r in [lifted, card]) {
+        expect(r.top, greaterThanOrEqualTo(media.padding.top + 12 - 0.5));
+        expect(r.bottom, lessThanOrEqualTo(504 + 0.5));
+      }
+      expect(lifted.overlaps(card.deflate(0.5)), isFalse);
+    });
+  }
 }

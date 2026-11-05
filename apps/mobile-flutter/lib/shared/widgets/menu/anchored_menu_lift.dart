@@ -36,11 +36,16 @@ import '../../../theme/kallo_theme.dart';
       ),
 );
 
-/// The rect [anchor] lifts to, in the same coordinates. [lift] is the scale
-/// it grows to, about the midpoint of its [trailing] (else leading) side;
-/// [width] is the overlay's; [ceiling] and [floor] bound what is on screen
-/// and tappable; [menuHeight] is the card that has to fit beside it.
-Rect liftedAnchor({
+/// The rect [anchor] lifts to, in the same coordinates, and whether the card
+/// goes [above] it. [lift] is the scale it grows to, about the midpoint of its
+/// [trailing] (else leading) side; [width] is the overlay's; [ceiling] and
+/// [floor] bound what is on screen and tappable; [menuHeight] is the card that
+/// has to fit beside it.
+///
+/// The side is returned, not left for the layer to re-derive from the rect: a
+/// card placed flush against the floor sits a rounding error past it, and a
+/// layer re-testing `bottom > floor` flipped the card onto the item.
+({Rect rect, bool above}) liftedAnchor({
   required Rect anchor,
   required double lift,
   required bool trailing,
@@ -52,10 +57,11 @@ Rect liftedAnchor({
   const gap = KalloSpacing.sp2;
   // Grow, but never past the screen's sides — a full-width card takes what
   // room there is — and shrink only when the item and the card cannot both
-  // fit between the ceiling and the floor.
+  // fit between the ceiling and the floor — however small that makes a long
+  // expanded card. The floor on the scale only keeps it positive.
   final roomWide = math.max(1.0, (width - 2 * gap) / anchor.width);
   final roomTall = (floor - ceiling - gap - menuHeight) / anchor.height;
-  final scale = math.max(0.25, math.min(math.min(lift, roomWide), roomTall));
+  final scale = math.max(0.01, math.min(math.min(lift, roomWide), roomTall));
   final growFrom = trailing ? Alignment.centerRight : Alignment.centerLeft;
   final grown = growFrom.inscribe(anchor.size * scale, anchor);
 
@@ -75,8 +81,11 @@ Rect liftedAnchor({
           : 0.0;
   final below = fit(grown.top, grown.bottom + gap + menuHeight);
   final above = fit(grown.top - gap - menuHeight, grown.bottom);
-  final dy = below.abs() <= above.abs() ? below : above;
-  return grown.shift(Offset(dx, dy));
+  final goAbove = above.abs() < below.abs();
+  return (
+    rect: grown.shift(Offset(dx, goAbove ? above : below)),
+    above: goAbove,
+  );
 }
 
 /// The pinned copy, laid out at [from] — it never re-flows — and carried onto
