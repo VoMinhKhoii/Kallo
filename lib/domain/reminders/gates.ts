@@ -41,7 +41,8 @@ export interface ReminderFacts {
   /** False when one of its meals has no calorie figure: the total is then
    *  only a floor, and a floor cannot say the day is behind, nor be quoted. */
   dayCaloriesKnown: boolean;
-  /** Whether that day is closed ("I've eaten enough"). */
+  /** Whether that day is closed ("That's everything I ate", or a reminder's
+   *  "That was all" / "I'm done for today"). */
   dayClosed: boolean;
   /** When the user last logged a meal (its creation, not its meal time). */
   lastMealAt: Date | null;

@@ -274,29 +274,20 @@ export function useFeedController(args: {
   const isToday = selectedDate === today;
   const isPastDay = selectedDate < today;
   const markDayComplete = useMarkDayComplete(profile.userId, selectedDate);
-  // The day has loaded and holds a saved meal (an empty day is "unlogged",
-  // never under-logged, and cannot be closed).
-  const dayLoaded = !day.isDayLoading && !day.isDayError && hasPersistedMeals;
-  // Its calorie total is the one that will count: no meal's calories unknown
-  // (the total would be a floor, which reads as under-logged when it is not)
-  // and nothing still on its way in.
-  const totalIsFinal =
-    !day.incompleteTotals.calories &&
-    !hasPendingMessages &&
-    !hasStreamingMessages;
   const showPartialDayNotice =
     isPastDay &&
-    dayLoaded &&
-    totalIsFinal &&
+    !day.isDayLoading &&
+    !day.isDayError &&
+    // A calorie total missing a meal would read as under-logged when it is not.
+    !day.incompleteTotals.calories &&
+    hasPersistedMeals &&
+    !hasPendingMessages &&
+    !hasStreamingMessages &&
     isLikelyPartialDay(
       day.dailyTotals.calories,
       profile.calorieTarget,
       day.markedComplete
     );
-  // Today's "I've eaten enough", quoting that final total; a closed day
-  // always says so.
-  const showTodayClose =
-    isToday && dayLoaded && (day.markedComplete || totalIsFinal);
 
   return {
     day,
@@ -331,7 +322,6 @@ export function useFeedController(args: {
     animateComposerLayout,
     isToday,
     showPartialDayNotice,
-    showTodayClose,
     markDayComplete,
   };
 }

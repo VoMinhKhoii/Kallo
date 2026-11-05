@@ -3,7 +3,6 @@
 import { MacroSummarySkeleton } from '@/components/logging/feed/feed-day-states';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { PartialDayNotice } from '@/components/logging/feed/partial-day/partial-day-notice';
-import { TodayClose } from '@/components/logging/feed/partial-day/today-close';
 import type { IncompleteTotals, MacroBreakdown } from '@/lib/core/types/meal';
 import type { Goal } from '@/lib/domain/onboarding/types';
 
@@ -14,19 +13,13 @@ interface FeedHeaderProps {
   dailyTotals: MacroBreakdown;
   targets: MacroBreakdown;
   showPartialDayNotice: boolean;
-  /** Today with a saved meal: offer "I've eaten enough" (or show it closed). */
-  showTodayClose: boolean;
-  isDayClosed: boolean;
   calorieTarget: number;
   goal: Goal | null;
   onMarkDayComplete: () => void;
   isMarkingDayComplete: boolean;
 }
 
-/**
- * The day's macro-summary strip, plus the past-day "partial day" notice or
- * today's "I've eaten enough".
- */
+/** The day's macro-summary strip plus the past-day "partial day" notice. */
 export function FeedHeader({
   isDayLoading,
   isDayError,
@@ -34,8 +27,6 @@ export function FeedHeader({
   dailyTotals,
   targets,
   showPartialDayNotice,
-  showTodayClose,
-  isDayClosed,
   calorieTarget,
   goal,
   onMarkDayComplete,
@@ -62,19 +53,6 @@ export function FeedHeader({
           )}
         </div>
       </div>
-
-      {showTodayClose && (
-        <div className="shrink-0 px-3 pb-1 sm:px-6">
-          <div className="mx-auto flex max-w-3xl justify-end">
-            <TodayClose
-              calories={dailyTotals.calories}
-              closed={isDayClosed}
-              isClosing={isMarkingDayComplete}
-              onClose={onMarkDayComplete}
-            />
-          </div>
-        </div>
-      )}
 
       {showPartialDayNotice && (
         <div className="shrink-0 px-3 pb-2 sm:px-6">

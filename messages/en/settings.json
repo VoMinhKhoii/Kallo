@@ -169,7 +169,7 @@
   },
   "reminders": {
     "label": "Meal reminders",
-    "hint": "A nudge on your iPhone when today is behind your target, at most four a day. Closing the day with “I've eaten enough” stops them until tomorrow.",
+    "hint": "A nudge on your iPhone when today is behind your target, at most four a day.",
     "error": "Couldn't update meal reminders. Please try again."
   },
   "aiConsent": {

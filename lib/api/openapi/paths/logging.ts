@@ -42,7 +42,7 @@ export const LOGGING_PATHS: Record<string, PathItem> = {
       operationId: 'markDayComplete',
       summary: 'Attest that a day is fully logged',
       description:
-        "Marks a day — a past one, or today (\"I've eaten enough\") — as everything the user actually ate, so it rejoins trends at its real logged calories instead of being held out as under-logged, and that day's meal reminders stop. One-way: there is no un-marking, and re-sending the same day is a no-op rather than an error. Rejects a day that has not started in the user's timezone, and a day with no meals.",
+        "Marks a day — a past one, or today — as everything the user actually ate, so it rejoins trends at its real logged calories instead of being held out as under-logged, and that day's meal reminders stop. One-way: there is no un-marking, and re-sending the same day is a no-op rather than an error. Rejects a day that has not started in the user's timezone, and a day with no meals.",
       tags: TAGS,
       body: fromZod(markDayCompleteSchema),
       ok: ref('Acknowledgement'),

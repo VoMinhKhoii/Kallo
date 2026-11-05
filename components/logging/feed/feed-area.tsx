@@ -81,8 +81,6 @@ export function FeedArea({
         dailyTotals={day.dailyTotals}
         targets={day.targets}
         showPartialDayNotice={feed.showPartialDayNotice}
-        showTodayClose={feed.showTodayClose}
-        isDayClosed={day.markedComplete}
         calorieTarget={profile.calorieTarget}
         goal={profile.goal}
         isMarkingDayComplete={feed.markDayComplete.isPending}

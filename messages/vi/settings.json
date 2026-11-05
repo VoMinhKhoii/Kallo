@@ -169,7 +169,7 @@
   },
   "reminders": {
     "label": "Nhắc ghi bữa ăn",
-    "hint": "Nhắc trên iPhone khi hôm nay còn ghi thiếu so với mục tiêu, tối đa bốn lần một ngày. Bấm “Mình ăn đủ rồi” để ngừng nhắc đến hết ngày.",
+    "hint": "Nhắc trên iPhone khi hôm nay còn ghi thiếu so với mục tiêu, tối đa bốn lần một ngày.",
     "error": "Không thể cập nhật nhắc ghi bữa ăn. Vui lòng thử lại."
   },
   "aiConsent": {

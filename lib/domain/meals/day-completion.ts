@@ -6,11 +6,12 @@ import { dayCompletionMarks, meals } from '@/lib/infra/db/schema';
 
 /**
  * Close a day: the user attests it holds everything they ate ("Mình ăn đủ
- * rồi" / "I've eaten enough"). The same row silences that day's reminders and
- * lets the progress views count it at its real calories.
+ * rồi" / "That's everything I ate"). The same row silences that day's
+ * reminders and lets the progress views count it at its real calories.
  *
- * Today may be closed (the Today screen and the 21:00 reminder both offer
- * it); a day that has not started yet may not — the caller resolves the day's
+ * Today may be closed (only the 21:00 reminder's "I'm done for today" offers
+ * it; the app's own screens keep it for past days); a day that has not started
+ * yet may not — the caller resolves the day's
  * UTC bounds in the user's own clock and this refuses a start still ahead.
  *
  * One-way by product decision: there is no un-mark, so this only ever inserts,

@@ -459,7 +459,7 @@ Tap / "Add to yesterday" / "Log a meal" / "Log more" open the app on the Today l
 
 ### Closing a day
 
-Closing reuses the existing "Mình ăn đủ rồi" mark: one `day_completion_marks` row per day, one-way, `closeDay` in `lib/domain/meals/day-completion.ts` shared by `POST /api/v1/logging/day/complete` and the reminder button. **Today may now be closed** (a day that has not started may not; an empty day still may not). The Today screen offers "I've eaten enough" / "Mình ăn đủ rồi" once it holds a saved meal, nothing is still analyzing and no meal's calories are unknown, and shows "Done for today" after. A mark on today means the progress views grade today at its real calories instead of setting it aside as partial — the attestation's whole point — and stops that day's reminders; meals logged after closing still count.
+Closing reuses the existing "Mình ăn đủ rồi" mark: one `day_completion_marks` row per day, one-way, `closeDay` in `lib/domain/meals/day-completion.ts` shared by `POST /api/v1/logging/day/complete` and the reminder button. **Today may now be closed** (a day that has not started may not; an empty day still may not), but only from the 21:00 reminder's "I'm done for today": the app's screens add no new UI and keep offering "That's everything I ate" for under-logged past days only. A mark on today means the progress views grade today at its real calories instead of setting it aside as partial — the attestation's whole point — and stops that day's reminders; meals logged after closing still count.
 
 ### Data
 
