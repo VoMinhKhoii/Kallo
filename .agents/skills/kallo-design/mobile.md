@@ -573,7 +573,7 @@ boundaries, each of which has already cost a bug when crossed:
      lifts 1.05x in place as the card arrives, on the menu's 200ms curve. An
      item that would not show whole (under the gauges or the composer, or
      taller than the screen) moves or shrinks just enough
-     (`anchored_menu_lift.dart`). *Retire when `CupertinoContextMenu` can
+     (`anchored_menu_geometry.dart`). *Retire when `CupertinoContextMenu` can
      present in place and its timings are public.* Guarded by
      `test/features/logging/user_message_bubble_test.dart` and
      `test/shared/widgets/menu/anchored_menu_layer_test.dart`.

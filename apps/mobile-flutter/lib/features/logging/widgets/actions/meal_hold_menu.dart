@@ -6,8 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../shared/widgets/menu/kallo_anchored_menu.dart';
 import '../../../../shared/widgets/menu/kallo_hold_menu.dart';
 
-enum _Action { edit, remove }
-
 /// Press and hold a meal card: the card lifts, whole, over the blurred feed
 /// with Edit and a destructive Remove / Discard beside it.
 ///
@@ -17,7 +15,7 @@ enum _Action { edit, remove }
 /// an overshooting curve. The card still lifts WHOLE — the owner's ruling
 /// (2026-10-22): a card half under the gauges or the composer is lifted out in
 /// full, and one taller than the screen is scaled down to fit
-/// (`anchored_menu_lift.dart`).
+/// (`anchored_menu_geometry.dart`).
 ///
 /// Taps still reach [child]: a plain tap resolves to the card's own gesture
 /// (expand, open a dish), and only a held press opens the menu.
@@ -41,18 +39,19 @@ class MealHoldMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Each row's value is the callback it runs.
     final actions = [
-      if (onEdit != null)
-        KalloMenuAction(
+      if (onEdit case final edit?)
+        KalloMenuAction<VoidCallback>(
           label: 'logging.edit'.tr(),
           icon: LucideIcons.pencil300,
-          value: _Action.edit,
+          value: edit,
         ),
-      if (onRemove != null)
-        KalloMenuAction(
+      if (onRemove case final remove?)
+        KalloMenuAction<VoidCallback>(
           label: removeLabel,
           icon: LucideIcons.trash2300,
-          value: _Action.remove,
+          value: remove,
           destructive: true,
         ),
     ];
@@ -68,13 +67,9 @@ class MealHoldMenu extends StatelessWidget {
         if (onRemove != null)
           CustomSemanticsAction(label: removeLabel): onRemove!,
       },
-      child: KalloHoldMenu<_Action>(
+      child: KalloHoldMenu<VoidCallback>(
         actions: actions,
-        onSelected:
-            (action) => switch (action) {
-              _Action.edit => onEdit?.call(),
-              _Action.remove => onRemove?.call(),
-            },
+        onSelected: (run) => run(),
         child: child,
       ),
     );

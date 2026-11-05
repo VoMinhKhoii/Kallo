@@ -11,6 +11,7 @@ import 'package:kallo_mobile/theme/calm_tokens.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../l10n_test_loader.dart';
+import 'actions/hold_to_open_menu.dart';
 import 'package:kallo_mobile/features/logging/data/handoff_slots.dart';
 
 Widget _wrap(String text, {double width = 390}) => ProviderScope(
@@ -142,22 +143,11 @@ void main() {
       await EasyLocalization.ensureInitialized();
     });
 
-    /// Hold the bubble until the menu opens.
-    ///
-    /// 600ms is enough: the menu is the app's own ([showKalloAnchoredMenu])
-    /// and opens on Material's 500ms `onLongPress`, not `CupertinoContextMenu`'s
-    /// 800ms preview timeout, which is the one thing that route made the user
-    /// wait for. Held frame by frame, as a finger on a device is.
-    Future<void> holdBubble(WidgetTester tester, {bool settle = true}) async {
-      final gesture = await tester.startGesture(
-        tester.getCenter(find.byType(UserMessageBubble)),
-      );
-      for (var i = 0; i < 6; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-      await gesture.up();
-      if (settle) await tester.pumpAndSettle();
-    }
+    /// Hold the bubble until the menu opens: Material's 500ms `onLongPress`,
+    /// not `CupertinoContextMenu`'s 800ms preview timeout, which is the one
+    /// thing that route made the user wait for.
+    Future<void> holdBubble(WidgetTester tester) =>
+        holdToOpenMenu(tester, find.byType(UserMessageBubble));
 
     /// Capture what the app hands the platform clipboard.
     List<String> interceptClipboard(WidgetTester tester) {

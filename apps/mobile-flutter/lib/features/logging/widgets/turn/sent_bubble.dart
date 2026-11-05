@@ -31,7 +31,7 @@ import '../../../../theme/kallo_theme.dart';
 /// lift out in a TIGHT box 1.15x the bubble's own rect, so the pill had to be
 /// scaled into it (`FittedBox`, `BoxFit.cover`) rather than re-flow 15% wider.
 /// The hold's lift is a paint-only transform over the pinned copy, laid out
-/// at its resting rect (`anchored_menu_lift.dart`), so the text still never
+/// at its resting rect (`anchored_menu_pin.dart`), so the text still never
 /// re-flows; the only tight box the pill sees is `Positioned.fromRect` at its
 /// own resting size, which it fills exactly.
 class SentBubble extends StatelessWidget {

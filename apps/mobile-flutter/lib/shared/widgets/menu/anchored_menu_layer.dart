@@ -1,7 +1,7 @@
 /// The open anchored menu, as a widget: its backdrop (blur + scrim, in
 /// `anchored_menu_backdrop.dart`), the caller's pinned copy lifting off its
-/// own rect (`anchored_menu_lift.dart`), and the card growing out of the
-/// lifted rect's corner.
+/// own rect (`anchored_menu_pin.dart`), and the card growing out of the
+/// lifted rect's corner — all placed by `anchored_menu_geometry.dart`.
 ///
 /// Split out of `kallo_anchored_menu.dart`, which kept the public API and the
 /// route (see that file for WHY the app owns this menu at all).
@@ -16,9 +16,9 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../theme/kallo_motion.dart';
-import '../../../theme/kallo_theme.dart';
 import 'anchored_menu_backdrop.dart';
-import 'anchored_menu_lift.dart';
+import 'anchored_menu_geometry.dart';
+import 'anchored_menu_pin.dart';
 import 'kallo_menu_card.dart';
 
 /// Which vertical edge the card shares with its anchor.
@@ -112,46 +112,15 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
       rows: widget.rows.length,
       header: widget.header != null,
     );
-    // Below the anchor unless the card would run off the bottom — then above
-    // it, same gap, same edge. [menuBounds] says where the bottom is.
-    final (:ceiling, :floor) = menuBounds(context, overlaySize);
-    // The card hangs off the rect the pinned copy LIFTS to, so the gap is
-    // measured from what shows.
-    final lifted =
-        pinned == null
-            ? null
-            : liftedAnchor(
-              anchor: widget.anchor,
-              lift: widget.lift,
-              trailing: !leadingEdge,
-              width: overlaySize.width,
-              ceiling: ceiling,
-              floor: floor,
-              menuHeight: height,
-            );
-    final anchor = lifted?.rect ?? widget.anchor;
-    final flipped =
-        lifted?.above ?? anchor.bottom + KalloSpacing.sp2 + height > floor;
-    final wantedTop =
-        flipped
-            ? anchor.top - KalloSpacing.sp2 - height
-            : anchor.bottom + KalloSpacing.sp2;
-    // The vertical twin of the horizontal clamp below. A bubble taller than
-    // the screen minus the card flips a card whose header and first row would
-    // land above y=0; when the screen is too short to hold both bounds the top
-    // one wins, exactly as the leading edge wins horizontally — a card that
-    // overhangs the floor still shows the header that says what it is.
-    final top =
-        ceiling >= floor - height
-            ? ceiling
-            : wantedTop.clamp(ceiling, floor - height);
-
-    final wanted = leadingEdge ? anchor.left : anchor.right - kKalloMenuWidth;
-    final maxLeft = overlaySize.width - kKalloMenuWidth - KalloSpacing.sp3;
-    final left =
-        maxLeft <= KalloSpacing.sp3
-            ? KalloSpacing.sp3
-            : wanted.clamp(KalloSpacing.sp3, maxLeft);
+    final (:item, :top, :left, :flipped) = placeAnchoredMenu(
+      anchor: widget.anchor,
+      overlay: overlaySize,
+      padding: MediaQuery.paddingOf(context),
+      viewInsets: MediaQuery.viewInsetsOf(context),
+      menuHeight: height,
+      leading: leadingEdge,
+      lift: pinned == null ? null : widget.lift,
+    );
 
     return Stack(
       children: [
@@ -160,7 +129,7 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
         if (pinned != null)
           AnchoredMenuPin(
             from: widget.anchor,
-            to: anchor,
+            to: item,
             animation: _curved,
             child: pinned,
           ),

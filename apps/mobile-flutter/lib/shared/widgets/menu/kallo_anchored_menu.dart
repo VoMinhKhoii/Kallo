@@ -74,7 +74,7 @@ class KalloMenuAction<T> {
 /// sent-message menu. [pinned] is drawn at EXACTLY [anchor], unshadowed, so a
 /// caller can float a crisp copy of the thing it anchored to above the blur
 /// without moving it; it lifts to [lift] as the menu opens, moved or shrunk
-/// only as far as showing it whole takes (`anchored_menu_lift.dart`), and
+/// only as far as showing it whole takes (`anchored_menu_geometry.dart`), and
 /// the card hangs off the lifted rect. [edge] picks which vertical
 /// edge the card shares with the anchor: [KalloMenuEdge.trailing] hangs it off
 /// the trailing edge (the default), [KalloMenuEdge.leading] off the leading

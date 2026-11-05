@@ -2,15 +2,12 @@ import 'package:flutter/widgets.dart';
 
 import 'kallo_anchored_menu.dart';
 
-/// How far a held item grows as its menu opens.
-const double kKalloHoldLift = 1.05;
-
 /// Press and hold [child] for a menu of [actions]: the app's ONE long-press
 /// menu, so a sent message and a meal card answer the hold the same way
 /// (owner, 2026-11-05).
 ///
 /// Nothing moves while the finger waits. At Material's 500ms hold, in the
-/// same frame, the haptic lands, the item lifts to [kKalloHoldLift] and the
+/// same frame, the haptic lands, the item lifts to [lift] and the
 /// card arrives beside it, all on the menu's 200ms curve with no overshoot;
 /// they leave together the same way. A grow that ran across the whole hold
 /// (2026-11-04) put the wait on screen and made the press read as slow, and
@@ -26,9 +23,14 @@ class KalloHoldMenu<T> extends StatelessWidget {
     required this.actions,
     required this.onSelected,
     this.header,
-    this.pinned,
   });
 
+  /// How far a held item grows as its menu opens.
+  static const double lift = 1.05;
+
+  /// The item, and the copy of it the menu lifts over the blur — so it has to
+  /// draw the same outside the page as in it (the sent bubble is handed the
+  /// page's width for that reason).
   final Widget child;
   final List<KalloMenuAction<T>> actions;
 
@@ -37,10 +39,6 @@ class KalloHoldMenu<T> extends StatelessWidget {
 
   /// One muted line above the rows — when a message was sent.
   final String? header;
-
-  /// The copy lifted over the blur, when [child] would not draw the same
-  /// thing outside the page (the sent bubble wraps by the page's width).
-  final Widget? pinned;
 
   Future<void> _open(BuildContext context) async {
     // The detector's box is exactly the child's: the rect the item lifts from.
@@ -53,8 +51,8 @@ class KalloHoldMenu<T> extends StatelessWidget {
       context,
       anchor: box.localToGlobal(Offset.zero, ancestor: overlay) & box.size,
       header: header,
-      pinned: pinned ?? child,
-      lift: kKalloHoldLift,
+      pinned: child,
+      lift: lift,
       actions: actions,
     );
     if (picked == null || !context.mounted) return;
