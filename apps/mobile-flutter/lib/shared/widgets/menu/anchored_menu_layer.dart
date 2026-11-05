@@ -50,6 +50,7 @@ class AnchoredMenuLayer extends StatefulWidget {
     required this.rows,
     this.header,
     this.pinned,
+    this.pinnedScale = 1,
     this.backdrop = true,
     super.key,
   });
@@ -61,6 +62,11 @@ class AnchoredMenuLayer extends StatefulWidget {
   final List<KalloMenuActionRow> rows;
   final String? header;
   final Widget? pinned;
+
+  /// The scale the caller draws [pinned] at, grown about the midpoint of the
+  /// [edge] side of [anchor]. The layer does not scale [pinned] itself; it
+  /// hangs the card off the grown rect so the gap is measured from what shows.
+  final double pinnedScale;
 
   /// Blur and dim the page behind the card — a context menu's backdrop. A
   /// pull-down ([showKalloAnchoredMenu]'s `backdrop: false`) leaves the page
@@ -97,7 +103,12 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
 
   @override
   Widget build(BuildContext context) {
-    final anchor = widget.anchor;
+    final leadingEdge = widget.edge == KalloMenuEdge.leading;
+    final growFrom = leadingEdge ? Alignment.centerLeft : Alignment.centerRight;
+    final anchor = growFrom.inscribe(
+      widget.anchor.size * widget.pinnedScale,
+      widget.anchor,
+    );
     final overlaySize = widget.overlaySize;
     final pinned = widget.pinned;
     final height = kalloMenuCardHeight(
@@ -135,7 +146,6 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
             ? ceiling
             : wantedTop.clamp(ceiling, floor - height);
 
-    final leadingEdge = widget.edge == KalloMenuEdge.leading;
     final wanted = leadingEdge ? anchor.left : anchor.right - kKalloMenuWidth;
     final maxLeft = overlaySize.width - kKalloMenuWidth - KalloSpacing.sp3;
     final left =
@@ -149,7 +159,7 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
           Positioned.fill(child: AnchoredMenuBackdrop(opacity: _curved)),
         if (pinned != null)
           Positioned.fromRect(
-            rect: anchor,
+            rect: widget.anchor,
             child: IgnorePointer(child: pinned),
           ),
         Positioned(

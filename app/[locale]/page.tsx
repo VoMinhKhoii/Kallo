@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
 import { OAuthErrorToast } from '@/components/auth/oauth-error-toast';
 import {
   AuthRequestConfig,
@@ -111,7 +111,7 @@ export default async function Home({
           <PricingSection />
         </main>
         <DocsFooter landing sections={sections} />
-        <AuthDialog />
+        <LazyAuthDialog />
         <Suspense fallback={null}>
           <OAuthErrorToast />
           <WaitlistStatusToast />

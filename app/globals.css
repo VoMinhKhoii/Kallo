@@ -642,6 +642,76 @@
       animation: none;
     }
   }
+
+  /* The public pages' entrance and scroll reveals, in CSS so they play from
+     the server-rendered HTML. Driven from JS (motion's `initial`), the server
+     sent the landing hero at opacity 0 and it stayed invisible until every
+     script had loaded and run: about 9 s on Fast 3G. Each one keeps the
+     curve, distance, duration and reduced-motion behaviour it had in motion. */
+
+  /* The hero's staggered rise on first paint. `--rise-step` sets the order
+     (90 ms apart). Reduced motion gets the hero with no animation. */
+  @keyframes kallo-rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+      filter: blur(6px);
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-rise {
+      animation: kallo-rise 0.85s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+      animation-delay: calc(var(--rise-step, 0) * 90ms);
+    }
+  }
+
+  /* The landing header's drop-in, on the curve motion played it with
+     (measured frame by frame: ease-out). It runs under reduced motion too, as
+     it always has: the header never read the setting. */
+  @keyframes kallo-header-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+  }
+  .animate-header-drop {
+    animation: kallo-header-drop 0.6s ease-out backwards;
+  }
+
+  /* Fade-up for blocks marked `data-reveal`. Visible in the HTML: a block in
+     view on first paint (or with no JS) plays it straight away, and
+     `useScrollReveal` sets `pending` on blocks still below the fold, then
+     `shown` once one is 80px into the viewport, which plays it again (motion's
+     `whileInView`, once). Reduced motion: no animation, never hidden. */
+  @keyframes kallo-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(var(--reveal-y, 24px));
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-reveal] {
+      animation: kallo-reveal 0.7s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+    }
+    [data-reveal="pending"] {
+      animation: none;
+      opacity: 0;
+    }
+  }
+
+  /* The landing page's ambient blobs: out to (--drift-x, --drift-y) and back,
+     forever, on the compositor. */
+  @keyframes kallo-drift {
+    50% {
+      transform: translate(var(--drift-x), var(--drift-y));
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-drift {
+      animation: kallo-drift var(--drift-duration)
+        cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    }
+  }
 }
 
 /* Eyebrow — the 10px uppercase section label. The one place UPPERCASE

@@ -565,8 +565,10 @@ boundaries, each of which has already cost a bug when crossed:
      pressed widget into a preview slot of its own and scales it, so a sent
      message slid out from under the finger holding it, and it dresses the
      action rows in system chrome rather than Be Vietnam Pro. Cost the most to
-     learn (2026-09-08). *Retire when `CupertinoContextMenu` can present
-     in place.* Guarded by `test/features/logging/user_message_bubble_test.dart`.
+     learn (2026-09-08). The owned menu still borrows the context menu's
+     lift: the held bubble grows to 1.05x IN PLACE, about its right edge,
+     over the 500ms hold (2026-11-04). *Retire when `CupertinoContextMenu` can
+     present in place.* Guarded by `test/features/logging/user_message_bubble_test.dart`.
    - **`KalloAlertSurface`** over `CupertinoPopupSurface`. Translucent by
      default; "solid surfaces, no stacked translucency" is a system rule.
      *Retire if that rule changes, not if the SDK does.*

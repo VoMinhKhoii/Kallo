@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../shared/widgets/menu/kallo_anchored_menu.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
+import 'bubble_lift.dart';
 import 'sent_bubble.dart';
 import '../../data/handoff_slots.dart';
 
@@ -53,6 +54,8 @@ enum _Action { copy, edit }
 /// The exception is recorded under boundary 3 of *Cupertino wherever it
 /// exists* in `.agents/skills/kallo-design/mobile.md`.
 ///
+/// **It grows while held**, in place — [BubbleLift].
+///
 /// The action glyphs come from Lucide, the one icon font this app bundles.
 /// `CupertinoIcons.doc_on_clipboard` sat here until 2026-09-05 and painted as
 /// a tofu box: its font ships in the `cupertino_icons` package, which is not a
@@ -72,10 +75,19 @@ class UserMessageBubble extends ConsumerStatefulWidget {
   ConsumerState<UserMessageBubble> createState() => _UserMessageBubbleState();
 }
 
-class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
+class _UserMessageBubbleState extends ConsumerState<UserMessageBubble>
+    with SingleTickerProviderStateMixin {
   /// On the pill, not on this widget: the menu anchors to the BUBBLE's rect,
   /// and this widget's own box is the full-width row it is aligned inside.
   final GlobalKey _pill = GlobalKey();
+
+  late final BubbleLift _lift = BubbleLift(vsync: this);
+
+  @override
+  void dispose() {
+    _lift.dispose();
+    super.dispose();
+  }
 
   /// Park the message for the composer to pick up — the composer applies it
   /// and says what it displaced ([listenForComposerRefill]).
@@ -96,7 +108,11 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
     final overlay =
         Overlay.of(context, rootOverlay: true).context.findRenderObject()
             as RenderBox?;
-    if (pill == null || overlay == null) return;
+    if (pill == null || overlay == null) {
+      _lift.menuClosed();
+      return;
+    }
+    _lift.menuOpened();
     final anchor =
         pill.localToGlobal(Offset.zero, ancestor: overlay) & pill.size;
 
@@ -107,7 +123,8 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
       // The still copy, floated over the blur at the rect the page's own
       // bubble occupies — which is what lets the page's blur run underneath it
       // without the message itself going soft.
-      pinned: SentBubble(text: widget.text, pageWidth: pageWidth),
+      pinned: _lift.wrap(SentBubble(text: widget.text, pageWidth: pageWidth)),
+      pinnedScale: BubbleLift.scale,
       actions: [
         KalloMenuAction(
           label: 'logging.copyMessage'.tr(),
@@ -122,6 +139,8 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
       ],
     );
     if (!mounted) return;
+    // The menu resolves as its close begins: both copies ease back with it.
+    _lift.menuClosed();
     // Awaiting the menu is what puts these AFTER the route has popped: the
     // copy toast is an OverlayEntry and would otherwise land under the scrim.
     switch (action) {
@@ -160,11 +179,12 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
                   // Opaque: the whole pill answers the hold, not just the glyph
                   // run of text under the finger.
                   behavior: HitTestBehavior.opaque,
+                  onLongPressDown: (_) => _lift.press(),
+                  onLongPressCancel: _lift.release,
                   onLongPress: () => _openMenu(page.maxWidth),
-                  child: SentBubble(
+                  child: _lift.wrap(
                     key: _pill,
-                    text: widget.text,
-                    pageWidth: page.maxWidth,
+                    SentBubble(text: widget.text, pageWidth: page.maxWidth),
                   ),
                 ),
               ),

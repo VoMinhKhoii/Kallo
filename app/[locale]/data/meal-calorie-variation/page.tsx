@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
 import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
 import { DocsH2, DocsParagraph } from '@/components/docs/mdx/prose';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
@@ -116,7 +116,7 @@ async function MealDataContent({ params }: MealDataProps) {
           </div>
         </div>
       </article>
-      <AuthDialog />
+      <LazyAuthDialog />
       <Suspense fallback={null}>
         <AuthRequestConfig />
       </Suspense>

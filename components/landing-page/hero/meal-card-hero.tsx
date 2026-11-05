@@ -1,12 +1,11 @@
 'use client';
 
-import { motion, useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useState } from 'react';
 import { HeroHeadline } from './headline';
 import { LoggedMealCard } from './logged-meal-card';
 import { HERO_MEALS } from './logged-meals';
-import { HERO_EASE, HERO_GROUND } from './tone';
+import { HERO_GROUND } from './tone';
 import { WaitlistPill } from './waitlist-pill';
 
 /**
@@ -23,7 +22,6 @@ import { WaitlistPill } from './waitlist-pill';
  */
 export function MealCardHero() {
   const t = useTranslations('landing.hero');
-  const reduced = useReducedMotion() ?? false;
   const [activeId, setActiveId] = useState<string | null>(null);
 
   // A phone has no hover, so every card wears its painting and nothing dims.
@@ -44,14 +42,10 @@ export function MealCardHero() {
     return () => query.removeEventListener('change', sync);
   }, []);
 
-  const rise = (index: number) =>
-    reduced
-      ? {}
-      : {
-          initial: { opacity: 0, y: 18, filter: 'blur(6px)' },
-          animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
-          transition: { duration: 0.85, delay: index * 0.09, ease: HERO_EASE },
-        };
+  // The staggered entrance is CSS (`animate-rise`, globals.css), so it plays
+  // from the server's HTML. As a JS animation the whole hero was sent at
+  // opacity 0 and stayed invisible until every script had loaded.
+  const rise = (step: number) => ({ '--rise-step': step }) as CSSProperties;
 
   return (
     <section
@@ -63,20 +57,20 @@ export function MealCardHero() {
         {/* On a phone the promise owns the first screen; the cards are what
             scrolling is for. On lg everything sits in one viewport again. */}
         <div className="flex min-h-[calc(100dvh-13rem)] flex-col items-center justify-center md:min-h-0">
-          <motion.div {...rise(0)}>
+          <div className="animate-rise" style={rise(0)}>
             <HeroHeadline ink={HERO_GROUND.ink} />
-          </motion.div>
+          </div>
 
-          <motion.p
-            {...rise(1)}
-            className={`mt-5 max-w-2xl text-pretty text-base leading-[1.6] ${HERO_GROUND.body}`}
+          <p
+            style={rise(1)}
+            className={`mt-5 max-w-2xl animate-rise text-pretty text-base leading-[1.6] ${HERO_GROUND.body}`}
           >
             {t('subtitle')}
-          </motion.p>
+          </p>
 
-          <motion.div {...rise(2)} className="mt-8 w-full">
+          <div className="mt-8 w-full animate-rise" style={rise(2)}>
             <WaitlistPill />
-          </motion.div>
+          </div>
         </div>
 
         {/* A section, not a div: the four cards are the page's second real block
@@ -84,10 +78,10 @@ export function MealCardHero() {
             (nothing) → h3 and neither a screen reader nor a crawler could tell
             where the hero ended. The heading is visually hidden because the
             cards are self-explanatory to anyone who can see them. */}
-        <motion.section
-          {...rise(3)}
+        <section
+          style={rise(3)}
           aria-labelledby="landing-examples"
-          className="mx-auto mt-10 grid w-full max-w-[100rem] grid-cols-1 items-start gap-x-5 gap-y-8 sm:grid-cols-2 md:mt-12 lg:grid-cols-4"
+          className="mx-auto mt-10 grid w-full max-w-[100rem] animate-rise grid-cols-1 items-start gap-x-5 gap-y-8 sm:grid-cols-2 md:mt-12 lg:grid-cols-4"
         >
           <h2 className="sr-only" id="landing-examples">
             {t('examplesHeading')}
@@ -104,17 +98,17 @@ export function MealCardHero() {
               onSelectMeal={() => setActiveId(meal.id)}
             />
           ))}
-        </motion.section>
+        </section>
 
-        <motion.div
-          {...rise(4)}
-          className={`mt-7 space-y-1 text-xs ${HERO_GROUND.body}`}
+        <div
+          style={rise(4)}
+          className={`mt-7 animate-rise space-y-1 text-xs ${HERO_GROUND.body}`}
         >
           {/* The desktop hint invites a hover. On touch the paintings are
               already up, so inviting one would be a lie. */}
           <p>{t(touch ? 'cardsHintTouch' : 'cardsHint')}</p>
           <p>{t('beta')}</p>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
