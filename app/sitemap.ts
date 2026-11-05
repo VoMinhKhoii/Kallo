@@ -80,18 +80,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
     }
 
-    // The calculators exist in every locale under the same slugs. A tool page
-    // is dated by `TOOL_PAGES_REVISED`, bumped by hand when its copy or links
-    // change; the hub has no revision date to read, so like the landing page
-    // it carries no `lastModified`.
-    for (const path of [TOOLS_PREFIX, ...TOOL_SLUGS.map(toolPath)]) {
+    // The calculators exist in every locale under the same slugs. The hub has
+    // no revision date to read, so like the landing page it carries no
+    // `lastModified`; a tool page is dated by `TOOL_PAGES_REVISED`, bumped by
+    // hand when its copy or links change.
+    entries.push({
+      url: `${SITE_URL}/${locale}${TOOLS_PREFIX}`,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+      alternates: { languages: alternateLanguages(TOOLS_PREFIX) },
+    });
+    for (const path of TOOL_SLUGS.map(toolPath)) {
       entries.push({
         url: `${SITE_URL}/${locale}${path}`,
-        ...(path === TOOLS_PREFIX
-          ? {}
-          : { lastModified: new Date(`${TOOL_PAGES_REVISED}T00:00:00Z`) }),
+        lastModified: new Date(`${TOOL_PAGES_REVISED}T00:00:00Z`),
         changeFrequency: 'monthly',
-        priority: path === TOOLS_PREFIX ? 0.6 : 0.7,
+        priority: 0.7,
         alternates: { languages: alternateLanguages(path) },
       });
     }

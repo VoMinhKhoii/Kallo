@@ -5,9 +5,10 @@ import { Suspense } from 'react';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
 import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
-import { DocsH2, DocsLink, DocsParagraph } from '@/components/docs/mdx/prose';
+import { DocsH2, DocsParagraph } from '@/components/docs/mdx/prose';
 import { FoodLinkList } from '@/components/seo/food-page/food-link-list';
 import { IngredientBars } from '@/components/seo/food-page/ingredient-bars';
+import { LinkedSentence } from '@/components/seo/food-page/linked-sentence';
 import { MealExample } from '@/components/seo/food-page/meal-example';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
 import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
@@ -116,13 +117,11 @@ async function FoodContent({ params }: FoodPageProps) {
           <DocsParagraph>
             {page.lead(kcalSpan(page.capture, page.locale))}
           </DocsParagraph>
-          <DocsParagraph>
-            {chrome.rangeNote.before}
-            <DocsLink href={MEAL_DATA_PATH}>
-              {chrome.rangeNote.link(facts.dishes, facts.ratio)}
-            </DocsLink>
-            {chrome.rangeNote.after}
-          </DocsParagraph>
+          <LinkedSentence
+            {...chrome.rangeNote}
+            href={MEAL_DATA_PATH}
+            link={chrome.rangeNote.link(facts.dishes, facts.ratio)}
+          />
 
           {page.meals.map((meal) => {
             const variant = page.capture.variants.find(
@@ -145,26 +144,21 @@ async function FoodContent({ params }: FoodPageProps) {
           <DocsParagraph>
             {chrome.sourcesBody(loggedOn, sourcesOf(page))}
           </DocsParagraph>
-          <DocsParagraph>
-            {chrome.dailyNote.before}
-            <DocsLink href={toolPath('tdee-calculator')}>
-              {chrome.dailyNote.link}
-            </DocsLink>
-            {chrome.dailyNote.after}
-          </DocsParagraph>
+          <LinkedSentence
+            {...chrome.dailyNote}
+            href={toolPath('tdee-calculator')}
+          />
 
           <DocsH2>{chrome.moreHeading}</DocsH2>
           <FoodLinkList pages={relatedPages(page)} />
 
           <DocsH2>{chrome.similarHeading}</DocsH2>
           <FoodLinkList pages={similarCaloriePages(page)} />
-          <DocsParagraph>
-            {chrome.browse.before}
-            <DocsLink href={FOOD_PAGE_PREFIX}>
-              {chrome.browse.link(FOOD_SLUGS[page.locale].length)}
-            </DocsLink>
-            {chrome.browse.after}
-          </DocsParagraph>
+          <LinkedSentence
+            {...chrome.browse}
+            href={FOOD_PAGE_PREFIX}
+            link={chrome.browse.link(FOOD_SLUGS[page.locale].length)}
+          />
 
           <div className="mt-16 border-kallo-text border-t pt-10 text-center">
             <DocsParagraph>{page.tryLine}</DocsParagraph>

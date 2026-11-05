@@ -61,18 +61,19 @@ describe.each(ALL_SLUGS)('food page %s', (slug) => {
   });
 });
 
-describe('kcalSpan', () => {
-  const capture = (...kcals: number[]): FoodPageCapture => ({
-    capturedAt: '2026-10-31T00:00:00Z',
-    modelProfile: 'haiku',
-    variants: kcals.map((calories, i) => ({
-      key: `m${i}`,
-      text: '',
-      ingredients: [],
-      dishes: [{ name: 'dish', calories, protein: 0, carbs: 0, fat: 0 }],
-    })),
-  });
+/** A capture whose meals total the given kcal, one dish each. */
+const capture = (...kcals: number[]): FoodPageCapture => ({
+  capturedAt: '2026-10-31T00:00:00Z',
+  modelProfile: 'haiku',
+  variants: kcals.map((calories, i) => ({
+    key: `m${i}`,
+    text: '',
+    ingredients: [],
+    dishes: [{ name: 'dish', calories, protein: 0, carbs: 0, fat: 0 }],
+  })),
+});
 
+describe('kcalSpan', () => {
   it('rounds the meals out to whole hundreds', () => {
     expect(kcalSpan(capture(310, 975), 'en')).toBe('300 to 1,000');
     expect(kcalSpan(capture(400, 400), 'en')).toBe('400 to 400');
@@ -84,16 +85,17 @@ describe('kcalSpan', () => {
     expect(kcalSpan(capture(310, 975), 'vi')).toBe('300 đến 1.000');
   });
 
-  // Same capture shape, so the median test sits with the span tests.
-  it('takes the median meal, averaging the middle two of four', () => {
-    expect(medianMealKcal(capture(491, 135, 334, 273))).toBe(303.5);
-    expect(medianMealKcal(capture(500, 100, 300))).toBe(300);
-  });
-
   it('covers the chicken burrito page’s real meals', () => {
     expect(kcalSpan(FOOD_PAGES['chicken-burrito'].capture, 'en')).toBe(
       '300 to 1,000'
     );
+  });
+});
+
+describe('medianMealKcal', () => {
+  it('takes the middle meal, averaging the middle two of an even count', () => {
+    expect(medianMealKcal(capture(491, 135, 334, 273))).toBe(303.5);
+    expect(medianMealKcal(capture(500, 100, 300))).toBe(300);
   });
 });
 

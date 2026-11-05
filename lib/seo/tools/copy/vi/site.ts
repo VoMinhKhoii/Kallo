@@ -7,6 +7,10 @@ export const hub: HubCopy = {
   title: 'Công cụ tính',
   lead: 'Những con số đằng sau việc ăn kiêng, tính bằng cùng công thức Kallo dùng để đặt mục tiêu calo cho bạn. Mỗi trang ghi rõ cách tính và nguồn.',
   foodLine: 'Calo các món ăn Việt',
+  exampleMeals: {
+    heading: 'Calo trong các bữa ăn thật',
+    lead: 'Con số mỗi ngày dễ dùng hơn khi bạn biết các món quen thuộc nặng bao nhiêu calo. Mỗi món được gõ vào Kallo vài cách, từ phần nhỏ đến phần đầy đủ, đúng như người ta vẫn kể.',
+  },
   more: 'Công cụ khác',
   tryLine:
     'Kallo tự đặt các mục tiêu này cho bạn khi đăng ký, rồi tính calo từ một câu bình thường như "1 tô phở bò tái, thêm 1 quẩy, ly trà đá".',

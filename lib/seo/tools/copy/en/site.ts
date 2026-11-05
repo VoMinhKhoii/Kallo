@@ -7,6 +7,10 @@ export const hub: HubCopy = {
   title: 'Calculators',
   lead: 'The numbers behind a diet, worked out with the same formulas Kallo uses to set your daily target. Each page shows the maths and sources.',
   foodLine: 'Calories in everyday meals',
+  exampleMeals: {
+    heading: 'Calories in real meals',
+    lead: 'A daily number is easier to use once you know what everyday meals come to. Each meal was typed into Kallo several ways, from a light portion to a full one, the way people describe it.',
+  },
   more: 'Other calculators',
   tryLine:
     'Kallo sets these targets for you at sign-up, then counts what you eat from a sentence like "two eggs, toast with butter, a flat white".',

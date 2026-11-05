@@ -1,3 +1,4 @@
+import { FOOD_PAGES, type FoodPage } from '@/lib/seo/food-pages/pages';
 import type { FoodLocale, FoodSlugOf } from '@/lib/seo/food-pages/slugs';
 import type { ToolSlug } from './slugs';
 
@@ -38,16 +39,10 @@ export const TOOL_EXAMPLE_MEALS: {
   },
 };
 
-export const TOOL_EXAMPLE_COPY: Record<
-  FoodLocale,
-  { heading: string; lead: string }
-> = {
-  en: {
-    heading: 'Calories in real meals',
-    lead: 'A daily number is easier to use once you know what everyday meals come to. Each meal was typed into Kallo several ways, from a light portion to a full one, the way people describe it.',
-  },
-  vi: {
-    heading: 'Calo trong các bữa ăn thật',
-    lead: 'Con số mỗi ngày dễ dùng hơn khi bạn biết các món quen thuộc nặng bao nhiêu calo. Mỗi món được gõ vào Kallo vài cách, từ phần nhỏ đến phần đầy đủ, đúng như người ta vẫn kể.',
-  },
-};
+/** A calculator's example meals as food pages, in its own locale. */
+export function exampleMealPages(
+  locale: FoodLocale,
+  tool: ToolSlug
+): FoodPage[] {
+  return TOOL_EXAMPLE_MEALS[locale][tool].map((slug) => FOOD_PAGES[slug]);
+}

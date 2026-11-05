@@ -13,21 +13,18 @@ import {
   DocsUnorderedList,
 } from '@/components/docs/mdx/prose';
 import { FoodLinkList } from '@/components/seo/food-page/food-link-list';
+import { LinkedSentence } from '@/components/seo/food-page/linked-sentence';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
 import { ToolCalculator } from '@/components/seo/tools/tool-calculator';
 import { ToolLinkList } from '@/components/seo/tools/tool-link-list';
 import { isLocale, locales } from '@/i18n/config';
 import { alternateLanguages } from '@/lib/seo/alternates';
 import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
-import { FOOD_PAGES } from '@/lib/seo/food-pages/pages';
 import { FOOD_PAGE_PREFIX, FOOD_SLUGS } from '@/lib/seo/food-pages/slugs';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 import { HUB_COPY, TOOL_COPY, TOOL_UI } from '@/lib/seo/tools/content';
-import {
-  TOOL_EXAMPLE_COPY,
-  TOOL_EXAMPLE_MEALS,
-} from '@/lib/seo/tools/example-meals';
+import { exampleMealPages } from '@/lib/seo/tools/example-meals';
 import {
   isToolSlug,
   TOOL_SLUGS,
@@ -89,7 +86,6 @@ async function ToolContent({ params }: ToolPageProps) {
   if (!isLocale(locale) || !isToolSlug(tool)) notFound();
   const copy = TOOL_COPY[locale][tool];
   const hub = HUB_COPY[locale];
-  const examples = TOOL_EXAMPLE_COPY[locale];
   const browse = FOOD_PAGE_CHROME[locale].browse;
   const t = await getTranslations({ locale, namespace: 'landing.header' });
 
@@ -120,20 +116,14 @@ async function ToolContent({ params }: ToolPageProps) {
             </section>
           ))}
 
-          <DocsH2>{examples.heading}</DocsH2>
-          <DocsParagraph>{examples.lead}</DocsParagraph>
-          <FoodLinkList
-            pages={TOOL_EXAMPLE_MEALS[locale][tool].map(
-              (slug) => FOOD_PAGES[slug]
-            )}
+          <DocsH2>{hub.exampleMeals.heading}</DocsH2>
+          <DocsParagraph>{hub.exampleMeals.lead}</DocsParagraph>
+          <FoodLinkList pages={exampleMealPages(locale, tool)} />
+          <LinkedSentence
+            {...browse}
+            href={FOOD_PAGE_PREFIX}
+            link={browse.link(FOOD_SLUGS[locale].length)}
           />
-          <DocsParagraph>
-            {browse.before}
-            <DocsLink href={FOOD_PAGE_PREFIX}>
-              {browse.link(FOOD_SLUGS[locale].length)}
-            </DocsLink>
-            {browse.after}
-          </DocsParagraph>
 
           <DocsH2>{hub.sourcesHeading}</DocsH2>
           <DocsUnorderedList>

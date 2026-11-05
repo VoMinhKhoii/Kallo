@@ -144,7 +144,7 @@ export function medianMealKcal(capture: FoodPageCapture): number {
  * "more meals"; these reach across groups, so a small group (three salads)
  * is not linked only by its own two siblings.
  */
-export function similarCaloriePages(page: FoodPage, count = 3): FoodPage[] {
+export function similarCaloriePages(page: FoodPage): FoodPage[] {
   const target = medianMealKcal(page.capture);
   return pagesOf(page.locale)
     .filter((other) => other.group !== page.group)
@@ -153,7 +153,7 @@ export function similarCaloriePages(page: FoodPage, count = 3): FoodPage[] {
       gap: Math.abs(medianMealKcal(other.capture) - target),
     }))
     .sort((a, b) => a.gap - b.gap)
-    .slice(0, count)
+    .slice(0, 3)
     .map(({ other }) => other);
 }
 
