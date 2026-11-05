@@ -150,7 +150,7 @@ jobs:
       # Next 16.3). PRs restore main's latest; only main saves one, so PR runs
       # do not crowd the repo's 10 GB cache.
       - if: steps.affected.outputs.run == 'true'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .next/cache
           key: next-build-${{ runner.os }}-${{ github.sha }}
@@ -158,7 +158,7 @@ jobs:
       - if: steps.affected.outputs.run == 'true'
         run: bun run build
       - if: steps.affected.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .next/cache
           key: next-build-${{ runner.os }}-${{ github.sha }}

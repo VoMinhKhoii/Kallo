@@ -73,7 +73,7 @@ jobs:
       # combined action is deprecated; the restore/save pair is the fix.)
       - name: Restore translation checkpoints
         id: checkpoints
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: data/translation-checkpoints
           key: translate-usda-checkpoints-${{ github.run_id }}-${{ github.run_attempt }}
@@ -113,7 +113,7 @@ jobs:
       # Must run even on cancel/timeout — see the restore step's comment.
       - name: Save translation checkpoints
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: data/translation-checkpoints
           # run_attempt is in the key because run_id is STABLE across
