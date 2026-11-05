@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a chicken shawarma?',
     metaTitle: 'Calories in Chicken Shawarma: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real chicken shawarmas, a shop wrap with fries inside, a plate with rice and hummus, a light wrap and a salad bowl.`,
+      `From about ${span} kcal. Four chicken shawarmas, a shop wrap with fries inside, a plate with rice and hummus, a light wrap and a salad bowl.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The chicken changes little from one shawarma to the next; the bread, the fries and the sauces are what move it. Here are four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The chicken changes little from one shawarma to the next; the bread, the fries and the sauces are what move it. Four real ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'wrap-fries',
     breakdownLead:
       'In the shop wrap, the pita and the fries inside it each carry more calories than the chicken does.',

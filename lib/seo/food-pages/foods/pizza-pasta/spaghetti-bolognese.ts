@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in spaghetti bolognese?',
     metaTitle: 'Calories in Spaghetti Bolognese: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real plates of spaghetti bolognese, a big restaurant plate, a lean homemade one, a small portion and a turkey sauce on zucchini noodles.`,
+      `From about ${span} kcal. Four plates of spaghetti bolognese: a big restaurant plate, lean homemade, a small portion and turkey sauce on zucchini noodles.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The amount of pasta on the plate is the biggest lever, then the meat in the sauce. Here are four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The amount of pasta on the plate is the biggest lever, then the meat in the sauce. Four real plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'At the restaurant, 280 g of cooked spaghetti is nearly half of the plate. The meat sauce adds 376 kcal.',

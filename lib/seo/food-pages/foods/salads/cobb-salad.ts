@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a Cobb salad?',
     metaTitle: 'Calories in a Cobb Salad: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real Cobb salads, a restaurant one with ranch, one with vinaigrette, one without bacon or blue cheese and a weighed homemade one.`,
+      `From about ${span} kcal. Four Cobb salads, a restaurant one with ranch, one with vinaigrette, one without bacon or blue cheese and a weighed homemade one.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. A Cobb is many rich toppings in small amounts, so leaving one or two out moves it a lot. Here are four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. A Cobb is many rich toppings in small amounts, so leaving one or two out moves it a lot. Four real ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'No single item runs a Cobb. The chicken is 151 kcal and the ranch 129, and the bacon, avocado, blue cheese and egg each add between 67 and 91.',

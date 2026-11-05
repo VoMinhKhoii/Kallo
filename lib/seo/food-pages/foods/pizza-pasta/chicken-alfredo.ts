@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in chicken alfredo?',
     metaTitle: 'Calories in Chicken Alfredo: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real plates of chicken alfredo, from a restaurant plate with garlic bread to a light homemade sauce made with milk.`,
+      `From about ${span} kcal. Four plates of chicken alfredo, from a restaurant plate with garlic bread to a light homemade sauce made with milk.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The pasta portion, the sauce and the bread on the side are what move it. Here are four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The pasta portion, the sauce and the bread on the side are what move it. Four real plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'At the restaurant, the pasta is the biggest line at 311 kcal. The bread on the side adds 245, more than the alfredo sauce itself.',

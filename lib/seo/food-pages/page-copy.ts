@@ -60,7 +60,7 @@ export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
         `How many calories are in a burrito, a poke bowl or pad thai? ${count} everyday meals, each logged in Kallo four ways, with the ingredients that move the number.`,
       heading: 'Calories in everyday meals',
       intro:
-        'A meal is not one number. The same burrito is 300 kcal or 1,000 depending on the tortilla, the rice and what goes on top. Each page below logs one meal in Kallo four ways, from a restaurant plate to a weighed homemade one, and shows which ingredients move the number.',
+        'A meal is not one number. The same burrito is 300 kcal or 1,000 depending on the tortilla, the rice and what goes on top. Each meal is typed into Kallo four ways, from a restaurant plate to a weighed homemade one, the way people describe it. You can see which ingredients move the number.',
     },
     loggedOn: (date) => `Logged in Kallo on ${date}`,
     movesHeading: 'What moves the number',
@@ -80,14 +80,13 @@ export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
       after: '.',
     },
     dailyNote: {
-      before:
-        'Whether a meal like this fits your day depends on your own target: ',
+      before: 'How this meal fits your day depends on your target: ',
       link: 'work out your daily calories with the TDEE calculator',
       after: '.',
     },
     similarHeading: 'Similar calories',
     footerLink: 'Calories in meals',
-    dataLink: 'How much the same meal varies: all these meals read together',
+    dataLink: 'How much the same meal varies across all these pages',
   },
   vi: {
     formatNumber: (n) => n.toLocaleString('vi-VN'),
@@ -102,7 +101,7 @@ export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
         `Phở bò, cơm tấm, bánh mì, trà sữa bao nhiêu calo? ${count} món quen thuộc, mỗi món ghi vào Kallo bốn cách, kèm những thành phần làm con số lên xuống.`,
       heading: 'Calo trong các món ăn Việt',
       intro:
-        'Một món ăn không chỉ có một con số. Cùng là tô phở, tô nhỏ ít bánh khác xa tô đặc biệt thêm quẩy; cùng là dĩa cơm tấm, thêm bì, chả và trứng ốp la là thêm vài trăm calo. Mỗi trang dưới đây ghi một món vào Kallo bốn cách, từ hàng quán đến nhà nấu, và chỉ ra phần nào làm con số thay đổi.',
+        'Một món ăn không chỉ có một con số. Cùng là tô phở, tô nhỏ ít bánh khác xa tô đặc biệt thêm quẩy; cùng là dĩa cơm tấm, thêm bì, chả và trứng ốp la là thêm vài trăm calo. Mỗi món được gõ vào Kallo bốn cách, từ hàng quán đến nhà nấu, đúng như người ta vẫn kể, để bạn thấy phần nào làm con số thay đổi.',
     },
     loggedOn: (date) => `Ghi vào Kallo ${date}`,
     movesHeading: 'Phần nào làm con số thay đổi',
@@ -128,7 +127,6 @@ export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
     },
     similarHeading: 'Món có lượng calo tương đương',
     footerLink: 'Calo các món ăn',
-    dataLink:
-      'Cùng một món, calo chênh nhau bao nhiêu: đọc tất cả các bữa cùng lúc',
+    dataLink: 'Cùng một món, calo chênh nhau bao nhiêu qua các bữa đã ghi',
   },
 };

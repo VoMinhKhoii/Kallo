@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a falafel wrap?',
     metaTitle: 'Calories in a Falafel Wrap: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real falafel meals, a shop wrap with hummus and tahini, a wrap with fries inside, a falafel plate and a baked homemade wrap.`,
+      `From about ${span} kcal. Four falafel meals, a shop wrap with hummus and tahini, a wrap with fries inside, a falafel plate and a baked homemade wrap.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. Falafel is fried, and the sauces around it are rich too. Here are four real falafel meals, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Falafel is fried, and the sauces around it are rich too. Four real falafel meals, each typed into Kallo the way people describe them.`,
     breakdownOf: 'shop',
     breakdownLead:
       'In the shop wrap, five falafel are the biggest line at 426 kcal. The hummus and tahini add 278, more than the pita.',

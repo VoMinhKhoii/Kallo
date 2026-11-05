@@ -5,7 +5,7 @@ export const hub: HubCopy = {
   description:
     'Tính TDEE, thâm hụt calo, macro, protein và BMI chuẩn châu Á miễn phí, cùng công thức với app Kallo. Không cần đăng ký.',
   title: 'Công cụ tính',
-  lead: 'Những con số đằng sau việc ăn kiêng, tính bằng đúng các công thức Kallo dùng khi đặt mục tiêu calo cho bạn. Mỗi trang đều ghi rõ cách tính và nguồn.',
+  lead: 'Những con số đằng sau việc ăn kiêng, tính bằng cùng công thức Kallo dùng để đặt mục tiêu calo cho bạn. Mỗi trang ghi rõ cách tính và nguồn.',
   foodLine: 'Calo các món ăn Việt',
   more: 'Công cụ khác',
   tryLine:

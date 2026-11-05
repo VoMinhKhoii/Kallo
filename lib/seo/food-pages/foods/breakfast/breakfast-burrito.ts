@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a breakfast burrito?',
     metaTitle: 'Calories in a Breakfast Burrito: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real breakfast burritos, from a cafe one with bacon and hash browns to a homemade egg-white wrap, broken down by filling.`,
+      `From about ${span} kcal. Four breakfast burritos, from a cafe one with bacon and hash browns to a homemade egg-white wrap, broken down by filling.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. Eggs and a tortilla are the base; potatoes, cheese and meat are what stack up. Here are four real breakfast burritos, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Eggs and a tortilla are the base; potatoes, cheese and meat are what stack up. Four real breakfast burritos, each typed into Kallo the way people describe them.`,
     breakdownOf: 'cafe',
     breakdownLead:
       'In the cafe burrito, three eggs and the tortilla are half of it. The hash browns and the cheddar add another 281 kcal between them.',

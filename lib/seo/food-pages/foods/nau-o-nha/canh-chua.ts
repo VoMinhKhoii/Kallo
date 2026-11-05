@@ -36,6 +36,6 @@ export const food: FoodContent = {
     breakdownLead:
       'Một tô canh chua cá lóc chỉ khoảng 160 calo: cá 76, phần còn lại là rau, thơm và chút đường. Chén cơm ăn kèm đã 152; bữa có thêm cá rô kho và hai chén cơm lên tới 766.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “canh chua cá lóc 1 tô, 1 chén cơm, ít cá kho”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “canh chua cá lóc 1 tô, 1 chén cơm, ít cá kho”, Kallo lo phần còn lại.',
   },
 };

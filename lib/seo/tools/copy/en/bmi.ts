@@ -8,7 +8,7 @@ export const bmiCopy: ToolCopy = {
   description:
     'Calculate your BMI and see it against both the WHO bands and the Asia-Pacific bands (overweight from 23). Free, no sign-up.',
   title: 'BMI calculator',
-  lead: 'Body mass index is your weight divided by your height squared. It is a rough screen, not a diagnosis, and where the lines fall depends on which standard you use. This calculator shows both the international WHO bands and the Asia-Pacific ones side by side.',
+  lead: 'Body mass index is your weight divided by your height squared. It is a rough screen, not a diagnosis. The cut-offs depend on the standard: this calculator shows the international WHO and Asia-Pacific bands side by side.',
   sections: [
     {
       heading: 'The formula',
@@ -21,7 +21,7 @@ export const bmiCopy: ToolCopy = {
       paragraphs: [
         'The WHO international bands: under 18.5 underweight, 18.5 to 24.9 normal, 25 to 29.9 overweight, 30 and over obese.',
         "People of Asian descent tend to carry more body fat, and develop type 2 diabetes and heart disease, at a lower BMI. The Asia-Pacific bands proposed by WHO's Western Pacific office in 2000 put overweight at 23 and obese at 25. Hospitals in Vietnam use them, as do health services in several other Asian countries. A 2004 WHO expert consultation kept the international bands for global comparison but added 23 and 27.5 as action points for Asian populations.",
-        'So the 175 cm, 74 kg person above is "normal" by WHO and "overweight" by the Asia-Pacific bands. Neither is wrong; they answer different questions.',
+        'The 175 cm, 74 kg person above is "normal" by WHO and "overweight" by the Asia-Pacific bands. Neither is wrong; they answer different questions.',
       ],
     },
     {
@@ -34,7 +34,7 @@ export const bmiCopy: ToolCopy = {
     {
       heading: 'If you want to change it',
       paragraphs: [
-        'BMI only moves when your weight does, and weight moves with calories over weeks. The TDEE calculator gives your maintenance, the calorie deficit calculator a daily target and a date. Then the work is knowing what you actually eat.',
+        'BMI only moves when your weight does, and weight moves with calories over weeks. The TDEE calculator gives your maintenance; the calorie deficit calculator gives a daily target and a date. Then the work is knowing what you actually eat.',
       ],
     },
   ],

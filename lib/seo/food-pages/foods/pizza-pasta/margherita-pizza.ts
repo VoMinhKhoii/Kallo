@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a margherita pizza?',
     metaTitle: 'Calories in a Margherita Pizza: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real margherita pizzas, a whole Neapolitan one, half a shared pizza, two slices and a homemade tortilla pizza.`,
+      `From about ${span} kcal. Four margherita pizzas, a whole Neapolitan one, half a shared pizza, two slices and a homemade tortilla pizza.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. With only tomato, mozzarella and basil on top, a margherita is mostly dough, and how much of it you eat decides the number. Here are four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. With only tomato, mozzarella and basil on top, a margherita is mostly dough, and how much of it you eat decides the number. Four real ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'neapolitan',
     breakdownLead:
       'A whole Neapolitan pizza is mostly crust: 576 kcal of dough, then 371 of fresh mozzarella. The sauce and basil barely register.',

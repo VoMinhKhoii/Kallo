@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in avocado toast?',
     metaTitle: 'Calories in Avocado Toast: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real avocado toasts, two slices at a cafe, one with a poached egg, whole wheat with feta and a light rye slice.`,
+      `From about ${span} kcal. Four avocado toasts, two slices at a cafe, one with a poached egg, whole wheat with feta and a light rye slice.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The bread and how much avocado goes on it decide the number. Here are four real toasts, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The bread and how much avocado goes on it decide the number. Four real toasts, each typed into Kallo the way people describe them.`,
     breakdownOf: 'cafe',
     breakdownLead:
       'In the cafe toast, the two slices of sourdough are just over half of it. A whole avocado adds 177 kcal.',

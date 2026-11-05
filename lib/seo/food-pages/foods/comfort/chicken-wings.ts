@@ -25,9 +25,9 @@ export const food: FoodContent = {
     title: 'How many calories are in chicken wings?',
     metaTitle: 'Calories in Chicken Wings: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real orders of chicken wings, ten buffalo wings with blue cheese dip, six BBQ wings, ten boneless wings and eight air-fried ones.`,
+      `From about ${span} kcal. Four orders of chicken wings, ten buffalo wings with blue cheese dip, six BBQ wings, ten boneless wings and eight air-fried ones.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The count is the obvious part; frying, breading and the dip are what make wings add up. Here are four real orders, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The count is the obvious part; frying, breading and the dip are what make wings add up. Four real orders, each typed into Kallo the way people describe them.`,
     breakdownOf: 'boneless',
     breakdownLead:
       'Boneless wings are breaded chicken. In the order of ten, the honey garlic sauce adds 186 kcal, about a quarter of it.',

@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in lasagna?',
     metaTitle: 'Calories in Lasagna: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real pieces of lasagna, from a restaurant beef lasagna to a homemade square, a vegetable one and a frozen tray.`,
+      `From about ${span} kcal. Four pieces of lasagna, from a restaurant beef lasagna to a homemade square, a vegetable one and a frozen tray.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. A piece of lasagna is layers of pasta, sauce and cheese, and the size of the piece decides most of it. Here are four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. A piece of lasagna is layers of pasta, sauce and cheese, and the size of the piece decides most of it. Four real ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'In the restaurant piece, the meat sauce and the pasta are about even. The mozzarella, parmesan and béchamel together add 226 kcal, more than either.',

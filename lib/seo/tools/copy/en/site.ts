@@ -5,7 +5,7 @@ export const hub: HubCopy = {
   description:
     'Free calculators for maintenance calories, a calorie deficit, macros, protein and BMI, using the same maths as the Kallo app. No sign-up.',
   title: 'Calculators',
-  lead: 'The numbers behind a diet, worked out with the same formulas Kallo uses when it sets your daily target. Each page shows its maths and its sources.',
+  lead: 'The numbers behind a diet, worked out with the same formulas Kallo uses to set your daily target. Each page shows the maths and sources.',
   foodLine: 'Calories in everyday meals',
   more: 'Other calculators',
   tryLine:

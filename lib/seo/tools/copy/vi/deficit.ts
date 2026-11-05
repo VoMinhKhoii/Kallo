@@ -8,7 +8,7 @@ export const deficit: ToolCopy = {
   description:
     'Ăn bao nhiêu calo một ngày để giảm cân và khi nào đạt cân nặng mục tiêu. Cùng công thức và mức calo tối thiểu như app Kallo.',
   title: 'Tính thâm hụt calo',
-  lead: 'Nhập số đo của bạn, cân nặng mục tiêu và tốc độ muốn giảm. Công cụ tính TDEE, trừ phần thâm hụt, rồi cho bạn số calo cần ăn mỗi ngày và ngày dự kiến đạt mục tiêu. Muốn tăng cân thì làm ngược lại.',
+  lead: 'Nhập số đo, cân nặng mục tiêu và tốc độ muốn giảm. Công cụ tính TDEE rồi trừ phần thâm hụt để cho biết số calo cần ăn mỗi ngày và ngày dự kiến đạt mục tiêu. Muốn tăng cân thì cộng thêm calo.',
   sections: [
     {
       heading: 'Thâm hụt calo là gì?',
@@ -27,7 +27,7 @@ export const deficit: ToolCopy = {
     {
       heading: 'Vì sao ngày đạt mục tiêu chỉ là ước tính',
       paragraphs: [
-        'Quy tắc 7.700 kcal là một đường thẳng, còn cơ thể thì không. Khi bạn nhẹ đi, TDEE cũng giảm theo, nên cùng một mức ăn sẽ thâm hụt ít hơn; những tuần đầu còn mất nhiều nước nên cân xuống nhanh. Mô hình của Kevin Hall trên tạp chí The Lancet năm 2011 cho thấy quy tắc đơn giản này luôn ước lượng dư mức giảm khi kéo dài nhiều tháng. Cứ giảm được vài ký thì tính lại, và đánh giá theo cân nặng trung bình 2–3 tuần chứ đừng nhìn từng ngày.',
+        'Quy tắc 7.700 kcal giả định cân nặng giảm đều. Khi bạn nhẹ đi, TDEE giảm theo nên cùng một mức ăn sẽ thâm hụt ít hơn; những tuần đầu còn mất nhiều nước nên cân xuống nhanh. Mô hình của Kevin Hall trên tạp chí The Lancet năm 2011 cho thấy quy tắc này ước lượng dư mức giảm qua nhiều tháng. Cứ giảm vài ký thì tính lại và đánh giá theo cân nặng trung bình 2–3 tuần thay vì từng ngày.',
       ],
     },
     {
@@ -39,7 +39,7 @@ export const deficit: ToolCopy = {
     {
       heading: 'Để ăn đúng con số',
       paragraphs: [
-        'Mục tiêu chỉ có ý nghĩa khi bạn ghi chép thật. Khoảng cách giữa "mình ăn có 1.200 thôi" và cân không xuống thường nằm ở những thứ khó thấy: dầu xào, nước chấm, chén cơm thứ hai, ly cà phê sữa hay trà sữa. Ghi lại đúng những gì bạn ăn, bằng lời của bạn, là việc Kallo làm.',
+        'Để ăn đúng mục tiêu, bạn cần ghi đủ những gì đã ăn. Khoảng cách giữa "mình ăn có 1.200 thôi" và cân không xuống thường nằm ở những thứ khó thấy: dầu xào, nước chấm, chén cơm thứ hai, ly cà phê sữa hay trà sữa. Ghi lại đúng những gì bạn ăn, bằng lời của bạn, là việc Kallo làm.',
       ],
     },
   ],

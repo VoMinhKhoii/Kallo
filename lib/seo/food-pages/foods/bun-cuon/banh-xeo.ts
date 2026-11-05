@@ -36,6 +36,6 @@ export const food: FoodContent = {
     breakdownLead:
       'Trong một cái bánh xèo tôm thịt cỡ lớn, bột gạo là 216 calo, nước cốt dừa 98 và dầu đổ bánh 90. Nước mắm chua ngọt thêm khoảng 50, phần lớn từ đường; rau sống cuốn kèm gần như không đáng kể.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “2 cái bánh xèo nhỏ, ít dầu, cuốn nhiều rau”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “2 cái bánh xèo nhỏ, ít dầu, cuốn nhiều rau”, Kallo lo phần còn lại.',
   },
 };

@@ -29,12 +29,12 @@ export const food: FoodContent = {
     title: 'How many calories are in chicken noodle soup?',
     metaTitle: 'Calories in Chicken Noodle Soup: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real bowls of chicken noodle soup, a big homemade bowl, a whole can, a deli soup with a buttered roll and a high-protein bowl.`,
+      `From about ${span} kcal. Four bowls of chicken noodle soup, a big homemade bowl, a whole can, a deli soup with a buttered roll and a high-protein bowl.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. A canned soup and a homemade bowl are not the same meal; the noodles and the bread beside it decide most of it. Here are four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. A canned soup and a homemade bowl are not the same meal; the noodles and the bread beside it decide most of it. Four real bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'homemade',
     breakdownLead:
-      'In the big homemade bowl, the noodles are the biggest line at 192 kcal. The broth adds 105, more than you might expect.',
+      'In the big homemade bowl, the noodles are the biggest line at 192 kcal. The broth adds 105.',
     tryLine:
       'Type yours the way you would say it, like “a big bowl of chicken noodle soup, mostly chicken, few noodles”, and Kallo works out the rest.',
   },

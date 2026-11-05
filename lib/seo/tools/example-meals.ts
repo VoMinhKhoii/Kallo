@@ -44,10 +44,10 @@ export const TOOL_EXAMPLE_COPY: Record<
 > = {
   en: {
     heading: 'Calories in real meals',
-    lead: 'A daily number is easier to use once you know what everyday meals come to. Each of these was logged in Kallo several ways, from a light portion to a full one.',
+    lead: 'A daily number is easier to use once you know what everyday meals come to. Each meal was typed into Kallo several ways, from a light portion to a full one, the way people describe it.',
   },
   vi: {
     heading: 'Calo trong các bữa ăn thật',
-    lead: 'Con số mỗi ngày dễ dùng hơn khi bạn biết các món quen thuộc nặng bao nhiêu calo. Mỗi món dưới đây được ghi vào Kallo vài cách, từ phần nhỏ đến phần đầy đủ.',
+    lead: 'Con số mỗi ngày dễ dùng hơn khi bạn biết các món quen thuộc nặng bao nhiêu calo. Mỗi món được gõ vào Kallo vài cách, từ phần nhỏ đến phần đầy đủ, đúng như người ta vẫn kể.',
   },
 };

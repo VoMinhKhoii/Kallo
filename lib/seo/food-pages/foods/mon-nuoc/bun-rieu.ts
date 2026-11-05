@@ -36,6 +36,6 @@ export const food: FoodContent = {
     breakdownLead:
       'Ở tô đặc biệt, riêu cua chỉ 57 calo; đậu phụ rán (204), bắp bò (187) và một thìa mỡ nước (121) mới là phần nặng. Tô nhỏ chỉ có riêu và cà chua là 223.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “bún riêu tô nhỏ, thêm đậu, không mỡ nước”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “bún riêu tô nhỏ, thêm đậu, không mỡ nước”, Kallo lo phần còn lại.',
   },
 };

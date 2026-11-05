@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in chicken and rice?',
     metaTitle: 'Calories in Chicken and Rice: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real plates of chicken and rice, a meal prep box, halal cart chicken over rice, pan-fried thighs and a big bulking bowl.`,
+      `From about ${span} kcal. Four plates of chicken and rice, a meal prep box, halal cart chicken over rice, pan-fried thighs and a big bulking bowl.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The simplest meal there is still swings: thigh or breast, how much rice and how much oil. Here are four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The simplest meal there is still swings: thigh or breast, how much rice and how much oil. Four real plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'meal-prep',
     breakdownLead:
       'In the meal prep box, the rice and the chicken are nearly equal at 190 and 171 kcal. The broccoli is 42.',

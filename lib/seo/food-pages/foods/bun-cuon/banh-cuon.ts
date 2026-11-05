@@ -31,11 +31,11 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo. Bốn đĩa bánh cuốn thật: thêm chả lụa và chả quế, hai đĩa nhân thịt mộc nhĩ, bánh cuốn Thanh Trì không nhân và bánh cuốn trứng.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo. Lớp bánh mỏng nhẹ hơn người ta nghĩ; chả ăn kèm mới quyết định một đĩa. Dưới đây là bốn đĩa thật, mỗi đĩa gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo. Lớp bánh mỏng nhẹ hơn người ta nghĩ; chả ăn kèm mới quyết định con số. Dưới đây là bốn đĩa thật, mỗi đĩa gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'thanh-tri',
     breakdownLead:
       'Ở đĩa Thanh Trì không nhân, 200 g bánh chỉ 253 calo; hai miếng chả quế (100 g) là 339, nhiều hơn cả đĩa bánh. Nước chấm thêm khoảng 50 calo, phần lớn từ đường.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “bánh cuốn 1 đĩa, thêm 2 lát chả, không hành phi”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “bánh cuốn 1 đĩa, thêm 2 lát chả, không hành phi”, Kallo lo phần còn lại.',
   },
 };

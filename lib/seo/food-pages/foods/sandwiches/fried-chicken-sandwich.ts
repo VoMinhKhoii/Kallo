@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a fried chicken sandwich?',
     metaTitle: 'Calories in a Fried Chicken Sandwich: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real chicken sandwiches, a fast food fried one, a spicy one with fries, a grilled one and an air-fried homemade one.`,
+      `From about ${span} kcal. Four chicken sandwiches, a fast food fried one, a spicy one with fries, a grilled one and an air-fried homemade one.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. Fried or grilled, the sauce and the side decide a chicken sandwich. Here are four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Fried or grilled, the sauce and the side decide a chicken sandwich. Four real ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'fast-food',
     breakdownLead:
       'In the fast food sandwich, the fried chicken is half of it. The bun adds 176 kcal and the mayo 105.',

@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in beef tacos?',
     metaTitle: 'Calories in Beef Tacos: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real orders of beef tacos, from a taco truck to hard shells with cheese and a lean homemade plate, broken down by filling.`,
+      `From about ${span} kcal. Four orders of beef tacos, from a taco truck to hard shells with cheese and a lean homemade plate, broken down by filling.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. A taco is small, so the count and the filling decide the meal. Here are four real taco plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. A taco is small, so the count and the filling decide the meal. Four real taco plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'truck',
     breakdownLead:
       'In the taco truck order, the seasoned beef is about 60% of the calories. The three corn tortillas add 171.',

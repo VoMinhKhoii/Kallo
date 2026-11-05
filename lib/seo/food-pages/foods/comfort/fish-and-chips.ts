@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in fish and chips?',
     metaTitle: 'Calories in Fish and Chips: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real portions of fish and chips, a large one from a chip shop, haddock with mushy peas, a small portion and an oven-baked homemade one.`,
+      `From about ${span} kcal. Four portions of fish and chips: a large chip shop meal, haddock with mushy peas, a small portion and a homemade oven-baked one.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The fish is lean; the batter, the frying oil and the size of the chips portion are what count. Here are four real portions, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The fish is lean; the batter, the frying oil and the size of the chips portion are what count. Four real portions, each typed into Kallo the way people describe them.`,
     breakdownOf: 'chip-shop',
     breakdownLead:
       'At the chip shop, the large portion of chips is the biggest line at 418 kcal, more than the fish. The batter adds 178.',

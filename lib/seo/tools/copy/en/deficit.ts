@@ -8,7 +8,7 @@ export const deficit: ToolCopy = {
   description:
     'How many calories to eat to lose weight, and when you would reach your goal. Uses the same maths and safety floors as the Kallo app.',
   title: 'Calorie deficit calculator',
-  lead: 'Tell it your body, your goal weight and how fast you want to get there. It works out your maintenance calories, takes the deficit off, and tells you the daily target and roughly when you would arrive. Gaining works the same way in reverse.',
+  lead: 'Enter your measurements, goal weight and how fast you want to get there. The calculator works out your maintenance calories, takes the deficit off, and gives you a daily target and roughly when you would arrive. Gaining works the same way in reverse.',
   sections: [
     {
       heading: 'Where the daily target comes from',
@@ -21,25 +21,25 @@ export const deficit: ToolCopy = {
       heading: 'A worked example',
       paragraphs: [
         'A 30-year-old woman, 165 cm, 65 kg, lightly active, has a maintenance of about 1,884 kcal. Aiming for 60 kg at 0.5 kg a week: 1,884 − 550 = 1,334 kcal a day, and 5 kg ÷ 0.5 = 10 weeks.',
-        'Now a smaller, less active woman: 25 years old, 158 cm, 55 kg, desk job. Her maintenance is about 1,502 kcal, so the same 0.5 kg a week would mean 952 kcal. The floor holds her at 1,200, which works out to about 0.27 kg a week. Slower, but it is a pace she can actually eat to.',
+        'A smaller, less active woman: 25 years old, 158 cm, 55 kg, desk job. Her maintenance is about 1,502 kcal, so the same 0.5 kg a week would mean 952 kcal. The minimum holds her at 1,200, which works out to about 0.27 kg a week. Slower, but it is a pace she can actually eat to.',
       ],
     },
     {
       heading: 'Why the date is a best case',
       paragraphs: [
-        "The 7,700 rule is a straight line, and bodies are not. As you get lighter your maintenance drops, so the same intake makes a smaller deficit, and early weeks include water that comes off fast. Kevin Hall's 2011 model in The Lancet showed the simple rule overestimates loss over months. Re-run the calculator every few kilos with your new weight, and judge progress on a two-to-three week average, not day to day.",
+        "The 7,700 rule assumes steady weight loss. As you get lighter your maintenance drops, so the same intake makes a smaller deficit. Early weight loss also includes water. Kevin Hall's 2011 model in The Lancet showed the simple rule overestimates loss over months. Re-run the calculator every few kilos with your new weight, and judge progress on a two-to-three week average, not day to day.",
       ],
     },
     {
       heading: 'Choosing a pace',
       paragraphs: [
-        'Around 0.25 to 0.5 kg a week is the range most people can sustain while keeping their muscle and their social life. Faster is possible for people with more to lose, but hunger and lost muscle make it harder to keep the weight off. Eating enough protein (see the protein calculator) matters more in a deficit, not less.',
+        'Around 0.25 to 0.5 kg a week is the range most people can sustain while keeping their muscle and their social life. Faster is possible for people with more to lose, but hunger and lost muscle make it harder to keep the weight off. Eating enough protein matters more in a deficit (see the protein calculator).',
       ],
     },
     {
       heading: 'Hitting the number',
       paragraphs: [
-        'A target only works if your logging is honest. Most of the gap between "I eat 1,400" and the scale not moving is hidden: cooking oil, sauces, a second serving of rice, the drink with lunch. Logging what you really ate, in your own words, is what Kallo is built for.',
+        'A target only works if you log what you really eat. Most of the gap between "I eat 1,400" and the scale not moving is hidden: cooking oil, sauces, a second serving of rice, the drink with lunch. Logging what you really ate, in your own words, is what Kallo is built for.',
       ],
     },
   ],

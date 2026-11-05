@@ -36,6 +36,6 @@ export const food: FoodContent = {
     breakdownLead:
       'Ở bữa thịt kho hột vịt, ba miếng ba rọi đã 641 calo, hơn cả hai hột vịt và chén cơm cộng lại; chan nước kho thêm 108. Đổi sang thịt nạc vai, bốn miếng chỉ 275.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “thịt kho trứng 2 miếng nạc, 1 trứng, 1 chén cơm”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “thịt kho trứng 2 miếng nạc, 1 trứng, 1 chén cơm”, Kallo lo phần còn lại.',
   },
 };

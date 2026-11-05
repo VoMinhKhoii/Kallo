@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in spaghetti carbonara?',
     metaTitle: 'Calories in Spaghetti Carbonara: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real plates of carbonara, the restaurant kind with guanciale, a creamy one with bacon, a weighed homemade plate and a small one.`,
+      `From about ${span} kcal. Four plates of carbonara, the restaurant kind with guanciale, a creamy one with bacon, a weighed homemade plate and a small one.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The pasta portion sets the floor; cream and how much cured pork goes in decide the rest. Here are four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The pasta portion sets the floor; cream and how much cured pork goes in decide the rest. Four real plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'At the restaurant, the pasta is just over half of it. The egg yolks, guanciale and pecorino that make the sauce add 288 kcal.',

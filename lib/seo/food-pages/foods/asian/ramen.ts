@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in ramen?',
     metaTitle: 'Calories in Ramen: 4 Real Bowls',
     description: (span) =>
-      `From about ${span} kcal. Four real bowls of ramen, tonkotsu with most of the broth, shoyu chicken, instant ramen with an egg and spicy miso with extra noodles.`,
+      `From about ${span} kcal. Four bowls of ramen, tonkotsu with most of the broth, shoyu chicken, instant ramen with an egg and spicy miso with extra noodles.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The noodles are one half of a bowl; a rich broth can be the other, so how much you drink matters. Here are four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The noodles are one half of a bowl. A rich broth can be the other, so how much you drink matters. Four real bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'tonkotsu',
     breakdownLead:
       'In the tonkotsu bowl, the pork bone broth is 374 kcal, almost as much as the noodles. Leaving most of it is the biggest single cut you can make.',

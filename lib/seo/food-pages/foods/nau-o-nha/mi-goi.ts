@@ -36,6 +36,6 @@ export const food: FoodContent = {
     breakdownLead:
       'Một vắt mì Hảo Hảo là 352 calo, kể cả khi bỏ gói dầu; hai cây xúc xích rán thêm 345 nữa. Trứng là thứ thêm vào nhẹ nhất: mỗi quả khoảng 70 calo.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “1 gói mì, 1 trứng, bỏ nửa gói dầu”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “1 gói mì, 1 trứng, bỏ nửa gói dầu”, Kallo lo phần còn lại.',
   },
 };
