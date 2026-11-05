@@ -124,14 +124,13 @@ function fail(scope: string, err: unknown) {
  * burnt the whole allowance in minutes (2026-11-03, 2026-11-05). During
  * startup the probe asks every second, at full CPU, as before.
  */
-function retryIfDue() {
+function retryIfDue(): boolean {
   const s = state();
-  if (s.status !== 'failed' || s.retryAt === null || Date.now() < s.retryAt) {
-    return;
-  }
+  if (s.retryAt === null || Date.now() < s.retryAt) return false;
   s.retryAt = null;
   if (s.catalog) spawnWorker();
   else loadBuild();
+  return true;
 }
 
 function spawnWorker() {
@@ -206,14 +205,11 @@ function loadBuild() {
 
 /**
  * Start loading the pinned build, once per process, and start a due retry.
- * Safe to call often.
+ * Safe to call often. True when this call started a retry.
  */
-export function startCardIndex(): void {
+export function startCardIndex(): boolean {
   const s = state();
-  if (s.started) {
-    retryIfDue();
-    return;
-  }
+  if (s.started) return retryIfDue();
   s.started = true;
   const cfg = config();
   if ('reason' in cfg) {
@@ -221,10 +217,11 @@ export function startCardIndex(): void {
     console.info(
       `[card-index] disabled (${cfg.reason}); using the database path`
     );
-    return;
+    return false;
   }
   s.uri = cfg.uri;
   loadBuild();
+  return false;
 }
 
 /** For /api/healthz and the deploy smoke check. */
@@ -285,12 +282,9 @@ export async function cardIndexCatalog(
 ): Promise<CardCatalog | null> {
   // A retry this call starts is for the calls after it: this one takes the
   // database path at once rather than wait on the load.
-  const wasFailed = state().status === 'failed';
-  startCardIndex();
+  if (startCardIndex()) return null;
   const s = state();
-  if (wasFailed || s.status === 'disabled' || s.status === 'failed') {
-    return null;
-  }
+  if (s.status === 'disabled' || s.status === 'failed') return null;
   if (s.catalog) return s.catalog;
   const loaded = await within(s.catalogLoad ?? Promise.resolve(null), waitMs);
   return loaded === TIMED_OUT || state().status === 'failed' ? null : loaded;
