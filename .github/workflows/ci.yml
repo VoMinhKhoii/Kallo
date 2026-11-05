@@ -303,7 +303,7 @@ jobs:
       # docs/GOOGLE_CLOUD_RUN.md → "Image retention").
       PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       IMAGE_TAG: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-      IMAGE_URI: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      IMAGE_URI: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/kallo:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps: &container-steps
       - uses: actions/checkout@v4
         with:
