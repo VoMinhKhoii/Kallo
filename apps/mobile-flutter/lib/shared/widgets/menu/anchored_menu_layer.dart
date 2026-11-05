@@ -1,5 +1,7 @@
 /// The open anchored menu, as a widget: its backdrop (blur + scrim, in
-/// `anchored_menu_backdrop.dart`), the caller's pinned copy at its own rect, and the card growing out of the anchor's corner.
+/// `anchored_menu_backdrop.dart`), the caller's pinned copy lifting off its
+/// own rect (`anchored_menu_pin.dart`), and the card growing out of the
+/// lifted rect's corner — all placed by `anchored_menu_geometry.dart`.
 ///
 /// Split out of `kallo_anchored_menu.dart`, which kept the public API and the
 /// route (see that file for WHY the app owns this menu at all).
@@ -11,13 +13,12 @@
 /// in the way (`test/shared/widgets/menu/anchored_menu_layer_test.dart`).
 library;
 
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../../theme/kallo_motion.dart';
-import '../../../theme/kallo_theme.dart';
 import 'anchored_menu_backdrop.dart';
+import 'anchored_menu_geometry.dart';
+import 'anchored_menu_pin.dart';
 import 'kallo_menu_card.dart';
 
 /// Which vertical edge the card shares with its anchor.
@@ -50,7 +51,7 @@ class AnchoredMenuLayer extends StatefulWidget {
     required this.rows,
     this.header,
     this.pinned,
-    this.pinnedScale = 1,
+    this.lift = 1,
     this.backdrop = true,
     super.key,
   });
@@ -63,10 +64,11 @@ class AnchoredMenuLayer extends StatefulWidget {
   final String? header;
   final Widget? pinned;
 
-  /// The scale the caller draws [pinned] at, grown about the midpoint of the
-  /// [edge] side of [anchor]. The layer does not scale [pinned] itself; it
-  /// hangs the card off the grown rect so the gap is measured from what shows.
-  final double pinnedScale;
+  /// The scale [pinned] grows to as the menu opens, about the midpoint of the
+  /// [edge] side of [anchor] — on the menu's own curve, so the lift, the card
+  /// and the blur arrive together and leave together. Ignored without
+  /// [pinned]: there is nothing to lift.
+  final double lift;
 
   /// Blur and dim the page behind the card — a context menu's backdrop. A
   /// pull-down ([showKalloAnchoredMenu]'s `backdrop: false`) leaves the page
@@ -104,63 +106,32 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
   @override
   Widget build(BuildContext context) {
     final leadingEdge = widget.edge == KalloMenuEdge.leading;
-    final growFrom = leadingEdge ? Alignment.centerLeft : Alignment.centerRight;
-    final anchor = growFrom.inscribe(
-      widget.anchor.size * widget.pinnedScale,
-      widget.anchor,
-    );
     final overlaySize = widget.overlaySize;
     final pinned = widget.pinned;
     final height = kalloMenuCardHeight(
       rows: widget.rows.length,
       header: widget.header != null,
     );
-    // Below the anchor unless the card would run off the bottom — then above
-    // it, same gap, same edge. The safe inset counts: a card ending under the
-    // home indicator has a last row nobody can tap. So does the KEYBOARD, and
-    // it is the bigger of the two: `overlaySize` is the full-screen root
-    // overlay, and while the composer is focused `padding.bottom` nets to 0
-    // whereas `viewInsets.bottom` carries the keyboard's height. Read only the
-    // padding and a menu on the last sent bubble counts the keyboard as room,
-    // never flips, and paints BEHIND it. (`thread_dock_insets.dart` pays the
-    // same pair for the same reason.)
-    final floor =
-        overlaySize.height -
-        math.max(
-          MediaQuery.paddingOf(context).bottom,
-          MediaQuery.viewInsetsOf(context).bottom,
-        );
-    final flipped = anchor.bottom + KalloSpacing.sp2 + height > floor;
-    final wantedTop =
-        flipped
-            ? anchor.top - KalloSpacing.sp2 - height
-            : anchor.bottom + KalloSpacing.sp2;
-    // The vertical twin of the horizontal clamp below. A bubble taller than
-    // the screen minus the card flips a card whose header and first row would
-    // land above y=0; when the screen is too short to hold both bounds the top
-    // one wins, exactly as the leading edge wins horizontally — a card that
-    // overhangs the floor still shows the header that says what it is.
-    final ceiling = MediaQuery.paddingOf(context).top + KalloSpacing.sp3;
-    final top =
-        ceiling >= floor - height
-            ? ceiling
-            : wantedTop.clamp(ceiling, floor - height);
-
-    final wanted = leadingEdge ? anchor.left : anchor.right - kKalloMenuWidth;
-    final maxLeft = overlaySize.width - kKalloMenuWidth - KalloSpacing.sp3;
-    final left =
-        maxLeft <= KalloSpacing.sp3
-            ? KalloSpacing.sp3
-            : wanted.clamp(KalloSpacing.sp3, maxLeft);
+    final (:item, :top, :left, :flipped) = placeAnchoredMenu(
+      anchor: widget.anchor,
+      overlay: overlaySize,
+      padding: MediaQuery.paddingOf(context),
+      viewInsets: MediaQuery.viewInsetsOf(context),
+      menuHeight: height,
+      leading: leadingEdge,
+      lift: pinned == null ? null : widget.lift,
+    );
 
     return Stack(
       children: [
         if (widget.backdrop)
           Positioned.fill(child: AnchoredMenuBackdrop(opacity: _curved)),
         if (pinned != null)
-          Positioned.fromRect(
-            rect: widget.anchor,
-            child: IgnorePointer(child: pinned),
+          AnchoredMenuPin(
+            from: widget.anchor,
+            to: item,
+            animation: _curved,
+            child: pinned,
           ),
         Positioned(
           left: left,
