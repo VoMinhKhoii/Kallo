@@ -78,7 +78,8 @@ class _PushRegistrationListenerState
 
   /// A reminder's "close the day" button runs natively while the app sits in
   /// the background, so the day it closed is refreshed here: otherwise the
-  /// still-cached feed keeps offering "I've eaten enough" for it.
+  /// still-cached feed and progress views keep treating it as open (a closed
+  /// yesterday would still offer "That's everything I ate").
   Future<void> _refreshClosedDays(PushService push) async {
     final days = await push.takeClosedDays();
     final userId = _registeredUserId;

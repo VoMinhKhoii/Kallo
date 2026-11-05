@@ -1232,14 +1232,6 @@
         "confirmCancel": "Not now",
         "markError": "Couldn't confirm this day. Please try again."
       },
-      "todayClose": {
-        "markComplete": "I've eaten enough",
-        "confirmTitle": "Done for today?",
-        "confirmBody": "Kallo will count today at the {calories} kcal you logged and stop today's reminders. You can still log more. This can't be undone.",
-        "confirmAccept": "I've eaten enough",
-        "confirmCancel": "Not now",
-        "closed": "Done for today"
-      },
       "partialYesterdayPrompt": {
         "title": "Yesterday looks under-logged",
         "body": "Only {calories} of your {target} kcal target is logged.",
