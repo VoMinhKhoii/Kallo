@@ -147,9 +147,7 @@ void main() {
     /// 600ms is enough: the menu is the app's own ([showKalloAnchoredMenu])
     /// and opens on Material's 500ms `onLongPress`, not `CupertinoContextMenu`'s
     /// 800ms preview timeout, which is the one thing that route made the user
-    /// wait for. Held frame by frame rather than with `tester.longPress`, whose single
-    /// 600ms pump gives the bubble's grow no frames before the menu opens —
-    /// a finger on a device does.
+    /// wait for. Held frame by frame, as a finger on a device is.
     Future<void> holdBubble(WidgetTester tester, {bool settle = true}) async {
       final gesture = await tester.startGesture(
         tester.getCenter(find.byType(UserMessageBubble)),
@@ -271,22 +269,35 @@ void main() {
 
       // `CupertinoContextMenu` relocated the bubble into a preview slot of
       // its own and scaled it 1.15x, so the message the user was pressing
-      // slid out from under their finger. Here both copies — the page's own
-      // under the blur and the pinned one over it — hold the same lift:
-      // 1.05x, right edge and vertical centre exactly where they were.
+      // slid out from under their finger. Here the pinned copy over the blur
+      // lifts 1.05x, right edge and vertical centre exactly where they were.
       expect(bubbleBoxes(), findsNWidgets(2));
-      for (var i = 0; i < 2; i++) {
-        final rect = tester.getRect(bubbleBoxes().at(i));
-        expect(rect.right, closeTo(resting.right, 0.5));
-        expect(rect.center.dy, closeTo(resting.center.dy, 0.5));
-        expect(rect.width, closeTo(resting.width * 1.05, 0.5));
-        expect(rect.height, closeTo(resting.height * 1.05, 0.5));
-      }
+      final lifted = tester.getRect(bubbleBoxes().last);
+      expect(lifted.right, closeTo(resting.right, 0.5));
+      expect(lifted.center.dy, closeTo(resting.center.dy, 0.5));
+      expect(lifted.width, closeTo(resting.width * 1.05, 0.5));
+      expect(lifted.height, closeTo(resting.height * 1.05, 0.5));
     });
 
-    testWidgets('it grows from the first touch, before the menu opens', (
+    testWidgets('nothing moves during the hold; at 500ms it buzzes and lifts', (
       tester,
     ) async {
+      final haptics = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'HapticFeedback.vibrate') {
+            haptics.add(call.arguments as String);
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
       await tester.pumpWidget(_wrapLocalized(sent));
       await tester.pumpAndSettle();
       final resting = tester.getRect(bubbleBoxes());
@@ -294,24 +305,29 @@ void main() {
       final gesture = await tester.startGesture(
         tester.getCenter(find.byType(UserMessageBubble)),
       );
-      // A short pause first, so a scroll that starts on the bubble never
-      // flickers it…
-      await tester.pump(const Duration(milliseconds: 50));
+      // A grow across the wait put the wait on screen (2026-11-04): the
+      // press read as slow. Until the hold registers, nothing happens.
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       expect(tester.getRect(bubbleBoxes()).width, closeTo(resting.width, 0.5));
-      // …then the meal card's lift, under the finger, while it is held.
-      await tester.pump(const Duration(milliseconds: 300));
-      final held = tester.getRect(bubbleBoxes());
-      expect(held.width, greaterThan(resting.width + 1));
-      expect(held.right, closeTo(resting.right, 0.5));
+      expect(haptics, isEmpty);
       expect(find.text('Copy'), findsNothing);
 
-      // Let go early: it settles back and nothing opens.
+      // The hold registers: the haptic in that frame, then the lift and the
+      // menu together on the menu's own curve.
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(haptics, ['HapticFeedbackType.lightImpact']);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Copy'), findsOneWidget);
+      final opening = tester.getRect(bubbleBoxes().last);
+      expect(opening.width, greaterThan(resting.width + 1));
       await gesture.up();
       await tester.pumpAndSettle();
-      expect(find.text('Copy'), findsNothing);
-      final after = tester.getRect(bubbleBoxes());
-      expect(after.width, closeTo(resting.width, 0.5));
-      expect(after.height, closeTo(resting.height, 0.5));
+      expect(
+        tester.getRect(bubbleBoxes().last).width,
+        closeTo(resting.width * 1.05, 0.5),
+      );
     });
 
     testWidgets('the lifted copy eases back as the menu closes', (
@@ -332,29 +348,6 @@ void main() {
 
       await tester.pumpAndSettle();
       expect(bubbleBoxes(), findsOneWidget);
-      expect(tester.getRect(bubbleBoxes()).width, closeTo(resting.width, 0.5));
-    });
-
-    testWidgets('dismissing it while it opens starts back from full size', (
-      tester,
-    ) async {
-      await tester.pumpWidget(_wrapLocalized(sent));
-      await tester.pumpAndSettle();
-      final resting = tester.getRect(bubbleBoxes());
-
-      // The menu is part-way through its 200ms open when the tap lands.
-      await holdBubble(tester, settle: false);
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.tapAt(const Offset(8, 8));
-      await tester.pump();
-
-      // The copy was drawn at the held size all through the open, so the
-      // close begins there too, not part of the way down.
-      expect(
-        tester.getRect(bubbleBoxes().last).width,
-        closeTo(resting.width * 1.05, 0.5),
-      );
-      await tester.pumpAndSettle();
       expect(tester.getRect(bubbleBoxes()).width, closeTo(resting.width, 0.5));
     });
 

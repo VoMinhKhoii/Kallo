@@ -27,7 +27,7 @@ Widget _layer({
   KalloMenuEdge edge = KalloMenuEdge.trailing,
   Animation<double> animation = const AlwaysStoppedAnimation<double>(1),
   Widget? pinned,
-  double pinnedScale = 1,
+  double lift = 1,
 }) => MaterialApp(
   home: MediaQuery(
     data: media,
@@ -38,7 +38,7 @@ Widget _layer({
       edge: edge,
       header: header,
       pinned: pinned,
-      pinnedScale: pinnedScale,
+      lift: lift,
       rows: _rows(),
     ),
   ),
@@ -210,7 +210,7 @@ void main() {
     );
   });
 
-  testWidgets('a grown pinned copy moves the card down by its growth', (
+  testWidgets('a lifted copy grows in place and moves the card down', (
     tester,
   ) async {
     _usePhone(tester);
@@ -222,17 +222,113 @@ void main() {
         overlaySize: _phone,
         media: const MediaQueryData(size: _phone),
         pinned: const ColoredBox(key: pin, color: Color(0xFF000000)),
-        pinnedScale: 1.05,
+        lift: 1.05,
       ),
     );
     await tester.pumpAndSettle();
 
-    // The caller scales its own copy; the layer lays it out at the resting
-    // rect and hangs the card off the GROWN one, right edges still flush.
-    expect(tester.getRect(find.byKey(pin)), anchor);
-    final grownBottom = anchor.center.dy + anchor.height * 1.05 / 2;
+    // Grown about its right edge, vertical centre where it was; the card
+    // hangs off the GROWN rect, right edges still flush.
+    final lifted = tester.getRect(find.byKey(pin));
+    expect(lifted.right, closeTo(anchor.right, 0.5));
+    expect(lifted.center.dy, closeTo(anchor.center.dy, 0.5));
+    expect(lifted.width, closeTo(anchor.width * 1.05, 0.5));
     final card = tester.getRect(find.byType(KalloMenuCard));
     expect(card.right, closeTo(anchor.right, 0.5));
-    expect(card.top, closeTo(grownBottom + KalloSpacing.sp2, 0.5));
+    expect(card.top, closeTo(lifted.bottom + KalloSpacing.sp2, 0.5));
+  });
+
+  testWidgets('the copy lifts on the menu\'s own animation', (tester) async {
+    _usePhone(tester);
+    const anchor = Rect.fromLTWH(100, 100, 240, 40);
+    const pin = Key('pin');
+    await tester.pumpWidget(
+      _layer(
+        anchor: anchor,
+        overlaySize: _phone,
+        media: const MediaQueryData(size: _phone),
+        pinned: const ColoredBox(key: pin, color: Color(0xFF000000)),
+        lift: 1.05,
+        animation: const AlwaysStoppedAnimation<double>(0),
+      ),
+    );
+    // Before the menu has opened at all, the copy sits exactly on the page's.
+    expect(tester.getRect(find.byKey(pin)), anchor);
+  });
+
+  testWidgets('a card half under the composer lifts out whole', (tester) async {
+    _usePhone(tester);
+    const media = MediaQueryData(
+      size: _phone,
+      padding: EdgeInsets.only(top: 47, bottom: 34),
+      viewInsets: EdgeInsets.only(bottom: 340),
+    );
+    // A meal card running under the keyboard: its bottom at 640, the floor
+    // at 504.
+    const anchor = Rect.fromLTWH(16, 340, 358, 300);
+    const pin = Key('pin');
+    await tester.pumpWidget(
+      _layer(
+        anchor: anchor,
+        overlaySize: _phone,
+        media: media,
+        pinned: const ColoredBox(key: pin, color: Color(0xFF000000)),
+        lift: 1.05,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final lifted = tester.getRect(find.byKey(pin));
+    final card = tester.getRect(find.byType(KalloMenuCard));
+    final ceiling = media.padding.top + KalloSpacing.sp3;
+    expect(lifted.bottom, lessThanOrEqualTo(504 + 0.5));
+    expect(lifted.top, greaterThanOrEqualTo(ceiling - 0.5));
+    // Never past the sides, even grown: a full-width card takes what room
+    // there is.
+    expect(lifted.left, greaterThanOrEqualTo(KalloSpacing.sp2 - 0.5));
+    expect(lifted.right, lessThanOrEqualTo(_phone.width - KalloSpacing.sp2));
+    // The card took the side that moved the item least — above it here —
+    // and overlaps neither the item nor the keyboard.
+    expect(card.bottom, closeTo(lifted.top - KalloSpacing.sp2, 0.5));
+    expect(card.top, greaterThanOrEqualTo(ceiling - 0.5));
+  });
+
+  testWidgets('a card taller than the screen is scaled down to fit', (
+    tester,
+  ) async {
+    _usePhone(tester);
+    const media = MediaQueryData(
+      size: _phone,
+      padding: EdgeInsets.only(top: 47, bottom: 34),
+    );
+    const anchor = Rect.fromLTWH(16, 20, 358, 1000);
+    const pin = Key('pin');
+    await tester.pumpWidget(
+      _layer(
+        anchor: anchor,
+        overlaySize: _phone,
+        media: media,
+        pinned: const ColoredBox(key: pin, color: Color(0xFF000000)),
+        lift: 1.05,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final lifted = tester.getRect(find.byKey(pin));
+    final card = tester.getRect(find.byType(KalloMenuCard));
+    final ceiling = media.padding.top + KalloSpacing.sp3;
+    final floor = _phone.height - media.padding.bottom;
+    expect(lifted.height, lessThan(anchor.height));
+    // Same shape, smaller: the copy is scaled, never squeezed.
+    expect(
+      lifted.width / lifted.height,
+      closeTo(anchor.width / anchor.height, 0.001),
+    );
+    // Item and card both on screen, side by side, neither over the other.
+    for (final r in [lifted, card]) {
+      expect(r.top, greaterThanOrEqualTo(ceiling - 0.5));
+      expect(r.bottom, lessThanOrEqualTo(floor + 0.5));
+    }
+    expect(lifted.overlaps(card.deflate(0.5)), isFalse);
   });
 }

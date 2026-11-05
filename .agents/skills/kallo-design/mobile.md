@@ -499,7 +499,7 @@ so there is nothing to prefer over it.
 | a segmented control | `CupertinoSlidingSegmentedControl` | `SegmentedStrip` — **exception**: a **pill** track and thumb, which is the iOS 26 shape (42pt track, thumb 2pt inside it with a 0.5pt rim, every label ink, the selected one 500 — measured off the Claude iOS app's switch, 2026-10-14). Motion and touch are the system control's, taken from the SDK control's measured constants: a critically damped spring that starts on the tap, the held thumb shrinking to 95% and draggable, a pressed segment fading to 20%; Flutter's Cupertino control still draws the iOS 13–18 rounded rectangle (private `_kCornerRadius` 9 / `_kThumbRadius` 7, no shape parameter — cited in `segmented_strip.dart`; retire when the SDK draws the capsule). An `OptionStripItem.icon` draws inline before its label (feedback's bug / sprout / lightbulb). The `.onboarding`/`.settings` hint skins retired 2026-09-24 with their last callers: a choice that needs a hint is an `OptionRow` with a subline |
 | `Slider` | `CupertinoSlider` | **1 site** (`cheat_slider_card.dart`; Settings' `AggressionSlider` retired 2026-09-24 — the goal page uses onboarding's pace ruler). No `SliderTheme` — the 4pt track and 9pt thumb are not expressible |
 | `Scaffold` | `CupertinoPageScaffold` | 8 sites. `tab_scaffold.dart` stays on `Scaffold`: `extendBody` + the `MediaQuery.padding.bottom` rewrite that lets the pill nav overlap content has no Cupertino analogue |
-| long-press menu | `showKalloAnchoredMenu` | **exception** — cites `_kOpenScale = 1.15` and `_previewLongPressTimeout = 800ms`, boundary 3 |
+| long-press menu | `KalloHoldMenu` (over `showKalloAnchoredMenu`) | **exception** — cites `_kOpenScale = 1.15`, `_previewLongPressTimeout = 800ms` and the `easeOutBack` open, boundary 3 |
 | `SnackBar` | `TopToast` | not an exception — Cupertino ships no toast |
 | a pushed page's inline title bar | `CupertinoNavigationBar`, via `InlineNavBar` (`shared/widgets/chrome/`) | ✅ done 2026-09-24 — the SDK bar owns the layout; the app sets type, ink and a clear, borderless, unblurred background. **Exception inside it: the back button.** `CupertinoNavigationBarBackButton` draws its chevron from the `CupertinoIcons` font, which the app does not ship (no `cupertino_icons` dependency), so it rendered a missing-glyph box; the leading slot is a `CupertinoButton` with the Lucide chevron and the SDK's 12-character "Back" rule. Retire if `cupertino_icons` is ever bundled |
 | `ClampingScrollPhysics` on a PAGE | `BouncingScrollPhysics` (the iOS rubber-band) | sheets clamp on purpose — a bounce fights the drag-to-dismiss |
@@ -565,10 +565,18 @@ boundaries, each of which has already cost a bug when crossed:
      pressed widget into a preview slot of its own and scales it, so a sent
      message slid out from under the finger holding it, and it dresses the
      action rows in system chrome rather than Be Vietnam Pro. Cost the most to
-     learn (2026-09-08). The owned menu still borrows the context menu's
-     lift: the held bubble grows to 1.05x IN PLACE, about its right edge,
-     over the 500ms hold (2026-11-04). *Retire when `CupertinoContextMenu` can
-     present in place.* Guarded by `test/features/logging/user_message_bubble_test.dart`.
+     learn (2026-09-08). Since 2026-11-05 the meal cards hold the same menu
+     (`KalloHoldMenu`), because the context menu's 800ms wait and its
+     `easeOutBack` open (the card sprang past its size and back) read as
+     slow and bouncy beside the message's 500ms. One hold for both: nothing
+     moves while the finger waits; at 500ms the haptic lands and the item
+     lifts 1.05x in place as the card arrives, on the menu's 200ms curve. An
+     item that would not show whole (under the gauges or the composer, or
+     taller than the screen) moves or shrinks just enough
+     (`anchored_menu_lift.dart`). *Retire when `CupertinoContextMenu` can
+     present in place and its timings are public.* Guarded by
+     `test/features/logging/user_message_bubble_test.dart` and
+     `test/shared/widgets/menu/anchored_menu_layer_test.dart`.
    - **`KalloAlertSurface`** over `CupertinoPopupSurface`. Translucent by
      default; "solid surfaces, no stacked translucency" is a system rule.
      *Retire if that rule changes, not if the SDK does.*

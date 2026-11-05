@@ -12,6 +12,7 @@ import 'package:kallo_mobile/features/logging/widgets/persisted/persisted_meal_c
 import 'package:kallo_mobile/features/logging/widgets/persisted/persisted_meal_card_content.dart';
 import 'package:kallo_mobile/services/billing/entitlements_provider.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
+import 'package:kallo_mobile/theme/kallo_colors.dart';
 
 import '../../../l10n_test_loader.dart';
 import '../actions/hold_to_open_menu.dart';
@@ -117,6 +118,11 @@ void main() {
     await holdToOpenMenu(tester, find.byType(PersistedMealCardContent));
     expect(find.text('Edit'), findsOneWidget);
     expect(find.text('Remove'), findsOneWidget);
+    // Remove deletes the meal: it wears the destructive red.
+    expect(
+      tester.widget<Text>(find.text('Remove')).style?.color,
+      KalloColors.danger,
+    );
 
     // The lifted copy lives in the menu's own route, above the page's
     // Material. Without one of its own every Text in it wore Flutter's yellow

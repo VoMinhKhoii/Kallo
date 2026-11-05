@@ -49,9 +49,13 @@ class KalloMenuActionRow extends StatelessWidget {
     this.badge,
     this.detail,
     this.checked,
+    this.destructive = false,
   });
 
   final String label;
+
+  /// Label and glyph in [KalloColors.danger]: the row removes something.
+  final bool destructive;
 
   /// The trailing glyph that confirms an action. A pull-down's rows carry
   /// none: the check column says what is chosen.
@@ -94,7 +98,7 @@ class KalloMenuActionRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: dashBody(),
+            style: dashBody(color: destructive ? KalloColors.danger : null),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -105,7 +109,11 @@ class KalloMenuActionRow extends StatelessWidget {
         ],
         if (badge != null) ...[badge!, const SizedBox(width: KalloSpacing.sp2)],
         if (icon != null)
-          Icon(icon, size: KalloIcons.tertiary, color: KalloColors.textSoft),
+          Icon(
+            icon,
+            size: KalloIcons.tertiary,
+            color: destructive ? KalloColors.danger : KalloColors.textSoft,
+          ),
       ],
     ),
   );
