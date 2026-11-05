@@ -18,6 +18,8 @@
 		<string>match AppStore com.khoivo.nham</string>
 		<key>com.khoivo.nham.NotificationService</key>
 		<string>match AppStore com.khoivo.nham.NotificationService</string>
+		<key>com.khoivo.nham.TodayWidget</key>
+		<string>match AppStore com.khoivo.nham.TodayWidget</string>
 	</dict>
 </dict>
 </plist>

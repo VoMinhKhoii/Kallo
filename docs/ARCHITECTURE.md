@@ -308,7 +308,7 @@ proved to be one hook.
 | `features/dashboard/widgets/` | `today/` `weight/` `heatmap/` `chrome/` `states/` | ok |
 | `features/nutrition/widgets/` | `summary/` `charts/` `nutrients/` `scope/` `states/` | ok |
 | `features/settings/widgets/` | `profile/` `list/` `account/` `chrome/` | ok |
-| `features/<f>/` | one product surface each — auth, circle, dashboard, feedback, logging, nutrition, onboarding, paywall, privacy (the one-time AI-processing consent sheet, its gate and record), settings | split |
+| `features/<f>/` | one product surface each — auth, circle, dashboard, feedback, logging, nutrition, onboarding, paywall, privacy (the one-time AI-processing consent sheet, its gate and record), settings, today_widget (the day the iOS home-screen widget draws, written to its App Group — the extension itself is `ios/TodayWidget/`, see `apps/docs/mobile/today-widget.md`) | split |
 
 There is no `lib/data/`. Everything that folder held was infrastructure, so it merged into
 `services/`; no genuinely static table was left to justify keeping it.

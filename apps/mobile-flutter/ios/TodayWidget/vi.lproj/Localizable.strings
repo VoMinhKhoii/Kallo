@@ -1,0 +1,3 @@
+/* Mục widget trong thư viện. Theo ngôn ngữ của máy (hệ thống vẽ nó). */
+"widget.name" = "Hôm nay";
+"widget.description" = "Hôm nay bạn đã ăn bao nhiêu so với mục tiêu.";

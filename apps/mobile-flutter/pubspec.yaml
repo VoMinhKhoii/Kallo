@@ -51,6 +51,10 @@ dependencies:
   sentry_flutter: ^9.30.1
   posthog_flutter: ^5.46.0
   webview_flutter: ^4.14.1
+  # The iOS home-screen widget's bridge: writes the day into the shared App
+  # Group and asks WidgetKit to redraw (lib/features/today_widget/). The
+  # widget itself is native SwiftUI in ios/TodayWidget/.
+  home_widget: ^0.10.0
 
 dev_dependencies:
   flutter_test:
