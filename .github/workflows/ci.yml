@@ -282,7 +282,7 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.repository.private == false && needs.changes.outputs.deps == 'true'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/dependency-review-action@v5
 
   # A push builds the image only after every gate passes: main's image is what
   # cloud-run-prod.yml deploys. A PR never pushes its image, so the PR job below
