@@ -31,7 +31,7 @@ jobs:
     steps:
       # Full history so the PR's merge base is here; blobless, so that costs
       # commits and trees, not old file contents.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           filter: blob:none
@@ -45,7 +45,7 @@ jobs:
     name: Lint (Biome)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Pinned to the version in package.json. Left unpinned, setup-biome
       # finds no version in bun.lock and installs latest, which promotes
       # nursery rules and fails the job on untouched files.
@@ -68,7 +68,7 @@ jobs:
       ran: ${{ steps.affected.outputs.run }}
     steps:
       # Full history (blobless) for the affected step below.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           filter: blob:none
@@ -92,7 +92,7 @@ jobs:
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       # Full history (blobless) for the affected step below.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           filter: blob:none
@@ -136,7 +136,7 @@ jobs:
       R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
     steps:
       # Full history (blobless) for the affected step below.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           filter: blob:none
@@ -179,7 +179,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "placeholder"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -200,7 +200,7 @@ jobs:
     env:
       SEND_EMAIL_HOOK_SECRET: v1,whsec_Y2ktbWlncmF0aW9uLXZhbGlkYXRlLW9ubHktZHVtbXk=
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Validate migration timestamps
@@ -281,7 +281,7 @@ jobs:
     # Dependency Review requires GitHub Code Security for private repositories.
     if: github.event_name == 'pull_request' && github.event.repository.private == false && needs.changes.outputs.deps == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/dependency-review-action@v4
 
   # A push builds the image only after every gate passes: main's image is what
@@ -305,7 +305,7 @@ jobs:
       IMAGE_TAG: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       IMAGE_URI: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/kallo:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps: &container-steps
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - uses: docker/setup-buildx-action@v4
@@ -398,7 +398,7 @@ jobs:
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: scripts/ci/affected
       - env:
