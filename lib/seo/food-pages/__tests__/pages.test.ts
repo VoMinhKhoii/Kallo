@@ -8,6 +8,7 @@ import {
   pagesByGroup,
   pagesOf,
   relatedPages,
+  similarCaloriePages,
   sourcesOf,
 } from '../pages';
 import {
@@ -104,6 +105,30 @@ describe.each(FOOD_PAGE_LOCALES)('the %s hub', (locale) => {
       expect(related.every((p) => p.group === page.group)).toBe(true);
       expect(related.every((p) => p.locale === locale)).toBe(true);
       expect(related.map((p) => p.slug)).not.toContain(page.slug);
+    }
+  });
+
+  it('adds three similar-calorie pages from other groups', () => {
+    for (const page of pagesOf(locale)) {
+      const similar = similarCaloriePages(page);
+      expect(similar, page.slug).toHaveLength(3);
+      expect(similar.every((p) => p.group !== page.group)).toBe(true);
+      expect(similar.every((p) => p.locale === locale)).toBe(true);
+    }
+  });
+
+  it('leaves no page linked by fewer than two other pages', () => {
+    const inbound = new Map(FOOD_SLUGS[locale].map((slug) => [slug, 0]));
+    for (const page of pagesOf(locale)) {
+      for (const other of [
+        ...relatedPages(page),
+        ...similarCaloriePages(page),
+      ]) {
+        inbound.set(other.slug, (inbound.get(other.slug) ?? 0) + 1);
+      }
+    }
+    for (const [slug, count] of inbound) {
+      expect(count, slug).toBeGreaterThanOrEqual(2);
     }
   });
 });

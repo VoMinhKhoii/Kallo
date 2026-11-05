@@ -27,6 +27,15 @@ export interface FoodPageChrome {
   moreHeading: string;
   /** "Or browse [all 50 meals]." around the hub link. */
   browse: { before: string; link: (count: number) => string; after: string };
+  /** After the lead: the data page, linked with its headline ratio. */
+  rangeNote: {
+    before: string;
+    link: (dishes: number, ratio: string) => string;
+    after: string;
+  };
+  /** Before "More meals": the TDEE calculator, for the reader's own day. */
+  dailyNote: { before: string; link: string; after: string };
+  similarHeading: string;
   footerLink: string;
   /** The hub's link to the data page that reads every dish together. */
   dataLink: string;
@@ -64,6 +73,19 @@ export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
       link: (count) => `all ${count} meals`,
       after: '.',
     },
+    rangeNote: {
+      before: 'A range this wide is normal. ',
+      link: (dishes, ratio) =>
+        `Across all ${dishes} meals, the heaviest version of a typical dish had ${ratio}× the calories of the lightest`,
+      after: '.',
+    },
+    dailyNote: {
+      before:
+        'Whether a meal like this fits your day depends on your own target: ',
+      link: 'work out your daily calories with the TDEE calculator',
+      after: '.',
+    },
+    similarHeading: 'Similar calories',
     footerLink: 'Calories in meals',
     dataLink: 'How much the same meal varies: all these meals read together',
   },
@@ -93,6 +115,18 @@ export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
       link: (count) => `xem tất cả ${count} món`,
       after: '.',
     },
+    rangeNote: {
+      before: 'Chênh lệch như vậy là bình thường. ',
+      link: (dishes, ratio) =>
+        `Trong cả ${dishes} món, bản nhiều calo nhất của một món điển hình gấp ${ratio} lần bản ít nhất`,
+      after: '.',
+    },
+    dailyNote: {
+      before: 'Món này nhiều hay vừa còn tùy mức calo mỗi ngày của bạn: ',
+      link: 'tính lượng calo mỗi ngày bằng công cụ TDEE',
+      after: '.',
+    },
+    similarHeading: 'Món có lượng calo tương đương',
     footerLink: 'Calo các món ăn',
     dataLink:
       'Cùng một món, calo chênh nhau bao nhiêu: đọc tất cả các bữa cùng lúc',

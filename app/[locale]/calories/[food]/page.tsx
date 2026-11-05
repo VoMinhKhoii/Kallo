@@ -17,6 +17,7 @@ import {
   type FoodPage,
   kcalSpan,
   relatedPages,
+  similarCaloriePages,
   sourcesOf,
 } from '@/lib/seo/food-pages/pages';
 import {
@@ -26,8 +27,11 @@ import {
   foodPageKey,
   foodPagePath,
 } from '@/lib/seo/food-pages/slugs';
+import { mealData } from '@/lib/seo/meal-data/facts';
+import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
+import { toolPath } from '@/lib/seo/tools/slugs';
 
 /**
  * A public food page: one question ("how many calories in a chicken
@@ -92,6 +96,7 @@ async function FoodContent({ params }: FoodPageProps) {
   const chrome = FOOD_PAGE_CHROME[page.locale];
   const t = await getTranslations({ locale, namespace: 'landing.header' });
   const loggedOn = chrome.formatDate(new Date(page.capture.capturedAt));
+  const { facts } = mealData(page.locale);
 
   return (
     <AuthProvider>
@@ -110,6 +115,13 @@ async function FoodContent({ params }: FoodPageProps) {
         <div className="mt-10">
           <DocsParagraph>
             {page.lead(kcalSpan(page.capture, page.locale))}
+          </DocsParagraph>
+          <DocsParagraph>
+            {chrome.rangeNote.before}
+            <DocsLink href={MEAL_DATA_PATH}>
+              {chrome.rangeNote.link(facts.dishes, facts.ratio)}
+            </DocsLink>
+            {chrome.rangeNote.after}
           </DocsParagraph>
 
           {page.meals.map((meal) => {
@@ -133,9 +145,19 @@ async function FoodContent({ params }: FoodPageProps) {
           <DocsParagraph>
             {chrome.sourcesBody(loggedOn, sourcesOf(page))}
           </DocsParagraph>
+          <DocsParagraph>
+            {chrome.dailyNote.before}
+            <DocsLink href={toolPath('tdee-calculator')}>
+              {chrome.dailyNote.link}
+            </DocsLink>
+            {chrome.dailyNote.after}
+          </DocsParagraph>
 
           <DocsH2>{chrome.moreHeading}</DocsH2>
           <FoodLinkList pages={relatedPages(page)} />
+
+          <DocsH2>{chrome.similarHeading}</DocsH2>
+          <FoodLinkList pages={similarCaloriePages(page)} />
           <DocsParagraph>
             {chrome.browse.before}
             <DocsLink href={FOOD_PAGE_PREFIX}>

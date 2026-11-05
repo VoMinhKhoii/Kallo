@@ -4,7 +4,11 @@ import { routing } from '@/i18n/routing';
 import { loadFrontmatter } from '@/lib/domain/docs/loader';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { alternateLanguages } from '@/lib/seo/alternates';
-import { captureDateRange, pagesOf } from '@/lib/seo/food-pages/pages';
+import {
+  captureDateRange,
+  FOOD_PAGE_LAYOUT_REVISED,
+  pagesOf,
+} from '@/lib/seo/food-pages/pages';
 import {
   FOOD_PAGE_LOCALES,
   FOOD_PAGE_PREFIX,
@@ -13,7 +17,12 @@ import {
 } from '@/lib/seo/food-pages/slugs';
 import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { SITE_URL } from '@/lib/seo/site';
-import { TOOL_SLUGS, TOOLS_PREFIX, toolPath } from '@/lib/seo/tools/slugs';
+import {
+  TOOL_PAGES_REVISED,
+  TOOL_SLUGS,
+  TOOLS_PREFIX,
+  toolPath,
+} from '@/lib/seo/tools/slugs';
 
 // Only the publicly crawlable, unauthenticated surfaces belong here. Everything
 // behind auth (dashboard, settings, groups, …) is disallowed in robots.ts.
@@ -71,12 +80,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
     }
 
-    // The calculators exist in every locale under the same slugs. Their copy
-    // has no revision date to read, so like the landing page they carry no
-    // `lastModified`.
+    // The calculators exist in every locale under the same slugs. A tool page
+    // is dated by `TOOL_PAGES_REVISED`, bumped by hand when its copy or links
+    // change; the hub has no revision date to read, so like the landing page
+    // it carries no `lastModified`.
     for (const path of [TOOLS_PREFIX, ...TOOL_SLUGS.map(toolPath)]) {
       entries.push({
         url: `${SITE_URL}/${locale}${path}`,
+        ...(path === TOOLS_PREFIX
+          ? {}
+          : { lastModified: new Date(`${TOOL_PAGES_REVISED}T00:00:00Z`) }),
         changeFrequency: 'monthly',
         priority: path === TOOLS_PREFIX ? 0.6 : 0.7,
         alternates: { languages: alternateLanguages(path) },
@@ -86,7 +99,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Each locale's food pages are its own dishes, so a page carries no
   // language alternates; only the hubs pair. A page's date is the day its
-  // meals were captured; a hub's is its newest page's.
+  // meals were captured or the shared layout last changed, whichever is
+  // later; a hub's is its newest capture.
   for (const locale of FOOD_PAGE_LOCALES) {
     const pages = pagesOf(locale);
     entries.push({
@@ -108,7 +122,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const page of pages) {
       entries.push({
         url: `${SITE_URL}${foodPagePath(page.locale, page.slug)}`,
-        lastModified: new Date(page.capture.capturedAt),
+        lastModified: new Date(
+          Math.max(
+            Date.parse(page.capture.capturedAt),
+            Date.parse(`${FOOD_PAGE_LAYOUT_REVISED}T00:00:00Z`)
+          )
+        ),
         changeFrequency: 'monthly',
         priority: 0.6,
       });
