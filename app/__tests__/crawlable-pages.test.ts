@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
  * and the page looks right in a browser, so this holds the line in the source.
  */
 const PUBLIC_PAGES = [
+  'app/[locale]/docs/[...slug]/page.tsx',
   'app/[locale]/calories/page.tsx',
   'app/[locale]/calories/[food]/page.tsx',
   'app/[locale]/tools/page.tsx',
@@ -18,8 +19,8 @@ const PUBLIC_PAGES = [
 describe('public pages render their article outside Suspense', () => {
   it.each(PUBLIC_PAGES)('%s', (path) => {
     const source = readFileSync(path, 'utf8');
-    expect(source).toContain('<article');
-    const beforeArticle = source.slice(0, source.indexOf('<article'));
-    expect(beforeArticle).not.toContain('<Suspense fallback');
+    const article = source.search(/<article|<Content\b/);
+    expect(article).toBeGreaterThan(-1);
+    expect(source.slice(0, article)).not.toContain('<Suspense fallback');
   });
 });

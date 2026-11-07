@@ -65,10 +65,10 @@ together give Instant Navigations. The rules the build enforces, and the choices
 - **Public pages keep their article outside `<Suspense>`.** React outlines a boundary over 12.8 KB:
   the content ships in a `<div hidden>` after the footer and a script moves it into place, even when
   it resolved at build time. Crawlers that run no JavaScript (OAI-SearchBot, PerplexityBot,
-  ClaudeBot) read that as an empty page. So the food, calculator and data routes render at the top
-  level, and the two with a dynamic param set `instant = false`, since a `params` read outside
+  ClaudeBot) read that as an empty page. So the docs, food, calculator and data routes render at the
+  top level, and those with a dynamic param set `instant = false`, since a `params` read outside
   `<Suspense>` otherwise fails instant validation. `app/__tests__/crawlable-pages.test.ts` holds
-  this. The docs route keeps its boundary for the skeleton a click shows.
+  this.
 - **Clock and random reads wait for `io()`.** Partial Prefetching makes `cookies()` and
   `headers()` readable in the runtime prefetch, so a `Date.now()`, `new Date()` or
   `Math.random()` reached right after them, before any network call, still lands in a prerender:
