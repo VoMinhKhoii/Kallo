@@ -7,7 +7,10 @@
 
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
-import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
+import type {
+  GroundedEstimator,
+  GroundedEstimatorStreamHooks,
+} from '@/lib/ai/pipeline/estimator/types';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
@@ -26,9 +29,7 @@ export interface FillOmittedArgs {
   budgetMs: number;
   /** Meal items that already failed for a reason a re-ask would not fix. */
   skipMealItemNames?: string[];
-  onAttemptComplete?: NonNullable<
-    Parameters<GroundedEstimator['estimate']>[2]
-  >['onAttemptComplete'];
+  onAttemptComplete?: GroundedEstimatorStreamHooks['onAttemptComplete'];
 }
 
 /** A meal item to ask for again, and which same-name dish it belongs to. */
