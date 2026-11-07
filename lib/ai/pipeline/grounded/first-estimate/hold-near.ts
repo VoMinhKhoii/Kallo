@@ -23,6 +23,8 @@ import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts'
 const BAND = 1.2;
 /** Free parts move by at most this factor either way; past it, trust them. */
 const MAX_SCALE = 3;
+/** Free parts priced at almost nothing, leaving what the user pinned. */
+const NEARLY_NOTHING = 1e-6;
 /** Search steps: enough to land within about 1% of the scale. */
 const STEPS = 8;
 
@@ -82,7 +84,7 @@ export function holdNearFirstEstimate(
   const priceAt = (k: number) =>
     price({ ...state, grounded: scaleFree(state, k) }, mealText);
   // What the user pinned alone passes the band: their numbers win, leave it.
-  if (over && priceAt(1e-6) >= target) return unchanged;
+  if (over && priceAt(NEARLY_NOTHING) >= target) return unchanged;
   let small = over ? 1 / MAX_SCALE : 1;
   let large = over ? 1 : MAX_SCALE;
   for (let step = 0; step < STEPS; step++) {
