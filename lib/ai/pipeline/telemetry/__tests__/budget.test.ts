@@ -197,6 +197,12 @@ describe('createBudgetAttemptRecorder', () => {
         fallbackFrom: 'claude-haiku-5-5',
       })
     );
+    // Haiku on Vertex bills Google, so it files under its own provider.
+    record(attemptOf({ attempt: 3, model: 'claude-haiku-5-5@vertex' }));
+    expect(mockRecord).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({ provider: 'vertex' })
+    );
   });
 
   it('tags non-meal callers with their own route', () => {

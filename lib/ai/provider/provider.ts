@@ -1,8 +1,8 @@
 import {
   getClaudeStructuredOutput,
   getVertexClaudeStructuredOutput,
-  withClaudeRouting,
-} from './claude/routing';
+} from './claude/clients';
+import { withClaudeRouting } from './claude/routing';
 import { type GeminiProviderConfig, getOrCreateAiClient } from './client';
 import { createEmbeddingMethods } from './embeddings';
 import { createWithRetry, DEFAULT_RETRY, type RetryOptions } from './retry';
