@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.23.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.22.0...v1.23.0) (2026-11-07)
+
+
+### Features
+
+* **ai:** fall back to Haiku on Vertex before Gemini ([#562](https://github.com/VoMinhKhoii/Kallo/issues/562)) ([1dd8573](https://github.com/VoMinhKhoii/Kallo/commit/1dd8573c1c791a0807160b7d7b0f059d876872b8))
+* **ios:** home-screen Today widget in small, medium and large ([#553](https://github.com/VoMinhKhoii/Kallo/issues/553)) ([4c36125](https://github.com/VoMinhKhoii/Kallo/commit/4c3612551001c2234281b1d999d3080838471dbc))
+* **mobile:** grow the sent message while it is held ([#554](https://github.com/VoMinhKhoii/Kallo/issues/554)) ([b9848f4](https://github.com/VoMinhKhoii/Kallo/commit/b9848f4e8af52d8ce38703cf9060e17e270f73f7))
+* **mobile:** one 500ms hold menu for the sent message and the meal cards ([#559](https://github.com/VoMinhKhoii/Kallo/issues/559)) ([9ed99f0](https://github.com/VoMinhKhoii/Kallo/commit/9ed99f0d9548d4c750a3c441d5c5dcef37e4938c))
+* **seo:** link food pages, calculators, data page and docs to each other ([#558](https://github.com/VoMinhKhoii/Kallo/issues/558)) ([f661b14](https://github.com/VoMinhKhoii/Kallo/commit/f661b14e85ed7eb9f1cd0118ce17d6b586250f03))
+* **web:** neutral fills for the Graphite dark theme ([#548](https://github.com/VoMinhKhoii/Kallo/issues/548)) ([b047f2f](https://github.com/VoMinhKhoii/Kallo/commit/b047f2f73a0b55ca2237be1b8f4e7f620aa75172))
+* **web:** size icons by role, reply field above the thread, border-only field focus ([#547](https://github.com/VoMinhKhoii/Kallo/issues/547)) ([048c06c](https://github.com/VoMinhKhoii/Kallo/commit/048c06cdb7979547976cd286b4afa9d3d0f90ecd))
+
+
+### Bug Fixes
+
+* **card-index:** retry a failed load on the next request, not on a timer ([#556](https://github.com/VoMinhKhoii/Kallo/issues/556)) ([94bfcb0](https://github.com/VoMinhKhoii/Kallo/commit/94bfcb0a99a898d1853b36ce34cb78bb3ff3596a))
+* **circle:** keep a post's kcal on one line and give the thread more room ([#549](https://github.com/VoMinhKhoii/Kallo/issues/549)) ([62b97c2](https://github.com/VoMinhKhoii/Kallo/commit/62b97c2decefa6136be595006512e12f29b348fe))
+* **seo:** serve public pages as plain HTML, with structured data and a meal table ([#561](https://github.com/VoMinhKhoii/Kallo/issues/561)) ([2144897](https://github.com/VoMinhKhoii/Kallo/commit/214489785de11d359f2cc93ff7c149608edf4788))
+
+
+### Performance
+
+* **web:** load PostHog on first use, zod/mini and per-area illustrations ([#552](https://github.com/VoMinhKhoii/Kallo/issues/552)) ([bf592ed](https://github.com/VoMinhKhoii/Kallo/commit/bf592ed44c169d9b377a5adaac4f55c3c3e4d365))
+* **web:** run the public pages' animations in CSS so content paints without JS ([#555](https://github.com/VoMinhKhoii/Kallo/issues/555)) ([725ae62](https://github.com/VoMinhKhoii/Kallo/commit/725ae62b2b6990fcac781fe0e484c03fd6a652ca))
+
+
+### Documentation
+
+* add security lessons and point code review at them ([#545](https://github.com/VoMinhKhoii/Kallo/issues/545)) ([d91eabf](https://github.com/VoMinhKhoii/Kallo/commit/d91eabf0eae8c6eb8c8d6f035d818e432bb3aa65))
+
 ## [1.22.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.21.0...v1.22.0) (2026-11-02)
 
 
