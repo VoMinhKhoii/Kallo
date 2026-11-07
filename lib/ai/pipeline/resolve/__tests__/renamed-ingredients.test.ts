@@ -109,6 +109,24 @@ describe('an ingredient renamed inside its dish', () => {
     ).toEqual([200, 50, null]);
   });
 
+  it('gives a rename to the food it matches best, not the first', () => {
+    expect(
+      grams(
+        { 'Gà nướng': ['Chicken breast', 'Chicken thigh'] },
+        { 'Gà nướng': [['Chicken thigh, cooked', 150]] }
+      )
+    ).toEqual([null, 150]);
+  });
+
+  it('leaves a tie open rather than guess between two foods', () => {
+    expect(
+      grams(
+        { 'Gà nướng': ['Chicken breast', 'Chicken thigh'] },
+        { 'Gà nướng': [['Chicken, roasted', 150]] }
+      )
+    ).toEqual([null, null]);
+  });
+
   it('never crosses into another dish', () => {
     expect(
       grams(

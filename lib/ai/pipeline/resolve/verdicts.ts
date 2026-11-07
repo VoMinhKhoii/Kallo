@@ -186,21 +186,39 @@ function pairRenamedInsideDish(
       );
     });
     const open = out.filter((e, i) => !e.ground && slotOfEntry[i] === slot);
-    for (const entry of open) {
-      const want = nameWords(entry.ingredient.rawName);
-      let best = -1;
-      let bestShared = 0;
-      estimates.forEach((estimate, j) => {
-        const shared = [...nameWords(estimate.ingredientName)].filter((w) =>
-          want.has(w)
-        ).length;
-        if (shared > bestShared) [best, bestShared] = [j, shared];
-      });
-      if (best >= 0) entry.ground = estimates.splice(best, 1)[0];
+    // The strongest shared-word match across the dish wins; a tie stays open,
+    // because either answer could be the wrong food.
+    const matches = open
+      .flatMap((entry) => {
+        const want = nameWords(entry.ingredient.rawName);
+        return estimates.map((estimate) => ({
+          entry,
+          estimate,
+          shared: [...nameWords(estimate.ingredientName)].filter((w) =>
+            want.has(w)
+          ).length,
+        }));
+      })
+      .filter((m) => m.shared > 0)
+      .sort((a, b) => b.shared - a.shared);
+    const taken = new Set<GroundedIngredientEstimate>();
+    const isOpen = (m: (typeof matches)[number]) =>
+      !m.entry.ground && !taken.has(m.estimate);
+    for (const match of matches) {
+      const tied = matches.some(
+        (m) =>
+          m !== match &&
+          isOpen(m) &&
+          m.shared === match.shared &&
+          (m.entry === match.entry || m.estimate === match.estimate)
+      );
+      if (!isOpen(match) || tied) continue;
+      match.entry.ground = match.estimate;
+      taken.add(match.estimate);
     }
+    const unused = estimates.filter((estimate) => !taken.has(estimate));
     const still = open.filter((e) => !e.ground);
-    if (still.length === 1 && estimates.length === 1)
-      still[0].ground = estimates[0];
+    if (still.length === 1 && unused.length === 1) still[0].ground = unused[0];
   }
 }
 

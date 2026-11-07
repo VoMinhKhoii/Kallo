@@ -107,18 +107,29 @@ function mergeAnswers(
     mealItems.push(added);
     return added;
   };
-  for (const item of again.mealItems) {
-    const asked = open.filter((o) => o.dish === nameKey(item.mealItemName));
+  const dishNames = new Set(again.mealItems.map((i) => i.mealItemName));
+  for (const mealItemName of dishNames) {
+    const items = again.mealItems.filter(
+      (i) => i.mealItemName === mealItemName
+    );
+    const asked = open.filter((o) => o.dish === nameKey(mealItemName));
     if (asked.length === 0) {
-      mealItems.push(item);
+      mealItems.push(...items);
       continue;
     }
-    for (const food of item.ingredients) {
-      const name = nameKey(food.ingredientName);
-      const exact = asked.find((o) => o.foods.delete(name));
-      const home = exact ?? asked.find((o) => o.foods.size > 0) ?? asked[0];
-      if (!exact) home.foods.delete([...home.foods][0]);
-      dishFor(item.mealItemName, home.occurrence).ingredients.push(food);
+    // Every exact name takes its place first, so a renamed food never takes it.
+    const renamed = items
+      .flatMap((i) => i.ingredients)
+      .filter((food) => {
+        const name = nameKey(food.ingredientName);
+        const home = asked.find((o) => o.foods.delete(name));
+        if (home) dishFor(mealItemName, home.occurrence).ingredients.push(food);
+        return !home;
+      });
+    for (const food of renamed) {
+      const home = asked.find((o) => o.foods.size > 0) ?? asked[0];
+      home.foods.delete([...home.foods][0]);
+      dishFor(mealItemName, home.occurrence).ingredients.push(food);
     }
   }
   return { ...grounded, mealItems };

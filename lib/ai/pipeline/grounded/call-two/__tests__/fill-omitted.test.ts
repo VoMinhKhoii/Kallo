@@ -152,6 +152,35 @@ describe('fillOmitted', () => {
     ]);
   });
 
+  it('never lets a renamed answer take a food asked for by name', async () => {
+    const first = dish('Cơm', ['Rice', 'Oil']);
+    const second = dish('Cơm', ['Rice']);
+    const estimate = vi.fn(async () => ({
+      estimation: {
+        mealItems: [
+          {
+            mealItemName: 'Cơm',
+            ingredients: [
+              { ingredientName: 'Oil, olive', grossG: 10 },
+              { ingredientName: 'Rice', grossG: 200 },
+            ],
+          },
+          {
+            mealItemName: 'Cơm',
+            ingredients: [{ ingredientName: 'Rice', grossG: 100 }],
+          },
+        ],
+      },
+    })) as unknown as GroundedEstimator['estimate'];
+    const out = await fillOmitted(
+      estimation(),
+      args(estimate, [first, second])
+    );
+    expect(
+      out.mealItems.map((m) => m.ingredients.map((i) => i.grossG))
+    ).toEqual([[200, 10], [100]]);
+  });
+
   it('reaches the second same-name dish when only it is short', async () => {
     const bowl = dish('Cơm', ['Cơm', 'Trứng']);
     const estimate = vi.fn(async () => ({
