@@ -44,6 +44,10 @@ import { runCallTwoStage } from './call-two/call-two';
 import { flushUnstreamedItemMacros } from './call-two/item-macros';
 import { runGroundedDecomposition } from './decomposition';
 import { runV2AnomalyPass, shouldEscalateV2 } from './escalation';
+import {
+  isFirstEstimateEnabled,
+  startFirstEstimate,
+} from './first-estimate/first-estimate';
 import { prepareGrounding } from './grounding';
 import { isDishRescueEnabled, startDishRescue } from './rescue/rescue';
 import { reviewPicks } from './review';
@@ -119,6 +123,18 @@ export async function analyzeMealV2(
   let promptCharsCall2 = 0;
   let nutritionChunkCount = 0;
   let closeRescue = () => {};
+  const firstEstimate = isFirstEstimateEnabled()
+    ? startFirstEstimate({
+        gemini,
+        model: profile.nutritionModel,
+        mealText: rawInput,
+        onAttemptComplete: budget.nutritionRecorder,
+      })
+    : null;
+  const closeSideCalls = () => {
+    closeRescue();
+    firstEstimate?.abort();
+  };
 
   try {
     // ---- Stage 1: Call 1 — pure decomposition (grounded-decomposition) --
@@ -134,6 +150,7 @@ export async function analyzeMealV2(
       onAttemptComplete: budget.decompositionRecorder,
     });
     if (stage1.nonFood) {
+      closeSideCalls();
       return nonFoodResponse();
     }
     const {
@@ -202,6 +219,7 @@ export async function analyzeMealV2(
       streamedMealItemIds,
       rawInput,
       promptCtx,
+      firstEstimate: await firstEstimate?.settle(),
       temperature: call2Temperature,
       userContext,
       onAttemptComplete: budget.nutritionRecorder,
@@ -350,7 +368,7 @@ export async function analyzeMealV2(
       ? { success: true, data: assembly.result, unresolved }
       : { success: true, data: assembly.result };
   } catch (error) {
-    closeRescue();
+    closeSideCalls();
     // The user only sees a generic "try again"; keep the cause in the logs.
     console.error('[v2-pipeline] analysis failed:', safeError(error));
     budget.recordCatchError(error);
