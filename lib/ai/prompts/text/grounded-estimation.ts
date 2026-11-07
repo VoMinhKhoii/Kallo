@@ -168,6 +168,11 @@ ${finalSanityRule}
  */
 export const SHARE_RULE = `\n\n<share_rule>\nWhen <original_prompt> says the user ate only part of what was ordered, cooked or served (a quarter, a third, half, "shared between 4", "split with a friend", "I had 1 of the 3"), size every ingredient of those dishes as the user's own share, never the whole table's.\n</share_rule>`;
 
+/** The plain question behind the first estimate: no rows, no rules. */
+export const FIRST_ESTIMATE_SYSTEM_PROMPT = 'You are a helpful assistant.';
+export const firstEstimateUserMessage = (mealText: string): string =>
+  `This is what I ate:\n\n${mealText}\n\nHow much did I eat? List each food with its grams and calories, then the total calories.`;
+
 /** The model's own read of the meal (`grounded/first-estimate`), rows unseen. */
 export const firstEstimateBlock = (estimate: string): string =>
   `\n\n<first_estimate>\nBefore seeing any database rows, you read this meal as:\n${estimate}\nThat is your honest read of what this person ate. Keep it. Use the rows to identify each food and to split a dish into its parts, so the parts add up to about the same amounts. Move away from it only for a clear reason: a number the user typed, or a row that shows you misjudged the food. Those foods are only a guide to amounts and may be grouped differently: your answer still lists every meal item and ingredient of <ingredient_data>, with their exact names.\n</first_estimate>`;

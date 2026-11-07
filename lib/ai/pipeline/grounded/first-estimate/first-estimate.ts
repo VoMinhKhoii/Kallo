@@ -11,6 +11,10 @@
 
 import { z } from 'zod';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
+import {
+  FIRST_ESTIMATE_SYSTEM_PROMPT,
+  firstEstimateUserMessage,
+} from '@/lib/ai/prompts/text/grounded-estimation';
 import type { GeminiClient, StreamOptions } from '@/lib/ai/provider/provider';
 
 /** How long Call 2 waits for an estimate that is still running. */
@@ -58,8 +62,8 @@ export function startFirstEstimate(args: {
     .generateStructuredOutput(
       {
         schema: firstEstimateSchema,
-        systemPrompt: 'You are a helpful assistant.',
-        userMessage: `This is what I ate:\n\n${args.mealText}\n\nHow much did I eat? List each food with its grams and calories, then the total calories.`,
+        systemPrompt: FIRST_ESTIMATE_SYSTEM_PROMPT,
+        userMessage: firstEstimateUserMessage(args.mealText),
         model: args.model,
         abortSignal: controller.signal,
       },

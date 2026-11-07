@@ -90,6 +90,7 @@ export function buildGroundedEstimationPrompt(args: {
   originalPrompt: string;
   mealItems: MealItemWithCandidates[];
   userContext: PromptPersonalizationContext;
+  firstEstimate?: string;
 }): string {
   const locale = resolvePromptLocale(args.userContext);
   const staticPrefix = buildStaticPrefix(
@@ -102,8 +103,8 @@ export function buildGroundedEstimationPrompt(args: {
     includeNameEn: locale === 'global',
   });
 
-  const firstEstimate = args.userContext.firstEstimate
-    ? firstEstimateBlock(escapeXmlAttribute(args.userContext.firstEstimate))
+  const firstEstimate = args.firstEstimate
+    ? firstEstimateBlock(escapeXmlAttribute(args.firstEstimate))
     : '';
 
   return `${staticPrefix}

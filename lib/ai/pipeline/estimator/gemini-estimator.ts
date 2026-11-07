@@ -49,6 +49,7 @@ export function createGeminiEstimator(
         originalPrompt: input.originalPrompt,
         mealItems: input.mealItems,
         userContext: input.userContext,
+        firstEstimate: input.firstEstimate,
       });
       const estimation: GroundedEstimation =
         await gemini.generateStructuredOutputStream(
@@ -91,5 +92,6 @@ export function renderGeminiEstimatorPrompt(
     originalPrompt: input.originalPrompt,
     mealItems: input.mealItems,
     userContext: input.userContext,
+    firstEstimate: input.firstEstimate,
   });
 }

@@ -131,6 +131,10 @@ export async function analyzeMealV2(
         onAttemptComplete: budget.nutritionRecorder,
       })
     : null;
+  const closeSideCalls = () => {
+    closeRescue();
+    firstEstimate?.abort();
+  };
 
   try {
     // ---- Stage 1: Call 1 — pure decomposition (grounded-decomposition) --
@@ -146,7 +150,7 @@ export async function analyzeMealV2(
       onAttemptComplete: budget.decompositionRecorder,
     });
     if (stage1.nonFood) {
-      firstEstimate?.abort();
+      closeSideCalls();
       return nonFoodResponse();
     }
     const {
@@ -202,8 +206,6 @@ export async function analyzeMealV2(
 
     rescue?.matched(matchResults, portionResolutions);
 
-    const estimateText = await firstEstimate?.settle();
-
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
     const stage3 = await runCallTwoStage({
       traceContext,
@@ -216,9 +218,8 @@ export async function analyzeMealV2(
       mealItemsWithCandidates,
       streamedMealItemIds,
       rawInput,
-      promptCtx: estimateText
-        ? { ...promptCtx, firstEstimate: estimateText }
-        : promptCtx,
+      promptCtx,
+      firstEstimate: await firstEstimate?.settle(),
       temperature: call2Temperature,
       userContext,
       onAttemptComplete: budget.nutritionRecorder,
@@ -367,8 +368,7 @@ export async function analyzeMealV2(
       ? { success: true, data: assembly.result, unresolved }
       : { success: true, data: assembly.result };
   } catch (error) {
-    closeRescue();
-    firstEstimate?.abort();
+    closeSideCalls();
     // The user only sees a generic "try again"; keep the cause in the logs.
     console.error('[v2-pipeline] analysis failed:', safeError(error));
     budget.recordCatchError(error);
