@@ -64,13 +64,24 @@ type Loose = Record<string, unknown>;
  * (decomposition and grounded estimation) before the Zod parse: an explicit
  * mass of 0 g means no mass; a missing dish `cookingMethod` is ""; over-long `rejectReason` /
  * `prepNotes` are cut to the schema's lengths; `refusePct` is clamped to
- * 0-80; a meal item with no ingredients is dropped. Fields a schema does not
- * have are left alone.
+ * 0-80; a Call 2 ingredient at 0 g is dropped, and a `servedG` of 0 means no
+ * plate weight; a meal item with no ingredients is dropped. Fields a schema
+ * does not have are left alone.
  */
 export function repairPipelineOutput(raw: unknown): unknown {
   if (!raw || typeof raw !== 'object') return raw;
   const out = raw as Loose;
   if (!Array.isArray(out.mealItems)) return raw;
+  for (const m of out.mealItems as Loose[]) {
+    // A Call 2 ingredient at 0 g is no answer for it (Call 2 asks again).
+    if (
+      Array.isArray(m?.ingredients) &&
+      m.ingredients.some((g) => 'grossG' in (g as Loose))
+    )
+      m.ingredients = (m.ingredients as Loose[]).filter(
+        (g) => Number(g.grossG) > 0
+      );
+  }
   out.mealItems = (out.mealItems as Loose[]).filter(
     (m) => !Array.isArray(m?.ingredients) || m.ingredients.length > 0
   );
@@ -81,6 +92,7 @@ export function repairPipelineOutput(raw: unknown): unknown {
     )
       m.cookingMethod = '';
     for (const g of (m.ingredients as Loose[] | undefined) ?? []) {
+      if ('servedG' in g && !(Number(g.servedG) > 0)) delete g.servedG;
       const mass = g.explicitMass as Loose | undefined;
       if (mass && !(Number(mass.grams) > 0)) delete g.explicitMass;
       if (typeof g.rejectReason === 'string' && g.rejectReason.length > 120)

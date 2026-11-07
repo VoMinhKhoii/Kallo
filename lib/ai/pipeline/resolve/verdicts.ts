@@ -92,10 +92,12 @@ export function pairIngredientsWithGrounded(
   const queues = queueGrounded(grounded, createDishSlots(dishNames));
   const decompositionSlotOf = createDishSlots(dishNames);
   const out: ReturnType<typeof pairIngredientsWithGrounded> = [];
+  const slotOfEntry: string[] = [];
 
   v2.mealItems.forEach((mi, mealItemIdx) => {
     const slot = decompositionSlotOf(mi.name);
     mi.ingredients.forEach((ing, ingredientIdx) => {
+      slotOfEntry.push(slotPrefix(queueKey(slot, ing.rawName)));
       const ground = queues.get(queueKey(slot, ing.rawName))?.shift() ?? null;
       out.push({
         mealItemIdx,
@@ -134,7 +136,68 @@ export function pairIngredientsWithGrounded(
     if (left?.length === 1 && unpaired.get(k) === 1) entry.ground = left[0];
   }
 
+  pairRenamedInsideDish(out, slotOfEntry, queues);
   return out;
+}
+
+const slotPrefix = (key: string): string => key.slice(0, key.lastIndexOf('::'));
+const nameWords = (name: string): Set<string> =>
+  new Set(
+    nameKey(name)
+      .split(/[\s,()/.-]+/)
+      .filter((w) => w.length > 1)
+  );
+
+/**
+ * A Call 2 that renamed an ingredient inside its own dish ("Jasmine rice"
+ * answered as "Jasmine rice, cooked", "Mì gói Hảo Hảo tôm chua cay" as "Mì ăn
+ * liền") leaves the estimate and the ingredient both unpaired, and the
+ * ingredient ships at 0 g. Inside one dish slot the leftovers are the same
+ * dish's parts, so pair them: a name sharing a word first, then the last one
+ * left on each side. Never re-uses an estimate.
+ */
+function pairRenamedInsideDish(
+  out: Array<{
+    ingredient: DecomposedIngredientV2;
+    ground: GroundedIngredientEstimate | null;
+  }>,
+  slotOfEntry: string[],
+  queues: Map<string, GroundedIngredientEstimate[]>
+): void {
+  const used = new Set(out.map((e) => e.ground));
+  const left = new Map<string, GroundedIngredientEstimate[]>();
+  for (const [key, queue] of queues)
+    for (const estimate of queue)
+      if (!used.has(estimate)) {
+        const slot = slotPrefix(key);
+        left.set(slot, [...(left.get(slot) ?? []), estimate]);
+      }
+  for (const [slot, estimates] of left) {
+    const open = out.filter((e, i) => !e.ground && slotOfEntry[i] === slot);
+    for (const entry of open) {
+      const want = nameWords(entry.ingredient.rawName);
+      let best = -1;
+      let bestShared = 0;
+      estimates.forEach((estimate, j) => {
+        const shared = [...nameWords(estimate.ingredientName)].filter((w) =>
+          want.has(w)
+        ).length;
+        if (shared > bestShared) [best, bestShared] = [j, shared];
+      });
+      if (best >= 0) entry.ground = estimates.splice(best, 1)[0];
+    }
+    const still = open.filter((e) => !e.ground);
+    const known = out
+      .filter((_, i) => slotOfEntry[i] === slot)
+      .map((e) => nameKey(e.ingredient.rawName));
+    // A second estimate for a food the dish has is a repeat, not a rename.
+    if (
+      still.length === 1 &&
+      estimates.length === 1 &&
+      !known.includes(nameKey(estimates[0].ingredientName))
+    )
+      still[0].ground = estimates[0];
+  }
 }
 
 export function classifyVerdict(

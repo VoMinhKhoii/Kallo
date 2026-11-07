@@ -319,6 +319,27 @@ describe('dropOilInFriedRows', () => {
     expect(dropOilInFriedRows(state).dropped).toBe(0);
   });
 
+  it('keeps an oil amount the user stated', () => {
+    const state = stateOf([
+      {
+        name: 'Trứng chiên',
+        cookingMethod: 'chiên',
+        parts: [
+          {
+            name: 'trứng',
+            g: 100,
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          oil,
+        ],
+      },
+    ]);
+    const parts = state.decomposition.mealItems[0].ingredients;
+    parts[1] = { ...parts[1], count: 1, unitToken: 'muỗng' };
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
   it('ignores seasonings and fats pan-fried without oil', () => {
     const fried = stateOf([
       {

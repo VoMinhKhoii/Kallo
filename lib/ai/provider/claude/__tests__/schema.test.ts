@@ -60,6 +60,28 @@ describe('withoutEmptyStrings', () => {
 });
 
 describe('repairPipelineOutput', () => {
+  it('drops a Call 2 ingredient at 0 g and a dish left with none', () => {
+    const out = repairPipelineOutput({
+      mealItems: [
+        {
+          mealItemName: 'Cơm gà',
+          ingredients: [
+            { ingredientName: 'Cơm', grossG: 0 },
+            { ingredientName: 'Gà', grossG: 100, servedG: 0 },
+          ],
+        },
+        {
+          mealItemName: 'Canh',
+          ingredients: [{ ingredientName: 'Rau', grossG: 0 }],
+        },
+      ],
+    }) as { mealItems: Array<{ ingredients: Array<Record<string, unknown>> }> };
+    expect(out.mealItems).toHaveLength(1);
+    expect(out.mealItems[0].ingredients).toEqual([
+      { ingredientName: 'Gà', grossG: 100 },
+    ]);
+  });
+
   it('fixes the value slips Claude cannot be held to by the schema', () => {
     const out = repairPipelineOutput({
       isFood: true,
