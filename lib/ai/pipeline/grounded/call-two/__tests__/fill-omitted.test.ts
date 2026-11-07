@@ -129,6 +129,29 @@ describe('fillOmitted', () => {
     ]);
   });
 
+  it('keeps a split answer on the same-name dish that asked', async () => {
+    const plate = dish('Cơm', ['Cơm', 'Trứng', 'Dầu']);
+    const estimate = vi.fn(async () => ({
+      estimation: estimation(
+        answer('Cơm', ['Trứng']),
+        answer('Cơm', ['Dầu ô liu'])
+      ),
+    })) as unknown as GroundedEstimator['estimate'];
+    const out = await fillOmitted(
+      estimation(
+        answer('Cơm', ['Cơm']),
+        answer('Cơm', ['Cơm', 'Trứng', 'Dầu'])
+      ),
+      args(estimate, [plate, plate])
+    );
+    expect(
+      out.mealItems.map((m) => m.ingredients.map((i) => i.ingredientName))
+    ).toEqual([
+      ['Cơm', 'Trứng', 'Dầu ô liu'],
+      ['Cơm', 'Trứng', 'Dầu'],
+    ]);
+  });
+
   it('reaches the second same-name dish when only it is short', async () => {
     const bowl = dish('Cơm', ['Cơm', 'Trứng']);
     const estimate = vi.fn(async () => ({

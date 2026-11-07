@@ -94,6 +94,21 @@ describe('an ingredient renamed inside its dish', () => {
     ).toEqual([120, null]);
   });
 
+  it('lets a repeated rename answer one food only', () => {
+    expect(
+      grams(
+        { 'Cơm trứng': ['Jasmine rice', 'Egg', 'Oil'] },
+        {
+          'Cơm trứng': [
+            ['Jasmine rice, cooked', 200],
+            ['Jasmine rice, cooked', 200],
+            ['Egg', 50],
+          ],
+        }
+      )
+    ).toEqual([200, 50, null]);
+  });
+
   it('never crosses into another dish', () => {
     expect(
       grams(

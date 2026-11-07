@@ -74,8 +74,10 @@ export function omittedMealItems(
 }
 
 /**
- * Add a re-ask's answers to the dish each was asked for: answers of one name
- * come back in the order they were asked, and go to that same-name dish.
+ * Add a re-ask's answers to the dish each food was asked for, wherever the
+ * answer put it: the shape of the answer (one item per dish, or a dish split
+ * into several same-name items) says nothing about which dish a food is for,
+ * the question does. A renamed food takes the next open place.
  */
 function mergeAnswers(
   grounded: GroundedEstimation,
@@ -86,17 +88,38 @@ function mergeAnswers(
     ...item,
     ingredients: [...item.ingredients],
   }));
-  const seen = new Map<string, number>();
+  const open = ask.map((o) => ({
+    dish: nameKey(o.item.mealItem.name),
+    occurrence: o.occurrence,
+    foods: new Set(
+      o.item.ingredients.map((i) => nameKey(i.ingredient.rawName))
+    ),
+  }));
+  const dishFor = (mealItemName: string, occurrence: number) => {
+    const same = mealItems.filter(
+      (m) => nameKey(m.mealItemName) === nameKey(mealItemName)
+    );
+    if (same[occurrence]) return same[occurrence];
+    const added = {
+      mealItemName,
+      ingredients: [] as (typeof again.mealItems)[number]['ingredients'],
+    };
+    mealItems.push(added);
+    return added;
+  };
   for (const item of again.mealItems) {
-    const name = nameKey(item.mealItemName);
-    const nth = seen.get(name) ?? 0;
-    seen.set(name, nth + 1);
-    const asked = ask.filter((o) => nameKey(o.item.mealItem.name) === name);
-    const target = mealItems.filter((m) => nameKey(m.mealItemName) === name)[
-      asked[nth]?.occurrence ?? nth
-    ];
-    if (target) target.ingredients.push(...item.ingredients);
-    else mealItems.push(item);
+    const asked = open.filter((o) => o.dish === nameKey(item.mealItemName));
+    if (asked.length === 0) {
+      mealItems.push(item);
+      continue;
+    }
+    for (const food of item.ingredients) {
+      const name = nameKey(food.ingredientName);
+      const exact = asked.find((o) => o.foods.delete(name));
+      const home = exact ?? asked.find((o) => o.foods.size > 0) ?? asked[0];
+      if (!exact) home.foods.delete([...home.foods][0]);
+      dishFor(item.mealItemName, home.occurrence).ingredients.push(food);
+    }
   }
   return { ...grounded, mealItems };
 }

@@ -176,10 +176,15 @@ function pairRenamedInsideDish(
     const known = out
       .filter((_, i) => slotOfEntry[i] === slot)
       .map((e) => nameKey(e.ingredient.rawName));
-    // A second estimate for a food the dish has is a repeat, not a rename.
-    const estimates = leftovers.filter(
-      (estimate) => !known.includes(nameKey(estimate.ingredientName))
-    );
+    // A second estimate for a food the dish has, or for a name already left
+    // over, is a repeat, not a rename. Each name counts once.
+    const estimates = leftovers.filter((estimate, i) => {
+      const name = nameKey(estimate.ingredientName);
+      return (
+        !known.includes(name) &&
+        leftovers.findIndex((e) => nameKey(e.ingredientName) === name) === i
+      );
+    });
     const open = out.filter((e, i) => !e.ground && slotOfEntry[i] === slot);
     for (const entry of open) {
       const want = nameWords(entry.ingredient.rawName);
