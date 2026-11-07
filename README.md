@@ -12,6 +12,12 @@ multilingual input and output.
 [![CI](https://github.com/VoMinhKhoii/Kallo/actions/workflows/ci.yml/badge.svg)](https://github.com/VoMinhKhoii/Kallo/actions/workflows/ci.yml)
 [![License: Source-Available](https://img.shields.io/badge/license-source--available-blue.svg)](./LICENSE)
 
+**Try it at [kallo.fit](https://kallo.fit).** Free tools built on the same data:
+[calories in 50 everyday meals](https://kallo.fit/en/calories),
+[calo trong 25 món Việt](https://kallo.fit/vi/calories),
+[TDEE, deficit, macro, protein and BMI calculators](https://kallo.fit/en/tools) and
+[how much the same meal varies](https://kallo.fit/en/data/meal-calorie-variation).
+
 ## What it does
 
 - **Natural-language meal logging** — describe a meal the way you'd tell a
