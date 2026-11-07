@@ -172,7 +172,14 @@ function pairRenamedInsideDish(
         const slot = slotPrefix(key);
         left.set(slot, [...(left.get(slot) ?? []), estimate]);
       }
-  for (const [slot, estimates] of left) {
+  for (const [slot, leftovers] of left) {
+    const known = out
+      .filter((_, i) => slotOfEntry[i] === slot)
+      .map((e) => nameKey(e.ingredient.rawName));
+    // A second estimate for a food the dish has is a repeat, not a rename.
+    const estimates = leftovers.filter(
+      (estimate) => !known.includes(nameKey(estimate.ingredientName))
+    );
     const open = out.filter((e, i) => !e.ground && slotOfEntry[i] === slot);
     for (const entry of open) {
       const want = nameWords(entry.ingredient.rawName);
@@ -187,15 +194,7 @@ function pairRenamedInsideDish(
       if (best >= 0) entry.ground = estimates.splice(best, 1)[0];
     }
     const still = open.filter((e) => !e.ground);
-    const known = out
-      .filter((_, i) => slotOfEntry[i] === slot)
-      .map((e) => nameKey(e.ingredient.rawName));
-    // A second estimate for a food the dish has is a repeat, not a rename.
-    if (
-      still.length === 1 &&
-      estimates.length === 1 &&
-      !known.includes(nameKey(estimates[0].ingredientName))
-    )
+    if (still.length === 1 && estimates.length === 1)
       still[0].ground = estimates[0];
   }
 }

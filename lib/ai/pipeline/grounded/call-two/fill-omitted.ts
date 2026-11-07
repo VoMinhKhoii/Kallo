@@ -5,8 +5,10 @@
  * late re-ask keeps the answer Call 2 gave: this step only ever adds food.
  */
 
+import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { GroundedEstimator } from '@/lib/ai/pipeline/estimator/types';
+import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-candidates';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import { fetchWithTimeout } from '@/lib/core/async/fetch-with-timeout';
@@ -29,45 +31,73 @@ export interface FillOmittedArgs {
   >['onAttemptComplete'];
 }
 
+/** A meal item to ask for again, and which same-name dish it belongs to. */
+interface Omitted {
+  item: MealItemWithCandidates;
+  /** 0-based among the meal's dishes with this name. */
+  occurrence: number;
+}
+
 /**
- * The meal items and ingredients `grounded` left out. A dish Call 2 renamed is
- * not left out when its answer still holds at least half of the dish's
- * ingredient names, and an ingredient it renamed inside a dish still counts
- * toward that dish: pairing finds both, and asking again would double them.
+ * The meal items and ingredients `grounded` left out: what the real pairing
+ * finds no estimate for, so a dish or ingredient Call 2 only renamed is not
+ * asked for twice.
  */
 export function omittedMealItems(
   mealItems: MealItemWithCandidates[],
   grounded: GroundedEstimation
-): MealItemWithCandidates[] {
-  const asked = new Set(mealItems.map((mi) => nameKey(mi.mealItem.name)));
-  const answered = new Map(
-    grounded.mealItems.map((item) => [
-      nameKey(item.mealItemName),
-      new Set(item.ingredients.map((i) => nameKey(i.ingredientName))),
-    ])
+): Omitted[] {
+  const decomposition = {
+    mealItems: mealItems.map((mi) => ({
+      ...mi.mealItem,
+      ingredients: mi.ingredients.map((i) => i.ingredient),
+    })),
+  } as MealDecompositionV2;
+  const unpaired = new Set(
+    pairIngredientsWithGrounded(decomposition, grounded)
+      .filter((pair) => !pair.ground)
+      .map((pair) => `${pair.mealItemIdx}:${pair.ingredientIdx}`)
   );
-  const renamed = [...answered]
-    .filter(([name]) => !asked.has(name))
-    .map(([, ingredients]) => ingredients);
-
-  return mealItems.flatMap((mi) => {
-    const names = mi.ingredients.map((i) => nameKey(i.ingredient.rawName));
-    const own = answered.get(nameKey(mi.mealItem.name));
-    if (!own) {
-      const covered = renamed.some(
-        (set) => names.filter((n) => set.has(n)).length * 2 >= names.length
-      );
-      return covered ? [] : [mi];
-    }
-    const left = mi.ingredients.length - own.size;
-    if (left <= 0) return [];
-    const skipped = mi.ingredients.filter(
-      (i) => !own.has(nameKey(i.ingredient.rawName))
+  const seen = new Map<string, number>();
+  return mealItems.flatMap((mi, m) => {
+    const name = nameKey(mi.mealItem.name);
+    const occurrence = seen.get(name) ?? 0;
+    seen.set(name, occurrence + 1);
+    const ingredients = mi.ingredients.filter((_, i) =>
+      unpaired.has(`${m}:${i}`)
     );
-    return skipped.length > 0
-      ? [{ ...mi, ingredients: skipped.slice(0, left) }]
+    return ingredients.length > 0
+      ? [{ item: { ...mi, ingredients }, occurrence }]
       : [];
   });
+}
+
+/**
+ * Add a re-ask's answers to the dish each was asked for: answers of one name
+ * come back in the order they were asked, and go to that same-name dish.
+ */
+function mergeAnswers(
+  grounded: GroundedEstimation,
+  again: GroundedEstimation,
+  ask: Omitted[]
+): GroundedEstimation {
+  const mealItems = grounded.mealItems.map((item) => ({
+    ...item,
+    ingredients: [...item.ingredients],
+  }));
+  const seen = new Map<string, number>();
+  for (const item of again.mealItems) {
+    const name = nameKey(item.mealItemName);
+    const nth = seen.get(name) ?? 0;
+    seen.set(name, nth + 1);
+    const asked = ask.filter((o) => nameKey(o.item.mealItem.name) === name);
+    const target = mealItems.filter((m) => nameKey(m.mealItemName) === name)[
+      asked[nth]?.occurrence ?? nth
+    ];
+    if (target) target.ingredients.push(...item.ingredients);
+    else mealItems.push(item);
+  }
+  return { ...grounded, mealItems };
 }
 
 export async function fillOmitted(
@@ -76,7 +106,7 @@ export async function fillOmitted(
 ): Promise<GroundedEstimation> {
   const skip = new Set(args.skipMealItemNames?.map(nameKey));
   const ask = omittedMealItems(args.mealItems, grounded).filter(
-    (mi) => !skip.has(nameKey(mi.mealItem.name))
+    ({ item }) => !skip.has(nameKey(item.mealItem.name))
   );
   if (ask.length === 0 || args.budgetMs < MIN_BUDGET_MS) return grounded;
 
@@ -87,7 +117,7 @@ export async function fillOmitted(
           .estimate(
             {
               originalPrompt: args.originalPrompt,
-              mealItems: ask,
+              mealItems: ask.map((o) => o.item),
               userContext: args.promptCtx,
               temperature: args.temperature,
             },
@@ -100,18 +130,7 @@ export async function fillOmitted(
       args.budgetMs,
       'grounded-nutrition-fill'
     );
-    const mealItems = grounded.mealItems.map((item) => ({
-      ...item,
-      ingredients: [...item.ingredients],
-    }));
-    for (const item of again.mealItems) {
-      const existing = mealItems.find(
-        (m) => nameKey(m.mealItemName) === nameKey(item.mealItemName)
-      );
-      if (existing) existing.ingredients.push(...item.ingredients);
-      else mealItems.push(item);
-    }
-    return { ...grounded, mealItems };
+    return mergeAnswers(grounded, again, ask);
   } catch (err) {
     console.warn('[call2] re-ask for omitted foods failed', err);
     return grounded;

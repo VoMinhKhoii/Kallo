@@ -80,6 +80,20 @@ describe('an ingredient renamed inside its dish', () => {
     ).toEqual([50, null]);
   });
 
+  it('does not let a repeat match a sibling through a shared word', () => {
+    expect(
+      grams(
+        { 'Gà nướng': ['Chicken breast', 'Chicken thigh'] },
+        {
+          'Gà nướng': [
+            ['Chicken breast', 120],
+            ['Chicken breast', 120],
+          ],
+        }
+      )
+    ).toEqual([120, null]);
+  });
+
   it('never crosses into another dish', () => {
     expect(
       grams(

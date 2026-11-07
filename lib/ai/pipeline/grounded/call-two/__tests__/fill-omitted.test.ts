@@ -43,20 +43,21 @@ function args(
 describe('omittedMealItems', () => {
   const noodles = dish('Indomie', ['Mì', 'Gia vị']);
   const rice = dish('Cơm', ['Cơm']);
+  const names = (left: ReturnType<typeof omittedMealItems>) =>
+    left.flatMap((o) => o.item.ingredients.map((i) => i.ingredient.rawName));
 
   it('finds a whole dish Call 2 left out', () => {
     expect(
-      omittedMealItems([rice, noodles], estimation(answer('Cơm', ['Cơm'])))
-    ).toEqual([noodles]);
+      names(
+        omittedMealItems([rice, noodles], estimation(answer('Cơm', ['Cơm'])))
+      )
+    ).toEqual(['Mì', 'Gia vị']);
   });
 
   it('finds the ingredients skipped inside an answered dish', () => {
-    const left = omittedMealItems(
-      [noodles],
-      estimation(answer('Indomie', ['Mì']))
-    );
-    expect(left.map((m) => m.ingredients.length)).toEqual([1]);
-    expect(left[0].ingredients[0].ingredient.rawName).toBe('Gia vị');
+    expect(
+      names(omittedMealItems([noodles], estimation(answer('Indomie', ['Mì']))))
+    ).toEqual(['Gia vị']);
   });
 
   it('does not ask again for a dish Call 2 renamed', () => {
@@ -76,6 +77,17 @@ describe('omittedMealItems', () => {
       )
     ).toEqual([]);
   });
+
+  it('asks for the food that is missing, not the renamed one', () => {
+    expect(
+      names(
+        omittedMealItems(
+          [dish('Cơm trứng', ['Jasmine rice', 'Egg', 'Oil'])],
+          estimation(answer('Cơm trứng', ['Jasmine rice, cooked', 'Egg']))
+        )
+      )
+    ).toEqual(['Oil']);
+  });
 });
 
 describe('fillOmitted', () => {
@@ -92,7 +104,44 @@ describe('fillOmitted', () => {
       'Cơm',
       'Indomie',
     ]);
-    expect(vi.mocked(estimate).mock.calls[0][0].mealItems).toEqual([noodles]);
+    expect(
+      vi.mocked(estimate).mock.calls[0][0].mealItems.map((m) => m.mealItem.name)
+    ).toEqual(['Indomie']);
+  });
+
+  it('sends each answer to the same-name dish it was asked for', async () => {
+    const bowl = dish('Cơm', ['Cơm', 'Trứng']);
+    const estimate = vi.fn(async () => ({
+      estimation: estimation(
+        answer('Cơm', ['Trứng']),
+        answer('Cơm', ['Trứng'])
+      ),
+    })) as unknown as GroundedEstimator['estimate'];
+    const out = await fillOmitted(
+      estimation(answer('Cơm', ['Cơm']), answer('Cơm', ['Cơm'])),
+      args(estimate, [bowl, bowl])
+    );
+    expect(
+      out.mealItems.map((m) => m.ingredients.map((i) => i.ingredientName))
+    ).toEqual([
+      ['Cơm', 'Trứng'],
+      ['Cơm', 'Trứng'],
+    ]);
+  });
+
+  it('reaches the second same-name dish when only it is short', async () => {
+    const bowl = dish('Cơm', ['Cơm', 'Trứng']);
+    const estimate = vi.fn(async () => ({
+      estimation: estimation(answer('Cơm', ['Trứng'])),
+    })) as unknown as GroundedEstimator['estimate'];
+    const out = await fillOmitted(
+      estimation(answer('Cơm', ['Cơm', 'Trứng']), answer('Cơm', ['Cơm'])),
+      args(estimate, [bowl, bowl])
+    );
+    expect(out.mealItems[1].ingredients.map((i) => i.ingredientName)).toEqual([
+      'Cơm',
+      'Trứng',
+    ]);
   });
 
   it('makes no call when nothing is missing', async () => {
