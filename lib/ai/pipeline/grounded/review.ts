@@ -38,8 +38,8 @@ export async function reviewPicks(
       state: RunState
     ): Promise<{ state: RunState; rescued: number } | null>;
   } | null,
-  /** Whole-meal kcal from the model's plain read (`./first-estimate`). */
-  firstEstimateKcal?: number
+  /** The model's plain read of the meal (`./first-estimate`), when there is one. */
+  firstEstimate?: { kcal: number; mealText: string }
 ): Promise<{
   state: RunState;
   changed: boolean;
@@ -52,8 +52,12 @@ export async function reviewPicks(
   const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state);
   logRawRowYields(oil.state);
   const served = scaleToServedMass(oil.state);
-  const held = firstEstimateKcal
-    ? holdNearFirstEstimate(served.state, firstEstimateKcal)
+  const held = firstEstimate
+    ? holdNearFirstEstimate(
+        served.state,
+        firstEstimate.kcal,
+        firstEstimate.mealText
+      )
     : { state: served.state, scaled: false };
   return {
     state: held.state,

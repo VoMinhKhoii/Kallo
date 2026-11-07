@@ -236,6 +236,7 @@ export async function analyzeMealV2(
     // Review the picks around the dish rescue (./review). When anything
     // changed, the streamed dishes no longer hold, so the final flush
     // re-sends every dish.
+    const estimateKcal = await firstEstimate?.settle();
     const review = await reviewPicks(
       {
         decomposition,
@@ -244,7 +245,7 @@ export async function analyzeMealV2(
         grounded: stage3.grounded,
       },
       rescue,
-      await firstEstimate?.settle()
+      estimateKcal ? { kcal: estimateKcal, mealText: rawInput } : undefined
     );
     const { state: run, changed } = review;
     // A rescued dish's parts can change its class (a broth part makes it a
