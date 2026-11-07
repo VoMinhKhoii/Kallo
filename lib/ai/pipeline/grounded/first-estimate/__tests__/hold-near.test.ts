@@ -155,7 +155,26 @@ describe('holdNearFirstEstimate', () => {
     // A fixed 100 kcal the scale cannot reach (a clamped fat band).
     const price = (s: RunState) => 100 + byMacros(s);
     const out = hold(meal([['Cơm', 200, 900]]), 500, 'meal', price);
-    expect(Math.round(price(out.state))).toBe(600);
+    expect(price(out.state) / 600).toBeCloseTo(1, 1);
+  });
+
+  it('never jumps past the band when the price bends', () => {
+    // Above 60 kcal of food the fat band adds 110; below it, nothing: like the
+    // fat guard letting go partway down.
+    const price = (s: RunState) => {
+      const food = byMacros(s);
+      return food > 60 ? food + 110 : food;
+    };
+    const out = hold(meal([['Thịt', 100, 60.1]]), 50, 'meal', price);
+    if (out.scaled) {
+      expect(price(out.state)).toBeGreaterThanOrEqual(50 / 1.2);
+      expect(price(out.state)).toBeLessThanOrEqual(50 * 1.2);
+    }
+  });
+
+  it('moves free parts by 3× at most', () => {
+    const out = holdNearFirstEstimate(meal([['Xôi', 100, 10]]), 900);
+    expect(grams(out.state)).toEqual([300]);
   });
 });
 

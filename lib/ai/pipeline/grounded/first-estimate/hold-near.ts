@@ -7,8 +7,8 @@
  * dish, never moves.
  *
  * The meal is priced by the code that prices the result, so the check sees the
- * calories the user will see. A price is not quite linear in grams (the fat
- * guard clamps), so the fit is measured, and it ships only if it landed closer.
+ * calories the user will see. That price is not linear in grams (the fat guard
+ * clamps), so the scale is searched for against it, never worked out.
  */
 
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
@@ -21,6 +21,10 @@ import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts'
 
 /** The meal may sit this many times above or below the plain read. */
 const BAND = 1.2;
+/** Free parts move by at most this factor either way; past it, trust them. */
+const MAX_SCALE = 3;
+/** Search steps: enough to land within about 1% of the scale. */
+const STEPS = 8;
 
 /** The meal's kcal as the result will show it. */
 export function shippedKcal(state: RunState, mealText: string): number {
@@ -69,26 +73,29 @@ export function holdNearFirstEstimate(
 ): { state: RunState; scaled: boolean } {
   const unchanged = { state, scaled: false };
   const total = price(state, mealText);
-  const target = Math.min(
-    estimateKcal * BAND,
-    Math.max(estimateKcal / BAND, total)
-  );
-  if (!(total > 0) || target === total) return unchanged;
+  const lowest = estimateKcal / BAND;
+  const highest = estimateKcal * BAND;
+  if (!(total > 0) || (total >= lowest && total <= highest)) return unchanged;
 
-  // One trial scale shows how much of the meal can move.
-  const trialK = target / total;
-  const trial = price(
-    { ...state, grounded: scaleFree(state, trialK) },
-    mealText
-  );
-  const free = (trial - total) / (trialK - 1);
-  const k = (target - (total - free)) / free;
-  if (!(free > 0) || !(k > 0)) return unchanged;
-
-  const grounded = scaleFree(state, k);
-  const fitted = { ...state, grounded };
+  const over = total > highest;
+  const target = over ? highest : lowest;
+  const priceAt = (k: number) =>
+    price({ ...state, grounded: scaleFree(state, k) }, mealText);
+  // What the user pinned alone passes the band: their numbers win, leave it.
+  if (over && priceAt(1e-6) >= target) return unchanged;
+  let small = over ? 1 / MAX_SCALE : 1;
+  let large = over ? 1 : MAX_SCALE;
+  for (let step = 0; step < STEPS; step++) {
+    const middle = (small + large) / 2;
+    if (priceAt(middle) > target) large = middle;
+    else small = middle;
+  }
+  // The end of the search on the band's side of the target.
+  const fitted = { ...state, grounded: scaleFree(state, over ? small : large) };
   const landed = price(fitted, mealText);
-  if (Math.abs(landed - target) >= Math.abs(total - target)) return unchanged;
+  const closer = Math.abs(landed - target) < Math.abs(total - target);
+  const pastTheBand = over ? landed < lowest : landed > highest;
+  if (!closer || pastTheBand) return unchanged;
   console.info(
     `[first-estimate] meal ${Math.round(total)} kcal held at ${Math.round(landed)} (plain read ${Math.round(estimateKcal)})`
   );
