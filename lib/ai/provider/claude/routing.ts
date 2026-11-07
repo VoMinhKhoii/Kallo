@@ -72,7 +72,9 @@ export function withClaudeRouting(
           if (params.abortSignal?.aborted) throw err;
           attempts += counted.attempts();
           console.warn(`[llm] ${params.model} failed (${describe(err)})`);
-          if (!(err instanceof Anthropic.APIError)) break;
+          // The SDK's own errors are the provider failing, a dropped stream
+          // included; a bad answer is never one.
+          if (!(err instanceof Anthropic.AnthropicError)) break;
         }
       }
       console.warn(`[llm] re-running on ${options.fallbackModel}`);

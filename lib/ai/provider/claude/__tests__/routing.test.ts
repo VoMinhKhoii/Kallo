@@ -82,6 +82,31 @@ describe('the Claude waterfall', () => {
     ).toEqual({ by: 'vertex', model: 'claude-haiku-5-5' });
   });
 
+  it('moves a stream that dropped midway to Vertex', async () => {
+    const dropped = new Anthropic.AnthropicError('ECONNRESET');
+    const llm = withClaudeRouting(gemini(), claude(dropped), {
+      fallbackModel: FALLBACK,
+      vertexClaude: vertex(),
+    });
+    expect(
+      await llm.generateStructuredOutputStream(params('claude-haiku-5-5'))
+    ).toEqual({ by: 'vertex', model: 'claude-haiku-5-5' });
+  });
+
+  it.each([
+    ['a schema slip', Object.assign(new Error('x'), { name: 'ZodError' })],
+    ['unparseable JSON', new SyntaxError('Unexpected token')],
+    ['a truncated answer', new Error('Claude stopped: max_tokens')],
+  ])('skips Vertex on %s', async (_name, bad) => {
+    const onVertex = vertex();
+    const llm = withClaudeRouting(gemini(), claude(bad), {
+      fallbackModel: FALLBACK,
+      vertexClaude: onVertex,
+    });
+    await llm.generateStructuredOutputStream(params('claude-haiku-5-5'));
+    expect(onVertex.generateStructuredOutputStream).not.toHaveBeenCalled();
+  });
+
   it('never reaches Vertex when the Claude API answers', async () => {
     const onVertex = vertex();
     const llm = withClaudeRouting(gemini(), claude(), {
