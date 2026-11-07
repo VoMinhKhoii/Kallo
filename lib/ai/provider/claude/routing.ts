@@ -6,7 +6,7 @@ import type {
   StructuredOutputOptions,
   StructuredOutputParams,
 } from '../types';
-import { createClaudeStructuredOutput } from './structured-output';
+import type { createClaudeStructuredOutput } from './structured-output';
 
 export type ClaudeStructuredOutput = ReturnType<
   typeof createClaudeStructuredOutput
@@ -19,20 +19,31 @@ export const isClaudeModel = (model: string): boolean =>
  * Wrap a Gemini client so a call whose model is a Claude model (`claude-*`)
  * goes to Claude; every other call, and every embedding, stays on Gemini.
  *
- * Any Claude failure — no API key, rate limit, overload, network, a schema
- * slip that survived its re-ask — re-runs that one call on Gemini with
- * `fallbackModel`, so a Claude outage degrades to today's pipeline instead of
- * failing meals. A call the caller aborted (a stage deadline) is not re-run.
+ * A failed call walks a waterfall, each step for that one call: the Claude
+ * API, then Claude on Vertex AI (`vertexClaude`), then Gemini on
+ * `fallbackModel`. An API failure on the Claude API (no credits, rate limit,
+ * overload, network) moves to Vertex, which bills elsewhere. A bad answer (a
+ * schema slip that survived its re-ask, a refusal) skips Vertex: the same
+ * model would likely repeat it, so Gemini re-runs it instead. So a Claude
+ * outage degrades instead of failing meals. A call the caller aborted (a stage
+ * deadline) is not re-run.
  *
- * The re-run continues Claude's attempt numbering: callers reset their stream
- * parsers on any attempt after the first, so Claude's partial output never
- * mixes with Gemini's.
+ * Each re-run continues the attempt numbering: callers reset their stream
+ * parsers on any attempt after the first, so one step's partial output never
+ * mixes with the next's.
  */
 export function withClaudeRouting(
   gemini: GeminiClient,
   claude: ClaudeStructuredOutput | null,
-  options: { fallbackModel: string }
+  options: {
+    fallbackModel: string;
+    vertexClaude?: ClaudeStructuredOutput | null;
+  }
 ): GeminiClient {
+  const steps = [claude, options.vertexClaude ?? null].filter(
+    (step): step is ClaudeStructuredOutput => step !== null
+  );
+
   function route<O extends AttemptHooks>(
     viaClaude: (
       c: ClaudeStructuredOutput
@@ -45,24 +56,29 @@ export function withClaudeRouting(
     ): Promise<T> => {
       if (!isClaudeModel(params.model)) return viaGemini(params, opts);
       const fallback = { ...params, model: options.fallbackModel };
-      if (!claude) {
+      if (steps.length === 0) {
         warnNoKeyOnce();
         return viaGemini(fallback, opts);
       }
       if (params.image) return viaGemini(fallback, opts);
-      const counted = countAttempts(opts);
-      try {
-        return await viaClaude(claude)(params, counted.opts);
-      } catch (err) {
-        if (params.abortSignal?.aborted) throw err;
-        console.warn(
-          `[llm] ${params.model} failed (${describe(err)}); re-running on ${options.fallbackModel}`
+      let attempts = 0;
+      for (const step of steps) {
+        const counted = countAttempts(
+          attempts ? fallbackHooks(opts, attempts, params.model) : opts
         );
-        return viaGemini(
-          fallback,
-          fallbackHooks(opts, counted.attempts(), params.model)
-        );
+        try {
+          return await viaClaude(step)(params, counted.opts);
+        } catch (err) {
+          if (params.abortSignal?.aborted) throw err;
+          attempts += counted.attempts();
+          console.warn(`[llm] ${params.model} failed (${describe(err)})`);
+          // The SDK's own errors are the provider failing, a dropped stream
+          // included; a bad answer is never one.
+          if (!(err instanceof Anthropic.AnthropicError)) break;
+        }
       }
+      console.warn(`[llm] re-running on ${options.fallbackModel}`);
+      return viaGemini(fallback, fallbackHooks(opts, attempts, params.model));
     };
   }
 
@@ -104,8 +120,8 @@ function countAttempts<O extends AttemptHooks>(opts: O | undefined) {
 }
 
 /**
- * Hooks for the Gemini re-run of a failed Claude call: attempts are numbered
- * from `offset + 1`, and each one reports the Claude model it stands in for.
+ * Hooks for the re-run of a failed Claude call: attempts are numbered from
+ * `offset + 1`, and each one reports the Claude model it stands in for.
  */
 function fallbackHooks<O extends AttemptHooks>(
   opts: O | undefined,
@@ -142,26 +158,4 @@ function warnNoKeyOnce(): void {
   console.warn(
     '[llm] ANTHROPIC_API_KEY is not set; Claude models run on Gemini'
   );
-}
-
-let cached: ClaudeStructuredOutput | null | undefined;
-
-/**
- * One Claude client per process, or null without ANTHROPIC_API_KEY. The SDK's
- * own retries are off: a failed call falls back to Gemini instead of waiting.
- */
-export function getClaudeStructuredOutput(): ClaudeStructuredOutput | null {
-  if (cached === undefined) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    cached = apiKey
-      ? createClaudeStructuredOutput(new Anthropic({ apiKey, maxRetries: 0 }))
-      : null;
-  }
-  return cached;
-}
-
-/** Visible for testing. */
-export function __resetClaudeForTests(): void {
-  cached = undefined;
-  warnedNoKey = false;
 }

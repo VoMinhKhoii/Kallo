@@ -1,4 +1,4 @@
-import { attemptCostUsd } from '@/lib/ai/cost/pricing';
+import { attemptCostUsd, VERTEX_RATE_SUFFIX } from '@/lib/ai/cost/pricing';
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import { cloudTrace } from '@/lib/ai/pipeline/telemetry/cloud-trace/cloud-trace';
 import { isClaudeModel, type StreamOptions } from '@/lib/ai/provider/provider';
@@ -24,6 +24,7 @@ export const ANALYSIS_MODEL_PROVIDER = 'gemini';
 
 /** The provider a budget row is filed under: the one that ran `model`. */
 function providerOf(model: string): string {
+  if (model.endsWith(VERTEX_RATE_SUFFIX)) return 'vertex';
   return isClaudeModel(model) ? 'anthropic' : ANALYSIS_MODEL_PROVIDER;
 }
 

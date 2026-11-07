@@ -20,7 +20,8 @@ rates(model, input_rate, cached_rate, output_rate) as (values
   ('gemini-3-flash-preview', 0.50, 0.05, 3.00),
   ('gemini-2.5-flash-lite', 0.10, 0.01, 0.40),
   ('gemini-2.5-flash', 0.30, 0.03, 2.50),
-  ('claude-haiku-5-5', 0.10, 0.01, 0.50)),
+  ('claude-haiku-5-5', 0.10, 0.01, 0.50),
+  ('claude-haiku-5-5@vertex', 0.11, 0.011, 0.55)),
 priced as (
   select e.*, (
     (e.input_tokens - e.cached_tokens) * r.input_rate
@@ -47,7 +48,8 @@ rates(model, input_rate, cached_rate, output_rate) as (values
   ('gemini-3-flash-preview', 0.50, 0.05, 3.00),
   ('gemini-2.5-flash-lite', 0.10, 0.01, 0.40),
   ('gemini-2.5-flash', 0.30, 0.03, 2.50),
-  ('claude-haiku-5-5', 0.10, 0.01, 0.50)),
+  ('claude-haiku-5-5', 0.10, 0.01, 0.50),
+  ('claude-haiku-5-5@vertex', 0.11, 0.011, 0.55)),
 per_request as (
   select e.request_id, e.route,
     count(*) filter (where e.request_count = 0) as attempts,

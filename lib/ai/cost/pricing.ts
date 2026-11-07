@@ -6,6 +6,9 @@
  * models; https://platform.claude.com/docs/en/about-claude/pricing, read
  * 2026-10-10 (Claude: prompts up to 100k tokens; a 5-minute cache write bills
  * 1.25x input — `CACHE_WRITE_INPUT_MULTIPLIER`, not a field here).
+ * https://cloud.google.com/model-garden/partner-models/pricing, read 2026-11-07
+ * (Claude on Vertex: 10% above the Claude API; its cached rate was not listed,
+ * so it follows the Claude API's 10% of input).
  * Re-check the page when a model is added or a cost number looks wrong — a
  * stale rate silently skews every cost report built on this file.
  */
@@ -16,6 +19,9 @@ export interface ModelRate {
   /** Rate for response tokens, thinking tokens included. */
   outputPerMTokUsd: number;
 }
+
+/** Added to a model's name for the calls that ran on Vertex AI's Claude. */
+export const VERTEX_RATE_SUFFIX = '@vertex';
 
 export const MODEL_RATES: Record<string, ModelRate> = {
   'gemini-3.1-flash-lite': {
@@ -53,6 +59,11 @@ export const MODEL_RATES: Record<string, ModelRate> = {
     inputPerMTokUsd: 0.1,
     cachedInputPerMTokUsd: 0.01,
     outputPerMTokUsd: 0.5,
+  },
+  [`claude-haiku-5-5${VERTEX_RATE_SUFFIX}`]: {
+    inputPerMTokUsd: 0.11,
+    cachedInputPerMTokUsd: 0.011,
+    outputPerMTokUsd: 0.55,
   },
 };
 

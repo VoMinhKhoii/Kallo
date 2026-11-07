@@ -351,8 +351,21 @@ DATABASE_URL=... bun scripts/data/food-cards/search-artifact/build-search-artifa
 The repository variable `PIPELINE_MODEL_PROFILE` picks the models both meal
 analysis calls run on (`lib/ai/pipeline/config/model-profile.ts`). Unset
 deploys `stable` (Gemini flash-lite). `haiku` runs both calls on Claude Haiku
-5.5; any failed Claude call re-runs on the stable Gemini model, so an Anthropic
-outage degrades to today's pipeline instead of failing meals.
+5.5 through a per-call waterfall, so an Anthropic outage or an empty credit
+balance degrades instead of failing meals:
+
+1. Haiku on the Claude API (`ANTHROPIC_API_KEY`).
+2. Haiku on Vertex AI, when the app runs with `AI_PROVIDER=vertex`. It signs in
+   as the Cloud Run identity and bills to the Google Cloud project at Google's
+   rate. Only API failures reach it; a bad answer goes straight to step 3.
+   The model answers on the `global` endpoint only, and it needs quota: the
+   project's `global_online_prediction_requests_per_base_model` limit for base
+   model `anthropic-claude-haiku` starts at none (a call returns 429), so ask
+   for an increase under IAM & Admin > Quotas (requests, input tokens and
+   output tokens per minute). Until then step 3 takes over. Requests filed
+   through the Cloud Quotas API on 2026-11-07 were denied within seconds, even
+   at 20 a minute, so check Model Garden access or go through Google support.
+3. The stable Gemini model.
 
 To start the trial:
 
