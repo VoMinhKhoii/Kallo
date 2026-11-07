@@ -180,35 +180,49 @@ export function getClaudeStructuredOutput(): ClaudeStructuredOutput | null {
 /** Haiku on Vertex AI answers on the `global` endpoint only (regions 404). */
 const VERTEX_CLAUDE_REGION = 'global';
 
-let cachedVertex: ClaudeStructuredOutput | null | undefined;
+const vertexClients = new Map<string, ClaudeStructuredOutput>();
+
+function vertexClient(project: string): ClaudeStructuredOutput {
+  let client = vertexClients.get(project);
+  if (!client) {
+    client = createClaudeStructuredOutput(
+      new AnthropicVertex({
+        projectId: project,
+        region: VERTEX_CLAUDE_REGION,
+        maxRetries: 0,
+      }),
+      { rateSuffix: VERTEX_RATE_SUFFIX }
+    );
+    vertexClients.set(project, client);
+  }
+  return client;
+}
 
 /**
- * One Claude-on-Vertex client per process, the middle step of the waterfall.
- * Null unless the app itself runs on Vertex: AI Studio setups (dev, evals)
- * never reach it. Signs in as the runtime's Google identity, with no API key.
+ * The middle step of the waterfall. Null unless the app itself runs on Vertex:
+ * AI Studio setups (dev, evals) never reach it. Signs in as the runtime's
+ * Google identity, with no API key.
+ *
+ * The SDK starts signing in when it is constructed and only handles a failure
+ * once a request runs, so a client built for a meal that never reaches this
+ * step could reject unhandled. Build it on the first call that needs it.
  */
 export function getVertexClaudeStructuredOutput(
   config: GeminiProviderConfig
 ): ClaudeStructuredOutput | null {
-  if (cachedVertex === undefined) {
-    cachedVertex =
-      config.provider === 'vertex'
-        ? createClaudeStructuredOutput(
-            new AnthropicVertex({
-              projectId: config.project,
-              region: VERTEX_CLAUDE_REGION,
-              maxRetries: 0,
-            }),
-            { rateSuffix: VERTEX_RATE_SUFFIX }
-          )
-        : null;
-  }
-  return cachedVertex;
+  if (config.provider !== 'vertex') return null;
+  const { project } = config;
+  return {
+    generateStructuredOutput: (params, opts) =>
+      vertexClient(project).generateStructuredOutput(params, opts),
+    generateStructuredOutputStream: (params, opts) =>
+      vertexClient(project).generateStructuredOutputStream(params, opts),
+  };
 }
 
 /** Visible for testing. */
 export function __resetClaudeForTests(): void {
   cached = undefined;
-  cachedVertex = undefined;
+  vertexClients.clear();
   warnedNoKey = false;
 }
