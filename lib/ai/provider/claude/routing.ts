@@ -1,4 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { AnthropicVertex } from '@anthropic-ai/vertex-sdk';
+import { VERTEX_RATE_SUFFIX } from '@/lib/ai/cost/pricing';
+import type { GeminiProviderConfig } from '../client';
 import type {
   GeminiAttemptMetadata,
   GeminiClient,
@@ -19,20 +22,31 @@ export const isClaudeModel = (model: string): boolean =>
  * Wrap a Gemini client so a call whose model is a Claude model (`claude-*`)
  * goes to Claude; every other call, and every embedding, stays on Gemini.
  *
- * Any Claude failure — no API key, rate limit, overload, network, a schema
- * slip that survived its re-ask — re-runs that one call on Gemini with
- * `fallbackModel`, so a Claude outage degrades to today's pipeline instead of
- * failing meals. A call the caller aborted (a stage deadline) is not re-run.
+ * A failed call walks a waterfall, each step for that one call: the Claude
+ * API, then Claude on Vertex AI (`vertexClaude`), then Gemini on
+ * `fallbackModel`. An API failure on the Claude API (no credits, rate limit,
+ * overload, network) moves to Vertex, which bills elsewhere. A bad answer (a
+ * schema slip that survived its re-ask, a refusal) skips Vertex: the same
+ * model would likely repeat it, so Gemini re-runs it instead. So a Claude
+ * outage degrades instead of failing meals. A call the caller aborted (a stage
+ * deadline) is not re-run.
  *
- * The re-run continues Claude's attempt numbering: callers reset their stream
- * parsers on any attempt after the first, so Claude's partial output never
- * mixes with Gemini's.
+ * Each re-run continues the attempt numbering: callers reset their stream
+ * parsers on any attempt after the first, so one step's partial output never
+ * mixes with the next's.
  */
 export function withClaudeRouting(
   gemini: GeminiClient,
   claude: ClaudeStructuredOutput | null,
-  options: { fallbackModel: string }
+  options: {
+    fallbackModel: string;
+    vertexClaude?: ClaudeStructuredOutput | null;
+  }
 ): GeminiClient {
+  const steps = [claude, options.vertexClaude ?? null].filter(
+    (step): step is ClaudeStructuredOutput => step !== null
+  );
+
   function route<O extends AttemptHooks>(
     viaClaude: (
       c: ClaudeStructuredOutput
@@ -45,24 +59,27 @@ export function withClaudeRouting(
     ): Promise<T> => {
       if (!isClaudeModel(params.model)) return viaGemini(params, opts);
       const fallback = { ...params, model: options.fallbackModel };
-      if (!claude) {
+      if (steps.length === 0) {
         warnNoKeyOnce();
         return viaGemini(fallback, opts);
       }
       if (params.image) return viaGemini(fallback, opts);
-      const counted = countAttempts(opts);
-      try {
-        return await viaClaude(claude)(params, counted.opts);
-      } catch (err) {
-        if (params.abortSignal?.aborted) throw err;
-        console.warn(
-          `[llm] ${params.model} failed (${describe(err)}); re-running on ${options.fallbackModel}`
+      let attempts = 0;
+      for (const step of steps) {
+        const counted = countAttempts(
+          attempts ? fallbackHooks(opts, attempts, params.model) : opts
         );
-        return viaGemini(
-          fallback,
-          fallbackHooks(opts, counted.attempts(), params.model)
-        );
+        try {
+          return await viaClaude(step)(params, counted.opts);
+        } catch (err) {
+          if (params.abortSignal?.aborted) throw err;
+          attempts += counted.attempts();
+          console.warn(`[llm] ${params.model} failed (${describe(err)})`);
+          if (!(err instanceof Anthropic.APIError)) break;
+        }
       }
+      console.warn(`[llm] re-running on ${options.fallbackModel}`);
+      return viaGemini(fallback, fallbackHooks(opts, attempts, params.model));
     };
   }
 
@@ -104,8 +121,8 @@ function countAttempts<O extends AttemptHooks>(opts: O | undefined) {
 }
 
 /**
- * Hooks for the Gemini re-run of a failed Claude call: attempts are numbered
- * from `offset + 1`, and each one reports the Claude model it stands in for.
+ * Hooks for the re-run of a failed Claude call: attempts are numbered from
+ * `offset + 1`, and each one reports the Claude model it stands in for.
  */
 function fallbackHooks<O extends AttemptHooks>(
   opts: O | undefined,
@@ -148,7 +165,7 @@ let cached: ClaudeStructuredOutput | null | undefined;
 
 /**
  * One Claude client per process, or null without ANTHROPIC_API_KEY. The SDK's
- * own retries are off: a failed call falls back to Gemini instead of waiting.
+ * own retries are off: a failed call moves down the waterfall instead of waiting.
  */
 export function getClaudeStructuredOutput(): ClaudeStructuredOutput | null {
   if (cached === undefined) {
@@ -160,8 +177,38 @@ export function getClaudeStructuredOutput(): ClaudeStructuredOutput | null {
   return cached;
 }
 
+/** Haiku on Vertex AI answers on the `global` endpoint only (regions 404). */
+const VERTEX_CLAUDE_REGION = 'global';
+
+let cachedVertex: ClaudeStructuredOutput | null | undefined;
+
+/**
+ * One Claude-on-Vertex client per process, the middle step of the waterfall.
+ * Null unless the app itself runs on Vertex: AI Studio setups (dev, evals)
+ * never reach it. Signs in as the runtime's Google identity, with no API key.
+ */
+export function getVertexClaudeStructuredOutput(
+  config: GeminiProviderConfig
+): ClaudeStructuredOutput | null {
+  if (cachedVertex === undefined) {
+    cachedVertex =
+      config.provider === 'vertex'
+        ? createClaudeStructuredOutput(
+            new AnthropicVertex({
+              projectId: config.project,
+              region: VERTEX_CLAUDE_REGION,
+              maxRetries: 0,
+            }),
+            { rateSuffix: VERTEX_RATE_SUFFIX }
+          )
+        : null;
+  }
+  return cachedVertex;
+}
+
 /** Visible for testing. */
 export function __resetClaudeForTests(): void {
   cached = undefined;
+  cachedVertex = undefined;
   warnedNoKey = false;
 }

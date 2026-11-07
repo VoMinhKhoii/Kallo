@@ -1,4 +1,8 @@
-import { getClaudeStructuredOutput, withClaudeRouting } from './claude/routing';
+import {
+  getClaudeStructuredOutput,
+  getVertexClaudeStructuredOutput,
+  withClaudeRouting,
+} from './claude/routing';
 import { type GeminiProviderConfig, getOrCreateAiClient } from './client';
 import { createEmbeddingMethods } from './embeddings';
 import { createWithRetry, DEFAULT_RETRY, type RetryOptions } from './retry';
@@ -30,8 +34,9 @@ export type {
 
 /**
  * The meal pipeline's client: Claude models (`claude-*`, the `haiku` model
- * profile) run on the Claude API with a per-call Gemini fallback on
- * `fallbackModel`; everything else, embeddings included, runs on Gemini.
+ * profile) run on the Claude API, then per call on Claude on Vertex AI, then on
+ * Gemini with `fallbackModel`; everything else, embeddings included, runs on
+ * Gemini.
  */
 export function createPipelineLlm(
   config: GeminiProviderConfig,
@@ -40,7 +45,7 @@ export function createPipelineLlm(
   return withClaudeRouting(
     createGeminiClient(config),
     getClaudeStructuredOutput(),
-    options
+    { ...options, vertexClaude: getVertexClaudeStructuredOutput(config) }
   );
 }
 

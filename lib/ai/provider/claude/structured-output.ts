@@ -79,7 +79,11 @@ function schemaSlip(message: string): Error {
   return err;
 }
 
-export function createClaudeStructuredOutput(anthropic: Anthropic) {
+export function createClaudeStructuredOutput(
+  anthropic: { messages: Pick<Anthropic['messages'], 'stream'> },
+  /** `rateSuffix` is added to the model name budget rows and costs read. */
+  options: { rateSuffix?: string } = {}
+) {
   async function run<T>(
     params: StructuredOutputParams<T>,
     opts: StreamOptions | undefined,
@@ -89,7 +93,7 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
     const schema = toClaudeSchema(jsonSchema) as Record<string, unknown>;
     const state = createAttemptState();
     const onAttempt = createAttemptObserver({
-      model: params.model,
+      model: `${params.model}${options.rateSuffix ?? ''}`,
       maxRetries: MAX_ATTEMPTS,
       promptBudget,
       state,
