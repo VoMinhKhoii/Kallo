@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in butter chicken?',
     metaTitle: 'Calories in Butter Chicken: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real plates of butter chicken, from a restaurant with pilau rice and naan to half a takeaway and a homemade one.`,
+      `From about ${span} kcal. Four plates of butter chicken, from a restaurant with pilau rice and naan to half a takeaway and a homemade one.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The butter and cream in the sauce matter, but so do the rice and bread around it. Here are four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The butter and cream in the sauce matter, but so do the rice and bread around it. Four real plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'At the restaurant, the naan and the pilau rice are more than half of it. The butter and oil across the plate add another 228 kcal.',

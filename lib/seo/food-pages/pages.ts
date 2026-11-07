@@ -119,6 +119,44 @@ export function relatedPages(page: FoodPage): FoodPage[] {
   );
 }
 
+/**
+ * The day the layout every food page shares last changed in a way a reader
+ * sees (a new section or new links). A page's sitemap date is this or its
+ * capture day, whichever is later. Bump it with such a change, never on a
+ * deploy alone: a date that moves on every build is one Google learns to
+ * ignore.
+ */
+export const FOOD_PAGE_LAYOUT_REVISED = '2026-11-05';
+
+/**
+ * The median of a capture's meal totals: the middle one, or the mean of the
+ * two middle ones when the count is even (every page has four meals).
+ */
+export function medianMealKcal(capture: FoodPageCapture): number {
+  const totals = capture.variants.map(mealKcal).sort((a, b) => a - b);
+  const mid = Math.floor(totals.length / 2);
+  return totals.length % 2 ? totals[mid] : (totals[mid - 1] + totals[mid]) / 2;
+}
+
+/**
+ * Pages from other groups whose median meal is closest in calories, for a
+ * page's "similar calories" links. Same-group pages are already linked as
+ * "more meals"; these reach across groups, so a small group (three salads)
+ * is not linked only by its own two siblings.
+ */
+export function similarCaloriePages(page: FoodPage): FoodPage[] {
+  const target = medianMealKcal(page.capture);
+  return pagesOf(page.locale)
+    .filter((other) => other.group !== page.group)
+    .map((other) => ({
+      other,
+      gap: Math.abs(medianMealKcal(other.capture) - target),
+    }))
+    .sort((a, b) => a.gap - b.gap)
+    .slice(0, 3)
+    .map(({ other }) => other);
+}
+
 /** A group's heading on its locale's hub. */
 export function groupName(locale: FoodLocale, group: FoodGroup): string {
   return (FOOD_GROUPS[locale] as Record<FoodGroup, string>)[group];

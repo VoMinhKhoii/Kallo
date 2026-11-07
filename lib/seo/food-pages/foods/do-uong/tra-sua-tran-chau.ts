@@ -36,6 +36,6 @@ export const food: FoodContent = {
     breakdownLead:
       'Trong ly full topping size L, hai loại trân châu là 483 calo, hơn nửa ly; sữa thêm 150 và đường 80. Bỏ trân châu và giảm đường, ly size M còn khoảng 130.',
     tryLine:
-      'Gõ ly của bạn như khi gọi món, kiểu “trà sữa size M, 30% đường, thêm trân châu trắng”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi gọi món: “trà sữa size M, 30% đường, thêm trân châu trắng”, Kallo lo phần còn lại.',
   },
 };

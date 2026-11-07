@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in pepperoni pizza?',
     metaTitle: 'Calories in Pepperoni Pizza: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real servings of pepperoni pizza, two slices from a pizza place, a deep-dish slice, half a thin crust and half a frozen pizza.`,
+      `From about ${span} kcal. Four servings of pepperoni pizza, two slices from a pizza place, a deep-dish slice, half a thin crust and half a frozen pizza.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The crust is where most of a pizza is, so its thickness and the number of slices matter more than the topping. Here are four real servings, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Most calories come from the crust. Its thickness and the number of slices matter more than the topping. Four real servings, each typed into Kallo the way people describe them.`,
     breakdownOf: 'two-slices',
     breakdownLead:
       'In two slices from a pizza place, the crust is more than half the calories. The pepperoni is 111 kcal.',

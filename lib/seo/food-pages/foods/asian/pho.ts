@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in pho?',
     metaTitle: 'Calories in Pho: 4 Real Bowls',
     description: (span) =>
-      `From about ${span} kcal. Four real bowls of pho, a large beef bowl from a pho shop, a small chicken one, extra noodles with meatballs and a homemade bowl.`,
+      `From about ${span} kcal. Four bowls of pho, a large beef bowl from a pho shop, a small chicken one, extra noodles with meatballs and a homemade bowl.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The broth is lighter than it looks; the noodles and the cuts of beef decide a bowl. Here are four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The broth is lighter than it looks; the noodles and the cuts of beef decide a bowl. Four real bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'shop',
     breakdownLead:
       'In the large bowl from the pho shop, the noodles and the beef are 85% of the calories. The broth is only 39 kcal, so drinking all of it changes little.',

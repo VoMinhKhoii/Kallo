@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a chicken stir fry?',
     metaTitle: 'Calories in a Chicken Stir Fry: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real chicken stir fries, takeout with rice, with egg noodles, homemade with jasmine rice and a no-rice version.`,
+      `From about ${span} kcal. Four chicken stir fries, takeout with rice, with egg noodles, homemade with jasmine rice and a no-rice version.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The vegetables barely count; the rice or noodles under it, the oil and the sauce do. Here are four real stir fries, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The vegetables add few calories. Most come from the rice or noodles, oil and sauce. Four real stir fries, each typed into Kallo the way people describe them.`,
     breakdownOf: 'takeout',
     breakdownLead:
       'In the takeout box, the chicken and the rice are about a third each. The brown sauce adds 112 kcal.',

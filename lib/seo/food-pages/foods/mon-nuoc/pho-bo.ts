@@ -29,13 +29,13 @@ export const food: FoodContent = {
     title: 'Phở bò bao nhiêu calo?',
     metaTitle: 'Phở bò bao nhiêu calo? 4 tô phở thật',
     description: (span) =>
-      `Khoảng ${span} calo một tô. Bốn tô phở bò thật: tô đặc biệt thêm trứng và quẩy, tô nhỏ ít bánh, tô lớn chín nạm gầu thêm nước béo và một tô nấu ở nhà.`,
+      `Khoảng ${span} calo một tô. Bốn tô phở bò: tô đặc biệt thêm trứng và quẩy, tô nhỏ ít bánh, tô lớn chín nạm gầu thêm nước béo và một tô nấu ở nhà.`,
     lead: (span) =>
       `Từ khoảng ${span} calo một tô. Bánh phở và thịt làm nên phần lớn con số; gầu, nước béo và quẩy là những thứ đẩy nó lên nhanh nhất. Dưới đây là bốn tô thật, mỗi tô gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'chin-nam-gau',
     breakdownLead:
       'Trong tô lớn chín nạm gầu, riêng 60 g gầu đã 272 calo, nhiều hơn 200 g bánh phở; chén nước béo thêm 101 calo nữa. Nước dùng thường chỉ vài chục calo, nên húp hết hay chừa lại không đổi bao nhiêu, trừ khi đó là nước béo.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “phở tái tô nhỏ, ít bánh, không quẩy”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “phở tái tô nhỏ, ít bánh, không quẩy”, Kallo lo phần còn lại.',
   },
 };

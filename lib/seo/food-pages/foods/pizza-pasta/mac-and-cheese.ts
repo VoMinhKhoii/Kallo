@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in mac and cheese?',
     metaTitle: 'Calories in Mac and Cheese: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real servings of mac and cheese, a restaurant bowl, half a box, one with broccoli and a homemade one with skim milk.`,
+      `From about ${span} kcal. Four servings of mac and cheese, a restaurant bowl, half a box, one with broccoli and a homemade one with skim milk.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The pasta is the steady part; how much cheese and butter go into the sauce is what changes. Here are four real servings, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The pasta is the steady part; how much cheese and butter go into the sauce is what changes. Four real servings, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'In the restaurant bowl, the pasta is nearly half of it. The cheddar sauce adds 261 kcal and the breadcrumb topping only 39.',

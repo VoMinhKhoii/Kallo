@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in bibimbap?',
     metaTitle: 'Calories in Bibimbap: 4 Real Bowls',
     description: (span) =>
-      `From about ${span} kcal. Four real bowls of bibimbap, with bulgogi at a Korean restaurant, in a hot stone bowl, with tofu and homemade with half the rice.`,
+      `From about ${span} kcal. Four bowls of bibimbap, with bulgogi at a Korean restaurant, in a hot stone bowl, with tofu and homemade with half the rice.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The vegetables are most of the bowl by sight and least by calories; the rice, the meat and the oil decide it. Here are four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The vegetables take up most of the bowl but add the fewest calories. The rice, meat and oil decide the number. Four real bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'In the restaurant bowl, the rice and the bulgogi are almost two thirds of it. All the vegetables together are about 40 kcal.',

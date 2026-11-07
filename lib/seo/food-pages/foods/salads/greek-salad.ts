@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a Greek salad?',
     metaTitle: 'Calories in a Greek Salad: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real Greek salads, a taverna plate with a slab of feta, one with grilled chicken, a light one with lemon and a side salad.`,
+      `From about ${span} kcal. Four Greek salads, a taverna plate with a slab of feta, one with grilled chicken, a light one with lemon and a side salad.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The vegetables are almost free; the feta and the olive oil are where a Greek salad is. Here are four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. In a Greek salad, vegetables add few calories; most come from the feta and olive oil. Four real ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'taverna',
     breakdownLead:
       'In the taverna salad, the feta and the olive oil are almost three quarters of it. The tomatoes, pepper, cucumber and onion together are about 50 kcal.',

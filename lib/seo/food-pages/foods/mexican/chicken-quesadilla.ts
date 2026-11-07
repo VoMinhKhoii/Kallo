@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a chicken quesadilla?',
     metaTitle: 'Calories in a Chicken Quesadilla: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real chicken quesadillas, from a restaurant plate with guacamole and sour cream to a homemade one cooked without oil.`,
+      `From about ${span} kcal. Four chicken quesadillas, from a restaurant plate with guacamole and sour cream to a homemade one cooked without oil.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. A quesadilla is a tortilla and cheese with some chicken in between, and the cheese is the part that varies most. Here are four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. A quesadilla is a tortilla and cheese with some chicken in between, and the cheese is the part that varies most. Four real ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'In the restaurant quesadilla, the cheese and the tortilla are well over half of it. The guacamole and sour cream on the side add 182 kcal.',

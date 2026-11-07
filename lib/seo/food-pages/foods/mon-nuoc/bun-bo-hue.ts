@@ -36,6 +36,6 @@ export const food: FoodContent = {
     breakdownLead:
       'Một khúc giò heo (93 g) là 226 calo, ngang cả phần bún (221). Tô thường chỉ có bắp bò là 317; thêm giò là gần gấp đôi. Húp hết 450 g nước dùng chỉ thêm 62.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “bún bò Huế tô thường, không giò, ít bún”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “bún bò Huế tô thường, không giò, ít bún”, Kallo lo phần còn lại.',
   },
 };

@@ -5,9 +5,11 @@ import {
   FOOD_PAGES,
   kcalSpan,
   mealKcal,
+  medianMealKcal,
   pagesByGroup,
   pagesOf,
   relatedPages,
+  similarCaloriePages,
   sourcesOf,
 } from '../pages';
 import {
@@ -59,18 +61,19 @@ describe.each(ALL_SLUGS)('food page %s', (slug) => {
   });
 });
 
-describe('kcalSpan', () => {
-  const capture = (...kcals: number[]): FoodPageCapture => ({
-    capturedAt: '2026-10-31T00:00:00Z',
-    modelProfile: 'haiku',
-    variants: kcals.map((calories, i) => ({
-      key: `m${i}`,
-      text: '',
-      ingredients: [],
-      dishes: [{ name: 'dish', calories, protein: 0, carbs: 0, fat: 0 }],
-    })),
-  });
+/** A capture whose meals total the given kcal, one dish each. */
+const capture = (...kcals: number[]): FoodPageCapture => ({
+  capturedAt: '2026-10-31T00:00:00Z',
+  modelProfile: 'haiku',
+  variants: kcals.map((calories, i) => ({
+    key: `m${i}`,
+    text: '',
+    ingredients: [],
+    dishes: [{ name: 'dish', calories, protein: 0, carbs: 0, fat: 0 }],
+  })),
+});
 
+describe('kcalSpan', () => {
   it('rounds the meals out to whole hundreds', () => {
     expect(kcalSpan(capture(310, 975), 'en')).toBe('300 to 1,000');
     expect(kcalSpan(capture(400, 400), 'en')).toBe('400 to 400');
@@ -89,6 +92,13 @@ describe('kcalSpan', () => {
   });
 });
 
+describe('medianMealKcal', () => {
+  it('takes the middle meal, averaging the middle two of an even count', () => {
+    expect(medianMealKcal(capture(491, 135, 334, 273))).toBe(303.5);
+    expect(medianMealKcal(capture(500, 100, 300))).toBe(300);
+  });
+});
+
 describe.each(FOOD_PAGE_LOCALES)('the %s hub', (locale) => {
   it('lists each of its pages exactly once, and no other locale’s', () => {
     const listed = pagesByGroup(locale).flatMap(({ pages }) =>
@@ -104,6 +114,33 @@ describe.each(FOOD_PAGE_LOCALES)('the %s hub', (locale) => {
       expect(related.every((p) => p.group === page.group)).toBe(true);
       expect(related.every((p) => p.locale === locale)).toBe(true);
       expect(related.map((p) => p.slug)).not.toContain(page.slug);
+    }
+  });
+
+  it('adds three similar-calorie pages from other groups', () => {
+    for (const page of pagesOf(locale)) {
+      const similar = similarCaloriePages(page);
+      expect(similar, page.slug).toHaveLength(3);
+      expect(similar.every((p) => p.group !== page.group)).toBe(true);
+      expect(similar.every((p) => p.locale === locale)).toBe(true);
+    }
+  });
+
+  // At least one other page links each page. Iced milk coffee (126 kcal) has
+  // no dish of another group near its calories, so only its drinks sibling
+  // picks it; the hub and the vi deficit calculator link it too.
+  it('leaves no page unlinked by the other pages', () => {
+    const inbound = new Map(FOOD_SLUGS[locale].map((slug) => [slug, 0]));
+    for (const page of pagesOf(locale)) {
+      for (const other of [
+        ...relatedPages(page),
+        ...similarCaloriePages(page),
+      ]) {
+        inbound.set(other.slug, (inbound.get(other.slug) ?? 0) + 1);
+      }
+    }
+    for (const [slug, count] of inbound) {
+      expect(count, slug).toBeGreaterThanOrEqual(1);
     }
   });
 });

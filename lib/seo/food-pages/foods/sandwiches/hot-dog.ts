@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a hot dog?',
     metaTitle: 'Calories in a Hot Dog: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real hot dogs, from a ballpark dog to a chili cheese dog and a chicken sausage on whole wheat, broken down part by part.`,
+      `From about ${span} kcal. Four hot dogs, from a ballpark dog to a chili cheese dog and a chicken sausage on whole wheat, broken down part by part.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. One hot dog is a frank and a bun; what goes on top and how many you eat decide the rest. Here are four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. One hot dog is a frank and a bun; what goes on top and how many you eat decide the rest. Four real ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'ballpark',
     breakdownLead:
       'In the ballpark dog, the frank is about half of it and the bun most of the rest. Ketchup, mustard and relish together add only 43 kcal.',

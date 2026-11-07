@@ -33,6 +33,8 @@ export interface HubCopy {
   lead: string;
   /** The section that links the food pages; absent where there are none. */
   foodLine?: string;
+  /** A tool page's "calories in real meals" section above its sources. */
+  exampleMeals: { heading: string; lead: string };
   /** "Other calculators" heading on a tool page. */
   more: string;
   /** "Logged in Kallo, these numbers…" line above the sign-up button. */

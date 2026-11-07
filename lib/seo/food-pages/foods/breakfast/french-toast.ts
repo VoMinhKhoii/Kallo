@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in French toast?',
     metaTitle: 'Calories in French Toast: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real plates of French toast, from diner brioche with syrup to a light homemade one, broken down by bread, butter and toppings.`,
+      `From about ${span} kcal. Four plates of French toast, from diner brioche with syrup to a light homemade one, broken down by bread, butter and toppings.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The bread decides most of it, and brioche is not sandwich bread. Here are four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The bread decides most of it, and brioche is not sandwich bread. Four real plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'diner',
     breakdownLead:
       'At the diner, three thick slices of brioche are more than half of the plate before any butter or syrup goes on.',

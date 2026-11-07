@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in Thai green curry?',
     metaTitle: 'Calories in Thai Green Curry: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real bowls of Thai green curry, chicken at a Thai restaurant, tofu and vegetables, no rice and homemade with light coconut milk.`,
+      `From about ${span} kcal. Four bowls of Thai green curry, chicken at a Thai restaurant, tofu and vegetables, no rice and homemade with light coconut milk.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. Coconut milk is the heart of a green curry and of its calories. Here are four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Much of the calorie count in a green curry comes from coconut milk. Four real bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'In the restaurant curry, the coconut milk is the biggest line at 257 kcal, more than the rice or the chicken.',

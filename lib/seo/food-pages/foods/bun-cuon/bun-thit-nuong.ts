@@ -29,13 +29,13 @@ export const food: FoodContent = {
     title: 'Bún thịt nướng bao nhiêu calo?',
     metaTitle: 'Bún thịt nướng bao nhiêu calo? 4 tô bún thật',
     description: (span) =>
-      `Khoảng ${span} calo. Bốn tô bún thịt nướng thật: thêm chả giò và chén nước mắm, tô thường không chả giò, tô đặc biệt có nem nướng, và tô ít bún thêm thịt.`,
+      `Khoảng ${span} calo. Bốn tô bún thịt nướng: thêm chả giò và chén nước mắm, tô thường không chả giò, tô đặc biệt có nem nướng, tô ít bún thêm thịt.`,
     lead: (span) =>
       `Từ khoảng ${span} calo. Bún chỉ chiếm một phần; thịt nướng và chả giò mới là thứ đẩy con số lên. Dưới đây là bốn tô thật, mỗi tô gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'them-thit',
     breakdownLead:
       'Ở tô ít bún nhưng thêm một phần thịt, 200 g thịt nướng là 801 calo, còn bún chỉ 127. Bớt bún chẳng giảm được bao nhiêu nếu phần thịt tăng gấp đôi.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “bún thịt nướng chả giò, ít bún, không đậu phộng”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “bún thịt nướng chả giò, ít bún, không đậu phộng”, Kallo lo phần còn lại.',
   },
 };

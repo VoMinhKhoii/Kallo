@@ -6,9 +6,9 @@ export const macro: ToolCopy = {
   blurb: 'Protein, carbs and fat in grams for your calorie target.',
   metaTitle: 'Macro Calculator: Protein, Carbs and Fat in Grams',
   description:
-    'Turn a calorie target into grams of protein, carbs and fat with the three splits Kallo offers. Free, instant, with the maths shown.',
+    'Turn a calorie target into grams of protein, carbs and fat with the three Kallo splits. Free, instant results with the maths shown.',
   title: 'Macro calculator',
-  lead: 'Calories say how much to eat; macros say what it is made of. Put in your daily target, or let the calculator work it out from your body, and pick a split. You get grams of protein, carbohydrate and fat you can actually aim for.',
+  lead: 'Calories say how much to eat; macros say what it is made of. Enter your daily target, or let the calculator work it out from your measurements, and pick a split. You get grams of protein, carbohydrate and fat you can actually aim for.',
   sections: [
     {
       heading: 'How grams come from calories',
@@ -28,7 +28,7 @@ export const macro: ToolCopy = {
     {
       heading: 'Which one should I pick?',
       paragraphs: [
-        'The one you can keep eating. For weight change, total calories matter far more than the split; the split mostly decides how full you feel and how you train. Make sure protein is enough (the protein calculator gives a range from your weight and goal), and let carbs and fat fall where your food culture puts them.',
+        'Pick the one you can keep eating. For weight change, total calories matter far more than the split; the split mostly decides how full you feel and how you train. Get enough protein (the protein calculator gives a range from your weight and goal), then let carbs and fat fall where your food culture puts them.',
       ],
     },
     {

@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a cheeseburger?',
     metaTitle: 'Calories in a Cheeseburger: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real cheeseburgers, from a restaurant burger with bacon and fries to a lean homemade one, broken down part by part.`,
+      `From about ${span} kcal. Four cheeseburgers, from a restaurant burger with bacon and fries to a lean homemade one, broken down part by part.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The patty size, the cheese and the side are what move a cheeseburger, more than the bun. Here are four real burgers, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The patty size, the cheese and the side are what move a cheeseburger, more than the bun. Four real burgers, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'At the restaurant, the fries add as much as the two slices of cheddar, 226 kcal each. Without the side, the burger alone is about 1,030 kcal.',

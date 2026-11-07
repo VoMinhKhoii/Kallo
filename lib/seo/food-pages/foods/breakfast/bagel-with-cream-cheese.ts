@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a bagel with cream cheese?',
     metaTitle: 'Calories in a Bagel with Cream Cheese: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real bagels, from a deli bagel with a thick spread to half a bagel with light cream cheese, broken down part by part.`,
+      `From about ${span} kcal. Four bagels, from a deli bagel with a thick spread to half a bagel with light cream cheese, broken down part by part.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The bagel is most of it; the spread is less than people think. Here are four real bagels, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Most calories come from the bagel. The spread adds less than people think. Four real bagels, each typed into Kallo the way people describe them.`,
     breakdownOf: 'deli',
     breakdownLead:
       'In the deli bagel, the bagel is almost three quarters of the calories. The cream cheese everyone worries about is 109 kcal.',

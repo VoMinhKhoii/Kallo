@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in sushi rolls?',
     metaTitle: 'Calories in Sushi Rolls: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real sushi orders, a California roll, a spicy tuna roll, a shrimp tempura roll with sauces and a lunch combo with nigiri.`,
+      `From about ${span} kcal. Four sushi orders, a California roll, a spicy tuna roll, a shrimp tempura roll with sauces and a lunch combo with nigiri.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. Sushi rice is most of a roll; tempura and creamy sauces are what push one up. Here are four real orders, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Sushi rice is most of a roll; tempura and creamy sauces are what push one up. Four real orders, each typed into Kallo the way people describe them.`,
     breakdownOf: 'california',
     breakdownLead:
       'In a California roll, the rice is almost 80% of the calories. The crab, avocado and cucumber add about 40 kcal.',

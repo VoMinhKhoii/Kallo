@@ -29,13 +29,13 @@ export const food: FoodContent = {
     title: 'Cà phê sữa đá bao nhiêu calo?',
     metaTitle: '1 ly cà phê sữa đá bao nhiêu calo? 4 ly thật',
     description: (span) =>
-      `Khoảng ${span} calo một ly. Bốn ly cà phê sữa đá thật: ly nhỏ quán cóc nhiều sữa, nhà pha ba muỗng sữa đặc, phin sữa đá Highlands size M và ly lớn ở quán.`,
+      `Khoảng ${span} calo một ly. Bốn ly cà phê sữa đá: ly nhỏ quán cóc nhiều sữa, nhà pha ba muỗng sữa đặc, phin sữa đá Highlands size M và ly lớn ở quán.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một ly. Cà phê và đá gần như không có calo; con số là sữa đặc. Dưới đây là bốn ly thật, mỗi ly gõ vào Kallo đúng như người ta vẫn gọi.`,
+      `Từ khoảng ${span} calo một ly. Cà phê và đá gần như không có calo; sữa đặc mới quyết định con số. Dưới đây là bốn ly thật, mỗi ly gõ vào Kallo đúng như người ta vẫn gọi.`,
     breakdownOf: 'ly-lon',
     breakdownLead:
       'Ở ly lớn, ba muỗng sữa đặc (45 g) là 151 calo, còn cà phê chỉ 2. Ly to hay nhỏ không quan trọng bằng bao nhiêu muỗng sữa.',
     tryLine:
-      'Gõ ly của bạn như khi gọi món, kiểu “cà phê sữa đá, ít sữa, ly nhỏ”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi gọi món: “cà phê sữa đá, ít sữa, ly nhỏ”, Kallo lo phần còn lại.',
   },
 };

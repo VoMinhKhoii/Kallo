@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a gyro?',
     metaTitle: 'Calories in a Gyro: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real gyros, lamb with fries inside, chicken without fries, a gyro plate with rice and a bowl without pita.`,
+      `From about ${span} kcal. Four gyros, lamb with fries inside, chicken without fries, a gyro plate with rice and a bowl without pita.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The meat, the pita and whether fries go inside decide a gyro. Here are four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The meat, the pita and whether fries go inside decide a gyro. Four real ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'lamb',
     breakdownLead:
       'In the lamb gyro, the meat is nearly half of it. The fries tucked inside add 98 kcal, while the tzatziki is only 29.',

@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a full English breakfast?',
     metaTitle: 'Calories in a Full English Breakfast: 4 Real Plates',
     description: (span) =>
-      `From about ${span} kcal. Four real full English breakfasts, from a cafe fry-up to a grilled homemade plate, broken down item by item.`,
+      `From about ${span} kcal. Four full English breakfasts, from a cafe fry-up to a grilled homemade plate, broken down item by item.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. A full English is a dozen small things, and a few of them carry most of the plate. Here are four real breakfasts, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. A full English is a dozen small things, and a few of them carry most of the plate. Four real breakfasts, each typed into Kallo the way people describe them.`,
     breakdownOf: 'cafe',
     breakdownLead:
       'On the cafe plate, the two sausages are the biggest line at 326 kcal. The hash browns come second, ahead of the bacon.',

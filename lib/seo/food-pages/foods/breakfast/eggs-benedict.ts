@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in eggs Benedict?',
     metaTitle: 'Calories in Eggs Benedict: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real plates of eggs Benedict, with ham, with smoked salmon and as a half portion, broken down ingredient by ingredient.`,
+      `From about ${span} kcal. Four plates of eggs Benedict, with ham, with smoked salmon and as a half portion, broken down ingredient by ingredient.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The eggs are the steady part; the hollandaise, the muffin and whatever comes on the side are what change. Here are four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The eggs are the steady part; the hollandaise, the muffin and whatever comes on the side are what change. Four real plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'brunch',
     breakdownLead:
       'At the brunch place, the side of home fries is the biggest single line, more than the hollandaise and the Canadian bacon put together.',

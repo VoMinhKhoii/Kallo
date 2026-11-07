@@ -31,11 +31,11 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa có rau muống thật: một dĩa nhỏ với trứng chiên, bữa cơm nhà có cá thu kho, rau muống xào bò, và một đĩa lớn xào nhiều dầu.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một bữa. Rau muống gần như không có calo; dầu xào, thịt xào cùng và chén cơm mới là con số. Dưới đây là bốn bữa thật, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một bữa. Rau muống gần như không có calo; dầu xào, thịt xào cùng và chén cơm mới quyết định con số. Dưới đây là bốn bữa thật, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'nhieu-dau',
     breakdownLead:
       'Ở đĩa lớn xào nhiều dầu, 225 g rau muống chỉ 64 calo, còn 12 g dầu là 103. Ăn bao nhiêu rau cũng không đổi bao nhiêu; dầu và chén cơm (152) mới quyết định.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “rau muống xào tỏi ít dầu, 1 chén cơm, 1 quả trứng luộc”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “rau muống xào tỏi ít dầu, 1 chén cơm, 1 quả trứng luộc”, Kallo lo phần còn lại.',
   },
 };

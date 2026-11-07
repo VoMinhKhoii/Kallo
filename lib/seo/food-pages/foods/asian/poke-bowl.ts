@@ -29,9 +29,9 @@ export const food: FoodContent = {
     title: 'How many calories are in a poke bowl?',
     metaTitle: 'Calories in a Poke Bowl: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real poke bowls, from a shop bowl with salmon and spicy mayo to half rice, greens only and homemade with brown rice.`,
+      `From about ${span} kcal. Four poke bowls, from a shop bowl with salmon and spicy mayo to half rice, greens only and homemade with brown rice.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. The fish is the steady part; the rice and the sauce are what move a poke bowl. Here are four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The fish is the steady part; the rice and the sauce are what move a poke bowl. Four real bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'shop',
     breakdownLead:
       'In the shop bowl, the salmon and the rice are about 200 kcal each. One spoon of spicy mayo adds 102.',

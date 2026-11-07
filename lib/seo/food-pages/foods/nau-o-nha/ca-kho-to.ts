@@ -31,11 +31,11 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa cơm nhà có cá kho thật: cá lóc kho tộ với canh chua, cá basa kho với rau muống xào, cá bống kho tiêu và cá nục kho cà.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một bữa. Bản thân khúc cá kho không nặng; chén cơm ăn kèm, dầu và đường trong nước kho mới làm nên phần lớn con số. Dưới đây là bốn bữa thật, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một bữa. Khúc cá kho không nặng; chén cơm ăn kèm, dầu và đường trong nước kho mới làm nên phần lớn con số. Dưới đây là bốn bữa thật, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'ca-nuc',
     breakdownLead:
       'Trong bữa cá nục kho cà, hai chén cơm là 303 calo, còn hai con cá chỉ 198. Ở bữa cơm nhà, cơm thường nặng hơn món kho: mỗi chén thêm là khoảng 150 calo.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “cá kho tộ 1 khúc, canh chua, 1 chén rưỡi cơm”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “cá kho tộ 1 khúc, canh chua, 1 chén rưỡi cơm”, Kallo lo phần còn lại.',
   },
 };

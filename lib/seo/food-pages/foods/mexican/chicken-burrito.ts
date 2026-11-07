@@ -29,12 +29,12 @@ export const food: FoodContent = {
     title: 'How many calories are in a chicken burrito?',
     metaTitle: 'Calories in a Chicken Burrito: 4 Real Examples',
     description: (span) =>
-      `From about ${span} kcal. Four real chicken burritos broken down by tortilla, rice, chicken and toppings, so you can see what moves the number.`,
+      `From about ${span} kcal. Four chicken burritos broken down by tortilla, rice, chicken and toppings, so you can see what moves the number.`,
     lead: (span) =>
-      `Anywhere from about ${span} kcal. A burrito is not one food: the tortilla, the rice and the toppings decide the number. Here are four real burritos, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. A burrito is not one food: the tortilla, the rice and the toppings decide the number. Four real burritos, each typed into Kallo the way people describe them.`,
     breakdownOf: 'shop',
     breakdownLead:
-      'Inside the first burrito, here is where the calories sit. The tortilla and the rice together are nearly half of it.',
+      'In the first burrito, the tortilla and the rice together are nearly half the calories.',
     tryLine:
       'Type yours the way you would say it, like “chicken burrito, extra rice, no beans, half the cheese”, and Kallo works out the rest.',
   },
