@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Poke bowl',
     title: 'How many calories are in a poke bowl?',
-    metaTitle: 'Calories in a Poke Bowl: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Poke Bowl: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four poke bowls, from a shop bowl with salmon and spicy mayo to half rice, greens only and homemade with brown rice.`,
     lead: (span) =>

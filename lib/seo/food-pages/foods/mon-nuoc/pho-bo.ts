@@ -27,7 +27,7 @@ export const food: FoodContent = {
   copy: {
     name: 'Phở bò',
     title: 'Phở bò bao nhiêu calo?',
-    metaTitle: 'Phở bò bao nhiêu calo? 4 tô phở thật',
+    metaTitle: (span) => `Phở bò bao nhiêu calo? ${span} kcal, 4 tô phở thật`,
     description: (span) =>
       `Khoảng ${span} calo một tô. Bốn tô phở bò: tô đặc biệt thêm trứng và quẩy, tô nhỏ ít bánh, tô lớn chín nạm gầu thêm nước béo và một tô nấu ở nhà.`,
     lead: (span) =>

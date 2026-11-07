@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bún riêu',
     title: 'Bún riêu bao nhiêu calo?',
-    metaTitle: '1 tô bún riêu bao nhiêu calo? 4 tô bún riêu thật',
+    metaTitle: (span) =>
+      `1 tô bún riêu bao nhiêu calo? ${span} kcal, 4 tô bún riêu thật`,
     description: (span) =>
       `Khoảng ${span} calo một tô. Bốn tô bún riêu thật: bát đầy đủ riêu ốc đậu bắp bò, tô nhỏ chỉ riêu và cà chua, tô lớn kiểu Sài Gòn thêm giò heo, và tô đặc biệt thêm mỡ nước.`,
     lead: (span) =>

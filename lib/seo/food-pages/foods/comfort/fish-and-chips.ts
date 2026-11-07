@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Fish and chips',
     title: 'How many calories are in fish and chips?',
-    metaTitle: 'Calories in Fish and Chips: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Fish and Chips: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four portions of fish and chips: a large chip shop meal, haddock with mushy peas, a small portion and a homemade oven-baked one.`,
     lead: (span) =>

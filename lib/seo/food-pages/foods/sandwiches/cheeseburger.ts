@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Cheeseburger',
     title: 'How many calories are in a cheeseburger?',
-    metaTitle: 'Calories in a Cheeseburger: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Cheeseburger: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four cheeseburgers, from a restaurant burger with bacon and fries to a lean homemade one, broken down part by part.`,
     lead: (span) =>

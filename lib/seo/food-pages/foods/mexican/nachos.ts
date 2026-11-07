@@ -27,7 +27,7 @@ export const food: FoodContent = {
   copy: {
     name: 'Nachos',
     title: 'How many calories are in nachos?',
-    metaTitle: 'Calories in Nachos: 4 Real Examples',
+    metaTitle: (span) => `Calories in Nachos: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of nachos, from half a loaded bar platter to chips with cheese sauce and a homemade plate, broken down by topping.`,
     lead: (span) =>

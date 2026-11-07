@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Fried chicken',
     title: 'How many calories are in fried chicken?',
-    metaTitle: 'Calories in Fried Chicken: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Fried Chicken: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four servings of fried chicken: a two-piece meal with sides, three pieces with skin, chicken tenders and two pieces without skin.`,
     lead: (span) =>

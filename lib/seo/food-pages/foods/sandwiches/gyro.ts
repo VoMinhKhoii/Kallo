@@ -27,7 +27,7 @@ export const food: FoodContent = {
   copy: {
     name: 'Gyro',
     title: 'How many calories are in a gyro?',
-    metaTitle: 'Calories in a Gyro: 4 Real Examples',
+    metaTitle: (span) => `Calories in a Gyro: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four gyros, lamb with fries inside, chicken without fries, a gyro plate with rice and a bowl without pita.`,
     lead: (span) =>

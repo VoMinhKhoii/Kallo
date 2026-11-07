@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Cobb salad',
     title: 'How many calories are in a Cobb salad?',
-    metaTitle: 'Calories in a Cobb Salad: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Cobb Salad: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four Cobb salads, a restaurant one with ranch, one with vinaigrette, one without bacon or blue cheese and a weighed homemade one.`,
     lead: (span) =>

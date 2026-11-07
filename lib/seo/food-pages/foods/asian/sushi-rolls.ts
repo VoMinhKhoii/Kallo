@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Sushi rolls',
     title: 'How many calories are in sushi rolls?',
-    metaTitle: 'Calories in Sushi Rolls: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Sushi Rolls: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four sushi orders, a California roll, a spicy tuna roll, a shrimp tempura roll with sauces and a lunch combo with nigiri.`,
     lead: (span) =>

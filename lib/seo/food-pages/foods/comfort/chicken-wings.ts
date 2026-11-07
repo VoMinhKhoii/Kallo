@@ -23,7 +23,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken wings',
     title: 'How many calories are in chicken wings?',
-    metaTitle: 'Calories in Chicken Wings: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Chicken Wings: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four orders of chicken wings, ten buffalo wings with blue cheese dip, six BBQ wings, ten boneless wings and eight air-fried ones.`,
     lead: (span) =>

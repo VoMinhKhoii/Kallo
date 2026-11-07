@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Fried chicken sandwich',
     title: 'How many calories are in a fried chicken sandwich?',
-    metaTitle: 'Calories in a Fried Chicken Sandwich: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Fried Chicken Sandwich: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four chicken sandwiches, a fast food fried one, a spicy one with fries, a grilled one and an air-fried homemade one.`,
     lead: (span) =>

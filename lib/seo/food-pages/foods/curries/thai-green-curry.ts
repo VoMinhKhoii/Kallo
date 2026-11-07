@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Thai green curry',
     title: 'How many calories are in Thai green curry?',
-    metaTitle: 'Calories in Thai Green Curry: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Thai Green Curry: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four bowls of Thai green curry, chicken at a Thai restaurant, tofu and vegetables, no rice and homemade with light coconut milk.`,
     lead: (span) =>

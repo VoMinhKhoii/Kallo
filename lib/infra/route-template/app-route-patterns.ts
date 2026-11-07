@@ -129,6 +129,7 @@ export const APP_ROUTE_PATTERNS = [
   '/auth/callback',
   '/auth/turnstile',
   '/auth/verify',
+  '/feed.xml',
   '/llms.txt',
   '/md/[locale]/[...slug]',
   '/openapi.json',

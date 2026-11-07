@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Club sandwich',
     title: 'How many calories are in a club sandwich?',
-    metaTitle: 'Calories in a Club Sandwich: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Club Sandwich: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four club sandwiches, from a cafe club with chips to a two-slice turkey club without mayo, broken down layer by layer.`,
     lead: (span) =>

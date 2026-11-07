@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Greek yogurt parfait',
     title: 'How many calories are in a Greek yogurt parfait?',
-    metaTitle: 'Calories in a Greek Yogurt Parfait: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Greek Yogurt Parfait: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four Greek yogurt bowls, full-fat, nonfat and from a coffee shop, broken down by yogurt, granola and toppings.`,
     lead: (span) =>

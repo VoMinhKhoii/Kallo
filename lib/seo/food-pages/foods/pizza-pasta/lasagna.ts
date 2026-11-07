@@ -27,7 +27,7 @@ export const food: FoodContent = {
   copy: {
     name: 'Lasagna',
     title: 'How many calories are in lasagna?',
-    metaTitle: 'Calories in Lasagna: 4 Real Examples',
+    metaTitle: (span) => `Calories in Lasagna: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four pieces of lasagna, from a restaurant beef lasagna to a homemade square, a vegetable one and a frozen tray.`,
     lead: (span) =>

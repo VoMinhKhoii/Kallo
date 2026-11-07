@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken noodle soup',
     title: 'How many calories are in chicken noodle soup?',
-    metaTitle: 'Calories in Chicken Noodle Soup: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Chicken Noodle Soup: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four bowls of chicken noodle soup, a big homemade bowl, a whole can, a deli soup with a buttered roll and a high-protein bowl.`,
     lead: (span) =>

@@ -126,7 +126,7 @@ export function relatedPages(page: FoodPage): FoodPage[] {
  * deploy alone: a date that moves on every build is one Google learns to
  * ignore.
  */
-export const FOOD_PAGE_LAYOUT_REVISED = '2026-11-05';
+export const FOOD_PAGE_LAYOUT_REVISED = '2026-11-07';
 
 /**
  * The median of a capture's meal totals: the middle one, or the mean of the

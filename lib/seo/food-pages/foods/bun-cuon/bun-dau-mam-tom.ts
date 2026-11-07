@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bún đậu mắm tôm',
     title: 'Bún đậu mắm tôm bao nhiêu calo?',
-    metaTitle: 'Bún đậu mắm tôm bao nhiêu calo? 4 suất thật',
+    metaTitle: (span) =>
+      `Bún đậu mắm tôm bao nhiêu calo? ${span} kcal, 4 suất thật`,
     description: (span) =>
       `Khoảng ${span} calo một suất. Bốn suất bún đậu mắm tôm: có thịt luộc, đủ chả cốm lòng dồi nem chua rán, suất nhỏ chỉ bún và đậu, thêm chả cốm không thịt.`,
     lead: (span) =>

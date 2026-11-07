@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bánh mì thịt',
     title: 'Bánh mì thịt bao nhiêu calo?',
-    metaTitle: '1 ổ bánh mì thịt bao nhiêu calo? 4 ổ bánh mì thật',
+    metaTitle: (span) =>
+      `1 ổ bánh mì thịt bao nhiêu calo? ${span} kcal, 4 ổ bánh mì thật`,
     description: (span) =>
       `Khoảng ${span} calo một ổ. Bốn ổ bánh mì: thịt nguội pate chả lụa thêm ốp la, bánh mì thịt thường, bánh mì thịt nướng và bánh mì heo quay.`,
     lead: (span) =>

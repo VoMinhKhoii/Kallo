@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bánh xèo',
     title: 'Bánh xèo bao nhiêu calo?',
-    metaTitle: 'Bánh xèo bao nhiêu calo? 4 lần ăn bánh xèo thật',
+    metaTitle: (span) =>
+      `Bánh xèo bao nhiêu calo? ${span} kcal, 4 lần ăn bánh xèo thật`,
     description: (span) =>
       `Khoảng ${span} calo. Bốn lần ăn bánh xèo thật: một cái bánh xèo chay, một cái tôm thịt cỡ lớn, sáu cái nhỏ miền Trung và bánh tự đổ ở nhà bằng chảo chống dính.`,
     lead: (span) =>

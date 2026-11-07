@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Thịt kho trứng',
     title: 'Thịt kho trứng bao nhiêu calo?',
-    metaTitle: 'Thịt kho trứng bao nhiêu calo? 4 bữa cơm thật',
+    metaTitle: (span) =>
+      `Thịt kho trứng bao nhiêu calo? ${span} kcal, 4 bữa cơm thật`,
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa có thịt kho trứng thật: hai miếng ba rọi với một chén cơm, thịt kho hột vịt chan nước kho, cơm văn phòng thêm cơm, và thịt nạc vai kho trứng.`,
     lead: (span) =>

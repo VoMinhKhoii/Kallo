@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Cơm tấm sườn',
     title: 'Cơm tấm sườn bao nhiêu calo?',
-    metaTitle: 'Cơm tấm sườn bao nhiêu calo? 4 dĩa cơm tấm thật',
+    metaTitle: (span) =>
+      `Cơm tấm sườn bao nhiêu calo? ${span} kcal, 4 dĩa cơm tấm thật`,
     description: (span) =>
       `Khoảng ${span} calo. Bốn dĩa cơm tấm: sườn bì chả trứng thêm cơm, chỉ sườn nướng, hai miếng sườn đủ món kèm canh, nửa cơm nửa dưa leo.`,
     lead: (span) =>

@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bún chả',
     title: 'Bún chả bao nhiêu calo?',
-    metaTitle: 'Bún chả bao nhiêu calo? 4 suất bún chả thật',
+    metaTitle: (span) =>
+      `Bún chả bao nhiêu calo? ${span} kcal, 4 suất bún chả thật`,
     description: (span) =>
       `Khoảng ${span} calo một suất. Bốn suất bún chả: thêm nem cua bể và một lượt bún, chỉ ăn nửa phần bún, một suất thường và bún chả làm ở nhà.`,
     lead: (span) =>

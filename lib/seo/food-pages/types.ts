@@ -56,7 +56,8 @@ export interface FoodPageCopy {
   /** The food as a link names it: "Chicken burrito". */
   name: string;
   title: string;
-  metaTitle: string;
+  /** The range sits in the title, where a searcher reads it before clicking. */
+  metaTitle: (span: string) => string;
   /** `span` reads like "300 to 1,000" (or "300 đến 1.000"). */
   description: (span: string) => string;
   lead: (span: string) => string;

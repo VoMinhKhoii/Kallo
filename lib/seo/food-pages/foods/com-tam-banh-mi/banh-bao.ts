@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bánh bao',
     title: 'Bánh bao bao nhiêu calo?',
-    metaTitle: 'Bánh bao bao nhiêu calo? 4 loại bánh bao thật',
+    metaTitle: (span) =>
+      `Bánh bao bao nhiêu calo? ${span} kcal, 4 loại bánh bao thật`,
     description: (span) =>
       `Khoảng ${span} calo. Bốn phần bánh bao: Thọ Phát nhân thịt trứng muối, xá xíu, hai cái bánh bao chay và một cái đặc biệt cỡ lớn.`,
     lead: (span) =>

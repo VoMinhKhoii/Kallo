@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Hot dog',
     title: 'How many calories are in a hot dog?',
-    metaTitle: 'Calories in a Hot Dog: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Hot Dog: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four hot dogs, from a ballpark dog to a chili cheese dog and a chicken sausage on whole wheat, broken down part by part.`,
     lead: (span) =>

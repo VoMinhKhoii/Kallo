@@ -36,6 +36,14 @@ export interface FoodPageChrome {
   /** Before "More meals": the TDEE calculator, for the reader's own day. */
   dailyNote: { before: string; link: string; after: string };
   similarHeading: string;
+  /** The summary table's columns. */
+  tableHeads: {
+    meal: string;
+    calories: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+  };
   footerLink: string;
   /** The hub's link to the data page that reads every dish together. */
   dataLink: string;
@@ -85,6 +93,13 @@ export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
       after: '.',
     },
     similarHeading: 'Similar calories',
+    tableHeads: {
+      meal: 'Meal',
+      calories: 'Calories',
+      protein: 'Protein',
+      carbs: 'Carbs',
+      fat: 'Fat',
+    },
     footerLink: 'Calories in meals',
     dataLink: 'How much the same meal varies across all these pages',
   },
@@ -126,6 +141,13 @@ export const FOOD_PAGE_CHROME: Record<FoodLocale, FoodPageChrome> = {
       after: '.',
     },
     similarHeading: 'Món có lượng calo tương đương',
+    tableHeads: {
+      meal: 'Bữa',
+      calories: 'Calo',
+      protein: 'Đạm',
+      carbs: 'Tinh bột',
+      fat: 'Chất béo',
+    },
     footerLink: 'Calo các món ăn',
     dataLink: 'Cùng một món, calo chênh nhau bao nhiêu qua các bữa đã ghi',
   },

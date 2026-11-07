@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken burrito',
     title: 'How many calories are in a chicken burrito?',
-    metaTitle: 'Calories in a Chicken Burrito: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Chicken Burrito: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four chicken burritos broken down by tortilla, rice, chicken and toppings, so you can see what moves the number.`,
     lead: (span) =>

@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'French toast',
     title: 'How many calories are in French toast?',
-    metaTitle: 'Calories in French Toast: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in French Toast: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of French toast, from diner brioche with syrup to a light homemade one, broken down by bread, butter and toppings.`,
     lead: (span) =>

@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Eggs Benedict',
     title: 'How many calories are in eggs Benedict?',
-    metaTitle: 'Calories in Eggs Benedict: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Eggs Benedict: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of eggs Benedict, with ham, with smoked salmon and as a half portion, broken down ingredient by ingredient.`,
     lead: (span) =>

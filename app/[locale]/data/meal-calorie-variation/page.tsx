@@ -7,14 +7,17 @@ import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
 import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
 import { DocsH2, DocsParagraph } from '@/components/docs/mdx/prose';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
+import { JsonLd } from '@/components/seo/json-ld';
 import { KindList } from '@/components/seo/meal-data/kind-list';
 import { SwingList } from '@/components/seo/meal-data/swing-list';
 import { alternateLanguages } from '@/lib/seo/alternates';
+import { captureDateRange } from '@/lib/seo/food-pages/pages';
 import { FOOD_PAGE_LOCALES, isFoodLocale } from '@/lib/seo/food-pages/slugs';
 import { MEAL_DATA_COPY } from '@/lib/seo/meal-data/copy';
 import { mealData } from '@/lib/seo/meal-data/facts';
 import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
+import { mealDataStructuredData } from '@/lib/seo/page-structured-data';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**
@@ -55,15 +58,7 @@ export async function generateMetadata({
   };
 }
 
-export default function MealDataPage({ params }: MealDataProps) {
-  return (
-    <Suspense fallback={null}>
-      <MealDataContent params={params} />
-    </Suspense>
-  );
-}
-
-async function MealDataContent({ params }: MealDataProps) {
+export default async function MealDataPage({ params }: MealDataProps) {
   const { locale } = await params;
   if (!isFoodLocale(locale)) notFound();
   const copy = MEAL_DATA_COPY[locale];
@@ -73,6 +68,15 @@ async function MealDataContent({ params }: MealDataProps) {
 
   return (
     <AuthProvider>
+      <JsonLd
+        data={mealDataStructuredData({
+          locale,
+          url,
+          name: copy.title,
+          description: copy.description(facts),
+          ...captureDateRange(locale),
+        })}
+      />
       <article className="mx-auto w-full min-w-0 max-w-[40rem] py-10">
         <div className="mt-3 text-center">
           <h1 className="text-balance font-bold font-serif text-h1 text-kallo-text">

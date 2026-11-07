@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Spaghetti carbonara',
     title: 'How many calories are in spaghetti carbonara?',
-    metaTitle: 'Calories in Spaghetti Carbonara: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Spaghetti Carbonara: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of carbonara, the restaurant kind with guanciale, a creamy one with bacon, a weighed homemade plate and a small one.`,
     lead: (span) =>

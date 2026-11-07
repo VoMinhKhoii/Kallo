@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Xôi',
     title: 'Xôi bao nhiêu calo?',
-    metaTitle: '1 gói xôi bao nhiêu calo? 4 gói xôi thật',
+    metaTitle: (span) =>
+      `1 gói xôi bao nhiêu calo? ${span} kcal, 4 gói xôi thật`,
     description: (span) =>
       `Khoảng ${span} calo một gói. Bốn gói xôi: xôi xéo không lấy mỡ, xôi xéo thêm giò lụa và trứng đúc, xôi lạc gói nhỏ và xôi đậu xanh dừa nạo.`,
     lead: (span) =>

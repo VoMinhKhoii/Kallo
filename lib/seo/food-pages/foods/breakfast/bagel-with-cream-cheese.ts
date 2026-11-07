@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bagel with cream cheese',
     title: 'How many calories are in a bagel with cream cheese?',
-    metaTitle: 'Calories in a Bagel with Cream Cheese: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Bagel with Cream Cheese: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four bagels, from a deli bagel with a thick spread to half a bagel with light cream cheese, broken down part by part.`,
     lead: (span) =>

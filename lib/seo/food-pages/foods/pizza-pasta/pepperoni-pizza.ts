@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Pepperoni pizza',
     title: 'How many calories are in pepperoni pizza?',
-    metaTitle: 'Calories in Pepperoni Pizza: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Pepperoni Pizza: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four servings of pepperoni pizza, two slices from a pizza place, a deep-dish slice, half a thin crust and half a frozen pizza.`,
     lead: (span) =>

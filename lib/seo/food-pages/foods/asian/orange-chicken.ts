@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Orange chicken',
     title: 'How many calories are in orange chicken?',
-    metaTitle: 'Calories in Orange Chicken: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Orange Chicken: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four servings of orange chicken, takeout with fried rice, with steamed rice, a small portion and an air-fried homemade one.`,
     lead: (span) =>
