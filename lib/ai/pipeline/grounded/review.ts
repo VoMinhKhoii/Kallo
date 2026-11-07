@@ -158,7 +158,11 @@ export function dropOilInFriedRows(state: RunState): {
       oils.length > 0 &&
       foods.every((f) => isFriedRow(state, pairs[f].ground, f))
     )
-      for (const f of oils) drop.add(f);
+      for (const f of oils) {
+        // An amount the user stated ("1 muỗng dầu ô liu") is what they ate.
+        const { count, explicitMass } = pairs[f].ingredient;
+        if (count == null && !explicitMass) drop.add(f);
+      }
   }
   if (drop.size === 0) return { state, dropped: 0 };
 
