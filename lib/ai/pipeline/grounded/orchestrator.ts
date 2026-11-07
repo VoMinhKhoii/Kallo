@@ -44,6 +44,10 @@ import { runCallTwoStage } from './call-two/call-two';
 import { flushUnstreamedItemMacros } from './call-two/item-macros';
 import { runGroundedDecomposition } from './decomposition';
 import { runV2AnomalyPass, shouldEscalateV2 } from './escalation';
+import {
+  isFirstEstimateEnabled,
+  startFirstEstimate,
+} from './first-estimate/first-estimate';
 import { prepareGrounding } from './grounding';
 import { isDishRescueEnabled, startDishRescue } from './rescue/rescue';
 import { reviewPicks } from './review';
@@ -119,6 +123,14 @@ export async function analyzeMealV2(
   let promptCharsCall2 = 0;
   let nutritionChunkCount = 0;
   let closeRescue = () => {};
+  const firstEstimate = isFirstEstimateEnabled()
+    ? startFirstEstimate({
+        gemini,
+        model: profile.nutritionModel,
+        mealText: rawInput,
+        onAttemptComplete: budget.nutritionRecorder,
+      })
+    : null;
 
   try {
     // ---- Stage 1: Call 1 — pure decomposition (grounded-decomposition) --
@@ -134,6 +146,7 @@ export async function analyzeMealV2(
       onAttemptComplete: budget.decompositionRecorder,
     });
     if (stage1.nonFood) {
+      firstEstimate?.abort();
       return nonFoodResponse();
     }
     const {
@@ -189,6 +202,8 @@ export async function analyzeMealV2(
 
     rescue?.matched(matchResults, portionResolutions);
 
+    const estimateText = await firstEstimate?.settle();
+
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
     const stage3 = await runCallTwoStage({
       traceContext,
@@ -201,7 +216,9 @@ export async function analyzeMealV2(
       mealItemsWithCandidates,
       streamedMealItemIds,
       rawInput,
-      promptCtx,
+      promptCtx: estimateText
+        ? { ...promptCtx, firstEstimate: estimateText }
+        : promptCtx,
       temperature: call2Temperature,
       userContext,
       onAttemptComplete: budget.nutritionRecorder,
@@ -351,6 +368,7 @@ export async function analyzeMealV2(
       : { success: true, data: assembly.result };
   } catch (error) {
     closeRescue();
+    firstEstimate?.abort();
     // The user only sees a generic "try again"; keep the cause in the logs.
     console.error('[v2-pipeline] analysis failed:', safeError(error));
     budget.recordCatchError(error);

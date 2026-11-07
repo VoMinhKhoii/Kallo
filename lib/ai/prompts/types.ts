@@ -14,4 +14,7 @@ export type PromptPersonalizationContext = Pick<
   | 'cookingHabits'
   | 'inputLanguage'
   | 'outputLanguage'
->;
+> & {
+  /** The model's own read of the meal, rendered for Call 2 (`grounded/first-estimate`). */
+  firstEstimate?: string;
+};

@@ -10,6 +10,7 @@ import {
   buildStaticPrefix,
   CALIBRATION_RULE,
   DISH_SIZING_RULE,
+  firstEstimateBlock,
   SHARE_RULE,
 } from '@/lib/ai/prompts/text/grounded-estimation';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
@@ -101,11 +102,15 @@ export function buildGroundedEstimationPrompt(args: {
     includeNameEn: locale === 'global',
   });
 
+  const firstEstimate = args.userContext.firstEstimate
+    ? firstEstimateBlock(escapeXmlAttribute(args.userContext.firstEstimate))
+    : '';
+
   return `${staticPrefix}
 
 ${userContextBlock}
 
-${originalPromptBlock}
+${originalPromptBlock}${firstEstimate}
 
 ${ingredientDataBlock}
 
