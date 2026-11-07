@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Greek salad',
     title: 'How many calories are in a Greek salad?',
-    metaTitle: 'Calories in a Greek Salad: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Greek Salad: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four Greek salads, a taverna plate with a slab of feta, one with grilled chicken, a light one with lemon and a side salad.`,
     lead: (span) =>

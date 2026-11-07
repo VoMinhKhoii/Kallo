@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Đậu phụ sốt cà chua',
     title: 'Đậu phụ sốt cà chua bao nhiêu calo?',
-    metaTitle: 'Đậu phụ sốt cà chua bao nhiêu calo? 4 bữa thật',
+    metaTitle: (span) =>
+      `Đậu phụ sốt cà chua bao nhiêu calo? ${span} kcal, 4 bữa thật`,
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa có đậu sốt cà chua thật: một bìa đậu rán với hai bát cơm, cơm bụi thêm vá cơm, đậu nhồi thịt và đậu hũ non không chiên.`,
     lead: (span) =>

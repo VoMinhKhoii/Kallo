@@ -62,6 +62,13 @@ together give Instant Navigations. The rules the build enforces, and the choices
   read down to the smallest component; the rest of the page stays static. The `(app)` layout reads
   the session behind one boundary whose fallback is `components/app/shell/app-shell-skeleton.tsx`;
   each app page's `loading.tsx` is what shows during a client navigation into it.
+- **Public pages keep their article outside `<Suspense>`.** React outlines a boundary over 12.8 KB:
+  the content ships in a `<div hidden>` after the footer and a script moves it into place, even when
+  it resolved at build time. Crawlers that run no JavaScript (OAI-SearchBot, PerplexityBot,
+  ClaudeBot) read that as an empty page. So the docs, food, calculator and data routes render at the
+  top level, and those with a dynamic param set `instant = false`, since a `params` read outside
+  `<Suspense>` otherwise fails instant validation. `app/__tests__/crawlable-pages.test.ts` holds
+  this.
 - **Clock and random reads wait for `io()`.** Partial Prefetching makes `cookies()` and
   `headers()` readable in the runtime prefetch, so a `Date.now()`, `new Date()` or
   `Math.random()` reached right after them, before any network call, still lands in a prerender:

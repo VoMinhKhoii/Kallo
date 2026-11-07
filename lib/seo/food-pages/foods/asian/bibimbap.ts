@@ -27,7 +27,7 @@ export const food: FoodContent = {
   copy: {
     name: 'Bibimbap',
     title: 'How many calories are in bibimbap?',
-    metaTitle: 'Calories in Bibimbap: 4 Real Bowls',
+    metaTitle: (span) => `Calories in Bibimbap: ${span} kcal (4 Real Bowls)`,
     description: (span) =>
       `From about ${span} kcal. Four bowls of bibimbap, with bulgogi at a Korean restaurant, in a hot stone bowl, with tofu and homemade with half the rice.`,
     lead: (span) =>

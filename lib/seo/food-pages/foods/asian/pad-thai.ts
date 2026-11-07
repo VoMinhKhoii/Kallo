@@ -27,7 +27,7 @@ export const food: FoodContent = {
   copy: {
     name: 'Pad thai',
     title: 'How many calories are in pad thai?',
-    metaTitle: 'Calories in Pad Thai: 4 Real Examples',
+    metaTitle: (span) => `Calories in Pad Thai: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of pad thai, chicken from a Thai restaurant, half a shrimp takeout box, tofu with extra peanuts and a homemade one.`,
     lead: (span) =>

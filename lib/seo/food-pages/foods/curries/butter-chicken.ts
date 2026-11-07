@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Butter chicken',
     title: 'How many calories are in butter chicken?',
-    metaTitle: 'Calories in Butter Chicken: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Butter Chicken: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of butter chicken, from a restaurant with pilau rice and naan to half a takeaway and a homemade one.`,
     lead: (span) =>

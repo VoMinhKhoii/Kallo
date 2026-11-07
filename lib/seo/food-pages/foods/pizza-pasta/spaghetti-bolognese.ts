@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Spaghetti bolognese',
     title: 'How many calories are in spaghetti bolognese?',
-    metaTitle: 'Calories in Spaghetti Bolognese: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Spaghetti Bolognese: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of spaghetti bolognese: a big restaurant plate, lean homemade, a small portion and turkey sauce on zucchini noodles.`,
     lead: (span) =>

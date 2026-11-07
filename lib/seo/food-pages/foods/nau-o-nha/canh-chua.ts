@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Canh chua',
     title: 'Canh chua bao nhiêu calo?',
-    metaTitle: 'Canh chua bao nhiêu calo? 4 bữa có canh chua thật',
+    metaTitle: (span) =>
+      `Canh chua bao nhiêu calo? ${span} kcal, 4 bữa có canh chua thật`,
     description: (span) =>
       `Khoảng ${span} calo. Bốn bữa có canh chua thật: canh chua cá lóc với một chén cơm, canh chua tôm và trứng chiên, canh chua bông điên điển với cá rô kho, và chỉ ăn canh.`,
     lead: (span) =>

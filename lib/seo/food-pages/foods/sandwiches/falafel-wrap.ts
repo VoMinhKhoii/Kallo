@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Falafel wrap',
     title: 'How many calories are in a falafel wrap?',
-    metaTitle: 'Calories in a Falafel Wrap: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Falafel Wrap: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four falafel meals, a shop wrap with hummus and tahini, a wrap with fries inside, a falafel plate and a baked homemade wrap.`,
     lead: (span) =>

@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Gà rang gừng',
     title: 'Gà rang gừng bao nhiêu calo?',
-    metaTitle: 'Gà rang gừng bao nhiêu calo? 4 bữa cơm thật',
+    metaTitle: (span) =>
+      `Gà rang gừng bao nhiêu calo? ${span} kcal, 4 bữa cơm thật`,
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa có gà rang gừng: năm miếng có xương với hai bát cơm, gà hâm lại với cơm rang trứng, đùi bỏ da và ức gà.`,
     lead: (span) =>

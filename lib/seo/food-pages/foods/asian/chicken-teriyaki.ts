@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken teriyaki',
     title: 'How many calories are in chicken teriyaki?',
-    metaTitle: 'Calories in Chicken Teriyaki: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Chicken Teriyaki: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of chicken teriyaki, at a Japanese restaurant, as a rice bowl, with salad instead of rice and homemade with brown rice.`,
     lead: (span) =>

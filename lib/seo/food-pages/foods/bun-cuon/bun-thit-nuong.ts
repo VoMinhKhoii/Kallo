@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bún thịt nướng',
     title: 'Bún thịt nướng bao nhiêu calo?',
-    metaTitle: 'Bún thịt nướng bao nhiêu calo? 4 tô bún thật',
+    metaTitle: (span) =>
+      `Bún thịt nướng bao nhiêu calo? ${span} kcal, 4 tô bún thật`,
     description: (span) =>
       `Khoảng ${span} calo. Bốn tô bún thịt nướng: thêm chả giò và chén nước mắm, tô thường không chả giò, tô đặc biệt có nem nướng, tô ít bún thêm thịt.`,
     lead: (span) =>

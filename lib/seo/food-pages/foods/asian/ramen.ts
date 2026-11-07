@@ -27,7 +27,7 @@ export const food: FoodContent = {
   copy: {
     name: 'Ramen',
     title: 'How many calories are in ramen?',
-    metaTitle: 'Calories in Ramen: 4 Real Bowls',
+    metaTitle: (span) => `Calories in Ramen: ${span} kcal (4 Real Bowls)`,
     description: (span) =>
       `From about ${span} kcal. Four bowls of ramen, tonkotsu with most of the broth, shoyu chicken, instant ramen with an egg and spicy miso with extra noodles.`,
     lead: (span) =>

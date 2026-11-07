@@ -23,7 +23,7 @@ function dishRowsOf(variant: FoodPageVariant): DishRowsMeal {
   };
 }
 
-function totalsOf(variant: FoodPageVariant) {
+export function totalsOf(variant: FoodPageVariant) {
   const sum = (key: 'calories' | 'protein' | 'carbs' | 'fat') =>
     variant.dishes.reduce((total, dish) => total + dish[key], 0);
   return {

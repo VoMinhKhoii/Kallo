@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bún bò Huế',
     title: 'Bún bò Huế bao nhiêu calo?',
-    metaTitle: '1 tô bún bò Huế bao nhiêu calo? 4 tô thật',
+    metaTitle: (span) =>
+      `1 tô bún bò Huế bao nhiêu calo? ${span} kcal, 4 tô thật`,
     description: (span) =>
       `Khoảng ${span} calo một tô. Bốn tô bún bò Huế thật: tô đặc biệt giò heo chả cua thêm huyết, tô thường chỉ bắp bò, tô thường thêm một khúc giò và một tô mẹ nấu ở nhà.`,
     lead: (span) =>

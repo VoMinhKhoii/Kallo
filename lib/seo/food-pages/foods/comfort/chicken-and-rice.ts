@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken and rice',
     title: 'How many calories are in chicken and rice?',
-    metaTitle: 'Calories in Chicken and Rice: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Chicken and Rice: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of chicken and rice, a meal prep box, halal cart chicken over rice, pan-fried thighs and a big bulking bowl.`,
     lead: (span) =>

@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken quesadilla',
     title: 'How many calories are in a chicken quesadilla?',
-    metaTitle: 'Calories in a Chicken Quesadilla: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Chicken Quesadilla: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four chicken quesadillas, from a restaurant plate with guacamole and sour cream to a homemade one cooked without oil.`,
     lead: (span) =>

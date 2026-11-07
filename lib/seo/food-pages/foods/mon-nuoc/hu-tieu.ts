@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Hủ tiếu',
     title: 'Hủ tiếu bao nhiêu calo?',
-    metaTitle: '1 tô hủ tiếu bao nhiêu calo? 4 tô hủ tiếu thật',
+    metaTitle: (span) =>
+      `1 tô hủ tiếu bao nhiêu calo? ${span} kcal, 4 tô hủ tiếu thật`,
     description: (span) =>
       `Khoảng ${span} calo một tô. Bốn tô hủ tiếu: Nam Vang khô tô lớn, hủ tiếu gõ nửa hủ tiếu nửa mì, Nam Vang nước tô thường và hủ tiếu xào bò tự nấu.`,
     lead: (span) =>

@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Mac and cheese',
     title: 'How many calories are in mac and cheese?',
-    metaTitle: 'Calories in Mac and Cheese: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Mac and Cheese: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four servings of mac and cheese, a restaurant bowl, half a box, one with broccoli and a homemade one with skim milk.`,
     lead: (span) =>

@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Breakfast burrito',
     title: 'How many calories are in a breakfast burrito?',
-    metaTitle: 'Calories in a Breakfast Burrito: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Breakfast Burrito: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four breakfast burritos, from a cafe one with bacon and hash browns to a homemade egg-white wrap, broken down by filling.`,
     lead: (span) =>

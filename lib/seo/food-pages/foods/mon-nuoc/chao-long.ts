@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Cháo lòng',
     title: 'Cháo lòng bao nhiêu calo?',
-    metaTitle: 'Cháo lòng bao nhiêu calo? 4 bát cháo thật',
+    metaTitle: (span) =>
+      `Cháo lòng bao nhiêu calo? ${span} kcal, 4 bát cháo thật`,
     description: (span) =>
       `Khoảng ${span} calo. Bốn bát cháo lòng: bát đầy đủ thêm quẩy, bát cháo kèm đĩa dồi lòng, tô nhỏ chỉ huyết và gan, tô lớn kiểu Sài Gòn.`,
     lead: (span) =>

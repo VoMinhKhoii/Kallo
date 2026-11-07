@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Cơm chiên',
     title: 'Cơm chiên bao nhiêu calo?',
-    metaTitle: 'Cơm chiên bao nhiêu calo? 4 dĩa cơm chiên thật',
+    metaTitle: (span) =>
+      `Cơm chiên bao nhiêu calo? ${span} kcal, 4 dĩa cơm chiên thật`,
     description: (span) =>
       `Khoảng ${span} calo một dĩa. Bốn dĩa cơm chiên: Dương Châu ở quán, cơm rang trứng ở nhà, cơm chiên hải sản dĩa lớn và cơm chiên gà xối mỡ.`,
     lead: (span) =>

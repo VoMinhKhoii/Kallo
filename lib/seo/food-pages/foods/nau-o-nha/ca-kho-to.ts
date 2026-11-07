@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Cá kho tộ',
     title: 'Cá kho tộ bao nhiêu calo?',
-    metaTitle: 'Cá kho tộ bao nhiêu calo? 4 bữa cơm nhà thật',
+    metaTitle: (span) =>
+      `Cá kho tộ bao nhiêu calo? ${span} kcal, 4 bữa cơm nhà thật`,
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa cơm nhà có cá kho thật: cá lóc kho tộ với canh chua, cá basa kho với rau muống xào, cá bống kho tiêu và cá nục kho cà.`,
     lead: (span) =>

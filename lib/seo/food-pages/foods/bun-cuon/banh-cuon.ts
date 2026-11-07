@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bánh cuốn',
     title: 'Bánh cuốn bao nhiêu calo?',
-    metaTitle: 'Bánh cuốn bao nhiêu calo? 4 đĩa bánh cuốn thật',
+    metaTitle: (span) =>
+      `Bánh cuốn bao nhiêu calo? ${span} kcal, 4 đĩa bánh cuốn thật`,
     description: (span) =>
       `Khoảng ${span} calo. Bốn đĩa bánh cuốn thật: thêm chả lụa và chả quế, hai đĩa nhân thịt mộc nhĩ, bánh cuốn Thanh Trì không nhân và bánh cuốn trứng.`,
     lead: (span) =>

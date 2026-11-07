@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Mì Quảng',
     title: 'Mì Quảng bao nhiêu calo?',
-    metaTitle: 'Mì Quảng bao nhiêu calo? 4 tô mì Quảng thật',
+    metaTitle: (span) =>
+      `Mì Quảng bao nhiêu calo? ${span} kcal, 4 tô mì Quảng thật`,
     description: (span) =>
       `Khoảng ${span} calo. Bốn tô mì Quảng: gà ta thêm bánh tráng mè, tôm thịt tô thường, tô đặc biệt thêm mỡ hành và tô cá lóc nhỏ.`,
     lead: (span) =>

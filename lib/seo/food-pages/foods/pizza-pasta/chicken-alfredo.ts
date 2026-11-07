@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken alfredo',
     title: 'How many calories are in chicken alfredo?',
-    metaTitle: 'Calories in Chicken Alfredo: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Chicken Alfredo: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of chicken alfredo, from a restaurant plate with garlic bread to a light homemade sauce made with milk.`,
     lead: (span) =>

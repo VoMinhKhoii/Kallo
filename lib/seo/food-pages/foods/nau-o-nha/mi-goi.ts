@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Mì gói',
     title: 'Mì gói bao nhiêu calo?',
-    metaTitle: 'Mì gói bao nhiêu calo? 4 lần nấu mì thật',
+    metaTitle: (span) =>
+      `Mì gói bao nhiêu calo? ${span} kcal, 4 lần nấu mì thật`,
     description: (span) =>
       `Khoảng ${span} calo. Bốn lần nấu mì gói thật: một gói Hảo Hảo đập hai trứng, hai gói với rau muống, một gói với xúc xích rán, và mì Indomie xào khô thêm ốp la.`,
     lead: (span) =>

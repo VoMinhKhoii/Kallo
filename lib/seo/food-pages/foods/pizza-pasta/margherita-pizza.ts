@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Margherita pizza',
     title: 'How many calories are in a margherita pizza?',
-    metaTitle: 'Calories in a Margherita Pizza: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Margherita Pizza: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four margherita pizzas, a whole Neapolitan one, half a shared pizza, two slices and a homemade tortilla pizza.`,
     lead: (span) =>

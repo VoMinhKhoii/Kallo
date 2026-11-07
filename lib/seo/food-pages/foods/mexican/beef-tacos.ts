@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Beef tacos',
     title: 'How many calories are in beef tacos?',
-    metaTitle: 'Calories in Beef Tacos: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Beef Tacos: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four orders of beef tacos, from a taco truck to hard shells with cheese and a lean homemade plate, broken down by filling.`,
     lead: (span) =>

@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Rau muống xào tỏi',
     title: 'Rau muống xào tỏi bao nhiêu calo?',
-    metaTitle: 'Rau muống xào tỏi bao nhiêu calo? 4 bữa thật',
+    metaTitle: (span) =>
+      `Rau muống xào tỏi bao nhiêu calo? ${span} kcal, 4 bữa thật`,
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa có rau muống thật: một dĩa nhỏ với trứng chiên, bữa cơm nhà có cá thu kho, rau muống xào bò, và một đĩa lớn xào nhiều dầu.`,
     lead: (span) =>

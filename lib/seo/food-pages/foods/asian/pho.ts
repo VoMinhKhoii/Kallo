@@ -27,7 +27,7 @@ export const food: FoodContent = {
   copy: {
     name: 'Pho',
     title: 'How many calories are in pho?',
-    metaTitle: 'Calories in Pho: 4 Real Bowls',
+    metaTitle: (span) => `Calories in Pho: ${span} kcal (4 Real Bowls)`,
     description: (span) =>
       `From about ${span} kcal. Four bowls of pho, a large beef bowl from a pho shop, a small chicken one, extra noodles with meatballs and a homemade bowl.`,
     lead: (span) =>

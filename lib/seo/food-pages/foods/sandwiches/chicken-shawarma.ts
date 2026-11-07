@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken shawarma',
     title: 'How many calories are in a chicken shawarma?',
-    metaTitle: 'Calories in Chicken Shawarma: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Chicken Shawarma: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four chicken shawarmas, a shop wrap with fries inside, a plate with rice and hummus, a light wrap and a salad bowl.`,
     lead: (span) =>

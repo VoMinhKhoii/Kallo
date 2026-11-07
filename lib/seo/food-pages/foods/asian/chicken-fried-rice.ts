@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken fried rice',
     title: 'How many calories are in chicken fried rice?',
-    metaTitle: 'Calories in Chicken Fried Rice: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Chicken Fried Rice: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four servings of chicken fried rice, a full takeout container, half of one, a homemade plate and a cauliflower rice version.`,
     lead: (span) =>

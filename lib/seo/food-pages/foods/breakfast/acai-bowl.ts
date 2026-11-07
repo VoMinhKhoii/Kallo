@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Acai bowl',
     title: 'How many calories are in an acai bowl?',
-    metaTitle: 'Calories in an Acai Bowl: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in an Acai Bowl: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four acai bowls, from a smoothie shop bowl with honey and coconut to a small one, showing where the calories really are.`,
     lead: (span) =>

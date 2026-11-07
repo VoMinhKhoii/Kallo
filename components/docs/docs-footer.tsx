@@ -1,11 +1,15 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
+import { DocsFooterColumn } from '@/components/docs/docs-footer-column';
 import { Link } from '@/i18n/navigation';
 import type { DocsNavSection } from '@/lib/domain/docs/tree';
+import { FOODS } from '@/lib/seo/food-pages/food-registry';
+import { FOOTER_MEALS } from '@/lib/seo/food-pages/footer-meals';
 import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
 import { FOOD_PAGE_PREFIX, isFoodLocale } from '@/lib/seo/food-pages/slugs';
 import { LINKEDIN_URL } from '@/lib/seo/structured-data';
-import { TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
+import { TOOL_COPY } from '@/lib/seo/tools/content';
+import { TOOL_SLUGS, TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
 
 /**
  * The docs navigation, as a footer.
@@ -71,34 +75,37 @@ export async function DocsFooter({
           aria-label={t('menu.label')}
           className="grid grid-cols-1 gap-x-8 gap-y-12 text-left sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
         >
-          {/* The group labels are `p`, not headings: a page's outline starts
-              at its `h1`, and nine `h2`s in the footer sat ahead of it in the
-              streamed HTML. The list stays named through `aria-labelledby`. */}
           {sections.map((section) => (
-            <div key={section.id}>
-              <p
-                className="font-sans-display font-semibold text-base text-kallo-surface dark:text-kallo-text"
-                id={`docs-footer-${section.id}`}
-              >
-                {tSections(section.id)}
-              </p>
-              <ul
-                aria-labelledby={`docs-footer-${section.id}`}
-                className="mt-5 space-y-3.5"
-              >
-                {section.links.map((link) => (
-                  <li key={link.slug}>
-                    <Link
-                      className="rounded-sm font-sans-display text-base text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
-                      href={`/docs/${link.slug}`}
-                    >
-                      {link.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <DocsFooterColumn
+              id={section.id}
+              key={section.id}
+              label={tSections(section.id)}
+              links={section.links.map((link) => ({
+                href: `/docs/${link.slug}`,
+                title: link.title,
+              }))}
+            />
           ))}
+          {isFoodLocale(locale) ? (
+            <>
+              <DocsFooterColumn
+                id="meals"
+                label={FOOD_PAGE_CHROME[locale].footerLink}
+                links={FOOTER_MEALS[locale].map((slug) => ({
+                  href: `${FOOD_PAGE_PREFIX}/${slug}`,
+                  title: FOODS[slug].copy.name,
+                }))}
+              />
+              <DocsFooterColumn
+                id="tools"
+                label={tFooter('calculators')}
+                links={TOOL_SLUGS.map((slug) => ({
+                  href: `${TOOLS_PREFIX}/${slug}`,
+                  title: TOOL_COPY[locale][slug].name,
+                }))}
+              />
+            </>
+          ) : null}
         </nav>
 
         <div className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-4 border-kallo-stone/25 border-t pt-8">

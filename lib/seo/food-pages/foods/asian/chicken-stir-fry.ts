@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken stir fry',
     title: 'How many calories are in a chicken stir fry?',
-    metaTitle: 'Calories in a Chicken Stir Fry: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Chicken Stir Fry: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four chicken stir fries, takeout with rice, with egg noodles, homemade with jasmine rice and a no-rice version.`,
     lead: (span) =>

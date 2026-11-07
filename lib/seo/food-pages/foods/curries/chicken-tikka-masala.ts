@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken tikka masala',
     title: 'How many calories are in chicken tikka masala?',
-    metaTitle: 'Calories in Chicken Tikka Masala: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Chicken Tikka Masala: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four plates of chicken tikka masala, at an Indian restaurant with rice and naan, with rice only, with naan only and homemade.`,
     lead: (span) =>

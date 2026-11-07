@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chicken Caesar salad',
     title: 'How many calories are in a chicken Caesar salad?',
-    metaTitle: 'Calories in a Chicken Caesar Salad: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in a Chicken Caesar Salad: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four chicken Caesar salads, a restaurant one with full dressing, a cafe wrap, a lighter bowl without croutons and a weighed homemade one.`,
     lead: (span) =>

@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Pancakes',
     title: 'How many calories are in pancakes?',
-    metaTitle: 'Calories in Pancakes: 4 Real Breakfasts',
+    metaTitle: (span) =>
+      `Calories in Pancakes: ${span} kcal (4 Real Breakfasts)`,
     description: (span) =>
       `From about ${span} kcal. Four pancake breakfasts, from a diner stack with butter and syrup to protein pancakes, broken down by what is on the plate.`,
     lead: (span) =>

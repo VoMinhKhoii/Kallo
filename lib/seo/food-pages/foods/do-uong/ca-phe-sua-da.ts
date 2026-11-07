@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Cà phê sữa đá',
     title: 'Cà phê sữa đá bao nhiêu calo?',
-    metaTitle: '1 ly cà phê sữa đá bao nhiêu calo? 4 ly thật',
+    metaTitle: (span) =>
+      `1 ly cà phê sữa đá bao nhiêu calo? ${span} kcal, 4 ly thật`,
     description: (span) =>
       `Khoảng ${span} calo một ly. Bốn ly cà phê sữa đá: ly nhỏ quán cóc nhiều sữa, nhà pha ba muỗng sữa đặc, phin sữa đá Highlands size M và ly lớn ở quán.`,
     lead: (span) =>

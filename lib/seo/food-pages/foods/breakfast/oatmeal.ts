@@ -27,7 +27,7 @@ export const food: FoodContent = {
   copy: {
     name: 'Oatmeal',
     title: 'How many calories are in oatmeal?',
-    metaTitle: 'Calories in Oatmeal: 4 Real Bowls',
+    metaTitle: (span) => `Calories in Oatmeal: ${span} kcal (4 Real Bowls)`,
     description: (span) =>
       `From about ${span} kcal. Four bowls of oatmeal, with whole milk and peanut butter, from a coffee shop, made with water and as overnight oats.`,
     lead: (span) =>

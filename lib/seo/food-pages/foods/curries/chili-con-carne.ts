@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Chili con carne',
     title: 'How many calories are in chili con carne?',
-    metaTitle: 'Calories in Chili con Carne: 4 Real Examples',
+    metaTitle: (span) =>
+      `Calories in Chili con Carne: ${span} kcal (4 Real Examples)`,
     description: (span) =>
       `From about ${span} kcal. Four bowls of chili con carne, with cheese and sour cream, with rice, a whole can and a homemade turkey chili.`,
     lead: (span) =>
