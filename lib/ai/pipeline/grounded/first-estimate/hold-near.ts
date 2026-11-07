@@ -12,6 +12,7 @@
  */
 
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
+import { isRescuePart } from '@/lib/ai/pipeline/grounded/rescue/splice';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 import { scaleEstimate } from '@/lib/ai/pipeline/resolve/estimate-scale';
 import { reconcileNutritionIds } from '@/lib/ai/pipeline/resolve/macro-resolution';
@@ -59,6 +60,9 @@ function scaleFree(state: RunState, k: number): GroundedEstimation {
         ground &&
         !weighed &&
         !portionAnchor(portion) &&
+        // A rescued part may stand in for a food the user weighed, and the
+        // splice keeps no record of that, so it counts as pinned.
+        !isRescuePart(portion) &&
         portion?.provenance !== 'unresolved'
       )
         Object.assign(ground, scaleEstimate(ground, k));

@@ -3,6 +3,7 @@ import {
   holdNearFirstEstimate as hold,
   shippedKcal,
 } from '@/lib/ai/pipeline/grounded/first-estimate/hold-near';
+import { RESCUE_PART_PORTION } from '@/lib/ai/pipeline/grounded/rescue/splice';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 
 const part = (ingredientName: string, grossG: number, kcal: number) => ({
@@ -107,6 +108,16 @@ describe('holdNearFirstEstimate', () => {
     );
     // 200 kcal pinned of a 600 kcal target: chicken carries 400 of its 800.
     expect(grams(out.state)).toEqual([150, 50]);
+  });
+
+  it('never moves a rescued part, which may stand in for a typed weight', () => {
+    const state = meal([
+      ['Thịt', 60, 800],
+      ['Cơm', 100, 200],
+    ]);
+    state.portionResolutions[0] = RESCUE_PART_PORTION;
+    const out = holdNearFirstEstimate(state, 500);
+    expect(grams(out.state)[0]).toBe(60);
   });
 
   it('never moves a dish the user weighed', () => {
