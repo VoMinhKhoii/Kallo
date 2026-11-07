@@ -219,7 +219,6 @@ export async function analyzeMealV2(
       streamedMealItemIds,
       rawInput,
       promptCtx,
-      firstEstimate: await firstEstimate?.settle(),
       temperature: call2Temperature,
       userContext,
       onAttemptComplete: budget.nutritionRecorder,
@@ -244,7 +243,8 @@ export async function analyzeMealV2(
         portionResolutions,
         grounded: stage3.grounded,
       },
-      rescue
+      rescue,
+      await firstEstimate?.settle()
     );
     const { state: run, changed } = review;
     // A rescued dish's parts can change its class (a broth part makes it a

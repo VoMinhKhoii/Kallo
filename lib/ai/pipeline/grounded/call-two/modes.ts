@@ -77,7 +77,6 @@ export interface RunCallTwoArgs {
   mealItems: MealItemWithCandidates[];
   originalPrompt: string;
   promptCtx: PromptPersonalizationContext;
-  firstEstimate?: string;
   temperature: number;
   /** Single-call streaming hooks (unused by fast + chunked paths). */
   stream: CallTwoStreamDeps;
@@ -129,7 +128,6 @@ export async function runCallTwo(
       mealItems: args.mealItems,
       originalPrompt: args.originalPrompt,
       userContext: args.promptCtx,
-      firstEstimate: args.firstEstimate,
       temperature: args.temperature,
       phaseDeadlineMs: chunkedPhaseBudgetMs(args.runStartedAt),
       onChunkComplete: (items, range) =>
@@ -154,7 +152,6 @@ export async function runCallTwo(
             originalPrompt: args.originalPrompt,
             mealItems: args.mealItems,
             userContext: args.promptCtx,
-            firstEstimate: args.firstEstimate,
             temperature: args.temperature,
           },
           signal,

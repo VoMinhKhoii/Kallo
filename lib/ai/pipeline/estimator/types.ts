@@ -40,8 +40,6 @@ export interface GroundedEstimatorInput {
   mealItems: MealItemWithCandidates[];
   /** Personalization context (country, cooking habits) for the prompt. */
   userContext: PromptPersonalizationContext;
-  /** The model's own read of the meal, rendered (`grounded/first-estimate`). */
-  firstEstimate?: string;
   /** Call-2 sampling temperature (orchestrator default 0.4). */
   temperature: number;
 }

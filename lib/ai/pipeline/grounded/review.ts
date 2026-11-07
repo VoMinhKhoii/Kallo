@@ -21,12 +21,14 @@ import {
 } from '@/lib/ai/pipeline/resolve/served-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
+import { holdNearFirstEstimate } from './first-estimate/hold-near';
 
 /**
  * Review the picks and splice in the dish rescue (`./rescue`), in that order:
  * wrong-form rows become rejections, the rescue replaces what Call 2 rejected,
  * then a fried dish's separate oil is dropped, then weighed dishes are scaled
- * to their typed weight. `changed` says the streamed dishes no longer hold;
+ * to their typed weight, then the meal is held near the first estimate when
+ * there is one. `changed` says the streamed dishes no longer hold;
  * `summary` is the log line.
  */
 export async function reviewPicks(
@@ -35,7 +37,9 @@ export async function reviewPicks(
     apply(
       state: RunState
     ): Promise<{ state: RunState; rescued: number } | null>;
-  } | null
+  } | null,
+  /** Whole-meal kcal from the model's plain read (`./first-estimate`). */
+  firstEstimateKcal?: number
 ): Promise<{
   state: RunState;
   changed: boolean;
@@ -48,13 +52,17 @@ export async function reviewPicks(
   const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state);
   logRawRowYields(oil.state);
   const served = scaleToServedMass(oil.state);
+  const held = firstEstimateKcal
+    ? holdNearFirstEstimate(served.state, firstEstimateKcal)
+    : { state: served.state, scaled: false };
   return {
-    state: served.state,
+    state: held.state,
     changed:
       reviewed.rejected > 0 ||
       rescued != null ||
       oil.dropped > 0 ||
-      served.scaled > 0,
+      served.scaled > 0 ||
+      held.scaled,
     rescued: rescued?.rescued ?? 0,
     summary: `${reviewed.rejected} wrong-form rows, ${rescued?.rescued ?? 0} ingredients rescued, ${oil.dropped} oil rows dropped, ${served.scaled} weighed dishes scaled`,
   };

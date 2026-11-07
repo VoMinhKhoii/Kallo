@@ -10,7 +10,6 @@ import {
   buildStaticPrefix,
   CALIBRATION_RULE,
   DISH_SIZING_RULE,
-  firstEstimateBlock,
   SHARE_RULE,
 } from '@/lib/ai/prompts/text/grounded-estimation';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
@@ -90,7 +89,6 @@ export function buildGroundedEstimationPrompt(args: {
   originalPrompt: string;
   mealItems: MealItemWithCandidates[];
   userContext: PromptPersonalizationContext;
-  firstEstimate?: string;
 }): string {
   const locale = resolvePromptLocale(args.userContext);
   const staticPrefix = buildStaticPrefix(
@@ -103,15 +101,11 @@ export function buildGroundedEstimationPrompt(args: {
     includeNameEn: locale === 'global',
   });
 
-  const firstEstimate = args.firstEstimate
-    ? firstEstimateBlock(escapeXmlAttribute(args.firstEstimate))
-    : '';
-
   return `${staticPrefix}
 
 ${userContextBlock}
 
-${originalPromptBlock}${firstEstimate}
+${originalPromptBlock}
 
 ${ingredientDataBlock}
 

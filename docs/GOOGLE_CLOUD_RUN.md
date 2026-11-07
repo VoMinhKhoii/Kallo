@@ -367,8 +367,9 @@ balance degrades instead of failing meals:
    at 20 a minute, so check Model Garden access or go through Google support.
 3. The stable Gemini model.
 
-`FIRST_ESTIMATE_ENABLED=true` adds the model's own read of the meal before
-Call 2 (`lib/ai/pipeline/grounded/first-estimate/`). It is off by default.
+`FIRST_ESTIMATE_ENABLED=true` adds a plain model read of the meal beside Call 1
+and holds the final total within ±20% of it, scaling only parts the user did
+not weigh (`lib/ai/pipeline/grounded/first-estimate/`). It is off by default.
 
 To start the trial:
 

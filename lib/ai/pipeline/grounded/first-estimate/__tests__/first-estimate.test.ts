@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   isFirstEstimateEnabled,
-  renderFirstEstimate,
   startFirstEstimate,
 } from '@/lib/ai/pipeline/grounded/first-estimate/first-estimate';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
@@ -24,18 +23,10 @@ describe('isFirstEstimateEnabled', () => {
   });
 });
 
-describe('renderFirstEstimate', () => {
-  it('writes one line per food and the total', () => {
-    expect(renderFirstEstimate(estimate)).toBe(
-      '- Phở bò: 650 g, 520 kcal\nTotal about 520 kcal.'
-    );
-  });
-});
-
 describe('startFirstEstimate', () => {
-  it('returns the rendered estimate', async () => {
+  it('returns the meal total', async () => {
     const gemini = llm(vi.fn(async () => estimate));
-    expect(await start(gemini).settle()).toContain('Phở bò: 650 g');
+    expect(await start(gemini).settle()).toBe(520.2);
   });
 
   it('asks from the meal text alone, and meters the call', async () => {
@@ -55,7 +46,7 @@ describe('startFirstEstimate', () => {
     expect(opts).toEqual({ onAttemptComplete });
   });
 
-  it('gives Call 2 nothing when the call fails', async () => {
+  it('gives the review nothing when the call fails', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gemini = llm(
       vi.fn(async () => {
@@ -65,7 +56,7 @@ describe('startFirstEstimate', () => {
     expect(await start(gemini).settle()).toBeUndefined();
   });
 
-  it('gives Call 2 nothing for an answer with no foods', async () => {
+  it('gives the review nothing for an answer with no foods', async () => {
     const gemini = llm(vi.fn(async () => ({ foods: [], totalKcal: 0 })));
     expect(await start(gemini).settle()).toBeUndefined();
   });

@@ -578,24 +578,3 @@ describe('a piece count on the part a split dish is named after', () => {
     ).toBeNull();
   });
 });
-
-describe('first estimate', () => {
-  const build = (firstEstimate?: string) =>
-    buildGroundedEstimationPrompt({
-      originalPrompt: '1 tô phở',
-      mealItems: [],
-      userContext: baseUserContext,
-      firstEstimate,
-    });
-
-  it('adds nothing when there is no estimate', () => {
-    expect(build()).not.toContain('<first_estimate>');
-  });
-
-  it('sits right after the meal text, escaped', () => {
-    const prompt = build('- Phở <b>: 650 g, 520 kcal');
-    expect(prompt).toContain('</original_prompt>\n\n<first_estimate>');
-    expect(prompt).not.toContain('Phở <b>');
-    expect(prompt).toContain('with their exact names');
-  });
-});

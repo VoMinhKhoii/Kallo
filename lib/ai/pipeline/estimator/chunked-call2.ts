@@ -61,7 +61,6 @@ export interface RunChunkedCall2Args {
   mealItems: MealItemWithCandidates[];
   originalPrompt: string;
   userContext: PromptPersonalizationContext;
-  firstEstimate?: string;
   temperature: number;
   /** Absolute wall-clock budget for the WHOLE Call-2 phase (ms). */
   phaseDeadlineMs: number;
@@ -93,7 +92,6 @@ export async function runChunkedCall2(
     mealItems,
     originalPrompt,
     userContext,
-    firstEstimate,
     temperature,
     phaseDeadlineMs,
     onChunkComplete,
@@ -120,7 +118,6 @@ export async function runChunkedCall2(
         first,
         originalPrompt,
         userContext,
-        firstEstimate,
         temperature,
         phaseStart,
         phaseDeadlineMs,
@@ -167,7 +164,6 @@ async function runOneChunk(args: {
   first: number;
   originalPrompt: string;
   userContext: PromptPersonalizationContext;
-  firstEstimate?: string;
   temperature: number;
   phaseStart: number;
   phaseDeadlineMs: number;
@@ -185,7 +181,6 @@ async function runOneChunk(args: {
     originalPrompt: args.originalPrompt,
     mealItems: args.chunk,
     userContext: args.userContext,
-    firstEstimate: args.firstEstimate,
     temperature: args.temperature,
   };
 

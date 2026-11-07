@@ -71,7 +71,6 @@ export async function runCallTwoStage(args: {
   streamedMealItemIds: Map<string, string>;
   rawInput: string;
   promptCtx: PromptPersonalizationContext;
-  firstEstimate?: string;
   temperature: number;
   userContext: UserContext;
   onAttemptComplete: NonNullable<
@@ -104,7 +103,6 @@ export async function runCallTwoStage(args: {
     originalPrompt: rawInput,
     mealItems: mealItemsWithCandidates,
     userContext: promptCtx,
-    firstEstimate: args.firstEstimate,
     temperature: args.temperature,
   });
   const promptCharsCall2 = call2SystemPrompt.length;
@@ -180,7 +178,6 @@ export async function runCallTwoStage(args: {
         mealItems: mealItemsWithCandidates,
         originalPrompt: rawInput,
         promptCtx,
-        firstEstimate: args.firstEstimate,
         temperature: args.temperature,
         stream: {
           handleChunk: call2Stream.handleChunk,
