@@ -30,6 +30,14 @@ const EXCLUDED = new Map([
   ],
   ['/api/supabase-proxy/{path}', 'internal auth plumbing'],
   [
+    '/api/v1/reminders/tick',
+    'the meal-reminder scheduler tick — bearer-secret, edge-cron-invoked only',
+  ],
+  [
+    '/api/v1/reminders/close-day',
+    "a reminder's lock-screen button — posts a server-signed token the push carried; only Kallo's own iOS app calls it",
+  ],
+  [
     '/api/startupz',
     "Cloud Run's startup probe — infrastructure-invoked only, no body",
   ],

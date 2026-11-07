@@ -30,6 +30,17 @@ export interface Env {
    * the app's own `authRefresh` breaker uses.
    */
   REFRESH_FLOOD: RateLimiter;
+  /**
+   * Bearer for the app's meal-reminder tick (`POST /api/v1/reminders/tick`),
+   * the same value as the Cloud Run secret. Unset → the cron does nothing.
+   */
+  REMINDER_TICK_SECRET?: string;
+}
+
+/** The slice of the Workers `ScheduledController` the cron reads. */
+export interface ScheduledEvent {
+  cron: string;
+  scheduledTime: number;
 }
 
 /** How a surface's refusal has to look to the client that called it. */
@@ -196,7 +207,38 @@ async function floodRefusal(
   }
 }
 
+/**
+ * The meal-reminder scheduler: every 15 minutes (`triggers.crons` in
+ * wrangler.jsonc) ask the app to run one reminder tick. Cloudflare cron
+ * triggers fire on time, which GitHub Actions' schedule does not; the app
+ * decides who is due on their own clock. A failed tick is simply retried by
+ * the next one — each checkpoint stays open for 90 minutes.
+ */
+export async function runReminderTick(env: Env): Promise<void> {
+  if (!env.REMINDER_TICK_SECRET) {
+    console.error('reminder tick skipped: REMINDER_TICK_SECRET is not set');
+    return;
+  }
+  const response = await fetch(`https://${env.ORIGIN}/api/v1/reminders/tick`, {
+    method: 'POST',
+    headers: {
+      'X-Origin-Verify': env.ORIGIN_SECRET,
+      Authorization: `Bearer ${env.REMINDER_TICK_SECRET}`,
+    },
+  });
+  const body = await response.text();
+  if (!response.ok) {
+    console.error(`reminder tick failed: ${response.status} ${body}`);
+    return;
+  }
+  console.log(`reminder tick: ${body}`);
+}
+
 export default {
+  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
+    await runReminderTick(env);
+  },
+
   async fetch(request: Request, env: Env): Promise<Response> {
     const refused = await floodRefusal(request, env);
     if (refused) return refused;

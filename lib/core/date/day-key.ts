@@ -12,6 +12,8 @@
  * offset — so a client crossing a DST boundary must send the right one.
  */
 
+import { MS_PER_DAY } from '@/lib/core/date/ms';
+
 const MS_PER_MINUTE = 60_000;
 
 function toEpochMs(instant: Date | number): number {
@@ -52,4 +54,9 @@ export function mondayIndex(date: Date): number {
 /** A day key read as UTC midnight — the anchor day arithmetic runs on. */
 export function dayKeyToUtcDate(dayKey: string): Date {
   return new Date(`${dayKey}T00:00:00.000Z`);
+}
+
+/** `YYYY-MM-DD` moved by whole calendar days. */
+export function shiftDayKey(date: string, days: number): string {
+  return toUtcDayKey(dayKeyToUtcDate(date).getTime() + days * MS_PER_DAY);
 }

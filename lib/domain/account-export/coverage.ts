@@ -210,6 +210,10 @@ export const EXPORT_COVERAGE: Readonly<Record<string, ExportCoverage>> = {
     exported: 'pushDevices',
     excludedColumns: { user_id: OWN_ID },
   },
+  meal_reminders: {
+    exported: 'mealReminders',
+    excludedColumns: { user_id: OWN_ID },
+  },
   apple_auth_tokens: {
     excluded:
       'An encrypted Sign in with Apple refresh token, a live credential held only so account deletion can revoke it. Like Auth sessions and provider tokens, never exported.',
