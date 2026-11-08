@@ -16,6 +16,8 @@ const _narrowestPhoneWidth = 375.0;
 /// reading the call site cannot name the key.
 const _indirectKeys = [
   'auth.code.resent',
+  'auth.dialog.appleError',
+  'auth.dialog.googleError',
   'auth.errors.network',
   'auth.errors.rateLimited',
   'auth.errors.accountExists',
@@ -63,6 +65,9 @@ const _filesWithIndirectToasts = {
 };
 
 typedef _Toast = ({String key, String? actionKey});
+
+/// The action button says this; the message must not repeat it.
+final _retryPhrase = RegExp('try again|thử lại', caseSensitive: false);
 
 final _keyPattern = RegExp(r"'([a-zA-Z]+(?:\.[a-zA-Z]+)+)'");
 
@@ -121,7 +126,7 @@ void main() {
   });
 
   for (final locale in ['vi', 'en']) {
-    testWidgets('every $locale toast fits one line on the narrowest phone', (
+    testWidgets('every $locale toast is one line with no retry clause', (
       tester,
     ) async {
       final strings =
@@ -154,7 +159,8 @@ void main() {
             ),
           ),
         );
-        if (tester.getSize(find.text(message)).height > kDashBodyLine * 1.5) {
+        if (_retryPhrase.hasMatch(message) ||
+            tester.getSize(find.text(message)).height > kDashBodyLine * 1.5) {
           wrapped.add('${toast.key}: $message');
         }
       }

@@ -774,10 +774,10 @@
       "signInTab": "Đăng nhập",
       "signUpTab": "Đăng ký",
       "continueWithApple": "Tiếp tục với Apple",
-      "appleError": "Đăng nhập bằng Apple thất bại. Vui lòng thử lại.",
+      "appleError": "Đăng nhập bằng Apple thất bại",
       "continueWithGoogle": "Tiếp tục với Google",
       "orContinueWithEmail": "hoặc tiếp tục với email",
-      "googleError": "Đăng nhập bằng Google thất bại. Vui lòng thử lại."
+      "googleError": "Đăng nhập bằng Google thất bại"
     },
     "email": {
       "or": "hoặc",
