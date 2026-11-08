@@ -60,6 +60,17 @@ describe('withoutEmptyStrings', () => {
 });
 
 describe('repairPipelineOutput', () => {
+  it('drops a vesselToken over the schema limit and keeps a short one', () => {
+    const out = repairPipelineOutput({
+      mealItems: [
+        { name: 'A', vesselToken: 'mot ly tra sua size L', ingredients: [{}] },
+        { name: 'B', vesselToken: 'ly', ingredients: [{}] },
+      ],
+    }) as { mealItems: { vesselToken?: string }[] };
+    expect(out.mealItems[0].vesselToken).toBeUndefined();
+    expect(out.mealItems[1].vesselToken).toBe('ly');
+  });
+
   it('drops a Call 2 ingredient at 0 g and a dish left with none', () => {
     const out = repairPipelineOutput({
       mealItems: [
