@@ -8,6 +8,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../../logging/data/logging_models.dart';
 import '../../data/circle_providers.dart';
 import '../states/friend_list_skeleton.dart';
+import 'add_friend_row.dart';
 import 'share_meal_body.dart';
 import 'share_meal_draft.dart';
 import 'share_meal_request.dart';
@@ -39,8 +40,8 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
   final _draft = ShareMealDraft();
 
   /// The lane holds its height so the footer never moves — not when the list
-  /// is long, not when the tab changes.
-  static const double _laneHeight = 150;
+  /// is long, not when the tab changes. Six friends fit without scrolling it.
+  static const double _laneHeight = AddFriendRow.height * 6;
 
   double? get _totalKcal => widget.meal.nutrition.caloriesKcal;
 
@@ -72,7 +73,9 @@ class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
-    final maxHeight = (MediaQuery.of(context).size.height - viewInsets) * 0.9;
+    // 0.95, not the usual 0.9: the split tab with six friends is ~796pt, and
+    // on a 844pt phone 0.9 made the list's last row scroll.
+    final maxHeight = (MediaQuery.of(context).size.height - viewInsets) * 0.95;
     final friendsAsync = ref.watch(visibleCircleFriendsProvider);
 
     return KalloSheetSurface(

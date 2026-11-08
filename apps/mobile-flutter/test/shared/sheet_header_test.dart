@@ -151,4 +151,33 @@ void main() {
     expect(title.center.dx, closeTo(header.center.dx, 0.5));
     expect(title.center.dy, closeTo(circle.center.dy, 1));
   });
+
+  testWidgets('a long subtitle leaves the title on the close button\'s line', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        header: const KalloSheetHeader(
+          title: 'Share',
+          subtitle:
+              'A very long meal name that runs on and on, across many lines of '
+              'the sheet header, far past what fits on one or even two lines '
+              'of text at this width, and then keeps going for a while longer.',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final circle = tester.getRect(
+      find.descendant(
+        of: find.byType(SheetCircleButton),
+        matching: find.byType(Container),
+      ),
+    );
+    final title = tester.getRect(find.text('Share'));
+    expect(title.center.dy, closeTo(circle.center.dy, 1));
+    // Clear of the grabber, which ends 13pt below the sheet's top.
+    final header = tester.getRect(find.byType(KalloSheetHeader));
+    expect(title.top - header.top, greaterThan(13));
+  });
 }

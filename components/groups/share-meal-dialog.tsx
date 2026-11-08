@@ -131,7 +131,6 @@ export function ShareMealDialog({
         {!(isPending || isError) && friends.length > 0 && (
           <>
             <ShareMealMeter
-              emptyLabel={t('pickSomeone')}
               evenlyLabel={t('splitEvenly')}
               split={mode === 'split'}
               onChange={draft.setParts}
@@ -143,7 +142,7 @@ export function ShareMealDialog({
             />
 
             <p className="mt-4 font-sans-display text-[12px] text-kallo-text-muted">
-              {t('addSectionTitle')}
+              {t(seated.length === 0 ? 'pickSomeone' : 'addSectionTitle')}
             </p>
             <ShareMealAddLane
               atCapacity={draft.atCapacity}

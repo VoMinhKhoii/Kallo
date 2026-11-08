@@ -67,36 +67,51 @@ class ShareMealBody extends StatelessWidget {
           SegmentedStrip(
             options: [
               OptionStripItem(
-                value: 'whole',
-                label: tr('groups.shareMeal.mode.whole'),
-              ),
-              OptionStripItem(
                 value: 'split',
                 label: tr('groups.shareMeal.mode.split'),
               ),
+              OptionStripItem(
+                value: 'whole',
+                label: tr('groups.shareMeal.mode.whole'),
+              ),
             ],
-            activeIndex: mode == 'whole' ? 0 : 1,
+            activeIndex: mode == 'split' ? 0 : 1,
             onChange: onModeChanged,
           ),
         const SizedBox(height: KalloSpacing.sp4),
         // The meter's height differs between the two modes, so the change is
-        // animated rather than a jump the eye reads as a relayout.
+        // animated rather than a jump the eye reads as a relayout. Full width
+        // while empty, so only the height animates.
         AnimatedSize(
           duration: KalloMotion.quick,
           curve: Curves.easeOut,
           alignment: Alignment.topCenter,
-          child: ShareMealMeter(
-            mode: mode,
-            seated: seated,
-            parts: parts,
-            totalKcal: totalKcal,
-            onChanged: onPartsChanged,
-            onRemove: onRemoveSeat,
-            onSplitEvenly: onSplitEvenly,
-          ),
+          child:
+              seated.isEmpty
+                  ? const SizedBox(width: double.infinity)
+                  : Padding(
+                    padding: const EdgeInsets.only(bottom: KalloSpacing.sp4),
+                    child: ShareMealMeter(
+                      mode: mode,
+                      seated: seated,
+                      parts: parts,
+                      totalKcal: totalKcal,
+                      onChanged: onPartsChanged,
+                      onRemove: onRemoveSeat,
+                      onSplitEvenly: onSplitEvenly,
+                    ),
+                  ),
         ),
-        const SizedBox(height: KalloSpacing.sp4),
-        Text(tr('groups.shareMeal.addSectionTitle'), style: dashMeta()),
+        // One line above the list: the prompt until someone is added, then
+        // the list's own title.
+        Text(
+          tr(
+            seated.isEmpty
+                ? 'groups.shareMeal.pickSomeone'
+                : 'groups.shareMeal.addSectionTitle',
+          ),
+          style: dashMeta(),
+        ),
         SizedBox(
           height: laneHeight,
           child:

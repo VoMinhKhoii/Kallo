@@ -9,6 +9,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import 'kallo_sheet.dart';
+import 'kallo_sheet_growing_bar.dart';
 import 'sheet_circle_button.dart';
 
 /// The unified sheet header, iOS 26 anatomy: a centred grabber, a grey circle
@@ -62,8 +63,7 @@ class KalloSheetHeader extends StatelessWidget {
   /// Controls start this far below the sheet's top edge; the 44pt targets
   /// reach 4pt above the 36pt circles.
   static const double _controlsTop = 16;
-  static const double _targetOverhang =
-      (KalloIcons.hit - SheetCircleButton.size) / 2;
+  static const double _targetOverhang = KalloSheetGrowingBar.targetOverhang;
 
   /// Grabber, controls row, and the same 16pt below the controls as above
   /// them (the approved canvas: 68) — the height of a one-line header; a
@@ -99,21 +99,6 @@ class KalloSheetHeader extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: kSheetTitle(),
             ));
-    final middle =
-        heading == null
-            ? null
-            : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                heading,
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    textAlign: TextAlign.center,
-                    style: dashMeta(),
-                  ),
-              ],
-            );
 
     return Stack(
       children: [
@@ -126,7 +111,11 @@ class KalloSheetHeader extends StatelessWidget {
           ),
           child:
               trailing == null
-                  ? _GrowingBar(leading: leading, middle: middle)
+                  ? KalloSheetGrowingBar(
+                    leading: leading,
+                    heading: heading,
+                    subtitle: subtitle,
+                  )
                   : SizedBox(
                     height: KalloIcons.hit,
                     // The platform navigation bar's own layout: the title
@@ -135,7 +124,7 @@ class KalloSheetHeader extends StatelessWidget {
                     // a trailing header takes a one-line title only.
                     child: NavigationToolbar(
                       leading: leading,
-                      middle: middle,
+                      middle: heading,
                       trailing: trailing,
                       middleSpacing: KalloSpacing.sp2,
                     ),
@@ -157,34 +146,6 @@ class KalloSheetHeader extends StatelessWidget {
             ),
           ),
         ),
-      ],
-    );
-  }
-}
-
-/// The header row without a trailing action: the leading control, and the
-/// title centred between it and a mirror of it. It grows with its title, which
-/// a subtitle ("3 members") or an inline rename field makes taller than the
-/// 44pt row; the controls stay pinned to the row's top.
-class _GrowingBar extends StatelessWidget {
-  const _GrowingBar({required this.leading, required this.middle});
-
-  final Widget leading;
-  final Widget? middle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(width: KalloIcons.hit, height: KalloIcons.hit, child: leading),
-        Expanded(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: KalloIcons.hit),
-            child: Align(child: middle),
-          ),
-        ),
-        const SizedBox(width: KalloIcons.hit),
       ],
     );
   }
