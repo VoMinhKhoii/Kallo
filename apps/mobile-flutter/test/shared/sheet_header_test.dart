@@ -179,5 +179,8 @@ void main() {
     // Clear of the grabber, which ends 13pt below the sheet's top.
     final header = tester.getRect(find.byType(KalloSheetHeader));
     expect(title.top - header.top, greaterThan(13));
+    // It runs full width, so it needs a real gap below the close circle.
+    final subtitle = tester.getRect(find.textContaining('A very long meal'));
+    expect(subtitle.top - circle.bottom, closeTo(8, 0.5));
   });
 }

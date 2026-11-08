@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
-import 'sheet_circle_button.dart';
 
 /// The sheet header's row without a trailing action: the leading control, and
 /// the title centred between it and a mirror of it. It grows with its title,
@@ -48,10 +47,10 @@ class KalloSheetGrowingBar extends StatelessWidget {
           ],
         ),
         if (subtitle != null)
-          // Up by the control's invisible tap margin: the text starts where
-          // the circle ends, close enough to read as the title's caption.
-          Transform.translate(
-            offset: const Offset(0, -SheetCircleButton.targetOverhang),
+          // With the row's 4pt tap margin, the text starts 8pt below the
+          // circle: it runs full width, so it passes right under it.
+          Padding(
+            padding: const EdgeInsets.only(top: KalloSpacing.sp1),
             child: Text(
               subtitle!,
               textAlign: TextAlign.center,
