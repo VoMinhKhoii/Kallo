@@ -110,15 +110,15 @@
   },
   "feedArea": {
     "savedMeal": "Meal saved",
-    "saveError": "Could not save the meal. Please try again.",
+    "saveError": "Could not save the meal",
     "mealUpdatedToast": "Meal updated",
     "mealRemoved": "Meal removed",
     "undo": "Undo",
-    "deleteError": "Could not remove the meal. Please try again.",
+    "deleteError": "Could not remove the meal",
     "discardConfirmTitle": "Discard this unsaved meal?",
     "discardConfirmDescription": "The analysis disappears. You can enter it again any time.",
     "pendingDiscarded": "Unsaved meal discarded",
-    "discardError": "Could not discard the meal. Please try again.",
+    "discardError": "Could not discard the meal",
     "repeatError": "Could not reopen that occasion.",
     "loadErrorTitle": "Could not load this day",
     "loadErrorDescription": "Your saved meals for this date did not load, so try again before logging more.",
@@ -131,7 +131,7 @@
       "confirmBody": "Kallo will count this day toward your trends at the {calories, number} kcal you logged. This can't be undone.",
       "confirmAccept": "That's everything I ate",
       "confirmCancel": "Not now",
-      "markError": "Couldn't confirm this day. Please try again."
+      "markError": "Couldn't confirm this day"
     },
     "partialYesterdayPrompt": {
       "title": "Yesterday looks under-logged",

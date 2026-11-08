@@ -99,8 +99,8 @@
     "linkedTitle": "Phương thức đăng nhập",
     "linkedConnect": "Liên kết",
     "linkedDisconnect": "Hủy liên kết",
-    "linkedConnectError": "Không thể liên kết tài khoản đó. Vui lòng thử lại.",
-    "linkedDisconnectError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
+    "linkedConnectError": "Không thể liên kết tài khoản",
+    "linkedDisconnectError": "Không thể hủy liên kết tài khoản",
     "linkedLoadError": "Không tải được phương thức đăng nhập của bạn.",
     "linkedLoading": "Đang tải phương thức đăng nhập…",
     "linkedRetry": "Thử lại",
@@ -108,9 +108,9 @@
     "exportDescription": "Tệp JSON gồm tài khoản, hồ sơ, bữa ăn, cân nặng, Vòng kết nối, trò chuyện, thông báo, góp ý, thanh toán và hoạt động trong ứng dụng. Ảnh đã tải lên được liệt kê theo đường dẫn tệp.",
     "exportAction": "Xuất",
     "exporting": "Đang chuẩn bị dữ liệu…",
-    "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
-    "exportRateLimited": "Dữ liệu đang được xuất hoặc bạn đã đạt giới hạn xuất trong ngày. Vui lòng thử lại sau.",
-    "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
+    "exportError": "Không thể xuất dữ liệu",
+    "exportRateLimited": "Đã đạt giới hạn xuất dữ liệu",
+    "signOutError": "Không thể đăng xuất",
     "signOutTitle": "Đăng xuất",
     "signOutAction": "Đăng xuất",
     "deleteTitle": "Xóa tài khoản",
@@ -124,7 +124,7 @@
     "deleteConfirmAction": "Xóa tài khoản của tôi",
     "deleting": "Đang xóa tài khoản…",
     "deleteCancel": "Giữ tài khoản",
-    "deleteError": "Không thể xóa tài khoản. Vui lòng thử lại."
+    "deleteError": "Không thể xóa tài khoản"
   },
   "regionalPanel": {
     "searchCountryLabel": "Tìm quốc gia",
@@ -136,8 +136,8 @@
     "startSetup": "Bắt đầu thiết lập"
   },
   "profilePanel": {
-    "saveError": "Không thể lưu cài đặt. Vui lòng thử lại.",
-    "invalidError": "Một số giá trị không hợp lệ — vui lòng kiểm tra lại chỉ số cơ thể."
+    "saveError": "Không thể lưu cài đặt",
+    "invalidError": "Kiểm tra lại chỉ số cơ thể"
   },
   "identity": {
     "title": "Hồ sơ",
@@ -165,11 +165,11 @@
   "sharing": {
     "autoShareLabel": "Chia sẻ bữa ăn mới với vòng kết nối",
     "autoShareHint": "Tắt cho đến khi bạn tự bật. Khi bật, mỗi bữa ăn mới sẽ được chia sẻ với vòng kết nối ngay lúc bạn lưu. Bạn bè chỉ thấy các bữa được chia sẻ sau khi đã kết nối.",
-    "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
+    "error": "Không thể cập nhật chia sẻ"
   },
   "aiConsent": {
     "label": "Phân tích bữa ăn bằng AI",
     "hint": "Gửi bữa ăn bạn nhập, ảnh nhãn bạn quét và từ khoá bạn tìm nguyên liệu đến Google Gemini để ước tính dinh dưỡng. Khi tắt, việc ghi bữa ăn bằng AI và quét nhãn sẽ tạm dừng.",
-    "error": "Không thể cập nhật tùy chọn AI. Vui lòng thử lại."
+    "error": "Không thể cập nhật tùy chọn AI"
   }
 }

@@ -104,7 +104,7 @@
       "profile": "Hồ sơ",
       "settings": "Cài đặt",
       "signOut": "Đăng xuất",
-      "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
+      "signOutError": "Không thể đăng xuất",
       "account": "Tài khoản",
       "expandOnHover": "Mở rộng khi di chuột"
     },
@@ -510,7 +510,7 @@
     "errors": {
       "overviewTitle": "Tổng quan chưa tải được.",
       "overview": "Hãy làm mới trang hoặc thử lại sau khi ghi thêm một bữa ăn.",
-      "overviewToast": "Không tải được tổng quan dinh dưỡng.",
+      "overviewToast": "Không tải được dinh dưỡng",
       "retry": "Tải lại tổng quan",
       "candidatesError": "Chưa tải được gợi ý món ăn ngay lúc này."
     },
@@ -609,7 +609,7 @@
   },
   "onboarding": {
     "stepOf": "Bước {current} / {total}",
-    "saveError": "Không thể lưu bước này. Vui lòng thử lại.",
+    "saveError": "Không thể lưu bước này",
     "setup": {
       "title": "Đang thiết lập tài khoản của bạn",
       "subtitle": "Đang cá nhân hoá mục tiêu của bạn — chỉ mất một chút thôi.",
@@ -799,11 +799,11 @@
       "terms": "Khi tiếp tục, bạn đồng ý với điều khoản và chính sách bảo mật của chúng tôi."
     },
     "errors": {
-      "network": "Không kết nối được máy chủ — kiểm tra mạng rồi thử lại nhé.",
-      "rateLimited": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
-      "accountExists": "Bạn đã có tài khoản với email này. Hãy đăng nhập bằng phương thức bạn đã dùng ban đầu.",
-      "generic": "Đã có lỗi xảy ra — bạn thử lại nhé.",
-      "captcha": "Chưa xác nhận được bạn là người thật — thử lại, hoặc tiếp tục với Apple hay Google nhé.",
+      "network": "Không kết nối được máy chủ",
+      "rateLimited": "Thao tác hơi nhanh, đợi một chút",
+      "accountExists": "Email này dùng cách đăng nhập khác",
+      "generic": "Đã có lỗi xảy ra",
+      "captcha": "Chưa xác nhận được bạn là người thật",
       "tooSoon": "Đợi một phút rồi hãy yêu cầu mã mới nhé.",
       "invalidCode": "Mã không đúng hoặc đã hết hạn — kiểm tra email mới nhất, hoặc gửi mã mới nhé."
     }
@@ -1012,7 +1012,7 @@
       "update": "Cập nhật",
       "editHint": "Đang sửa số liệu hôm nay — lần lưu sau sẽ ghi đè giá trị trước.",
       "saveFailed": "Không thể lưu cân nặng",
-      "loadFailed": "Không mở được mục ghi cân nặng. Vui lòng thử lại.",
+      "loadFailed": "Không mở được mục ghi cân nặng",
       "netChange": "Thay đổi",
       "steady": "Ổn định"
     },
@@ -1152,7 +1152,7 @@
       "error": {
         "invalidInput": "Mã vạch không hợp lệ. Vui lòng chỉ nhập chữ số.",
         "notFound": "Không tìm thấy sản phẩm với mã vạch này.",
-        "notCached": "Sản phẩm không còn khả dụng. Vui lòng quét lại.",
+        "notCached": "Sản phẩm không còn khả dụng",
         "featureLocked": "Đây là tính năng Premium. Nâng cấp Premium để tiếp tục quét.",
         "serverError": "Đã xảy ra lỗi. Vui lòng thử lại."
       }
@@ -1231,7 +1231,7 @@
         "confirmBody": "Kallo sẽ tính ngày này vào xu hướng với {calories} kcal đã ghi. Không hoàn tác được.",
         "confirmAccept": "Mình ăn đủ rồi",
         "confirmCancel": "Để sau",
-        "markError": "Chưa xác nhận được ngày này. Thử lại nhé."
+        "markError": "Chưa xác nhận được ngày này"
       },
       "partialYesterdayPrompt": {
         "title": "Hôm qua có vẻ ghi chưa đủ",
@@ -1287,9 +1287,9 @@
       "total": "Tổng",
       "shareWithFriends": "Gửi cho bạn bè",
       "logAgain": "Ghi lại",
-      "logAgainError": "Không ghi lại được — hãy thử lại.",
+      "logAgainError": "Không ghi lại được",
       "mealUpdated": "Đã cập nhật bữa ăn",
-      "updateError": "Không cập nhật được bữa ăn — hãy thử lại."
+      "updateError": "Không cập nhật được bữa ăn"
     },
     "mealEdit": {
       "title": "Sửa bữa ăn",
@@ -1379,7 +1379,7 @@
       "noHistory": "Chưa có món nào trong lịch sử",
       "searchFailed": "Không tải được danh sách món",
       "closePicker": "Đóng",
-      "stagedFull": "Mỗi lần chỉ ghi lại được tối đa {max} món."
+      "stagedFull": "Tối đa {max} món mỗi lần"
     },
     "scan": {
       "title": "Quét",
@@ -1545,7 +1545,7 @@
       "privacyLink": "Cách chúng tôi xử lý dữ liệu",
       "continue": "Tiếp tục",
       "notNow": "Để sau",
-      "error": "Không thể lưu lựa chọn. Vui lòng thử lại."
+      "error": "Không thể lưu lựa chọn"
     }
   },
   "groups": {
@@ -1568,12 +1568,12 @@
     },
     "feed": {
       "heart": "Thả tim",
-      "reactionError": "Không thể cập nhật lượt thả tim. Hãy thử lại.",
+      "reactionError": "Không thể cập nhật lượt thích",
       "reply": "Trả lời",
       "replySend": "Gửi",
       "replyPlaceholder": "Trả lời…",
       "replyTo": "Trả lời {name}…",
-      "replyError": "Không thể gửi trả lời. Hãy thử lại.",
+      "replyError": "Không thể gửi trả lời",
       "openThread": "Mở chủ đề",
       "threadTitle": "Trả lời",
       "noReplies": "Chưa có trả lời nào",
@@ -1583,12 +1583,12 @@
       "portion": "{portion} phần",
       "logCopy": "Ăn theo",
       "logSuccess": "Đã thêm vào nhật ký hôm nay",
-      "logError": "Không thể thêm bữa ăn này. Hãy thử lại.",
+      "logError": "Không thể thêm bữa ăn này",
       "leave": "Rời nhóm",
       "leaveTitle": "Rời nhóm này?",
       "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.",
       "leaveConfirm": "Rời nhóm",
-      "leaveError": "Không thể rời nhóm. Hãy thử lại."
+      "leaveError": "Không thể rời nhóm"
     },
     "createGroup": {
       "title": "Tạo nhóm",
@@ -1604,7 +1604,7 @@
       "submit": "Tạo nhóm",
       "creating": "Đang tạo…",
       "created": "Đã tạo nhóm",
-      "createError": "Không thể tạo nhóm. Hãy thử lại."
+      "createError": "Không thể tạo nhóm"
     },
     "info": {
       "title": "Thông tin nhóm",
@@ -1621,14 +1621,14 @@
       "everyoneIn": "Mọi người trong vòng kết nối đều đã ở đây.",
       "addCta": "Thêm",
       "added": "Đã thêm vào nhóm",
-      "addError": "Không thể thêm. Hãy thử lại.",
+      "addError": "Không thể thêm",
       "renameLabel": "Đổi tên nhóm",
       "renameSave": "Lưu",
-      "renameError": "Không thể đổi tên nhóm. Hãy thử lại.",
+      "renameError": "Không thể đổi tên nhóm",
       "removeLabel": "Xoá {name}",
       "removeTitle": "Xoá {name}?",
       "removeDescription": "Họ sẽ mất quyền xem bữa ăn và trả lời trong nhóm này.",
-      "removeError": "Không thể xoá thành viên này. Hãy thử lại."
+      "removeError": "Không thể xoá thành viên này"
     },
     "wall": {
       "loading": "Đang tải vòng kết nối của bạn",
@@ -1644,8 +1644,8 @@
       "sharing": "Đang chia sẻ…",
       "sharedToast": "Đã chia sẻ với vòng kết nối",
       "unsharedToast": "Đã ngừng chia sẻ với vòng kết nối",
-      "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
-      "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại."
+      "errorShare": "Không thể chia sẻ",
+      "errorUnshare": "Không thể cập nhật chia sẻ"
     },
     "shareMeal": {
       "title": "Chia sẻ bữa ăn",
@@ -1678,10 +1678,10 @@
         "other": "Đã gửi cho {count} người bạn"
       },
       "splitSuccess": {
-        "one": "Đã chia phần với {count} người bạn",
-        "other": "Đã chia phần với {count} người bạn"
+        "one": "Đã chia phần với {count} bạn",
+        "other": "Đã chia phần với {count} bạn"
       },
-      "error": "Không thể chia sẻ bữa ăn. Vui lòng thử lại.",
+      "error": "Không thể chia sẻ bữa ăn",
       "cheatWholeOnly": "Bữa xả được gửi nguyên phần — người nhận sẽ tự chọn mức."
     },
     "invites": {
@@ -1693,7 +1693,7 @@
       "accept": "Thêm vào nhật ký",
       "dismiss": "Bỏ qua",
       "accepted": "Đã thêm vào nhật ký",
-      "error": "Chưa được — vui lòng thử lại.",
+      "error": "Chưa thực hiện được",
       "loadError": "Không tải được lời mời. Chạm để thử lại.",
       "acceptShort": "Nhận",
       "yourShare": "Bạn {percent}%",
@@ -1742,7 +1742,7 @@
       "title": "Vòng kết nối ({count})",
       "empty": "Chia sẻ liên kết để mời ai đó vào vòng kết nối.",
       "remove": "Xoá",
-      "removeError": "Không thể xoá. Vui lòng thử lại."
+      "removeError": "Không thể xoá"
     },
     "error": {
       "title": "Không thể tải vòng kết nối",
@@ -1753,7 +1753,7 @@
       "connectTitle": "Kết nối với {name}",
       "connectBody": "Chấp nhận để thêm nhau vào vòng kết nối và xem cách mỗi người đang ăn uống.",
       "accept": "Chấp nhận",
-      "error": "Không thể kết nối. Vui lòng thử lại.",
+      "error": "Không thể kết nối",
       "invalidTitle": "Lời mời không hợp lệ",
       "invalidBody": "Liên kết mời này không hợp lệ hoặc đã thay đổi.",
       "selfTitle": "Đây là liên kết mời của bạn",
@@ -1784,8 +1784,8 @@
       "blockedEmptyBody": "Người bạn chặn sẽ hiện ở đây, và bạn có thể bỏ chặn bất cứ lúc nào.",
       "blockedLoadError": "Không thể tải danh sách đã chặn",
       "unblock": "Bỏ chặn",
-      "groupLoadError": "Không tải được nhóm này. Hãy thử lại.",
-      "ownerNoActions": "Bạn là chủ nhóm — bạn có thể rời nhóm khi mọi người khác đã rời."
+      "groupLoadError": "Không tải được nhóm này",
+      "ownerNoActions": "Chủ nhóm chỉ rời được sau cùng"
     },
     "moderation": {
       "report": "Báo cáo",
@@ -1806,18 +1806,18 @@
         "other": "Lý do khác"
       },
       "reportSentTitle": "Cảm ơn bạn đã báo cho chúng tôi",
-      "reportSentBody": "Chúng tôi xem xét mọi báo cáo trong vòng 24 giờ.",
+      "reportSentBody": "Sẽ xem xét trong vòng 24 giờ",
       "reportSentBlockBody": "Chúng tôi xem xét mọi báo cáo trong vòng 24 giờ. Bạn cũng có thể chặn {name} để hai bạn không còn thấy nhau.",
       "done": "Xong",
-      "reportError": "Không gửi được báo cáo. Hãy thử lại.",
+      "reportError": "Không gửi được báo cáo",
       "blockTitle": "Chặn {name}?",
       "blockBody": "Họ sẽ bị xoá khỏi vòng kết nối, và hai bạn sẽ không còn thấy bữa ăn, trả lời hay bài đăng trong nhóm của nhau. Họ sẽ không được thông báo.",
       "blocked": "Đã chặn {name}",
-      "blockError": "Không chặn được {name}. Hãy thử lại.",
+      "blockError": "Không chặn được {name}",
       "unblockTitle": "Bỏ chặn {name}?",
       "unblockBody": "Họ sẽ không tự được thêm lại vào vòng kết nối. Để kết nối lại, một trong hai bạn gửi liên kết mời mới.",
       "unblocked": "Đã bỏ chặn {name}",
-      "unblockError": "Không bỏ chặn được {name}. Hãy thử lại.",
+      "unblockError": "Không bỏ chặn được {name}",
       "removeTitle": "Xoá {name}?",
       "removeBody": "Hai bạn sẽ không còn thấy bữa ăn của nhau. Liên kết của bạn sẽ không kết nối lại với họ. Để kết nối lại, hãy chấp nhận liên kết mời của họ.",
       "removed": "Đã xoá {name} khỏi vòng kết nối"
@@ -1828,17 +1828,17 @@
     "account": {
       "title": "Tài khoản",
       "exportTitle": "Xuất dữ liệu của tôi",
-      "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
-      "exportRateLimited": "Dữ liệu đang được xuất hoặc bạn đã đạt giới hạn xuất trong ngày. Vui lòng thử lại sau.",
+      "exportError": "Không thể xuất dữ liệu",
+      "exportRateLimited": "Đã đạt giới hạn xuất dữ liệu",
       "connectGoogle": "Liên kết Google",
       "connectApple": "Liên kết Apple",
       "googleConnected": "Google · Đã liên kết",
       "appleConnected": "Apple · Đã liên kết",
       "disconnect": "Huỷ liên kết",
       "disconnectConfirmTitle": "Huỷ liên kết phương thức đăng nhập này?",
-      "linkError": "Không thể liên kết tài khoản đó. Vui lòng thử lại.",
-      "unlinkError": "Không thể huỷ liên kết tài khoản đó. Vui lòng thử lại.",
-      "loadError": "Không tải được phương thức đăng nhập.",
+      "linkError": "Không thể liên kết tài khoản",
+      "unlinkError": "Không thể huỷ liên kết tài khoản",
+      "loadError": "Không tải được cách đăng nhập",
       "signOut": "Đăng xuất",
       "signOutConfirmTitle": "Đăng xuất khỏi Kallo?",
       "delete": "Xoá tài khoản",
@@ -1851,7 +1851,7 @@
       "deleteConfirmLabel": "Nhập {word} để xác nhận",
       "deleteConfirmWord": "XOA",
       "deleteConfirmAction": "Xoá tài khoản của tôi",
-      "deleteError": "Không thể xoá tài khoản. Vui lòng thử lại."
+      "deleteError": "Không thể xoá tài khoản"
     },
     "profile": "Hồ sơ",
     "preferences": "Tùy chỉnh",
@@ -1871,7 +1871,7 @@
     },
     "sharing": {
       "autoShareLabel": "Tự động chia sẻ với vòng kết nối",
-      "error": "Không thể cập nhật tùy chọn chia sẻ. Vui lòng thử lại."
+      "error": "Không thể cập nhật chia sẻ"
     },
     "sidebar": {
       "title": "Cài đặt",
@@ -1879,7 +1879,7 @@
       "navigationLabel": "Điều hướng cài đặt"
     },
     "profilePanel": {
-      "saveError": "Không thể lưu cài đặt. Vui lòng thử lại.",
+      "saveError": "Không thể lưu cài đặt",
       "incompleteHint": "Chưa lưu được gì — hãy điền cân nặng, chiều cao và tuổi trước nhé."
     },
     "rows": {
@@ -1912,7 +1912,7 @@
       "addScreenshot": "Thêm ảnh chụp màn hình",
       "removeScreenshot": "Bỏ ảnh chụp màn hình",
       "screenshotTooLarge": "Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.",
-      "photoPermission": "Kallo cần quyền truy cập ảnh để đính kèm ảnh chụp màn hình. Hãy bật trong Cài đặt.",
+      "photoPermission": "Hãy bật quyền ảnh trong Cài đặt",
       "submit": "Gửi góp ý",
       "successTitle": "Cảm ơn — chúng tôi đã nhận được",
       "successBody": "Góp ý của bạn đã đến đội ngũ. Chúng tôi đọc từng góp ý một.",
@@ -1941,7 +1941,7 @@
       "nameSave": "Lưu tên",
       "nameSaved": "Đã cập nhật tên",
       "nameError": "Không thể cập nhật tên",
-      "nameRequired": "Vui lòng nhập tên.",
+      "nameRequired": "Hãy nhập tên",
       "linkWarning": "Đổi tên sẽ đổi liên kết mời — liên kết cũ sẽ không dùng được nữa.",
       "avatarEdit": "Sửa ảnh"
     },
@@ -1962,7 +1962,7 @@
     "aiConsent": {
       "label": "Phân tích bữa ăn bằng AI",
       "subline": "Gửi bữa ăn, ảnh nhãn và từ khoá tìm kiếm đến Google Gemini",
-      "error": "Không thể cập nhật tùy chọn AI. Vui lòng thử lại."
+      "error": "Không thể cập nhật tùy chọn AI"
     },
     "me": {
       "friends": {
@@ -1986,7 +1986,7 @@
     "profileNotFound": "Không tìm thấy hồ sơ. Vui lòng đăng nhập lại.",
     "pipelineTimeout": "Phân tích mất quá lâu. Vui lòng thử lại.",
     "rateLimited": "Hệ thống đang bận. Vui lòng đợi một chút rồi thử lại.",
-    "internal": "Đã xảy ra lỗi. Vui lòng thử lại."
+    "internal": "Đã xảy ra lỗi"
   },
   "validation": {
     "bodyMetrics": {
@@ -2019,14 +2019,14 @@
     "alreadyPremiumBody": "Phân tích bữa ăn bằng AI đã được mở khóa. Bạn có thể quản lý gói trong cửa hàng bất cứ lúc nào.",
     "alreadyLifetimeBody": "Bạn có Premium trọn đời. Phân tích bữa ăn bằng AI luôn thuộc về bạn.",
     "unavailableTitle": "Không thể mua hàng",
-    "unavailableBody": "Mua hàng trong ứng dụng hiện chưa khả dụng. Vui lòng thử lại sau.",
+    "unavailableBody": "Chưa thể mua trong ứng dụng",
     "loadError": "Không tải được các gói đăng ký.",
-    "purchaseError": "Không hoàn tất được giao dịch. Vui lòng thử lại.",
-    "restoreAccountConflict": "Giao dịch này thuộc về một tài khoản Kallo khác. Hãy đăng nhập vào tài khoản đã mua ban đầu hoặc liên hệ hỗ trợ.",
-    "restoreError": "Không khôi phục được giao dịch. Vui lòng thử lại.",
-    "restoreNothing": "Không tìm thấy giao dịch trước đó để khôi phục.",
+    "purchaseError": "Không hoàn tất được giao dịch",
+    "restoreAccountConflict": "Giao dịch thuộc tài khoản khác",
+    "restoreError": "Không khôi phục được giao dịch",
+    "restoreNothing": "Không có giao dịch để khôi phục",
     "verifying": "Đang xác nhận giao dịch…",
-    "verifyPending": "Đã nhận thanh toán — chúng tôi đang kích hoạt Premium. Sẽ mở khóa trong giây lát.",
+    "verifyPending": "Đã thanh toán, đang mở Premium",
     "bestValue": "Đáng giá nhất",
     "perMonth": "/tháng",
     "perYear": "/năm",

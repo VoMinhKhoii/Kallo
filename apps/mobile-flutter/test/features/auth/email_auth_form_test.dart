@@ -159,7 +159,7 @@ void main() {
 
     expect(find.byType(EmailCodeView), findsNothing);
     expect(
-      find.textContaining("couldn't confirm you're a person"),
+      find.text("Couldn't confirm you're a person"),
       findsOneWidget,
     );
   });

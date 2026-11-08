@@ -28,7 +28,7 @@
     "you": "Bạn",
     "block": "Chặn",
     "blocked": "Đã chặn",
-    "actionError": "Chưa được — hãy thử lại."
+    "actionError": "Chưa thực hiện được"
   },
   "thread": {
     "title": "Trả lời",
@@ -39,10 +39,10 @@
   "feed": {
     "you": "Bạn",
     "heart": "Thả tim",
-    "reactionError": "Không thể cập nhật lượt thả tim. Hãy thử lại.",
+    "reactionError": "Không thể cập nhật lượt thích",
     "reply": "Trả lời",
     "replyPlaceholder": "Trả lời…",
-    "replyError": "Không thể gửi trả lời. Hãy thử lại.",
+    "replyError": "Không thể gửi trả lời",
     "replyTo": "Trả lời {name}…",
     "noReplies": "Chưa có trả lời nào",
     "noRepliesBody": "Hãy là người đầu tiên lên tiếng.",
@@ -50,7 +50,7 @@
     "logCopy": "Ăn theo",
     "logHalf": "Chia đôi",
     "logSuccess": "Đã thêm vào nhật ký hôm nay",
-    "logError": "Không thể thêm bữa ăn này. Hãy thử lại.",
+    "logError": "Không thể thêm bữa ăn này",
     "composerLabel": "Tin nhắn",
     "composerPlaceholder": "Nhắn {name}…",
     "send": "Gửi",
@@ -59,7 +59,7 @@
     "leaveTitle": "Rời nhóm này?",
     "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.",
     "leaveConfirm": "Rời nhóm",
-    "leaveError": "Không thể rời nhóm. Hãy thử lại.",
+    "leaveError": "Không thể rời nhóm",
     "cancel": "Huỷ"
   },
   "shareControl": {
@@ -68,8 +68,8 @@
     "sharing": "Đang chia sẻ…",
     "sharedToast": "Đã chia sẻ với vòng kết nối",
     "unsharedToast": "Đã ngừng chia sẻ với vòng kết nối",
-    "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
-    "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại."
+    "errorShare": "Không thể chia sẻ",
+    "errorUnshare": "Không thể cập nhật chia sẻ"
   },
   "shareMeal": {
     "title": "Chia sẻ bữa ăn",
@@ -95,7 +95,7 @@
     "errorBody": "Kiểm tra kết nối rồi thử lại nhé.",
     "copySuccess": "Đã gửi cho {count} người bạn",
     "splitSuccess": "Đã chia phần với {count} người bạn",
-    "error": "Không thể chia sẻ bữa ăn. Vui lòng thử lại.",
+    "error": "Không thể chia sẻ bữa ăn",
     "cheatWholeOnly": "Bữa xả được gửi nguyên phần — người nhận sẽ tự chọn mức."
   },
   "invites": {
@@ -107,7 +107,7 @@
     "accept": "Nhận",
     "dismiss": "Bỏ qua",
     "accepted": "Đã thêm vào nhật ký",
-    "error": "Chưa được — vui lòng thử lại.",
+    "error": "Chưa thực hiện được",
     "loadError": "Không tải được lời mời. Chạm để thử lại.",
     "sharedCheat": "{name} đã chia sẻ bữa xả với bạn",
     "acceptCheat": "Tự chọn mức",
@@ -168,7 +168,7 @@
     "submit": "Tạo nhóm",
     "creating": "Đang tạo…",
     "created": "Đã tạo nhóm",
-    "createError": "Không thể tạo nhóm. Hãy thử lại."
+    "createError": "Không thể tạo nhóm"
   },
   "info": {
     "title": "Thông tin nhóm",
@@ -181,15 +181,15 @@
     "everyoneIn": "Mọi người trong vòng kết nối đều đã ở đây.",
     "addCta": "Thêm",
     "added": "Đã thêm vào nhóm",
-    "addError": "Không thể thêm. Hãy thử lại.",
+    "addError": "Không thể thêm",
     "renameLabel": "Đổi tên nhóm",
     "renameSave": "Lưu",
-    "renameError": "Không thể đổi tên nhóm. Hãy thử lại.",
+    "renameError": "Không thể đổi tên nhóm",
     "removeLabel": "Xóa {name}",
     "removeTitle": "Xóa {name}?",
     "removeDescription": "Họ sẽ mất quyền xem bữa ăn và trả lời trong nhóm này.",
     "removeConfirm": "Xóa",
-    "removeError": "Không thể xóa thành viên này. Hãy thử lại.",
+    "removeError": "Không thể xóa thành viên này",
     "expand": "Mở thông tin nhóm",
     "collapse": "Thu gọn thông tin nhóm"
   },
@@ -197,11 +197,11 @@
     "title": "Vòng kết nối ({count})",
     "empty": "Chia sẻ liên kết để mời ai đó vào vòng kết nối.",
     "remove": "Xoá",
-    "removeError": "Không thể xoá. Vui lòng thử lại.",
+    "removeError": "Không thể xoá",
     "emptyTitle": "Hiện chỉ có bạn"
   },
   "circleLimit": {
-    "memberAtLimit": "Một người bạn chọn đã đạt giới hạn của gói miễn phí. Họ cần Premium để tham gia thêm."
+    "memberAtLimit": "Một người đã hết lượt gói miễn phí"
   },
   "error": {
     "title": "Không thể tải vòng kết nối",
@@ -212,7 +212,7 @@
     "connectTitle": "Kết nối với {name}",
     "connectBody": "Chấp nhận để thêm nhau vào vòng kết nối và xem cách mỗi người đang ăn uống.",
     "accept": "Chấp nhận",
-    "error": "Không thể kết nối. Vui lòng thử lại.",
+    "error": "Không thể kết nối",
     "invalidTitle": "Lời mời không hợp lệ",
     "invalidBody": "Liên kết mời này không hợp lệ hoặc đã thay đổi.",
     "selfTitle": "Đây là liên kết mời của bạn",

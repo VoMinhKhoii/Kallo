@@ -31,13 +31,13 @@
     "minimize": "Thu gọn",
     "minimizedTitle": "Hoàn thiện hồ sơ",
     "restoreLabel": "Tiếp tục hồ sơ, bước {current} / {total}",
-    "saveError": "Không thể lưu nhắc nhở thiết lập. Vui lòng thử lại."
+    "saveError": "Không thể lưu nhắc nhở thiết lập"
   },
   "userMenu": {
     "openMenu": "Mở menu tài khoản",
     "settings": "Cài đặt",
     "signOut": "Đăng xuất",
-    "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
+    "signOutError": "Không thể đăng xuất",
     "account": "Tài khoản",
     "expandOnHover": "Mở rộng khi di chuột"
   },

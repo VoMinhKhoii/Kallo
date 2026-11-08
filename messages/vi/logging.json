@@ -110,15 +110,15 @@
   },
   "feedArea": {
     "savedMeal": "Đã lưu bữa ăn",
-    "saveError": "Không thể lưu bữa ăn. Vui lòng thử lại.",
+    "saveError": "Không thể lưu bữa ăn",
     "mealUpdatedToast": "Đã cập nhật bữa ăn",
     "mealRemoved": "Đã xóa bữa ăn",
     "undo": "Hoàn tác",
-    "deleteError": "Không thể xóa bữa ăn. Vui lòng thử lại.",
+    "deleteError": "Không thể xóa bữa ăn",
     "discardConfirmTitle": "Bỏ bữa ăn chưa lưu này?",
     "discardConfirmDescription": "Phân tích sẽ biến mất. Bạn có thể nhập lại bất cứ lúc nào.",
     "pendingDiscarded": "Đã bỏ bữa ăn chưa lưu",
-    "discardError": "Không thể bỏ bữa ăn. Vui lòng thử lại.",
+    "discardError": "Không thể bỏ bữa ăn",
     "repeatError": "Không thể mở lại dịp này.",
     "loadErrorTitle": "Không thể tải ngày này",
     "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được, hãy thử lại trước khi ghi thêm.",
@@ -131,7 +131,7 @@
       "confirmBody": "Kallo sẽ tính ngày này vào xu hướng với {calories, number} kcal đã ghi. Không hoàn tác được.",
       "confirmAccept": "Mình ăn đủ rồi",
       "confirmCancel": "Để sau",
-      "markError": "Chưa xác nhận được ngày này. Thử lại nhé."
+      "markError": "Chưa xác nhận được ngày này"
     },
     "partialYesterdayPrompt": {
       "title": "Hôm qua có vẻ ghi chưa đủ",

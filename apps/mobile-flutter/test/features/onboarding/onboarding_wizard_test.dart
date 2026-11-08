@@ -278,7 +278,7 @@ void main() {
 
     expect(find.text('Where do you cook?'), findsOneWidget);
     expect(
-      find.text("Couldn't save this step. Please try again."),
+      find.text("Couldn't save this step"),
       findsOneWidget,
     );
     expect(_ctaDisabled(tester), isFalse);
@@ -400,7 +400,7 @@ void main() {
     expect(find.text('Choose your language'), findsNothing);
     expect(find.text('About you'), findsNothing);
     expect(
-      find.text("Couldn't save this step. Please try again."),
+      find.text("Couldn't save this step"),
       findsOneWidget,
     );
     await _tap(tester, 'Try again');
