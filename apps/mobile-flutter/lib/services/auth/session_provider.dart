@@ -158,6 +158,15 @@ class AuthController {
     return _auth.verifyOTP(email: email, token: code, type: OtpType.email);
   }
 
+  /// Password sign-in, kept only for the App Review demo account: a reviewer
+  /// cannot read the code mailed to it. See [isAppReviewEmail].
+  Future<AuthResponse> signInWithPassword({
+    required String email,
+    required String password,
+  }) {
+    return _auth.signInWithPassword(email: email, password: password);
+  }
+
   /// Sign out, clearing the persisted session. Mirrors the RN `signOut` helper.
   Future<void> signOut() => _auth.signOut();
 

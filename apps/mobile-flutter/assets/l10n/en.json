@@ -764,7 +764,8 @@
     "signIn": {
       "email": "Email",
       "emailPlaceholder": "you@example.com",
-      "emailError": "Enter a valid email address"
+      "emailError": "Enter a valid email address",
+      "password": "Password"
     },
     "dialog": {
       "signInTitle": "Welcome back",

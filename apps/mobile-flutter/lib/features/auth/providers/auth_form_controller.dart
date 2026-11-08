@@ -24,6 +24,14 @@ enum AuthAction { email, google, apple }
 /// contains this string, so editing the SQL prose fails loudly here too.
 const String kDuplicateEmailMarker = 'already exists for this email';
 
+/// The App Review demo account (App Store Connect → App Review Information).
+/// A reviewer cannot read a code mailed to it, so this one address signs in
+/// with its password; every other address stays code-only.
+const String kAppReviewEmail = 'test@kallo.fit';
+
+bool isAppReviewEmail(String email) =>
+    email.trim().toLowerCase() == kAppReviewEmail;
+
 /// Maps a Supabase [AuthException] to warm, localized copy — the raw English
 /// `e.message` never reaches the UI.
 String authErrorMessage(AuthException e) {
@@ -150,6 +158,33 @@ class AuthFormController extends StateNotifier<AuthFormState> {
             captchaToken: captchaToken,
           );
       state = state.copyWith(clearAction: true, pendingEmail: address);
+    } on AuthException catch (e) {
+      state = state.copyWith(clearAction: true, error: authErrorMessage(e));
+    } catch (_) {
+      state = state.copyWith(
+        clearAction: true,
+        error: tr('auth.errors.generic'),
+      );
+    }
+  }
+
+  /// Sign the App Review demo account in with its password. On success the
+  /// sessionProvider stream fires and the router redirect routes in.
+  Future<void> signInReviewAccount({
+    required String email,
+    required String password,
+  }) async {
+    if (state.busy) return;
+    state = state.copyWith(
+      action: AuthAction.email,
+      clearError: true,
+      clearNotice: true,
+    );
+    try {
+      await _ref
+          .read(authControllerProvider)
+          .signInWithPassword(email: email.trim(), password: password);
+      state = state.copyWith(clearAction: true);
     } on AuthException catch (e) {
       state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (_) {

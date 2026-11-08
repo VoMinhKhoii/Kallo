@@ -764,7 +764,8 @@
     "signIn": {
       "email": "Email",
       "emailPlaceholder": "ban@example.com",
-      "emailError": "Nhập địa chỉ email hợp lệ"
+      "emailError": "Nhập địa chỉ email hợp lệ",
+      "password": "Mật khẩu"
     },
     "dialog": {
       "signInTitle": "Chào mừng trở lại",
