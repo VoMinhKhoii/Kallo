@@ -37,7 +37,11 @@ class ShareMealSheet extends ConsumerStatefulWidget {
 }
 
 class _ShareMealSheetState extends ConsumerState<ShareMealSheet> {
-  final _draft = ShareMealDraft();
+  /// Opens on split, except a cheat meal: it can only be shared whole, and
+  /// has no tabs to switch away from a split it could not send.
+  late final _draft = ShareMealDraft(
+    mode: widget.meal.isCheat ? 'whole' : 'split',
+  );
 
   /// The lane holds its height so the footer never moves — not when the list
   /// is long, not when the tab changes. Six friends fit without scrolling it.

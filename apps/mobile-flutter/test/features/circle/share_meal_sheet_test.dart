@@ -25,7 +25,11 @@ List<CircleMember> _friends(int n) => [
     CircleMember(friendshipId: 'f$i', status: 'accepted', profile: _profile(i)),
 ];
 
-Future<void> _pumpSheet(WidgetTester tester, {int friends = 8}) async {
+Future<void> _pumpSheet(
+  WidgetTester tester, {
+  int friends = 8,
+  String entryMode = 'precise',
+}) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -53,12 +57,13 @@ Future<void> _pumpSheet(WidgetTester tester, {int friends = 8}) async {
                   body: Align(
                     alignment: Alignment.bottomCenter,
                     child: ShareMealSheet(
-                      meal: const PersistedMeal(
+                      meal: PersistedMeal(
                         id: 'm1',
                         rawInput: _longMeal,
                         loggedAt: '2026-11-08T11:23:00Z',
-                        nutrition: MealNutrition(caloriesKcal: 424),
-                        mealItemGroups: [],
+                        nutrition: const MealNutrition(caloriesKcal: 424),
+                        mealItemGroups: const [],
+                        entryMode: entryMode,
                       ),
                       onAddFriends: () {},
                     ),
@@ -81,6 +86,20 @@ void main() {
   setUpAll(() async {
     await loadAppFonts();
     await loadIconFonts();
+  });
+
+  testWidgets('opens on the split tab', (tester) async {
+    await _pumpSheet(tester);
+    await _seatFirst(tester);
+    // Half of 424 is what you keep on a split; a whole share keeps it all.
+    expect(find.textContaining('còn 212 kcal'), findsOneWidget);
+  });
+
+  testWidgets('a cheat meal opens whole, with no tabs', (tester) async {
+    await _pumpSheet(tester, entryMode: 'cheat');
+    await _seatFirst(tester);
+    expect(find.text('Chia phần'), findsNothing);
+    expect(find.textContaining('còn 424 kcal'), findsOneWidget);
   });
 
   testWidgets('the split tab comes before the whole tab', (tester) async {
