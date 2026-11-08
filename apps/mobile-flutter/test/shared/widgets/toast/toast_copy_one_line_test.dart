@@ -47,13 +47,30 @@ const _indirectKeys = [
 /// The same, for toasts that carry the Undo action.
 const _indirectUndoKeys = ['logging.mealRemoved', 'logging.pendingDiscarded'];
 
+/// Files whose `showTopToast` call takes a variable. Their messages are the
+/// keys listed above; a new file here means a new key to list.
+const _filesWithIndirectToasts = {
+  'account_section.dart',
+  'auth_page.dart',
+  'email_auth_screen.dart',
+  'feature_lock.dart',
+  'group_flows.dart',
+  'meal_actions.dart',
+  'moderation_flows.dart',
+  'pure_relog_staging.dart',
+  'subscription_section.dart',
+  'top_toast.dart',
+};
+
 typedef _Toast = ({String key, String? actionKey});
 
 final _keyPattern = RegExp(r"'([a-zA-Z]+(?:\.[a-zA-Z]+)+)'");
 
-/// Every `showTopToast` call in `lib/`, by the l10n keys it names.
-List<_Toast> _toastsAtCallSites() {
+/// Every `showTopToast` call in `lib/`: the l10n keys the calls name, and the
+/// files holding a call that names none.
+({List<_Toast> toasts, Set<String> keylessFiles}) _scanCallSites() {
   final toasts = <_Toast>[];
+  final keylessFiles = <String>{};
   final sources = Directory('lib')
       .listSync(recursive: true)
       .whereType<File>()
@@ -70,13 +87,15 @@ List<_Toast> _toastsAtCallSites() {
       final parts = source.substring(start, end).split('actionLabel:');
       final actionKey =
           parts.length > 1 ? _keyPattern.firstMatch(parts[1])?.group(1) : null;
-      for (final match in _keyPattern.allMatches(parts[0])) {
+      final keys = _keyPattern.allMatches(parts[0]);
+      if (keys.isEmpty) keylessFiles.add(file.uri.pathSegments.last);
+      for (final match in keys) {
         toasts.add((key: match.group(1)!, actionKey: actionKey));
       }
       start = source.indexOf('showTopToast(', end);
     }
   }
-  return toasts;
+  return (toasts: toasts, keylessFiles: keylessFiles);
 }
 
 String _resolve(Map<String, dynamic> strings, String key) {
@@ -97,6 +116,10 @@ String _resolve(Map<String, dynamic> strings, String key) {
 void main() {
   setUpAll(loadAppFonts);
 
+  test('a toast taking a variable has its keys listed here', () {
+    expect(_scanCallSites().keylessFiles, _filesWithIndirectToasts);
+  });
+
   for (final locale in ['vi', 'en']) {
     testWidgets('every $locale toast fits one line on the narrowest phone', (
       tester,
@@ -105,14 +128,13 @@ void main() {
           jsonDecode(File('assets/l10n/$locale.json').readAsStringSync())
               as Map<String, dynamic>;
       final toasts = {
-        ..._toastsAtCallSites(),
+        ..._scanCallSites().toasts,
         for (final key in _indirectKeys) (key: key, actionKey: null),
         for (final key in _indirectUndoKeys)
           (key: key, actionKey: 'logging.undo'),
       };
       expect(toasts.length, greaterThan(50), reason: 'call-site scan broke');
 
-      final oneLine = kDashBodySize * kDashBodyLeading;
       final wrapped = <String>[];
       for (final toast in toasts) {
         final message = _resolve(strings, toast.key);
@@ -132,7 +154,7 @@ void main() {
             ),
           ),
         );
-        if (tester.getSize(find.text(message)).height > oneLine * 1.5) {
+        if (tester.getSize(find.text(message)).height > kDashBodyLine * 1.5) {
           wrapped.add('${toast.key}: $message');
         }
       }
