@@ -109,7 +109,7 @@
     "exportAction": "Export",
     "exporting": "Preparing your data…",
     "exportError": "Could not export your data",
-    "exportRateLimited": "Export limit reached",
+    "exportRateLimited": "Export running or limit reached",
     "signOutError": "Couldn't sign out",
     "signOutTitle": "Sign out",
     "signOutAction": "Sign out",

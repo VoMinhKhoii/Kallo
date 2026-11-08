@@ -15,6 +15,7 @@ const _narrowestPhoneWidth = 375.0;
 /// Messages that reach `showTopToast` through a wrapper or a variable, where
 /// reading the call site cannot name the key.
 const _indirectKeys = [
+  'auth.code.resent',
   'auth.errors.network',
   'auth.errors.rateLimited',
   'auth.errors.accountExists',
@@ -33,8 +34,6 @@ const _indirectKeys = [
   'groups.moderation.unblocked',
   'groups.moderation.unblockError',
   'logging.barcode.error.notCached',
-  'logging.mealRemoved',
-  'logging.pendingDiscarded',
   'paywall.restoreAccountConflict',
   'paywall.restoreError',
   'paywall.restoreNothing',
@@ -44,6 +43,9 @@ const _indirectKeys = [
   'settings.account.loadError',
   'settings.account.unlinkError',
 ];
+
+/// The same, for toasts that carry the Undo action.
+const _indirectUndoKeys = ['logging.mealRemoved', 'logging.pendingDiscarded'];
 
 typedef _Toast = ({String key, String? actionKey});
 
@@ -105,6 +107,8 @@ void main() {
       final toasts = {
         ..._toastsAtCallSites(),
         for (final key in _indirectKeys) (key: key, actionKey: null),
+        for (final key in _indirectUndoKeys)
+          (key: key, actionKey: 'logging.undo'),
       };
       expect(toasts.length, greaterThan(50), reason: 'call-site scan broke');
 

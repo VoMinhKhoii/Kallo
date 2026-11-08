@@ -790,7 +790,7 @@
       "submit": "Tiếp tục",
       "resend": "Gửi mã mới",
       "resendIn": "Gửi mã mới sau {seconds}s",
-      "resent": "Đã gửi mã mới — mã cũ không còn dùng được.",
+      "resent": "Đã gửi mã mới",
       "back": "Dùng email khác"
     },
     "welcome": {
@@ -1829,7 +1829,7 @@
       "title": "Tài khoản",
       "exportTitle": "Xuất dữ liệu của tôi",
       "exportError": "Không thể xuất dữ liệu",
-      "exportRateLimited": "Đã đạt giới hạn xuất dữ liệu",
+      "exportRateLimited": "Đang xuất hoặc đã hết lượt hôm nay",
       "connectGoogle": "Liên kết Google",
       "connectApple": "Liên kết Apple",
       "googleConnected": "Google · Đã liên kết",

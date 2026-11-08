@@ -790,7 +790,7 @@
       "submit": "Continue",
       "resend": "Send a new code",
       "resendIn": "Send a new code in {seconds}s",
-      "resent": "New code sent — it replaces the last one.",
+      "resent": "New code sent",
       "back": "Use a different email"
     },
     "welcome": {
@@ -1832,7 +1832,7 @@
       "title": "Account",
       "exportTitle": "Export my data",
       "exportError": "Could not export your data",
-      "exportRateLimited": "Export limit reached",
+      "exportRateLimited": "Export running or limit reached",
       "connectGoogle": "Connect Google",
       "connectApple": "Connect Apple",
       "googleConnected": "Google · Connected",
