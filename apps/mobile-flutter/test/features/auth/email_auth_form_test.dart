@@ -158,10 +158,7 @@ void main() {
     await _sendCode(tester, 'khoi@example.com');
 
     expect(find.byType(EmailCodeView), findsNothing);
-    expect(
-      find.text("Couldn't confirm you're a person"),
-      findsOneWidget,
-    );
+    expect(find.text("Couldn't confirm you're a person"), findsOneWidget);
   });
 
   testWidgets('a code that arrives whole verifies by itself; a wrong one says '
