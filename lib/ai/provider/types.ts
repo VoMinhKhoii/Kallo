@@ -30,7 +30,7 @@ export interface AttemptTokens {
   outputTokens: number | null;
   /** Subset of `inputTokens` served from the provider cache (cached rate). */
   cachedTokens: number | null;
-  /** Subset of `inputTokens` written to the cache (Claude only; 1.25x input). */
+  /** Subset of `inputTokens` written to the cache (Claude only; 2x input). */
   cacheWriteTokens: number | null;
   /** Thinking tokens (`thoughtsTokenCount`), billed at the output rate. */
   thoughtTokens: number | null;
