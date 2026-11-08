@@ -38,14 +38,18 @@ class KalloSheetHeader extends StatelessWidget {
     this.onBack,
     this.closeEnabled = true,
     this.trailing,
-  });
+  }) : assert(
+         subtitle == null || trailing == null,
+         'A trailing header has a fixed one-line height.',
+       );
 
   final String? title;
 
   /// Overrides [title] for the one dynamic case (group name with inline edit).
   final Widget? titleWidget;
 
-  /// Optional centred caption under the title.
+  /// Optional centred caption under the title, at most two lines. Only
+  /// without [trailing]: a trailing header is one line tall.
   final String? subtitle;
 
   /// Close action; defaults to popping the route. Ignored when [onBack] is set.
@@ -63,7 +67,7 @@ class KalloSheetHeader extends StatelessWidget {
   /// Controls start this far below the sheet's top edge; the 44pt targets
   /// reach 4pt above the 36pt circles.
   static const double _controlsTop = 16;
-  static const double _targetOverhang = KalloSheetGrowingBar.targetOverhang;
+  static const double _targetOverhang = SheetCircleButton.targetOverhang;
 
   /// Grabber, controls row, and the same 16pt below the controls as above
   /// them (the approved canvas: 68) — the height of a one-line header; a

@@ -25,10 +25,6 @@ class KalloSheetGrowingBar extends StatelessWidget {
   final Widget? heading;
   final String? subtitle;
 
-  /// How far a 44pt tap target reaches past the 36pt circle on each side.
-  static const double targetOverhang =
-      (KalloIcons.hit - SheetCircleButton.size) / 2;
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -55,7 +51,7 @@ class KalloSheetGrowingBar extends StatelessWidget {
           // Up by the control's invisible tap margin: the text starts where
           // the circle ends, close enough to read as the title's caption.
           Transform.translate(
-            offset: const Offset(0, -targetOverhang),
+            offset: const Offset(0, -SheetCircleButton.targetOverhang),
             child: Text(
               subtitle!,
               textAlign: TextAlign.center,

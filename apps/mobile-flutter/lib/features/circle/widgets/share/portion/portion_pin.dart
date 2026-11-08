@@ -83,16 +83,37 @@ class PortionPin extends StatelessWidget {
             box.maxWidth / 2 + PortionDrop.box / 2 - _badgeInset,
             box.maxWidth - _badge / 2,
           );
-          final left = (badgeCentre - width / 2).clamp(
-            0.0,
-            box.maxWidth - width,
-          );
           return Stack(
             fit: StackFit.passthrough,
             children: [
               marker,
+              // Drawn beside the target rather than inside it, so both are
+              // placed in this one coordinate system.
               Positioned(
-                left: left,
+                left: badgeCentre - _badge / 2,
+                bottom: fromBottom - _badge / 2,
+                child: IgnorePointer(
+                  child: Container(
+                    width: _badge,
+                    height: _badge,
+                    decoration: BoxDecoration(
+                      color: KalloColors.elev,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: KalloColors.border),
+                    ),
+                    child: Icon(
+                      LucideIcons.x300,
+                      size: 11,
+                      color: KalloColors.textSoft,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: (badgeCentre - width / 2).clamp(
+                  0.0,
+                  box.maxWidth - width,
+                ),
                 bottom: targetBottom,
                 width: width,
                 height: KalloIcons.hit,
@@ -102,29 +123,6 @@ class PortionPin extends StatelessWidget {
                     HapticFeedback.selectionClick();
                     onRemove!();
                   },
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned(
-                        left: badgeCentre - left - _badge / 2,
-                        top: (KalloIcons.hit - _badge) / 2,
-                        child: Container(
-                          width: _badge,
-                          height: _badge,
-                          decoration: BoxDecoration(
-                            color: KalloColors.elev,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: KalloColors.border),
-                          ),
-                          child: Icon(
-                            LucideIcons.x300,
-                            size: 11,
-                            color: KalloColors.textSoft,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ],
