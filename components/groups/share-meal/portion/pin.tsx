@@ -2,6 +2,7 @@
 
 import { X } from 'lucide-react';
 import { ProfileAvatar } from '@/components/shared/profile-avatar';
+import { cn } from '@/lib/core/ui/cn';
 
 /**
  * kcal over an inverted water-drop pin, centred on the run it owns.
@@ -34,7 +35,11 @@ export function PortionPin({
 }) {
   return (
     <div
-      className="flex min-w-0 flex-col items-center justify-end gap-1.5 pb-3"
+      // The minimum keeps the tap area whole when there is no kcal line.
+      className={cn(
+        'relative flex min-w-0 flex-col items-center justify-end gap-1.5 pb-3',
+        onRemove && 'min-h-[67px]'
+      )}
       style={{ flex }}
     >
       {kcal !== null && (
@@ -70,17 +75,23 @@ export function PortionPin({
             label={label}
           />
         </span>
-        {onRemove && (
+      </span>
+      {onRemove && (
+        // One clipped layer per column, above every drop: on a narrow run the
+        // × and its 44px tap area stay on this person, so a tap can never land
+        // on the next person's button. Twin of `portion_pin.dart`.
+        <span className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
           <button
             aria-label={`Bỏ ${label}`}
-            className="absolute -top-1.5 -right-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-kallo-border bg-card"
+            className="pointer-events-auto absolute bottom-9 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-kallo-border bg-card before:absolute before:-inset-[14px] before:content-['']"
             onClick={onRemove}
+            style={{ left: 'min(calc(50% + 6px), calc(100% - 18px))' }}
             type="button"
           >
             <X className="size-icon-micro text-kallo-text-muted" />
           </button>
-        )}
-      </span>
+        </span>
+      )}
     </div>
   );
 }

@@ -17,7 +17,6 @@ export function ShareMealMeter({
   totalKcal,
   split,
   showEvenly,
-  emptyLabel,
   evenlyLabel,
   onChange,
   onRemove,
@@ -27,23 +26,18 @@ export function ShareMealMeter({
   totalKcal: number | null;
   split: boolean;
   showEvenly: boolean;
-  emptyLabel: string;
   evenlyLabel: string;
   onChange: (parts: number[]) => void;
   onRemove: (seat: number) => void;
   onSplitEvenly: () => void;
 }) {
   // Seat 0 is always me, so one seat means nobody has been added yet.
-  const alone = seats.length <= 1;
+  if (seats.length <= 1) return null;
 
   return (
     <>
       <div className="mt-4">
-        {alone ? (
-          <p className="font-sans-display text-[13px] text-kallo-text-muted">
-            {emptyLabel}
-          </p>
-        ) : split ? (
+        {split ? (
           <PortionBattery
             onChange={onChange}
             onRemove={onRemove}

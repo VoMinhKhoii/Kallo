@@ -171,6 +171,36 @@ void main() {
     expect(find.byIcon(LucideIcons.x300), findsNothing);
   });
 
+  testWidgets('on narrow runs each × removes its own person', (tester) async {
+    final removed = <int>[];
+    await pump(tester, parts: [14, 2, 2, 2], width: 288, onRemove: removed.add);
+    final badges = find.byIcon(LucideIcons.x300);
+    for (var i = 0; i < 3; i++) {
+      await tester.tapAt(tester.getCenter(badges.at(i)));
+      await tester.pump();
+    }
+    expect(removed, [1, 2, 3]);
+  });
+
+  testWidgets('the remove × answers across a 44pt target', (tester) async {
+    final removed = <int>[];
+    await pump(tester, parts: [10, 10], onRemove: removed.add);
+    final centre = tester.getCenter(find.byIcon(LucideIcons.x300));
+
+    // Each corner of a 40pt square around the ×: outside the 18pt disc, and
+    // above and right of it outside the drop's own box too.
+    for (final corner in const [
+      Offset(-20, -20),
+      Offset(20, -20),
+      Offset(-20, 20),
+      Offset(20, 20),
+    ]) {
+      await tester.tapAt(centre + corner);
+      await tester.pump();
+    }
+    expect(removed, [1, 1, 1, 1]);
+  });
+
   testWidgets('tapping a badge removes that seat', (tester) async {
     final removed = <int>[];
     await pump(tester, parts: [7, 7, 6], onRemove: removed.add);

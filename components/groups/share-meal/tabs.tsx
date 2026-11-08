@@ -50,8 +50,8 @@ export function ShareMealTabs({
       value={mode}
     >
       <TabsList className="w-full">
-        <TabsTrigger value="whole">{wholeLabel}</TabsTrigger>
         <TabsTrigger value="split">{splitLabel}</TabsTrigger>
+        <TabsTrigger value="whole">{wholeLabel}</TabsTrigger>
       </TabsList>
     </Tabs>
   );

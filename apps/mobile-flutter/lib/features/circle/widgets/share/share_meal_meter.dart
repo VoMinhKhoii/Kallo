@@ -49,9 +49,6 @@ class ShareMealMeter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (seated.isEmpty) {
-      return Text(tr('groups.shareMeal.pickSomeone'), style: dashMeta());
-    }
     final seats = [
       PortionSeat(
         id: 'me',
