@@ -84,7 +84,7 @@ void main() {
       await tester.enterText(find.byType(TextField).first, 'Lunch');
       await tap(tester, find.text('Save'));
 
-      expect(find.text('Something went wrong. Please try again.'), findsOne);
+      expect(find.text('Something went wrong'), findsOne);
       expect(find.byType(ManualLogSheet), findsOneWidget);
       expect(find.text('2 ingredients'), findsOneWidget);
       expect(find.widgetWithText(TextField, 'Lunch'), findsOneWidget);
@@ -291,7 +291,7 @@ void main() {
       await search(tester, 'xyz');
       expect(find.text('No foods found'), findsOneWidget);
       await search(tester, 'boom');
-      expect(find.text('Something went wrong. Please try again.'), findsOne);
+      expect(find.text('Something went wrong'), findsOne);
 
       await tap(tester, find.byTooltip('Clear search'));
       await tester.pump(const Duration(milliseconds: 350));

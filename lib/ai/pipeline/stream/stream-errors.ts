@@ -27,7 +27,7 @@ export function toStreamErrorEvent(error: unknown): StreamErrorEvent {
     type: 'error',
     code: isRateLimit ? 'rate_limit' : 'internal',
     message: isRateLimit
-      ? 'Rate limited — please wait a moment and try again'
+      ? 'The service is busy right now'
       : 'Failed to process meal',
     retryable: !isRateLimit,
   };

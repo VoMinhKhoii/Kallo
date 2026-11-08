@@ -1261,8 +1261,7 @@ describe('POST /api/analyze-meal', () => {
       {
         type: 'error',
         code: 'partial_analysis_failure',
-        message:
-          'Part of your meal could not be analyzed just now. Please try again.',
+        message: 'Couldn’t analyze part of your meal',
         retryable: true,
       },
     ]);
@@ -1298,8 +1297,7 @@ describe('POST /api/analyze-meal', () => {
       {
         type: 'error',
         code: 'partial_analysis_failure',
-        message:
-          'Could not work out the nutrition for "Mì gói". Please try describing that part differently.',
+        message: 'Try rewording "Mì gói"',
         retryable: true,
       },
     ]);
@@ -1331,8 +1329,7 @@ describe('POST /api/analyze-meal', () => {
 
     expect(events[0]).toMatchObject({
       code: 'partial_analysis_failure',
-      message:
-        'Could not work out the nutrition for part of this meal. Please try describing it differently.',
+      message: 'Try rewording part of this meal',
     });
     expect(mockLogUnmatchedIngredients).not.toHaveBeenCalled();
   });
@@ -1367,8 +1364,7 @@ describe('POST /api/analyze-meal', () => {
       {
         type: 'error',
         code: 'empty_nutrition',
-        message:
-          'Could not estimate nutrition for this meal. Please try describing it differently.',
+        message: 'Try rewording this meal',
         retryable: true,
       },
     ]);

@@ -20,7 +20,7 @@
   "todayLoading": "Đang tải bữa ăn hôm nay…",
   "todayLoadError": "Bữa ăn hôm nay chưa tải được, vui lòng thử lại.",
   "progressLoadError": "Xu hướng cân nặng chưa tải được, vui lòng thử lại.",
-  "heatmapLoadError": "Phần độ đều đặn chưa tải được, vui lòng thử lại.",
+  "heatmapLoadError": "Phần độ đều đặn chưa tải được",
   "loadingWeightTrend": "Đang tải xu hướng cân nặng…",
   "now": "Hiện tại",
   "start": "Bắt đầu",

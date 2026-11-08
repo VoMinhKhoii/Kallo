@@ -215,9 +215,9 @@
     "linkedin": "LinkedIn"
   },
   "waitlistStatus": {
-    "confirmed": "You're on the list. We'll email you when the mobile app is out.",
-    "already": "You're already on the list — nothing more to do.",
-    "expired": "That link has expired. Enter your email again to get a new one.",
-    "invalid": "That link isn't valid. Enter your email again to get a new one."
+    "confirmed": "You're on the list",
+    "already": "You're already on the list",
+    "expired": "That link has expired",
+    "invalid": "That link isn't valid"
   }
 }

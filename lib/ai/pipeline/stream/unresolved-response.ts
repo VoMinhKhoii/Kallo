@@ -67,8 +67,8 @@ export async function emitPartialFailure(args: {
       type: 'error',
       code: 'partial_analysis_failure',
       message: name
-        ? `Could not work out the nutrition for "${name}". Please try describing that part differently.`
-        : 'Could not work out the nutrition for part of this meal. Please try describing it differently.',
+        ? `Try rewording "${name}"`
+        : 'Try rewording part of this meal',
       retryable: true,
     });
     return;
@@ -77,8 +77,7 @@ export async function emitPartialFailure(args: {
   args.emit({
     type: 'error',
     code: 'partial_analysis_failure',
-    message:
-      'Part of your meal could not be analyzed just now. Please try again.',
+    message: 'Couldn’t analyze part of your meal',
     retryable: true,
   });
 }

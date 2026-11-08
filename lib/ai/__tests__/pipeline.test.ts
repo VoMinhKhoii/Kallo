@@ -199,7 +199,7 @@ describe('analyzeMeal', () => {
       success: false,
       error: {
         type: 'api_error',
-        message: 'Analysis took too long. Please try again.',
+        message: 'Analysis took too long',
         retryable: true,
       },
     });

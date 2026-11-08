@@ -28,7 +28,7 @@
     "you": "You",
     "block": "Block",
     "blocked": "Blocked",
-    "actionError": "That didn't work — try again."
+    "actionError": "That didn't work"
   },
   "thread": {
     "title": "Replies",
@@ -39,10 +39,10 @@
   "feed": {
     "you": "You",
     "heart": "Heart",
-    "reactionError": "Couldn't update the reaction. Try again.",
+    "reactionError": "Couldn't update the reaction",
     "reply": "Reply",
     "replyPlaceholder": "Reply…",
-    "replyError": "Couldn't post your reply. Try again.",
+    "replyError": "Couldn't post your reply",
     "replyTo": "Reply to {name}…",
     "noReplies": "No replies yet",
     "noRepliesBody": "Be the first to say something.",
@@ -50,7 +50,7 @@
     "logCopy": "Log this too",
     "logHalf": "Split half",
     "logSuccess": "Added to today's diary",
-    "logError": "Couldn't add this meal. Try again.",
+    "logError": "Couldn't add this meal",
     "composerLabel": "Message",
     "composerPlaceholder": "Message {name}…",
     "send": "Send",
@@ -59,7 +59,7 @@
     "leaveTitle": "Leave this group?",
     "leaveDescription": "You'll lose access to this group's timeline.",
     "leaveConfirm": "Leave group",
-    "leaveError": "Couldn't leave the group. Try again.",
+    "leaveError": "Couldn't leave the group",
     "cancel": "Cancel"
   },
   "shareControl": {
@@ -68,8 +68,8 @@
     "sharing": "Sharing…",
     "sharedToast": "Shared to your circle",
     "unsharedToast": "No longer shared with your circle",
-    "errorShare": "Couldn't share to your circle. Try again.",
-    "errorUnshare": "Couldn't update sharing. Try again."
+    "errorShare": "Couldn't share to your circle",
+    "errorUnshare": "Couldn't update sharing"
   },
   "shareMeal": {
     "title": "Share this meal",
@@ -95,7 +95,7 @@
     "errorBody": "Check your connection and try again.",
     "copySuccess": "Sent to {count, plural, one {# friend} other {# friends}}",
     "splitSuccess": "Split with {count, plural, one {# friend} other {# friends}}",
-    "error": "Couldn't share the meal. Try again.",
+    "error": "Couldn't share the meal",
     "cheatWholeOnly": "A cheat meal is sent as a full portion — your friend sets their own amounts."
   },
   "invites": {
@@ -107,7 +107,7 @@
     "accept": "Accept",
     "dismiss": "Dismiss",
     "accepted": "Added to your diary",
-    "error": "That didn't work — try again.",
+    "error": "That didn't work",
     "loadError": "Couldn't load your invites. Tap to retry.",
     "sharedCheat": "{name} shared their cheat meal with you",
     "acceptCheat": "Set my amounts",
@@ -168,7 +168,7 @@
     "submit": "Create group",
     "creating": "Creating…",
     "created": "Group created",
-    "createError": "Couldn't create the group. Try again."
+    "createError": "Couldn't create the group"
   },
   "info": {
     "title": "Group info",
@@ -181,15 +181,15 @@
     "everyoneIn": "Everyone in your circle is already here.",
     "addCta": "Add",
     "added": "Added to the group",
-    "addError": "Couldn't add. Try again.",
+    "addError": "Couldn't add",
     "renameLabel": "Rename group",
     "renameSave": "Save",
-    "renameError": "Couldn't rename the group. Try again.",
+    "renameError": "Couldn't rename the group",
     "removeLabel": "Remove {name}",
     "removeTitle": "Remove {name}?",
     "removeDescription": "They'll lose access to this group's meals and replies.",
     "removeConfirm": "Remove",
-    "removeError": "Couldn't remove this member. Try again.",
+    "removeError": "Couldn't remove this member",
     "expand": "Open group info",
     "collapse": "Collapse group info"
   },
@@ -197,11 +197,11 @@
     "title": "Your circle ({count})",
     "empty": "Share your link to bring someone into your circle.",
     "remove": "Remove",
-    "removeError": "Couldn't remove them. Try again.",
+    "removeError": "Couldn't remove them",
     "emptyTitle": "Just you so far"
   },
   "circleLimit": {
-    "memberAtLimit": "Someone in your selection has reached the free plan's limit. They'll need Premium to join more."
+    "memberAtLimit": "Someone hit the free plan's limit"
   },
   "error": {
     "title": "Couldn't load your circle",
@@ -212,7 +212,7 @@
     "connectTitle": "Connect with {name}",
     "connectBody": "Accept to add each other to your circles and see how you're each eating.",
     "accept": "Accept",
-    "error": "Couldn't connect. Try again.",
+    "error": "Couldn't connect",
     "invalidTitle": "Invite not valid",
     "invalidBody": "This invite link isn't valid or has changed.",
     "selfTitle": "This is your invite link",

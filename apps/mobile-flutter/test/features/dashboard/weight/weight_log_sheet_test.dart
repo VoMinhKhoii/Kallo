@@ -87,7 +87,7 @@ void main() {
     expect(tester.takeException(), isNull);
     // ...and the user must be told why nothing opened.
     expect(
-      find.text("Couldn't open the weight logger. Please try again."),
+      find.text("Couldn't open the weight log"),
       findsOneWidget,
       reason: 'the failed bundle dead-ended silently',
     );

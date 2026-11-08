@@ -135,8 +135,7 @@ export async function runPreciseBranch({
     emit({
       type: 'error',
       code: 'empty_nutrition',
-      message:
-        'Could not estimate nutrition for this meal. Please try describing it differently.',
+      message: 'Try rewording this meal',
       retryable: true,
     });
     return;

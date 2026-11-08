@@ -237,7 +237,7 @@ void main() {
       await tester.tap(find.text('Block').last);
       await tester.pumpAndSettle();
 
-      expect(find.text("Couldn't block Linh. Try again."), findsOneWidget);
+      expect(find.text("Couldn't block Linh"), findsOneWidget);
       expect(_moreOn(tester, 'Linh'), isTrue);
     });
 
@@ -542,12 +542,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Report group'), findsNothing);
       expect(find.text('Leave group'), findsNothing);
-      expect(
-        find.text(
-          'You own this group — you can leave once everyone else has left.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('Owners can only leave last'), findsOneWidget);
     });
 
     testWidgets('tapping ⋯ again while the role loads opens one sheet', (
@@ -608,7 +603,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Report group'), findsNothing);
       expect(find.text('Leave group'), findsNothing);
-      expect(find.text("Couldn't load this group. Try again."), findsOneWidget);
+      expect(find.text("Couldn't load this group"), findsOneWidget);
     });
 
     testWidgets('an owner alone in the group can leave, not report', (
