@@ -291,7 +291,7 @@ describe('analyzeMealV2 — admin/audit observability', () => {
       success: false,
       error: {
         type: 'api_error',
-        message: 'Analysis took too long. Please try again.',
+        message: 'Analysis took too long',
         retryable: true,
       },
     });
@@ -300,7 +300,7 @@ describe('analyzeMealV2 — admin/audit observability', () => {
         requestId: 'req-timeout-call-1',
         stage: 'decomposition',
         status: 'error',
-        error: 'Analysis took too long. Please try again.',
+        error: 'Analysis took too long',
       })
     );
     vi.useRealTimers();
@@ -365,7 +365,7 @@ describe('analyzeMealV2 — admin/audit observability', () => {
     if (!result.success) {
       expect(result.error).toEqual({
         type: 'api_error',
-        message: 'Analysis took too long. Please try again.',
+        message: 'Analysis took too long',
         retryable: true,
       });
     }
@@ -374,7 +374,7 @@ describe('analyzeMealV2 — admin/audit observability', () => {
         requestId: 'req-timeout-call-2',
         stage: 'nutrition',
         status: 'error',
-        error: 'Analysis took too long. Please try again.',
+        error: 'Analysis took too long',
       })
     );
     vi.useRealTimers();
