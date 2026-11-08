@@ -2,9 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../models/social/circle.dart';
 import '../../../../../theme/calm_tokens.dart';
+import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import 'portion_drop.dart';
 
@@ -37,10 +39,11 @@ class PortionPin extends StatelessWidget {
   /// Between the drop's tip and the battery.
   static const double _bottomGap = 12;
 
-  /// How far the × disc's centre sits from the drop box's top and right edges
-  /// — inward, because the disc hangs less than half its width off the box.
-  static const double _badgeInset =
-      PortionDrop.badge / 2 - PortionDrop.badgeOverhang;
+  /// The × disc.
+  static const double _badge = 18;
+
+  /// How far the disc's centre sits from the drop box's top and right edges.
+  static const double _badgeInset = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -55,21 +58,18 @@ class PortionPin extends StatelessWidget {
             overflow: TextOverflow.clip,
           ),
         const SizedBox(height: 6),
-        PortionDrop(
-          seat: seat,
-          profile: profile,
-          initials: initials,
-          showBadge: onRemove != null,
-        ),
+        PortionDrop(seat: seat, profile: profile, initials: initials),
         const SizedBox(height: _bottomGap),
       ],
     );
     if (onRemove == null) return marker;
 
-    // The tap target is a layer over the whole pin, not a child of the badge:
-    // Flutter only hit-tests inside a parent's bounds, so a target hanging off
-    // the drop's box would be dead outside it. Anchored from the bottom, where
-    // nothing changes with text size, and kept inside this pin's own column.
+    // The × and its target are a layer over the whole pin, not part of the
+    // drop: Flutter only hit-tests inside a parent's bounds, so a target
+    // hanging off the drop's box would be dead outside it. Anchored from the
+    // bottom, where nothing changes with text size. Both stay inside this
+    // pin's own column, or on a narrow run the × drawn for one person would
+    // sit over the next person's target and remove them instead.
     const fromBottom = _bottomGap + PortionDrop.box - _badgeInset;
     const targetBottom = fromBottom - KalloIcons.hit / 2;
     return ConstrainedBox(
@@ -79,14 +79,20 @@ class PortionPin extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, box) {
           final width = math.min(KalloIcons.hit, box.maxWidth);
-          final badgeCentre =
-              box.maxWidth / 2 + PortionDrop.box / 2 - _badgeInset;
+          final badgeCentre = math.min(
+            box.maxWidth / 2 + PortionDrop.box / 2 - _badgeInset,
+            box.maxWidth - _badge / 2,
+          );
+          final left = (badgeCentre - width / 2).clamp(
+            0.0,
+            box.maxWidth - width,
+          );
           return Stack(
             fit: StackFit.passthrough,
             children: [
               marker,
               Positioned(
-                left: (badgeCentre - width / 2).clamp(0, box.maxWidth - width),
+                left: left,
                 bottom: targetBottom,
                 width: width,
                 height: KalloIcons.hit,
@@ -96,6 +102,29 @@ class PortionPin extends StatelessWidget {
                     HapticFeedback.selectionClick();
                     onRemove!();
                   },
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned(
+                        left: badgeCentre - left - _badge / 2,
+                        top: (KalloIcons.hit - _badge) / 2,
+                        child: Container(
+                          width: _badge,
+                          height: _badge,
+                          decoration: BoxDecoration(
+                            color: KalloColors.elev,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: KalloColors.border),
+                          ),
+                          child: Icon(
+                            LucideIcons.x300,
+                            size: 11,
+                            color: KalloColors.textSoft,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../models/social/circle.dart';
 import '../../../../../shared/widgets/avatar/profile_avatar.dart';
@@ -9,30 +8,23 @@ import '../../../../../theme/kallo_theme.dart';
 import '../../portion/portion_seats.dart';
 
 /// The inverted water drop carrying a person's face, ringed in their seat
-/// colour, with the × disc drawn on it when they can be removed. Paint only:
-/// the tap lives on `PortionPin`, which has the room for a finger.
+/// colour.
 class PortionDrop extends StatelessWidget {
   const PortionDrop({
     required this.seat,
     required this.profile,
     required this.initials,
-    required this.showBadge,
     super.key,
   });
 
   final int seat;
   final CircleProfile? profile;
   final String initials;
-  final bool showBadge;
 
   /// The drop, and the seat-coloured ring around it.
   static const double _drop = 36;
   static const double _ring = 2;
   static const double box = _drop + _ring * 2;
-
-  /// The × disc, and how far it hangs off the drop's top-right corner.
-  static const double badge = 18;
-  static const double badgeOverhang = 6;
 
   /// Their photo when they have one, else their initials on the seat colour.
   /// The glyph goes down as [ProfileAvatarDisc.fallback] as well, so a photo
@@ -100,25 +92,6 @@ class PortionDrop extends StatelessWidget {
                 ),
               ),
             ),
-            if (showBadge)
-              Positioned(
-                top: -badgeOverhang,
-                right: -badgeOverhang,
-                child: Container(
-                  width: badge,
-                  height: badge,
-                  decoration: BoxDecoration(
-                    color: KalloColors.elev,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: KalloColors.border),
-                  ),
-                  child: Icon(
-                    LucideIcons.x300,
-                    size: 11,
-                    color: KalloColors.textSoft,
-                  ),
-                ),
-              ),
           ],
         ),
       ),

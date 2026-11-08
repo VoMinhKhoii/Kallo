@@ -74,7 +74,7 @@ export function PortionPin({
           <button
             aria-label={`Bỏ ${label}`}
             // The ::before grows the 18px disc's tap area to 44px.
-            className="absolute -top-1.5 -right-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-kallo-border bg-card before:absolute before:-inset-[13px] before:content-['']"
+            className="absolute -top-1.5 -right-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-kallo-border bg-card before:absolute before:-inset-[14px] before:content-['']"
             onClick={onRemove}
             type="button"
           >

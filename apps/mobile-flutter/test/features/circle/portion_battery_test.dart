@@ -171,6 +171,17 @@ void main() {
     expect(find.byIcon(LucideIcons.x300), findsNothing);
   });
 
+  testWidgets('on narrow runs each × removes its own person', (tester) async {
+    final removed = <int>[];
+    await pump(tester, parts: [14, 2, 2, 2], width: 288, onRemove: removed.add);
+    final badges = find.byIcon(LucideIcons.x300);
+    for (var i = 0; i < 3; i++) {
+      await tester.tapAt(tester.getCenter(badges.at(i)));
+      await tester.pump();
+    }
+    expect(removed, [1, 2, 3]);
+  });
+
   testWidgets('the remove × answers across a 44pt target', (tester) async {
     final removed = <int>[];
     await pump(tester, parts: [10, 10], onRemove: removed.add);
