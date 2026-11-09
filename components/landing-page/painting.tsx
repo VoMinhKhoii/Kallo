@@ -3,8 +3,8 @@ import { getImageProps } from 'next/image';
 const COVER = 'object-cover object-[68%_0] md:object-top dark:brightness-[0.6]';
 
 interface PaintingProps {
-  /** File name in `public/landing/hero/`, without width or extension. */
-  name: string;
+  /** Each needs `.webp`, `-1920.avif` and `-1200.avif` in `public/landing/hero/`. */
+  name: 'stacks-of-wheat' | 'stacks-of-wheat-summer';
   /** Inline thumbnail shown until the painting has arrived. */
   blurDataURL?: string;
   /** For the first painting on screen. */
@@ -17,7 +17,11 @@ interface PaintingProps {
  *
  * AVIF is the point, not only for its size: Chrome draws WebP as the bytes
  * arrive, which showed a sharp band creeping down over the blurred thumbnail.
- * It draws a whole AVIF at once.
+ * It draws a whole AVIF at once. Files are the WebP master through sharp at
+ * those widths, AVIF quality 50.
+ *
+ * `getImageProps` never removes the blur background. That is fine only because
+ * a painting is opaque and covers it, so keep every painting that way.
  */
 export function Painting({ name, blurDataURL, eager = false }: PaintingProps) {
   const { props } = getImageProps({
