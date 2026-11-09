@@ -1,10 +1,10 @@
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import {
   formatCaloriesValue,
   formatMacroValue,
 } from '@/components/logging/feed/format-inline-nutrition';
 import { HIGHLIGHT_MARK } from '../highlight';
+import { CompareArt } from './compare-art';
 import { CompareMealRows } from './compare-meal-rows';
 import {
   type Comparison,
@@ -78,40 +78,18 @@ export function CompareMealCard({
           never becomes a grid item. That matters: the card is a 3-row subgrid
           from `md`, and an in-flow child here would take the sentence's row and
           push every row down by one. */}
-      {isAfter && (
-        <Image
-          src={comparison.art}
-          alt=""
-          fill
-          sizes="(min-width: 1536px) 40rem, (min-width: 768px) 45vw, 90vw"
-          style={{ opacity: ART_OPACITY }}
-          // A tint on a dark card, as on the hero's (`!` beats the inline style).
-          className="-z-10 object-cover dark:opacity-[0.14]!"
-        />
-      )}
+      {isAfter && <CompareArt src={comparison.art} opacity={ART_OPACITY} />}
 
       {/* The sentence somebody actually typed. `first-letter:uppercase` rather
           than capitalised copy, because half these sentences open with a digit
           and "1 chén cơm" has no first letter to raise.
 
-          One line from `2xl`, which is what holds the two cards' dish rows level
-          with each other — a sentence that wraps drops everything under it by a
-          line and the numbers stop being readable across.
-
-          Both the size and the breakpoint are dictated by whether one line can
-          actually FIT, and the ceiling is tighter than it looks. The panel is
-          capped at 1088px of inner width by the section's measure, so that is
-          all there will ever be however wide the screen gets. Measured: the
-          raw-weight pair needs 1206px at 17px and about 1064px at 15px. So 17px
-          on one line is impossible at ANY viewport, and 15px only clears it
-          from `2xl`. It was set to `lg`, where the pair overflowed the panel by
-          ~250px and the right-hand card was silently clipped — the panel is
-          `overflow-hidden` for its corners.
-
-          Below `2xl` the sentence wraps and carries a two-line floor instead:
-          the rows underneath still start at the same height whether the
-          sentence took one line or two, which is the actual goal. */}
-      <p className="font-serif text-[15px] text-kallo-text leading-snug first-letter:uppercase sm:text-[17px] 2xl:whitespace-nowrap">
+          It wraps at every width: the panel's measure is too narrow for the
+          long pairs to sit on one line each, and forcing it overflowed the
+          panel, whose `overflow-hidden` clipped the right-hand card. The
+          subgrid keeps the rows underneath level whether the sentence took one
+          line or two. */}
+      <p className="font-serif text-[15px] text-kallo-text leading-snug first-letter:uppercase sm:text-[17px]">
         {t.rich(`${base}.variants.${variant.id}.input`, {
           // Bold and highlighted, in the same tint the moved macro wears below,
           // so the eye can travel from the words to the number they moved.

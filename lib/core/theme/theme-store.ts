@@ -19,13 +19,19 @@ const listeners = new Set<() => void>();
 let unstoredChoice: ThemeChoice | null = null;
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
+/** A choice made before hydration in a browser that refused to store it. */
+function earlyChoice(): ThemeChoice {
+  const early = document.documentElement.dataset.unstoredTheme;
+  return isThemeChoice(early) ? early : 'system';
+}
+
 export function readThemeChoice(): ThemeChoice {
   if (unstoredChoice) return unstoredChoice;
   try {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return isThemeChoice(stored) ? stored : 'system';
+    return isThemeChoice(stored) ? stored : earlyChoice();
   } catch {
-    return 'system';
+    return earlyChoice();
   }
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { earlyThemeToggle } from '@/lib/core/theme/early-theme-toggle';
 import { paintTheme } from '@/lib/core/theme/paint-theme';
 import { THEME_COLOR, THEME_STORAGE_KEY } from '@/lib/core/theme/themes';
 
@@ -17,7 +18,10 @@ function scriptJson(value: unknown): string {
     .replace(/\u2029/g, '\\u2029');
 }
 
-const SCRIPT = `(${paintTheme.toString()})(${scriptJson(THEME_STORAGE_KEY)},${scriptJson(THEME_COLOR)})`;
+const PAINT = `(${paintTheme.toString()})`;
+const ARGS = `${scriptJson(THEME_STORAGE_KEY)},${scriptJson(THEME_COLOR)}`;
+
+const SCRIPT = `${PAINT}(${ARGS});(${earlyThemeToggle.toString()})(${ARGS},${PAINT})`;
 const subscribeNever = () => () => {};
 
 /**

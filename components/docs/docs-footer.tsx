@@ -38,13 +38,13 @@ interface DocsFooterProps {
    * Two differences, both about sitting correctly under the page above.
    *
    * No gap: docs end on cream, and that gap is what stops the ink slab reading
-   * as part of the article. The landing page ends on the beige pricing band, so
+   * as part of the article. The landing page ends on its beige closing band, so
    * there the same gap is a strip of page background wedged between two solid
    * colours — a seam rather than breathing room.
    *
    * And the landing measure: the default `90rem / px-4 / sm:px-6` is matched to
    * `app/[locale]/docs/layout.tsx`, so the footer's columns line up with the
-   * article above them. The landing page frames everything at `88rem` with far
+   * article above them. The landing page frames everything at `86rem` with far
    * wider side padding, and against that the default makes the footer look like
    * it belongs to a different page.
    */
@@ -67,7 +67,7 @@ export async function DocsFooter({
       <div
         className={
           landing
-            ? 'mx-auto max-w-[92rem] px-6 py-12 sm:px-12 lg:px-20'
+            ? 'mx-auto max-w-[86rem] px-6 py-12 sm:px-12 lg:px-20'
             : 'mx-auto max-w-[90rem] px-4 py-16 sm:px-6'
         }
       >

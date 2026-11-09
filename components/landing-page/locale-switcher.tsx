@@ -4,7 +4,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
+import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
+import { isPlainClick } from '@/lib/core/ui/plain-click';
+import { switchedFoodPath } from '@/lib/seo/food-pages/slugs';
 
 /**
  * Two locales, so the switch is two words rather than a control.
@@ -25,6 +28,12 @@ export function LocaleSwitcher() {
   const t = useTranslations('landing.localeSwitcher');
   const locale = useLocale() as Locale;
   const [isPending, startTransition] = useTransition();
+
+  const pathname = usePathname();
+  const hrefFor = (nextLocale: Locale) => {
+    const path = switchedFoodPath(pathname, nextLocale);
+    return `/${nextLocale}${path === '/' ? '' : path}`;
+  };
 
   const switchLocale = useLocaleSwitch();
   const handleChange = (nextLocale: Locale) => {
@@ -54,25 +63,30 @@ export function LocaleSwitcher() {
             {index > 0 && (
               <span aria-hidden="true" className="h-3 w-px bg-kallo-border" />
             )}
-            <button
-              type="button"
-              onClick={() => handleChange(code)}
-              disabled={isPending}
-              aria-pressed={selected}
+            {/* A real link, so a tap before the page's scripts arrive still
+                changes language. Once hydrated it switches in place. */}
+            <a
+              href={hrefFor(code)}
+              onClick={(event) => {
+                if (!isPlainClick(event)) return;
+                event.preventDefault();
+                if (!isPending) handleChange(code);
+              }}
+              aria-current={selected ? 'true' : undefined}
               title={label}
               // The visible text is "EN" / "VI"; the accessible name has to
               // stay the language's own name, or a screen reader announces two
               // buttons called after country-ish abbreviations.
               aria-label={label}
               className={cn(
-                'cursor-pointer px-2.5 py-1 text-[11px] uppercase tracking-[0.08em] transition-colors disabled:cursor-wait',
+                'cursor-pointer px-2.5 py-1 text-[11px] uppercase tracking-[0.08em] transition-colors',
                 selected
                   ? 'font-semibold text-kallo-text'
                   : 'font-normal text-kallo-text-soft hover:text-kallo-text'
               )}
             >
               {short}
-            </button>
+            </a>
           </div>
         );
       })}

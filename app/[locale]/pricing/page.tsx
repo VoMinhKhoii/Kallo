@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/auth/auth-provider';
 import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
 import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
 import { Header } from '@/components/landing-page/header';
+import { PageCanvas } from '@/components/landing-page/page-canvas';
 import { PricingBackLink } from '@/components/landing-page/pricing/checkout/back-link';
 import { PricingCheckoutProvider } from '@/components/landing-page/pricing/checkout/pricing-checkout-provider';
 import {
@@ -90,7 +91,8 @@ export default function PricingPage({
       <PricingCheckoutProvider>
         <Header standalone />
         {/* pt-20 clears the fixed header; the cards then centre in what is left. */}
-        <main className="flex min-h-dvh flex-col justify-center bg-kallo-hover pt-20 dark:bg-kallo-surface">
+        <PageCanvas veiled />
+        <main className="flex min-h-dvh flex-col justify-center pt-20">
           <PricingBackLink />
           <PricingSection titleAs="h1" />
         </main>

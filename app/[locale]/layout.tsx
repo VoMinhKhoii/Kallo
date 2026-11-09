@@ -13,44 +13,51 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { ServiceWorkerRegister } from '@/components/app/shell/service-worker-register';
-import { ComposerDraftSession } from '@/components/providers/composer-draft-session';
 import { QueryProvider } from '@/components/providers/query-provider';
-import { TelemetryIdentity } from '@/components/providers/telemetry-identity';
+import { SessionListeners } from '@/components/providers/session-listeners';
 import { Toaster } from '@/components/ui/sonner';
 import { routing } from '@/i18n/routing';
 import { openGraphLocale, SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 import '../globals.css';
 
+// `preload: false` on every face: the default preloaded 15 files (381 KB) ahead
+// of the CSS, the first thing the page needs to paint on a slow connection. The
+// browser still fetches the faces a page really uses, once the CSS names them.
 const fraunces = Fraunces({
   variable: '--font-fraunces',
   subsets: ['vietnamese', 'latin'],
   axes: ['SOFT', 'WONK', 'opsz'],
   display: 'optional',
+  preload: false,
 });
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
   display: 'swap',
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
   display: 'swap',
+  preload: false,
 });
 
 const lora = Lora({
   variable: '--font-lora',
   subsets: ['latin', 'vietnamese'],
   display: 'swap',
+  preload: false,
 });
 
 const dmSans = DM_Sans({
   variable: '--font-dm-sans',
   subsets: ['latin'],
   display: 'swap',
+  preload: false,
 });
 
 // DM Sans ships no Vietnamese subset on Google Fonts (adding a 'vietnamese'
@@ -64,6 +71,7 @@ const viSans = Be_Vietnam_Pro({
   subsets: ['vietnamese', 'latin'],
   weight: ['400', '500', '600', '700'],
   display: 'swap',
+  preload: false,
 });
 
 export const viewport: Viewport = {
@@ -164,8 +172,7 @@ export default async function LocaleLayout({
         {/* `usePathname()` is request data under Cache Components: without a
             boundary it blocks prerendering of every dynamic route. */}
         <Suspense fallback={null}>
-          <TelemetryIdentity />
-          <ComposerDraftSession />
+          <SessionListeners />
         </Suspense>
         {/* Registers the offline SW only when NEXT_PUBLIC_ENABLE_SW=true;
             defaults off so it can never white-screen production. */}

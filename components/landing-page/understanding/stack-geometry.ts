@@ -51,22 +51,21 @@ export const STACK_TOP_REM = 15.5;
  *
  * It has to clear the TALLEST panel at ANY width, and the tallest is not at the
  * widest screen — at `md` two cards share the width, sentences wrap, and the
- * panels grow. Measured: 22.9rem at 1728px, 26.58rem at 820px. The value
- * carries about a rem of headroom over that worst case on purpose, because a
- * shorter wrapper does not warn you — the card simply spills into the next
- * one's flow slot during the deal-in.
+ * panels grow. Measured: 22.38rem at 1728px, 23.79rem at 820px. The value
+ * carries headroom over that worst case on purpose, because a shorter wrapper
+ * does not warn you — the card simply spills into the next one's flow slot
+ * during the deal-in.
  *
- * Re-measure after ANY content change. Taking the note line out dropped the
- * `md` worst case to 24.79rem and this to 25.75; putting it back took it
- * straight past that, which is exactly the silent failure this comment is
- * warning about.
+ * Re-measure after ANY content change. A line of copy added under the card
+ * title takes the worst case past this value, which is exactly the silent
+ * failure this comment is warning about.
  *
  * Shrinking this is the only thing that shortens the sweep a covering card
  * makes across the card beneath it (sweep = CARD_REM + STACK_GAP_REM +
  * (n-2-i)·TITLE_BAND_REM), so it is worth keeping tight — but never tighter
  * than the `md` measurement above.
  */
-export const CARD_REM = 27.5;
+export const CARD_REM = 25.75;
 
 /**
  * The scroll position, in rem down the container, at which every card lets go.

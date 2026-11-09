@@ -2,6 +2,17 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Not the web app, so their class-like strings must not become CSS, which ships
+   inside every page's HTML (`experimental.inlineCss`). */
+@source not "../apps";
+@source not "../docs";
+@source not "../data";
+@source not "../scripts";
+@source not "../supabase";
+@source not "../e2e";
+@source not "../.agents";
+@source not "../.claude";
+
 /* Both dark themes (Graphite `.dark` and `.aurora`) turn on the `dark:`
    variant — see lib/core/theme/themes.ts. */
 @custom-variant dark (&:is(.dark *, .aurora *));
@@ -696,20 +707,6 @@
     [data-reveal="pending"] {
       animation: none;
       opacity: 0;
-    }
-  }
-
-  /* The landing page's ambient blobs: out to (--drift-x, --drift-y) and back,
-     forever, on the compositor. */
-  @keyframes kallo-drift {
-    50% {
-      transform: translate(var(--drift-x), var(--drift-y));
-    }
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .animate-drift {
-      animation: kallo-drift var(--drift-duration)
-        cubic-bezier(0.45, 0, 0.55, 1) infinite;
     }
   }
 }

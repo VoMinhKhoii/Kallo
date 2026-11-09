@@ -36,6 +36,12 @@ to `hooks/` without `hooks/` exporting a non-hook value.
 Next.js 16.3 with **Cache Components** and **Partial Prefetching** on (`next.config.ts`), which
 together give Instant Navigations. The rules the build enforces, and the choices made here:
 
+- **First paint on a slow connection.** `experimental.inlineCss` puts the stylesheet in the HTML,
+  and no `next/font` face is preloaded (`app/[locale]/layout.tsx`), so nothing queues ahead of the
+  CSS. The cost is a heavier document (about 210 KB gzipped on the landing page) because Next
+  repeats the CSS in the page data, and a brief font swap on first load. The landing page's phone
+  controls work before hydration (real links, plus an early theme listener in `ThemeScript`), and
+  Sentry loads after the window's `load` event, so an error thrown before then is not reported.
 - **Request pipeline.** `proxy.ts` (the Next 16 name for `middleware.ts`; Node.js runtime) runs
   first on every matched request: origin lock, markdown negotiation, next-intl, and the Supabase
   session refresh. The session step (`lib/infra/supabase/middleware.ts`) also routes: a signed-in
@@ -251,6 +257,8 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `docs/` | MDX docs chrome | ok |
 | `groups/` | circle shell, feeds, sharing, friends | split |
 | `landing-page/` | marketing page | split |
+| `landing-page/media/` | the landing page's clip and still paths, and the product video player | |
+| `landing-page/section-text/` | the landing page's section title and card caption | |
 | `landing-page/pricing/checkout/` | /pricing as the purchase page — the signed-in checkout state, its request-time inputs (session, `?from=`) and the back link | ok |
 | `logging/` | meal logging surface | split |
 | `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows on md+; `sheet/` the phone's stacked manual-log sheets — meal, search, food page with the vessel `tape/` — mirroring the Flutter `sheets/manual/`), `barcode/` (the scanner dialog: camera, lookup; `product/` the found-product step: amount in the product's unit, photo, nutrition preview with the Premium nutrients), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |
@@ -283,10 +291,6 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `social/sharing/` | sharing a meal, logging a shared one, invites, replies, reactions | ok |
 | `theme/` | the Settings → Appearance choice and the resolved theme, read straight from storage (`lib/core/theme/theme-store.ts`) | ok |
 | `ui/` | device and browser-surface hooks, plus the nav chrome's cross-surface state (sidebar open/collapse, badge counts); `use-is-late-night.ts` is the hydration-safe read of the viewer's clock the surface states pose from | ok |
-
-`hooks/auth/` also owns the landing page's waitlist signup — the pre-account end
-of the same "getting into the product" concern, folded in when `hooks/landing/`
-proved to be one hook.
 
 ## `app/` — routes
 
