@@ -9,7 +9,6 @@ import {
   nearestAnchor,
   type PortionAnchor,
   positionBreaks,
-  rulerStep,
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { PIECE_TIERS } from '@/lib/ai/portion/data/vessel-tables';
 import { pieceAssetFor } from '@/lib/ai/portion/vessel/geometry';
@@ -142,24 +141,6 @@ describe('glyphWidthRatio', () => {
     const largest = glyph(PIECE_TIERS.length - 1, 'fish');
     const grams = PIECE_TIERS.at(-1)!.grams / PIECE_TIERS[0].grams;
     expect(largest.area / smallest.area).toBeCloseTo(grams ** (2 / 3), 10);
-  });
-});
-
-describe('rulerStep', () => {
-  it('moves at least 1 g in every segment', () => {
-    const gramBreaks = [60, 100, 200, 300, 400, 500, 600];
-    const breaks = positionBreaks(5);
-    const step = rulerStep(gramBreaks, breaks);
-    for (let i = 0; i < breaks.length - 1; i += 1) {
-      const gramsPerStep =
-        (step * (gramBreaks[i + 1] - gramBreaks[i])) /
-        (breaks[i + 1] - breaks[i]);
-      expect(gramsPerStep).toBeGreaterThanOrEqual(1);
-    }
-  });
-
-  it('ignores zero-width gram segments and never returns 0', () => {
-    expect(rulerStep([100, 100, 100], [0, 500, 1000])).toBe(1);
   });
 });
 

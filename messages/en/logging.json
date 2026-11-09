@@ -164,10 +164,7 @@
   "portionPicker": {
     "title": "Portion size",
     "assumption": "≈ {label}",
-    "adjust": "Adjust portion, currently {label}",
-    "custom": "Custom portion",
-    "apply": "Apply",
-    "cancel": "Cancel"
+    "adjust": "Adjust portion, currently {label}"
   },
   "persistedMealCard": {
     "toggleDetails": "Toggle meal details",

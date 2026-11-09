@@ -1,6 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import {
   type EditDish,
@@ -21,6 +22,8 @@ import { MealEditStepperRow } from './meal-edit-stepper-row';
 interface MealEditDishProps {
   draft: MealEditDraft;
   dish: EditDish;
+  /** The dish the card opened the dialog onto: scrolled to on open. */
+  openedOn: boolean;
   onDraft: (next: MealEditDraft) => void;
 }
 
@@ -29,8 +32,19 @@ interface MealEditDishProps {
  * and — when the pipeline pictured it in a vessel — Size. No ingredient rows:
  * a dish scales as one thing (the owner's ruling).
  */
-export function MealEditDish({ draft, dish, onDraft }: MealEditDishProps) {
+export function MealEditDish({
+  draft,
+  dish,
+  openedOn,
+  onDraft,
+}: MealEditDishProps) {
   const t = useTranslations('logging.mealEdit');
+  const sectionRef = useRef<HTMLElement>(null);
+  // It may sit below the first screenful, or tapping "≈ medium bowl" would
+  // land on the summary.
+  useEffect(() => {
+    if (openedOn) sectionRef.current?.scrollIntoView({ block: 'start' });
+  }, [openedOn]);
   const locale = useLocale();
   const named = { name: dish.name };
   const removes = removesOnMinus(draft, dish);
@@ -39,7 +53,7 @@ export function MealEditDish({ draft, dish, onDraft }: MealEditDishProps) {
   const times = `${formatLocalizedNumber(Math.round(servingsOf(dish) * 10) / 10, locale)}×`;
 
   return (
-    <section className="font-sans-display">
+    <section ref={sectionRef} className="scroll-mt-4 font-sans-display">
       <div className="mx-0.5 mt-4 mb-1.5 flex items-baseline gap-3 text-sm">
         <h3 className="min-w-0 flex-1 truncate font-medium text-kallo-text">
           {dish.name}
@@ -88,16 +102,7 @@ export function MealEditDish({ draft, dish, onDraft }: MealEditDishProps) {
           <MealEditSizeRow
             vessel={dish.vessel}
             grams={dish.grams}
-            kcal={kcal ?? 0}
-            onApply={(grams, vessel) => {
-              const next = setDishGrams(draft, dish.key, grams);
-              onDraft({
-                ...next,
-                dishes: next.dishes.map((d) =>
-                  d.key === dish.key ? { ...d, vessel } : d
-                ),
-              });
-            }}
+            onChange={(grams) => onDraft(setDishGrams(draft, dish.key, grams))}
           />
         )}
       </div>

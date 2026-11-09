@@ -6,6 +6,7 @@ import {
 } from '@/lib/ai/portion/data/vessel-tables';
 import { containerAnchorG } from '@/lib/ai/portion/vessel/geometry';
 import type {
+  ClientVessel,
   ContainerVessel,
   PieceVessel,
 } from '@/lib/ai/portion/vessel/types';
@@ -60,6 +61,16 @@ export function buildPieceAnchors(
   }));
 }
 
+/** A vessel's anchors, whichever family it is. */
+export function vesselAnchors(
+  vessel: ClientVessel,
+  loc: 'en' | 'vi'
+): PortionAnchor[] {
+  return vessel.family === 'piece'
+    ? buildPieceAnchors(vessel, loc)
+    : buildContainerAnchors(vessel, loc);
+}
+
 /** Nearest anchor by absolute gram distance — always returns one. */
 export function nearestAnchor<T extends AnchorTier>(
   anchors: PortionAnchor<T>[],
@@ -100,6 +111,31 @@ export function committedPieceTier(
   return claimedAnchor(anchors, grams)?.tier ?? current;
 }
 
+/**
+ * The vessel `grams` may honestly claim. Containers name the nearest anchor;
+ * pieces only move to a tier the UI actually claims, and otherwise keep theirs.
+ */
+export function repointVesselTo(
+  vessel: ClientVessel,
+  grams: number,
+  locale: string
+): ClientVessel {
+  const loc = locale === 'vi' ? 'vi' : 'en';
+  return vessel.family === 'piece'
+    ? {
+        ...vessel,
+        tier: committedPieceTier(
+          vessel.tier,
+          buildPieceAnchors(vessel, loc),
+          grams
+        ),
+      }
+    : {
+        ...vessel,
+        tier: nearestAnchor(buildContainerAnchors(vessel, loc), grams).tier,
+      };
+}
+
 /** Equal-spaced track positions (%) — one per anchor, centred in its slot. */
 export function anchorPositions(count: number): number[] {
   return Array.from({ length: count }, (_, i) => ((i + 0.5) / count) * 100);
@@ -112,24 +148,6 @@ export function positionBreaks(count: number): number[] {
     ...anchorPositions(count).map((p) => (p / 100) * POSITION_MAX),
     POSITION_MAX,
   ];
-}
-
-/**
- * Slider step in position space. Taken from the flattest segment (the largest
- * position-per-gram slope), so one arrow press moves at least 1 g in every
- * segment — the coarse segments simply move more.
- */
-export function rulerStep(
-  gramBreaks: readonly number[],
-  positions: readonly number[]
-): number {
-  let steepest = 0;
-  for (let i = 0; i < positions.length - 1; i += 1) {
-    const dGrams = gramBreaks[i + 1] - gramBreaks[i];
-    if (dGrams <= 0) continue;
-    steepest = Math.max(steepest, (positions[i + 1] - positions[i]) / dGrams);
-  }
-  return Math.max(1, Math.ceil(steepest));
 }
 
 const LARGEST_PIECE_GRAMS = PIECE_TIERS[PIECE_TIERS.length - 1].grams;

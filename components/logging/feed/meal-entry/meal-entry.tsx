@@ -13,7 +13,7 @@ import {
 import { MealEditDialog } from '@/components/logging/feed/meal-edit/meal-edit-dialog';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entry-actions';
 import { MealEntryDetails } from '@/components/logging/feed/meal-entry/meal-entry-details';
-import { repointVesselTo } from '@/components/logging/feed/meal-entry/portion/portion-picker';
+import { repointVesselTo } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 import { formatTime } from '@/lib/core/date/format-time';
@@ -61,7 +61,8 @@ export function MealEntry({
     message.parsedMeal?.items ?? []
   );
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  // The open edit dialog; `dish` is the dish tapped to open it, if any.
+  const [editing, setEditing] = useState<{ dish?: string } | null>(null);
   const [isDiscarding, setIsDiscarding] = useState(false);
 
   const meal = message.parsedMeal;
@@ -76,6 +77,8 @@ export function MealEntry({
     onConfirm?.(edits);
   };
 
+  const openEditor = (dish?: string) => setEditing({ dish });
+
   // Unsaved: the card's own menus carry Edit and Discard, and every dish row is
   // a way into the edit dialog. Nothing sits under the save button.
   const menuItems: MealCardMenuItem[] = confirmed
@@ -84,7 +87,7 @@ export function MealEntry({
         {
           label: tLogging('edit'),
           icon: Pencil,
-          onSelect: () => setIsEditing(true),
+          onSelect: () => openEditor(),
         },
         ...(onDiscard && !isConfirming
           ? [
@@ -97,7 +100,6 @@ export function MealEntry({
             ]
           : []),
       ];
-  const openEditor = confirmed ? undefined : () => setIsEditing(true);
 
   const totalsLine = (
     <span className="text-[11px] text-kallo-text-muted tabular-nums">
@@ -176,7 +178,7 @@ export function MealEntry({
                   items={items}
                   totals={currentTotals}
                   totalsLine={totalsLine}
-                  onOpen={openEditor}
+                  onOpen={confirmed ? undefined : openEditor}
                 />
               </motion.div>
             )}
@@ -190,9 +192,12 @@ export function MealEntry({
 
       {!confirmed && (
         <MealEditDialog
-          open={isEditing}
-          onOpenChange={setIsEditing}
+          open={editing !== null}
+          onOpenChange={(open) => {
+            if (!open) setEditing(null);
+          }}
           initial={draftFromStaged(items, meal.items)}
+          openOnDish={editing?.dish}
           subtitle={message.userInput}
           commitLabel={tEdit('done')}
           onCommit={(draft) =>

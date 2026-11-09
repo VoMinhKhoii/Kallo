@@ -121,11 +121,8 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   the scale scrolls under a fixed accent needle, tall graduations mark each vessel tier,
   and every graduation gives one haptic detent plus a click. The bowl / plate / cup branch
   and the fish / meat / poultry branch share one control (`widgets/portion/ruler/`); only
-  the art and the tier labels differ. **The ruler is a deliberate divergence from the web
-  portion picker** — its plain Radix slider suits a pointer and a keyboard, but on touch
-  there is no hover, arrow key or focus ring, so the bar carries none of that affordance.
-  (The web's phone-width manual-log sheet draws the same tape, `components/logging/input/
-  manual/sheet/tape/`, since a phone there is touch too.) Otherwise a
+  the art and the tier labels differ. Web draws the same tape on its manual food page and
+  in the meal edit dialog (`components/logging/feed/meal-entry/portion/tape/`). Otherwise a
   port of `components/logging/feed/meal-entry/portion/`; the vessel rides in on the SSE
   `result` frame and on restored `/api/v1/meals/pending` rows.
   **Shared with web — keep them in lockstep.** The tier tables, envelope factors and
