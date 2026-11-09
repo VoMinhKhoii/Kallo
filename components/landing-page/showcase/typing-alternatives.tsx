@@ -3,10 +3,10 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { type CSSProperties, useRef } from 'react';
 import { useScrollSettle } from '@/hooks/landing/use-scroll-settle';
-import { CardCaption } from './card-caption';
-import { landingClip } from './media';
-import { ProductVideo } from './product-video';
-import { SectionTitle } from './section-title';
+import { landingClip } from '../media/media';
+import { ProductVideo } from '../media/product-video';
+import { CardCaption } from '../section-text/card-caption';
+import { SectionTitle } from '../section-text/section-title';
 
 const WAYS = ['barcode', 'relog', 'label'] as const;
 

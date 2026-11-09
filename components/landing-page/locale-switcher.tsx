@@ -6,8 +6,8 @@ import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
 import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
+import { isPlainClick } from '@/lib/core/ui/plain-click';
 import { switchedFoodPath } from '@/lib/seo/food-pages/slugs';
-import { isPlainClick } from './plain-click';
 
 /**
  * Two locales, so the switch is two words rather than a control.

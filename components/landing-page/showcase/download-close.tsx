@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { AppStoreButton } from '../app-store-button';
-import { SectionTitle } from './section-title';
+import { SectionTitle } from '../section-text/section-title';
 
 /** The last screen before the footer: one sentence and the button. */
 export function DownloadClose() {

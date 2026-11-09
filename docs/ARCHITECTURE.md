@@ -257,6 +257,8 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `docs/` | MDX docs chrome | ok |
 | `groups/` | circle shell, feeds, sharing, friends | split |
 | `landing-page/` | marketing page | split |
+| `landing-page/media/` | the landing page's clip and still paths, and the product video player | |
+| `landing-page/section-text/` | the landing page's section title and card caption | |
 | `landing-page/pricing/checkout/` | /pricing as the purchase page — the signed-in checkout state, its request-time inputs (session, `?from=`) and the back link | ok |
 | `logging/` | meal logging surface | split |
 | `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows on md+; `sheet/` the phone's stacked manual-log sheets — meal, search, food page with the vessel `tape/` — mirroring the Flutter `sheets/manual/`), `barcode/` (the scanner dialog: camera, lookup; `product/` the found-product step: amount in the product's unit, photo, nutrition preview with the Premium nutrients), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |

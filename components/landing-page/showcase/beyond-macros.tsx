@@ -3,9 +3,9 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { type CSSProperties, useRef } from 'react';
 import { useScrollSettle } from '@/hooks/landing/use-scroll-settle';
-import { landingClip } from './media';
-import { ProductVideo } from './product-video';
-import { SectionTitle } from './section-title';
+import { landingClip } from '../media/media';
+import { ProductVideo } from '../media/product-video';
+import { SectionTitle } from '../section-text/section-title';
 
 const ROWS = ['macros', 'micros', 'range'] as const;
 

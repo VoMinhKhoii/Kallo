@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
+import { useNearViewport } from '@/hooks/landing/use-near-viewport';
 
 /**
  * The painting behind the right-hand card, mounted only as it comes near.
@@ -18,23 +19,7 @@ export function CompareArt({
   opacity: number;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
-  const [near, setNear] = useState(false);
-
-  useEffect(() => {
-    const box = boxRef.current;
-    if (!box) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setNear(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '800px' }
-    );
-    observer.observe(box);
-    return () => observer.disconnect();
-  }, []);
+  const near = useNearViewport(boxRef, '800px');
 
   return (
     <div ref={boxRef} className="absolute inset-0 -z-10">

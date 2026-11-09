@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useScrollFrame } from './use-scroll-frame';
 
 /**
  * Whether the page has moved off its top. The landing header stays clear over
@@ -9,13 +10,6 @@ import { useEffect, useState } from 'react';
  */
 export function useHeaderScrolled(): boolean {
   const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const update = () => setScrolled(window.scrollY > 24);
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    return () => window.removeEventListener('scroll', update);
-  }, []);
-
+  useScrollFrame(() => setScrolled(window.scrollY > 24));
   return scrolled;
 }

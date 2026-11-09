@@ -1,8 +1,23 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useNearViewport } from '@/hooks/landing/use-near-viewport';
 import { cn } from '@/lib/core/ui/cn';
 import type { LandingClip } from './media';
+
+/** Reduced motion, data saver or a very slow connection: stills, no film. */
+function readStillOnly(): boolean {
+  if (typeof window === 'undefined') return false;
+  const { connection } = navigator as Navigator & {
+    connection?: { saveData?: boolean; effectiveType?: string };
+  };
+  return (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+    connection?.saveData === true ||
+    connection?.effectiveType === '2g' ||
+    connection?.effectiveType === 'slow-2g'
+  );
+}
 
 /**
  * A muted product loop that is ready before you reach it.
@@ -32,33 +47,14 @@ export function ProductVideo({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const visibleRef = useRef(false);
-  const [near, setNear] = useState(false);
-  const [armed, setArmed] = useState(false);
+  const near = useNearViewport(videoRef, '1200px');
+  // Nothing this gates renders until `near`, so the server's `false` is safe.
+  const [stillOnly] = useState(readStillOnly);
+  const armed = near && !stillOnly;
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
-    const { connection } = navigator as Navigator & {
-      connection?: { saveData?: boolean; effectiveType?: string };
-    };
-    const stillOnly =
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      connection?.saveData ||
-      connection?.effectiveType === '2g' ||
-      connection?.effectiveType === 'slow-2g';
-
-    const nearby = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setNear(true);
-          if (!stillOnly) setArmed(true);
-          nearby.disconnect();
-        }
-      },
-      { rootMargin: '1200px' }
-    );
-    nearby.observe(video);
-    if (stillOnly) return () => nearby.disconnect();
+    if (!video || stillOnly) return;
 
     const onScreen = new IntersectionObserver(
       ([entry]) => {
@@ -73,11 +69,8 @@ export function ProductVideo({
       { threshold: 0.45 }
     );
     onScreen.observe(video);
-    return () => {
-      nearby.disconnect();
-      onScreen.disconnect();
-    };
-  }, []);
+    return () => onScreen.disconnect();
+  }, [stillOnly]);
 
   // Sources added to a mounted <video> are ignored until it is told to reload.
   useEffect(() => {

@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import type { MouseEvent } from 'react';
+import { isPlainClick } from '@/lib/core/ui/plain-click';
 import {
   parseSettingsPage,
   SETTINGS_PARAM,
@@ -65,18 +66,6 @@ export function useSettingsDialog() {
   };
 }
 
-// An ordinary left click. A cmd/ctrl/shift/middle click falls through to the
-// browser, which opens the link's href in a new tab.
-function isPlainLeftClick(event: MouseEvent<HTMLAnchorElement>): boolean {
-  return (
-    event.button === 0 &&
-    !event.metaKey &&
-    !event.ctrlKey &&
-    !event.shiftKey &&
-    !event.altKey
-  );
-}
-
 /**
  * Props for a link that opens the dialog in place on a plain click. A
  * cmd/ctrl/middle click still follows `/settings`, which redirects into the
@@ -89,7 +78,7 @@ export function useSettingsLink(onOpen?: () => void) {
     isOpen,
     href: '/settings',
     onClick(event: MouseEvent<HTMLAnchorElement>) {
-      if (!isPlainLeftClick(event)) return;
+      if (!isPlainClick(event)) return;
       event.preventDefault();
       rememberSettingsOpener(event.currentTarget);
       onOpen?.();

@@ -4,9 +4,9 @@ import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { type CSSProperties, useRef } from 'react';
 import { useScrollFrame } from '@/hooks/landing/use-scroll-frame';
-import { CardCaption } from './card-caption';
-import { appScreen } from './media';
-import { SectionTitle } from './section-title';
+import { appScreen } from '../media/media';
+import { CardCaption } from '../section-text/card-caption';
+import { SectionTitle } from '../section-text/section-title';
 
 const PHONES = [
   { id: 'circle', screen: 'circle', drop: '8rem' },
