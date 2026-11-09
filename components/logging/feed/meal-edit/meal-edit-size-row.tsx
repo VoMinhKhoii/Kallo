@@ -4,11 +4,13 @@ import { ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId, useRef } from 'react';
-import { portionDisplay } from '@/components/logging/feed/meal-entry/portion/portion-display';
 import {
-  PortionPicker,
+  gramEnvelope,
   repointVesselTo,
-} from '@/components/logging/feed/meal-entry/portion/portion-picker';
+  vesselAnchors,
+} from '@/components/logging/feed/meal-entry/portion/portion-anchors';
+import { portionDisplay } from '@/components/logging/feed/meal-entry/portion/portion-display';
+import { VesselTape } from '@/components/logging/feed/meal-entry/portion/tape/vessel-tape';
 import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 import { cn } from '@/lib/core/ui/cn';
 
@@ -21,9 +23,9 @@ interface MealEditSizeRowProps {
 }
 
 /**
- * The Size row of a dish with a vessel, and the picker it drops open in place,
- * as the iOS sheet does. It writes grams live, like Amount, and the label
- * follows the grams, so Servings and Amount move the size it names too.
+ * The Size row of a dish with a vessel, and the vessel tape it drops open in
+ * place, as the iOS sheet does. It writes grams live, like Amount, and the
+ * label follows the grams, so Servings and Amount move the size it names too.
  */
 export function MealEditSizeRow({
   vessel,
@@ -33,6 +35,7 @@ export function MealEditSizeRow({
   onChange,
 }: MealEditSizeRowProps) {
   const t = useTranslations('logging.mealEdit');
+  const tPortion = useTranslations('logging.portionPicker');
   const locale = useLocale();
   const panelId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -40,6 +43,8 @@ export function MealEditSizeRow({
   const rounded = Math.round(grams);
   const shown = repointVesselTo(vessel, rounded, locale);
   const { label } = portionDisplay(shown, rounded, loc);
+  const anchors = vesselAnchors(shown, loc);
+  const { min, max } = gramEnvelope(anchors);
 
   return (
     <div>
@@ -86,9 +91,13 @@ export function MealEditSizeRow({
             data-vaul-no-drag
           >
             <div className="px-1 pt-1 pb-4">
-              <PortionPicker
+              <VesselTape
                 vessel={shown}
-                grams={rounded}
+                anchors={anchors}
+                grams={Math.min(max, Math.max(min, rounded))}
+                min={min}
+                max={max}
+                label={tPortion('title')}
                 onChange={onChange}
               />
             </div>

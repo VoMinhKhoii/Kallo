@@ -132,8 +132,7 @@ export function draftFromStaged(
 
 /**
  * `items` re-scaled to the draft. `repoint` moves a vessel to the tier the new
- * grams may honestly claim — the portion picker's own rule, which lives with
- * the picker.
+ * grams may honestly claim — a rule that lives with the portion anchors.
  */
 export function stagedItemsFrom(
   draft: MealEditDraft,

@@ -3,9 +3,8 @@
 import { Minus, Plus } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
-  buildContainerAnchors,
-  buildPieceAnchors,
   claimedAnchor,
+  vesselAnchors,
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { VesselTape } from '@/components/logging/feed/meal-entry/portion/tape/vessel-tape';
 import { useStateWord } from '@/components/logging/input/manual/manual-food-row';
@@ -46,11 +45,7 @@ export function ManualAmountCard({
   const stateWord = useStateWord();
   const loc = useLocale() === 'vi' ? 'vi' : 'en';
   const vessel = vesselFromHint(food.vessel);
-  const anchors = vessel
-    ? vessel.family === 'piece'
-      ? buildPieceAnchors(vessel, loc)
-      : buildContainerAnchors(vessel, loc)
-    : null;
+  const anchors = vessel ? vesselAnchors(vessel, loc) : null;
   const claimed = anchors ? claimedAnchor(anchors, Math.round(grams)) : null;
   const less = steppedManualGrams(grams, -1);
   const more = steppedManualGrams(grams, 1);

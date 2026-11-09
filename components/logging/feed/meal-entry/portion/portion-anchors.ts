@@ -6,6 +6,7 @@ import {
 } from '@/lib/ai/portion/data/vessel-tables';
 import { containerAnchorG } from '@/lib/ai/portion/vessel/geometry';
 import type {
+  ClientVessel,
   ContainerVessel,
   PieceVessel,
 } from '@/lib/ai/portion/vessel/types';
@@ -60,6 +61,16 @@ export function buildPieceAnchors(
   }));
 }
 
+/** A vessel's anchors, whichever family it is. */
+export function vesselAnchors(
+  vessel: ClientVessel,
+  loc: 'en' | 'vi'
+): PortionAnchor[] {
+  return vessel.family === 'piece'
+    ? buildPieceAnchors(vessel, loc)
+    : buildContainerAnchors(vessel, loc);
+}
+
 /** Nearest anchor by absolute gram distance — always returns one. */
 export function nearestAnchor<T extends AnchorTier>(
   anchors: PortionAnchor<T>[],
@@ -98,6 +109,31 @@ export function committedPieceTier(
   grams: number
 ): PieceVesselTier {
   return claimedAnchor(anchors, grams)?.tier ?? current;
+}
+
+/**
+ * The vessel `grams` may honestly claim. Containers name the nearest anchor;
+ * pieces only move to a tier the UI actually claims, and otherwise keep theirs.
+ */
+export function repointVesselTo(
+  vessel: ClientVessel,
+  grams: number,
+  locale: string
+): ClientVessel {
+  const loc = locale === 'vi' ? 'vi' : 'en';
+  return vessel.family === 'piece'
+    ? {
+        ...vessel,
+        tier: committedPieceTier(
+          vessel.tier,
+          buildPieceAnchors(vessel, loc),
+          grams
+        ),
+      }
+    : {
+        ...vessel,
+        tier: nearestAnchor(buildContainerAnchors(vessel, loc), grams).tier,
+      };
 }
 
 /** Equal-spaced track positions (%) — one per anchor, centred in its slot. */

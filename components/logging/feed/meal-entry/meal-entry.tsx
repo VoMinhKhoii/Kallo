@@ -13,7 +13,7 @@ import {
 import { MealEditDialog } from '@/components/logging/feed/meal-edit/meal-edit-dialog';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entry-actions';
 import { MealEntryDetails } from '@/components/logging/feed/meal-entry/meal-entry-details';
-import { repointVesselTo } from '@/components/logging/feed/meal-entry/portion/portion-picker';
+import { repointVesselTo } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { TurnHeader } from '@/components/logging/feed/turn/turn-header';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog/confirm-dialog';
 import { formatTime } from '@/lib/core/date/format-time';
@@ -61,8 +61,8 @@ export function MealEntry({
     message.parsedMeal?.items ?? []
   );
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [sizeOpen, setSizeOpen] = useState<string>();
+  // The open edit dialog; `sizeDish` is the dish it opened onto, if any.
+  const [editing, setEditing] = useState<{ sizeDish?: string } | null>(null);
   const [isDiscarding, setIsDiscarding] = useState(false);
 
   const meal = message.parsedMeal;
@@ -77,10 +77,7 @@ export function MealEntry({
     onConfirm?.(edits);
   };
 
-  const openEditor = (sizeDish?: string) => {
-    setSizeOpen(sizeDish);
-    setIsEditing(true);
-  };
+  const openEditor = (sizeDish?: string) => setEditing({ sizeDish });
 
   // Unsaved: the card's own menus carry Edit and Discard, and every dish row is
   // a way into the edit dialog. Nothing sits under the save button.
@@ -196,10 +193,12 @@ export function MealEntry({
 
       {!confirmed && (
         <MealEditDialog
-          open={isEditing}
-          onOpenChange={setIsEditing}
+          open={editing !== null}
+          onOpenChange={(open) => {
+            if (!open) setEditing(null);
+          }}
           initial={draftFromStaged(items, meal.items)}
-          sizeOpen={sizeOpen}
+          initialSizeDish={editing?.sizeDish}
           subtitle={message.userInput}
           commitLabel={tEdit('done')}
           onCommit={(draft) =>
