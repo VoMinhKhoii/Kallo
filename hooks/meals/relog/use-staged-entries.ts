@@ -40,6 +40,8 @@ export interface StagedEntriesApi {
   sync: (value: string) => void;
   /** Clear staged picks and return the value with their text removed. */
   consume: (value: string, stageIds?: readonly string[]) => string;
+  /** Put back a composer a failed submit had consumed: its text and its picks. */
+  restore: (value: string, entries: RelogMention[]) => void;
   isFull: boolean;
 }
 
@@ -146,8 +148,8 @@ export function useStagedEntries(userId: string): StagedEntriesApi {
    * stage request is in flight, so clearing "everything staged now" would also
    * swallow a pick made after the POST — removed from the composer despite
    * never having been sent, and unrecoverable. Omitting the argument clears
-   * everything, which is what the combined path wants: it cleared the field on
-   * submit, so nothing there is newer than the request.
+   * everything, which is what the combined path wants: it clears the field as
+   * the request goes out, so nothing there is newer than the request.
    */
   const consume = useCallback(
     (current: string, stageIds?: readonly string[]) => {
@@ -168,6 +170,16 @@ export function useStagedEntries(userId: string): StagedEntriesApi {
     [entries, userId]
   );
 
+  const restore = useCallback(
+    (next: string, picks: RelogMention[]) => {
+      const restored = reconcileMentions(next, picks);
+      setEntries(restored);
+      setValue(next);
+      writeStagedDraft(restored, userId);
+    },
+    [userId]
+  );
+
   const totals = useMemo(() => sumStagedMacros(entries), [entries]);
   const segments = useMemo(
     () => (entries.length > 0 ? buildMentionSegments(value, entries) : []),
@@ -182,6 +194,7 @@ export function useStagedEntries(userId: string): StagedEntriesApi {
     remove,
     sync,
     consume,
+    restore,
     isFull: entries.length >= RELOG_MAX_STAGED,
   };
 }

@@ -108,13 +108,15 @@ export function useRelogSubmit(args: {
 
     // Combined: analyze the free text alone, merge the picks server-side.
     //
-    // `handleSubmit` clears the composer synchronously (to show the streaming
+    // `handleSubmit` clears the textarea synchronously (to show the streaming
     // card) and only resolves once the stream settles, reporting whether it
-    // DURABLY staged. So snapshot the composer first: on a durable success we
-    // drop the staged picks (their card now exists); on ANY failure — invalid
-    // text, error, or a precise-clarify that stages nothing — we restore the
-    // composer verbatim and re-sync so the picks reappear intact for a retry,
-    // instead of vanishing behind a submit that produced no confirmable card.
+    // DURABLY staged. The picks go at the same moment as the text: that clear
+    // bypasses the textarea's change event, so picks left staged here would
+    // keep the staged list and the mirror painting a sentence already sent.
+    // Snapshot both first: on ANY failure — invalid text, error, or a
+    // precise-clarify that stages nothing — the composer comes back verbatim
+    // with its picks intact for a retry, instead of vanishing behind a submit
+    // that produced no confirmable card.
     //
     // The restore DOES cost something: the snapshot predates the submit, so
     // anything typed while the analysis was in flight is replaced by it. That
@@ -124,6 +126,8 @@ export function useRelogSubmit(args: {
     // restores the same way, so the two platforms lose the same keystrokes.
     if (freeText.length > 0) {
       const snapshot = getText();
+      const pickedEntries = staged.entries;
+      staged.consume('');
       // The label is the composer's own sentence, in the order it was typed —
       // and it rides the submit, so the streaming card, the confirmable card
       // and the saved meal all carry that one string. Rebuilding it from
@@ -134,11 +138,9 @@ export function useRelogSubmit(args: {
         refs,
         label: capRawInput(snapshot),
       });
-      if (durablyStaged) {
-        staged.consume('');
-      } else {
+      if (!durablyStaged) {
         setText(snapshot, snapshot.length);
-        staged.sync(snapshot);
+        staged.restore(snapshot, pickedEntries);
       }
       return;
     }
