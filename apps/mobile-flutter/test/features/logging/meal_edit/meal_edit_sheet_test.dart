@@ -11,6 +11,7 @@ import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/logic/meal_edit/meal_edit_draft.dart';
 import 'package:kallo_mobile/features/logging/logic/meal_edit/meal_edit_sources.dart';
 import 'package:kallo_mobile/features/logging/widgets/meal_edit/meal_edit_sheet.dart';
+import 'package:kallo_mobile/features/logging/widgets/meal_edit/meal_edit_size_row.dart';
 import 'package:kallo_mobile/features/logging/widgets/portion/ruler/portion_ruler_control.dart';
 import 'package:kallo_mobile/models/logging/meal.dart';
 import 'package:kallo_mobile/models/nutrition/vessel.dart';
@@ -59,7 +60,7 @@ List<MealItem> _staged(ClientVessel vessel, double grams) => [
 Future<List<MealEditDraft>> _open(
   WidgetTester tester,
   MealEditDraft draft, {
-  String? sizeOpen,
+  String? openOnDish,
   Future<void> Function(MealEditDraft)? onCommit,
 }) async {
   final commits = <MealEditDraft>[];
@@ -73,7 +74,7 @@ Future<List<MealEditDraft>> _open(
                     context,
                     draft: draft,
                     commitLabel: 'Done',
-                    sizeOpen: sizeOpen,
+                    openOnDish: openOnDish,
                     onCommit:
                         onCommit ??
                         (d) async {
@@ -113,7 +114,7 @@ void main() {
     expect(find.text('Whole meal'), findsOneWidget);
     expect(find.text('Servings'), findsOneWidget);
     expect(find.text('Amount'), findsOneWidget);
-    expect(find.text('150 g'), findsOneWidget);
+    expect(find.text('150 g'), findsWidgets); // Amount, and a tick on the ruler
     expect(find.text('Size'), findsOneWidget);
     expect(find.text('Medium cut'), findsOneWidget);
 
@@ -139,9 +140,11 @@ void main() {
       moreOrLessEquals(bar.right - third / 2, epsilon: 0.5),
     );
 
-    // The tier name sits against its chevron, not halfway along the row.
-    // Measured on the GLYPHS: the Text's own box spans the whole slot, so its
-    // edge sits at the chevron however the words inside it are aligned.
+    // The vessels are out with nothing to tap, and the tier name sits at the
+    // row's end, not halfway along it. Measured on the GLYPHS: the Text's own
+    // box spans the whole slot however the words inside it are aligned.
+    expect(find.byIcon(LucideIcons.chevronDown300), findsNothing);
+    expect(find.byType(PortionRulerControl), findsOneWidget);
     final paragraph = tester.renderObject<RenderParagraph>(
       find.text('Medium cut'),
     );
@@ -149,8 +152,8 @@ void main() {
       const TextSelection(baseOffset: 0, extentOffset: 'Medium cut'.length),
     );
     final inkRight = paragraph.localToGlobal(Offset(glyphs.last.right, 0)).dx;
-    final chevron = tester.getRect(find.byIcon(LucideIcons.chevronDown300));
-    expect(chevron.left - inkRight, lessThanOrEqualTo(8));
+    final row = tester.getRect(find.byType(MealEditSizeRow));
+    expect(row.right - inkRight, lessThanOrEqualTo(8));
   });
 
   testWidgets('a missing macro keeps its third empty, never shifts the rest', (
@@ -208,17 +211,12 @@ void main() {
     expect(find.text('600'), findsOneWidget);
   });
 
-  testWidgets('Size drops open in place; a bowl tap moves the amount', (
+  testWidgets('the vessels need no tap to reach; one moves the amount', (
     tester,
   ) async {
     final items = _staged(_fish, 150);
     final commits = await _open(tester, draftFromStaged(items, items));
-    // Closed: no ruler on screen.
     final fillet = find.bySemanticsLabel('fillet (250 g)');
-    expect(fillet, findsNothing);
-
-    await tester.tap(find.text('Size'));
-    await tester.pumpAndSettle();
     await tester.ensureVisible(fillet);
     await tester.pumpAndSettle();
     await tester.tap(fillet);
@@ -252,7 +250,7 @@ void main() {
   ) async {
     // A 700 ml medium bowl of soup resolves to ~665 g at the tier-2 anchor.
     final items = _staged(_bowl, 665);
-    await _open(tester, draftFromStaged(items, items), sizeOpen: 'a');
+    await _open(tester, draftFromStaged(items, items));
     expect(find.text('Medium bowl'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('medium bowl')), findsWidgets);
   });
@@ -286,7 +284,7 @@ void main() {
     expect(find.text('Edit meal'), findsOneWidget, reason: 'kept to retry');
   });
 
-  testWidgets('opening onto a lower dish scrolls its Size into view', (
+  testWidgets('opening onto a lower dish scrolls its ruler into view', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 700));
@@ -307,8 +305,8 @@ void main() {
           vessel: _fish,
         ),
     ];
-    await _open(tester, draftFromStaged(items, items), sizeOpen: 'd');
-    final ruler = tester.getRect(find.byType(PortionRulerControl));
+    await _open(tester, draftFromStaged(items, items), openOnDish: 'd');
+    final ruler = tester.getRect(find.byType(PortionRulerControl).last);
     expect(ruler.bottom, lessThanOrEqualTo(700));
     expect(ruler.top, greaterThanOrEqualTo(0));
   });

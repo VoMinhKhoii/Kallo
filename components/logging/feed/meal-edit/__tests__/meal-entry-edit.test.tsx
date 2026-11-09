@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MealEntry } from '@/components/logging/feed/meal-entry/meal-entry';
 import type { ChatMessage } from '@/lib/core/types/meal';
 
@@ -32,6 +32,10 @@ const message: ChatMessage = {
     ],
   },
 };
+
+// jsdom has no scrollIntoView; opening from a dish scrolls to it.
+const scrollTo = vi.fn();
+Element.prototype.scrollIntoView = scrollTo;
 
 describe('editing an unsaved meal on web', () => {
   it('opens the dialog from a dish and hands the edit back to Save meal', async () => {
@@ -90,13 +94,12 @@ describe('sizing a dish with a vessel on web', () => {
       ],
     },
   };
-  const sizeRow = (expanded: boolean) =>
-    screen.getByRole('button', { name: /^size/, expanded });
   const tape = () => screen.queryByRole('slider', { name: 'title' });
 
+  beforeEach(() => scrollTo.mockClear());
+
   beforeAll(() => {
-    // What jsdom lacks: the panel's scroll and the slider's size measuring.
-    Element.prototype.scrollIntoView = vi.fn();
+    // jsdom has no ResizeObserver, which the tape's slider measures with.
     vi.stubGlobal(
       'ResizeObserver',
       class {
@@ -107,14 +110,14 @@ describe('sizing a dish with a vessel on web', () => {
     );
   });
 
-  it('opens from the portion line straight onto the size, in place', async () => {
+  it('opens from the portion line onto that dish, its tape already out', async () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();
     render(<MealEntry message={withBowl} onConfirm={onConfirm} />);
 
     await user.click(screen.getByRole('button', { name: 'adjust' }));
-    expect(sizeRow(true)).toBeInTheDocument();
     expect(screen.getByRole('dialog')).toContainElement(tape());
+    expect(scrollTo).toHaveBeenCalledTimes(1);
 
     // Moving the tape writes the amount live: there is no Apply to press.
     tape()?.focus();
@@ -131,17 +134,23 @@ describe('sizing a dish with a vessel on web', () => {
     ]);
   });
 
-  it('keeps Size shut when the dialog opens from the dish, until its row is tapped', async () => {
+  it('opens from the dish row onto that dish, with no tap to reach the tape', async () => {
     const user = userEvent.setup();
     render(<MealEntry message={withBowl} />);
 
     await user.click(screen.getAllByRole('button', { name: 'editDish' })[0]);
-    expect(sizeRow(false)).toBeInTheDocument();
-    expect(tape()).toBeNull();
-
-    await user.click(sizeRow(false));
     expect(tape()).toBeInTheDocument();
-    await user.click(sizeRow(true));
-    await waitFor(() => expect(tape()).toBeNull());
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: /^size/ })).toBeNull();
+  });
+
+  it('opens from Edit at the top, the tape still out', async () => {
+    const user = userEvent.setup();
+    render(<MealEntry message={withBowl} />);
+
+    await user.click(screen.getByRole('button', { name: 'moreOptions' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'edit' }));
+    expect(await screen.findByRole('slider', { name: 'title' })).toBeTruthy();
+    expect(scrollTo).not.toHaveBeenCalled();
   });
 });

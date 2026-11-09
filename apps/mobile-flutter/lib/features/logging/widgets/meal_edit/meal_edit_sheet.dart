@@ -23,7 +23,7 @@ Future<void> showMealEditSheet(
   required MealEditDraft draft,
   required String commitLabel,
   required Future<void> Function(MealEditDraft draft) onCommit,
-  String? sizeOpen,
+  String? openOnDish,
 }) => showNhamSheet<void>(
   context,
   builder:
@@ -31,7 +31,7 @@ Future<void> showMealEditSheet(
         draft: draft,
         commitLabel: commitLabel,
         onCommit: onCommit,
-        sizeOpen: sizeOpen,
+        openOnDish: openOnDish,
       ),
 );
 
@@ -43,12 +43,11 @@ class MealEditSheet extends StatefulWidget {
     required this.draft,
     required this.commitLabel,
     required this.onCommit,
-    this.sizeOpen,
+    this.openOnDish,
   });
 
-  /// A dish whose Size dropdown starts open — the card's portion line opens
-  /// the sheet straight onto the size it names.
-  final String? sizeOpen;
+  /// The dish tapped on the card, which the sheet opens scrolled to.
+  final String? openOnDish;
 
   final MealEditDraft draft;
   final String commitLabel;
@@ -60,22 +59,19 @@ class MealEditSheet extends StatefulWidget {
 
 class _MealEditSheetState extends State<MealEditSheet> {
   late MealEditDraft _draft = widget.draft;
-
-  /// The dish whose Size dropdown is open — one at a time.
-  late String? _sizeOpen = widget.sizeOpen;
   bool _saving = false;
 
-  /// The dish the sheet was opened onto from its portion line. It may sit
-  /// below the first screenful, so the sheet scrolls it into view once laid
-  /// out — otherwise the user taps "≈ medium bowl" and sees the summary.
-  final GlobalKey _sizeTarget = GlobalKey();
+  /// The dish the sheet was opened onto. It may sit below the first
+  /// screenful, so the sheet scrolls it into view once laid out — otherwise
+  /// the user taps "≈ medium bowl" and sees the summary.
+  final GlobalKey _dishTarget = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    if (widget.sizeOpen == null) return;
+    if (widget.openOnDish == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final target = _sizeTarget.currentContext;
+      final target = _dishTarget.currentContext;
       if (target == null || !mounted) return;
       Scrollable.ensureVisible(
         target,
@@ -96,10 +92,7 @@ class _MealEditSheetState extends State<MealEditSheet> {
     }
   }
 
-  void _set(MealEditDraft next) => setState(() {
-    _draft = next;
-    if (_sizeOpen != null && next.dish(_sizeOpen!) == null) _sizeOpen = null;
-  });
+  void _set(MealEditDraft next) => setState(() => _draft = next);
 
   @override
   Widget build(BuildContext context) {
@@ -161,19 +154,12 @@ class _MealEditSheetState extends State<MealEditSheet> {
                       for (final dish in d.dishes)
                         MealEditDishSection(
                           key:
-                              dish.key == widget.sizeOpen
-                                  ? _sizeTarget
+                              dish.key == widget.openOnDish
+                                  ? _dishTarget
                                   : ValueKey(dish.key),
                           draft: d,
                           dish: dish,
-                          sizeOpen: _sizeOpen == dish.key,
                           onDraft: _set,
-                          onToggleSize:
-                              () => setState(
-                                () =>
-                                    _sizeOpen =
-                                        _sizeOpen == dish.key ? null : dish.key,
-                              ),
                         ),
                     ],
                   ),

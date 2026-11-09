@@ -11,10 +11,8 @@ interface MealEntryDetailsProps {
   totals: MacroBreakdown;
   /** The P/C/F run the collapsed summary shows too. */
   totalsLine: ReactNode;
-  /** Opens the edit dialog; undefined once the meal is saved. */
-  onOpen?: () => void;
-  /** Opens the edit dialog onto this dish's Size; undefined once saved. */
-  onOpenSize?: (itemId: string) => void;
+  /** Opens the edit dialog onto this dish; undefined once the meal is saved. */
+  onOpen?: (itemId: string) => void;
 }
 
 /**
@@ -26,7 +24,6 @@ export function MealEntryDetails({
   totals,
   totalsLine,
   onOpen,
-  onOpenSize,
 }: MealEntryDetailsProps) {
   const t = useTranslations('logging.mealEntry');
   return (
@@ -34,12 +31,16 @@ export function MealEntryDetails({
       <div className="mb-4 space-y-1">
         {items.map((item, idx) => (
           <div key={item.id}>
-            <MealEntryItem item={item} index={idx} onOpen={onOpen} />
-            {onOpenSize && item.vessel && (
+            <MealEntryItem
+              item={item}
+              index={idx}
+              onOpen={onOpen && (() => onOpen(item.id))}
+            />
+            {onOpen && item.vessel && (
               <PortionAssumptionLine
                 vessel={item.vessel}
                 grams={item.quantity}
-                onClick={() => onOpenSize(item.id)}
+                onClick={() => onOpen(item.id)}
               />
             )}
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import {
   type EditDish,
@@ -21,9 +22,9 @@ import { MealEditStepperRow } from './meal-edit-stepper-row';
 interface MealEditDishProps {
   draft: MealEditDraft;
   dish: EditDish;
-  sizeOpen: boolean;
+  /** The dish the card opened the dialog onto: scrolled to on open. */
+  openedOn: boolean;
   onDraft: (next: MealEditDraft) => void;
-  onToggleSize: () => void;
 }
 
 /**
@@ -34,11 +35,16 @@ interface MealEditDishProps {
 export function MealEditDish({
   draft,
   dish,
-  sizeOpen,
+  openedOn,
   onDraft,
-  onToggleSize,
 }: MealEditDishProps) {
   const t = useTranslations('logging.mealEdit');
+  const sectionRef = useRef<HTMLElement>(null);
+  // It may sit below the first screenful, or tapping "≈ medium bowl" would
+  // land on the summary.
+  useEffect(() => {
+    if (openedOn) sectionRef.current?.scrollIntoView({ block: 'start' });
+  }, [openedOn]);
   const locale = useLocale();
   const named = { name: dish.name };
   const removes = removesOnMinus(draft, dish);
@@ -47,7 +53,7 @@ export function MealEditDish({
   const times = `${formatLocalizedNumber(Math.round(servingsOf(dish) * 10) / 10, locale)}×`;
 
   return (
-    <section className="font-sans-display">
+    <section ref={sectionRef} className="scroll-mt-4 font-sans-display">
       <div className="mx-0.5 mt-4 mb-1.5 flex items-baseline gap-3 text-sm">
         <h3 className="min-w-0 flex-1 truncate font-medium text-kallo-text">
           {dish.name}
@@ -96,8 +102,6 @@ export function MealEditDish({
           <MealEditSizeRow
             vessel={dish.vessel}
             grams={dish.grams}
-            open={sizeOpen}
-            onToggle={onToggleSize}
             onChange={(grams) => onDraft(setDishGrams(draft, dish.key, grams))}
           />
         )}

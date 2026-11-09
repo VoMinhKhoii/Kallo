@@ -36,8 +36,8 @@ class MealEntryBody extends StatelessWidget {
   /// Only the reveal's opening frame counts the totals up from zero.
   final bool countUp;
 
-  /// Opens the edit sheet on [item]; [size] drops its Size row open.
-  final void Function(MealItem item, {bool size}) onOpen;
+  /// Opens the edit sheet scrolled to [item].
+  final void Function(MealItem item) onOpen;
 
   static Divider get _hairline =>
       Divider(height: 1, thickness: 1, color: KalloColors.borderFaint);
@@ -64,7 +64,6 @@ class MealEntryBody extends StatelessWidget {
                   revealing: revealing,
                   animateIn: animateIn,
                   onOpen: () => onOpen(item),
-                  onOpenSize: () => onOpen(item, size: true),
                 ),
             ],
           ),

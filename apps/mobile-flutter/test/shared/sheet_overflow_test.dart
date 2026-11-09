@@ -92,8 +92,7 @@ Future<void> _openSheet(
   await tester.pumpAndSettle();
 }
 
-/// The meal edit sheet on one staged dish in [vessel], its Size dropdown open —
-/// the tallest state the sheet has.
+/// The meal edit sheet on one staged dish in [vessel], its ruler out.
 VoidCallback Function(BuildContext) _editSheet(ClientVessel vessel, int grams) {
   final items = [
     MealItem(
@@ -115,7 +114,6 @@ VoidCallback Function(BuildContext) _editSheet(ClientVessel vessel, int grams) {
         c,
         draft: draftFromStaged(items, items),
         commitLabel: 'Done',
-        sizeOpen: 'a',
         onCommit: (_) async {},
       );
 }

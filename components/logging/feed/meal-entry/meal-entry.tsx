@@ -61,8 +61,8 @@ export function MealEntry({
     message.parsedMeal?.items ?? []
   );
   const [isCollapsed, setIsCollapsed] = useState(false);
-  // The open edit dialog; `sizeDish` is the dish it opened onto, if any.
-  const [editing, setEditing] = useState<{ sizeDish?: string } | null>(null);
+  // The open edit dialog; `dish` is the dish tapped to open it, if any.
+  const [editing, setEditing] = useState<{ dish?: string } | null>(null);
   const [isDiscarding, setIsDiscarding] = useState(false);
 
   const meal = message.parsedMeal;
@@ -77,7 +77,7 @@ export function MealEntry({
     onConfirm?.(edits);
   };
 
-  const openEditor = (sizeDish?: string) => setEditing({ sizeDish });
+  const openEditor = (dish?: string) => setEditing({ dish });
 
   // Unsaved: the card's own menus carry Edit and Discard, and every dish row is
   // a way into the edit dialog. Nothing sits under the save button.
@@ -178,8 +178,7 @@ export function MealEntry({
                   items={items}
                   totals={currentTotals}
                   totalsLine={totalsLine}
-                  onOpen={confirmed ? undefined : () => openEditor()}
-                  onOpenSize={confirmed ? undefined : openEditor}
+                  onOpen={confirmed ? undefined : openEditor}
                 />
               </motion.div>
             )}
@@ -198,7 +197,7 @@ export function MealEntry({
             if (!open) setEditing(null);
           }}
           initial={draftFromStaged(items, meal.items)}
-          initialSizeDish={editing?.sizeDish}
+          openOnDish={editing?.dish}
           subtitle={message.userInput}
           commitLabel={tEdit('done')}
           onCommit={(draft) =>

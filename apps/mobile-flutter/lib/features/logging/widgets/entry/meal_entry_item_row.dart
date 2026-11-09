@@ -12,8 +12,7 @@ import '../portion/portion_assumption_line.dart';
 /// underneath it, the quiet portion-assumption line whenever the pipeline
 /// resolved a vessel for the dish.
 ///
-/// Both are buttons into the meal edit sheet: the row opens it on the dish,
-/// the assumption line opens it with that dish's Size already dropped open.
+/// Both are buttons into the meal edit sheet, opening it scrolled to the dish.
 class MealEntryItemRow extends StatelessWidget {
   const MealEntryItemRow({
     super.key,
@@ -22,7 +21,6 @@ class MealEntryItemRow extends StatelessWidget {
     required this.revealing,
     required this.animateIn,
     required this.onOpen,
-    required this.onOpenSize,
   });
 
   final MealItem item;
@@ -39,9 +37,6 @@ class MealEntryItemRow extends StatelessWidget {
 
   /// Opens the edit sheet on this dish.
   final VoidCallback onOpen;
-
-  /// Opens it with this dish's Size dropdown already open.
-  final VoidCallback onOpenSize;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +75,7 @@ class MealEntryItemRow extends StatelessWidget {
           PortionAssumptionLine(
             vessel: vessel,
             grams: item.quantity.round(),
-            onTap: onOpenSize,
+            onTap: onOpen,
           ),
       ],
     );
