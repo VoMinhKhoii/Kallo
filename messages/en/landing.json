@@ -3,12 +3,11 @@
     "label": "Landing page language"
   },
   "header": {
-    "why": "Why text",
     "pricing": "Pricing",
     "docs": "Docs",
     "signIn": "Sign in",
-    "getStarted": "Start tracking smarter",
-    "getStartedShort": "Start tracking"
+    "features": "Features",
+    "getStarted": "Start tracking smarter"
   },
   "hero": {
     "headline": {
@@ -22,9 +21,6 @@
       }
     },
     "subtitle": "Tell Kallo what you ate the way you'd tell a friend. It helps split into real ingredients and derives calories and macros from trusted data.",
-    "cardsHint": "Eyeballed or weighed to the gram. Hover a meal to see it.",
-    "cardsHintTouch": "Eyeballed or weighed to the gram.",
-    "examplesHeading": "What Kallo reads, and what it works out",
     "beta": "Free while in beta · born in Vietnam, built for every kitchen",
     "total": "Total",
     "toggleDetails": "Toggle details",
@@ -60,26 +56,16 @@
         }
       }
     },
-    "waitlist": {
-      "label": "Email address",
-      "placeholder": "you@email.com",
-      "submit": "Join the waitlist",
-      "submitting": "Joining…",
-      "success": "Check your inbox",
-      "successBody": "We sent you a link. Tap it to confirm — that's the only thing left to do.",
-      "invalidEmail": "Enter a valid email address.",
-      "error": "Something went wrong. Please try again.",
-      "rateLimited": "Too many tries. Please wait a moment and try again.",
-      "privacy": "One email to confirm, one when the mobile app is out. Nothing else."
-    }
+    "useWeb": "Try it on the web",
+    "videoLabel": "A breakfast typed into Kallo in plain words and split into foods with their calories"
   },
   "understanding": {
+    "videoLabel": "Two logs of the same breakfast side by side, the detailed one with more calories",
     "titleLead": "We understand that",
     "titleUnderlined": "minor details matter",
     "categories": {
       "fat": {
         "title": "Skin on, or skin off",
-        "note": "Three words about how you ate the chicken, and the fat follows them.",
         "items": {
           "rice": "Rice",
           "thigh": "Grilled chicken thigh",
@@ -96,7 +82,6 @@
       },
       "count": {
         "title": "One cup, or two",
-        "note": "Say how much rice and it is counted, rather than assumed from a setting you filled in once.",
         "items": {
           "rice": "Rice",
           "pork": "Braised pork and egg"
@@ -112,7 +97,6 @@
       },
       "weight": {
         "title": "Weighed raw, or weighed cooked",
-        "note": "The difference every person who owns a kitchen scale has argued about. Say which, and it lands.",
         "items": {
           "breast": "Slow-cooked chicken breast",
           "potato": "Sweet potato",
@@ -129,7 +113,6 @@
       },
       "oil": {
         "title": "Deep-fried, or air-fried",
-        "note": "The same potatoes, cooked two ways. The oil they drank is the difference.",
         "items": {
           "potatoes": "Potatoes",
           "burger": "Beef burger"
@@ -219,5 +202,88 @@
     "already": "You're already on the list",
     "expired": "That link has expired",
     "invalid": "That link isn't valid"
+  },
+  "appStore": {
+    "label": "Download on the App Store"
+  },
+  "showcase": {
+    "phones": {
+      "titleLead": "How Kallo refines",
+      "titleRest": "your day",
+      "circle": {
+        "lead": "Circle.",
+        "rest": "Every journey becomes easier when there's a companion.",
+        "alt": "Kallo Circle feed with meals from friends"
+      },
+      "home": {
+        "lead": "See the day at a glance.",
+        "rest": "What's left, what you've had and where your weight is heading.",
+        "alt": "Kallo home screen with calories left and recent meals"
+      },
+      "nutrition": {
+        "lead": "Micronutrients.",
+        "rest": "Fiber, vitamins and minerals over 7, 30 or 90 days.",
+        "alt": "Kallo nutrition screen with a weekly calorie chart and vitamins"
+      }
+    },
+    "typing": {
+      "titleLead": "When typing",
+      "titleRest": "becomes a burden",
+      "barcode": {
+        "lead": "Scan a barcode.",
+        "rest": "Set how much you had and add it.",
+        "alt": "Kallo scanning a barcode and showing the nutrition"
+      },
+      "relog": {
+        "lead": "Relog a meal.",
+        "rest": "Type a slash, pick something you've had before, and save.",
+        "alt": "Kallo relogging an earlier meal from a list"
+      },
+      "label": {
+        "lead": "Snap a nutrition label.",
+        "rest": "Kallo reads the panel for you.",
+        "alt": "Kallo reading a nutrition label from a photo"
+      }
+    },
+    "beyond": {
+      "titleLead": "Not just calories",
+      "titleRest": "and macros",
+      "alt": "Vitamins and minerals in the Kallo nutrition screen",
+      "macros": {
+        "title": "Protein, carbs and fat",
+        "body": "Broken down for every food in the meal."
+      },
+      "micros": {
+        "title": "Vitamins and minerals",
+        "body": "Vitamin C, the B group, vitamin A and more, against what you need."
+      },
+      "range": {
+        "title": "7, 30 or 90 days",
+        "body": "One tap between this week and the whole quarter."
+      }
+    },
+    "faq": {
+      "title": "Questions",
+      "numbers": {
+        "q": "How does Kallo work out the numbers?",
+        "a": "It splits what you wrote into single foods, matches each one against USDA and FAO food data, and estimates the portion from your words."
+      },
+      "weigh": {
+        "q": "Do I have to weigh my food?",
+        "a": "No. Eyeball it the way you would tell a friend. If you do weigh something, type the grams and Kallo uses them."
+      },
+      "web": {
+        "q": "Is it on the web too?",
+        "a": "Yes. The iPhone app and the web app share one account, so a meal logged on one shows up on the other."
+      },
+      "cost": {
+        "q": "What does Kallo cost?",
+        "a": "Plans are on the <link>pricing page</link>."
+      }
+    },
+    "close": {
+      "line": "Meal tracking in your own words.",
+      "sub": "Start with your next meal."
+    }
   }
 }

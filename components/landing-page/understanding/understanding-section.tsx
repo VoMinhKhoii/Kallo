@@ -2,7 +2,12 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useRef } from 'react';
+import { useClosePileGap } from '@/hooks/landing/use-close-pile-gap';
+import { useFadeUnderPinned } from '@/hooks/landing/use-fade-under-pinned';
 import { useScrollReveal } from '@/hooks/landing/use-scroll-reveal';
+import { landingClip } from '../showcase/media';
+import { ProductVideo } from '../showcase/product-video';
+import { SectionTitle } from '../showcase/section-title';
 import { COMPARISONS_BY_LOCALE } from './comparisons';
 import { stackReleaseRem } from './stack-geometry';
 import { StackedComparison } from './stacked-comparison';
@@ -50,7 +55,13 @@ const HEADING_REM = 9.5;
 export function UnderstandingSection() {
   const t = useTranslations('landing.understanding');
   const locale = useLocale();
+  const introRef = useRef<HTMLDivElement>(null);
+
+  useFadeUnderPinned(introRef, HEADING_TOP_REM + HEADING_REM);
   const sectionRef = useRef<HTMLElement>(null);
+  const pileRef = useRef<HTMLDivElement>(null);
+
+  useClosePileGap(sectionRef, pileRef);
   useScrollReveal(sectionRef);
 
   const comparisons = COMPARISONS_BY_LOCALE[locale] ?? COMPARISONS_BY_LOCALE.en;
@@ -75,14 +86,14 @@ export function UnderstandingSection() {
       ref={sectionRef}
       aria-labelledby="landing-understanding"
       id="how"
-      className="relative scroll-mt-20 border-kallo-border/40 border-t py-8 md:py-10"
+      className="relative scroll-mt-20 py-8 md:pt-20 md:pb-10"
     >
       {/* `md:flex-col` is load-bearing: in normal flow the heading's bottom
           margin and the pile's negative top margin are adjacent siblings and
           would COLLAPSE into a single used value, which destroys both the
           cancellation and the sticky arithmetic. Flex children do not collapse
           margins, so the two survive independently. */}
-      <div className="mx-auto max-w-[92rem] px-6 sm:px-12 md:flex md:flex-col lg:px-20">
+      <div className="mx-auto max-w-[86rem] px-6 sm:px-12 md:flex md:flex-col lg:px-20">
         {/* The hero's headline treatment at the pricing heading's size, in two
             blocks so the rule sits under the second clause rather than wherever
             the text happens to wrap.
@@ -92,10 +103,10 @@ export function UnderstandingSection() {
             margin below is doing. */}
         <div
           data-reveal=""
-          className="text-center md:sticky md:top-24 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)]"
+          className="z-10 text-center md:sticky md:top-0 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)] md:pt-24"
           style={
             {
-              '--heading-h': `${HEADING_REM}rem`,
+              '--heading-h': `${HEADING_TOP_REM + HEADING_REM}rem`,
               '--heading-mb': `${headingMarginRem}rem`,
               // The scroll reveal (`data-reveal`, globals.css) fades
               // only: no `y` rise, unlike the other sections. This heading is
@@ -106,15 +117,11 @@ export function UnderstandingSection() {
             } as React.CSSProperties
           }
         >
-          <h2
-            className="font-medium font-serif text-4xl text-kallo-text leading-[1.04] tracking-[-0.03em] sm:text-5xl md:text-6xl"
+          <SectionTitle
             id="landing-understanding"
-          >
-            <span className="block">{t('titleLead')}</span>
-            <span className="block underline decoration-[0.055em] underline-offset-[0.16em]">
-              {t('titleUnderlined')}
-            </span>
-          </h2>
+            lead={t('titleLead')}
+            rest={t('titleUnderlined')}
+          />
         </div>
 
         {/* The pile. Sticky children release when their PARENT's bottom reaches
@@ -129,11 +136,24 @@ export function UnderstandingSection() {
             come from each card's own bottom margin, which is doing arithmetic
             (see StackedComparison), and a uniform gap would break it. */}
         <div
-          className="mt-10 space-y-5 md:mt-[var(--pile-mt)] md:space-y-0"
+          ref={introRef}
+          className="mt-12 text-center md:mt-[var(--intro-mt)] md:[mask-image:linear-gradient(to_bottom,transparent_calc(var(--under-heading,0px)-2rem),black_var(--under-heading,0px))]"
           style={
-            { '--pile-mt': `${-headingMarginRem}rem` } as React.CSSProperties
+            { '--intro-mt': `${-headingMarginRem}rem` } as React.CSSProperties
           }
         >
+          <div className="overflow-hidden rounded-[1.25rem] bg-kallo-hover sm:rounded-[2rem] md:mt-10">
+            <ProductVideo
+              clip={landingClip(locale, 'diff')}
+              width={2400}
+              height={1350}
+              label={t('videoLabel')}
+              className="aspect-[4/5] object-cover md:aspect-video"
+            />
+          </div>
+        </div>
+
+        <div ref={pileRef} className="mt-10 space-y-5 md:mt-16 md:space-y-0">
           {comparisons.map((comparison, index) => (
             <StackedComparison
               key={comparison.id}
@@ -142,10 +162,6 @@ export function UnderstandingSection() {
               total={comparisons.length}
             />
           ))}
-          {/* Scroll runway after the last card is dealt, so the finished pile
-              sits complete for a beat before the container's bottom reaches it
-              and the whole stack lets go at once. */}
-          <div aria-hidden="true" className="hidden md:block md:h-[40vh]" />
         </div>
       </div>
     </section>

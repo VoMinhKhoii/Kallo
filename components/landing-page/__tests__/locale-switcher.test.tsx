@@ -26,7 +26,7 @@ describe('LocaleSwitcher', () => {
     render(<LocaleSwitcher />);
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: 'Tiếng Việt' }));
+    await user.click(screen.getByRole('link', { name: 'Tiếng Việt' }));
 
     expect(replaceMock).toHaveBeenCalledWith('/dashboard', { locale: 'vi' }); // shared hook shape
   });

@@ -19,7 +19,6 @@
  * time, so local dev and CI ship nothing. Product analytics (PostHog) is NOT
  * started here: it loads on first use (`lib/infra/telemetry/analytics/init.ts`).
  */
-import * as Sentry from '@sentry/nextjs';
 import { config } from 'zod/mini';
 import {
   clientSentryEnvironment,
@@ -29,10 +28,29 @@ import {
 
 config({ jitless: true });
 
-Sentry.init({
-  ...sharedSentryOptions(clientSentryEnvironment(window.location.hostname)),
-  denyUrls: DENIED_URLS,
+/**
+ * Sentry is 115 KB gzipped, so it loads once the page has, instead of holding up
+ * hydration on a slow connection. On a fast one that is about a second; an error
+ * thrown before then is not reported.
+ */
+const sentry = new Promise<void>((resolve) => {
+  if (document.readyState === 'complete') resolve();
+  else window.addEventListener('load', () => resolve(), { once: true });
+}).then(async () => {
+  const Sentry = await import('@sentry/nextjs');
+  Sentry.init({
+    ...sharedSentryOptions(clientSentryEnvironment(window.location.hostname)),
+    denyUrls: DENIED_URLS,
+  });
+  return Sentry;
 });
 
 /** Names client-side navigations in Sentry traces. */
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+export function onRouterTransitionStart(
+  href: string,
+  navigationType: 'push' | 'replace' | 'traverse'
+) {
+  void sentry.then((Sentry) =>
+    Sentry.captureRouterTransitionStart(href, navigationType)
+  );
+}

@@ -3,12 +3,11 @@
     "label": "Ngôn ngữ trang chào"
   },
   "header": {
-    "why": "Vì sao",
     "pricing": "Giá",
     "docs": "Tài liệu",
     "signIn": "Đăng nhập",
-    "getStarted": "Theo dõi thông minh hơn",
-    "getStartedShort": "Bắt đầu theo dõi"
+    "features": "Tính năng",
+    "getStarted": "Theo dõi thông minh hơn"
   },
   "hero": {
     "headline": {
@@ -22,9 +21,6 @@
       }
     },
     "subtitle": "Kể cho Kallo nghe bạn vừa ăn gì, như khi kể với bạn bè. Kallo tách thành từng nguyên liệu thật rồi tính calo và macro từ dữ liệu đáng tin cậy.",
-    "cardsHint": "Ước lượng bằng mắt hay cân từng gram. Rê chuột vào một bữa để xem.",
-    "cardsHintTouch": "Ước lượng bằng mắt hay cân từng gram.",
-    "examplesHeading": "Kallo đọc được gì, và tính ra được gì",
     "beta": "Miễn phí trong thời gian thử nghiệm · làm tại Việt Nam, dùng được cho mọi căn bếp",
     "total": "Tổng",
     "toggleDetails": "Mở/đóng chi tiết",
@@ -60,26 +56,16 @@
         }
       }
     },
-    "waitlist": {
-      "label": "Địa chỉ email",
-      "placeholder": "ban@email.com",
-      "submit": "Vào danh sách chờ",
-      "submitting": "Đang gửi…",
-      "success": "Kiểm tra hộp thư",
-      "successBody": "Chúng tôi vừa gửi bạn một liên kết. Nhấn vào đó để xác nhận — chỉ còn bước đó thôi.",
-      "invalidEmail": "Nhập địa chỉ email hợp lệ.",
-      "error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
-      "rateLimited": "Bạn thử hơi nhiều lần. Vui lòng đợi một lát rồi thử lại.",
-      "privacy": "Một email để xác nhận, một email khi ứng dụng di động ra mắt. Không gì khác."
-    }
+    "useWeb": "Dùng thử trên web",
+    "videoLabel": "Một bữa sáng được gõ vào Kallo bằng lời thường rồi tách thành từng món kèm calo"
   },
   "understanding": {
+    "videoLabel": "Hai lần ghi cùng một bữa sáng đặt cạnh nhau, lần ghi chi tiết có nhiều calo hơn",
     "titleLead": "Chúng tôi hiểu rằng",
     "titleUnderlined": "những chi tiết nhỏ đều quan trọng",
     "categories": {
       "fat": {
         "title": "Còn da, hay bỏ da",
-        "note": "Chỉ hai chữ về cách bạn ăn miếng gà, và lượng mỡ đi theo.",
         "items": {
           "rice": "Cơm trắng",
           "thigh": "Đùi gà nướng",
@@ -96,7 +82,6 @@
       },
       "oil": {
         "title": "Chiên, hay không dầu",
-        "note": "Đậu hũ mặc định là chiên. Nói rõ là không dầu, thì phần dầu được trừ ra.",
         "items": {
           "bun": "Bún đậu hũ"
         },
@@ -111,7 +96,6 @@
       },
       "weight": {
         "title": "Cân sống, hay cân chín",
-        "note": "Chuyện mà ai có cân nhà bếp cũng từng tranh cãi. Nói rõ là cân sống, con số đổi theo.",
         "items": {
           "breast": "Ức gà nấu chậm",
           "potato": "Khoai lang",
@@ -128,7 +112,6 @@
       },
       "count": {
         "title": "Một chén, hay hai chén",
-        "note": "Nói rõ bao nhiêu cơm thì được tính đúng bấy nhiêu, thay vì suy ra từ một thiết lập bạn chọn một lần rồi quên.",
         "items": {
           "rice": "Cơm trắng",
           "pork": "Thịt kho trứng"
@@ -218,5 +201,88 @@
     "already": "Bạn đã có trong danh sách rồi",
     "expired": "Liên kết đã hết hạn",
     "invalid": "Liên kết không hợp lệ"
+  },
+  "appStore": {
+    "label": "Tải về trên App Store"
+  },
+  "showcase": {
+    "phones": {
+      "titleLead": "Kallo chăm chút",
+      "titleRest": "từng ngày của bạn",
+      "circle": {
+        "lead": "Vòng kết nối.",
+        "rest": "Có người đồng hành, hành trình nào cũng dễ hơn.",
+        "alt": "Bảng tin Vòng kết nối của Kallo với các bữa ăn của bạn bè"
+      },
+      "home": {
+        "lead": "Theo dõi dễ dàng.",
+        "rest": "Còn bao nhiêu calo, đã ăn gì và cân nặng đang thay đổi ra sao.",
+        "alt": "Màn hình chính của Kallo với lượng calo còn lại và các bữa gần đây"
+      },
+      "nutrition": {
+        "lead": "Vi chất.",
+        "rest": "Chất xơ, vitamin và khoáng chất trong 7, 30 hoặc 90 ngày.",
+        "alt": "Màn hình dinh dưỡng của Kallo với biểu đồ calo theo tuần và các vitamin"
+      }
+    },
+    "typing": {
+      "titleLead": "Khi việc gõ",
+      "titleRest": "trở thành gánh nặng",
+      "barcode": {
+        "lead": "Quét mã vạch.",
+        "rest": "Chọn lượng bạn đã dùng rồi thêm vào bữa ăn.",
+        "alt": "Kallo quét mã vạch và hiển thị dinh dưỡng"
+      },
+      "relog": {
+        "lead": "Ghi lại bữa cũ.",
+        "rest": "Gõ dấu gạch chéo, chọn món đã từng ăn rồi lưu.",
+        "alt": "Kallo ghi lại một bữa ăn trước đó từ danh sách"
+      },
+      "label": {
+        "lead": "Chụp nhãn dinh dưỡng.",
+        "rest": "Kallo đọc bảng thành phần giúp bạn.",
+        "alt": "Kallo đọc nhãn dinh dưỡng từ ảnh chụp"
+      }
+    },
+    "beyond": {
+      "titleLead": "Không chỉ calo",
+      "titleRest": "và macro",
+      "alt": "Vitamin và khoáng chất trên màn hình dinh dưỡng của Kallo",
+      "macros": {
+        "title": "Đạm, carb và chất béo",
+        "body": "Chia theo từng món trong bữa ăn."
+      },
+      "micros": {
+        "title": "Vitamin và khoáng chất",
+        "body": "Vitamin C, nhóm B, vitamin A và nhiều chất khác, so với nhu cầu của bạn."
+      },
+      "range": {
+        "title": "7, 30 hoặc 90 ngày",
+        "body": "Một chạm để chuyển từ tuần này sang cả quý."
+      }
+    },
+    "faq": {
+      "title": "Câu hỏi",
+      "numbers": {
+        "q": "Kallo tính con số như thế nào?",
+        "a": "Kallo tách những gì bạn viết thành từng món, đối chiếu với dữ liệu thực phẩm của USDA và FAO, rồi ước lượng khẩu phần từ lời bạn kể."
+      },
+      "weigh": {
+        "q": "Tôi có cần cân đồ ăn không?",
+        "a": "Không. Cứ ước chừng như khi kể với bạn bè. Nếu có cân, bạn gõ số gam và Kallo sẽ dùng đúng số đó."
+      },
+      "web": {
+        "q": "Có dùng được trên web không?",
+        "a": "Có. Ứng dụng iPhone và bản web dùng chung một tài khoản, bữa ăn ghi ở bên này sẽ hiện ở bên kia."
+      },
+      "cost": {
+        "q": "Kallo giá bao nhiêu?",
+        "a": "Các gói có ở <link>trang giá</link>."
+      }
+    },
+    "close": {
+      "line": "Theo dõi bữa ăn bằng chính lời của bạn.",
+      "sub": "Bắt đầu từ bữa ăn tiếp theo."
+    }
   }
 }

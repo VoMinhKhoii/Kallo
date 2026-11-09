@@ -46,6 +46,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // OCR sends at most 4 MiB of decoded image bytes as base64 (~5.34 MiB).
     serverActions: { bodySizeLimit: '6mb' },
+    // The stylesheet arrives with the HTML instead of costing its own round
+    // trip before anything can paint, which is seconds on a slow connection.
+    inlineCss: true,
   },
   // Surfaced to the client so in-app feedback can record which app version a
   // report came from.

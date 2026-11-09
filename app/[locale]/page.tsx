@@ -10,10 +10,13 @@ import {
   type AuthSearchParams,
 } from '@/components/auth/request-config/auth-request-config';
 import { DocsFooter } from '@/components/docs/docs-footer';
-import { AmbientWash } from '@/components/landing-page/ambient-wash';
 import { Header } from '@/components/landing-page/header';
-import { MealCardHero } from '@/components/landing-page/hero/meal-card-hero';
-import { PricingSection } from '@/components/landing-page/pricing/pricing-section';
+import { PaintedHero } from '@/components/landing-page/hero/painted-hero';
+import { PageCanvas } from '@/components/landing-page/page-canvas';
+import { BeyondMacros } from '@/components/landing-page/showcase/beyond-macros';
+import { DownloadClose } from '@/components/landing-page/showcase/download-close';
+import { PhoneTrio } from '@/components/landing-page/showcase/phone-trio';
+import { TypingAlternatives } from '@/components/landing-page/showcase/typing-alternatives';
 import { SignedInRedirect } from '@/components/landing-page/signed-in-redirect';
 import { UnderstandingSection } from '@/components/landing-page/understanding/understanding-section';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
@@ -101,14 +104,15 @@ export default async function Home({
           // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is raw script text built locally, not user input — see comment above.
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
-        {/* One fixed layer behind everything, so the drift runs the whole way
-            down instead of stopping where the hero ends. */}
-        <AmbientWash />
+        <PageCanvas />
         <Header />
         <main>
-          <MealCardHero />
+          <PaintedHero />
+          <PhoneTrio />
           <UnderstandingSection />
-          <PricingSection />
+          <TypingAlternatives />
+          <BeyondMacros />
+          <DownloadClose />
         </main>
         <DocsFooter landing sections={sections} />
         <LazyAuthDialog />

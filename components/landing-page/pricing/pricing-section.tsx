@@ -50,7 +50,7 @@ export function PricingSection({
       ref={sectionRef}
       aria-labelledby="landing-pricing"
       id="pricing"
-      className="relative scroll-mt-20 border-kallo-border/40 border-t bg-kallo-hover pt-8 pb-8 md:pt-10 md:pb-10 dark:bg-transparent"
+      className="relative scroll-mt-20 pt-8 pb-8 md:pt-10 md:pb-10"
     >
       <div className="mx-auto max-w-[92rem] px-6 sm:px-12 lg:px-20">
         {/* `data-reveal` fades each block up as it scrolls into view

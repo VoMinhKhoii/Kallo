@@ -1,42 +1,41 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import { THEME_ICONS } from '@/components/settings/appearance/theme-icons';
-import { ThemeMenuRadio } from '@/components/settings/appearance/theme-menu-radio';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useThemeChoice } from '@/hooks/theme/use-theme-choice';
+  useResolvedTheme,
+  useThemeChoice,
+} from '@/hooks/theme/use-theme-choice';
 
 /**
- * The header's theme switch: an icon showing the current choice, opening the
- * same four segments the app's account menu offers. The choice is the app's
- * own (one stored value per device), so a visitor who picks Aurora here signs
- * in to Aurora.
+ * The header's theme switch: one click between light and dark. Aurora counts
+ * as dark here, so a visitor who picked it in the app can still flip out of it.
  */
 export function ThemeSwitcher() {
   const t = useTranslations('settings.appearance');
-  const [theme] = useThemeChoice();
-  const Icon = THEME_ICONS[theme];
+  const [, setTheme] = useThemeChoice();
+  const isLight = useResolvedTheme() === 'light';
+  const Icon = THEME_ICONS[isLight ? 'light' : 'dark'];
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Hands the click over from the early listener in `ThemeScript`.
+  useEffect(() => {
+    if (buttonRef.current) buttonRef.current.dataset.hydrated = 'true';
+  }, []);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={t('label')}
-        title={t('label')}
-        className="flex size-8 cursor-pointer items-center justify-center rounded-full text-kallo-text-soft transition-colors hover:bg-kallo-hover hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
-      >
-        <Icon className="size-icon-inline" aria-hidden="true" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        sideOffset={8}
-        className="w-56 rounded-xl border border-kallo-text/10 bg-card p-1.5 font-sans-display shadow-lg"
-      >
-        <ThemeMenuRadio />
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <button
+      ref={buttonRef}
+      data-theme-toggle=""
+      type="button"
+      aria-label={t('label')}
+      aria-pressed={!isLight}
+      title={t('label')}
+      onClick={() => setTheme(isLight ? 'dark' : 'light')}
+      className="flex size-8 cursor-pointer items-center justify-center rounded-full text-kallo-text-soft transition-colors hover:text-kallo-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-text/40"
+    >
+      <Icon className="size-icon-inline" aria-hidden="true" />
+    </button>
   );
 }

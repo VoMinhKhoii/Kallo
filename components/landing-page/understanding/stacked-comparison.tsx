@@ -9,8 +9,7 @@ import {
 } from './stack-geometry';
 
 /**
- * One category in the stack: a heading, a line saying what to look for, and the
- * two meals side by side.
+ * One category in the stack: a heading and the two meals side by side.
  *
  * The card is opaque on purpose. These stack by sticking at increasing offsets,
  * so each one slides over the last and has to hide it completely except for the
@@ -96,7 +95,7 @@ export function StackedComparison({
 
           The panel takes its NATURAL height — content plus the same padding on
           every card. It was pinned to one height so all four shared a release
-          threshold, but the four want 21.25, 19.5, 22.88 and 19.5rem, so
+          threshold, but they want different heights, so
           holding them level pooled a different amount of empty beige under each
           one and read as inconsistent padding. The fixed height lives on the
           sticky wrapper above instead, which is the box release timing actually
@@ -104,10 +103,13 @@ export function StackedComparison({
 
           That leaves coverage, which the numbers happen to satisfy: a card may
           be up to one title band shorter than the one it lands on and still
-          hide it, and the biggest drop between neighbours here is 4.81rem
-          against a 5rem band, with 0.19rem to spare. Reorder the comparisons, or add a
-          dish row, and that has to be re-checked. */}
-      <div className="overflow-hidden rounded-[2rem] border border-kallo-border/60 bg-kallo-hover shadow-[inset_0_2px_0_rgba(255,255,255,0.85),0_-6px_16px_-4px_rgba(20,20,19,0.16),0_-1px_0_rgba(20,20,19,0.06),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_-6px_16px_-4px_rgba(0,0,0,0.4),0_24px_48px_-16px_rgba(0,0,0,0.5)]">
+          hide it, and the biggest drop between neighbours here is 3.44rem
+          against a 5rem band. Reorder the comparisons, or add a dish row, and
+          that has to be re-checked. */}
+      <div
+        data-stack-card=""
+        className="overflow-hidden rounded-[2rem] border border-kallo-border/60 bg-kallo-hover shadow-[inset_0_2px_0_rgba(255,255,255,0.85),0_-6px_16px_-4px_rgba(20,20,19,0.16),0_-1px_0_rgba(20,20,19,0.06),0_8px_16px_-8px_rgba(20,20,19,0.10),0_24px_48px_-16px_rgba(20,20,19,0.16),0_48px_96px_-32px_rgba(20,20,19,0.20)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_-6px_16px_-4px_rgba(0,0,0,0.4),0_24px_48px_-16px_rgba(0,0,0,0.5)]"
+      >
         {/* The title band. Its height is exactly the stack's step, so the strip
             each buried card still shows is precisely this band — you can read
             "Skin on, or skin off" off a card three deep in the pile. Everything
@@ -133,24 +135,15 @@ export function StackedComparison({
               use: Vietnamese is full of descenders — the y of "hay", the g of
               "sống" — which a serif hangs below a 1.15 line box, and they were
               being sliced off mid-stroke by the old overflow. */}
-          <h3 className="text-balance font-normal font-serif text-2xl text-kallo-text leading-[1.4] tracking-[-0.02em] md:text-3xl">
+          <h3 className="text-balance font-semibold font-serif text-2xl text-kallo-text leading-[1.4] tracking-[-0.02em] md:text-3xl">
             {t(`categories.${comparison.id}.title`)}
           </h3>
         </div>
 
         <div className="px-6 pb-7 sm:px-8 sm:pb-8 lg:px-10">
-          <p className="max-w-2xl font-sans-display text-base text-kallo-text leading-relaxed">
-            {t(`categories.${comparison.id}.note`)}
-          </p>
-
-          {/* `max-content` floors each column at its own one-line sentence, so
-              neither card can be squeezed into wrapping; `1fr` splits the
-              leftover so the pair fills the panel. This was `auto-cols-max`,
-              which did the first half and left the rest as empty beige.
-
-              Equal halves below `2xl`, where two one-line sentences do not fit
-              anyway; the subgrid keeps the rows level when one wraps. */}
-          <div className="mt-4 grid gap-3.5 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] 2xl:grid-cols-[minmax(max-content,1fr)_minmax(max-content,1fr)]">
+          {/* Equal halves; the subgrid keeps the rows level when a sentence
+              wraps. */}
+          <div className="grid gap-3.5 md:grid-cols-2 md:grid-rows-[auto_1fr_auto]">
             <CompareMealCard
               comparison={comparison}
               variant={before}
