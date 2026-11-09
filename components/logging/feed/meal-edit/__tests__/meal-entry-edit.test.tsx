@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { MealEntry } from '@/components/logging/feed/meal-entry/meal-entry';
 import type { ChatMessage } from '@/lib/core/types/meal';
 
@@ -74,5 +74,74 @@ describe('editing an unsaved meal on web', () => {
       await screen.findByRole('menuitem', { name: 'edit' })
     ).toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'discard' })).toBeNull();
+  });
+});
+
+describe('sizing a dish with a vessel on web', () => {
+  const [pho, latte] = message.parsedMeal?.items ?? [];
+  const withBowl: ChatMessage = {
+    ...message,
+    parsedMeal: {
+      mealName: 'Lunch',
+      totalMacros: { calories: 500, protein: 30, carbs: 60, fat: 12 },
+      items: [
+        { ...pho, vessel: { family: 'bowl', tier: 2, dishClass: 'soup' } },
+        latte,
+      ],
+    },
+  };
+  const sizeRow = (expanded: boolean) =>
+    screen.getByRole('button', { name: /^size/, expanded });
+  const tape = () => screen.queryByRole('slider', { name: 'title' });
+
+  beforeAll(() => {
+    // What jsdom lacks: the panel's scroll and the slider's size measuring.
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      }
+    );
+  });
+
+  it('opens from the portion line straight onto the size, in place', async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(<MealEntry message={withBowl} onConfirm={onConfirm} />);
+
+    await user.click(screen.getByRole('button', { name: 'adjust' }));
+    expect(sizeRow(true)).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toContainElement(tape());
+
+    // Moving the tape writes the amount live: there is no Apply to press.
+    tape()?.focus();
+    await user.keyboard('{ArrowRight}');
+    const grams = Number(tape()?.getAttribute('aria-valuenow'));
+    expect(grams).toBeGreaterThan(400);
+    expect(screen.getByText(`${grams} g`)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'done' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await user.click(screen.getByRole('button', { name: /confirm/ }));
+    expect(onConfirm).toHaveBeenCalledWith([
+      { mealItemOrder: 0, newGrams: grams },
+    ]);
+  });
+
+  it('keeps Size shut when the dialog opens from the dish, until its row is tapped', async () => {
+    const user = userEvent.setup();
+    render(<MealEntry message={withBowl} />);
+
+    await user.click(screen.getAllByRole('button', { name: 'editDish' })[0]);
+    expect(sizeRow(false)).toBeInTheDocument();
+    expect(tape()).toBeNull();
+
+    await user.click(sizeRow(false));
+    expect(tape()).toBeInTheDocument();
+    await user.click(sizeRow(true));
+    await waitFor(() => expect(tape()).toBeNull());
   });
 });

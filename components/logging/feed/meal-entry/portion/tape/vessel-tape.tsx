@@ -21,8 +21,8 @@ const NEEDLE_GAP = 6;
 
 /**
  * A food's vessels on a tape measure — the iOS ruler (`PortionRulerStrip`),
- * on the phone sheets: the tape and its silhouettes scroll together under a
- * fixed centre needle. Drag the tape, tap a vessel to jump to it, or step one
+ * on web's manual food page and meal edit dialog: the tape and its silhouettes
+ * scroll together under a fixed centre needle. Drag the tape, tap a vessel to jump to it, or step one
  * graduation with the arrow keys; every label is in grams.
  */
 export function VesselTape({

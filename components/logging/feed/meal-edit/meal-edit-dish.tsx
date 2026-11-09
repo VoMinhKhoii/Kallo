@@ -21,7 +21,9 @@ import { MealEditStepperRow } from './meal-edit-stepper-row';
 interface MealEditDishProps {
   draft: MealEditDraft;
   dish: EditDish;
+  sizeOpen: boolean;
   onDraft: (next: MealEditDraft) => void;
+  onToggleSize: () => void;
 }
 
 /**
@@ -29,7 +31,13 @@ interface MealEditDishProps {
  * and — when the pipeline pictured it in a vessel — Size. No ingredient rows:
  * a dish scales as one thing (the owner's ruling).
  */
-export function MealEditDish({ draft, dish, onDraft }: MealEditDishProps) {
+export function MealEditDish({
+  draft,
+  dish,
+  sizeOpen,
+  onDraft,
+  onToggleSize,
+}: MealEditDishProps) {
   const t = useTranslations('logging.mealEdit');
   const locale = useLocale();
   const named = { name: dish.name };
@@ -88,16 +96,9 @@ export function MealEditDish({ draft, dish, onDraft }: MealEditDishProps) {
           <MealEditSizeRow
             vessel={dish.vessel}
             grams={dish.grams}
-            kcal={kcal ?? 0}
-            onApply={(grams, vessel) => {
-              const next = setDishGrams(draft, dish.key, grams);
-              onDraft({
-                ...next,
-                dishes: next.dishes.map((d) =>
-                  d.key === dish.key ? { ...d, vessel } : d
-                ),
-              });
-            }}
+            open={sizeOpen}
+            onToggle={onToggleSize}
+            onChange={(grams) => onDraft(setDishGrams(draft, dish.key, grams))}
           />
         )}
       </div>

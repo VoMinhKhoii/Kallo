@@ -22,6 +22,8 @@ interface MealEditDialogProps {
   initial: MealEditDraft;
   /** The meal's words, under the title. */
   subtitle?: string;
+  /** A dish whose Size starts open: the card's portion line opens onto it. */
+  sizeOpen?: string;
   /** "Save" for a saved meal, "Done" for an unsaved one. */
   commitLabel: string;
   /** Resolves to close; throws to stay open for a retry (the caller toasts). */
@@ -64,6 +66,7 @@ export function MealEditDialog(props: MealEditDialogProps) {
 function MealEditBody({
   onOpenChange,
   initial,
+  sizeOpen: initialSizeOpen,
   commitLabel,
   onCommit,
   saving,
@@ -75,6 +78,8 @@ function MealEditBody({
   const t = useTranslations('logging.mealEdit');
   const locale = useLocale();
   const [draft, setDraft] = useState(initial);
+  // One dish's Size open at a time.
+  const [sizeOpen, setSizeOpen] = useState(initialSizeOpen);
 
   const commit = async () => {
     setSaving(true);
@@ -110,7 +115,11 @@ function MealEditBody({
             key={dish.key}
             draft={draft}
             dish={dish}
+            sizeOpen={sizeOpen === dish.key}
             onDraft={setDraft}
+            onToggleSize={() =>
+              setSizeOpen((open) => (open === dish.key ? undefined : dish.key))
+            }
           />
         ))}
       </fieldset>

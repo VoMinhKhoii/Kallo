@@ -13,6 +13,8 @@ interface MealEntryDetailsProps {
   totalsLine: ReactNode;
   /** Opens the edit dialog; undefined once the meal is saved. */
   onOpen?: () => void;
+  /** Opens the edit dialog onto this dish's Size; undefined once saved. */
+  onOpenSize?: (itemId: string) => void;
 }
 
 /**
@@ -24,6 +26,7 @@ export function MealEntryDetails({
   totals,
   totalsLine,
   onOpen,
+  onOpenSize,
 }: MealEntryDetailsProps) {
   const t = useTranslations('logging.mealEntry');
   return (
@@ -32,11 +35,11 @@ export function MealEntryDetails({
         {items.map((item, idx) => (
           <div key={item.id}>
             <MealEntryItem item={item} index={idx} onOpen={onOpen} />
-            {onOpen && item.vessel && (
+            {onOpenSize && item.vessel && (
               <PortionAssumptionLine
                 vessel={item.vessel}
                 grams={item.quantity}
-                onClick={onOpen}
+                onClick={() => onOpenSize(item.id)}
               />
             )}
           </div>

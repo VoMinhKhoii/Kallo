@@ -164,10 +164,7 @@
   "portionPicker": {
     "title": "Khẩu phần",
     "assumption": "≈ {label}",
-    "adjust": "Chỉnh khẩu phần, hiện tại {label}",
-    "custom": "Khẩu phần tuỳ chỉnh",
-    "apply": "Áp dụng",
-    "cancel": "Hủy"
+    "adjust": "Chỉnh khẩu phần, hiện tại {label}"
   },
   "persistedMealCard": {
     "toggleDetails": "Bật/tắt chi tiết bữa ăn",

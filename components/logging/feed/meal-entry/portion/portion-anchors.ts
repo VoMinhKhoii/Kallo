@@ -114,24 +114,6 @@ export function positionBreaks(count: number): number[] {
   ];
 }
 
-/**
- * Slider step in position space. Taken from the flattest segment (the largest
- * position-per-gram slope), so one arrow press moves at least 1 g in every
- * segment — the coarse segments simply move more.
- */
-export function rulerStep(
-  gramBreaks: readonly number[],
-  positions: readonly number[]
-): number {
-  let steepest = 0;
-  for (let i = 0; i < positions.length - 1; i += 1) {
-    const dGrams = gramBreaks[i + 1] - gramBreaks[i];
-    if (dGrams <= 0) continue;
-    steepest = Math.max(steepest, (positions[i + 1] - positions[i]) / dGrams);
-  }
-  return Math.max(1, Math.ceil(steepest));
-}
-
 const LARGEST_PIECE_GRAMS = PIECE_TIERS[PIECE_TIERS.length - 1].grams;
 
 /**

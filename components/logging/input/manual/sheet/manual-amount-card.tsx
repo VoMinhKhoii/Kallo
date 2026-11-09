@@ -7,6 +7,7 @@ import {
   buildPieceAnchors,
   claimedAnchor,
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
+import { VesselTape } from '@/components/logging/feed/meal-entry/portion/tape/vessel-tape';
 import { useStateWord } from '@/components/logging/input/manual/manual-food-row';
 import { ScanAmountInput } from '@/components/logging/input/scan/result/amount/input';
 import { cn } from '@/lib/core/ui/cn';
@@ -21,7 +22,6 @@ import {
   type IngredientSearchResult,
   MANUAL_ITEM_GRAMS_MAX,
 } from '@/lib/domain/logging/manual-logging';
-import { VesselTape } from './tape/vessel-tape';
 
 const STEP =
   'flex size-8 items-center justify-center rounded-full bg-kallo-segment text-kallo-text transition-colors hover:bg-kallo-border disabled:opacity-40';
