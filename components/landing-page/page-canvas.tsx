@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import { useRef, useState } from 'react';
+import { Painting } from '@/components/landing-page/painting';
 import { useScrollFrame } from '@/hooks/landing/use-scroll-frame';
 
 /** How much paper covers the painting once past the hero. */
@@ -11,9 +11,6 @@ const smooth = (from: number, to: number, value: number) => {
   const t = Math.min(1, Math.max(0, (value - from) / (to - from)));
   return t * t * (3 - 2 * t);
 };
-
-const PAINTING =
-  'object-cover object-[68%_0] md:object-top dark:brightness-[0.6]';
 
 /** The painting at 32px, in the HTML, so its colours are in the first paint. */
 const PAINTING_BLUR =
@@ -62,27 +59,9 @@ export function PageCanvas({ veiled = false }: { veiled?: boolean }) {
       className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[100lvh] overflow-hidden"
     >
       <div ref={stageRef} className="absolute inset-0 origin-[50%_35%]">
-        <Image
-          src="/landing/hero/stacks-of-wheat.webp"
-          alt=""
-          fill
-          loading="eager"
-          fetchPriority="low"
-          placeholder="blur"
-          blurDataURL={PAINTING_BLUR}
-          sizes="100vw"
-          className={PAINTING}
-        />
+        <Painting name="stacks-of-wheat" blurDataURL={PAINTING_BLUR} eager />
         <div ref={summerRef} className="absolute inset-0 opacity-0">
-          {later ? (
-            <Image
-              src="/landing/hero/stacks-of-wheat-summer.webp"
-              alt=""
-              fill
-              sizes="100vw"
-              className={PAINTING}
-            />
-          ) : null}
+          {later ? <Painting name="stacks-of-wheat-summer" /> : null}
         </div>
       </div>
       <div
