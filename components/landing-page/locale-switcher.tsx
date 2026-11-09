@@ -4,7 +4,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
+import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
+import { switchedFoodPath } from '@/lib/seo/food-pages/slugs';
+import { isPlainClick } from './plain-click';
 
 /**
  * Two locales, so the switch is two words rather than a control.
@@ -25,6 +28,12 @@ export function LocaleSwitcher() {
   const t = useTranslations('landing.localeSwitcher');
   const locale = useLocale() as Locale;
   const [isPending, startTransition] = useTransition();
+
+  const pathname = usePathname();
+  const hrefFor = (nextLocale: Locale) => {
+    const path = switchedFoodPath(pathname, nextLocale);
+    return `/${nextLocale}${path === '/' ? '' : path}`;
+  };
 
   const switchLocale = useLocaleSwitch();
   const handleChange = (nextLocale: Locale) => {
@@ -57,8 +66,9 @@ export function LocaleSwitcher() {
             {/* A real link, so a tap before the page's scripts arrive still
                 changes language. Once hydrated it switches in place. */}
             <a
-              href={`/${code}`}
+              href={hrefFor(code)}
               onClick={(event) => {
+                if (!isPlainClick(event)) return;
                 event.preventDefault();
                 if (!isPending) handleChange(code);
               }}

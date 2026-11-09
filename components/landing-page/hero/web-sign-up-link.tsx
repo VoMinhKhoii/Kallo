@@ -3,6 +3,7 @@
 import { ArrowRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
+import { isPlainClick } from '../plain-click';
 
 /**
  * The way in for anyone not on an iPhone: plain text beside Apple's badge.
@@ -19,6 +20,7 @@ export function WebSignUpLink() {
     <a
       href={`/${locale}?auth=sign-up`}
       onClick={(event) => {
+        if (!isPlainClick(event)) return;
         event.preventDefault();
         openDialog('sign-up');
       }}

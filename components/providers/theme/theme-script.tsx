@@ -25,7 +25,7 @@ const ARGS = `${scriptJson(THEME_STORAGE_KEY)},${scriptJson(THEME_COLOR)}`;
  * page's scripts arrive, which on a slow connection is many seconds after it is
  * on screen. The switch marks itself `data-hydrated` once React owns the click.
  */
-const EARLY_TOGGLE = `document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-theme-toggle]');if(!b||b.dataset.hydrated)return;var h=document.documentElement.classList,t=h.contains('dark')||h.contains('aurora')?'light':'dark';try{localStorage.setItem(${scriptJson(THEME_STORAGE_KEY)},t)}catch(_){}${PAINT}(${ARGS},t)})`;
+const EARLY_TOGGLE = `document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-theme-toggle]');if(!b||b.dataset.hydrated)return;var h=document.documentElement.classList,t=h.contains('dark')||h.contains('aurora')?'light':'dark';try{localStorage.setItem(${scriptJson(THEME_STORAGE_KEY)},t)}catch(_){document.documentElement.dataset.unstoredTheme=t}${PAINT}(${ARGS},t)})`;
 
 const SCRIPT = `${PAINT}(${ARGS});${EARLY_TOGGLE}`;
 const subscribeNever = () => () => {};

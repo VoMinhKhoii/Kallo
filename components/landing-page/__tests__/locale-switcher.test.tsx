@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleSwitcher } from '../locale-switcher';
@@ -20,6 +20,24 @@ vi.mock('@/i18n/navigation', () => ({
 describe('LocaleSwitcher', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('links to the current route in the other locale', () => {
+    render(<LocaleSwitcher />);
+
+    expect(
+      screen.getByRole('link', { name: 'Tiếng Việt' }).getAttribute('href')
+    ).toBe('/vi/dashboard');
+  });
+
+  it('leaves a modified click to the browser', () => {
+    render(<LocaleSwitcher />);
+
+    fireEvent.click(screen.getByRole('link', { name: 'Tiếng Việt' }), {
+      metaKey: true,
+    });
+
+    expect(replaceMock).not.toHaveBeenCalled();
   });
 
   it('switches the current route into the selected locale', async () => {
