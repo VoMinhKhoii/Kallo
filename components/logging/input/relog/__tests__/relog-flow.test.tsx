@@ -130,7 +130,7 @@ function Harness({
   onAiSubmit?: (override?: {
     message: string;
     refs?: unknown[];
-  }) => boolean | undefined;
+  }) => boolean | undefined | Promise<boolean>;
   mode?: InputMode;
 } = {}) {
   const inputRef = useRef<MealInputHandle>(null);
@@ -141,11 +141,14 @@ function Harness({
     inputRef,
     scrollToBottom: () => {},
     setMessages: () => {},
-    handleSubmit: (override) => {
+    handleSubmit: async (override) => {
       const started = onAiSubmit?.(override);
-      // The real useFeedSubmit resolves to whether the analysis started; let a
-      // test force `false` by returning it from the spy (default true).
-      return Promise.resolve(started === undefined ? true : Boolean(started));
+      // The real useFeedSubmit empties the field as it starts, through the
+      // imperative handle (so no change event), and resolves to whether the
+      // analysis started; let a test force `false` or hold it open from the spy
+      // (default true).
+      inputRef.current?.clear();
+      return (await started) ?? true;
     },
   });
   const {
@@ -204,7 +207,7 @@ function renderHarness(
   onAiSubmit?: (override?: {
     message: string;
     refs?: unknown[];
-  }) => boolean | undefined
+  }) => boolean | undefined | Promise<boolean>
 ) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
@@ -457,10 +460,42 @@ describe('relog `/` flow', () => {
     await waitFor(() => expect(onAiSubmit).toHaveBeenCalled());
     // Failed durable stage ⇒ the pick is restored (still staged), not consumed,
     // and the AI carried only the free text with the pick as a ref.
-    expect(stagedRow('Phở bò')).toBeVisible();
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
+    expect(textarea.value).toBe('Phở bò và cơm');
+    expect(mentionText()).toEqual(['Phở bò']);
     expect(onAiSubmit.mock.calls[0][0].message).toBe('và cơm');
     expect(onAiSubmit.mock.calls[0][0].refs).toHaveLength(1);
     expect(stageRelog).not.toHaveBeenCalled();
+  });
+
+  it('empties the whole composer the moment a combined submit goes out', async () => {
+    let settle: (staged: boolean) => void = () => {};
+    const onAiSubmit = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          settle = resolve;
+        })
+    );
+    const { textarea } = renderHarness(undefined, 'normal', onAiSubmit);
+    type(textarea, '/');
+    await screen.findAllByRole('option');
+    key(textarea, 'Enter');
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeVisible());
+    type(textarea, `${textarea.value}và cơm`);
+
+    key(textarea, 'Enter');
+
+    // Still analyzing: nothing of the sentence may be left behind in the
+    // composer — not the staged row, not the mirror painting the old text.
+    await waitFor(() => expect(onAiSubmit).toHaveBeenCalled());
+    await waitFor(() => expect(stagedRow('Phở bò')).toBeNull());
+    expect(textarea.value).toBe('');
+    expect(mentionText()).toEqual([]);
+    expect(textarea.className).not.toContain('text-transparent');
+
+    await act(async () => settle(true));
+    expect(stagedRow('Phở bò')).toBeNull();
+    expect(textarea.value).toBe('');
   });
 
   it('combined: free text runs the AI with the picks passed as refs', async () => {
