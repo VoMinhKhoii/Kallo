@@ -155,6 +155,13 @@ describe('hasTypedWeight', () => {
     '1.5 kg ribs',
     '2 lạng thịt bò'.normalize('NFD'),
     'nửa ký thịt bò',
+    '150gam thịt bò',
+    '2lạng thịt heo',
+    '1ký tôm',
+    '1lít sữa',
+    '200grams beef',
+    '1 lit sua',
+    '2kilos ribs',
     'half a pound of ground beef',
     'a 6 ounce sirloin',
   ])('spots a typed weight in %s', (text) => {
