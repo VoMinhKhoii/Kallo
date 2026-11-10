@@ -156,7 +156,7 @@ export async function runGroundedDecomposition(args: {
             systemPrompt: decompSystemPrompt,
             userMessage,
             model: profile.decompositionModel,
-            temperature: 0.3,
+            temperature: 0,
             topP: 1,
             topK: 1,
             abortSignal: signal,
