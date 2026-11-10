@@ -50,7 +50,9 @@ describe('account export download', () => {
 });
 
 describe('account sign-out', () => {
-  it('signs out only this browser, leaving the iOS session alive', async () => {
+  // A rejected sign-out keeps the hook off `window.location.assign`, which
+  // jsdom does not implement; only the scope passed to Supabase is checked.
+  it('passes scope local to signOut, so the iOS session is not revoked', async () => {
     const signOut = vi
       .fn()
       .mockResolvedValue({ error: new Error('sign-out failed') });

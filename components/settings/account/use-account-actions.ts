@@ -2,13 +2,13 @@
 
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { signOutThisBrowser } from '@/hooks/auth/use-sign-out';
 import { useAsyncAction } from '@/hooks/ui/use-async-action';
 import {
   deleteAccountAction,
   exportMyDataAction,
 } from '@/lib/actions/identity/account';
 import { clearComposerDrafts } from '@/lib/domain/logging/drafts/composer-drafts';
-import { createClient } from '@/lib/infra/supabase/client';
 
 /**
  * The three account-level side effects — export, sign out, delete — as
@@ -47,22 +47,11 @@ export function useAccountActions(expectedUserId: string) {
     );
 
   const handleSignOut = () =>
-    signOutAction.run(
-      async () => {
-        const supabase = createClient();
-        // `local`: end only this browser's session, as useSignOut does.
-        const { error } = await supabase.auth.signOut({ scope: 'local' });
-        if (error) throw error;
-        clearComposerDrafts();
-        document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
-        window.location.assign('/');
-      },
-      {
-        logLabel: 'Failed to sign out:',
-        errorMessage: t('signOutError'),
-        keepPendingOnSuccess: true,
-      }
-    );
+    signOutAction.run(signOutThisBrowser, {
+      logLabel: 'Failed to sign out:',
+      errorMessage: t('signOutError'),
+      keepPendingOnSuccess: true,
+    });
 
   const handleDelete = () =>
     deleteAction.run(

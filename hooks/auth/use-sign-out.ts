@@ -7,8 +7,23 @@ import { clearComposerDrafts } from '@/lib/domain/logging/drafts/composer-drafts
 import { createClient } from '@/lib/infra/supabase/client';
 
 /**
- * Signs the user out and hard-navigates home. Shared by the desktop user menu
- * and the mobile account sheet so both clear the locale cookie the same way.
+ * Ends this browser's session and hard-navigates home, clearing the composer
+ * drafts and the locale cookie. Every web Sign out button goes through here.
+ *
+ * `local`: only this browser. supabase-js defaults to `global`, which also
+ * revokes the iOS app's session on the same account.
+ */
+export async function signOutThisBrowser() {
+  const supabase = createClient();
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
+  if (error) throw error;
+  clearComposerDrafts();
+  document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
+  window.location.assign('/');
+}
+
+/**
+ * Sign out for the desktop user menu and the mobile account sheet.
  *
  * A failure keeps the user where they are with a toast and re-enables the
  * control; success never resets `signingOut`, because the page is leaving.
@@ -21,14 +36,7 @@ export function useSignOut() {
     if (signingOut) return;
     setSigningOut(true);
     try {
-      const supabase = createClient();
-      // `local`: end only this browser's session. supabase-js defaults to
-      // `global`, which also revokes the iOS app's session on the same account.
-      const { error } = await supabase.auth.signOut({ scope: 'local' });
-      if (error) throw error;
-      clearComposerDrafts();
-      document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
-      window.location.assign('/');
+      await signOutThisBrowser();
     } catch (error) {
       console.error('Failed to sign out:', error);
       toast.error(t('signOutError'));
