@@ -40,8 +40,11 @@ export function startPlainRead(args: {
   mealText: string;
   /** The request's signal: a client hang-up cancels the read at once. */
   signal: AbortSignal;
+  /** Do not ask the model at all (a typed-weight meal); settles to null. */
+  skip?: boolean;
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
 }): { settle: () => Promise<number | null>; abort: () => void } {
+  if (args.skip) return { settle: async () => null, abort: () => {} };
   const controller = new AbortController();
   const cancel = () => controller.abort();
   if (args.signal.aborted) cancel();

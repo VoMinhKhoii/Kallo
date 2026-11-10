@@ -27,12 +27,6 @@ export const HOLD_BAND = 0.1;
  */
 export const MAX_HOLD_FACTOR = 5;
 
-/**
- * A weight the user typed ("150g thịt bò", "2 lạng", "8 oz steak", "nửa ký
- * thịt bò", "half a pound of beef"). Those meals are left as computed: the hold
- * was never measured on them, and scaling would change grams the user wrote
- * themselves. A false match ("pound cake") only leaves a meal unheld.
- */
 /** Any unit right after a number, spaced or not ("150g", "2lạng", "1 lit"). */
 const NUMBER_THEN_UNIT =
   /\d\s*(?:g|gr|grams?|gam|kg|kilos?|kilograms?|ký|kí|lạng|ml|l|lít|lit|liters?|litres?|oz|ounces?|lbs?|pounds?)(?![\p{L}\p{N}])/iu;
@@ -43,6 +37,12 @@ const NUMBER_THEN_UNIT =
 const UNIT_WORD =
   /(?<!\p{L})(?:grams?|gam|kilos?|kilograms?|ký|kí|lạng|lít|liters?|litres?|ounces?|pounds?)(?![\p{L}\p{N}])/iu;
 
+/**
+ * A weight the user typed ("150g thịt bò", "2 lạng", "8 oz steak", "nửa ký
+ * thịt bò", "half a pound of beef"). Those meals are left as computed: the hold
+ * was never measured on them, and scaling would change grams the user wrote
+ * themselves. A false match ("pound cake") only leaves a meal unheld.
+ */
 export function hasTypedWeight(mealText: string): boolean {
   // NFC first: "lạng" / "ký" typed in decomposed form must still match.
   const text = mealText.normalize('NFC');
@@ -105,8 +105,8 @@ function scaleResult(result: PipelineResult, f: number): PipelineResult {
   return {
     ...result,
     mealItems: result.mealItems.map((mi) => scaleMealItem(mi, f)),
-    boundedNutrition: scaleBounded(result.boundedNutrition, f),
-    displayedNutrition: scaleValues(result.displayedNutrition, f),
+    boundedNutrition: scaleBoundedNutrition(result.boundedNutrition, f),
+    displayedNutrition: scaleNutritionValues(result.displayedNutrition, f),
   };
 }
 
@@ -114,8 +114,8 @@ function scaleMealItem(mi: PipelineMealItem, f: number): PipelineMealItem {
   return {
     ...mi,
     ingredients: mi.ingredients.map((ing) => scaleIngredient(ing, f)),
-    boundedNutrition: scaleBounded(mi.boundedNutrition, f),
-    displayedNutrition: scaleValues(mi.displayedNutrition, f),
+    boundedNutrition: scaleBoundedNutrition(mi.boundedNutrition, f),
+    displayedNutrition: scaleNutritionValues(mi.displayedNutrition, f),
   };
 }
 
@@ -127,13 +127,13 @@ function scaleIngredient(
     ...ing,
     estimatedGrams: ing.estimatedGrams * f,
     rawEquivalentGrams: ing.rawEquivalentGrams * f,
-    boundedNutrition: scaleBounded(ing.boundedNutrition, f),
-    displayedNutrition: scaleValues(ing.displayedNutrition, f),
+    boundedNutrition: scaleBoundedNutrition(ing.boundedNutrition, f),
+    displayedNutrition: scaleNutritionValues(ing.displayedNutrition, f),
     ...(ing.alcoholG != null && { alcoholG: ing.alcoholG * f }),
   };
 }
 
-function scaleValues(v: NutritionValues, f: number): NutritionValues {
+function scaleNutritionValues(v: NutritionValues, f: number): NutritionValues {
   const out = { ...v };
   for (const key of Object.keys(out) as (keyof NutritionValues)[]) {
     const x = out[key];
@@ -142,7 +142,10 @@ function scaleValues(v: NutritionValues, f: number): NutritionValues {
   return out;
 }
 
-function scaleBounded(b: BoundedNutrition, f: number): BoundedNutrition {
+function scaleBoundedNutrition(
+  b: BoundedNutrition,
+  f: number
+): BoundedNutrition {
   const out = { ...b };
   for (const key of Object.keys(out) as (keyof BoundedNutrition)[]) {
     const e = out[key];

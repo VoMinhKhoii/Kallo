@@ -34,6 +34,18 @@ const MAX_ATTEMPTS = 2;
 const CHUNK_INTERVAL_MS = 150;
 
 /**
+ * Thinking off, per model. Sonnet 5.5 rejects `disabled` with a 400; its
+ * thinking-off setting is `between_tools` (accepted at effort high or below).
+ */
+function thinkingOff(
+  model: string
+): Anthropic.ThinkingConfigDisabled | Anthropic.ThinkingConfigBetweenTools {
+  return model.startsWith('claude-sonnet-5-5')
+    ? { type: 'between_tools' }
+    : { type: 'disabled' };
+}
+
+/**
  * The system prompt as cache blocks. Everything before the first per-user
  * block (a line that opens `<language>` or `<user_context>`) is identical for
  * every request, so it gets the cache breakpoint; the per-user and per-meal
@@ -116,11 +128,7 @@ export function createClaudeStructuredOutput(
           {
             model: params.model,
             max_tokens: 16_000,
-            // Sonnet 5.5 rejects `disabled` with a 400; `between_tools` is its
-            // thinking-off setting (accepted at effort high or below).
-            thinking: params.model.startsWith('claude-sonnet-5-5')
-              ? { type: 'between_tools' }
-              : { type: 'disabled' },
+            thinking: thinkingOff(params.model),
             system: systemBlocks(params.systemPrompt),
             messages: [{ role: 'user', content: params.userMessage }],
             output_config: {
