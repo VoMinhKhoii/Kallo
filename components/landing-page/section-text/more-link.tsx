@@ -17,13 +17,11 @@ export function MoreLink({
   lead,
   text,
   stretch = false,
-  className,
 }: {
   href: string;
   lead?: string;
   text: string;
   stretch?: boolean;
-  className?: string;
 }) {
   const cut = text.lastIndexOf(' ') + 1;
   return (
@@ -31,8 +29,7 @@ export function MoreLink({
       href={href}
       className={cn(
         'group rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-text/40',
-        stretch && 'after:absolute after:inset-0',
-        className
+        stretch && 'after:absolute after:inset-0'
       )}
     >
       <span className="decoration-1 underline-offset-4 group-hover:underline">

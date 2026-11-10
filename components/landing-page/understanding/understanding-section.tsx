@@ -52,7 +52,7 @@ const HEADING_REM = 9.5;
  * section this page used to have pinned 300vh and ran a four-stage animation
  * off scroll offset, and it was the worst thing on the page on mobile.
  */
-export function UnderstandingSection({ subtitle }: { subtitle?: ReactNode }) {
+export function UnderstandingSection({ subtitle }: { subtitle: ReactNode }) {
   const t = useTranslations('landing.understanding');
   const locale = useLocale();
   const introRef = useRef<HTMLDivElement>(null);

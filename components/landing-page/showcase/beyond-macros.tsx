@@ -8,9 +8,10 @@ import { ProductVideo } from '../media/product-video';
 import { MoreLink } from '../section-text/more-link';
 import { SectionTitle } from '../section-text/section-title';
 
-const ROWS = [
-  { id: 'macros', doc: '/docs/estimates/how-it-works' },
-  { id: 'micros', doc: '/docs/tracking/nutrition' },
+/** The rows; `doc` is the docs slug a row links to, when one explains it. */
+export const ROWS = [
+  { id: 'macros', doc: 'estimates/how-it-works' },
+  { id: 'micros', doc: 'tracking/nutrition' },
   { id: 'range', doc: undefined },
 ] as const;
 
@@ -60,7 +61,11 @@ export function BeyondMacros() {
               <div key={row} className="relative py-6 first:pt-0 last:pb-0">
                 <dt className="font-sans-display text-[1.75rem] text-kallo-text leading-[1.25] tracking-[-0.018em]">
                   {doc ? (
-                    <MoreLink href={doc} text={t(`${row}.title`)} stretch />
+                    <MoreLink
+                      href={`/docs/${doc}`}
+                      text={t(`${row}.title`)}
+                      stretch
+                    />
                   ) : (
                     t(`${row}.title`)
                   )}

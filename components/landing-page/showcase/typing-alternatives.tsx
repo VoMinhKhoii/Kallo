@@ -8,10 +8,11 @@ import { ProductVideo } from '../media/product-video';
 import { CardCaption } from '../section-text/card-caption';
 import { SectionTitle } from '../section-text/section-title';
 
-const WAYS = [
-  { id: 'barcode', doc: '/docs/logging/barcode' },
-  { id: 'relog', doc: '/docs/logging/relog' },
-  { id: 'label', doc: '/docs/logging/nutrition-label' },
+/** Each way to log without typing and the docs slug its caption links to. */
+export const WAYS = [
+  { id: 'barcode', doc: 'logging/barcode' },
+  { id: 'relog', doc: 'logging/relog' },
+  { id: 'label', doc: 'logging/nutrition-label' },
 ] as const;
 
 /** How much larger than its settled size the row arrives on screen. */
@@ -59,7 +60,7 @@ export function TypingAlternatives() {
             <CardCaption
               lead={t(`${way}.lead`)}
               rest={t(`${way}.rest`)}
-              href={doc}
+              doc={doc}
             />
           </li>
         ))}
