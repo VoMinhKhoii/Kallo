@@ -10,7 +10,7 @@ vi.mock('@/components/groups/circle-meal-bar', () => ({
 vi.mock('@/components/groups/meal-invites/meal-invites', () => ({
   MealInvites: () => null,
 }));
-vi.mock('@/components/groups/view-switcher', () => ({
+vi.mock('@/components/groups/navigation/view-switcher', () => ({
   ViewSwitcher: () => null,
 }));
 

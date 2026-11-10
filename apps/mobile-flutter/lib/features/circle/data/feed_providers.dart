@@ -167,8 +167,8 @@ class SharedMealFeedNotifier
     previous?.call();
   }
 
-  /// Refresh in place: keep posts visible, preserve an overlapping history
-  /// tail, and never let an earlier page request overwrite the new head.
+  /// Keep posts visible while refreshing, then restart older pagination from
+  /// the fresh head. Earlier requests cannot overwrite the refreshed result.
   Future<void> refresh() {
     if (_refreshing != null) return _refreshing!;
     if (state.isLoading) return Future.value();

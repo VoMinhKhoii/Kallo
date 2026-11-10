@@ -6,7 +6,10 @@ import { useMyChatGroups } from '@/hooks/social/circle/use-chat-groups';
 import { useFriendsFeedReadMarker } from '@/hooks/social/circle/use-friend-thread-feed';
 import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
-import { circleGroupHref } from '@/lib/domain/social/circle-routes';
+import {
+  circleFeedSelection,
+  circleGroupHref,
+} from '@/lib/domain/social/circle-routes';
 
 const PILL_BASE =
   'inline-flex items-center gap-[7px] whitespace-nowrap rounded-full ' +
@@ -34,6 +37,7 @@ function UnreadDot() {
 export function ViewSwitcher() {
   const t = useTranslations('groups.switcher');
   const pathname = usePathname();
+  const selection = circleFeedSelection(pathname);
   const { data: groups = [], isError, refetch } = useMyChatGroups();
   const { data: readMarker } = useFriendsFeedReadMarker();
 
@@ -62,10 +66,10 @@ export function ViewSwitcher() {
     >
       <CircleFeedLink
         href="/circle"
-        aria-current={pathname === '/circle' ? 'page' : undefined}
+        aria-current={selection === 'all' ? 'page' : undefined}
         className={cn(
           PILL_BASE,
-          pathname === '/circle' ? PILL_ACTIVE : PILL_INACTIVE
+          selection === 'all' ? PILL_ACTIVE : PILL_INACTIVE
         )}
       >
         {allUnread && <UnreadDot />}
@@ -74,7 +78,7 @@ export function ViewSwitcher() {
 
       {namedGroups.map((group) => {
         const href = circleGroupHref(group.id);
-        const active = pathname === href;
+        const active = selection === group.id;
         return (
           <CircleFeedLink
             key={group.id}

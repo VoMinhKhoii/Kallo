@@ -5,7 +5,7 @@ import { CircleAddMenu } from '@/components/groups/circle-add-menu';
 import { CircleMealBar } from '@/components/groups/circle-meal-bar';
 import { MealInvites } from '@/components/groups/meal-invites/meal-invites';
 import { CircleFeedPanel } from '@/components/groups/navigation/circle-feed-panel';
-import { ViewSwitcher } from '@/components/groups/view-switcher';
+import { ViewSwitcher } from '@/components/groups/navigation/view-switcher';
 
 /**
  * One tab name for the whole Circle surface, including layout-owned feeds

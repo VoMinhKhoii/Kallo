@@ -4,6 +4,11 @@ import { CircleFeedLink } from '@/components/groups/navigation/circle-feed-link'
 import { CircleFeedPanel } from '@/components/groups/navigation/circle-feed-panel';
 
 const state = vi.hoisted(() => ({ pathname: '/circle' }));
+vi.mock('next/navigation', () => ({
+  notFound: () => {
+    throw new Error('NEXT_NOT_FOUND');
+  },
+}));
 vi.mock('@/i18n/navigation', () => ({
   usePathname: () => state.pathname,
   Link: ({
@@ -62,6 +67,7 @@ describe('Circle local navigation', () => {
   it('selects deep links and history changes without mounting inactive feeds', () => {
     const view = render(<CircleFeedPanel>Thread content</CircleFeedPanel>);
     expect(screen.getByText('All posts')).toBeInTheDocument();
+    expect(screen.getByText('Thread content')).not.toBeVisible();
     state.pathname = `/circle/g/${id}`;
     view.rerender(<CircleFeedPanel>Thread content</CircleFeedPanel>);
     expect(screen.getByText(`Group ${id}`)).toBeInTheDocument();
@@ -69,9 +75,11 @@ describe('Circle local navigation', () => {
     state.pathname = `/circle/${id}`;
     view.rerender(<CircleFeedPanel>Thread content</CircleFeedPanel>);
     expect(screen.getByText('Thread content')).toBeInTheDocument();
+    expect(screen.getByText('Thread content')).toBeVisible();
     expect(screen.queryByText(`Group ${id}`)).not.toBeInTheDocument();
     state.pathname = '/circle/g/not-a-uuid';
-    view.rerender(<CircleFeedPanel>Route fallback</CircleFeedPanel>);
-    expect(screen.getByText('Route fallback')).toBeInTheDocument();
+    expect(() =>
+      view.rerender(<CircleFeedPanel>Route fallback</CircleFeedPanel>)
+    ).toThrow('NEXT_NOT_FOUND');
   });
 });

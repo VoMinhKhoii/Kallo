@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ViewSwitcher } from '@/components/groups/view-switcher';
+import { ViewSwitcher } from '@/components/groups/navigation/view-switcher';
 
 const state = vi.hoisted(() => ({
   marker: undefined as

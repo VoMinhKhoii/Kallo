@@ -12,9 +12,9 @@
  * `@/i18n/navigation`, which prefixes the active locale.
  */
 
-/** One post's own page: the meal, its whole thread, and the composer. */
 import { getChatGroupSchema } from '@/lib/core/validation/chat';
 
+/** One post's own page: the meal, its whole thread, and the composer. */
 export function circleThreadHref(shareId: string): string {
   return `/circle/${shareId}`;
 }
