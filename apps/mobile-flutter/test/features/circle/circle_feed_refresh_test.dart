@@ -43,7 +43,7 @@ ProviderContainer _clockedContainer(
 
 void main() {
   testWidgets(
-    'a stale circle renders cached history while its head refreshes',
+    'a stale circle keeps history while refreshing then resumes from the fresh cursor',
     (tester) async {
       final refreshed = Completer<Object?>();
       var headCalls = 0;
@@ -79,11 +79,42 @@ void main() {
         'new',
         'head',
         'anchor',
-        'tail',
       ]);
-      expect(state.nextCursor, 'oldest');
+      expect(state.nextCursor, 'server-cursor');
       container.dispose();
       await tester.pump(const Duration(milliseconds: 1));
+    },
+  );
+
+  test(
+    'refresh reloads history so backdated additions and removed posts reconcile',
+    () async {
+      var refreshed = false;
+      final api = FakeApiClient((request) {
+        if (request.path.contains('before=')) {
+          return refreshed
+              ? _page(['backdated', 'kept'], null)
+              : _page(['removed', 'kept'], 'oldest');
+        }
+        return _page(['head', 'anchor'], refreshed ? 'fresh-cursor' : 'older');
+      });
+      final container = makeContainer(api);
+      await mountFeed(container, 'g');
+      final feed = sharedMealFeedProvider('g');
+      final notifier = container.read(feed.notifier);
+      await notifier.loadMore();
+      refreshed = true;
+      await notifier.refresh();
+      expect(
+        container.read(feed).requireValue.entries.map((e) => e.meal.shareId),
+        ['head', 'anchor'],
+      );
+      await notifier.loadMore();
+      expect(api.requests.last.path, contains('before=fresh-cursor'));
+      expect(
+        container.read(feed).requireValue.entries.map((e) => e.meal.shareId),
+        ['head', 'anchor', 'backdated', 'kept'],
+      );
     },
   );
 

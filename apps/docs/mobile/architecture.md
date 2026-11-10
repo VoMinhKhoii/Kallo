@@ -151,9 +151,10 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   after loading. In-flight requests also survive a quick switch away/back, so returning
   reuses the pending request instead of starting a duplicate. Returning after a minute
   starts a background refresh while cached
-  posts/faces remain available. Feed refreshes preserve an overlapping loaded history
-  tail and its cursor; without overlap they use the fresh page/cursor to avoid gaps
-  (`features/circle/data/feed_refresh/`). Pull-to-refresh refreshes posts in place.
+  posts/faces remain available. Successful refreshes replace the loaded range with
+  the fresh head/cursor so older pages can reconcile backdated additions, deleted
+  posts and privacy changes (`features/circle/data/feed_refresh/`). Pull-to-refresh
+  refreshes posts in place while the request is pending.
   Temporary feed-refresh failures keep posts; terminal access errors clear them.
   Membership/moderation invalidation and account changes still rebuild the affected
   providers, and signed-out cached providers make no request. Failed initial loads

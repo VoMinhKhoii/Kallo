@@ -192,12 +192,7 @@ class SharedMealFeedNotifier
       final page = await _fetchPage(before: null);
       if (generation != _generation) return;
       final current = state.valueOrNull ?? before;
-      final merged = mergeFeedRefresh(
-        page,
-        before.entries,
-        current.entries,
-        current.nextCursor,
-      );
+      final merged = mergeFeedRefresh(page, before.entries, current.entries);
       state = AsyncData(
         SharedMealFeedState(
           entries: merged.entries,

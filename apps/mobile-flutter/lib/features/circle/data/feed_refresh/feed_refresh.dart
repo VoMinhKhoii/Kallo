@@ -1,13 +1,13 @@
 import '../../../../models/social/circle.dart';
 import '../local_blocks.dart';
 
-/// Preserve a loaded history tail only when the refreshed head overlaps it.
-/// With no overlap there may be an unloaded gap, so use the server's cursor.
+/// Rebase local interactions onto a fresh head, then resume from its cursor.
+/// A retained tail may have backdated additions, deletions or privacy changes;
+/// head overlap cannot establish that older rows are still authoritative.
 SharedMealFeedPage mergeFeedRefresh(
   SharedMealFeedPage page,
   List<CircleFeedEntry> before,
   List<CircleFeedEntry> current,
-  String? currentCursor,
 ) {
   final oldById = {for (final entry in before) entry.meal.shareId: entry};
   final latestById = {for (final entry in current) entry.meal.shareId: entry};
@@ -42,22 +42,5 @@ SharedMealFeedPage mergeFeedRefresh(
         carryStamp(latest, rebased);
         return rebased;
       }).toList();
-  final anchor =
-      head.isEmpty
-          ? -1
-          : current.indexWhere(
-            (entry) => entry.meal.shareId == head.last.meal.shareId,
-          );
-  if (page.nextCursor == null || anchor < 0) {
-    return SharedMealFeedPage(entries: head, nextCursor: page.nextCursor);
-  }
-  final seen = head.map((entry) => entry.meal.shareId).toSet();
-  return SharedMealFeedPage(
-    entries: [
-      ...head,
-      for (final entry in current.skip(anchor + 1))
-        if (seen.add(entry.meal.shareId)) entry,
-    ],
-    nextCursor: currentCursor,
-  );
+  return SharedMealFeedPage(entries: head, nextCursor: page.nextCursor);
 }

@@ -322,7 +322,7 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `shared/data/` | static tables more than one feature reads — `countries.dart` | ok |
 | `shell/` | app scaffold and navigation: `header/` `nav/`, `launch/` (the launch intro curtain over the whole app, which plays once per process and lifts when the router has settled), plus the routed surfaces the shell itself owns (`tab_scaffold.dart`, `placeholder_screen.dart`, `route_error_screen.dart`) | ok |
 | `features/circle/widgets/` | `invite/` `groups/` `feed/` `share/` `states/` | ok |
-| `features/circle/data/feed_refresh/` | merge a refreshed feed head with loaded history and in-flight local reaction/reply changes | ok |
+| `features/circle/data/feed_refresh/` | rebase in-flight local reaction/reply changes onto the fresh feed head and reset pagination to revalidate older history | ok |
 | `features/circle/data/read_state/` | apply server read receipts conservatively and coalesce group-list reconciliation | ok |
 | `features/dashboard/widgets/` | `today/` `weight/` `heatmap/` `chrome/` `states/` | ok |
 | `features/nutrition/widgets/` | `summary/` `charts/` `nutrients/` `scope/` `states/` | ok |
