@@ -44,4 +44,7 @@ export type GroupMealFeedEntry = SharedMealEntry;
 export interface GroupMealFeedPage {
   entries: GroupMealFeedEntry[];
   nextCursor: string | null;
+  /** The share timestamp acknowledged after a successful first-page read.
+   * Optional for compatibility with older servers; null means no advance. */
+  readThroughAt?: string | null;
 }

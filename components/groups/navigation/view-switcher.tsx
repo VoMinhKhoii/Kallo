@@ -1,12 +1,15 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { CircleFeedLink } from '@/components/groups/navigation/circle-feed-link';
 import { useMyChatGroups } from '@/hooks/social/circle/use-chat-groups';
-import { useCircleFeed } from '@/hooks/social/circle/use-circle-feed';
 import { useFriendsFeedReadMarker } from '@/hooks/social/circle/use-friend-thread-feed';
-import { Link, usePathname } from '@/i18n/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
-import { circleGroupHref } from '@/lib/domain/social/circle-routes';
+import {
+  circleFeedSelection,
+  circleGroupHref,
+} from '@/lib/domain/social/circle-routes';
 
 const PILL_BASE =
   'inline-flex items-center gap-[7px] whitespace-nowrap rounded-full ' +
@@ -34,25 +37,16 @@ function UnreadDot() {
 export function ViewSwitcher() {
   const t = useTranslations('groups.switcher');
   const pathname = usePathname();
+  const selection = circleFeedSelection(pathname);
   const { data: groups = [], isError, refetch } = useMyChatGroups();
-  const { data: feed = [] } = useCircleFeed();
   const { data: readMarker } = useFriendsFeedReadMarker();
 
   const namedGroups = groups.filter((g) => g.kind === 'group');
 
-  // Most recent shared meal across all friends (excluding the actor's own).
-  // The polled wall keeps it live for meals eaten today; the marker's
-  // latestSharedAt adds a meal shared now but eaten on an earlier day, which
-  // the wall (eaten today only) never holds.
-  const latestSharedAt = feed
-    .filter((entry) => !entry.isSelf)
-    .map((entry) => entry.meal.sharedAt)
-    .concat(readMarker?.latestSharedAt ?? [])
-    .reduce<string | null>(
-      (latest, sharedAt) =>
-        !latest || new Date(sharedAt) > new Date(latest) ? sharedAt : latest,
-      null
-    );
+  // This polled marker already covers every friend share, including meals
+  // eaten on earlier days. Fetching the ambient wall here duplicated that
+  // work and competed with the first feed load on the small DB pool.
+  const latestSharedAt = readMarker?.latestSharedAt;
 
   // Defaults to false while the marker is still loading, to avoid a flash.
   const allUnread = Boolean(
@@ -70,23 +64,23 @@ export function ViewSwitcher() {
       aria-label={t('label')}
       className="mb-3 flex items-center gap-2 overflow-x-auto"
     >
-      <Link
+      <CircleFeedLink
         href="/circle"
-        aria-current={pathname === '/circle' ? 'page' : undefined}
+        aria-current={selection === 'all' ? 'page' : undefined}
         className={cn(
           PILL_BASE,
-          pathname === '/circle' ? PILL_ACTIVE : PILL_INACTIVE
+          selection === 'all' ? PILL_ACTIVE : PILL_INACTIVE
         )}
       >
         {allUnread && <UnreadDot />}
         {t('all')}
-      </Link>
+      </CircleFeedLink>
 
       {namedGroups.map((group) => {
         const href = circleGroupHref(group.id);
-        const active = pathname === href;
+        const active = selection === group.id;
         return (
-          <Link
+          <CircleFeedLink
             key={group.id}
             href={href}
             aria-current={active ? 'page' : undefined}
@@ -94,7 +88,7 @@ export function ViewSwitcher() {
           >
             {group.unread && <UnreadDot />}
             {group.title}
-          </Link>
+          </CircleFeedLink>
         );
       })}
 

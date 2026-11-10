@@ -241,10 +241,17 @@ class CircleFeedEntry {
 /// One seek-paginated page of shared meals. [nextCursor] is opaque and null
 /// when the thread history is exhausted.
 class SharedMealFeedPage {
-  const SharedMealFeedPage({required this.entries, this.nextCursor});
+  const SharedMealFeedPage({
+    required this.entries,
+    this.nextCursor,
+    this.readThroughAt,
+    this.hasReadReceipt = false,
+  });
 
   final List<CircleFeedEntry> entries;
   final String? nextCursor;
+  final DateTime? readThroughAt;
+  final bool hasReadReceipt;
 
   factory SharedMealFeedPage.fromJson(Map<String, dynamic> json) =>
       SharedMealFeedPage(
@@ -256,6 +263,10 @@ class SharedMealFeedPage {
                 )
                 .toList(),
         nextCursor: json['nextCursor'] as String?,
+        readThroughAt: DateTime.tryParse(
+          json['readThroughAt'] as String? ?? '',
+        ),
+        hasReadReceipt: json.containsKey('readThroughAt'),
       );
 }
 

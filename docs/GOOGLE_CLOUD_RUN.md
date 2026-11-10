@@ -879,6 +879,36 @@ query. Inedible and fresh-candidate reads keep their existing behavior. Validate
 production query counts/bytes and cold-start latency after rollout; synthetic
 query-delay tests do not estimate cross-region latency.
 
+### Circle feed latency
+
+`GET /api/v1/chat-groups/[groupId]/feed` includes a `Server-Timing` header and
+emits one structured `circle_feed_timing_v1` log with `status` and `stagesMs`:
+`auth`, `access`, `marker`, `page`, `enrichment` (batched hearts/replies), and
+`read` (the read-marker write). Pagination omits `marker`/`read`; an empty
+first page omits `read`. Failed requests retain completed/failed stage timings.
+These durations include database connection/pool waits; they do not measure
+the phone's network, rendering, proxy work, or container startup before the
+handler runs. Logs contain no user/group/share ids, tokens or meal content.
+`access` and `marker` now overlap (the marker's query independently enforces
+viewer visibility); both complete before `page`. Do not sum these stages as
+wall-clock latency. The initial switcher no longer fetches the ambient
+today-only wall: its existing 30-second read-marker poll already supplies the
+newest friend share time. No database schema or pool-size change is required;
+production still uses the configured larger transaction-pooler pool, while
+the default local pool is two connections. This optimization has only been
+exercised locally, not on production.
+
+Read them with the same deployment project used above:
+
+```bash
+gcloud logging read \
+  'resource.type="cloud_run_revision" AND resource.labels.service_name="kallo-prod" AND jsonPayload.kind="circle_feed_timing_v1"' \
+  --project="${GCP_PROJECT_ID}" --freshness=24h --limit=100 --format=json
+```
+
+Use these stage timings to locate a slow uncached feed before changing SQL or
+instance scaling; the mobile cache does not make the server's first read faster.
+
 ## 12. Known boundaries of the current setup
 
 - There is no pre-merge deployment lane: changes are verified locally and in CI,
