@@ -7,7 +7,7 @@ import 'package:kallo_mobile/models/http/api_error.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/services/http/query_cache.dart';
-import 'circle_feed_test_support.dart';
+import '../circle_feed_test_support.dart';
 
 Map<String, dynamic> _detail(String name) => {
   'group': {

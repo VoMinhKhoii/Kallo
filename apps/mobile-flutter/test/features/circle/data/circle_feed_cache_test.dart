@@ -8,7 +8,7 @@ import 'package:kallo_mobile/models/http/api_error.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
-import 'circle_feed_test_support.dart';
+import '../circle_feed_test_support.dart';
 
 FakeApiClient _feedApi(RequestHandler handler) => FakeApiClient((request) {
   if (request.path.contains('/feed')) return handler(request);
