@@ -1,22 +1,27 @@
 import { ArrowRight } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 
 /**
  * Words on the landing that open the page explaining them in more detail, with
  * the hero's "Try it on the web" treatment: underlined on hover, and an arrow
- * that steps right.
+ * at the end that steps right.
+ *
+ * The last word and the arrow never wrap apart, so the arrow cannot end up
+ * alone on a line. `lead` is an optional bold opening, as in card captions.
  */
 export function MoreLink({
   href,
-  children,
+  lead,
+  text,
   className,
 }: {
   href: string;
-  children: ReactNode;
+  lead?: string;
+  text: string;
   className?: string;
 }) {
+  const cut = text.lastIndexOf(' ') + 1;
   return (
     <Link
       href={href}
@@ -26,12 +31,16 @@ export function MoreLink({
       )}
     >
       <span className="underline-offset-4 group-hover:underline">
-        {children}
+        {lead && <span className="font-semibold">{lead} </span>}
+        {text.slice(0, cut)}
+        <span className="whitespace-nowrap">
+          {text.slice(cut)}
+          <ArrowRight
+            aria-hidden="true"
+            className="ml-1 inline size-[0.8em] align-[-0.05em] transition-transform group-hover:translate-x-1"
+          />
+        </span>
       </span>
-      <ArrowRight
-        aria-hidden="true"
-        className="ml-1 inline size-[0.8em] align-[-0.05em] transition-transform group-hover:translate-x-1"
-      />
     </Link>
   );
 }

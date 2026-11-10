@@ -110,8 +110,9 @@ export default async function Home({
         <main>
           <PaintedHero />
           <PhoneTrio />
-          <UnderstandingSection />
-          <MealDataNote locale={locale as Locale} />
+          <UnderstandingSection
+            subtitle={<MealDataNote locale={locale as Locale} />}
+          />
           <TypingAlternatives />
           <BeyondMacros />
           <DownloadClose />

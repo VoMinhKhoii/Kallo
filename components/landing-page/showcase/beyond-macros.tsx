@@ -60,7 +60,7 @@ export function BeyondMacros() {
               <div key={row} className="py-6 first:pt-0 last:pb-0">
                 <dt className="font-sans-display text-[1.75rem] text-kallo-text leading-[1.25] tracking-[-0.018em]">
                   {doc ? (
-                    <MoreLink href={doc}>{t(`${row}.title`)}</MoreLink>
+                    <MoreLink href={doc} text={t(`${row}.title`)} />
                   ) : (
                     t(`${row}.title`)
                   )}
