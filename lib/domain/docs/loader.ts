@@ -43,6 +43,8 @@ const VI_DOCS: DocRegistry = {
     import('@/content/docs/vi/logging/cheat-mode.mdx'),
   'logging/manual': () => import('@/content/docs/vi/logging/manual.mdx'),
   'logging/barcode': () => import('@/content/docs/vi/logging/barcode.mdx'),
+  'logging/nutrition-label': () =>
+    import('@/content/docs/vi/logging/nutrition-label.mdx'),
   'logging/relog': () => import('@/content/docs/vi/logging/relog.mdx'),
   'tracking/dashboard': () =>
     import('@/content/docs/vi/tracking/dashboard.mdx'),
@@ -81,6 +83,8 @@ const EN_DOCS: DocRegistry = {
     import('@/content/docs/en/logging/cheat-mode.mdx'),
   'logging/manual': () => import('@/content/docs/en/logging/manual.mdx'),
   'logging/barcode': () => import('@/content/docs/en/logging/barcode.mdx'),
+  'logging/nutrition-label': () =>
+    import('@/content/docs/en/logging/nutrition-label.mdx'),
   'logging/relog': () => import('@/content/docs/en/logging/relog.mdx'),
   'tracking/dashboard': () =>
     import('@/content/docs/en/tracking/dashboard.mdx'),

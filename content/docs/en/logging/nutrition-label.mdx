@@ -1,0 +1,72 @@
+---
+title: Nutrition label scanning
+description: Photograph the nutrition table on a pack and Kallo reads its numbers into a meal, even when the barcode is not in any database.
+lastUpdated: '2026-11-10'
+---
+
+A barcode scan only works when the product is in the database. The nutrition
+table printed on the pack always has the numbers, so when the barcode comes up
+empty, take a photo of the table and Kallo reads it for you. Label scanning is
+part of [Premium](/docs/account/premium).
+
+## How to use it
+
+<Steps>
+<Step index={1} title="Open the scanner">
+Open scanning in the input area and switch from Barcode to Nutrition label. Take
+a photo, pick one from your library, or tap Enter manually to type the values
+yourself.
+</Step>
+
+<Step index={2} title="Photograph the whole table">
+Fit every row of the table in the frame, as flat and as well lit as you can.
+Kallo needs the printed table itself, so a photo of the front of the pack, a
+menu, a receipt or handwritten notes comes back with a message asking for the
+label. If the photo is blurred or cuts off part of the table, retake it.
+</Step>
+
+<Step index={3} title="Check what Kallo read">
+You see the product name when one is printed near the table, then calories,
+protein, carbs and fat, and below them any other nutrients the label lists. Tap
+Edit to correct a number. A blank field means the label does not list that
+nutrient, and 0 means the food has none of it.
+</Step>
+
+<Step index={4} title="Choose how much you had">
+Log one serving, the whole pack, or an amount you type in grams, or millilitres
+for a drink. Serving appears when the label prints a serving size, and pack when
+it prints the net contents. Then add the meal.
+</Step>
+</Steps>
+
+## What Kallo reads from the table
+
+Labels give their numbers per 100 g, per 100 ml, per serving or per pack, and
+some print two columns side by side. Kallo notes which one the table uses, so
+the amount you pick in step 4 scales from the right base.
+
+Each value is copied with the unit printed next to it. Energy given in kJ is
+converted to kcal, and a decimal comma such as 1,5 g reads as one and a half
+grams. A nutrient shown only as a percentage of daily value is left blank,
+because a percentage is not an amount.
+
+Besides calories, protein, carbs and fat, Kallo reads fiber, sodium, calcium,
+iron, magnesium, phosphorus, potassium, zinc, copper, manganese, beta carotene
+and vitamins A, B1, B2, B3 (PP), B5, B6, B9, B12, C, D, E, H and K, whenever the
+table lists them. Kallo does not track saturated fat, trans fat, cholesterol or
+added sugars, so it skips those rows.
+
+<Callout label="What the scan sends">
+Only the photo, which goes to Google's Gemini model to read the table. Kallo
+asks for your permission for AI analysis before the first scan. Kallo also keeps
+the photo privately, without its location or camera details, together with what
+was read from it. Only you and the Kallo team can see it. Details in
+[your data](/docs/account/your-data) and the [privacy policy](/docs/legal/privacy).
+</Callout>
+
+## About label accuracy
+
+The figures on a pack are rounded, and the law allows them some tolerance, so
+they are close to the truth but not exact. The serving on the label is also
+often not what you ate. If you had half the bag, type the amount instead of
+logging a serving.

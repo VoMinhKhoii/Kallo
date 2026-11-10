@@ -8,11 +8,10 @@ import { ProductVideo } from '../media/product-video';
 import { CardCaption } from '../section-text/card-caption';
 import { SectionTitle } from '../section-text/section-title';
 
-/** Label scanning has no docs page of its own yet, so its caption stays plain. */
 const WAYS = [
   { id: 'barcode', doc: '/docs/logging/barcode' },
   { id: 'relog', doc: '/docs/logging/relog' },
-  { id: 'label', doc: undefined },
+  { id: 'label', doc: '/docs/logging/nutrition-label' },
 ] as const;
 
 /** How much larger than its settled size the row arrives on screen. */

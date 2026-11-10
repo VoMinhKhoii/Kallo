@@ -28,6 +28,7 @@ export const DOCS_SECTIONS: DocsSection[] = [
       'logging/cheat-mode',
       'logging/manual',
       'logging/barcode',
+      'logging/nutrition-label',
       'logging/relog',
     ],
   },
