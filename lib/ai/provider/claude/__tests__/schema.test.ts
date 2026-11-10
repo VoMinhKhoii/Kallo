@@ -93,6 +93,26 @@ describe('repairPipelineOutput', () => {
     ]);
   });
 
+  it('keeps an emptied dish whose name repeats, so pairing by occurrence holds', () => {
+    // "1 bát cơm + 2 bát cơm": dropping the first dish would hand the second
+    // dish's 300 g to the first slot (pairing is by name + occurrence).
+    const out = repairPipelineOutput({
+      mealItems: [
+        {
+          mealItemName: 'Cơm trắng',
+          ingredients: [{ ingredientName: 'Cơm', grossG: 0 }],
+        },
+        {
+          mealItemName: 'Cơm trắng',
+          ingredients: [{ ingredientName: 'Cơm', grossG: 300 }],
+        },
+      ],
+    }) as { mealItems: Array<{ ingredients: unknown[] }> };
+    expect(out.mealItems).toHaveLength(2);
+    expect(out.mealItems[0].ingredients).toEqual([]);
+    expect(out.mealItems[1].ingredients).toHaveLength(1);
+  });
+
   it('fixes the value slips Claude cannot be held to by the schema', () => {
     const out = repairPipelineOutput({
       isFood: true,
