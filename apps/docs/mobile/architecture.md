@@ -147,6 +147,20 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
 
 - **State:** Riverpod providers per feature (`*_providers.dart`); the Supabase session drives
   auth-gated routing. Riverpod controllers wrap streaming (`stream_analysis_controller.dart`).
+  Circle feeds and group details retain successful results in memory for five minutes
+  after loading. In-flight requests also survive a quick switch away/back, so returning
+  reuses the pending request instead of starting a duplicate. Returning after a minute
+  starts a background refresh while cached
+  posts/faces remain available. Feed refreshes preserve an overlapping loaded history
+  tail and its cursor; without overlap they use the fresh page/cursor to avoid gaps
+  (`features/circle/data/feed_refresh/`). Pull-to-refresh refreshes posts in place.
+  Temporary feed-refresh failures keep posts; terminal access errors clear them.
+  Membership/moderation invalidation and account changes still rebuild the affected
+  providers, and signed-out cached providers make no request. Failed initial loads
+  are not retained. Server `readThroughAt` receipts clear only an older group-list
+  snapshot's covered unread state (`data/read_state/`); newer messages/list snapshots
+  stay unread. Remote group-list changes reconcile at most once per minute of feed
+  loads. Older servers without receipts keep the original list-refetch behavior.
 - **Navigation:** `go_router` with a `StatefulShellRoute` behind a **floating pill
   tab bar** (`shell/nav/pill_nav_bar.dart`; the web-parity drawer/hamburger retired in
   the 2026-08-31 native pass). Branches: dashboard, nutrition, circle (+ off-bar

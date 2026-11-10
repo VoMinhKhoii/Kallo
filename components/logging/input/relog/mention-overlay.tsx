@@ -27,7 +27,7 @@ export function MentionOverlay({ segments, mirrorRef }: MentionOverlayProps) {
     <div
       ref={mirrorRef}
       aria-hidden
-      className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words py-1.5 font-[var(--font-dm-sans)] font-normal text-kallo-text text-sm leading-5"
+      className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words py-1.5 font-normal font-sans text-kallo-text text-sm leading-5"
     >
       {segments.map((segment, index) => (
         <span

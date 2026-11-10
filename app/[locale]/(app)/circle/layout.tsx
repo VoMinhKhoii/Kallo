@@ -4,13 +4,12 @@ import type { ReactNode } from 'react';
 import { CircleAddMenu } from '@/components/groups/circle-add-menu';
 import { CircleMealBar } from '@/components/groups/circle-meal-bar';
 import { MealInvites } from '@/components/groups/meal-invites/meal-invites';
+import { CircleFeedPanel } from '@/components/groups/navigation/circle-feed-panel';
 import { ViewSwitcher } from '@/components/groups/view-switcher';
 
 /**
- * One tab name for the whole Circle surface. The group feed and the share
- * thread are Client Component pages (they read their id with `useParams`), so
- * they cannot export metadata themselves; this layout covers them, and the
- * feed page repeats the same title.
+ * One tab name for the whole Circle surface, including layout-owned feeds
+ * and the client-rendered share thread. The All page repeats the same title.
  */
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('metadata.groups');
@@ -73,7 +72,9 @@ export default async function GroupsLayout({
           <MealInvites />
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <CircleFeedPanel>{children}</CircleFeedPanel>
+        </div>
       </div>
 
       {/* No padding of its own — the app shell's p-3 gutter already frames

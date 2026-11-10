@@ -13,6 +13,8 @@
  */
 
 /** One post's own page: the meal, its whole thread, and the composer. */
+import { getChatGroupSchema } from '@/lib/core/validation/chat';
+
 export function circleThreadHref(shareId: string): string {
   return `/circle/${shareId}`;
 }
@@ -20,4 +22,12 @@ export function circleThreadHref(shareId: string): string {
 /** One named group's feed. */
 export function circleGroupHref(groupId: string): string {
   return `/circle/g/${groupId}`;
+}
+
+/** Only feed URLs participate in local switching; threads/friends stay routes. */
+export function circleFeedSelection(pathname: string): string | null {
+  if (pathname === '/circle') return 'all';
+  const match = /^\/circle\/g\/([^/]+)$/.exec(pathname);
+  const parsed = getChatGroupSchema.safeParse({ groupId: match?.[1] });
+  return parsed.success ? parsed.data.groupId : null;
 }

@@ -33,6 +33,11 @@ to `hooks/` without `hooks/` exporting a non-hook value.
 
 ## Rendering and caching
 
+The locale root loads only Be Vietnam Pro and Lora, including Vietnamese
+subsets. The composer and its mention overlay use the same Be Vietnam Pro
+sans token to keep their text aligned. Code and numeric monospace use the
+device's built-in monospace stack, with no additional font download.
+
 Next.js 16.3 with **Cache Components** and **Partial Prefetching** on (`next.config.ts`), which
 together give Instant Navigations. The rules the build enforces, and the choices made here:
 
@@ -256,6 +261,7 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `design-system/` | style-guide showcase — a dev tool, not product UI | split |
 | `docs/` | MDX docs chrome | ok |
 | `groups/` | circle shell, feeds, sharing, friends | split |
+| `groups/navigation/` | layout-owned Circle feed selection and locale-aware shallow feed links; only the active feed mounts, using the existing five-minute TanStack cache. Feed-to-feed selections use native history (Next's `usePathname` integration), avoiding an RSC round trip; post threads and friends management keep normal routing. The switcher uses the read-marker poll alone for All unread, without fetching the ambient wall. | ok |
 | `landing-page/` | marketing page | split |
 | `landing-page/media/` | the landing page's clip and still paths, and the product video player | |
 | `landing-page/section-text/` | the landing page's section title and card caption | |
@@ -316,6 +322,8 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `shared/data/` | static tables more than one feature reads — `countries.dart` | ok |
 | `shell/` | app scaffold and navigation: `header/` `nav/`, `launch/` (the launch intro curtain over the whole app, which plays once per process and lifts when the router has settled), plus the routed surfaces the shell itself owns (`tab_scaffold.dart`, `placeholder_screen.dart`, `route_error_screen.dart`) | ok |
 | `features/circle/widgets/` | `invite/` `groups/` `feed/` `share/` `states/` | ok |
+| `features/circle/data/feed_refresh/` | merge a refreshed feed head with loaded history and in-flight local reaction/reply changes | ok |
+| `features/circle/data/read_state/` | apply server read receipts conservatively and coalesce group-list reconciliation | ok |
 | `features/dashboard/widgets/` | `today/` `weight/` `heatmap/` `chrome/` `states/` | ok |
 | `features/nutrition/widgets/` | `summary/` `charts/` `nutrients/` `scope/` `states/` | ok |
 | `features/settings/widgets/` | `profile/` `list/` `account/` `chrome/` | ok |

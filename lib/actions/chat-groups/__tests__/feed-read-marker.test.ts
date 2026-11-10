@@ -166,10 +166,33 @@ describe('listGroupMealFeed', () => {
 
   it('rejects a non-member', async () => {
     membershipQuery([]);
+    newestShareQuery(null);
 
     await expect(
       listGroupMealFeed(USER_A, { groupId: GROUP_ID })
     ).rejects.toThrow('Không tìm thấy nhóm chat.');
+    expect(mockDbSelect).toHaveBeenCalledTimes(2);
+    expect(mockDbUpdate).not.toHaveBeenCalled();
+  });
+
+  it('overlaps the visibility-scoped marker read with access, but gates the page', async () => {
+    let allowAccess!: (rows: unknown[]) => void;
+    const pending = new Promise<unknown[]>((resolve) => {
+      allowAccess = resolve;
+    });
+    const access = selectRows([]);
+    access.from().where().limit.mockReturnValue(pending);
+    mockDbSelect.mockReturnValueOnce(access);
+    newestShareQuery(null);
+    sharedMealsBeforeQuery([]);
+
+    const result = listGroupMealFeed(USER_A, { groupId: GROUP_ID });
+    await Promise.resolve();
+    expect(mockDbSelect).toHaveBeenCalledTimes(2);
+    expect(mockDbUpdate).not.toHaveBeenCalled();
+    allowAccess([accessRow()]);
+    await result;
+    expect(mockDbSelect).toHaveBeenCalledTimes(3);
   });
 
   it('returns every shared meal among members, not collapsed per person', async () => {
@@ -186,6 +209,7 @@ describe('listGroupMealFeed', () => {
 
     expect(page.entries).toHaveLength(2);
     expect(page.nextCursor).toBeNull();
+    expect(page.readThroughAt).toBe('2026-01-01T18:00:00.000Z');
     expect(mockDbUpdate).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(marker.set)).toContain('2026-01-01T18:00:00.000Z');
     expect(JSON.stringify(marker.set)).toContain('GREATEST');
@@ -200,9 +224,10 @@ describe('listGroupMealFeed', () => {
     sharedMealsBeforeQuery([sharedMeal(2, new Date('2026-01-02T12:00:00Z'))]);
     stubUpdate(marker);
 
-    await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
+    const page = await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
 
     expect(JSON.stringify(marker.set)).toContain('2026-01-02T20:00:00.000Z');
+    expect(page.readThroughAt).toBe('2026-01-02T20:00:00.000Z');
   });
 
   it('reports a nextCursor when more history remains', async () => {

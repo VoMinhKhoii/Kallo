@@ -1,12 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import {
-  Be_Vietnam_Pro,
-  DM_Sans,
-  Fraunces,
-  Geist,
-  Geist_Mono,
-  Lora,
-} from 'next/font/google';
+import { Be_Vietnam_Pro, Lora } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { locale as localeParam } from 'next/root-params';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
@@ -21,31 +14,6 @@ import { openGraphLocale, SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { SITE_URL } from '@/lib/seo/site';
 import '../globals.css';
 
-// `preload: false` on every face: the default preloaded 15 files (381 KB) ahead
-// of the CSS, the first thing the page needs to paint on a slow connection. The
-// browser still fetches the faces a page really uses, once the CSS names them.
-const fraunces = Fraunces({
-  variable: '--font-fraunces',
-  subsets: ['vietnamese', 'latin'],
-  axes: ['SOFT', 'WONK', 'opsz'],
-  display: 'optional',
-  preload: false,
-});
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-  display: 'swap',
-  preload: false,
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-  display: 'swap',
-  preload: false,
-});
-
 const lora = Lora({
   variable: '--font-lora',
   subsets: ['latin', 'vietnamese'],
@@ -53,19 +21,8 @@ const lora = Lora({
   preload: false,
 });
 
-const dmSans = DM_Sans({
-  variable: '--font-dm-sans',
-  subsets: ['latin'],
-  display: 'swap',
-  preload: false,
-});
-
-// DM Sans ships no Vietnamese subset on Google Fonts (adding a 'vietnamese'
-// subset is a build error), so vi diacritics would otherwise fall back
-// per-glyph to a system font mid-word. Be Vietnam Pro is a near-identical
-// geometric sans WITH full Vietnamese coverage; it is wired into the
-// --font-dm-sans fallback chain (see globals.css) so only the glyphs DM Sans
-// lacks resolve here — the Latin body keeps DM Sans intact.
+// Only the two brand families are downloaded. Code/numeric monospace uses
+// the device's built-in font stack (see globals.css).
 const viSans = Be_Vietnam_Pro({
   variable: '--font-vi-sans',
   subsets: ['vietnamese', 'latin'],
@@ -161,9 +118,7 @@ export default async function LocaleLayout({
     // The theme script (components/providers/theme) sets the theme class on
     // <html> before React hydrates.
     <html lang={locale} suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${dmSans.variable} ${viSans.variable} ${fraunces.variable} antialiased`}
-      >
+      <body className={`${lora.variable} ${viSans.variable} antialiased`}>
         <div className="noise-bg pointer-events-none fixed inset-0 z-50 opacity-[0.03] mix-blend-overlay" />
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>{children}</QueryProvider>
