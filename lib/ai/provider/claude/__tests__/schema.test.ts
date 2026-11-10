@@ -66,6 +66,7 @@ describe('repairPipelineOutput', () => {
       mealItems: [
         {
           name: 'Phở bò',
+          servedMassG: 0,
           ingredients: [
             {
               rawName: 'bánh phở',
@@ -100,6 +101,7 @@ describe('repairPipelineOutput', () => {
     expect(out.mealItems).toHaveLength(2);
     const [pho, rice] = out.mealItems;
     expect(pho.cookingMethod).toBe('');
+    expect('servedMassG' in pho).toBe(false);
     expect(pho.ingredients[0].explicitMass).toBeUndefined();
     // nameVi is not filled in: it is optional, and absent on main's schema.
     expect('nameVi' in pho.ingredients[0]).toBe(false);
@@ -152,6 +154,44 @@ describe('repairPipelineOutput', () => {
         repairPipelineOutput(structuredClone(call2))
       ).success
     ).toBe(true);
+  });
+
+  it('reads a dish servedMassG of 0 as no weight, and keeps a typed one', () => {
+    // Prod d05fec25: Haiku wrote servedMassG 0 on a dish with no weight; the
+    // > 0 rule (which Claude's schema cannot carry) failed both attempts.
+    const call1 = {
+      isFood: true,
+      mealSlot: null,
+      mealItems: [
+        {
+          name: 'phở cuốn thịt nướng',
+          cookingMethod: 'cuốn',
+          ingredients: [{ rawName: 'bánh phở', canonicalName: 'Bánh phở' }],
+        },
+        {
+          name: 'bánh ướt tôm chấy',
+          cookingMethod: 'hấp',
+          servedMassG: 0,
+          ingredients: [{ rawName: 'bánh ướt', canonicalName: 'Bánh ướt' }],
+        },
+        {
+          name: 'mì xào bò',
+          cookingMethod: 'xào',
+          servedMassG: 300,
+          ingredients: [{ rawName: 'mì', canonicalName: 'Mì' }],
+        },
+      ],
+    };
+    expect(mealDecompositionV2Schema.safeParse(call1).success).toBe(false);
+    const parsed = mealDecompositionV2Schema.safeParse(
+      repairPipelineOutput(structuredClone(call1))
+    );
+    expect(parsed.success).toBe(true);
+    expect(parsed.data?.mealItems.map((m) => m.servedMassG)).toEqual([
+      undefined,
+      undefined,
+      300,
+    ]);
   });
 
   it('leaves non-pipeline shapes alone', () => {
