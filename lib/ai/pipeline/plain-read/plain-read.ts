@@ -29,19 +29,23 @@ export function usableReadKcal(read: PlainRead): number | null {
   const total = read.totalKcal;
   if (!Number.isFinite(total)) return null;
   if (total < MIN_READ_KCAL || total > MAX_READ_KCAL) return null;
+  // A total with no foods, or foods that do not add up to it, is not a read.
   const sum = read.foods.reduce((s, f) => s + f.kcal, 0);
-  if (read.foods.length > 0 && Math.abs(sum - total) > SUM_TOLERANCE * total) {
-    return null;
-  }
+  if (Math.abs(sum - total) > SUM_TOLERANCE * total) return null;
   return total;
 }
 
 export function startPlainRead(args: {
   gemini: GeminiClient;
   mealText: string;
+  /** The request's signal: a client hang-up cancels the read at once. */
+  signal: AbortSignal;
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
 }): { settle: () => Promise<number | null>; abort: () => void } {
   const controller = new AbortController();
+  const cancel = () => controller.abort();
+  if (args.signal.aborted) cancel();
+  else args.signal.addEventListener('abort', cancel, { once: true });
   // Started inside a promise chain so even a synchronous throw from the
   // client lands in `.catch` below: the read must never fail the meal.
   const read: Promise<number | null> = Promise.resolve()
@@ -70,16 +74,25 @@ export function startPlainRead(args: {
   return {
     async settle() {
       let timer: ReturnType<typeof setTimeout> | undefined;
+      let onAbort: (() => void) | undefined;
       const kcal = await Promise.race([
         read,
         new Promise<null>((resolve) => {
           timer = setTimeout(() => resolve(null), GRACE_MS);
+          onAbort = () => resolve(null);
+          if (controller.signal.aborted) onAbort();
+          else controller.signal.addEventListener('abort', onAbort);
         }),
       ]);
       clearTimeout(timer);
-      controller.abort();
+      if (onAbort) controller.signal.removeEventListener('abort', onAbort);
+      args.signal.removeEventListener('abort', cancel);
+      cancel();
       return kcal;
     },
-    abort: () => controller.abort(),
+    abort: () => {
+      args.signal.removeEventListener('abort', cancel);
+      cancel();
+    },
   };
 }

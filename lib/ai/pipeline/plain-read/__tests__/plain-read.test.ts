@@ -12,6 +12,8 @@ function client(impl: GeminiClient['generateStructuredOutput']): GeminiClient {
   return { generateStructuredOutput: impl } as unknown as GeminiClient;
 }
 
+const live = () => new AbortController().signal;
+
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -26,6 +28,10 @@ describe('usableReadKcal', () => {
     expect(usableReadKcal(read(50_000))).toBeNull();
   });
 
+  it('rejects a total with no foods behind it', () => {
+    expect(usableReadKcal(read(1000, []))).toBeNull();
+  });
+
   it('rejects a total its own foods do not add up to', () => {
     expect(usableReadKcal(read(900, [200, 150]))).toBeNull();
   });
@@ -34,7 +40,11 @@ describe('usableReadKcal', () => {
 describe('startPlainRead', () => {
   it('asks the plain-read model with the meal text as data', async () => {
     const call = vi.fn().mockResolvedValue(read(640));
-    const r = startPlainRead({ gemini: client(call), mealText: '1 tô phở bò' });
+    const r = startPlainRead({
+      gemini: client(call),
+      signal: live(),
+      mealText: '1 tô phở bò',
+    });
 
     await expect(r.settle()).resolves.toBe(640);
     const params = call.mock.calls[0][0];
@@ -54,6 +64,7 @@ describe('startPlainRead', () => {
       gemini: client(
         call as unknown as GeminiClient['generateStructuredOutput']
       ),
+      signal: live(),
       mealText: 'cơm tấm',
     });
 
@@ -72,16 +83,43 @@ describe('startPlainRead', () => {
       gemini: client(
         call as unknown as GeminiClient['generateStructuredOutput']
       ),
+      signal: live(),
       mealText: 'xôi gà',
     });
 
     await expect(r.settle()).resolves.toBeNull();
   });
 
+  it('cancels the read and settles at once when the client hangs up', async () => {
+    let readSignal: AbortSignal | undefined;
+    const call = vi.fn((params: { abortSignal: AbortSignal }) => {
+      readSignal = params.abortSignal;
+      return new Promise(() => {});
+    });
+    const request = new AbortController();
+    const r = startPlainRead({
+      gemini: client(
+        call as unknown as GeminiClient['generateStructuredOutput']
+      ),
+      signal: request.signal,
+      mealText: 'bún chả',
+    });
+    await Promise.resolve();
+
+    const settled = r.settle();
+    request.abort();
+    await expect(settled).resolves.toBeNull();
+    expect(readSignal?.aborted).toBe(true);
+  });
+
   it('returns null when the read fails', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const call = vi.fn().mockRejectedValue(new Error('overloaded'));
-    const r = startPlainRead({ gemini: client(call), mealText: 'bánh mì' });
+    const r = startPlainRead({
+      gemini: client(call),
+      signal: live(),
+      mealText: 'bánh mì',
+    });
 
     await expect(r.settle()).resolves.toBeNull();
     expect(warn).toHaveBeenCalled();

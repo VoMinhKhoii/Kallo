@@ -154,6 +154,9 @@ describe('hasTypedWeight', () => {
     '250ml sữa tươi',
     '1.5 kg ribs',
     '2 lạng thịt bò'.normalize('NFD'),
+    'nửa ký thịt bò',
+    'half a pound of ground beef',
+    'a 6 ounce sirloin',
   ])('spots a typed weight in %s', (text) => {
     expect(hasTypedWeight(text)).toBe(true);
   });

@@ -42,6 +42,7 @@ export async function runPreciseBranch({
       ? startPlainRead({
           gemini,
           mealText: ctx.message,
+          signal: ctx.signal,
           onAttemptComplete: createBudgetAttemptRecorder({
             db,
             requestId,
@@ -140,6 +141,8 @@ export async function runPreciseBranch({
     readKcal: plainRead ? await plainRead.settle() : null,
     typedWeight,
   });
+  // The client may have hung up while the read settled: stage nothing.
+  if (ctx.signal.aborted) return;
   result.data = hold.result;
   console.info(
     '[plain-read]',

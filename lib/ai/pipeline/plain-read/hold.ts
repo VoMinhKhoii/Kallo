@@ -28,16 +28,21 @@ export const HOLD_BAND = 0.1;
 export const MAX_HOLD_FACTOR = 5;
 
 /**
- * A weight the user typed ("150g thịt bò", "2 lạng", "8 oz steak"). Those meals
- * are left as computed: the hold was never measured on them, and scaling would
- * change grams the user wrote themselves.
+ * A weight the user typed ("150g thịt bò", "2 lạng", "8 oz steak", "nửa ký
+ * thịt bò", "half a pound of beef"). Those meals are left as computed: the hold
+ * was never measured on them, and scaling would change grams the user wrote
+ * themselves. A false match ("pound cake") only leaves a meal unheld.
  */
-const TYPED_WEIGHT =
-  /\d\s*(?:g|gr|grams?|gam|kg|ký|kí|lạng|ml|lít|lit|liters?|litres?|oz|lbs?)(?![\p{L}\p{N}])/iu;
+/** Short unit symbols, which only mean a weight right after a number. */
+const NUMBER_THEN_SYMBOL = /\d\s*(?:g|gr|kg|ml|l|oz|lbs?)(?![\p{L}\p{N}])/iu;
+/** Unit words, which mean a weight with or without a number ("nửa ký"). */
+const UNIT_WORD =
+  /(?<![\p{L}\p{N}])(?:grams?|gam|kilos?|kilograms?|ký|kí|lạng|lít|liters?|litres?|ounces?|pounds?)(?![\p{L}\p{N}])/iu;
 
 export function hasTypedWeight(mealText: string): boolean {
   // NFC first: "lạng" / "ký" typed in decomposed form must still match.
-  return TYPED_WEIGHT.test(mealText.normalize('NFC'));
+  const text = mealText.normalize('NFC');
+  return NUMBER_THEN_SYMBOL.test(text) || UNIT_WORD.test(text);
 }
 
 export type HoldOutcome =
