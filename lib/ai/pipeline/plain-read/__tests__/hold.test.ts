@@ -162,6 +162,9 @@ describe('hasTypedWeight', () => {
     '200grams beef',
     '1 lit sua',
     '2kilos ribs',
+    'nửa kg thịt bò',
+    'half lb ground beef',
+    'six oz sirloin',
     'half a pound of ground beef',
     'a 6 ounce sirloin',
   ])('spots a typed weight in %s', (text) => {

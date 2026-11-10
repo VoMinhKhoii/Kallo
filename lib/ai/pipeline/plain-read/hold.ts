@@ -31,11 +31,12 @@ export const MAX_HOLD_FACTOR = 5;
 const NUMBER_THEN_UNIT =
   /\d\s*(?:g|gr|grams?|gam|kg|kilos?|kilograms?|ký|kí|lạng|ml|l|lít|lit|liters?|litres?|oz|ounces?|lbs?|pounds?)(?![\p{L}\p{N}])/iu;
 /**
- * Unit words that mean a weight even with no number ("nửa ký", "half a
- * pound"). Only a letter before one breaks it, so "2kilos" still counts.
+ * Units that mean a weight even with a written number ("nửa ký", "half a
+ * pound", "nửa kg", "six oz"). Only a letter before one breaks it, so "2kilos"
+ * still counts. Single letters (g, l) stay number-only: alone they are words.
  */
 const UNIT_WORD =
-  /(?<!\p{L})(?:grams?|gam|kilos?|kilograms?|ký|kí|lạng|lít|liters?|litres?|ounces?|pounds?)(?![\p{L}\p{N}])/iu;
+  /(?<!\p{L})(?:grams?|gam|kg|kilos?|kilograms?|ký|kí|lạng|ml|lít|liters?|litres?|oz|ounces?|lbs?|pounds?)(?![\p{L}\p{N}])/iu;
 
 /**
  * A weight the user typed ("150g thịt bò", "2 lạng", "8 oz steak", "nửa ký
