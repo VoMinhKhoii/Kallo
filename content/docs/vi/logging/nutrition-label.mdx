@@ -1,0 +1,74 @@
+---
+title: Quét nhãn dinh dưỡng
+description: Chụp bảng dinh dưỡng trên bao bì, Kallo đọc số liệu và ghi thành bữa ăn, kể cả khi mã vạch chưa có trong cơ sở dữ liệu.
+lastUpdated: '2026-11-10'
+---
+
+Quét mã vạch chỉ dùng được khi sản phẩm đã có trong cơ sở dữ liệu. Còn bảng dinh
+dưỡng in trên bao bì thì lúc nào cũng có số liệu, nên khi mã vạch không cho kết
+quả, bạn chụp bảng đó và Kallo sẽ đọc giúp. Quét nhãn dinh dưỡng thuộc gói
+[Premium](/docs/account/premium).
+
+## Cách dùng
+
+<Steps>
+<Step index={1} title="Mở trình quét">
+Mở phần quét ở khu vực nhập liệu và chuyển từ Mã vạch sang Nhãn dinh dưỡng. Bạn
+có thể chụp ảnh, chọn ảnh trong Thư viện, hoặc bấm Tự nhập để gõ số liệu.
+</Step>
+
+<Step index={2} title="Chụp trọn bảng dinh dưỡng">
+Để mọi dòng của bảng nằm trong khung, chụp thẳng và đủ sáng. Kallo cần chính
+bảng in trên bao bì, nên ảnh mặt trước, thực đơn, hóa đơn hay chữ viết tay sẽ
+nhận về lời nhắc chụp đúng mặt có bảng. Nếu ảnh bị mờ hoặc mất một phần bảng,
+hãy chụp lại.
+</Step>
+
+<Step index={3} title="Kiểm tra số liệu Kallo đọc được">
+Bạn sẽ thấy tên sản phẩm nếu nó được in gần bảng, rồi đến calo, đạm, carb và
+chất béo, bên dưới là các chất khác mà nhãn có ghi. Bấm Sửa để chỉnh một con
+số. Ô để trống nghĩa là nhãn không ghi chất đó, còn 0 nghĩa là món ăn không có
+chất đó.
+</Step>
+
+<Step index={4} title="Chọn lượng bạn đã ăn">
+Ghi theo một khẩu phần, cả gói, hoặc lượng bạn tự nhập bằng gam, hay mililít với
+đồ uống. Khẩu phần chỉ hiện khi nhãn có ghi kích cỡ khẩu phần. Cả gói hiện khi
+số liệu trên nhãn tính cho cả gói, hoặc khi nhãn ghi cả kích cỡ khẩu phần lẫn số
+khẩu phần trong gói. Nếu số liệu tính theo khẩu phần mà nhãn không ghi một khẩu
+phần nặng bao nhiêu, bạn ghi theo số khẩu phần. Sau đó thêm bữa ăn.
+</Step>
+</Steps>
+
+## Kallo đọc gì trên bảng
+
+Nhãn ghi số liệu theo 100 g, 100 ml, một khẩu phần hoặc cả gói, có nhãn in hai
+cột cạnh nhau. Kallo ghi nhận bảng dùng cách nào, để lượng bạn chọn ở bước 4
+được tính từ đúng mốc.
+
+Mỗi giá trị được chép kèm đơn vị in bên cạnh. Năng lượng ghi bằng kJ được đổi
+sang kcal, và dấu phẩy thập phân như 1,5 g được đọc là một gam rưỡi. Chất nào
+chỉ ghi theo phần trăm nhu cầu hằng ngày thì để trống, vì phần trăm không phải
+là lượng.
+
+Ngoài calo, đạm, carb và chất béo, Kallo đọc chất xơ, natri, canxi, sắt, magie,
+phốt pho, kali, kẽm, đồng, mangan, beta caroten và các vitamin A, B1, B2, B3
+(PP), B5, B6, B9, B12, C, D, E, H và K, khi bảng có ghi. Kallo không theo dõi
+chất béo bão hòa, chất béo chuyển hóa, cholesterol và đường bổ sung, nên bỏ qua
+các dòng này.
+
+<Callout label="Khi quét, Kallo gửi gì">
+Chỉ gửi ảnh, đến mô hình Gemini của Google để đọc bảng. Trước lần quét đầu tiên,
+Kallo sẽ xin phép bạn cho phân tích bằng AI. Kallo cũng lưu ảnh ở chế độ riêng
+tư, không kèm vị trí hay thông tin máy ảnh, cùng với số liệu đọc được. Chỉ bạn
+và đội ngũ Kallo xem được ảnh này. Chi tiết ở trang
+[dữ liệu của bạn](/docs/account/your-data) và
+[chính sách quyền riêng tư](/docs/legal/privacy).
+</Callout>
+
+## Về độ chính xác của nhãn
+
+Số liệu trên bao bì đã được làm tròn và luật cho phép một mức sai số, nên chúng
+gần đúng chứ không chính xác tuyệt đối. Khẩu phần ghi trên nhãn cũng thường
+không phải lượng bạn thực sự ăn. Nếu bạn ăn nửa gói, hãy nhập lượng thay vì ghi
+một khẩu phần.

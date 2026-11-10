@@ -8,7 +8,12 @@ import { ProductVideo } from '../media/product-video';
 import { CardCaption } from '../section-text/card-caption';
 import { SectionTitle } from '../section-text/section-title';
 
-const WAYS = ['barcode', 'relog', 'label'] as const;
+/** Each way to log without typing and the docs slug its caption links to. */
+export const WAYS = [
+  { id: 'barcode', doc: 'logging/barcode' },
+  { id: 'relog', doc: 'logging/relog' },
+  { id: 'label', doc: 'logging/nutrition-label' },
+] as const;
 
 /** How much larger than its settled size the row arrives on screen. */
 const ROW_STARTS_AT = 1.08;
@@ -42,8 +47,8 @@ export function TypingAlternatives() {
         style={{ '--settle': ROW_STARTS_AT } as CSSProperties}
         className="mt-12 grid gap-10 md:mt-16 md:origin-top md:grid-cols-3 md:gap-4 md:motion-safe:[transform:scale(var(--settle))]"
       >
-        {WAYS.map((way) => (
-          <li key={way}>
+        {WAYS.map(({ id: way, doc }) => (
+          <li key={way} className="relative">
             <div className="overflow-hidden rounded-3xl bg-kallo-hover">
               <ProductVideo
                 clip={landingClip(locale, way)}
@@ -52,7 +57,11 @@ export function TypingAlternatives() {
                 label={t(`${way}.alt`)}
               />
             </div>
-            <CardCaption lead={t(`${way}.lead`)} rest={t(`${way}.rest`)} />
+            <CardCaption
+              lead={t(`${way}.lead`)}
+              rest={t(`${way}.rest`)}
+              doc={doc}
+            />
           </li>
         ))}
       </ul>

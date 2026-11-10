@@ -5,9 +5,15 @@ import { type CSSProperties, useRef } from 'react';
 import { useScrollSettle } from '@/hooks/landing/use-scroll-settle';
 import { landingClip } from '../media/media';
 import { ProductVideo } from '../media/product-video';
+import { MoreLink } from '../section-text/more-link';
 import { SectionTitle } from '../section-text/section-title';
 
-const ROWS = ['macros', 'micros', 'range'] as const;
+/** The rows; `doc` is the docs slug a row links to, when one explains it. */
+export const ROWS = [
+  { id: 'macros', doc: 'estimates/how-it-works' },
+  { id: 'micros', doc: 'tracking/nutrition' },
+  { id: 'range', doc: undefined },
+] as const;
 
 /** How much larger than its settled size the panel arrives on screen. */
 const PANEL_STARTS_AT = 1.08;
@@ -51,10 +57,18 @@ export function BeyondMacros() {
             className="lg:text-5xl xl:text-6xl"
           />
           <dl className="mt-8 divide-y divide-kallo-text/25">
-            {ROWS.map((row) => (
-              <div key={row} className="py-6 first:pt-0 last:pb-0">
+            {ROWS.map(({ id: row, doc }) => (
+              <div key={row} className="relative py-6 first:pt-0 last:pb-0">
                 <dt className="font-sans-display text-[1.75rem] text-kallo-text leading-[1.25] tracking-[-0.018em]">
-                  {t(`${row}.title`)}
+                  {doc ? (
+                    <MoreLink
+                      href={`/docs/${doc}`}
+                      text={t(`${row}.title`)}
+                      stretch
+                    />
+                  ) : (
+                    t(`${row}.title`)
+                  )}
                 </dt>
                 <dd className="mt-2 text-kallo-text text-lg leading-[1.55]">
                   {t(`${row}.body`)}

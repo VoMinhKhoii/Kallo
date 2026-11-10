@@ -126,6 +126,11 @@
           }
         }
       }
+    },
+    "dataNote": {
+      "text": "Across {dishes} everyday meals we logged, the heaviest version of a dish had {ratio}× the calories of the lightest.",
+      "numbers": "See the numbers",
+      "meals": "Look up a meal"
     }
   },
   "pricing": {

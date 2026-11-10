@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useRef } from 'react';
+import { type ReactNode, useRef } from 'react';
 import { useClosePileGap } from '@/hooks/landing/use-close-pile-gap';
 import { useFadeUnderPinned } from '@/hooks/landing/use-fade-under-pinned';
 import { useScrollReveal } from '@/hooks/landing/use-scroll-reveal';
@@ -52,7 +52,7 @@ const HEADING_REM = 9.5;
  * section this page used to have pinned 300vh and ran a four-stage animation
  * off scroll offset, and it was the worst thing on the page on mobile.
  */
-export function UnderstandingSection() {
+export function UnderstandingSection({ subtitle }: { subtitle: ReactNode }) {
   const t = useTranslations('landing.understanding');
   const locale = useLocale();
   const introRef = useRef<HTMLDivElement>(null);
@@ -142,6 +142,7 @@ export function UnderstandingSection() {
             { '--intro-mt': `${-headingMarginRem}rem` } as React.CSSProperties
           }
         >
+          {subtitle}
           <div className="overflow-hidden rounded-[1.25rem] bg-kallo-hover sm:rounded-[2rem] md:mt-10">
             <ProductVideo
               clip={landingClip(locale, 'diff')}
