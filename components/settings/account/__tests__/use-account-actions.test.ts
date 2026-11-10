@@ -15,6 +15,7 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('sonner', () => ({ toast: { error: toastError } }));
 
 import { useAccountActions } from '@/components/settings/account/use-account-actions';
+import { createClient } from '@/lib/infra/supabase/client';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -45,5 +46,21 @@ describe('account export download', () => {
     await act(() => result.current.handleExport());
     expect(toastError).toHaveBeenCalledExactlyOnceWith('exportError');
     expect(result.current.exportPending).toBe(false);
+  });
+});
+
+describe('account sign-out', () => {
+  // A rejected sign-out keeps the hook off `window.location.assign`, which
+  // jsdom does not implement; only the scope passed to Supabase is checked.
+  it('passes scope local to signOut, so the iOS session is not revoked', async () => {
+    const signOut = vi
+      .fn()
+      .mockResolvedValue({ error: new Error('sign-out failed') });
+    vi.mocked(createClient).mockReturnValue({
+      auth: { signOut },
+    } as unknown as ReturnType<typeof createClient>);
+    const { result } = renderHook(() => useAccountActions('owner'));
+    await act(() => result.current.handleSignOut());
+    expect(signOut).toHaveBeenCalledExactlyOnceWith({ scope: 'local' });
   });
 });
