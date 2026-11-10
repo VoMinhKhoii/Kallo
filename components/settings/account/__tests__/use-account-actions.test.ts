@@ -15,6 +15,7 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('sonner', () => ({ toast: { error: toastError } }));
 
 import { useAccountActions } from '@/components/settings/account/use-account-actions';
+import { createClient } from '@/lib/infra/supabase/client';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -45,5 +46,19 @@ describe('account export download', () => {
     await act(() => result.current.handleExport());
     expect(toastError).toHaveBeenCalledExactlyOnceWith('exportError');
     expect(result.current.exportPending).toBe(false);
+  });
+});
+
+describe('account sign-out', () => {
+  it('signs out only this browser, leaving the iOS session alive', async () => {
+    const signOut = vi
+      .fn()
+      .mockResolvedValue({ error: new Error('sign-out failed') });
+    vi.mocked(createClient).mockReturnValue({
+      auth: { signOut },
+    } as unknown as ReturnType<typeof createClient>);
+    const { result } = renderHook(() => useAccountActions('owner'));
+    await act(() => result.current.handleSignOut());
+    expect(signOut).toHaveBeenCalledExactlyOnceWith({ scope: 'local' });
   });
 });

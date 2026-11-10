@@ -22,7 +22,9 @@ export function useSignOut() {
     setSigningOut(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signOut();
+      // `local`: end only this browser's session. supabase-js defaults to
+      // `global`, which also revokes the iOS app's session on the same account.
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error) throw error;
       clearComposerDrafts();
       document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';

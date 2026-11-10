@@ -145,7 +145,8 @@ describe('MobileHeader', () => {
     );
     await u.click(button);
 
-    expect(signOut).toHaveBeenCalledTimes(1);
+    // Only this browser: a global sign-out would end the iOS app's session.
+    expect(signOut).toHaveBeenCalledExactlyOnceWith({ scope: 'local' });
     await waitFor(() => {
       expect(mocks.toastError).toHaveBeenCalledWith('signOutError');
       expect(button).not.toBeDisabled();
