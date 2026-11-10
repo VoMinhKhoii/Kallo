@@ -112,7 +112,7 @@ export function PhoneTrio() {
               <li
                 key={phone.id}
                 style={{ '--drop': phone.drop } as CSSProperties}
-                className="w-[72vw] max-w-[20rem] shrink-0 snap-center max-md:motion-safe:text-center md:w-[clamp(14rem,22vw,20rem)] md:[transform:translate3d(0,calc(var(--phone-rise,0)*var(--drop)),0)]"
+                className="relative w-[72vw] max-w-[20rem] shrink-0 snap-center max-md:motion-safe:text-center md:w-[clamp(14rem,22vw,20rem)] md:[transform:translate3d(0,calc(var(--phone-rise,0)*var(--drop)),0)]"
               >
                 {/* Height-bound while pinned, so a short screen still fits the
                     phone and its caption under the header. */}

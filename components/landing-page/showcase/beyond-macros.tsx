@@ -57,10 +57,10 @@ export function BeyondMacros() {
           />
           <dl className="mt-8 divide-y divide-kallo-text/25">
             {ROWS.map(({ id: row, doc }) => (
-              <div key={row} className="py-6 first:pt-0 last:pb-0">
+              <div key={row} className="relative py-6 first:pt-0 last:pb-0">
                 <dt className="font-sans-display text-[1.75rem] text-kallo-text leading-[1.25] tracking-[-0.018em]">
                   {doc ? (
-                    <MoreLink href={doc} text={t(`${row}.title`)} />
+                    <MoreLink href={doc} text={t(`${row}.title`)} stretch />
                   ) : (
                     t(`${row}.title`)
                   )}

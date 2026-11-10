@@ -48,7 +48,7 @@ export function TypingAlternatives() {
         className="mt-12 grid gap-10 md:mt-16 md:origin-top md:grid-cols-3 md:gap-4 md:motion-safe:[transform:scale(var(--settle))]"
       >
         {WAYS.map(({ id: way, doc }) => (
-          <li key={way}>
+          <li key={way} className="relative">
             <div className="overflow-hidden rounded-3xl bg-kallo-hover">
               <ProductVideo
                 clip={landingClip(locale, way)}
