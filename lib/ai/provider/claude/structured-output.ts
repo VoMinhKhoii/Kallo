@@ -116,7 +116,11 @@ export function createClaudeStructuredOutput(
           {
             model: params.model,
             max_tokens: 16_000,
-            thinking: { type: 'disabled' },
+            // Sonnet 5.5 rejects `disabled` with a 400; `between_tools` is its
+            // thinking-off setting (accepted at effort high or below).
+            thinking: params.model.startsWith('claude-sonnet-5-5')
+              ? { type: 'between_tools' }
+              : { type: 'disabled' },
             system: systemBlocks(params.systemPrompt),
             messages: [{ role: 'user', content: params.userMessage }],
             output_config: {

@@ -1,6 +1,13 @@
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import { logUnmatchedIngredients } from '@/lib/ai/matching/unmatched-log';
 import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
+import {
+  hasTypedWeight,
+  holdToPlainRead,
+} from '@/lib/ai/pipeline/plain-read/hold';
+import { startPlainRead } from '@/lib/ai/pipeline/plain-read/plain-read';
+import { PLAIN_READ_MODEL } from '@/lib/ai/pipeline/plain-read/prompt';
+import { createBudgetAttemptRecorder } from '@/lib/ai/pipeline/telemetry/budget';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
 import { withDeadline } from '@/lib/core/async/with-deadline';
 import { safeError } from '@/lib/core/errors/safe-error';
@@ -26,6 +33,25 @@ export async function runPreciseBranch({
 }: StreamRun): Promise<void> {
   const { db, requestId, userId } = ctx;
 
+  // The plain read runs beside the pipeline; its total is the reference the
+  // meal is held near once the pipeline finishes (see plain-read/hold.ts).
+  // Typed-weight meals keep their computed numbers, so they skip the read.
+  const typedWeight = hasTypedWeight(ctx.message);
+  const plainRead =
+    !typedWeight && ctx.message.trim() !== ''
+      ? startPlainRead({
+          gemini,
+          mealText: ctx.message,
+          onAttemptComplete: createBudgetAttemptRecorder({
+            db,
+            requestId,
+            workKind: 'primary',
+            model: PLAIN_READ_MODEL,
+            stage: 'plain_read',
+          }),
+        })
+      : null;
+
   const result = await analyzeMeal(
     ctx.message,
     ctx.userContext,
@@ -42,6 +68,7 @@ export async function runPreciseBranch({
 
   // Check for abort after pipeline completes
   if (ctx.signal.aborted) {
+    plainRead?.abort();
     return;
   }
 
@@ -49,6 +76,7 @@ export async function runPreciseBranch({
     promptVersionsUsed.size > 0 ? Object.fromEntries(promptVersionsUsed) : null;
 
   if (!result.success) {
+    plainRead?.abort();
     console.error(
       '[analyze-meal] Pipeline returned error:',
       result.error.type,
@@ -82,6 +110,7 @@ export async function runPreciseBranch({
   // dish. Runs BEFORE that gate so the failure surfaces precisely. Nothing is
   // staged for confirm.
   if (result.unresolved) {
+    plainRead?.abort();
     await emitPartialFailure({
       emit,
       requestId,
@@ -105,6 +134,24 @@ export async function runPreciseBranch({
   // them and reorders anything typed after one — `/cơm gà + 1 kem vani` saved as
   // `+ 1 kem vani, cơm gà`. The join stays as the fallback for clients that
   // send no `displayText`, where dropping the pick names would be worse.
+  // Hold the free-text meal near the plain read BEFORE the relog picks are
+  // folded in: the read never saw the picks, and their numbers are frozen.
+  const hold = holdToPlainRead(result.data, {
+    readKcal: plainRead ? await plainRead.settle() : null,
+    typedWeight,
+  });
+  result.data = hold.result;
+  console.info(
+    '[plain-read]',
+    JSON.stringify({
+      requestId,
+      outcome: hold.outcome,
+      appKcal: hold.appKcal,
+      readKcal: hold.readKcal,
+      factor: hold.factor,
+    })
+  );
+
   let rawInput = ctx.message;
   if (ctx.refs && ctx.refs.length > 0) {
     const applied = await ctx.mergePicks(result.data, ctx.refs, userId);
