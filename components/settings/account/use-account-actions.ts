@@ -2,13 +2,13 @@
 
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { signOutThisBrowser } from '@/hooks/auth/use-sign-out';
 import { useAsyncAction } from '@/hooks/ui/use-async-action';
 import {
   deleteAccountAction,
   exportMyDataAction,
 } from '@/lib/actions/identity/account';
 import { clearComposerDrafts } from '@/lib/domain/logging/drafts/composer-drafts';
+import { signOutThisBrowser } from '@/lib/infra/supabase/sign-out';
 
 /**
  * The three account-level side effects — export, sign out, delete — as
