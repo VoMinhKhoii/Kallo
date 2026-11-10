@@ -65,6 +65,17 @@ export const MODEL_RATES: Record<string, ModelRate> = {
     cachedInputPerMTokUsd: 0.011,
     outputPerMTokUsd: 0.55,
   },
+  // The plain read (lib/ai/pipeline/plain-read). Read 2026-11-10.
+  'claude-sonnet-5-5': {
+    inputPerMTokUsd: 2,
+    cachedInputPerMTokUsd: 0.2,
+    outputPerMTokUsd: 10,
+  },
+  [`claude-sonnet-5-5${VERTEX_RATE_SUFFIX}`]: {
+    inputPerMTokUsd: 2.2,
+    cachedInputPerMTokUsd: 0.22,
+    outputPerMTokUsd: 11,
+  },
 };
 
 /**
