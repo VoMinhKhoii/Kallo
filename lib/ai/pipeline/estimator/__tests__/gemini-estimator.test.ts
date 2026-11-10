@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createMockGemini } from '@/lib/ai/__fixtures__/test-helpers';
 import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/build/grounded-estimation';
+import { repairPipelineOutput } from '@/lib/ai/provider/claude/schema';
 import {
   createGeminiEstimator,
   GROUNDED_ESTIMATION_USER_MESSAGE,
@@ -63,6 +64,7 @@ describe('createGeminiEstimator — round-trips the pre-refactor call identicall
     expect(request.userMessage).toBe(GROUNDED_ESTIMATION_USER_MESSAGE);
     expect(request.model).toBe('gemini-3-flash');
     expect(request.temperature).toBe(0.4);
+    expect(request.repair).toBe(repairPipelineOutput);
     expect(request.topP).toBe(1);
     expect(request.topK).toBe(1);
     expect(request.abortSignal).toBe(controller.signal);

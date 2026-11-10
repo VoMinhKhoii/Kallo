@@ -23,6 +23,7 @@ import {
 } from '@/lib/ai/prompts/build/decomposition-v2';
 import { promptTraceName, resolvePromptLocale } from '@/lib/ai/prompts/locale';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
+import { repairPipelineOutput } from '@/lib/ai/provider/claude/schema';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { MealDecomposition } from '@/lib/ai/types/decomposition';
@@ -151,6 +152,7 @@ export async function runGroundedDecomposition(args: {
         return gemini.generateStructuredOutputStream(
           {
             schema: decompositionCallSchema,
+            repair: repairPipelineOutput,
             systemPrompt: decompSystemPrompt,
             userMessage,
             model: profile.decompositionModel,

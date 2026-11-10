@@ -13,6 +13,8 @@ export interface StructuredOutputParams<T> {
   topK?: number;
   thinkingConfig?: { thinkingLevel?: ThinkingLevel };
   abortSignal?: AbortSignal;
+  /** Fixes known value slips in a streamed answer before the schema parse. */
+  repair?: (raw: unknown) => unknown;
 }
 
 export interface GeminiCallTrace {
