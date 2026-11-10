@@ -261,7 +261,7 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `design-system/` | style-guide showcase — a dev tool, not product UI | split |
 | `docs/` | MDX docs chrome | ok |
 | `groups/` | circle shell, feeds, sharing, friends | split |
-| `groups/navigation/` | layout-owned Circle feed selection and locale-aware shallow feed links; only the active feed mounts, using the existing five-minute TanStack cache. Feed-to-feed selections use native history (Next's `usePathname` integration), avoiding an RSC round trip; post threads and friends management keep normal routing. The switcher uses the read-marker poll alone for All unread, without fetching the ambient wall. | ok |
+| `groups/navigation/` | URL-driven Circle feed selection and locale-aware shallow feed links; only the active feed mounts, using the existing five-minute TanStack cache. The All and group route pages render the same client panel under Suspense, preserving Next's route validation, focus and scroll handling. Feed-to-feed selections use native history (Next's `usePathname` integration), avoiding an RSC round trip; post threads and friends management keep normal routing. The switcher uses the read-marker poll alone for All unread, without fetching the ambient wall. | ok |
 | `landing-page/` | marketing page | split |
 | `landing-page/media/` | the landing page's clip and still paths, and the product video player | |
 | `landing-page/section-text/` | the landing page's section title and card caption | |

@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { CircleAddMenu } from '@/components/groups/circle-add-menu';
 import { CircleMealBar } from '@/components/groups/circle-meal-bar';
 import { MealInvites } from '@/components/groups/meal-invites/meal-invites';
-import { CircleFeedPanel } from '@/components/groups/navigation/circle-feed-panel';
 import { ViewSwitcher } from '@/components/groups/navigation/view-switcher';
 
 /**
@@ -72,9 +71,7 @@ export default async function GroupsLayout({
           <MealInvites />
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col">
-          <CircleFeedPanel>{children}</CircleFeedPanel>
-        </div>
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </div>
 
       {/* No padding of its own — the app shell's p-3 gutter already frames

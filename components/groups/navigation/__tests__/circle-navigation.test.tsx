@@ -65,21 +65,16 @@ describe('Circle local navigation', () => {
   });
 
   it('selects deep links and history changes without mounting inactive feeds', () => {
-    const view = render(<CircleFeedPanel>Thread content</CircleFeedPanel>);
+    const view = render(<CircleFeedPanel />);
     expect(screen.getByText('All posts')).toBeInTheDocument();
-    expect(screen.getByText('Thread content')).not.toBeVisible();
     state.pathname = `/circle/g/${id}`;
-    view.rerender(<CircleFeedPanel>Thread content</CircleFeedPanel>);
+    view.rerender(<CircleFeedPanel />);
     expect(screen.getByText(`Group ${id}`)).toBeInTheDocument();
     expect(screen.queryByText('All posts')).not.toBeInTheDocument();
     state.pathname = `/circle/${id}`;
-    view.rerender(<CircleFeedPanel>Thread content</CircleFeedPanel>);
-    expect(screen.getByText('Thread content')).toBeInTheDocument();
-    expect(screen.getByText('Thread content')).toBeVisible();
+    view.rerender(<CircleFeedPanel />);
     expect(screen.queryByText(`Group ${id}`)).not.toBeInTheDocument();
     state.pathname = '/circle/g/not-a-uuid';
-    expect(() =>
-      view.rerender(<CircleFeedPanel>Route fallback</CircleFeedPanel>)
-    ).toThrow('NEXT_NOT_FOUND');
+    expect(() => view.rerender(<CircleFeedPanel />)).toThrow('NEXT_NOT_FOUND');
   });
 });
