@@ -9,9 +9,19 @@ import { CardCaption } from '../section-text/card-caption';
 import { SectionTitle } from '../section-text/section-title';
 
 const PHONES = [
-  { id: 'circle', screen: 'circle', drop: '8rem' },
-  { id: 'home', screen: 'home', drop: '0rem' },
-  { id: 'nutrition', screen: 'nutrition', drop: '8rem' },
+  {
+    id: 'circle',
+    screen: 'circle',
+    drop: '8rem',
+    doc: '/docs/circle/friends-and-feed',
+  },
+  { id: 'home', screen: 'home', drop: '0rem', doc: '/docs/tracking/dashboard' },
+  {
+    id: 'nutrition',
+    screen: 'nutrition',
+    drop: '8rem',
+    doc: '/docs/tracking/nutrition',
+  },
 ] as const;
 
 /** Where the row's top sits, as a share of the viewport, when the rise runs. */
@@ -119,6 +129,7 @@ export function PhoneTrio() {
                 <CardCaption
                   lead={t(`${phone.id}.lead`)}
                   rest={t(`${phone.id}.rest`)}
+                  href={phone.doc}
                 />
               </li>
             ))}

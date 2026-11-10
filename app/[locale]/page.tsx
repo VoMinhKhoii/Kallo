@@ -18,6 +18,7 @@ import { DownloadClose } from '@/components/landing-page/showcase/download-close
 import { PhoneTrio } from '@/components/landing-page/showcase/phone-trio';
 import { TypingAlternatives } from '@/components/landing-page/showcase/typing-alternatives';
 import { SignedInRedirect } from '@/components/landing-page/signed-in-redirect';
+import { MealDataNote } from '@/components/landing-page/understanding/meal-data-note';
 import { UnderstandingSection } from '@/components/landing-page/understanding/understanding-section';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
 import { AppThemeProvider } from '@/components/providers/theme/app-theme-provider';
@@ -110,6 +111,7 @@ export default async function Home({
           <PaintedHero />
           <PhoneTrio />
           <UnderstandingSection />
+          <MealDataNote locale={locale as Locale} />
           <TypingAlternatives />
           <BeyondMacros />
           <DownloadClose />

@@ -125,6 +125,11 @@
           }
         }
       }
+    },
+    "dataNote": {
+      "text": "Trong {dishes} món ăn hằng ngày đã ghi, bản nhiều calo nhất của một món gấp {ratio} lần bản ít nhất.",
+      "numbers": "Xem số liệu",
+      "meals": "Tra một món"
     }
   },
   "pricing": {
