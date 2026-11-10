@@ -153,8 +153,8 @@ describe('createBudgetAttemptRecorder', () => {
       cacheWriteTokens: number;
       fallbackFrom: string | null;
     };
-    // 1000 fresh × 0.10 + 1000 cached × 0.01 + 3000 written × 0.125 + 400 × 0.50.
-    expect(row.costUsd).toBeCloseTo(0.000685, 10);
+    // 1000 fresh × 0.10 + 1000 cached × 0.01 + 3000 written × 0.20 + 400 × 0.50.
+    expect(row.costUsd).toBeCloseTo(0.00091, 10);
     expect(row.latencyMs).toBe(2_345);
     expect(row.cacheWriteTokens).toBe(3_000);
     expect(row.fallbackFrom).toBeNull();

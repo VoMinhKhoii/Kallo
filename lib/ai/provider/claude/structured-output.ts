@@ -46,6 +46,13 @@ function thinkingOff(
 }
 
 /**
+ * An hour, not the default 5 minutes: nearly half of meals arrive more than
+ * 5 minutes after the one before, so a shorter entry has expired by then and
+ * the meal starts cold. Writes bill `CACHE_WRITE_INPUT_MULTIPLIER`.
+ */
+const SHARED_PREFIX_CACHE = { type: 'ephemeral', ttl: '1h' } as const;
+
+/**
  * The system prompt as cache blocks. Everything before the first per-user
  * block (a line that opens `<language>` or `<user_context>`) is identical for
  * every request, so it gets the cache breakpoint; the per-user and per-meal
@@ -58,7 +65,7 @@ export function systemBlocks(systemPrompt: string): Anthropic.TextBlockParam[] {
       {
         type: 'text',
         text: systemPrompt,
-        cache_control: { type: 'ephemeral' },
+        cache_control: SHARED_PREFIX_CACHE,
       },
     ];
   }
@@ -66,7 +73,7 @@ export function systemBlocks(systemPrompt: string): Anthropic.TextBlockParam[] {
     {
       type: 'text',
       text: systemPrompt.slice(0, at),
-      cache_control: { type: 'ephemeral' },
+      cache_control: SHARED_PREFIX_CACHE,
     },
     { type: 'text', text: systemPrompt.slice(at) },
   ];

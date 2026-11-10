@@ -4,8 +4,8 @@
  * Sources: https://ai.google.dev/gemini-api/docs/pricing (paid tier, text
  * input), read 2026-09-25 — Vertex bills the same list rates for these
  * models; https://platform.claude.com/docs/en/about-claude/pricing, read
- * 2026-10-10 (Claude: prompts up to 100k tokens; a 5-minute cache write bills
- * 1.25x input — `CACHE_WRITE_INPUT_MULTIPLIER`, not a field here).
+ * 2026-10-10 (Claude: prompts up to 100k tokens; a 1-hour cache write bills
+ * 2x input — `CACHE_WRITE_INPUT_MULTIPLIER`, not a field here).
  * https://cloud.google.com/model-garden/partner-models/pricing, read 2026-11-07
  * (Claude on Vertex: 10% above the Claude API; its cached rate was not listed,
  * so it follows the Claude API's 10% of input).
@@ -79,10 +79,11 @@ export const MODEL_RATES: Record<string, ModelRate> = {
 };
 
 /**
- * Claude bills prompt tokens written to its 5-minute cache at 1.25x input.
- * Gemini's implicit cache has no write charge, so its attempts report 0.
+ * Claude bills prompt tokens written to its 1-hour cache at 2x input, the
+ * lifetime every call asks for (`claude/structured-output.ts`). Gemini's
+ * implicit cache has no write charge, so its attempts report 0.
  */
-export const CACHE_WRITE_INPUT_MULTIPLIER = 1.25;
+export const CACHE_WRITE_INPUT_MULTIPLIER = 2;
 
 /** The token counts one attempt was billed for, as the budget row stores them. */
 export interface BilledTokens {
