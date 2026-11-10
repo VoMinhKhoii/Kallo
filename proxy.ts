@@ -212,6 +212,6 @@ export const config = {
     // that has no locale-prefixed counterpart to redirect to. `.txt` covers the
     // IndexNow key file in `public/` (scripts/seo/indexnow.ts): the engines
     // reject a key file that answers with a redirect to /{locale}/….
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|feed.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|geojson|txt)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|feed.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|mp4|geojson|txt)$).*)',
   ],
 };
