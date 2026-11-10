@@ -92,10 +92,12 @@ export function pairIngredientsWithGrounded(
   const queues = queueGrounded(grounded, createDishSlots(dishNames));
   const decompositionSlotOf = createDishSlots(dishNames);
   const out: ReturnType<typeof pairIngredientsWithGrounded> = [];
+  const slotOfEntry: string[] = [];
 
   v2.mealItems.forEach((mi, mealItemIdx) => {
     const slot = decompositionSlotOf(mi.name);
     mi.ingredients.forEach((ing, ingredientIdx) => {
+      slotOfEntry.push(slotPrefix(queueKey(slot, ing.rawName)));
       const ground = queues.get(queueKey(slot, ing.rawName))?.shift() ?? null;
       out.push({
         mealItemIdx,
@@ -134,7 +136,90 @@ export function pairIngredientsWithGrounded(
     if (left?.length === 1 && unpaired.get(k) === 1) entry.ground = left[0];
   }
 
+  pairRenamedInsideDish(out, slotOfEntry, queues);
   return out;
+}
+
+const slotPrefix = (key: string): string => key.slice(0, key.lastIndexOf('::'));
+const nameWords = (name: string): Set<string> =>
+  new Set(
+    nameKey(name)
+      .split(/[\s,()/.-]+/)
+      .filter((w) => w.length > 1)
+  );
+
+/**
+ * A Call 2 that renamed an ingredient inside its own dish ("Jasmine rice"
+ * answered as "Jasmine rice, cooked", "Mì gói Hảo Hảo tôm chua cay" as "Mì ăn
+ * liền") leaves the estimate and the ingredient both unpaired, and the
+ * ingredient ships at 0 g. Inside one dish slot the leftovers are the same
+ * dish's parts, so pair them: a name sharing a word first, then the last one
+ * left on each side. Never re-uses an estimate.
+ */
+function pairRenamedInsideDish(
+  out: Array<{
+    ingredient: DecomposedIngredientV2;
+    ground: GroundedIngredientEstimate | null;
+  }>,
+  slotOfEntry: string[],
+  queues: Map<string, GroundedIngredientEstimate[]>
+): void {
+  const used = new Set(out.map((e) => e.ground));
+  const left = new Map<string, GroundedIngredientEstimate[]>();
+  for (const [key, queue] of queues)
+    for (const estimate of queue)
+      if (!used.has(estimate)) {
+        const slot = slotPrefix(key);
+        left.set(slot, [...(left.get(slot) ?? []), estimate]);
+      }
+  for (const [slot, leftovers] of left) {
+    const known = out
+      .filter((_, i) => slotOfEntry[i] === slot)
+      .map((e) => nameKey(e.ingredient.rawName));
+    // A second estimate for a food the dish has, or for a name already left
+    // over, is a repeat, not a rename. Each name counts once.
+    const estimates = leftovers.filter((estimate, i) => {
+      const name = nameKey(estimate.ingredientName);
+      return (
+        !known.includes(name) &&
+        leftovers.findIndex((e) => nameKey(e.ingredientName) === name) === i
+      );
+    });
+    const open = out.filter((e, i) => !e.ground && slotOfEntry[i] === slot);
+    // The strongest shared-word match across the dish wins; a tie stays open,
+    // because either answer could be the wrong food.
+    const matches = open
+      .flatMap((entry) => {
+        const want = nameWords(entry.ingredient.rawName);
+        return estimates.map((estimate) => ({
+          entry,
+          estimate,
+          shared: [...nameWords(estimate.ingredientName)].filter((w) =>
+            want.has(w)
+          ).length,
+        }));
+      })
+      .filter((m) => m.shared > 0)
+      .sort((a, b) => b.shared - a.shared);
+    const taken = new Set<GroundedIngredientEstimate>();
+    const isOpen = (m: (typeof matches)[number]) =>
+      !m.entry.ground && !taken.has(m.estimate);
+    for (const match of matches) {
+      const tied = matches.some(
+        (m) =>
+          m !== match &&
+          isOpen(m) &&
+          m.shared === match.shared &&
+          (m.entry === match.entry || m.estimate === match.estimate)
+      );
+      if (!isOpen(match) || tied) continue;
+      match.entry.ground = match.estimate;
+      taken.add(match.estimate);
+    }
+    const unused = estimates.filter((estimate) => !taken.has(estimate));
+    const still = open.filter((e) => !e.ground);
+    if (still.length === 1 && unused.length === 1) still[0].ground = unused[0];
+  }
 }
 
 export function classifyVerdict(
