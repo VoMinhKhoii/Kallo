@@ -181,12 +181,15 @@ export function useBarcodeCameraScanner({
           {
             fps: 25,
             qrbox: (width: number, height: number) => {
-              // Expand decodable bounds (90% width, 70% height) for reliable scan hits
-              const w = Math.max(50, Math.round(width * 0.9));
-              const h = Math.max(50, Math.round(height * 0.7));
+              // Expand decodable bounds (90% width, 70% height) while staying
+              // inside the live stream dimensions on any aspect ratio.
+              const w = Math.min(width, Math.max(50, Math.round(width * 0.9)));
+              const h = Math.min(
+                height,
+                Math.max(50, Math.round(height * 0.7))
+              );
               return { width: w, height: h };
             },
-            aspectRatio: 1.333333,
           },
           (decodedText: string) => {
             // Suppress repeat firings while the first decode is in flight.
