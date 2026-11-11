@@ -357,6 +357,26 @@ describe('holdToPlainRead, parts weighed one by one in one dish', () => {
   });
 });
 
+describe('holdToPlainRead, a typed part with no calories', () => {
+  it('takes its grams out of the read too', () => {
+    // 200 g of typed water beside untyped noodles the read agrees on.
+    const water = {
+      ...ingredient('water', 200, 0),
+      typedAmount: 'grams' as const,
+    };
+    const noodles = ingredient('noodles', 100, 400);
+    const m = meal([water, noodles]);
+    const out = holdToPlainRead(m, {
+      read: read(kcalOf(m.displayedNutrition), [
+        [200, 0],
+        [100, kcalOf(noodles.displayedNutrition)],
+      ]),
+    });
+    expect(out.outcome).toBe('within_band');
+    expect(out.result).toBe(m);
+  });
+});
+
 describe('holdToPlainRead, a dish the user weighed whole', () => {
   it('finds the dish in the read as one food, not its parts among other foods', () => {
     // "300g chicken rice, plus two eggs and vegetables": the eggs and the

@@ -75,8 +75,13 @@ describe('typedWeights', () => {
 describe('isTypedWeight', () => {
   const typed = typedWeights('a 400g steak and 150g rice') ?? [];
   it('accepts the typed weight, a share of it, several of it, or a sum', () => {
-    for (const g of [400, 150, 200, 133, 100, 550])
+    for (const g of [400, 150, 550])
       expect(isTypedWeight(g, typed), `${g}`).toBe(true);
+    // A share only when the text says one was eaten.
+    for (const g of [200, 133, 100]) {
+      expect(isTypedWeight(g, typed), `${g}`).toBe(false);
+      expect(isTypedWeight(g, typed, 'shared a 400g steak'), `${g}`).toBe(true);
+    }
     expect(isTypedWeight(800, typed)).toBe(false);
     expect(isTypedWeight(800, typed, 'two 400g steaks')).toBe(true);
     expect(isTypedWeight(180, typed, '3 quả trứng 60g mỗi quả')).toBe(false);
@@ -330,6 +335,17 @@ describe('holdWeightsToText, a food weight on the dish beside weighed parts', ()
 });
 
 describe('holdNamesToEnglish', () => {
+  it('reads a name that arrives decomposed (NFD) as the same name', () => {
+    const d = meal({
+      name: 'Beef bulgogi',
+      ingredients: [
+        ing('Dầu ăn'.normalize('NFD'), { canonicalName: 'Cooking oil' }),
+      ],
+    });
+    holdNamesToEnglish(d, 'beef bulgogi');
+    expect(d.mealItems[0].ingredients[0].rawName).toBe('Cooking oil');
+  });
+
   it('shows the English name for a Vietnamese one the user did not type (#581)', () => {
     const d = meal({
       name: 'Seasoned spinach',
@@ -450,6 +466,14 @@ describe('holdCaloriesToText', () => {
     );
     holdCaloriesToText(d, '1 tô phở bò và 11kcal canh');
     expect(kcals(d)).toEqual([undefined, 11]);
+    // Half of a typed figure is Call 1's own number when no share was typed.
+    const yogurt = meal({
+      name: 'Yogurt',
+      statedKcal: 80,
+      ingredients: [ing('yogurt')],
+    });
+    holdCaloriesToText(yogurt, '160kcal yogurt');
+    expect(kcals(yogurt)).toEqual([160]);
   });
 
   it('puts each figure on the dish named beside it (prod: a list shifted by one)', () => {

@@ -162,6 +162,16 @@ function sums(weights: number[]): number[] {
   return out;
 }
 
+/**
+ * Words and signs that say the user ate a share of what they typed: "half",
+ * "chia 3 người", "ăn chung với 3 đứa bạn", "meal prep hộp 1/4", "serves 4". Without one, a fraction of
+ * a typed amount is Call 1's own number (saved runs: 57 of 58 real shares
+ * have one; the 58th was an invented weight that happened to be 2/3 of
+ * another food's).
+ */
+const SHARE_SIGNS =
+  /(?<!\p{L})(?:nửa|nua|rưỡi|half|halves|chia|share[ds]?|sharing|split|phần|phan|thirds?|quarters?|fifths?|servings?|serves|portions?|người|nguoi|ng|people|persons?|cả nhà|ca nha|family|chung|together|bạn|friends?|đứa|meal\s*prep|batch|mẻ|hộp|hop|box|boxes|each|mỗi|moi|per)(?!\p{L})|[½⅓¼⅔¾%]|\d\s*\/\s*\d/iu;
+
 /** True when `value` is a typed amount, a share or multiple of one, or a sum of several. */
 export function isTypedAmount(
   value: number,
@@ -170,7 +180,8 @@ export function isTypedAmount(
   same: (a: number, b: number) => boolean = near
 ): boolean {
   const factors = [
-    ...SHARES,
+    1,
+    ...(SHARE_SIGNS.test(mealText) ? SHARES : []),
     ...typedCounts(mealText),
     ...(PERCENT.test(mealText) ? PERCENT_FACTORS : []),
   ];

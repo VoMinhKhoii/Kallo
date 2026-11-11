@@ -200,8 +200,11 @@ export function holdToPlainRead(
     .reduce((g, ing) => g + ing.estimatedGrams, 0);
   let factor: number;
   let gramsFactor: number;
-  const readTyped =
-    typedKcal > 0 ? readOfTypedParts(result, args.read) : { kcal: 0, grams: 0 };
+  // Whenever a part is typed, even one with no calories (200 g of water):
+  // its grams are in the read's total too and must come out of the target.
+  const readTyped = parts.some((ing) => ing.typedAmount)
+    ? readOfTypedParts(result, args.read)
+    : { kcal: 0, grams: 0 };
   if (readTyped != null) {
     // The other parts are held to the read's figures for those same parts:
     // calories to its calories, grams to its grams.

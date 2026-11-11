@@ -72,7 +72,7 @@ export function holdNamesToEnglish(
   );
   for (const dish of decomposition.mealItems) {
     for (const ing of dish.ingredients) {
-      if (!VIETNAMESE_ONLY.test(ing.rawName)) continue;
+      if (!VIETNAMESE_ONLY.test(ing.rawName.normalize('NFC'))) continue;
       if (text.includes(foldedWords(ing.rawName))) continue;
       // "Phở bò" for a typed "phở": every Vietnamese word of the name is the
       // user's own, accents and all.
@@ -102,6 +102,6 @@ function foldedWords(text: string): string {
 
 function englishName(ing: DecomposedIngredientV2): string | undefined {
   return [ing.canonicalName, ing.queryEn].find(
-    (name) => name && !VIETNAMESE_ONLY.test(name)
+    (name) => name && !VIETNAMESE_ONLY.test(name.normalize('NFC'))
   );
 }
