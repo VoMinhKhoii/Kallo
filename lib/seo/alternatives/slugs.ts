@@ -4,7 +4,7 @@
  * loading any of it. English only: the queries these answer are English ones
  * ("cal ai alternatives"); a Vietnamese reader searches for apps differently.
  */
-export const ALTERNATIVE_SLUGS = ['cal-ai'] as const;
+export const ALTERNATIVE_SLUGS = ['cal-ai', 'myfitnesspal'] as const;
 
 export type AlternativeSlug = (typeof ALTERNATIVE_SLUGS)[number];
 
