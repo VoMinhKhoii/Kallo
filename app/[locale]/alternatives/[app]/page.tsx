@@ -13,6 +13,7 @@ import {
 import { OptionsTable } from '@/components/seo/alternatives/options-table';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
 import { JsonLd } from '@/components/seo/json-ld';
+import { ALTERNATIVES_CHROME } from '@/lib/seo/alternatives/chrome';
 import { ALTERNATIVE_PAGES } from '@/lib/seo/alternatives/pages';
 import {
   ALTERNATIVE_SLUGS,
@@ -61,7 +62,9 @@ export async function generateMetadata({
   if (!page) return {};
   const url = `${SITE_URL}/${locale}${alternativePath(page.slug)}`;
   return {
-    title: page.copy.metaTitle,
+    // Absolute: the brand suffix would push the title past what Google shows,
+    // and nobody searches for these pages by the brand.
+    title: { absolute: page.copy.metaTitle },
     description: page.copy.description,
     alternates: { canonical: url },
     openGraph: {
@@ -92,6 +95,7 @@ export default async function AlternativesPage({
           url,
           title: copy.title,
           description: copy.description,
+          publishedOn: copy.publishedOn,
           checkedOn: copy.checkedOn,
         })}
       />
@@ -100,6 +104,9 @@ export default async function AlternativesPage({
           <h1 className="text-balance font-bold font-serif text-h1 text-kallo-text">
             {copy.title}
           </h1>
+          <p className="mt-3 text-kallo-text-muted text-sm">
+            {ALTERNATIVES_CHROME.checked(copy.checkedOn)}
+          </p>
         </div>
 
         <hr className="mt-8 border-kallo-text border-t" />
@@ -121,6 +128,15 @@ export default async function AlternativesPage({
           {copy.options.map((option) => (
             <OptionSection key={option.name} option={option} />
           ))}
+
+          {copy.extra ? (
+            <>
+              <DocsH2>{copy.extra.heading}</DocsH2>
+              {copy.extra.body.map((p) => (
+                <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
+              ))}
+            </>
+          ) : null}
 
           <DocsH2>{copy.dataHeading}</DocsH2>
           <DocsParagraph>

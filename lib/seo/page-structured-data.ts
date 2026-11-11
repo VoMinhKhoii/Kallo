@@ -188,13 +188,16 @@ export function alternativesStructuredData({
   url,
   title,
   description,
+  publishedOn,
   checkedOn,
 }: {
   locale: string;
   url: string;
   title: string;
   description: string;
-  /** The day the facts were checked, `YYYY-MM-DD`. */
+  /** The day the page first went out, `YYYY-MM-DD`. */
+  publishedOn: string;
+  /** The day the facts were last checked, `YYYY-MM-DD`. */
   checkedOn: string;
 }) {
   return {
@@ -208,7 +211,7 @@ export function alternativesStructuredData({
         url,
         mainEntityOfPage: url,
         inLanguage: locale,
-        datePublished: checkedOn,
+        datePublished: publishedOn,
         dateModified: checkedOn,
         author: PUBLISHER,
         publisher: PUBLISHER,

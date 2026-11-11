@@ -9,6 +9,8 @@ export interface Source {
 /** One app in the list, as its own vendor and app store describe it. */
 export interface AlternativeOption {
   name: string;
+  /** What sets it apart, after the name in its heading: "SnapCalorie: <headline>". */
+  headline: string;
   /** Kallo itself: disclosed in the text, never listed first. */
   ours?: true;
   /** How it logs a meal. */
@@ -29,6 +31,8 @@ export interface AlternativePage {
   metaTitle: string;
   description: string;
   title: string;
+  /** The day the page first went out, `YYYY-MM-DD`. Never changes. */
+  publishedOn: string;
   /** The day every price and fact was checked on the vendors' own pages. */
   checkedOn: string;
   /** The answer, in the first 40–80 words, naming Kallo. */
@@ -38,6 +42,8 @@ export interface AlternativePage {
   leave: string[];
   leaveSources: Source[];
   options: AlternativeOption[];
+  /** One plain question the searches around this app ask, answered after the apps. */
+  extra?: { heading: string; body: string[] };
   dataHeading: string;
   /** Kallo's own numbers, from the committed food-page captures. */
   data: (facts: MealDataFacts) => string;

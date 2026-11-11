@@ -38,7 +38,7 @@ export function OptionSection({ option }: { option: AlternativeOption }) {
   return (
     <section>
       <DocsH2>
-        {option.name}
+        {option.name}: {option.headline}
         {option.ours ? ` (${labels.ours})` : null}
       </DocsH2>
       {option.body.map((paragraph) => (
