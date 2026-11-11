@@ -13,6 +13,7 @@ import {
   isTypedAmount,
   type TypedKcal,
   typedKcals,
+  wordBag,
   wordsOf,
 } from './typed-amounts';
 import { foodNamedBy } from './weights';
@@ -28,7 +29,7 @@ const PER_UNIT =
 /** The dish a food phrase from the text names: most of the shorter name's words are shared. */
 function namesDish(phrase: string, dish: DecomposedDishV2): boolean {
   const words = wordsOf;
-  const said = new Set(words(phrase));
+  const said = wordBag(words(phrase));
   return [dish.name, ...dish.ingredients.map((i) => i.rawName)].some((name) => {
     const named = words(name);
     const shared = named.filter((w) => said.has(w)).length;
@@ -85,7 +86,7 @@ export function holdCaloriesToText(
 
   /** The words typed around a figure name the dish or one of its foods. */
   const sharesWord = (figure: TypedKcal, dish: DecomposedDishV2) => {
-    const dishWords = new Set(
+    const dishWords = wordBag(
       [dish.name, ...dish.ingredients.map((i) => i.rawName)].flatMap(wordsOf)
     );
     return foodsBeside(text, figure).some((p) =>
@@ -110,7 +111,7 @@ export function holdCaloriesToText(
   // names another of the dish's foods elsewhere: parts Call 1 added on its
   // own (the milk and syrup of "285kcal Starbucks coffee") are inside the
   // figure.
-  const textWords = new Set(wordsOf(text));
+  const textWords = wordBag(wordsOf(text));
   const partOf = (
     dish: DecomposedDishV2,
     figure: TypedKcal
@@ -119,7 +120,7 @@ export function holdCaloriesToText(
     for (const phrase of foodsBeside(text, figure)) {
       const part = foodNamedBy(phrase, dish);
       if (!part) continue;
-      const said = new Set(wordsOf(phrase));
+      const said = wordBag(wordsOf(phrase));
       const otherNamed = dish.ingredients.some(
         (other) =>
           other !== part &&

@@ -18,6 +18,7 @@ import {
   near,
   type TypedWeight,
   typedWeights,
+  wordBag,
   wordsOf,
 } from './typed-amounts';
 
@@ -35,7 +36,7 @@ export function foodNamedBy(
   if (!phrase || phrase === nameKey(dish.name)) return null;
   const exact = dish.ingredients.filter((i) => nameKey(i.rawName) === phrase);
   if (exact.length > 0) return exact.length === 1 ? exact[0] : null;
-  const said = new Set(wordsOf(phrase));
+  const said = wordBag(wordsOf(phrase));
   const cover = (name: string) =>
     new Set(wordsOf(name).filter((w) => said.has(w))).size;
   const inside = (name: string) => {

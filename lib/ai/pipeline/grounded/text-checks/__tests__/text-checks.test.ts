@@ -227,6 +227,29 @@ describe('holdWeightsToText', () => {
     expect(vi.mealItems[0].ingredients[0].explicitMass?.grams).toBe(200);
   });
 
+  it('tells foods apart by their accents, and reads a text typed without them', () => {
+    // "bơ" is butter and "bò" is beef: the 100 g is not the beef's.
+    const d = meal({
+      name: 'Bánh mì bơ bò',
+      servedMassG: 100,
+      ingredients: [ing('Bơ lạt'), ing('Bò'), ing('Bánh mì')],
+    });
+    holdWeightsToText(d, '100g bơ với bánh mì và bò');
+    expect(d.mealItems[0].ingredients.map((i) => i.explicitMass)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    // Typed without accents, the letters are all there is to go by.
+    const plain = meal({
+      name: 'Ức gà với rau xào',
+      servedMassG: 200,
+      ingredients: [ing('Ức gà'), ing('Rau cải'), ing('Dầu ăn')],
+    });
+    holdWeightsToText(plain, 'uc ga 200g voi rau xao');
+    expect(plain.mealItems[0].ingredients[0].explicitMass?.grams).toBe(200);
+  });
+
   it('keeps a dish weight typed on the dish itself', () => {
     const d = meal({
       name: 'Ribeye steak',

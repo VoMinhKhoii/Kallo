@@ -114,17 +114,16 @@ function takeClosest(
  * The read's calories and grams for the parts the user typed an amount for,
  * or null when they cannot be told. The read repeats a typed weight as that food's
  * grams (and typed calories as its calories), so each typed part is paired
- * with the read's food of the same grams or calories: a whole typed dish
- * first, else its parts one by one.
+ * with the read's food of the same grams or calories: its parts one by one,
+ * else a dish typed whole as one food.
  */
 function readOfTypedParts(
   result: PipelineResult,
   read: PlainRead
 ): { kcal: number; grams: number } | null {
-  const foods = [...read.foods];
-  const take = (by: TypedAmount, grams: number, kcal: number | null) =>
-    takeClosest(foods, by, grams, kcal);
+  let foods = [...read.foods];
   const kcalOf = (v: NutritionValues) => v.caloriesKcal ?? null;
+  const by = (ing: ProcessedIngredient) => ing.typedAmount ?? 'grams';
   const total = { kcal: 0, grams: 0 };
   const add = (food: PlainRead['foods'][number]) => {
     total.kcal += food.kcal;
@@ -133,31 +132,38 @@ function readOfTypedParts(
   for (const mi of result.mealItems) {
     const typed = mi.ingredients.filter((ing) => ing.typedAmount);
     if (typed.length === 0) continue;
-    const by = (ing: ProcessedIngredient) => ing.typedAmount ?? 'grams';
-    if (
-      typed.length > 1 &&
-      typed.length === mi.ingredients.length &&
-      typed.every((ing) => by(ing) === by(typed[0]))
-    ) {
-      const dish = take(
-        by(typed[0]),
-        typed.reduce((g, ing) => g + ing.estimatedGrams, 0),
-        kcalOf(mi.displayedNutrition)
-      );
-      if (dish != null) {
-        add(dish);
-        continue;
-      }
-    }
-    for (const ing of typed) {
-      const food = take(
+    // Part by part first: parts the user weighed one by one are in the read
+    // one by one, and their sum must not be taken for another food that
+    // happens to weigh as much.
+    const left = [...foods];
+    const parts = typed.map((ing) =>
+      takeClosest(
+        left,
         by(ing),
         ing.estimatedGrams,
         kcalOf(ing.displayedNutrition)
-      );
-      if (food == null) return null;
-      add(food);
+      )
+    );
+    if (parts.every((food) => food != null)) {
+      foods = left;
+      for (const food of parts) if (food) add(food);
+      continue;
     }
+    // Else the dish as one food of the read: a dish typed whole.
+    const whole =
+      typed.length > 1 &&
+      typed.length === mi.ingredients.length &&
+      typed.every((ing) => by(ing) === by(typed[0]));
+    const dish = whole
+      ? takeClosest(
+          foods,
+          by(typed[0]),
+          typed.reduce((g, ing) => g + ing.estimatedGrams, 0),
+          kcalOf(mi.displayedNutrition)
+        )
+      : null;
+    if (dish == null) return null;
+    add(dish);
   }
   return total;
 }

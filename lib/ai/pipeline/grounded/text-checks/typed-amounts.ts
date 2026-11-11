@@ -244,7 +244,30 @@ export const foodsBeside = (text: string, amount: Span): string[] => [
   foodBefore(text, amount),
 ];
 
+/** The words of a name, lower-cased, accents kept. */
 export const wordsOf = (name: string) =>
-  fold(name)
+  nameKey(name)
     .split(/[^\p{L}\p{N}]+/u)
     .filter(Boolean);
+
+const unaccented = (word: string) => fold(word) === word;
+
+/**
+ * A set of words to look a word up in. Accents decide: "bơ" (butter) is not
+ * "bò" (beef). A word typed without accents ("uc ga" for "ức gà") matches by
+ * its letters alone, since only one of the two then says which word it is.
+ */
+export function wordBag(words: string[]): {
+  has(word: string): boolean;
+  size: number;
+} {
+  const exact = new Set(words);
+  const plain = new Set(words.filter(unaccented));
+  const folded = new Set(words.map((w) => fold(w)));
+  return {
+    size: exact.size,
+    has: (word) =>
+      exact.has(word) ||
+      (unaccented(word) ? folded.has(word) : plain.has(fold(word))),
+  };
+}

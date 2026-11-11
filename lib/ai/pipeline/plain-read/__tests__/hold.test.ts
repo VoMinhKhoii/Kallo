@@ -320,3 +320,39 @@ describe('holdToPlainRead, a part the user typed calories for', () => {
     expect(out.result).toBe(m);
   });
 });
+
+describe('holdToPlainRead, parts weighed one by one in one dish', () => {
+  it('pairs each with its own read food, not their sum with another food', () => {
+    // "100g chicken and 200g rice, plus a dessert": the dessert also weighs 300 g.
+    const weighed = (name: string, grams: number, kcal: number) => ({
+      ...ingredient(name, grams, kcal),
+      typedAmount: 'grams' as const,
+    });
+    const plate = meal([
+      weighed('chicken', 100, 165),
+      weighed('rice', 200, 260),
+    ]);
+    const dessert = meal([ingredient('dessert', 300, 600)]);
+    const b = sumBoundedNutrition([
+      plate.boundedNutrition,
+      dessert.boundedNutrition,
+    ]);
+    const m: PipelineResult = {
+      ...plate,
+      mealItems: [...plate.mealItems, ...dessert.mealItems],
+      boundedNutrition: b,
+      displayedNutrition: goalAdjustNutrition(b, 'cutting', 0.5),
+    };
+    const shown = (i: number, j: number) =>
+      kcalOf(m.mealItems[i].ingredients[j].displayedNutrition);
+    const out = holdToPlainRead(m, {
+      read: read(kcalOf(m.displayedNutrition), [
+        [300, shown(1, 0)],
+        [100, shown(0, 0)],
+        [200, shown(0, 1)],
+      ]),
+    });
+    expect(out.outcome).toBe('within_band');
+    expect(out.result).toBe(m);
+  });
+});
