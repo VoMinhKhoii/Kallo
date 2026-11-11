@@ -21,6 +21,9 @@ import {
   alternativePath,
   isAlternativeSlug,
 } from '@/lib/seo/alternatives/slugs';
+import { COMPARE_CHROME } from '@/lib/seo/compare/chrome';
+import { COMPARE_PAGES, compareSlugFor } from '@/lib/seo/compare/pages';
+import { comparePath } from '@/lib/seo/compare/slugs';
 import { mealData } from '@/lib/seo/meal-data/facts';
 import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
@@ -86,6 +89,7 @@ export default async function AlternativesPage({
   const { facts } = mealData(ALTERNATIVES_LOCALE);
   const t = await getTranslations({ locale, namespace: 'landing.header' });
   const url = `${SITE_URL}/${locale}${alternativePath(page.slug)}`;
+  const vs = compareSlugFor(page.slug);
 
   return (
     <AuthProvider>
@@ -136,6 +140,14 @@ export default async function AlternativesPage({
                 <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
               ))}
             </>
+          ) : null}
+
+          {vs ? (
+            <DocsParagraph>
+              <DocsLink href={comparePath(vs)}>
+                {COMPARE_CHROME.compareLink(COMPARE_PAGES[vs].them)}
+              </DocsLink>
+            </DocsParagraph>
           ) : null}
 
           <DocsH2>{copy.dataHeading}</DocsH2>

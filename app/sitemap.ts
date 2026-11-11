@@ -10,6 +10,12 @@ import {
   ALTERNATIVES_LOCALE,
   alternativePath,
 } from '@/lib/seo/alternatives/slugs';
+import { COMPARE_PAGES } from '@/lib/seo/compare/pages';
+import {
+  COMPARE_LOCALE,
+  COMPARE_SLUGS,
+  comparePath,
+} from '@/lib/seo/compare/slugs';
 import {
   captureDateRange,
   FOOD_PAGE_LAYOUT_REVISED,
@@ -152,6 +158,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(`${ALTERNATIVE_PAGES[slug].checkedOn}T00:00:00Z`),
       changeFrequency: 'monthly',
       priority: 0.7,
+    });
+  }
+
+  for (const slug of COMPARE_SLUGS) {
+    entries.push({
+      url: `${SITE_URL}/${COMPARE_LOCALE}${comparePath(slug)}`,
+      lastModified: new Date(`${COMPARE_PAGES[slug].checkedOn}T00:00:00Z`),
+      changeFrequency: 'monthly',
+      priority: 0.6,
     });
   }
 

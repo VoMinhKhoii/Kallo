@@ -3,6 +3,7 @@ import {
   markdownAlternatePath,
   negotiate,
   unknownAlternativePageTarget,
+  unknownComparePageTarget,
   unknownDocsTarget,
   unknownFoodPageTarget,
   unknownToolPageTarget,
@@ -321,5 +322,31 @@ describe('unknownAlternativePageTarget', () => {
     expect(
       unknownAlternativePageTarget('/en/alternatives/%E0%A4%A')
     ).toBeNull();
+  });
+});
+
+describe('unknownComparePageTarget', () => {
+  it('leaves the real English pages', () => {
+    for (const pathname of [
+      '/en/compare/kallo-vs-cal-ai',
+      '/en/compare/kallo-vs-myfitnesspal/',
+    ]) {
+      expect(unknownComparePageTarget(pathname), pathname).toBeNull();
+    }
+  });
+
+  it('gives the bare folder, other slugs and Vietnamese URLs the real 404', () => {
+    for (const [pathname, target] of [
+      ['/en/compare', '/en/not-found'],
+      ['/en/compare/kallo-vs-lose-it', '/en/not-found'],
+      ['/vi/compare/kallo-vs-cal-ai', '/vi/not-found'],
+    ]) {
+      expect(unknownComparePageTarget(pathname), pathname).toBe(target);
+    }
+  });
+
+  it('is null outside /{locale}/compare', () => {
+    expect(unknownComparePageTarget('/en/comparex')).toBeNull();
+    expect(unknownComparePageTarget('/en/alternatives/cal-ai')).toBeNull();
   });
 });

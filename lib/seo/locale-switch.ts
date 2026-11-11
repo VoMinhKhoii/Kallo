@@ -2,11 +2,13 @@ import {
   ALTERNATIVES_LOCALE,
   ALTERNATIVES_PREFIX,
 } from '@/lib/seo/alternatives/slugs';
+import { COMPARE_LOCALE, COMPARE_PREFIX } from '@/lib/seo/compare/slugs';
 import { switchedFoodPath } from '@/lib/seo/food-pages/slugs';
 
 /** Folders whose pages exist in one locale only, with that locale. */
 const SINGLE_LOCALE_PREFIXES = [
   { prefix: ALTERNATIVES_PREFIX, locale: ALTERNATIVES_LOCALE },
+  { prefix: COMPARE_PREFIX, locale: COMPARE_LOCALE },
 ];
 
 /**
