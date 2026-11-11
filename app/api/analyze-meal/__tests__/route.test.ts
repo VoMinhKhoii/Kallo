@@ -980,7 +980,9 @@ describe('POST /api/analyze-meal', () => {
 
   it('leaves a part the user weighed as computed, whatever the read says', async () => {
     const typed = structuredClone(mockPipelineData);
-    Object.assign(typed.mealItems[0].ingredients[0], { typedAmount: true });
+    Object.assign(typed.mealItems[0].ingredients[0], {
+      typedAmount: 'grams' as const,
+    });
     mockAnalyzeMeal.mockResolvedValue({ success: true, data: typed });
     const generateStructuredOutput = vi.fn().mockResolvedValue({
       foods: [{ name: 'ức gà', grams: 200, kcal: 600 }],

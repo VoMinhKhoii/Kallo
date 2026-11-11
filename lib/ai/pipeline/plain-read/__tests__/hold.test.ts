@@ -147,7 +147,10 @@ describe('holdToPlainRead', () => {
 
   it('holds the other parts to what the read gives them, typed parts left as they are', () => {
     // "2 gói mì + 100g rau": the noodles came out as one pack.
-    const veg = { ...ingredient('rau', 100, 40), typedAmount: true };
+    const veg = {
+      ...ingredient('rau', 100, 40),
+      typedAmount: 'grams' as const,
+    };
     const before = meal([ingredient('mì', 80, 380), veg]);
     const out = holdToPlainRead(before, {
       read: read(810, [
@@ -202,7 +205,10 @@ describe('holdToPlainRead', () => {
   it('does not make the other parts absorb a difference over a typed part', () => {
     // The read prices the 200 g of salmon far above the row; the broccoli
     // agrees with the read and stays.
-    const salmon = { ...ingredient('salmon', 200, 275), typedAmount: true };
+    const salmon = {
+      ...ingredient('salmon', 200, 275),
+      typedAmount: 'grams' as const,
+    };
     const m = meal([salmon, ingredient('broccoli', 110, 40)]);
     const out = holdToPlainRead(m, {
       read: read(456, [
@@ -215,7 +221,10 @@ describe('holdToPlainRead', () => {
   });
 
   it('pairs a typed part with the read food of the same grams that is closest in calories', () => {
-    const rice = { ...ingredient('rice', 100, 130), typedAmount: true };
+    const rice = {
+      ...ingredient('rice', 100, 130),
+      typedAmount: 'grams' as const,
+    };
     const m = meal([rice, ingredient('egg', 50, 78)]);
     // Two 100 g foods in the read: the rice must not be paired with the chicken.
     const out = holdToPlainRead(m, {
@@ -233,7 +242,10 @@ describe('holdToPlainRead', () => {
   });
 
   it('moves the other parts toward the total, within 2x, when a typed part is not in the read', () => {
-    const beef = { ...ingredient('beef', 75, 130), typedAmount: true };
+    const beef = {
+      ...ingredient('beef', 75, 130),
+      typedAmount: 'grams' as const,
+    };
     const before = meal([beef, ingredient('rice', 100, 130)]);
     // The read lists no 75 g food.
     const out = holdToPlainRead(before, { read: read(1300, [[400, 1300]]) });
@@ -245,7 +257,7 @@ describe('holdToPlainRead', () => {
   it('leaves the meal alone when nothing is free or the typed parts reach the read', () => {
     const typed = (name: string, grams: number, kcal: number) => ({
       ...ingredient(name, grams, kcal),
-      typedAmount: true,
+      typedAmount: 'grams' as const,
     });
     const allTyped = meal([
       typed('rice', 150, 195),
@@ -262,6 +274,29 @@ describe('holdToPlainRead', () => {
     ]);
     const out = holdToPlainRead(m, { read: read(500) });
     expect(out.outcome).toBe('typed_parts');
+    expect(out.result).toBe(m);
+  });
+});
+
+describe('holdToPlainRead, a part the user typed calories for', () => {
+  it('finds it in the read by its calories, not by its estimated grams', () => {
+    // "160kcal yogurt and a banana": the yogurt's 100 g is an estimate, and
+    // the read's banana also weighs 100 g.
+    const yogurt = {
+      ...ingredient('yogurt', 100, 160),
+      typedAmount: 'kcal' as const,
+    };
+    const banana = ingredient('banana', 100, 89);
+    const m = meal([yogurt, banana]);
+    const y = kcalOf(yogurt.displayedNutrition);
+    const b = kcalOf(banana.displayedNutrition);
+    const out = holdToPlainRead(m, {
+      read: read(y + b, [
+        [150, y],
+        [100, b],
+      ]),
+    });
+    expect(out.outcome).toBe('within_band');
     expect(out.result).toBe(m);
   });
 });

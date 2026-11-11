@@ -125,7 +125,7 @@ describe('holdToTypedCalories', () => {
       [undefined, undefined]
     );
     expect(marked.mealItems[0].ingredients.map((i) => i.typedAmount)).toEqual([
-      true,
+      'kcal',
       undefined,
     ]);
   });
@@ -155,7 +155,7 @@ describe('markTypedParts', () => {
     ...extra,
   });
   const typedOf = (r: PipelineResult) =>
-    r.mealItems.map((mi) => mi.ingredients.map((i) => i.typedAmount === true));
+    r.mealItems.map((mi) => mi.ingredients.map((i) => i.typedAmount != null));
 
   it('marks a weighed part, and every part of a weighed or calorie-typed dish', () => {
     const before = result(

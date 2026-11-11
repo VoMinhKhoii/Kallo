@@ -153,20 +153,28 @@ export function markTypedParts(
     const aligned =
       itemOf(result, dish, index) !== null &&
       dish.ingredients.length === mi.ingredients.length;
-    const wholeDish = !aligned || !!dish.servedMassG || !!dish.statedKcal;
-    const typed = mi.ingredients.map(
-      (_, i) =>
-        wholeDish ||
-        !!dish.ingredients[i]?.statedKcal ||
-        portionAnchor(portions[start + i]) !== null ||
+    // Which amount is the user's: the calories, or else the grams. The hold
+    // finds a typed part in the plain read by that amount.
+    const wholeDish: 'grams' | 'kcal' | null = dish.statedKcal
+      ? 'kcal'
+      : !aligned || dish.servedMassG
+        ? 'grams'
+        : null;
+    const typed = mi.ingredients.map((_, i): 'grams' | 'kcal' | null => {
+      if (wholeDish) return wholeDish;
+      if (dish.ingredients[i]?.statedKcal) return 'kcal';
+      return portionAnchor(portions[start + i]) !== null ||
         portions[start + i] === RESCUE_TYPED_PART_PORTION
-    );
+        ? 'grams'
+        : null;
+    });
     if (!typed.some(Boolean)) return mi;
     return {
       ...mi,
-      ingredients: mi.ingredients.map((ing, i) =>
-        typed[i] ? { ...ing, typedAmount: true } : ing
-      ),
+      ingredients: mi.ingredients.map((ing, i) => {
+        const typedAmount = typed[i];
+        return typedAmount ? { ...ing, typedAmount } : ing;
+      }),
     };
   });
   return { ...result, mealItems };

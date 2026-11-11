@@ -111,8 +111,23 @@ export function spliceRescue(
         continue;
       }
       const k = target / partsMass;
-      for (const p of subParts) {
-        ingredients.push(p.ingredient);
+      // Calories typed for the replaced food are shared over its parts by
+      // their own energy, so the typed figure still holds for the group.
+      const energy = subParts.map(
+        (p) =>
+          4 * p.estimate.proteinG.mid +
+          4 * p.estimate.carbohydrateG.mid +
+          9 * p.estimate.fatG.mid
+      );
+      const groupEnergy = energy.reduce((sum, e) => sum + e, 0);
+      for (const [at, p] of subParts.entries()) {
+        const share =
+          ing.statedKcal && groupEnergy > 0
+            ? (ing.statedKcal * energy[at]) / groupEnergy
+            : 0;
+        ingredients.push(
+          share > 0 ? { ...p.ingredient, statedKcal: share } : p.ingredient
+        );
         matchResults.push(p.match);
         portionResolutions.push(
           portionAnchor(portion)

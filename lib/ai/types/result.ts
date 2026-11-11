@@ -42,10 +42,11 @@ export interface ProcessedIngredient {
   alcoholG?: number;
   /**
    * The user typed this part's amount: a weight or package size of its own, a
-   * weight or calories for its dish. Later scaling (the plain-read hold)
-   * leaves it as it is. Absent otherwise.
+   * weight or calories for its dish; the value says which of the two is the
+   * user's. Later scaling (the plain-read hold) leaves the part as it is.
+   * Absent otherwise.
    */
-  typedAmount?: boolean;
+  typedAmount?: 'grams' | 'kcal';
 }
 
 /** Final processed meal item in the pipeline result */

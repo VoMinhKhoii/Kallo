@@ -169,18 +169,50 @@ function namesDish(phrase: string, dish: DecomposedDishV2): boolean {
  *   dish), goes on that food (`statedKcal` on the ingredient): on the dish it
  *   would shrink the other foods into it.
  */
+/**
+ * Words that make a calorie figure about the person's day, not about a food:
+ * what is left of a budget, a goal, a deficit.
+ */
+const DAY_WORDS =
+  /(?<!\p{L})(?:còn dư|còn lại|còn thiếu|mục tiêu|thâm hụt|remaining|budget|goal|target|deficit)(?!\p{L})/iu;
+const LEFT_AFTER = /^\s*(?:left|remaining)(?!\p{L})/iu;
+
+/** "1 tô phở bò, hôm nay còn dư 400 kcal": the 400 is no food's calories. */
+function isAboutTheDay(text: string, figure: TypedKcal): boolean {
+  const from =
+    Math.max(
+      text.lastIndexOf(',', figure.start),
+      text.lastIndexOf(';', figure.start),
+      text.lastIndexOf('\n', figure.start)
+    ) + 1;
+  return (
+    DAY_WORDS.test(text.slice(from, figure.end)) ||
+    LEFT_AFTER.test(text.slice(figure.end))
+  );
+}
+
 export function holdCaloriesToText(
   decomposition: MealDecompositionV2,
   mealText: string
 ): void {
   const text = mealText.normalize('NFC');
-  const figures = typedKcals(text);
+  const figures = typedKcals(text).filter((f) => !isAboutTheDay(text, f));
   const amounts = figures.map((f) => f.kcal);
   // A calorie figure is copied, not converted: only rounding to a whole
   // number separates two figures that are the same.
   const exact = (a: number, b: number) => Math.abs(a - b) < 0.5;
   const dishes = decomposition.mealItems;
 
+  /** The words typed around a figure name the dish or one of its foods. */
+  const sharesWord = (figure: TypedKcal, dish: DecomposedDishV2) => {
+    const span = { grams: figure.kcal, start: figure.start, end: figure.end };
+    const dishWords = new Set(
+      [dish.name, ...dish.ingredients.map((i) => i.rawName)].flatMap(wordsOf)
+    );
+    return [foodAfter(text, span), foodBefore(text, span)].some((p) =>
+      wordsOf(p).some((w) => dishWords.has(w))
+    );
+  };
   // The one dish each figure sits beside, when there is exactly one.
   const besides = figures.map((figure) => {
     const span = { grams: figure.kcal, start: figure.start, end: figure.end };
@@ -194,13 +226,7 @@ export function holdCaloriesToText(
     // drink"). No shared word, and the figure may not be about food at all
     // ("1 tô phở bò, hôm nay còn dư 400 kcal").
     if (figures.length !== 1 || dishes.length !== 1) return null;
-    const [dish] = dishes;
-    const dishWords = new Set(
-      [dish.name, ...dish.ingredients.map((i) => i.rawName)].flatMap(wordsOf)
-    );
-    return phrases.some((p) => wordsOf(p).some((w) => dishWords.has(w)))
-      ? dish
-      : null;
+    return sharesWord(figure, dishes[0]) ? dishes[0] : null;
   });
   // A figure beside ONE food of a dish with several ("300kcal bánh mì kèm 2
   // trứng" merged into one dish) is that food's, not the dish's: setting the

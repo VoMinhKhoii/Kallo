@@ -82,18 +82,23 @@ function readOfTypedParts(
   read: PlainRead
 ): { kcal: number; grams: number } | null {
   const foods = [...read.foods];
-  // By grams first (the closest in calories when several weigh the same);
-  // calories only pair a food the user typed calories for.
-  const take = (grams: number, kcal: number | null) => {
+  // By the amount the user typed: typed calories pair on calories alone (the
+  // part's grams are an estimate, and would pair it with another food that
+  // happens to weigh the same); a typed weight pairs on grams, the closest in
+  // calories when several weigh the same.
+  const take = (by: 'grams' | 'kcal', grams: number, kcal: number | null) => {
     let at = -1;
-    foods.forEach((f, i) => {
-      if (!same(f.grams, grams)) return;
-      const closer =
-        kcal != null &&
-        Math.abs(f.kcal - kcal) < Math.abs(foods[at]?.kcal - kcal);
-      if (at < 0 || closer) at = i;
-    });
-    if (at < 0 && kcal != null) at = foods.findIndex((f) => same(f.kcal, kcal));
+    if (by === 'kcal') {
+      if (kcal != null) at = foods.findIndex((f) => same(f.kcal, kcal));
+    } else {
+      foods.forEach((f, i) => {
+        if (!same(f.grams, grams)) return;
+        const closer =
+          kcal != null &&
+          Math.abs(f.kcal - kcal) < Math.abs(foods[at]?.kcal - kcal);
+        if (at < 0 || closer) at = i;
+      });
+    }
     return at < 0 ? null : foods.splice(at, 1)[0];
   };
   const kcalOf = (v: NutritionValues) => v.caloriesKcal ?? null;
@@ -105,8 +110,14 @@ function readOfTypedParts(
   for (const mi of result.mealItems) {
     const typed = mi.ingredients.filter((ing) => ing.typedAmount);
     if (typed.length === 0) continue;
-    if (typed.length > 1 && typed.length === mi.ingredients.length) {
+    const by = (ing: ProcessedIngredient) => ing.typedAmount ?? 'grams';
+    if (
+      typed.length > 1 &&
+      typed.length === mi.ingredients.length &&
+      typed.every((ing) => by(ing) === by(typed[0]))
+    ) {
       const dish = take(
+        by(typed[0]),
         typed.reduce((g, ing) => g + ing.estimatedGrams, 0),
         kcalOf(mi.displayedNutrition)
       );
@@ -116,7 +127,11 @@ function readOfTypedParts(
       }
     }
     for (const ing of typed) {
-      const food = take(ing.estimatedGrams, kcalOf(ing.displayedNutrition));
+      const food = take(
+        by(ing),
+        ing.estimatedGrams,
+        kcalOf(ing.displayedNutrition)
+      );
       if (food == null) return null;
       add(food);
     }

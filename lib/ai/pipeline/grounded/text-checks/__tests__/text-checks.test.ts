@@ -5,7 +5,12 @@ import {
   holdWeighStateToDescription,
 } from '../described-checks';
 import { holdCaloriesToText, holdWeightsToText } from '../text-checks';
-import { isTypedWeight, typedCalories, typedWeights } from '../typed-amounts';
+import {
+  foodAfter,
+  isTypedWeight,
+  typedCalories,
+  typedWeights,
+} from '../typed-amounts';
 
 vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -511,6 +516,43 @@ describe('holdCaloriesToText', () => {
       "McDonald's Big Mac (the menu says 590 calories) and a small fries"
     );
     expect(kcals(d)).toEqual([590, undefined]);
+  });
+
+  it('takes no figure about the day for a food', () => {
+    for (const text of [
+      '1 tô phở bò, hôm nay còn dư 400 kcal',
+      'a bowl of pho, 400 kcal left',
+      'bowl of pho; my goal is 400 kcal',
+    ]) {
+      const d = meal({
+        name: 'Phở bò',
+        statedKcal: 400,
+        ingredients: [ing('phở')],
+      });
+      holdCaloriesToText(d, text);
+      expect(kcals(d)).toEqual([undefined]);
+    }
+    // "leftover" is a food word, and a figure after a comma is still the dish's.
+    const kept = meal({
+      name: 'Beef rendang',
+      statedKcal: 650,
+      ingredients: [ing('rendang')],
+    });
+    holdCaloriesToText(kept, 'leftover beef rendang, about 650 kcal');
+    expect(kcals(kept)).toEqual([650]);
+  });
+});
+
+describe('foodAfter', () => {
+  it('drops a leading article, never the first letter of the food', () => {
+    const food = (text: string) => {
+      const [w] = typedWeights(text) ?? [];
+      return foodAfter(text, w);
+    };
+    expect(food('100g avocado with toast')).toBe('avocado');
+    expect(food('30g almonds')).toBe('almonds');
+    expect(food('200g of the chicken')).toBe('chicken');
+    expect(food('100g an apple')).toBe('apple');
   });
 });
 

@@ -228,7 +228,7 @@ export function typedCalories(mealText: string): number[] {
 /** Where a weighed food's name stops: a joiner, punctuation or another number. */
 const PHRASE_END =
   /[,.;:+&()\d]|(?<!\p{L})(?:with|and|plus|kèm|với|và|thêm)(?!\p{L})/iu;
-const LEADING_WORDS = /^(?:\s|of|an?|the|của)+/iu;
+const LEADING_WORDS = /^(?:\s+|(?:of|an?|the|của)(?!\p{L}))+/iu;
 
 /** The food named right after a weight ("300g ribeye steak with fries" → "ribeye steak"). */
 export function foodAfter(text: string, weight: TypedWeight): string {
