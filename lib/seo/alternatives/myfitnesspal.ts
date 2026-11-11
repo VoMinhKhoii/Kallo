@@ -15,13 +15,13 @@ const LI_2024: Source = {
 };
 
 export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
-  metaTitle: 'MyFitnessPal Alternatives: 7 Apps, Prices Checked',
+  metaTitle: 'MyFitnessPal Alternatives (2026): 7 Apps, Prices Checked',
   description:
     'Seven MyFitnessPal alternatives, what each one gives you free (barcode scanner included or not), and the US price, checked on the vendors’ own pages.',
   title: 'MyFitnessPal alternatives',
   checkedOn: '2026-11-11',
   answer:
-    'The closest MyFitnessPal alternatives are Lose It! for the same simple calorie budget, Cronometer and MyNetDiary for free plans that still include a barcode scanner, and FatSecret for a free diary on phone and web. Yazio and MacroFactor add AI photo logging; MacroFactor has no free plan. Kallo, which we make, drops the database search: you type the meal the way you would say it.',
+    'The closest MyFitnessPal alternatives are Lose It! for the same simple calorie budget, Cronometer and MyNetDiary for free plans that still include a barcode scanner, and FatSecret for a free diary on phone and web. Yazio and MacroFactor add AI photo logging; MacroFactor has no free plan. Kallo, which we make, drops the database search: you type the meal the way you would say it, and that is a Premium feature once Kallo’s beta ends.',
   disclosure:
     'Kallo is our app. It is listed last, because it is the least like MyFitnessPal. Prices are US prices from each vendor’s site or US App Store listing, checked on 11 November 2026. Each app gets one real drawback, Kallo included.',
   leaveHeading: 'Why people look for a MyFitnessPal alternative',
@@ -184,18 +184,22 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
       name: 'Kallo',
       ours: true,
       logs: 'Typed text, barcode, nutrition label',
-      free: 'Barcode scanning, manual logging, macros. Everything is free while Kallo is in beta',
-      paid: 'Premium, $29.99 a year on the web, once beta ends',
+      free: 'Barcode scanning, manual logging, macros. Typing a meal is Premium. Everything is free while Kallo is in beta',
+      paid: 'Premium, $29.99 a year on the web or $34.99 on the App Store, once beta ends',
       platforms: 'iOS, web',
       bestFor: 'People tired of picking the right entry from a list.',
       body: [
-        'Kallo logs a meal from the sentence you would say out loud, like “leftover spaghetti bolognese and a side salad”, instead of a search box and a row of database matches. It counts calories and macros from USDA and FAO food data, as a range, not one number. When the words can’t settle a portion, it asks.',
+        'Kallo logs a meal from the sentence you would say out loud, like “leftover spaghetti bolognese and a side salad”, instead of a search box and a row of database matches. It counts calories and macros from USDA and FAO food data, as a range, not one number. When the words can’t settle a portion, it asks. Typing a meal is part of Premium; the free plan keeps barcode scanning and manual logging.',
         'No independent test has measured Kallo yet. The data below is our own.',
       ],
       drawback:
         'It can’t log a meal from a photo of the plate, only from a nutrition label, and there is no Android app.',
       sources: [
         { label: 'Kallo pricing', url: 'https://kallo.fit/en/pricing' },
+        {
+          label: 'Kallo on the App Store',
+          url: 'https://apps.apple.com/us/app/id6775761392',
+        },
       ],
     },
   ],
