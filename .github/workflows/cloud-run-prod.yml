@@ -546,6 +546,11 @@ jobs:
         env:
           SMOKE_URL: ${{ env.SMOKE_URL }}
         run: |
+          # A redeploy of a commit from before the check has no script to run.
+          if [ ! -f scripts/seo/crawl-check.ts ]; then
+            echo "This commit predates scripts/seo/crawl-check.ts; skipping."
+            exit 0
+          fi
           ORIGIN_SHARED_SECRET="$(gcloud secrets versions access latest --secret=kallo-prod-origin-shared-secret)"
           echo "::add-mask::$ORIGIN_SHARED_SECRET"
           export ORIGIN_SHARED_SECRET
