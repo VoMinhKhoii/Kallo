@@ -2,7 +2,7 @@
 
 This repo deploys a single production service via `cloud-run-prod.yml`:
 
-- **Production service** (`kallo-prod`): Deployed manually (`workflow_dispatch` from `main`) for a `main` SHA with a green CI run; applies pending migrations behind a GCS lease, then blue-green promotes after a smoke check
+- **Production service** (`kallo-prod`): Deployed manually (`workflow_dispatch` from `main`) for a `main` SHA with a green CI run; applies pending migrations behind a GCS lease, then blue-green promotes after a smoke check and an SEO crawl check
 - Artifact Registry: One immutable image per `main` commit SHA (built + pushed by CI; PRs build but do not push), pruned by a cleanup policy — see [Image retention](#image-retention)
 - Authentication: GitHub Actions via Workload Identity Federation (WIF)
 
@@ -14,7 +14,30 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
 3. Dispatch `cloud-run-prod.yml` from `main` (optionally with a `sha`).
 4. The prod job acquires its GCS lease, tags the image `prod-<sha>`
    (exempting it from cleanup), applies pending migrations, deploys a
-   no-traffic candidate, smoke-tests it, and only then promotes traffic.
+   no-traffic candidate, smoke-tests it, crawl-checks it (below), and only
+   then promotes traffic.
+
+### SEO crawl check
+
+`scripts/seo/crawl-check.ts` reads the site the way a crawler that runs no
+JavaScript does. It fails when a sitemap page stops answering 200 without a
+redirect, loses its self canonical, its single `<title>` or its meta
+description, turns noindex (meta tag or `X-Robots-Tag`), loses its `<main>`,
+or puts its `<h1>` after the footer (the article streamed hidden, as on
+2026-11-07). It also fails when robots.txt blocks the site or stops naming the
+sitemap, when a made-up food page stops answering 404, and, with `--live`,
+when a page the live sitemap lists now answers 404 or 410 (retire a page with
+a redirect).
+
+- **CI** (`Build` job): after `next build`, starts `.next/standalone/server.js`
+  on port 3000 and runs the check with `--live https://kallo.fit`.
+- **Prod** (`Crawl check the candidate (SEO)` step, after the smoke check): runs
+  it on the candidate URL, sending the origin secret as `X-Origin-Verify`. A
+  failure leaves the candidate without traffic, like a failed smoke check. A
+  redeploy of a commit from before the script skips the step.
+- **Locally**: `bun scripts/seo/crawl-check.ts https://kallo.fit` (or a local
+  build's URL; add `--live https://kallo.fit` to compare sitemaps). It prints a
+  `PROBLEM` line for each failure and exits 1.
 
 There is no staging, internal, or preview deployment.
 Sandbox billing tests run locally (or through an explicitly approved temporary
@@ -765,7 +788,7 @@ fallback works without re-issuing the secret.
 | Workflow | Purpose |
 | --- | --- |
 | `CI` | Validate the repo and build the image on every PR; on `main`, push the SHA-tagged image |
-| `Cloud Run Prod` | Manual prod deploy: lease, migrations, no-traffic candidate, smoke check, promote |
+| `Cloud Run Prod` | Manual prod deploy: lease, migrations, no-traffic candidate, smoke check, SEO crawl check, promote |
 | `Card Index Refresh` | Nightly: redeploy the serving commit when the card data has moved past its search index |
 | `Translate USDA rows` | Manual USDA translation backfill into the prod DB, holding the deploy lease |
 | `Account deletion retry` | Retry account deletions that failed part-way |
@@ -806,7 +829,8 @@ Run these after setup:
    and confirm:
    - the workflow acquires the deploy lease
    - pending migrations apply and `assert-migrations-applied` passes
-   - the no-traffic candidate passes the smoke check before traffic moves
+   - the no-traffic candidate passes the smoke check and the SEO crawl check
+     before traffic moves
    - `https://kallo.fit/api/healthz` returns the expected health JSON
 
 ## Structured pipeline trace capture
