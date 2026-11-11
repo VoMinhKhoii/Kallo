@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
@@ -22,7 +23,6 @@ import { MealDataNote } from '@/components/landing-page/understanding/meal-data-
 import { UnderstandingSection } from '@/components/landing-page/understanding/understanding-section';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
 import { AppThemeProvider } from '@/components/providers/theme/app-theme-provider';
-import type { Locale } from '@/i18n/config';
 import { routing } from '@/i18n/routing';
 import { getDocsTree } from '@/lib/domain/docs/tree';
 import { alternateLanguages } from '@/lib/seo/alternates';
@@ -79,11 +79,15 @@ export default async function Home({
   searchParams: Promise<AuthSearchParams>;
 }) {
   const { locale } = await params;
+  // The layout's notFound() does not stop this page: they render in parallel,
+  // so a non-locale first segment (`/:param`) would reach the food-page data
+  // below and crash with a 500 instead of a 404.
+  if (!hasLocale(routing.locales, locale)) notFound();
 
   // The docs footer, not a marketing one: it is already the full site directory
   // (including Legal), and its espresso ground is what ends the page — a cream
   // footer under a cream page needs a rule and still reads as more page.
-  const sections = await getDocsTree(locale as Locale);
+  const sections = await getDocsTree(locale);
 
   const t = await getTranslations({ locale, namespace: 'metadata' });
   const structuredData = landingStructuredData({
@@ -110,9 +114,7 @@ export default async function Home({
         <main>
           <PaintedHero />
           <PhoneTrio />
-          <UnderstandingSection
-            subtitle={<MealDataNote locale={locale as Locale} />}
-          />
+          <UnderstandingSection subtitle={<MealDataNote locale={locale} />} />
           <TypingAlternatives />
           <BeyondMacros />
           <DownloadClose />
