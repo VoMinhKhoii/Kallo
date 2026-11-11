@@ -179,12 +179,11 @@ const LEFT_AFTER = /^\s*(?:left|remaining)(?!\p{L})/iu;
 
 /** "1 tô phở bò, hôm nay còn dư 400 kcal": the 400 is no food's calories. */
 function isAboutTheDay(text: string, figure: TypedKcal): boolean {
-  const from =
-    Math.max(
-      text.lastIndexOf(',', figure.start),
-      text.lastIndexOf(';', figure.start),
-      text.lastIndexOf('\n', figure.start)
-    ) + 1;
+  // The figure's own clause: back to a comma, a line break or a sentence end
+  // (a period before a space; "1.5" is a number).
+  const before = text.slice(0, figure.start);
+  let from = 0;
+  for (const m of before.matchAll(/[,;!?\n]|\.(?=\s)/g)) from = m.index + 1;
   return (
     DAY_WORDS.test(text.slice(from, figure.end)) ||
     LEFT_AFTER.test(text.slice(figure.end))

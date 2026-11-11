@@ -82,23 +82,30 @@ function readOfTypedParts(
   read: PlainRead
 ): { kcal: number; grams: number } | null {
   const foods = [...read.foods];
-  // By the amount the user typed: typed calories pair on calories alone (the
-  // part's grams are an estimate, and would pair it with another food that
-  // happens to weigh the same); a typed weight pairs on grams, the closest in
-  // calories when several weigh the same.
+  // By the amount the user typed: a typed weight pairs with the read food of
+  // the same grams, typed calories with the one of the same calories (the
+  // part's grams are then an estimate, and would pair it with another food
+  // that happens to weigh the same). When several match, the closest in the
+  // other amount, so the read's order never decides.
   const take = (by: 'grams' | 'kcal', grams: number, kcal: number | null) => {
+    if (by === 'kcal' && kcal == null) return null;
     let at = -1;
-    if (by === 'kcal') {
-      if (kcal != null) at = foods.findIndex((f) => same(f.kcal, kcal));
-    } else {
-      foods.forEach((f, i) => {
-        if (!same(f.grams, grams)) return;
-        const closer =
-          kcal != null &&
-          Math.abs(f.kcal - kcal) < Math.abs(foods[at]?.kcal - kcal);
-        if (at < 0 || closer) at = i;
-      });
-    }
+    let gap = Number.POSITIVE_INFINITY;
+    foods.forEach((f, i) => {
+      const matches =
+        by === 'kcal' ? same(f.kcal, kcal ?? 0) : same(f.grams, grams);
+      if (!matches) return;
+      const other =
+        by === 'kcal'
+          ? Math.abs(f.grams - grams)
+          : kcal == null
+            ? 0
+            : Math.abs(f.kcal - kcal);
+      if (at < 0 || other < gap) {
+        at = i;
+        gap = other;
+      }
+    });
     return at < 0 ? null : foods.splice(at, 1)[0];
   };
   const kcalOf = (v: NutritionValues) => v.caloriesKcal ?? null;

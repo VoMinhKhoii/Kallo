@@ -540,6 +540,17 @@ describe('holdCaloriesToText', () => {
     });
     holdCaloriesToText(kept, 'leftover beef rendang, about 650 kcal');
     expect(kcals(kept)).toEqual([650]);
+    // The day's figure is in another sentence; a decimal point is no sentence end.
+    const yogurt = meal({
+      name: 'Yogurt',
+      statedKcal: 160,
+      ingredients: [ing('yogurt')],
+    });
+    holdCaloriesToText(
+      yogurt,
+      'My goal is 2000 kcal. I ate 1.5 yogurt 160 kcal.'
+    );
+    expect(kcals(yogurt)).toEqual([160]);
   });
 });
 

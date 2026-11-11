@@ -299,4 +299,24 @@ describe('holdToPlainRead, a part the user typed calories for', () => {
     expect(out.outcome).toBe('within_band');
     expect(out.result).toBe(m);
   });
+
+  it('picks the read food closest in grams when two have the same calories', () => {
+    // "160kcal yogurt and toast": both come out at the same calories, and the
+    // read lists the toast first.
+    const yogurt = {
+      ...ingredient('yogurt', 150, 160),
+      typedAmount: 'kcal' as const,
+    };
+    const toast = ingredient('toast', 50, 160);
+    const m = meal([yogurt, toast]);
+    const k = kcalOf(yogurt.displayedNutrition);
+    const out = holdToPlainRead(m, {
+      read: read(2 * k, [
+        [50, k],
+        [150, k],
+      ]),
+    });
+    expect(out.outcome).toBe('within_band');
+    expect(out.result).toBe(m);
+  });
 });
