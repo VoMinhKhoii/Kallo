@@ -53,9 +53,9 @@ export function ScanCameraControls({
         )}
       </div>
 
-      <div className="pointer-events-auto flex flex-col items-center gap-4 bg-gradient-to-b from-transparent to-black/50 px-4 pt-10 pb-4">
+      <div className="pointer-events-auto flex flex-col items-center gap-3 bg-gradient-to-b from-transparent to-black/50 px-4 pt-6 pb-3 sm:gap-4 sm:pt-10 sm:pb-4">
         <ScanModeSwitch mode={mode} locked={labelLocked} onChange={onMode} />
-        <div className="flex w-full items-start justify-between">
+        <div className="mx-auto flex w-full max-w-sm items-start justify-between">
           {mode === 'barcode' ? (
             <ScanGlassButton
               icon={Keyboard}

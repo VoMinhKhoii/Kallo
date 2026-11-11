@@ -540,4 +540,47 @@ describe('ScanDialog — nutrition label', () => {
     expect(await screen.findByText('Bánh quy Cosy')).toBeVisible();
     expect(h.scanLabel).toHaveBeenCalledTimes(2);
   });
+
+  it('switches the responsive camera window between barcode and label modes and anchors busy status below it', async () => {
+    let resolveLabel: ((value: unknown) => void) | undefined;
+    h.scanLabel.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveLabel = resolve;
+      })
+    );
+    const { user } = open();
+
+    const windowEl = screen.getByTestId('scan-camera-window');
+    expect(windowEl).toHaveAttribute('data-mode', 'barcode');
+    expect(windowEl.parentElement).toHaveClass('[container-type:size]');
+
+    await user.click(screen.getByRole('radio', { name: 'Nutrition label' }));
+    expect(windowEl).toHaveAttribute('data-mode', 'label');
+
+    await user.upload(
+      document.querySelector('input[type="file"]') as HTMLInputElement,
+      photo
+    );
+    const status = await screen.findByRole('status');
+    expect(status).toHaveTextContent('Reading the label');
+    expect(windowEl).toContainElement(status);
+
+    await act(async () =>
+      resolveLabel?.({
+        basis: 'per_100g',
+        confidence: 'high',
+        labelEvidence: '',
+        productName: 'Bánh quy Cosy',
+        servingSize: null,
+        servingSizeDescription: null,
+        servingsPerContainer: null,
+        per100g: {
+          calories: 480,
+          proteinGrams: 6,
+          carbsGrams: 62,
+          fatGrams: 22,
+        },
+      })
+    );
+  });
 });

@@ -85,4 +85,39 @@ describe('useBarcodeCameraScanner', () => {
     await act(async () => resolveStart?.());
     await waitFor(() => expect(scanner.stop).toHaveBeenCalledOnce());
   });
+
+  it('starts without a forced 4:3 aspectRatio and clamps qrbox inside the stream', async () => {
+    scanner.start.mockResolvedValue(undefined);
+    const { unmount } = renderHook(() =>
+      useBarcodeCameraScanner({
+        isActive: true,
+        onDecode: vi.fn(),
+      })
+    );
+
+    await waitFor(() => expect(scanner.start).toHaveBeenCalledOnce());
+    const config = scanner.start.mock.calls[0][1] as {
+      aspectRatio?: number;
+      qrbox: (
+        width: number,
+        height: number
+      ) => { width: number; height: number };
+    };
+    expect(config).not.toHaveProperty('aspectRatio');
+
+    for (const [w, h] of [
+      [720, 1280],
+      [1920, 1080],
+      [600, 600],
+      [60, 60],
+      [40, 40],
+    ] as const) {
+      const box = config.qrbox(w, h);
+      expect(box.width).toBeGreaterThanOrEqual(Math.min(w, 50));
+      expect(box.width).toBeLessThanOrEqual(w);
+      expect(box.height).toBeGreaterThanOrEqual(Math.min(h, 50));
+      expect(box.height).toBeLessThanOrEqual(h);
+    }
+    unmount();
+  });
 });
