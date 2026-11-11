@@ -1,5 +1,6 @@
 import { DocsTable, DocsTd, DocsTh } from '@/components/docs/mdx/prose-blocks';
-import type { AlternativePage } from '@/lib/seo/alternatives/types';
+import { ALTERNATIVES_CHROME } from '@/lib/seo/alternatives/chrome';
+import type { AlternativeOption } from '@/lib/seo/alternatives/types';
 
 const HEAD = 'px-2 sm:px-4';
 const CELL =
@@ -10,8 +11,8 @@ const CELL =
  * engines and assistants lift into an answer; it scrolls inside its own box on
  * a phone.
  */
-export function OptionsTable({ page }: { page: AlternativePage }) {
-  const heads = page.tableHeads;
+export function OptionsTable({ options }: { options: AlternativeOption[] }) {
+  const heads = ALTERNATIVES_CHROME.tableHeads;
   return (
     <DocsTable>
       <thead>
@@ -23,7 +24,7 @@ export function OptionsTable({ page }: { page: AlternativePage }) {
         </tr>
       </thead>
       <tbody>
-        {page.options.map((option) => (
+        {options.map((option) => (
           <tr key={option.name}>
             <DocsTd className={`${CELL} font-semibold`}>{option.name}</DocsTd>
             <DocsTd className={CELL}>{option.logs}</DocsTd>

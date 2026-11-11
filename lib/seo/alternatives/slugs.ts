@@ -22,18 +22,3 @@ export function isAlternativeSlug(slug: string): slug is AlternativeSlug {
 export function alternativePath(slug: AlternativeSlug): string {
   return `${ALTERNATIVES_PREFIX}/${slug}`;
 }
-
-/**
- * Where a locale switch should land from `pathname` (locale-relative) after
- * the food-page rule. The alternatives pages exist only in English, so leaving
- * one for another language goes to that language's home page, not a 404.
- */
-export function switchedAlternativePath(
-  pathname: string,
-  nextLocale: string
-): string {
-  return nextLocale !== ALTERNATIVES_LOCALE &&
-    pathname.startsWith(`${ALTERNATIVES_PREFIX}/`)
-    ? '/'
-    : pathname;
-}

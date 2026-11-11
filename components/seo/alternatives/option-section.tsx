@@ -6,23 +6,14 @@ import {
   DocsStrong,
   DocsUnorderedList,
 } from '@/components/docs/mdx/prose';
-import type {
-  AlternativeOption,
-  AlternativePage,
-  Source,
-} from '@/lib/seo/alternatives/types';
+import { ALTERNATIVES_CHROME } from '@/lib/seo/alternatives/chrome';
+import type { AlternativeOption, Source } from '@/lib/seo/alternatives/types';
 
 /** "Sources: A, B" with each source linked. */
-export function SourceLine({
-  label,
-  sources,
-}: {
-  label: string;
-  sources: Source[];
-}) {
+export function SourceLine({ sources }: { sources: Source[] }) {
   return (
     <p className="mt-4 text-kallo-text-muted text-sm leading-[1.75]">
-      {label}:{' '}
+      {ALTERNATIVES_CHROME.labels.sources}:{' '}
       {sources.map((source, i) => (
         <span key={source.url}>
           {i > 0 ? ', ' : null}
@@ -34,13 +25,8 @@ export function SourceLine({
 }
 
 /** One app: what it is, the facts in a short list, its drawback, its sources. */
-export function OptionSection({
-  option,
-  labels,
-}: {
-  option: AlternativeOption;
-  labels: AlternativePage['optionLabels'];
-}) {
+export function OptionSection({ option }: { option: AlternativeOption }) {
+  const labels = ALTERNATIVES_CHROME.labels;
   const facts: [string, string][] = [
     [labels.logs, option.logs],
     [labels.free, option.free],
@@ -65,7 +51,7 @@ export function OptionSection({
           </DocsListItem>
         ))}
       </DocsUnorderedList>
-      <SourceLine label={labels.sources} sources={option.sources} />
+      <SourceLine sources={option.sources} />
     </section>
   );
 }

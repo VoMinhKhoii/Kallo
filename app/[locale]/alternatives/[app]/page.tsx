@@ -110,23 +110,16 @@ export default async function AlternativesPage({
             {copy.disclosure}
           </p>
 
-          <OptionsTable page={copy} />
+          <OptionsTable options={copy.options} />
 
           <DocsH2>{copy.leaveHeading}</DocsH2>
           {copy.leave.map((p) => (
             <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
           ))}
-          <SourceLine
-            label={copy.optionLabels.sources}
-            sources={copy.leaveSources}
-          />
+          <SourceLine sources={copy.leaveSources} />
 
           {copy.options.map((option) => (
-            <OptionSection
-              key={option.name}
-              labels={copy.optionLabels}
-              option={option}
-            />
+            <OptionSection key={option.name} option={option} />
           ))}
 
           <DocsH2>{copy.dataHeading}</DocsH2>

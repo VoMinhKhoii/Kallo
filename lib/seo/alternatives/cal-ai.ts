@@ -29,12 +29,6 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     'The closest Cal AI alternatives are SnapCalorie for photo logging with a few free logs a day, MacroFactor for photo, typed and voice logging with weekly targets, and Cronometer for the most useful free plan. Yazio, MyFitnessPal and Lose It! keep photo logging behind their paid plans. Kallo, which we make, skips photos: you type the meal the way you would say it.',
   disclosure:
     'Kallo is our app. It is listed last, because it is the least like Cal AI. Prices are US prices from each vendor’s site or US App Store listing, checked on 11 November 2026. Each app gets one real drawback, Kallo included.',
-  tableHeads: {
-    app: 'App',
-    logs: 'Logs a meal by',
-    free: 'Free plan',
-    paid: 'Paid plan (US)',
-  },
   leaveHeading: 'Why people look for a Cal AI alternative',
   leave: [
     'Cal AI logs a meal from a photo, a barcode or a typed description. After a 3-day trial, scan results need a subscription. Its US App Store listing shows plans from $2.99 to $29.99 without saying how long each one lasts.',
@@ -48,20 +42,9 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     },
     NIH_2026,
   ],
-  optionLabels: {
-    logs: 'Logs a meal by',
-    free: 'Free',
-    paid: 'Paid (US)',
-    platforms: 'Platforms',
-    bestFor: 'Best for',
-    drawback: 'Drawback',
-    sources: 'Sources',
-    ours: 'our app',
-  },
   options: [
     {
       name: 'SnapCalorie',
-      url: 'https://www.snapcalorie.com/',
       logs: 'Photo, voice, nutrition label',
       free: '3 AI logs a day',
       paid: '$19.99 a month or $149 a year',
@@ -82,7 +65,6 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'MacroFactor',
-      url: 'https://macrofactor.com/',
       logs: 'Photo, typed description, voice, barcode, nutrition label',
       free: 'None after the trial',
       paid: '$11.99 a month or $71.99 a year',
@@ -101,7 +83,6 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'Yazio',
-      url: 'https://www.yazio.com/',
       logs: 'Photo, voice, text, barcode',
       free: 'Food diary, barcode scanner, fasting timer',
       paid: 'Pro, listed at $23.90 and $47.90 a year',
@@ -124,7 +105,6 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'Cronometer',
-      url: 'https://cronometer.com/',
       logs: 'Search, barcode; photo and voice on Gold',
       free: 'Unlimited barcode scanning, about 95 nutrients, custom recipes',
       paid: 'Gold, $10.99 a month or $59.99 a year',
@@ -145,7 +125,6 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'MyFitnessPal',
-      url: 'https://www.myfitnesspal.com/',
       logs: 'Search; barcode, photo and voice on Premium',
       free: 'Calorie, weight and exercise tracking by search',
       paid: 'Premium, $19.99 a month or $79.99 a year',
@@ -170,7 +149,6 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'Lose It!',
-      url: 'https://www.loseit.com/',
       logs: 'Search; photo, voice and barcode on Premium',
       free: 'Calorie budget, weight-loss plan, community',
       paid: 'Premium, $39.99 a year',
@@ -191,7 +169,6 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'Kallo',
-      url: 'https://kallo.fit/en',
       ours: true,
       logs: 'Typed text, barcode, nutrition label',
       free: 'Barcode scanning, manual logging, macros. Everything is free while Kallo is in beta',

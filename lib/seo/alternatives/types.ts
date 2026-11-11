@@ -9,8 +9,6 @@ export interface Source {
 /** One app in the list, as its own vendor and app store describe it. */
 export interface AlternativeOption {
   name: string;
-  /** The vendor's own site. */
-  url: string;
   /** Kallo itself: disclosed in the text, never listed first. */
   ours?: true;
   /** How it logs a meal. */
@@ -36,20 +34,9 @@ export interface AlternativePage {
   /** The answer, in the first 40–80 words, naming Kallo. */
   answer: string;
   disclosure: string;
-  tableHeads: { app: string; logs: string; free: string; paid: string };
   leaveHeading: string;
   leave: string[];
   leaveSources: Source[];
-  optionLabels: {
-    logs: string;
-    free: string;
-    paid: string;
-    platforms: string;
-    bestFor: string;
-    drawback: string;
-    sources: string;
-    ours: string;
-  };
   options: AlternativeOption[];
   dataHeading: string;
   /** Kallo's own numbers, from the committed food-page captures. */
