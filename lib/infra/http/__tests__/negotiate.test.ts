@@ -295,6 +295,7 @@ describe('unknownAlternativePageTarget', () => {
       '/en/alternatives/cal-ai',
       '/en/alternatives/cal-ai/',
       '/en/alternatives/cal%2Dai',
+      '/en/alternatives/myfitnesspal',
     ]) {
       expect(unknownAlternativePageTarget(pathname), pathname).toBeNull();
     }
@@ -304,7 +305,7 @@ describe('unknownAlternativePageTarget', () => {
     for (const [pathname, target] of [
       ['/en/alternatives', '/en/not-found'],
       ['/en/alternatives/', '/en/not-found'],
-      ['/en/alternatives/myfitnesspal', '/en/not-found'],
+      ['/en/alternatives/lose-it', '/en/not-found'],
       ['/en/alternatives/cal-ai/extra', '/en/not-found'],
       ['/vi/alternatives/cal-ai', '/vi/not-found'],
     ]) {

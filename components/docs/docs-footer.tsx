@@ -3,6 +3,7 @@ import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { DocsFooterColumn } from '@/components/docs/docs-footer-column';
 import { Link } from '@/i18n/navigation';
 import type { DocsNavSection } from '@/lib/domain/docs/tree';
+import { ALTERNATIVES_CHROME } from '@/lib/seo/alternatives/chrome';
 import { ALTERNATIVE_PAGES } from '@/lib/seo/alternatives/pages';
 import {
   ALTERNATIVE_SLUGS,
@@ -112,6 +113,17 @@ export async function DocsFooter({
               />
             </>
           ) : null}
+          {/* The alternatives pages' way into the site; English only. */}
+          {locale === ALTERNATIVES_LOCALE ? (
+            <DocsFooterColumn
+              id="alternatives"
+              label={ALTERNATIVES_CHROME.footerLabel}
+              links={ALTERNATIVE_SLUGS.map((slug) => ({
+                href: alternativePath(slug),
+                title: ALTERNATIVE_PAGES[slug].title,
+              }))}
+            />
+          ) : null}
         </nav>
 
         <div className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-4 border-kallo-stone/25 border-t pt-8">
@@ -150,18 +162,6 @@ export async function DocsFooter({
               {FOOD_PAGE_CHROME[locale].footerLink}
             </Link>
           ) : null}
-          {/* The alternatives pages' way into the site; English only. */}
-          {locale === ALTERNATIVES_LOCALE
-            ? ALTERNATIVE_SLUGS.map((slug) => (
-                <Link
-                  className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
-                  href={alternativePath(slug)}
-                  key={slug}
-                >
-                  {ALTERNATIVE_PAGES[slug].title}
-                </Link>
-              ))
-            : null}
           <a
             className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
             href={LINKEDIN_URL}
