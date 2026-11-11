@@ -539,6 +539,17 @@ jobs:
             esac
           fi
           ./scripts/cloud-run/smoke-check.sh "$SMOKE_URL" "${smoke_args[@]}"
+      - name: Crawl check the candidate (SEO)
+        # The same check CI runs on the build, now with prod settings, before
+        # the candidate takes traffic: a page that turns noindex, 404s or hides
+        # its article never reaches search engines.
+        env:
+          SMOKE_URL: ${{ env.SMOKE_URL }}
+        run: |
+          ORIGIN_SHARED_SECRET="$(gcloud secrets versions access latest --secret=kallo-prod-origin-shared-secret)"
+          echo "::add-mask::$ORIGIN_SHARED_SECRET"
+          export ORIGIN_SHARED_SECRET
+          bun scripts/seo/crawl-check.ts "$SMOKE_URL" --live https://kallo.fit
       - name: Promote candidate after smoke pass
         # Only for an existing service: shift 100% traffic to the validated
         # (latest) revision, then drop the candidate tag. On a first deploy the
