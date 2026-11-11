@@ -18,6 +18,8 @@ export interface ComparePage {
   metaTitle: string;
   description: string;
   title: string;
+  /** The day the page first went out, `YYYY-MM-DD`. Never changes. */
+  publishedOn: string;
   /** The day the other app's facts were checked on its own pages. */
   checkedOn: string;
   /** The answer, in the first 40–80 words. */

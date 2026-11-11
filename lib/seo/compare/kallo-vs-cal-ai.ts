@@ -13,6 +13,7 @@ export const KALLO_VS_CAL_AI: ComparePage = {
   description:
     'Kallo and Cal AI side by side: how each logs a meal, what is free, the US price (checked 11 November 2026), and what each says about accuracy.',
   title: 'Kallo vs Cal AI',
+  publishedOn: '2026-11-11',
   checkedOn: '2026-11-11',
   answer:
     'Cal AI starts from a photo of your plate. Kallo starts from a sentence: you type what you ate, and it shows the calories as a range and asks when the words leave a portion open. MyFitnessPal has owned Cal AI since March 2026. Cal AI runs on iOS and Android, and nothing is free after a 3-day trial. Kallo runs on iOS and the web. Its free plan has barcode scanning and manual logging, and typing a meal is Premium once beta ends.',

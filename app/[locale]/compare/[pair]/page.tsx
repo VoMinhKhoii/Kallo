@@ -60,7 +60,8 @@ export async function generateMetadata({
   if (!page) return {};
   const url = `${SITE_URL}/${locale}${comparePath(page.slug)}`;
   return {
-    title: page.copy.metaTitle,
+    // Absolute, like the alternatives pages: no brand suffix on the title.
+    title: { absolute: page.copy.metaTitle },
     description: page.copy.description,
     alternates: { canonical: url },
     openGraph: {
@@ -97,6 +98,7 @@ export default async function KalloVsPage({ params }: ComparePageProps) {
     <VendorArticle
       answer={copy.answer}
       checkedOn={copy.checkedOn}
+      publishedOn={copy.publishedOn}
       description={copy.description}
       disclosure={copy.disclosure}
       locale={locale}

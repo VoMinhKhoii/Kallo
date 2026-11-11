@@ -13,6 +13,7 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
   description:
     'Kallo and MyFitnessPal side by side: how each logs a meal, where the food data comes from, what is free, and the US price (checked 11 November 2026).',
   title: 'Kallo vs MyFitnessPal',
+  publishedOn: '2026-11-11',
   checkedOn: '2026-11-11',
   answer:
     'With MyFitnessPal you search a database of more than 20 million entries and pick one for each food. With Kallo you type the meal in a sentence and it works out the parts and portions. MyFitnessPal’s barcode scanner needs Premium; Kallo’s is on the free plan, and typing a meal is Kallo’s Premium feature once beta ends. MyFitnessPal runs on iOS, Android and the web, Kallo on iOS and the web.',
