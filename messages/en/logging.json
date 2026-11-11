@@ -367,6 +367,7 @@
     "missingValues": "Add a name, calories, protein, carbs and fat first.",
     "modeBarcode": "Barcode",
     "modeLabel": "Nutrition label",
+    "modeCard": "Menu card",
     "newFood": "New food",
     "notFoundBody": "Barcode {code} isn't in our database yet.",
     "notFoundTitle": "No match found",

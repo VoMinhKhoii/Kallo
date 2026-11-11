@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
+import { scanMacroCardWithGemini } from '@/lib/ai/pipeline/estimator/macro-card-ocr/macro-card-ocr';
 import { scanNutritionLabelSchema } from '@/lib/api/contracts/nutrition-label';
 import { handleRouteError } from '@/lib/api/respond';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
@@ -61,13 +62,20 @@ export async function POST(req: NextRequest) {
       );
       await validateNutritionLabelImage(body);
       await chargeGlobal();
+      const scanRunner =
+        body.kind === 'macro_card'
+          ? () =>
+              scanMacroCardWithGemini({
+                imageBase64: body.imageBase64,
+                mimeType: body.mimeType,
+              })
+          : () =>
+              scanNutritionLabelWithGemini({
+                imageBase64: body.imageBase64,
+                mimeType: body.mimeType,
+              });
       // The photo is kept best-effort, in parallel with the model call.
-      return scanWithStoredLabelImage({ userId: user.id, ...body }, () =>
-        scanNutritionLabelWithGemini({
-          imageBase64: body.imageBase64,
-          mimeType: body.mimeType,
-        })
-      );
+      return scanWithStoredLabelImage({ userId: user.id, ...body }, scanRunner);
     });
     // `labelImageId` is omitted when the photo could not be kept.
     return Response.json({

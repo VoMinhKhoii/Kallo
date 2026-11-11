@@ -1,5 +1,12 @@
 import type { OcrErrorCode } from '@/lib/domain/nutrition/ocr/schema';
 
+export class NutritionLabelOcrError extends Error {
+  constructor(public readonly code: OcrErrorCode) {
+    super(code);
+    this.name = 'NutritionLabelOcrError';
+  }
+}
+
 /**
  * Classify anything thrown by the label-scan path into an {@link OcrErrorCode}.
  *

@@ -229,6 +229,8 @@ another domain module is a smell worth a second look.
 | `language/` | language detect + guard | ok |
 | `pipeline/` | `contracts/ config/ grounded/ estimator/ resolve/ assemble/ stream/ telemetry/ legacy/` | ok |
 | `pipeline/estimator/` | provider-agnostic Call-2 seam | **reference shape** |
+| `pipeline/estimator/label-ocr/` | packaged-food Nutrition Facts table OCR scanner | ok |
+| `pipeline/estimator/macro-card-ocr/` | single-item printed macro-card OCR scanner (Soumaki, FitFood, café cards) | ok |
 | `pipeline/grounded/call-two/selector/` | per-ingredient candidate selector beside Call 2: re-ranks Call 2's candidates against the user's words, overrides only mass-equivalent rows | ok |
 | `pipeline/grounded/review.ts` | reviews Call 2's row picks around the rescue (`reviewPicks`, the one entry): a row contradicting Call 2's own estimate becomes a rejection; a fried dish's separate oil is dropped when its foods matched rows that are already fried; last, weighed dishes are scaled (`resolve/served-mass.ts`) | ok |
 | `pipeline/grounded/rescue/` | dish rescue: an ingredient Call 2 rejects is re-run as a mini-meal and replaced by its single foods, scaled to the main run's shipped mass | ok |

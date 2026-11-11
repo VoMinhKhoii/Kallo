@@ -47,7 +47,10 @@ export const scanNutritionLabelSchema = z.object({
       return (value.length * 3) / 4 - padding <= OCR_MAX_IMAGE_BYTES;
     }, 'Image payload is too large'),
   mimeType: z.enum(OCR_UPLOAD_MIME_TYPES),
+  kind: z.enum(['label', 'macro_card']).default('label'),
 });
+
+export type ScanNutritionLabelKind = 'label' | 'macro_card';
 
 export type ScanNutritionLabelInput = z.infer<typeof scanNutritionLabelSchema>;
 

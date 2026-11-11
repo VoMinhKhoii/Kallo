@@ -557,6 +557,9 @@ describe('ScanDialog — nutrition label', () => {
     await user.click(screen.getByRole('radio', { name: 'Nutrition label' }));
     expect(windowEl).toHaveAttribute('data-mode', 'label');
 
+    await user.click(screen.getByRole('radio', { name: 'Menu card' }));
+    expect(windowEl).toHaveAttribute('data-mode', 'card');
+
     await user.upload(
       document.querySelector('input[type="file"]') as HTMLInputElement,
       photo

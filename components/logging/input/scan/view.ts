@@ -10,7 +10,7 @@ import {
 } from '@/lib/domain/scan/food';
 import type { ScanLookup } from './use-lookup';
 
-export type ScanMode = 'barcode' | 'label';
+export type ScanMode = 'barcode' | 'label' | 'card';
 
 /**
  * What stands over the camera right now — the web twin of the Flutter app's

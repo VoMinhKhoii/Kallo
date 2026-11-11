@@ -3,12 +3,20 @@
  *
  * Everything here takes untrusted transcribed strings ("1.234,5", "% DV",
  * "840 kJ", "1000 IU") and returns either a number in the app's canonical unit
- * for that nutrient or `null`. No schema knowledge, no label assembly — those
- * are `raw-schema.ts` and `normalization.ts`.
+ * for that nutrient or `null`. Pure domain utility, zero LLM or schema dependencies.
  */
 
-import type { NutritionValues } from '@/lib/domain/nutrition/ocr/schema';
-import type { RawAmount, RawMeasure } from './raw-schema';
+import type { NutritionValues } from './schema';
+
+export interface RawAmountToken {
+  value: string;
+  unit: string;
+}
+
+export interface RawMeasureToken {
+  value: string;
+  unit: string;
+}
 
 const GRAM_NUTRIENTS = new Set<keyof NutritionValues>([
   'proteinGrams',
@@ -28,7 +36,7 @@ const MICROGRAM_NUTRIENTS = new Set<keyof NutritionValues>([
   'vitaminHMcg',
 ]);
 
-function parsePrintedNumber(token: string): number | null {
+export function parsePrintedNumber(token: string): number | null {
   const compact = token
     .trim()
     .replace(/[\s\u00a0']/g, '')
@@ -41,17 +49,13 @@ function parsePrintedNumber(token: string): number | null {
   const lastDot = compact.lastIndexOf('.');
   let normalized = compact;
   if (lastComma >= 0 && lastDot >= 0) {
-    // Both present: the rightmost one is the decimal separator, the other
-    // groups thousands. "1.234,5" (vi/EU) and "1,234.5" (US) both work.
+    // Both present: rightmost is decimal separator, other groups thousands.
     const decimalSeparator = lastComma > lastDot ? ',' : '.';
     const groupingSeparator = decimalSeparator === ',' ? /\./g : /,/g;
     normalized = compact.replace(groupingSeparator, '');
     normalized = normalized.replace(decimalSeparator, '.');
   } else if (lastComma >= 0 || lastDot >= 0) {
-    // Only one separator kind: it is ambiguous on its own, because "1,5" is
-    // one and a half on a Vietnamese label while "1,000" is a thousand on a
-    // US one. Groups of exactly three digits mean thousands; nutrition
-    // labels never print three decimal places.
+    // Only one separator: 3 digits after separator indicates thousands.
     const separator = lastComma >= 0 ? ',' : '.';
     const escaped = separator === ',' ? ',' : '\\.';
     const grouped = new RegExp(`^[+-]?\\d{1,3}(?:${escaped}\\d{3})+$`);
@@ -65,11 +69,11 @@ function parsePrintedNumber(token: string): number | null {
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
-function normalizeUnitToken(token: string): string {
+export function normalizeUnitToken(token: string): string {
   return token.trim().toLowerCase().replace(/[µμ]/g, 'u').replace(/[.\s]/g, '');
 }
 
-function isPercentageToken(value: string, unit: string): boolean {
+export function isPercentageToken(value: string, unit: string): boolean {
   const token = `${value} ${unit}`.toLowerCase();
   return (
     token.includes('%') ||
@@ -104,7 +108,7 @@ function convertMass(
 }
 
 export function normalizeAmount(
-  raw: RawAmount,
+  raw: RawAmountToken | null | undefined,
   nutrient: keyof NutritionValues
 ): number | null {
   if (!raw || isPercentageToken(raw.value, raw.unit)) return null;
@@ -140,7 +144,7 @@ export function parsePositiveNumber(value: string | null): number | null {
   return parsed !== null && parsed > 0 ? parsed : null;
 }
 
-export function normalizeMeasure(raw: RawMeasure) {
+export function normalizeMeasure(raw: RawMeasureToken | null | undefined) {
   if (!raw) return null;
   const value = parsePositiveNumber(raw.value);
   const unit = normalizeUnitToken(raw.unit);

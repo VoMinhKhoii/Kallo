@@ -367,6 +367,7 @@
     "missingValues": "Hãy nhập tên, calo, đạm, carb và béo trước.",
     "modeBarcode": "Mã vạch",
     "modeLabel": "Nhãn dinh dưỡng",
+    "modeCard": "Thẻ dinh dưỡng món",
     "newFood": "Món mới",
     "notFoundBody": "Mã vạch {code} chưa có trong dữ liệu của Kallo.",
     "notFoundTitle": "Không tìm thấy sản phẩm",
