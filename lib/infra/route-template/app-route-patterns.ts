@@ -16,6 +16,7 @@ export const APP_ROUTE_PATTERNS = [
   '/[locale]',
   '/[locale]/[...rest]',
   '/[locale]/activity',
+  '/[locale]/alternatives/[app]',
   '/[locale]/calories',
   '/[locale]/calories/[food]',
   '/[locale]/circle',

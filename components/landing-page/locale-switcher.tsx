@@ -7,7 +7,7 @@ import type { Locale } from '@/i18n/config';
 import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import { isPlainClick } from '@/lib/core/ui/plain-click';
-import { switchedFoodPath } from '@/lib/seo/food-pages/slugs';
+import { localeSwitchPath } from '@/lib/seo/locale-switch';
 
 /**
  * Two locales, so the switch is two words rather than a control.
@@ -31,7 +31,7 @@ export function LocaleSwitcher() {
 
   const pathname = usePathname();
   const hrefFor = (nextLocale: Locale) => {
-    const path = switchedFoodPath(pathname, nextLocale);
+    const path = localeSwitchPath(pathname, nextLocale);
     return `/${nextLocale}${path === '/' ? '' : path}`;
   };
 

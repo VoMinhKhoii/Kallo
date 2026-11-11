@@ -177,3 +177,45 @@ export function mealDataStructuredData({
     ],
   };
 }
+
+/**
+ * An alternatives page: a dated article in the trail Kallo > page. No
+ * `SoftwareApplication` nodes for the apps it lists and no ratings: the page
+ * states facts about other companies' apps, it does not review them.
+ */
+export function alternativesStructuredData({
+  locale,
+  url,
+  title,
+  description,
+  publishedOn,
+  checkedOn,
+}: {
+  locale: string;
+  url: string;
+  title: string;
+  description: string;
+  /** The day the page first went out, `YYYY-MM-DD`. */
+  publishedOn: string;
+  /** The day the facts were last checked, `YYYY-MM-DD`. */
+  checkedOn: string;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      breadcrumb(locale, [{ name: title }]),
+      {
+        '@type': 'Article',
+        headline: title,
+        description,
+        url,
+        mainEntityOfPage: url,
+        inLanguage: locale,
+        datePublished: publishedOn,
+        dateModified: checkedOn,
+        author: PUBLISHER,
+        publisher: PUBLISHER,
+      },
+    ],
+  };
+}

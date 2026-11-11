@@ -4,6 +4,12 @@ import { routing } from '@/i18n/routing';
 import { loadFrontmatter } from '@/lib/domain/docs/loader';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { alternateLanguages } from '@/lib/seo/alternates';
+import { ALTERNATIVE_PAGES } from '@/lib/seo/alternatives/pages';
+import {
+  ALTERNATIVE_SLUGS,
+  ALTERNATIVES_LOCALE,
+  alternativePath,
+} from '@/lib/seo/alternatives/slugs';
 import {
   captureDateRange,
   FOOD_PAGE_LAYOUT_REVISED,
@@ -136,6 +142,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.6,
       });
     }
+  }
+
+  // English only, so no language alternates. Dated by the day its prices and
+  // facts were last checked against the vendors' own pages.
+  for (const slug of ALTERNATIVE_SLUGS) {
+    entries.push({
+      url: `${SITE_URL}/${ALTERNATIVES_LOCALE}${alternativePath(slug)}`,
+      lastModified: new Date(`${ALTERNATIVE_PAGES[slug].checkedOn}T00:00:00Z`),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    });
   }
 
   return entries;
