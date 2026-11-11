@@ -95,74 +95,92 @@ async function mapLimit<T, R>(
   return out;
 }
 
-export async function crawlCheck(base: string, live?: string) {
-  const problems: string[] = [];
-
-  const robots = await fetchPage(base, '/robots.txt');
-  problems.push(
-    ...(robots.ok
-      ? robotsProblems(await robots.text())
-      : [`robots.txt: HTTP ${robots.status}`])
-  );
-
-  const sitemap = await fetchPage(base, '/sitemap.xml');
-  if (!sitemap.ok) return [...problems, `sitemap.xml: HTTP ${sitemap.status}`];
-  const urls = sitemapUrls(await sitemap.text());
-  if (urls.length === 0) return [...problems, 'sitemap.xml lists no URLs'];
-
-  const pages = await mapLimit(urls, 6, async (url) => {
+/** Fetch each URL's path from `base`, six at a time, and collect `rule`'s problems. */
+async function checkEach(
+  base: string,
+  urls: string[],
+  rule: (url: string, res: Response) => Promise<string[]> | string[]
+) {
+  const results = await mapLimit(urls, 6, async (url) => {
     const { pathname } = new URL(url);
     const res = await fetchPage(base, pathname);
-    if (res.status !== 200) return [`${pathname}: HTTP ${res.status}`];
-    if (/noindex/i.test(res.headers.get('x-robots-tag') ?? '')) {
-      return [`${pathname}: X-Robots-Tag noindex`];
-    }
-    return pageProblems(url, await res.text()).map((p) => `${pathname}: ${p}`);
+    return (await rule(url, res)).map((p) => `${pathname}: ${p}`);
   });
-  problems.push(...pages.flat());
+  return results.flat();
+}
 
-  const unknown = await fetchPage(base, UNKNOWN_FOOD_PAGE);
-  if (unknown.status !== 404) {
-    problems.push(`${UNKNOWN_FOOD_PAGE}: HTTP ${unknown.status}, expected 404`);
-  }
+async function robotsFileProblems(base: string) {
+  const robots = await fetchPage(base, '/robots.txt');
+  return robots.ok
+    ? robotsProblems(await robots.text())
+    : [`robots.txt: HTTP ${robots.status}`];
+}
 
-  if (live) {
-    const liveSitemap = await fetchPage(live, '/sitemap.xml');
-    if (!liveSitemap.ok) {
-      console.warn(
-        `live sitemap HTTP ${liveSitemap.status}; skipped the removed-page check`
-      );
-    } else {
-      const ours = new Set(urls);
-      const dropped = sitemapUrls(await liveSitemap.text()).filter(
-        (u) => !ours.has(u)
-      );
-      const gone = await mapLimit(dropped, 6, async (url) => {
-        const { pathname } = new URL(url);
-        const { status } = await fetchPage(base, pathname);
-        return status === 404 || status === 410
-          ? [
-              `${pathname}: live page now answers ${status}; redirect it instead`,
-            ]
-          : [];
-      });
-      problems.push(...gone.flat());
+function sitemapPageProblems(base: string, urls: string[]) {
+  return checkEach(base, urls, async (url, res) => {
+    if (res.status !== 200) return [`HTTP ${res.status}`];
+    if (/noindex/i.test(res.headers.get('x-robots-tag') ?? '')) {
+      return ['X-Robots-Tag noindex'];
     }
-  }
+    return pageProblems(url, await res.text());
+  });
+}
 
+async function unknownPageProblems(base: string) {
+  const { status } = await fetchPage(base, UNKNOWN_FOOD_PAGE);
+  return status === 404
+    ? []
+    : [`${UNKNOWN_FOOD_PAGE}: HTTP ${status}, expected 404`];
+}
+
+/** Pages the live sitemap lists that this build answers 404 or 410 for. */
+async function removedPageProblems(base: string, live: string, ours: string[]) {
+  const liveSitemap = await fetchPage(live, '/sitemap.xml');
+  if (!liveSitemap.ok) {
+    console.warn(
+      `live sitemap HTTP ${liveSitemap.status}; skipped the removed-page check`
+    );
+    return [];
+  }
+  const kept = new Set(ours);
+  const dropped = sitemapUrls(await liveSitemap.text()).filter(
+    (u) => !kept.has(u)
+  );
+  return checkEach(base, dropped, (_url, res) =>
+    res.status === 404 || res.status === 410
+      ? [`live page now answers ${res.status}; redirect it instead`]
+      : []
+  );
+}
+
+export async function crawlCheck(base: string, live?: string) {
+  const robots = await robotsFileProblems(base);
+  const sitemap = await fetchPage(base, '/sitemap.xml');
+  if (!sitemap.ok) return [...robots, `sitemap.xml: HTTP ${sitemap.status}`];
+  const urls = sitemapUrls(await sitemap.text());
+  if (urls.length === 0) return [...robots, 'sitemap.xml lists no URLs'];
+
+  const problems = [
+    ...robots,
+    ...(await sitemapPageProblems(base, urls)),
+    ...(await unknownPageProblems(base)),
+    ...(live ? await removedPageProblems(base, live, urls) : []),
+  ];
   console.log(`checked ${urls.length} sitemap URLs on ${base}`);
   return problems;
 }
 
 async function main() {
-  const [base, flag, live] = process.argv.slice(2);
-  if (!base || (flag && flag !== '--live')) {
+  const args = process.argv.slice(2);
+  const [base] = args;
+  const validLive = args.length === 3 && args[1] === '--live';
+  if (!base || !(args.length === 1 || validLive)) {
     console.error(
       'usage: bun scripts/seo/crawl-check.ts <base-url> [--live <url>]'
     );
     process.exit(2);
   }
-  const problems = await crawlCheck(base, flag ? live : undefined);
+  const problems = await crawlCheck(base, validLive ? args[2] : undefined);
   for (const p of problems) console.error(`PROBLEM ${p}`);
   if (problems.length > 0) process.exit(1);
   console.log('no problems');
