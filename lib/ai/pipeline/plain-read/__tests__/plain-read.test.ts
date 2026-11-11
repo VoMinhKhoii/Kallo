@@ -5,7 +5,13 @@ import { PLAIN_READ_MODEL } from '../prompt';
 
 const read = (totalKcal: number, foods: number[] = [totalKcal]) => ({
   totalKcal,
-  foods: foods.map((kcal, i) => ({ name: `f${i}`, grams: 100, kcal })),
+  foods: foods.map((kcal, i) => ({
+    name: `f${i}`,
+    pieces: 1,
+    gramsEach: 100,
+    grams: 100,
+    kcal,
+  })),
 });
 
 function client(impl: GeminiClient['generateStructuredOutput']): GeminiClient {
@@ -46,7 +52,7 @@ describe('startPlainRead', () => {
       mealText: '1 tô phở bò',
     });
 
-    await expect(r.settle()).resolves.toBe(640);
+    await expect(r.settle()).resolves.toMatchObject({ totalKcal: 640 });
     const params = call.mock.calls[0][0];
     expect(params.model).toBe(PLAIN_READ_MODEL);
     expect(params.userMessage).toContain('1 tô phở bò');

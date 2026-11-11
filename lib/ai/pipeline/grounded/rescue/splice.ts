@@ -13,7 +13,10 @@ import type {
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 import { scaleEstimate } from '@/lib/ai/pipeline/resolve/estimate-scale';
-import { shippedEdibleGrams } from '@/lib/ai/pipeline/resolve/refuse-mass';
+import {
+  portionAnchor,
+  shippedEdibleGrams,
+} from '@/lib/ai/pipeline/resolve/refuse-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
 import type { PortionResolution } from '@/lib/ai/portion/types';
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
@@ -34,9 +37,21 @@ export const RESCUE_PART_PORTION: PortionResolution = {
   note: 'rescue part: grams scaled to the main run',
 };
 
+/**
+ * A rescued part of a food the user typed an amount for ("300g cà ri gà"
+ * split into its foods): the parts add up to that amount, so the user's
+ * figure still stands behind them.
+ */
+export const RESCUE_TYPED_PART_PORTION: PortionResolution = {
+  ...RESCUE_PART_PORTION,
+  note: 'rescue part of a typed amount: grams scaled to the typed amount',
+};
+
 /** A part the rescue spliced in, its grams already scaled by the server. */
 export function isRescuePart(portion: PortionResolution | undefined): boolean {
-  return portion === RESCUE_PART_PORTION;
+  return (
+    portion === RESCUE_PART_PORTION || portion === RESCUE_TYPED_PART_PORTION
+  );
 }
 
 /**
@@ -99,7 +114,11 @@ export function spliceRescue(
       for (const p of subParts) {
         ingredients.push(p.ingredient);
         matchResults.push(p.match);
-        portionResolutions.push(RESCUE_PART_PORTION);
+        portionResolutions.push(
+          portionAnchor(portion)
+            ? RESCUE_TYPED_PART_PORTION
+            : RESCUE_PART_PORTION
+        );
         ordered.push(scaleEstimate(p.estimate, k));
       }
       touched = true;

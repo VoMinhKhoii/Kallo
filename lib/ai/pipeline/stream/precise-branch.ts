@@ -1,10 +1,7 @@
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import { logUnmatchedIngredients } from '@/lib/ai/matching/unmatched-log';
 import { analyzeMeal } from '@/lib/ai/pipeline/analyze-meal';
-import {
-  hasTypedWeight,
-  holdToPlainRead,
-} from '@/lib/ai/pipeline/plain-read/hold';
+import { holdToPlainRead } from '@/lib/ai/pipeline/plain-read/hold';
 import { startPlainRead } from '@/lib/ai/pipeline/plain-read/plain-read';
 import { PLAIN_READ_MODEL } from '@/lib/ai/pipeline/plain-read/prompt';
 import { createBudgetAttemptRecorder } from '@/lib/ai/pipeline/telemetry/budget';
@@ -35,13 +32,10 @@ export async function runPreciseBranch({
 
   // The plain read runs beside the pipeline; its total is the reference the
   // meal is held near once the pipeline finishes (see plain-read/hold.ts).
-  // Typed-weight meals keep their computed numbers, so they skip the read.
-  const typedWeight = hasTypedWeight(ctx.message);
   const plainRead = startPlainRead({
     gemini,
     mealText: ctx.message,
     signal: ctx.signal,
-    skip: typedWeight,
     onAttemptComplete: createBudgetAttemptRecorder({
       db,
       requestId,
@@ -124,8 +118,7 @@ export async function runPreciseBranch({
     // Hold the free-text meal near the plain read BEFORE the relog picks are
     // folded in: the read never saw the picks, and their numbers are frozen.
     const hold = holdToPlainRead(result.data, {
-      readKcal: await plainRead.settle(),
-      typedWeight,
+      read: await plainRead.settle(),
     });
     // The client may have hung up while the read settled: stage nothing.
     if (ctx.signal.aborted) return;
@@ -138,6 +131,7 @@ export async function runPreciseBranch({
         appKcal: hold.appKcal,
         readKcal: hold.readKcal,
         factor: hold.factor,
+        gramsFactor: hold.gramsFactor,
       })
     );
 

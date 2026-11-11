@@ -14,7 +14,6 @@ import type {
 } from '@/lib/ai/types/result';
 import {
   HOLD_BAND,
-  hasTypedWeight,
   holdFactor,
   holdToPlainRead,
   MAX_HOLD_FACTOR,
@@ -67,6 +66,20 @@ function meal(parts: ProcessedIngredient[]): PipelineResult {
 }
 
 const kcalOf = (v: NutritionValues) => v.caloriesKcal ?? 0;
+/**
+ * A read of `total` kcal; `foods` are [grams, kcal] pairs. By default one food
+ * with no grams, so grams follow the calorie factor.
+ */
+const read = (total: number, foods: [number, number][] = [[0, total]]) => ({
+  totalKcal: total,
+  foods: foods.map(([grams, kcal], i) => ({
+    name: `food ${i}`,
+    pieces: 1,
+    gramsEach: grams,
+    grams,
+    kcal,
+  })),
+});
 
 describe('holdFactor', () => {
   it('leaves a meal inside the band alone', () => {
@@ -92,10 +105,7 @@ describe('holdToPlainRead', () => {
   it('scales every part so the shown total lands on the band edge', () => {
     const before = meal(parts);
     const app = kcalOf(before.displayedNutrition);
-    const out = holdToPlainRead(before, {
-      readKcal: app / 2,
-      typedWeight: false,
-    });
+    const out = holdToPlainRead(before, { read: read(app / 2) });
 
     expect(out.outcome).toBe('held');
     expect(out.appKcal).toBe(app);
@@ -114,10 +124,7 @@ describe('holdToPlainRead', () => {
   });
 
   it('matches what confirm re-derives from the scaled bounded triples', () => {
-    const out = holdToPlainRead(meal(parts), {
-      readKcal: 1500,
-      typedWeight: false,
-    });
+    const out = holdToPlainRead(meal(parts), { read: read(1500) });
     const ingredients = out.result.mealItems[0].ingredients;
     const reDerived = goalAdjustNutrition(
       sumBoundedNutrition(ingredients.map((i) => i.boundedNutrition)),
@@ -129,55 +136,132 @@ describe('holdToPlainRead', () => {
     );
   });
 
-  it('leaves typed-weight meals, missing reads and in-band meals unchanged', () => {
+  it('leaves missing reads and in-band meals unchanged', () => {
     const m = meal(parts);
     const app = kcalOf(m.displayedNutrition);
-    expect(
-      holdToPlainRead(m, { readKcal: 100, typedWeight: true }).outcome
-    ).toBe('typed_weight');
-    expect(
-      holdToPlainRead(m, { readKcal: null, typedWeight: false }).outcome
-    ).toBe('no_read');
-    const inBand = holdToPlainRead(m, { readKcal: app, typedWeight: false });
+    expect(holdToPlainRead(m, { read: null }).outcome).toBe('no_read');
+    const inBand = holdToPlainRead(m, { read: read(app) });
     expect(inBand.outcome).toBe('within_band');
     expect(inBand.result).toBe(m);
   });
-});
 
-describe('hasTypedWeight', () => {
-  it.each([
-    '150g thăn bò cân sống',
-    '2 lạng thịt heo',
-    '1 ký tôm',
-    'an 200 gr com',
-    '8 oz steak',
-    '250ml sữa tươi',
-    '1.5 kg ribs',
-    '2 lạng thịt bò'.normalize('NFD'),
-    'nửa ký thịt bò',
-    '150gam thịt bò',
-    '2lạng thịt heo',
-    '1ký tôm',
-    '1lít sữa',
-    '200grams beef',
-    '1 lit sua',
-    '2kilos ribs',
-    'nửa kg thịt bò',
-    'half lb ground beef',
-    'six oz sirloin',
-    'half a pound of ground beef',
-    'a 6 ounce sirloin',
-  ])('spots a typed weight in %s', (text) => {
-    expect(hasTypedWeight(text)).toBe(true);
+  it('holds the other parts to what the read gives them, typed parts left as they are', () => {
+    // "2 gói mì + 100g rau": the noodles came out as one pack.
+    const veg = { ...ingredient('rau', 100, 40), typedAmount: true };
+    const before = meal([ingredient('mì', 80, 380), veg]);
+    const out = holdToPlainRead(before, {
+      read: read(810, [
+        [160, 760],
+        [100, 50],
+      ]),
+    });
+
+    expect(out.outcome).toBe('held');
+    const [noodles, vegAfter] = out.result.mealItems[0].ingredients;
+    expect(vegAfter).toBe(veg);
+    // The noodles land on the band edge of the read's noodles, not of the meal.
+    const edge = 760 / (1 + HOLD_BAND);
+    expect(kcalOf(noodles.displayedNutrition)).toBeCloseTo(edge);
+    // Its grams land on the band edge of the read's grams for it.
+    expect(noodles.estimatedGrams).toBeCloseTo(160 / (1 + HOLD_BAND));
+    expect(out.gramsFactor).toBeCloseTo(160 / (1 + HOLD_BAND) / 80);
+    // Every total agrees.
+    const shownVeg = kcalOf(veg.displayedNutrition);
+    expect(kcalOf(out.result.displayedNutrition)).toBeCloseTo(edge + shownVeg);
+    expect(kcalOf(out.result.mealItems[0].displayedNutrition)).toBeCloseTo(
+      edge + shownVeg
+    );
   });
 
-  it.each([
-    '2 gói mì tôm',
-    '10 gà rán',
-    '1 ly trà sữa size L',
-    'a cup of 2% milk',
-    '5 cái bánh rán',
-  ])('does not mistake %s for a weight', (text) => {
-    expect(hasTypedWeight(text)).toBe(false);
+  it('leaves grams that agree with the read alone when only the calories are off', () => {
+    // Two packs of noodles at the right 160 g, priced on a row far too lean.
+    const before = meal([ingredient('mì', 160, 340)]);
+    const out = holdToPlainRead(before, { read: read(760, [[160, 760]]) });
+    expect(out.outcome).toBe('held');
+    expect(out.gramsFactor).toBe(1);
+    const [noodles] = out.result.mealItems[0].ingredients;
+    expect(noodles.estimatedGrams).toBe(160);
+    expect(noodles.rawEquivalentGrams).toBe(160);
+    expect(kcalOf(noodles.displayedNutrition)).toBeCloseTo(
+      760 / (1 + HOLD_BAND)
+    );
+  });
+
+  it('moves grams alone when the calories already agree', () => {
+    const before = meal([ingredient('soup', 100, 200)]);
+    const app = kcalOf(before.displayedNutrition);
+    const out = holdToPlainRead(before, { read: read(app, [[400, app]]) });
+    expect(out.outcome).toBe('held');
+    expect(out.factor).toBe(1);
+    expect(out.result.mealItems[0].ingredients[0].estimatedGrams).toBeCloseTo(
+      400 / (1 + HOLD_BAND)
+    );
+    expect(kcalOf(out.result.displayedNutrition)).toBeCloseTo(app);
+  });
+
+  it('does not make the other parts absorb a difference over a typed part', () => {
+    // The read prices the 200 g of salmon far above the row; the broccoli
+    // agrees with the read and stays.
+    const salmon = { ...ingredient('salmon', 200, 275), typedAmount: true };
+    const m = meal([salmon, ingredient('broccoli', 110, 40)]);
+    const out = holdToPlainRead(m, {
+      read: read(456, [
+        [200, 416],
+        [120, 40],
+      ]),
+    });
+    expect(out.outcome).toBe('within_band');
+    expect(out.result).toBe(m);
+  });
+
+  it('pairs a typed part with the read food of the same grams that is closest in calories', () => {
+    const rice = { ...ingredient('rice', 100, 130), typedAmount: true };
+    const m = meal([rice, ingredient('egg', 50, 78)]);
+    // Two 100 g foods in the read: the rice must not be paired with the chicken.
+    const out = holdToPlainRead(m, {
+      read: read(373, [
+        [100, 165],
+        [100, 130],
+        [50, 78],
+      ]),
+    });
+    // Free parts against the read's remainder (165 + 78): the egg is moved up.
+    expect(out.outcome).toBe('held');
+    expect(
+      kcalOf(out.result.mealItems[0].ingredients[1].displayedNutrition)
+    ).toBeCloseTo(243 / (1 + HOLD_BAND));
+  });
+
+  it('moves the other parts toward the total, within 2x, when a typed part is not in the read', () => {
+    const beef = { ...ingredient('beef', 75, 130), typedAmount: true };
+    const before = meal([beef, ingredient('rice', 100, 130)]);
+    // The read lists no 75 g food.
+    const out = holdToPlainRead(before, { read: read(1300, [[400, 1300]]) });
+    expect(out.outcome).toBe('held');
+    expect(out.factor).toBe(2);
+    expect(out.result.mealItems[0].ingredients[0]).toBe(beef);
+  });
+
+  it('leaves the meal alone when nothing is free or the typed parts reach the read', () => {
+    const typed = (name: string, grams: number, kcal: number) => ({
+      ...ingredient(name, grams, kcal),
+      typedAmount: true,
+    });
+    const allTyped = meal([
+      typed('rice', 150, 195),
+      typed('chicken', 120, 200),
+    ]);
+    expect(holdToPlainRead(allTyped, { read: read(900) }).outcome).toBe(
+      'typed_parts'
+    );
+    // The typed salmon alone is above the read's total, and the read lists
+    // no 250 g food to compare it with.
+    const m = meal([
+      typed('salmon', 250, 760),
+      ingredient('broccoli', 150, 50),
+    ]);
+    const out = holdToPlainRead(m, { read: read(500) });
+    expect(out.outcome).toBe('typed_parts');
+    expect(out.result).toBe(m);
   });
 });

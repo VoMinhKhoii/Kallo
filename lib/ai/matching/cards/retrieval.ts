@@ -5,7 +5,6 @@
  *                 (every distinct string that names a card, max-sim per
  *                 row; one round trip)
  *   lexical arm   rawName → in-memory trigram index over card names
- *   dialect arm   tableName → BM25 over the rows' English names
  *
  * Arms are fused by reciprocal rank, filtered by the legacy eligibility guards,
  * collapsed to one row per concept (grade/salt siblings), narrowed to the
@@ -175,7 +174,7 @@ function toMatchInfo(
     confidence: classifyConfidence(similarity),
     state: normalizeState(row.state),
     source: row.source,
-    // Found by a vector arm, or only by the lexical / dialect arms.
+    // Found by a vector arm, or only by the lexical arm.
     matchType: vector === undefined ? 'fuzzy' : 'vector',
   };
 }
@@ -241,8 +240,6 @@ export async function matchCardCandidates(
       return list.slice(0, ARM_DEPTH).map((h) => h.id);
     });
     arms.push(catalog.lexical.search(ing.rawName, ARM_DEPTH));
-    if (ing.tableName)
-      arms.push(catalog.bm25En.search(ing.tableName, ARM_DEPTH));
 
     const eligible = eligibleRows(rrfOrder(arms), catalog, ing).map((row) => ({
       row,

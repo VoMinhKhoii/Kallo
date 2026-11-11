@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { buildBm25Index } from '../bm25-index';
 import { conceptKey } from '../concept-key';
 import { buildLexicalIndex, wordTokens } from '../lexical-index';
 
@@ -60,23 +59,5 @@ describe('buildLexicalIndex', () => {
   it('finds a row by an English alias and caps results', () => {
     expect(index.search('chicken')).toEqual(['ga']);
     expect(index.search('b', 1)).toHaveLength(1);
-  });
-});
-
-describe('buildBm25Index', () => {
-  it('ranks the row sharing the rarest specific words first', () => {
-    const index = buildBm25Index([
-      {
-        id: 'flat',
-        text: 'Beef, brisket, flat half, separable lean only, raw',
-      },
-      {
-        id: 'point',
-        text: 'Beef, brisket, point half, separable lean and fat, raw',
-      },
-      { id: 'chuck', text: 'Beef, chuck, arm pot roast, raw' },
-    ]);
-    expect(index.search('Beef, brisket, flat half, raw')[0]).toBe('flat');
-    expect(index.search('nothing matches here')).toEqual([]);
   });
 });

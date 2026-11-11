@@ -40,6 +40,12 @@ export interface ProcessedIngredient {
    * `caloriesKcal`; this only feeds `meals.alcohol_g`. Absent otherwise.
    */
   alcoholG?: number;
+  /**
+   * The user typed this part's amount: a weight or package size of its own, a
+   * weight or calories for its dish. Later scaling (the plain-read hold)
+   * leaves it as it is. Absent otherwise.
+   */
+  typedAmount?: boolean;
 }
 
 /** Final processed meal item in the pipeline result */

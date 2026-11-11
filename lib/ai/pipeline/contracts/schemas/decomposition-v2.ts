@@ -16,8 +16,6 @@ export const CARD_QUERY_RULES = {
     'Plain English description of the exact food as eaten, keeping every specific the text states (brand, variety, cut or part, skin, fat level, processing such as canned/dried/smoked/pickled/powder/juice, sweetened or not, cooked state and method) and adding only what the dish clearly implies (e.g. the beef in "phở tái" is thin-sliced lean raw beef). Do not invent other details. 3–15 words.',
   nameVi:
     'The natural Vietnamese name of that food with diacritics (restore them if the user typed without).',
-  tableName:
-    'The USDA SR Legacy description you would expect for this exact food as eaten in this dish, in USDA\'s own comma style and vocabulary (food, part, preparation, state), e.g. "Chicken, broilers or fryers, breast, meat only, cooked, roasted". Keep every stated specific (cut, fat level, skin, sweetened, canned) and what the dish clearly implies.',
 } as const;
 
 /**
@@ -49,11 +47,6 @@ export const decomposedIngredientV2Schema = z
     // them); `mealDecompositionV2CallSchema` makes Call 1 always emit them.
     queryEn: z.string().min(1).optional().describe(CARD_QUERY_RULES.queryEn),
     nameVi: z.string().min(1).optional().describe(CARD_QUERY_RULES.nameVi),
-    tableName: z
-      .string()
-      .min(1)
-      .optional()
-      .describe(CARD_QUERY_RULES.tableName),
     cookingMethod: z
       .string()
       .min(1)
@@ -103,6 +96,14 @@ export const decomposedIngredientV2Schema = z
       .optional()
       .describe(
         'Set ONLY when the user typed an explicit weight for this one food — never a weight typed for a whole dish split into several ingredients. `basis` is the physical mass basis: gross_as_served for a named bone-in/shell-on object, edible for a boneless/peeled/fillet form, otherwise unknown. Cooking state belongs in stateHint. Never invent a mass.'
+      ),
+    statedKcal: z
+      .number()
+      .positive()
+      .finite()
+      .optional()
+      .describe(
+        'Calories the user typed for this one food of a dish with several. Set by the server from the meal text (`grounded/text-checks`), never by Call 1.'
       ),
     prepNotes: z
       .array(z.string().min(1).max(60))
@@ -159,6 +160,14 @@ function dishSchemaOf<I extends z.ZodType>(ingredient: I) {
         .describe(
           'Grams of this WHOLE dish as served that THIS user ate, when the user typed a weight for the whole dish (their share of it when they shared it: "a third of a 900g tray" → 300). Omit when no weight was typed for the whole dish.'
         ),
+      statedKcal: z
+        .number()
+        .positive()
+        .finite()
+        .optional()
+        .describe(
+          'Calories the user typed for this whole dish, from a label or a menu ("160kcal sữa chua" → 160; their share when they ate part of it). Omit when the user typed no calories for it. Never estimate calories.'
+        ),
       ingredients: z
         .array(ingredient)
         .min(1)
@@ -210,10 +219,9 @@ export type MealDecompositionV2 = z.infer<typeof mealDecompositionV2Schema>;
  * valid `MealDecompositionV2`.
  */
 export const mealDecompositionV2CallSchema = mealSchemaOf(
-  decomposedIngredientV2Schema.required({
+  decomposedIngredientV2Schema.omit({ statedKcal: true }).required({
     queryEn: true,
     nameVi: true,
-    tableName: true,
   })
 );
 

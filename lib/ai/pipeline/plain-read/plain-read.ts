@@ -1,5 +1,5 @@
 /**
- * Run the plain read beside the pipeline and collect its total afterwards.
+ * Run the plain read beside the pipeline and collect it afterwards.
  *
  * Started with the analysis so it costs no wait on most meals (Sonnet's read:
  * p50 2.1 s, p99 5.5 s, against a 6.7 s p50 analysis). `settle()` waits at most
@@ -40,18 +40,15 @@ export function startPlainRead(args: {
   mealText: string;
   /** The request's signal: a client hang-up cancels the read at once. */
   signal: AbortSignal;
-  /** Do not ask the model at all (a typed-weight meal); settles to null. */
-  skip?: boolean;
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
-}): { settle: () => Promise<number | null>; abort: () => void } {
-  if (args.skip) return { settle: async () => null, abort: () => {} };
+}): { settle: () => Promise<PlainRead | null>; abort: () => void } {
   const controller = new AbortController();
   const cancel = () => controller.abort();
   if (args.signal.aborted) cancel();
   else args.signal.addEventListener('abort', cancel, { once: true });
   // Started inside a promise chain so even a synchronous throw from the
   // client lands in `.catch` below: the read must never fail the meal.
-  const read: Promise<number | null> = Promise.resolve()
+  const read: Promise<PlainRead | null> = Promise.resolve()
     .then(() =>
       args.gemini.generateStructuredOutput(
         {
@@ -66,7 +63,7 @@ export function startPlainRead(args: {
           : undefined
       )
     )
-    .then(usableReadKcal)
+    .then((answer) => (usableReadKcal(answer) == null ? null : answer))
     .catch((err) => {
       if (!controller.signal.aborted) {
         console.warn('[plain-read] read failed:', safeError(err));
