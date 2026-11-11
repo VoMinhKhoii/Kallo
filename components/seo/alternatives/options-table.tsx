@@ -2,9 +2,11 @@ import { DocsTable, DocsTd, DocsTh } from '@/components/docs/mdx/prose-blocks';
 import { ALTERNATIVES_CHROME } from '@/lib/seo/alternatives/chrome';
 import type { AlternativeOption } from '@/lib/seo/alternatives/types';
 
-const HEAD = 'px-2 sm:px-4';
+// 6px a side on phones: at 8px the bold "MyFitnessPal" pushed a 390px screen
+// 7px past the edge.
+const HEAD = 'px-1.5 sm:px-4';
 const CELL =
-  'px-2 text-sm last:border-b sm:px-4 sm:text-base [tr:last-child_&]:border-0';
+  'px-1.5 text-sm last:border-b sm:px-4 sm:text-base [tr:last-child_&]:border-0';
 // Kallo's row carries the same warm wash as the Premium card on /pricing.
 const OURS = 'bg-kallo-gold-wash';
 
