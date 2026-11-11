@@ -10,6 +10,8 @@ import {
   ALTERNATIVES_LOCALE,
   alternativePath,
 } from '@/lib/seo/alternatives/slugs';
+import { COMPARE_PAGES } from '@/lib/seo/compare/pages';
+import { COMPARE_SLUGS, comparePath } from '@/lib/seo/compare/slugs';
 import { FOODS } from '@/lib/seo/food-pages/food-registry';
 import { FOOTER_MEALS } from '@/lib/seo/food-pages/footer-meals';
 import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
@@ -113,15 +115,21 @@ export async function DocsFooter({
               />
             </>
           ) : null}
-          {/* The alternatives pages' way into the site; English only. */}
+          {/* The alternatives and comparison pages' way into the site; English only. */}
           {locale === ALTERNATIVES_LOCALE ? (
             <DocsFooterColumn
               id="alternatives"
               label={ALTERNATIVES_CHROME.footerLabel}
-              links={ALTERNATIVE_SLUGS.map((slug) => ({
-                href: alternativePath(slug),
-                title: ALTERNATIVE_PAGES[slug].title,
-              }))}
+              links={[
+                ...ALTERNATIVE_SLUGS.map((slug) => ({
+                  href: alternativePath(slug),
+                  title: ALTERNATIVE_PAGES[slug].title,
+                })),
+                ...COMPARE_SLUGS.map((slug) => ({
+                  href: comparePath(slug),
+                  title: COMPARE_PAGES[slug].title,
+                })),
+              ]}
             />
           ) : null}
         </nav>

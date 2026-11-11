@@ -7,6 +7,11 @@ import {
   isAlternativeSlug,
 } from '@/lib/seo/alternatives/slugs';
 import {
+  COMPARE_LOCALE,
+  COMPARE_PREFIX,
+  isCompareSlug,
+} from '@/lib/seo/compare/slugs';
+import {
   FOOD_PAGE_PREFIX,
   foodPageKey,
   isFoodLocale,
@@ -126,25 +131,45 @@ export function unknownFoodPageTarget(pathname: string): string | null {
 }
 
 /**
- * The 404 target for an unknown alternatives URL, or null when the path is a
- * real alternatives page or not under `/alternatives` at all. The pages are
- * English only and have no hub, so the bare folder and any Vietnamese URL 404.
+ * The 404 target for a URL under a folder whose pages exist in one locale and
+ * have no hub (the alternatives and comparison pages), or null when the path
+ * is one of its pages or not under the folder at all. The bare folder, an
+ * unknown slug and any other locale get the real 404.
  */
-export function unknownAlternativePageTarget(pathname: string): string | null {
+function singleLocalePageTarget(
+  pathname: string,
+  prefix: string,
+  pageLocale: string,
+  isSlug: (slug: string) => boolean
+): string | null {
   const split = splitLocale(pathname);
   if (!split) return null;
   const { locale, rest } = split;
-  if (
-    rest !== ALTERNATIVES_PREFIX &&
-    !rest.startsWith(`${ALTERNATIVES_PREFIX}/`)
-  )
-    return null;
+  if (rest !== prefix && !rest.startsWith(`${prefix}/`)) return null;
   const decoded = pagePath(rest);
   if (decoded === null) return null;
-  const slug = decoded.slice(ALTERNATIVES_PREFIX.length + 1);
-  return locale === ALTERNATIVES_LOCALE && isAlternativeSlug(slug)
-    ? null
-    : `/${locale}/not-found`;
+  const slug = decoded.slice(prefix.length + 1);
+  return locale === pageLocale && isSlug(slug) ? null : `/${locale}/not-found`;
+}
+
+/** The real 404 for an unknown alternatives URL (English only, no hub). */
+export function unknownAlternativePageTarget(pathname: string): string | null {
+  return singleLocalePageTarget(
+    pathname,
+    ALTERNATIVES_PREFIX,
+    ALTERNATIVES_LOCALE,
+    isAlternativeSlug
+  );
+}
+
+/** The real 404 for an unknown "Kallo vs" URL (English only, no hub). */
+export function unknownComparePageTarget(pathname: string): string | null {
+  return singleLocalePageTarget(
+    pathname,
+    COMPARE_PREFIX,
+    COMPARE_LOCALE,
+    isCompareSlug
+  );
 }
 
 /**

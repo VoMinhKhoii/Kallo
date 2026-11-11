@@ -1,19 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
-import { AuthProvider } from '@/components/auth/auth-provider';
-import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
-import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
 import { DocsH2, DocsLink, DocsParagraph } from '@/components/docs/mdx/prose';
 import {
   OptionSection,
   SourceLine,
 } from '@/components/seo/alternatives/option-section';
 import { OptionsTable } from '@/components/seo/alternatives/options-table';
-import { TryItButton } from '@/components/seo/food-page/try-it-button';
-import { JsonLd } from '@/components/seo/json-ld';
-import { ALTERNATIVES_CHROME } from '@/lib/seo/alternatives/chrome';
+import { VendorArticle } from '@/components/seo/vendor-article';
 import { ALTERNATIVE_PAGES } from '@/lib/seo/alternatives/pages';
 import {
   ALTERNATIVE_SLUGS,
@@ -21,10 +14,12 @@ import {
   alternativePath,
   isAlternativeSlug,
 } from '@/lib/seo/alternatives/slugs';
+import { COMPARE_CHROME } from '@/lib/seo/compare/chrome';
+import { COMPARE_PAGES, compareSlugFor } from '@/lib/seo/compare/pages';
+import { comparePath } from '@/lib/seo/compare/slugs';
 import { mealData } from '@/lib/seo/meal-data/facts';
 import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
-import { alternativesStructuredData } from '@/lib/seo/page-structured-data';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**
@@ -84,83 +79,60 @@ export default async function AlternativesPage({
   if (!page) notFound();
   const { copy } = page;
   const { facts } = mealData(ALTERNATIVES_LOCALE);
-  const t = await getTranslations({ locale, namespace: 'landing.header' });
   const url = `${SITE_URL}/${locale}${alternativePath(page.slug)}`;
+  const vs = compareSlugFor(page.slug);
 
   return (
-    <AuthProvider>
-      <JsonLd
-        data={alternativesStructuredData({
-          locale,
-          url,
-          title: copy.title,
-          description: copy.description,
-          publishedOn: copy.publishedOn,
-          checkedOn: copy.checkedOn,
-        })}
-      />
-      <article className="mx-auto w-full min-w-0 max-w-[40rem] py-10">
-        <div className="mt-3 text-center">
-          <h1 className="text-balance font-bold font-serif text-h1 text-kallo-text">
-            {copy.title}
-          </h1>
-          <p className="mt-3 text-kallo-text-muted text-sm">
-            {ALTERNATIVES_CHROME.checked(copy.checkedOn)}
-          </p>
-        </div>
+    <VendorArticle
+      answer={copy.answer}
+      checkedOn={copy.checkedOn}
+      publishedOn={copy.publishedOn}
+      description={copy.description}
+      disclosure={copy.disclosure}
+      locale={locale}
+      title={copy.title}
+      tryLine={copy.tryLine}
+      url={url}
+    >
+      <OptionsTable options={copy.options} />
 
-        <hr className="mt-8 border-kallo-text border-t" />
+      <DocsH2>{copy.leaveHeading}</DocsH2>
+      {copy.leave.map((p) => (
+        <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
+      ))}
+      <SourceLine sources={copy.leaveSources} />
 
-        <div className="mt-10">
-          <DocsParagraph>{copy.answer}</DocsParagraph>
-          <p className="mt-4 text-kallo-text-muted text-sm leading-[1.75]">
-            {copy.disclosure}
-          </p>
+      {copy.options.map((option) => (
+        <OptionSection key={option.name} option={option} />
+      ))}
 
-          <OptionsTable options={copy.options} />
-
-          <DocsH2>{copy.leaveHeading}</DocsH2>
-          {copy.leave.map((p) => (
+      {copy.extra ? (
+        <>
+          <DocsH2>{copy.extra.heading}</DocsH2>
+          {copy.extra.body.map((p) => (
             <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
           ))}
-          <SourceLine sources={copy.leaveSources} />
+        </>
+      ) : null}
 
-          {copy.options.map((option) => (
-            <OptionSection key={option.name} option={option} />
-          ))}
+      {vs ? (
+        <DocsParagraph>
+          <DocsLink href={comparePath(vs)}>
+            {COMPARE_CHROME.compareLink(COMPARE_PAGES[vs].them)}
+          </DocsLink>
+        </DocsParagraph>
+      ) : null}
 
-          {copy.extra ? (
-            <>
-              <DocsH2>{copy.extra.heading}</DocsH2>
-              {copy.extra.body.map((p) => (
-                <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
-              ))}
-            </>
-          ) : null}
+      <DocsH2>{copy.dataHeading}</DocsH2>
+      <DocsParagraph>
+        {copy.data(facts)}{' '}
+        <DocsLink href={MEAL_DATA_PATH}>{copy.dataLink}</DocsLink>
+      </DocsParagraph>
 
-          <DocsH2>{copy.dataHeading}</DocsH2>
-          <DocsParagraph>
-            {copy.data(facts)}{' '}
-            <DocsLink href={MEAL_DATA_PATH}>{copy.dataLink}</DocsLink>
-          </DocsParagraph>
-
-          <DocsH2>{copy.methodHeading}</DocsH2>
-          {copy.method.map((p) => (
-            <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
-          ))}
-
-          <div className="mt-16 border-kallo-text border-t pt-10 text-center">
-            <DocsParagraph>{copy.tryLine}</DocsParagraph>
-            <div className="mt-6">
-              <TryItButton>{t('getStarted')}</TryItButton>
-            </div>
-          </div>
-        </div>
-      </article>
-      <LazyAuthDialog />
-      <Suspense fallback={null}>
-        <AuthRequestConfig />
-      </Suspense>
-    </AuthProvider>
+      <DocsH2>{copy.methodHeading}</DocsH2>
+      {copy.method.map((p) => (
+        <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
+      ))}
+    </VendorArticle>
   );
 }
