@@ -14,23 +14,29 @@ const LI_2024: Source = {
   url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC11314244/',
 };
 
+const OWNERSHIP: Source = {
+  label: 'FITT Insider on the Cal AI purchase',
+  url: 'https://insider.fitt.co/myfitnesspal-acquires-rival-food-tracker-cal-ai/',
+};
+
 const NIH_2026: Source = {
   label: 'NIH test, NUTRITION 2026',
   url: 'https://www.newswise.com/articles/photo-based-calorie-tracking-apps-may-underestimate-energy-in-meals',
 };
 
 export const CAL_AI_ALTERNATIVES: AlternativePage = {
-  metaTitle: 'Cal AI Alternatives: 7 Apps, Prices Checked',
+  metaTitle: 'Cal AI Alternatives (2026): 7 Apps, Prices Checked',
   description:
     'Seven Cal AI alternatives with photo, voice or typed logging, what each one gives you free, and the US price, checked on the vendors’ own pages.',
   title: 'Cal AI alternatives',
   checkedOn: '2026-11-11',
   answer:
-    'The closest Cal AI alternatives are SnapCalorie for photo logging with a few free logs a day, MacroFactor for photo, typed and voice logging with weekly targets, and Cronometer for the most useful free plan. Yazio, MyFitnessPal and Lose It! keep photo logging behind their paid plans. Kallo, which we make, skips photos: you type the meal the way you would say it.',
+    'The closest Cal AI alternatives are SnapCalorie for photo logging with a few free logs a day, MacroFactor for photo, typed and voice logging with weekly targets, and Cronometer for the most useful free plan. Yazio, MyFitnessPal and Lose It! keep photo logging behind their paid plans. Kallo, which we make, skips photos: you type the meal the way you would say it, and that is a Premium feature once Kallo’s beta ends.',
   disclosure:
     'Kallo is our app. It is listed last, because it is the least like Cal AI. Prices are US prices from each vendor’s site or US App Store listing, checked on 11 November 2026. Each app gets one real drawback, Kallo included.',
   leaveHeading: 'Why people look for a Cal AI alternative',
   leave: [
+    'MyFitnessPal bought Cal AI in March 2026, so one of the apps on this list now owns it. In April 2026 Apple briefly removed Cal AI from the App Store for breaking its in-app purchase and billing rules, and it is back now.',
     'Cal AI logs a meal from a photo, a barcode or a typed description. After a 3-day trial, scan results need a subscription. Its US App Store listing shows plans from $2.99 to $29.99 without saying how long each one lasts.',
     'Its own FAQ puts its accuracy at about 80%. In a preliminary NIH test presented at NUTRITION 2026, Cal AI, MyFitnessPal, Lose It! and Appediet read photos of 102 weighed meals. All four came in about 250 to 345 kcal low per meal on average, and about 30 g low on fat. The test did not publish a number per app.',
   ],
@@ -39,6 +45,11 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     {
       label: 'Cal AI on the App Store',
       url: 'https://apps.apple.com/us/app/id6480417616',
+    },
+    OWNERSHIP,
+    {
+      label: '9to5Mac on the App Store removal',
+      url: 'https://9to5mac.com/2026/04/21/popular-calorie-tracker-briefly-pulled-from-app-store-over-iap-and-billing-violations/',
     },
     NIH_2026,
   ],
@@ -131,7 +142,7 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
       platforms: 'iOS, Android, web',
       bestFor: 'Packaged and restaurant food, from 20 million entries.',
       body: [
-        'MyFitnessPal has the biggest database on this list, restaurants included. In a 2024 study its photo scan named 38 of 39 foods. Photo, voice and barcode logging are paid.',
+        'MyFitnessPal has the biggest database on this list, restaurants included, and has owned Cal AI since March 2026. In a 2024 study its photo scan named 38 of 39 foods. Photo, voice and barcode logging are paid.',
       ],
       drawback:
         'Barcode scanning, photo and voice logging are all Premium-only.',
@@ -144,6 +155,7 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
           label: 'MyFitnessPal on the App Store',
           url: 'https://apps.apple.com/us/app/id341232718',
         },
+        OWNERSHIP,
         LI_2024,
       ],
     },
@@ -158,7 +170,7 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
         'Lose It! gives you a daily calorie budget and a community around it. Its paid plan adds photo, voice and barcode logging.',
       ],
       drawback:
-        'In the same 2024 study, its photo recognition named 18 of 39 foods, the fewest of the seven apps tested.',
+        'In the same 2024 study, its photo recognition named 18 of 39 foods. That tied with FatSecret for the fewest of the seven apps tested. The study used 2024 versions of each app.',
       sources: [
         {
           label: 'Lose It! on the App Store',
@@ -171,18 +183,22 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
       name: 'Kallo',
       ours: true,
       logs: 'Typed text, barcode, nutrition label',
-      free: 'Barcode scanning, manual logging, macros. Everything is free while Kallo is in beta',
-      paid: 'Premium, $29.99 a year on the web, once beta ends',
+      free: 'Barcode scanning, manual logging, macros. Typing a meal is Premium. Everything is free while Kallo is in beta',
+      paid: 'Premium, $29.99 a year on the web or $34.99 on the App Store, once beta ends',
       platforms: 'iOS, web',
       bestFor: 'People who would rather type a meal than photograph it.',
       body: [
-        'Kallo logs a meal from the sentence you would say out loud, like “leftover spaghetti bolognese and a side salad”. It splits that into ingredients and counts calories and macros from USDA and FAO food data, as a range, not one number. When the words can’t settle a portion, it asks.',
+        'Kallo logs a meal from the sentence you would say out loud, like “leftover spaghetti bolognese and a side salad”. It splits that into ingredients and counts calories and macros from USDA and FAO food data, as a range, not one number. When the words can’t settle a portion, it asks. Typing a meal is part of Premium; the free plan keeps barcode scanning and manual logging.',
         'No independent test has measured Kallo yet. The data below is our own.',
       ],
       drawback:
         'It can’t log a meal from a photo of the plate, only from a nutrition label, and there is no Android app.',
       sources: [
         { label: 'Kallo pricing', url: 'https://kallo.fit/en/pricing' },
+        {
+          label: 'Kallo on the App Store',
+          url: 'https://apps.apple.com/us/app/id6775761392',
+        },
       ],
     },
   ],
