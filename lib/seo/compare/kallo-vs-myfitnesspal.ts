@@ -9,13 +9,13 @@ import type { ComparePage } from './types';
 export const KALLO_VS_MYFITNESSPAL: ComparePage = {
   them: 'MyFitnessPal',
   alternatives: 'myfitnesspal',
-  metaTitle: 'Kallo vs MyFitnessPal: Type a Meal or Search for It',
+  metaTitle: 'Kallo vs MyFitnessPal (2026): Type a Meal or Search for It',
   description:
     'Kallo and MyFitnessPal side by side: how each logs a meal, where the food data comes from, what is free, and the US price (checked 11 November 2026).',
   title: 'Kallo vs MyFitnessPal',
   checkedOn: '2026-11-11',
   answer:
-    'With MyFitnessPal you search a database of more than 20 million entries and pick one for each food. With Kallo you type the meal in a sentence and it works out the parts and portions. MyFitnessPal’s barcode scanner needs Premium; Kallo’s is on the free plan. MyFitnessPal runs on iOS, Android and the web, Kallo on iOS and the web.',
+    'With MyFitnessPal you search a database of more than 20 million entries and pick one for each food. With Kallo you type the meal in a sentence and it works out the parts and portions. MyFitnessPal’s barcode scanner needs Premium; Kallo’s is on the free plan, and typing a meal is Kallo’s Premium feature once beta ends. MyFitnessPal runs on iOS, Android and the web, Kallo on iOS and the web.',
   disclosure:
     'We make Kallo, so this is a vendor’s comparison. MyFitnessPal’s facts come from its own site, help centre and US App Store listing, checked on 11 November 2026. The sources are listed at the end.',
   rows: [
@@ -28,12 +28,13 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
     {
       label: 'Free',
       kallo:
-        'Barcode scanning, manual logging, macros. Everything is free while Kallo is in beta',
+        'Barcode scanning, manual logging, macros. Typing a meal is Premium. Everything is free while Kallo is in beta',
       them: 'Calorie, weight and exercise tracking by search, with ads',
     },
     {
       label: 'Paid (US)',
-      kallo: '$29.99 a year on the web, once beta ends',
+      kallo:
+        '$29.99 a year on the web or $34.99 on the App Store, once beta ends',
       them: 'Premium, $19.99 a month or $79.99 a year',
     },
     { label: 'Platforms', kallo: 'iOS, web', them: 'iOS, Android, web' },
@@ -48,7 +49,7 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
       heading: 'How each one logs a meal',
       body: [
         'In MyFitnessPal you search for each food and pick an entry from the results. Premium adds barcode scanning, a photo meal scan and voice logging.',
-        'Kallo reads the whole meal from one sentence, like “leftover spaghetti bolognese and a side salad”. It splits it into ingredients, counts calories and macros, and shows a range. When the words can’t settle a portion, it asks. Barcode scanning is on the free plan and nutrition labels on Premium. It can’t log a meal from a photo of the plate.',
+        'Kallo reads the whole meal from one sentence, like “leftover spaghetti bolognese and a side salad”. It splits it into ingredients, counts calories and macros, and shows a range. When the words can’t settle a portion, it asks. Barcode scanning is on the free plan; typing a meal and nutrition labels are Premium. It can’t log a meal from a photo of the plate.',
       ],
     },
     {
@@ -96,6 +97,10 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
       url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC11314244/',
     },
     { label: 'Kallo pricing', url: 'https://kallo.fit/en/pricing' },
+    {
+      label: 'Kallo on the App Store',
+      url: 'https://apps.apple.com/us/app/id6775761392',
+    },
     {
       label: 'Kallo accuracy and limits',
       url: 'https://kallo.fit/en/docs/estimates/accuracy-and-limits',

@@ -9,13 +9,13 @@ import type { ComparePage } from './types';
 export const KALLO_VS_CAL_AI: ComparePage = {
   them: 'Cal AI',
   alternatives: 'cal-ai',
-  metaTitle: 'Kallo vs Cal AI: Type Your Meal or Photograph It',
+  metaTitle: 'Kallo vs Cal AI (2026): Type Your Meal or Photograph It',
   description:
     'Kallo and Cal AI side by side: how each logs a meal, what is free, the US price (checked 11 November 2026), and what each says about accuracy.',
   title: 'Kallo vs Cal AI',
   checkedOn: '2026-11-11',
   answer:
-    'Cal AI starts from a photo of your plate. Kallo starts from a sentence: you type what you ate, and it shows the calories as a range and asks when the words leave a portion open. Cal AI runs on iOS and Android, and nothing is free after a 3-day trial. Kallo runs on iOS and the web and has a free plan.',
+    'Cal AI starts from a photo of your plate. Kallo starts from a sentence: you type what you ate, and it shows the calories as a range and asks when the words leave a portion open. MyFitnessPal has owned Cal AI since March 2026. Cal AI runs on iOS and Android, and nothing is free after a 3-day trial. Kallo runs on iOS and the web. Its free plan has barcode scanning and manual logging, and typing a meal is Premium once beta ends.',
   disclosure:
     'We make Kallo, so this is a vendor’s comparison. Cal AI’s facts come from its own site and US App Store listing, checked on 11 November 2026. The sources are listed at the end.',
   rows: [
@@ -28,12 +28,13 @@ export const KALLO_VS_CAL_AI: ComparePage = {
     {
       label: 'Free',
       kallo:
-        'Barcode scanning, manual logging, macros. Everything is free while Kallo is in beta',
+        'Barcode scanning, manual logging, macros. Typing a meal is Premium. Everything is free while Kallo is in beta',
       them: 'Nothing after a 3-day trial: scan results need a subscription',
     },
     {
       label: 'Paid (US)',
-      kallo: '$29.99 a year on the web, once beta ends',
+      kallo:
+        '$29.99 a year on the web or $34.99 on the App Store, once beta ends',
       them: 'Plans listed from $2.99 to $29.99 on the US App Store, with no billing period shown',
     },
     { label: 'Platforms', kallo: 'iOS, web', them: 'iOS, Android' },
@@ -75,6 +76,10 @@ export const KALLO_VS_CAL_AI: ComparePage = {
   sources: [
     { label: 'Cal AI', url: 'https://www.calai.app/' },
     {
+      label: 'FITT Insider on the Cal AI purchase',
+      url: 'https://insider.fitt.co/myfitnesspal-acquires-rival-food-tracker-cal-ai/',
+    },
+    {
       label: 'Cal AI on the App Store',
       url: 'https://apps.apple.com/us/app/id6480417616',
     },
@@ -83,6 +88,10 @@ export const KALLO_VS_CAL_AI: ComparePage = {
       url: 'https://www.newswise.com/articles/photo-based-calorie-tracking-apps-may-underestimate-energy-in-meals',
     },
     { label: 'Kallo pricing', url: 'https://kallo.fit/en/pricing' },
+    {
+      label: 'Kallo on the App Store',
+      url: 'https://apps.apple.com/us/app/id6775761392',
+    },
     {
       label: 'Kallo accuracy and limits',
       url: 'https://kallo.fit/en/docs/estimates/accuracy-and-limits',
