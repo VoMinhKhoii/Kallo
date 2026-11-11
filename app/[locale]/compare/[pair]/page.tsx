@@ -1,10 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
-import { AuthProvider } from '@/components/auth/auth-provider';
-import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
-import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
 import {
   DocsH2,
   DocsLink,
@@ -14,8 +9,7 @@ import {
 } from '@/components/docs/mdx/prose';
 import { SourceLine } from '@/components/seo/alternatives/option-section';
 import { CompareTable } from '@/components/seo/compare/compare-table';
-import { TryItButton } from '@/components/seo/food-page/try-it-button';
-import { JsonLd } from '@/components/seo/json-ld';
+import { VendorArticle } from '@/components/seo/vendor-article';
 import { alternativePath } from '@/lib/seo/alternatives/slugs';
 import { COMPARE_CHROME } from '@/lib/seo/compare/chrome';
 import { COMPARE_PAGES } from '@/lib/seo/compare/pages';
@@ -28,7 +22,6 @@ import {
 import { mealData } from '@/lib/seo/meal-data/facts';
 import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
-import { alternativesStructuredData } from '@/lib/seo/page-structured-data';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**
@@ -98,82 +91,53 @@ export default async function KalloVsPage({ params }: ComparePageProps) {
   if (!page) notFound();
   const { copy } = page;
   const { facts } = mealData(COMPARE_LOCALE);
-  const t = await getTranslations({ locale, namespace: 'landing.header' });
   const url = `${SITE_URL}/${locale}${comparePath(page.slug)}`;
 
   return (
-    <AuthProvider>
-      <JsonLd
-        data={alternativesStructuredData({
-          locale,
-          url,
-          title: copy.title,
-          description: copy.description,
-          checkedOn: copy.checkedOn,
-        })}
-      />
-      <article className="mx-auto w-full min-w-0 max-w-[40rem] py-10">
-        <div className="mt-3 text-center">
-          <h1 className="text-balance font-bold font-serif text-h1 text-kallo-text">
-            {copy.title}
-          </h1>
-        </div>
+    <VendorArticle
+      answer={copy.answer}
+      checkedOn={copy.checkedOn}
+      description={copy.description}
+      disclosure={copy.disclosure}
+      locale={locale}
+      title={copy.title}
+      tryLine={copy.tryLine}
+      url={url}
+    >
+      <CompareTable page={copy} />
 
-        <hr className="mt-8 border-kallo-text border-t" />
-
-        <div className="mt-10">
-          <DocsParagraph>{copy.answer}</DocsParagraph>
-          <p className="mt-4 text-kallo-text-muted text-sm leading-[1.75]">
-            {copy.disclosure}
-          </p>
-
-          <CompareTable page={copy} />
-
-          {copy.sections.map((section) => (
-            <section key={section.heading}>
-              <DocsH2>{section.heading}</DocsH2>
-              {section.body.map((p) => (
-                <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
-              ))}
-            </section>
-          ))}
-
-          <PickList
-            heading={COMPARE_CHROME.pickThem(copy.them)}
-            items={copy.pickThem}
-          />
-          <PickList heading={COMPARE_CHROME.pickKallo} items={copy.pickKallo} />
-
-          <DocsH2>{copy.dataHeading}</DocsH2>
-          <DocsParagraph>
-            {copy.data(facts)}{' '}
-            <DocsLink href={MEAL_DATA_PATH}>{COMPARE_CHROME.dataLink}</DocsLink>
-          </DocsParagraph>
-
-          <DocsParagraph>
-            <DocsLink href={alternativePath(copy.alternatives)}>
-              {COMPARE_CHROME.alternativesLink(copy.them)}
-            </DocsLink>
-          </DocsParagraph>
-
-          <DocsH2>{COMPARE_CHROME.methodHeading}</DocsH2>
-          {copy.method.map((p) => (
+      {copy.sections.map((section) => (
+        <section key={section.heading}>
+          <DocsH2>{section.heading}</DocsH2>
+          {section.body.map((p) => (
             <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
           ))}
-          <SourceLine sources={copy.sources} />
+        </section>
+      ))}
 
-          <div className="mt-16 border-kallo-text border-t pt-10 text-center">
-            <DocsParagraph>{copy.tryLine}</DocsParagraph>
-            <div className="mt-6">
-              <TryItButton>{t('getStarted')}</TryItButton>
-            </div>
-          </div>
-        </div>
-      </article>
-      <LazyAuthDialog />
-      <Suspense fallback={null}>
-        <AuthRequestConfig />
-      </Suspense>
-    </AuthProvider>
+      <PickList
+        heading={COMPARE_CHROME.pickThem(copy.them)}
+        items={copy.pickThem}
+      />
+      <PickList heading={COMPARE_CHROME.pickKallo} items={copy.pickKallo} />
+
+      <DocsH2>{copy.dataHeading}</DocsH2>
+      <DocsParagraph>
+        {copy.data(facts)}{' '}
+        <DocsLink href={MEAL_DATA_PATH}>{COMPARE_CHROME.dataLink}</DocsLink>
+      </DocsParagraph>
+
+      <DocsParagraph>
+        <DocsLink href={alternativePath(copy.alternatives)}>
+          {COMPARE_CHROME.alternativesLink(copy.them)}
+        </DocsLink>
+      </DocsParagraph>
+
+      <DocsH2>{COMPARE_CHROME.methodHeading}</DocsH2>
+      {copy.method.map((p) => (
+        <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
+      ))}
+      <SourceLine sources={copy.sources} />
+    </VendorArticle>
   );
 }

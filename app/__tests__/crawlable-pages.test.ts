@@ -14,8 +14,8 @@ const PUBLIC_PAGES = [
   'app/[locale]/tools/page.tsx',
   'app/[locale]/tools/[tool]/page.tsx',
   'app/[locale]/data/meal-calorie-variation/page.tsx',
-  'app/[locale]/alternatives/[app]/page.tsx',
-  'app/[locale]/compare/[pair]/page.tsx',
+  // The alternatives and "Kallo vs" pages render their article here.
+  'components/seo/vendor-article.tsx',
 ];
 
 describe('public pages render their article outside Suspense', () => {
