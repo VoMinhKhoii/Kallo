@@ -13,6 +13,9 @@ import type {
 export type MealConfidence = 'high' | 'medium' | 'low';
 
 /** Final processed ingredient in the pipeline result */
+/** Which of a part's amounts the user typed. */
+export type TypedAmount = 'grams' | 'kcal';
+
 export interface ProcessedIngredient {
   ingredientName: string;
   foodCompositionId: string | null;
@@ -46,7 +49,7 @@ export interface ProcessedIngredient {
    * user's. Later scaling (the plain-read hold) leaves the part as it is.
    * Absent otherwise.
    */
-  typedAmount?: 'grams' | 'kcal';
+  typedAmount?: TypedAmount;
 }
 
 /** Final processed meal item in the pipeline result */

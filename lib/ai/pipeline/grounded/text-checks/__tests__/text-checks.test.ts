@@ -1,16 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
-import {
-  holdNamesToEnglish,
-  holdWeighStateToDescription,
-} from '../described-checks';
-import { holdCaloriesToText, holdWeightsToText } from '../text-checks';
+import { holdCaloriesToText } from '../calories';
+import { holdNamesToEnglish, holdWeighStateToDescription } from '../described';
 import {
   foodAfter,
   isTypedWeight,
-  typedCalories,
+  typedKcals,
   typedWeights,
 } from '../typed-amounts';
+import { holdWeightsToText } from '../weights';
 
 vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -35,6 +33,8 @@ const meal = (
   mealSlot: null,
   mealItems: dishes.map((d) => ({ cookingMethod: 'cooked', ...d })),
 });
+const typedCalories = (text: string) =>
+  typedKcals(text.normalize('NFC')).map((t) => t.kcal);
 const grams = (text: string) => typedWeights(text)?.map((w) => w.grams);
 
 describe('typedWeights', () => {

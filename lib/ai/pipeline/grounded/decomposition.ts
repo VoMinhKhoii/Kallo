@@ -33,14 +33,12 @@ import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import type { AppDb } from '@/lib/infra/db/client';
 import { createDecompositionStreamController } from './decomposition-stream';
 import { withStageLogV2 } from './stage-log';
+import { holdCaloriesToText } from './text-checks/calories';
 import {
   holdNamesToEnglish,
   holdWeighStateToDescription,
-} from './text-checks/described-checks';
-import {
-  holdCaloriesToText,
-  holdWeightsToText,
-} from './text-checks/text-checks';
+} from './text-checks/described';
+import { holdWeightsToText } from './text-checks/weights';
 
 type StreamedMealItemIds = ReturnType<
   ReturnType<

@@ -19,14 +19,19 @@
  * food list; when one is not, they are moved, within 2×, to bring the meal's
  * total to the band.
  */
+
+import {
+  replaceMealItem,
+  scaleBoundedNutrition,
+  scaleNutritionValues,
+  swapBoundedNutrition,
+  swapNutritionValues,
+} from '@/lib/ai/pipeline/assemble/result-scale';
+import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
 import type {
-  BoundedNutrition,
-  NutritionValues,
-} from '@/lib/ai/types/nutrition-values';
-import type {
-  PipelineMealItem,
   PipelineResult,
   ProcessedIngredient,
+  TypedAmount,
 } from '@/lib/ai/types/result';
 import type { PlainRead } from './prompt';
 
@@ -71,6 +76,41 @@ const same = (a: number, b: number) =>
   Math.abs(a - b) <= Math.max(2, 0.03 * Math.max(a, b));
 
 /**
+ * Take from `foods` the read's food for a part the user typed an amount for.
+ * A typed weight pairs with the food of the same grams, typed calories with
+ * the one of the same calories (the part's grams are then an estimate, and
+ * would pair it with another food that happens to weigh the same). When
+ * several match, the closest in the other amount, so the read's order never
+ * decides.
+ */
+function takeClosest(
+  foods: PlainRead['foods'],
+  by: TypedAmount,
+  grams: number,
+  kcal: number | null
+): PlainRead['foods'][number] | null {
+  if (by === 'kcal' && kcal == null) return null;
+  let at = -1;
+  let gap = Number.POSITIVE_INFINITY;
+  foods.forEach((f, i) => {
+    const matches =
+      by === 'kcal' ? same(f.kcal, kcal ?? 0) : same(f.grams, grams);
+    if (!matches) return;
+    const other =
+      by === 'kcal'
+        ? Math.abs(f.grams - grams)
+        : kcal == null
+          ? 0
+          : Math.abs(f.kcal - kcal);
+    if (at < 0 || other < gap) {
+      at = i;
+      gap = other;
+    }
+  });
+  return at < 0 ? null : foods.splice(at, 1)[0];
+}
+
+/**
  * The read's calories and grams for the parts the user typed an amount for,
  * or null when they cannot be told. The read repeats a typed weight as that food's
  * grams (and typed calories as its calories), so each typed part is paired
@@ -82,32 +122,8 @@ function readOfTypedParts(
   read: PlainRead
 ): { kcal: number; grams: number } | null {
   const foods = [...read.foods];
-  // By the amount the user typed: a typed weight pairs with the read food of
-  // the same grams, typed calories with the one of the same calories (the
-  // part's grams are then an estimate, and would pair it with another food
-  // that happens to weigh the same). When several match, the closest in the
-  // other amount, so the read's order never decides.
-  const take = (by: 'grams' | 'kcal', grams: number, kcal: number | null) => {
-    if (by === 'kcal' && kcal == null) return null;
-    let at = -1;
-    let gap = Number.POSITIVE_INFINITY;
-    foods.forEach((f, i) => {
-      const matches =
-        by === 'kcal' ? same(f.kcal, kcal ?? 0) : same(f.grams, grams);
-      if (!matches) return;
-      const other =
-        by === 'kcal'
-          ? Math.abs(f.grams - grams)
-          : kcal == null
-            ? 0
-            : Math.abs(f.kcal - kcal);
-      if (at < 0 || other < gap) {
-        at = i;
-        gap = other;
-      }
-    });
-    return at < 0 ? null : foods.splice(at, 1)[0];
-  };
+  const take = (by: TypedAmount, grams: number, kcal: number | null) =>
+    takeClosest(foods, by, grams, kcal);
   const kcalOf = (v: NutritionValues) => v.caloriesKcal ?? null;
   const total = { kcal: 0, grams: 0 };
   const add = (food: PlainRead['foods'][number]) => {
@@ -224,63 +240,6 @@ export function holdToPlainRead(
   };
 }
 
-/** `total` with `before` taken out and `after` put in, per nutrient. */
-export function swapNutritionValues(
-  total: NutritionValues,
-  before: NutritionValues,
-  after: NutritionValues
-): NutritionValues {
-  const out = { ...total };
-  for (const key of Object.keys(out) as (keyof NutritionValues)[]) {
-    const t = out[key];
-    if (t != null) out[key] = t - (before[key] ?? 0) + (after[key] ?? 0);
-  }
-  return out;
-}
-
-export function swapBoundedNutrition(
-  total: BoundedNutrition,
-  before: BoundedNutrition,
-  after: BoundedNutrition
-): BoundedNutrition {
-  const out = { ...total };
-  for (const key of Object.keys(out) as (keyof BoundedNutrition)[]) {
-    const t = out[key];
-    if (t == null) continue;
-    const b = before[key];
-    const a = after[key];
-    out[key] = {
-      low: t.low - (b?.low ?? 0) + (a?.low ?? 0),
-      mid: t.mid - (b?.mid ?? 0) + (a?.mid ?? 0),
-      high: t.high - (b?.high ?? 0) + (a?.high ?? 0),
-    };
-  }
-  return out;
-}
-
-/** `result` with one meal item replaced and the meal totals moved with it. */
-export function replaceMealItem(
-  result: PipelineResult,
-  index: number,
-  next: PipelineMealItem
-): PipelineResult {
-  const before = result.mealItems[index];
-  return {
-    ...result,
-    mealItems: result.mealItems.map((mi, i) => (i === index ? next : mi)),
-    boundedNutrition: swapBoundedNutrition(
-      result.boundedNutrition,
-      before.boundedNutrition,
-      next.boundedNutrition
-    ),
-    displayedNutrition: swapNutritionValues(
-      result.displayedNutrition,
-      before.displayedNutrition,
-      next.displayedNutrition
-    ),
-  };
-}
-
 /**
  * Scale every part the user gave no amount for, nutrients by `f` and grams by
  * `gramsF`; dish and meal totals follow.
@@ -327,29 +286,4 @@ function scaleIngredient(
     displayedNutrition: scaleNutritionValues(ing.displayedNutrition, f),
     ...(ing.alcoholG != null && { alcoholG: ing.alcoholG * f }),
   };
-}
-
-export function scaleNutritionValues(
-  v: NutritionValues,
-  f: number
-): NutritionValues {
-  const out = { ...v };
-  for (const key of Object.keys(out) as (keyof NutritionValues)[]) {
-    const x = out[key];
-    if (x != null) out[key] = x * f;
-  }
-  return out;
-}
-
-export function scaleBoundedNutrition(
-  b: BoundedNutrition,
-  f: number
-): BoundedNutrition {
-  const out = { ...b };
-  for (const key of Object.keys(out) as (keyof BoundedNutrition)[]) {
-    const e = out[key];
-    if (e != null)
-      out[key] = { low: e.low * f, mid: e.mid * f, high: e.high * f };
-  }
-  return out;
 }

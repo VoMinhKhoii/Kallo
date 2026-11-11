@@ -1,6 +1,6 @@
 /**
  * Checks on what Call 1 wrote about a food, beside its amounts
- * (`text-checks.ts`): the basis of a typed weight it describes as dry or raw,
+ * (`weights.ts`, `calories.ts`): the basis of a typed weight it describes as dry or raw,
  * and the language of a display name.
  */
 import type {

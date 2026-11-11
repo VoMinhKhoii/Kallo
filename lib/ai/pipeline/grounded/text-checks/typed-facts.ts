@@ -3,7 +3,7 @@
  *
  * - Calories typed for a dish ("160kcal sữa chua", a label or a menu figure)
  *   are a fact, like a typed weight. Call 1 reports them as the dish's
- *   `statedKcal` (checked against the text in `text-checks.ts`); here the
+ *   `statedKcal` (checked against the text in `calories.ts`); here the
  *   finished dish is set to that figure. Only the nutrients move, by one
  *   factor, so the parts keep their split and every macro follows the
  *   calories. Grams stay as estimated: the typed figure says how much energy
@@ -14,18 +14,23 @@
  * - Every part whose amount the user typed is marked `typedAmount`, so the
  *   plain-read hold (`plain-read/hold.ts`) moves only the other parts.
  */
-import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
-import { RESCUE_TYPED_PART_PORTION } from '@/lib/ai/pipeline/grounded/rescue/splice';
+
 import {
   replaceMealItem,
   scaleBoundedNutrition,
   scaleNutritionValues,
   swapBoundedNutrition,
   swapNutritionValues,
-} from '@/lib/ai/pipeline/plain-read/hold';
+} from '@/lib/ai/pipeline/assemble/result-scale';
+import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import { RESCUE_TYPED_PART_PORTION } from '@/lib/ai/pipeline/grounded/rescue/splice';
 import { portionAnchor } from '@/lib/ai/pipeline/resolve/refuse-mass';
 import type { PortionResolution } from '@/lib/ai/portion/types';
-import type { PipelineMealItem, PipelineResult } from '@/lib/ai/types/result';
+import type {
+  PipelineMealItem,
+  PipelineResult,
+  TypedAmount,
+} from '@/lib/ai/types/result';
 
 function scaleNutrients(mi: PipelineMealItem, f: number): PipelineMealItem {
   return {
@@ -133,6 +138,26 @@ export function holdToTypedCalories(
 }
 
 /**
+ * Which amount of a part is the user's: the calories, or else the grams. The
+ * hold finds a typed part in the plain read by that amount. A dish whose parts
+ * do not line up counts as weighed whole.
+ */
+function typedKindOf(
+  dish: MealDecompositionV2['mealItems'][number],
+  aligned: boolean,
+  part: { statedKcal?: number } | undefined,
+  portion: PortionResolution | undefined
+): TypedAmount | null {
+  if (dish.statedKcal) return 'kcal';
+  if (!aligned || dish.servedMassG) return 'grams';
+  if (part?.statedKcal) return 'kcal';
+  return portionAnchor(portion) !== null ||
+    portion === RESCUE_TYPED_PART_PORTION
+    ? 'grams'
+    : null;
+}
+
+/**
  * Mark the parts whose amount the user typed: a part with a weight or package
  * size of its own (or the foods the rescue split such a part into), and every part of a dish the user weighed or typed calories
  * for. `portions` runs over Call 1's ingredients in order, as the result's
@@ -153,21 +178,9 @@ export function markTypedParts(
     const aligned =
       itemOf(result, dish, index) !== null &&
       dish.ingredients.length === mi.ingredients.length;
-    // Which amount is the user's: the calories, or else the grams. The hold
-    // finds a typed part in the plain read by that amount.
-    const wholeDish: 'grams' | 'kcal' | null = dish.statedKcal
-      ? 'kcal'
-      : !aligned || dish.servedMassG
-        ? 'grams'
-        : null;
-    const typed = mi.ingredients.map((_, i): 'grams' | 'kcal' | null => {
-      if (wholeDish) return wholeDish;
-      if (dish.ingredients[i]?.statedKcal) return 'kcal';
-      return portionAnchor(portions[start + i]) !== null ||
-        portions[start + i] === RESCUE_TYPED_PART_PORTION
-        ? 'grams'
-        : null;
-    });
+    const typed = mi.ingredients.map((_, i) =>
+      typedKindOf(dish, aligned, dish.ingredients[i], portions[start + i])
+    );
     if (!typed.some(Boolean)) return mi;
     return {
       ...mi,

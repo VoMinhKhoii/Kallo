@@ -1,8 +1,8 @@
 /**
  * The amounts a meal text states, read by code: every weight and calorie
  * figure typed with a digit, the shares and multiples of them the text
- * allows, and the food named beside one. `text-checks.ts` holds Call 1's
- * answer to these.
+ * allows, and the food named beside one. `weights.ts` and `calories.ts` hold
+ * Call 1's answer to these.
  */
 import { fold } from '@/lib/core/text/fold';
 import { nameKey } from '@/lib/core/text/name-key';
@@ -64,11 +64,20 @@ const WORD_WEIGHT = new RegExp(
   'iu'
 );
 
-export interface TypedWeight {
-  grams: number;
-  /** Where the weight starts and ends in the normalized text. */
+/** Where a typed amount starts and ends in the normalized text. */
+export interface Span {
   start: number;
   end: number;
+}
+
+export interface TypedWeight extends Span {
+  grams: number;
+}
+
+/** "1.200" is a thousands separator when `thousands` allows it; "1.2" and "0.250" are decimals. */
+function typedNumber(number: string, thousands: boolean): number {
+  const grouped = thousands && /^[1-9]\d{0,2}[.,]\d{3}$/.test(number);
+  return Number(number.replace(/[.,]/, grouped ? '' : '.'));
 }
 
 /**
@@ -82,10 +91,8 @@ export function typedWeights(mealText: string): TypedWeight[] | null {
     const [whole, number, divisor, unit, andAHalf] = m;
     const perUnit = UNIT_G[unit.toLowerCase()];
     // "1.200g" is a thousands separator, "1.2kg" and "0.250g" a decimal.
-    const thousands = perUnit === 1 && /^[1-9]\d{0,2}[.,]\d{3}$/.test(number);
     const n =
-      Number(number.replace(/[.,]/, thousands ? '' : '.')) /
-      (divisor ? Number(divisor) : 1);
+      typedNumber(number, perUnit === 1) / (divisor ? Number(divisor) : 1);
     const grams = (n + (andAHalf ? 0.5 : 0)) * perUnit;
     if (grams > 0)
       found.push({ grams, start: m.index, end: m.index + whole.length });
@@ -196,33 +203,18 @@ const TYPED_KCAL = new RegExp(
   'giu'
 );
 
-export interface TypedKcal {
+export interface TypedKcal extends Span {
   kcal: number;
-  start: number;
-  end: number;
 }
 
 export function typedKcals(text: string): TypedKcal[] {
   return [...text.matchAll(TYPED_KCAL)]
-    .map((m) => {
-      const number = m[1] ?? m[2];
-      return {
-        kcal: Number(
-          number.replace(
-            /[.,]/,
-            /^[1-9]\d{0,2}[.,]\d{3}$/.test(number) ? '' : '.'
-          )
-        ),
-        start: m.index,
-        end: m.index + m[0].length,
-      };
-    })
+    .map((m) => ({
+      kcal: typedNumber(m[1] ?? m[2], true),
+      start: m.index,
+      end: m.index + m[0].length,
+    }))
     .filter((t) => t.kcal > 0);
-}
-
-/** Every calorie figure the user typed. */
-export function typedCalories(mealText: string): number[] {
-  return typedKcals(mealText.normalize('NFC')).map((t) => t.kcal);
 }
 
 /** Where a weighed food's name stops: a joiner, punctuation or another number. */
@@ -231,20 +223,26 @@ const PHRASE_END =
 const LEADING_WORDS = /^(?:\s+|(?:of|an?|the|của)(?!\p{L}))+/iu;
 
 /** The food named right after a weight ("300g ribeye steak with fries" → "ribeye steak"). */
-export function foodAfter(text: string, weight: TypedWeight): string {
-  const rest = text.slice(weight.end).replace(LEADING_WORDS, '');
+export function foodAfter(text: string, amount: Span): string {
+  const rest = text.slice(amount.end).replace(LEADING_WORDS, '');
   const end = rest.search(PHRASE_END);
   return nameKey(end < 0 ? rest : rest.slice(0, end));
 }
 
 /** The food named right before a weight ("ức gà 200g với rau xào" → "ức gà"). */
-export function foodBefore(text: string, weight: TypedWeight): string {
-  const before = text.slice(0, weight.start);
+export function foodBefore(text: string, amount: Span): string {
+  const before = text.slice(0, amount.start);
   let cut = 0;
   for (const m of before.matchAll(new RegExp(PHRASE_END.source, 'giu')))
     cut = m.index + m[0].length;
   return nameKey(before.slice(cut));
 }
+
+/** The food phrases typed right after and right before an amount. */
+export const foodsBeside = (text: string, amount: Span): string[] => [
+  foodAfter(text, amount),
+  foodBefore(text, amount),
+];
 
 export const wordsOf = (name: string) =>
   fold(name)
