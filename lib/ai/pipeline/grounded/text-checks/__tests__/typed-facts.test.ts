@@ -177,6 +177,13 @@ describe('markTypedParts', () => {
       [free, pinned, free, free, free] as never
     );
     expect(typedOf(marked)).toEqual([[false, true], [true, true], [true]]);
+    // Only a dish typed as a whole says so: the hold looks for it in the read
+    // as one food, and for a part weighed on its own as itself.
+    expect(marked.mealItems.map((mi) => mi.typedWhole)).toEqual([
+      undefined,
+      'grams',
+      'kcal',
+    ]);
   });
 
   it('marks the foods the rescue split a weighed part into', () => {

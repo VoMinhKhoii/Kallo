@@ -356,3 +356,43 @@ describe('holdToPlainRead, parts weighed one by one in one dish', () => {
     expect(out.result).toBe(m);
   });
 });
+
+describe('holdToPlainRead, a dish the user weighed whole', () => {
+  it('finds the dish in the read as one food, not its parts among other foods', () => {
+    // "300g chicken rice, plus two eggs and vegetables": the eggs and the
+    // vegetables weigh what the chicken and the rice were estimated at.
+    const part = (name: string, grams: number, kcal: number) => ({
+      ...ingredient(name, grams, kcal),
+      typedAmount: 'grams' as const,
+    });
+    const plate = meal([part('chicken', 100, 165), part('rice', 200, 260)]);
+    const sides = meal([
+      ingredient('eggs', 100, 155),
+      ingredient('vegetables', 200, 60),
+    ]);
+    const b = sumBoundedNutrition([
+      plate.boundedNutrition,
+      sides.boundedNutrition,
+    ]);
+    const m: PipelineResult = {
+      ...plate,
+      mealItems: [
+        { ...plate.mealItems[0], typedWhole: 'grams' },
+        ...sides.mealItems,
+      ],
+      boundedNutrition: b,
+      displayedNutrition: goalAdjustNutrition(b, 'cutting', 0.5),
+    };
+    const shown = (i: number, j: number) =>
+      kcalOf(m.mealItems[i].ingredients[j].displayedNutrition);
+    const out = holdToPlainRead(m, {
+      read: read(kcalOf(m.displayedNutrition), [
+        [300, kcalOf(m.mealItems[0].displayedNutrition)],
+        [100, shown(1, 0)],
+        [200, shown(1, 1)],
+      ]),
+    });
+    expect(out.outcome).toBe('within_band');
+    expect(out.result).toBe(m);
+  });
+});

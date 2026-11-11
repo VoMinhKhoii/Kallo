@@ -12,7 +12,9 @@
  *   typed ÷ shown lands the shown calories on the typed figure, and confirm
  *   (which re-derives shown values from the triples) reproduces it.
  * - Every part whose amount the user typed is marked `typedAmount`, so the
- *   plain-read hold (`plain-read/hold.ts`) moves only the other parts.
+ *   plain-read hold (`plain-read/hold.ts`) moves only the other parts; a dish
+ *   typed as a whole is marked `typedWhole`, so the hold looks for it in the
+ *   read as one food.
  */
 
 import {
@@ -138,18 +140,23 @@ export function holdToTypedCalories(
 }
 
 /**
- * Which amount of a part is the user's: the calories, or else the grams. The
- * hold finds a typed part in the plain read by that amount. A dish whose parts
- * do not line up counts as weighed whole.
+ * The amount the user typed for the dish as a whole, if any: its calories, or
+ * else its weight. A dish whose parts do not line up counts as weighed whole,
+ * so nothing in it is moved by mistake.
  */
-function typedKindOf(
+function wholeKindOf(
   dish: MealDecompositionV2['mealItems'][number],
-  aligned: boolean,
+  aligned: boolean
+): TypedAmount | null {
+  if (dish.statedKcal) return 'kcal';
+  return !aligned || dish.servedMassG ? 'grams' : null;
+}
+
+/** Which amount of one part is the user's own: its calories, or else its grams. */
+function partKindOf(
   part: { statedKcal?: number } | undefined,
   portion: PortionResolution | undefined
 ): TypedAmount | null {
-  if (dish.statedKcal) return 'kcal';
-  if (!aligned || dish.servedMassG) return 'grams';
   if (part?.statedKcal) return 'kcal';
   return portionAnchor(portion) !== null ||
     portion === RESCUE_TYPED_PART_PORTION
@@ -178,12 +185,14 @@ export function markTypedParts(
     const aligned =
       itemOf(result, dish, index) !== null &&
       dish.ingredients.length === mi.ingredients.length;
-    const typed = mi.ingredients.map((_, i) =>
-      typedKindOf(dish, aligned, dish.ingredients[i], portions[start + i])
+    const whole = wholeKindOf(dish, aligned);
+    const typed = mi.ingredients.map(
+      (_, i) => whole ?? partKindOf(dish.ingredients[i], portions[start + i])
     );
     if (!typed.some(Boolean)) return mi;
     return {
       ...mi,
+      ...(whole && { typedWhole: whole }),
       ingredients: mi.ingredients.map((ing, i) => {
         const typedAmount = typed[i];
         return typedAmount ? { ...ing, typedAmount } : ing;

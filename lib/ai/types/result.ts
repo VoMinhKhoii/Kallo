@@ -59,6 +59,12 @@ export interface PipelineMealItem {
   boundedNutrition: BoundedNutrition;
   displayedNutrition: NutritionValues;
   vessel?: PipelineVessel;
+  /**
+   * The user typed an amount for this dish as a whole (its weight or its
+   * calories), so its parts' own grams are estimates. Absent when amounts
+   * were typed part by part, or not at all.
+   */
+  typedWhole?: TypedAmount;
 }
 
 /** Full pipeline result for a successful analysis */
