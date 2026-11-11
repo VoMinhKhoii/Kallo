@@ -157,6 +157,19 @@ jobs:
           restore-keys: next-build-${{ runner.os }}-
       - if: steps.affected.outputs.run == 'true'
         run: bun run build
+      # Read the build the way a crawler without JavaScript does: every sitemap
+      # page answers 200, self-canonical, indexable, article before the footer;
+      # robots.txt open; and no page the live site lists now answers 404.
+      - name: Crawl check (SEO)
+        if: steps.affected.outputs.run == 'true'
+        run: |
+          PORT=3000 HOSTNAME=127.0.0.1 node .next/standalone/server.js > "$RUNNER_TEMP/server.log" 2>&1 &
+          for _ in $(seq 60); do
+            curl -sf -o /dev/null http://127.0.0.1:3000/robots.txt && break
+            sleep 1
+          done
+          bun scripts/seo/crawl-check.ts http://127.0.0.1:3000 --live https://kallo.fit \
+            || { tail -50 "$RUNNER_TEMP/server.log"; exit 1; }
       - if: steps.affected.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/cache/save@v4
         with:
