@@ -82,7 +82,7 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
       free: 'Unlimited barcode scanning, about 95 nutrients, custom recipes',
       paid: 'Gold, $10.99 a month or $59.99 a year',
       platforms: 'iOS, Android, web',
-      bestFor: 'Tracking vitamins and minerals, not just calories.',
+      bestFor: 'Tracking vitamins and minerals as well as calories.',
       body: [
         'Cronometer keeps what MyFitnessPal took away: barcode scanning is free with no limit. It tracks around 95 nutrients for each food and runs on the web as well as phones.',
       ],
@@ -190,7 +190,7 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
       bestFor: 'People tired of picking the right entry from a list.',
       body: [
         'Kallo logs a meal from the sentence you would say out loud, like “leftover spaghetti bolognese and a side salad”, instead of a search box and a row of database matches. It counts calories and macros from USDA and FAO food data, as a range, not one number. When the words can’t settle a portion, it asks.',
-        'No independent test has measured Kallo yet. What we can show is our own data, below.',
+        'No independent test has measured Kallo yet. The data below is our own.',
       ],
       drawback:
         'It can’t log a meal from a photo of the plate, only from a nutrition label, and there is no Android app.',
@@ -205,7 +205,7 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
   dataLink: 'See all the numbers',
   methodHeading: 'How we checked',
   method: [
-    'Every price and feature comes from the vendor’s own site or its US App Store listing, read on 11 November 2026. Where a listing shows a price without a billing period, we say so instead of guessing. Prices change and differ by country, so check before you pay.',
+    'Every price and feature comes from the vendor’s own site or its US App Store listing, read on 11 November 2026. Where a listing shows a price without a billing period, we say so. Prices change and differ by country, so check before you pay.',
     'The order follows how close each app is to MyFitnessPal’s search-and-log diary, not a score. The study figures come from Li et al. (Nutrients, 2024), linked under each app. It did not test Kallo.',
   ],
   tryLine: 'Try typing your next meal instead of searching for it.',
