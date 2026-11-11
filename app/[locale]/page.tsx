@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
@@ -79,6 +80,10 @@ export default async function Home({
   searchParams: Promise<AuthSearchParams>;
 }) {
   const { locale } = await params;
+  // The layout's notFound() does not stop this page: they render in parallel,
+  // so a non-locale first segment (`/:param`) would reach the food-page data
+  // below and crash with a 500 instead of a 404.
+  if (!hasLocale(routing.locales, locale)) notFound();
 
   // The docs footer, not a marketing one: it is already the full site directory
   // (including Legal), and its espresso ground is what ends the page — a cream
