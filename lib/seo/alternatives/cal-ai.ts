@@ -141,14 +141,14 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'MyFitnessPal',
-      headline: 'the biggest database, and Cal AI’s owner',
+      headline: 'restaurant food, and Cal AI’s owner',
       logs: 'Search; barcode, photo and voice on Premium',
       free: 'Calorie, weight and exercise tracking by search',
       paid: 'Premium, $19.99 a month or $79.99 a year',
       platforms: 'iOS, Android, web',
       bestFor: 'Packaged and restaurant food, from 20 million entries.',
       body: [
-        'MyFitnessPal has the biggest database on this list, restaurants included, and has owned Cal AI since March 2026. In a 2024 study its photo scan named 38 of 39 foods. Photo, voice and barcode logging are paid.',
+        'MyFitnessPal has 20 million food entries, restaurants included, and has owned Cal AI since March 2026. In a 2024 study its photo scan named 38 of 39 foods. Photo, voice and barcode logging are paid.',
       ],
       drawback:
         'Barcode scanning, photo and voice logging are all Premium-only.',
