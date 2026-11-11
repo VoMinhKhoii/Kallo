@@ -3,6 +3,12 @@ import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { DocsFooterColumn } from '@/components/docs/docs-footer-column';
 import { Link } from '@/i18n/navigation';
 import type { DocsNavSection } from '@/lib/domain/docs/tree';
+import { ALTERNATIVE_PAGES } from '@/lib/seo/alternatives/pages';
+import {
+  ALTERNATIVE_SLUGS,
+  ALTERNATIVES_LOCALE,
+  alternativePath,
+} from '@/lib/seo/alternatives/slugs';
 import { FOODS } from '@/lib/seo/food-pages/food-registry';
 import { FOOTER_MEALS } from '@/lib/seo/food-pages/footer-meals';
 import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
@@ -144,6 +150,18 @@ export async function DocsFooter({
               {FOOD_PAGE_CHROME[locale].footerLink}
             </Link>
           ) : null}
+          {/* The alternatives pages' way into the site; English only. */}
+          {locale === ALTERNATIVES_LOCALE
+            ? ALTERNATIVE_SLUGS.map((slug) => (
+                <Link
+                  className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
+                  href={alternativePath(slug)}
+                  key={slug}
+                >
+                  {ALTERNATIVE_PAGES[slug].title}
+                </Link>
+              ))
+            : null}
           <a
             className="rounded-sm text-caption text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
             href={LINKEDIN_URL}

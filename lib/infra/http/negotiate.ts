@@ -2,6 +2,11 @@ import { locales } from '@/i18n/config';
 import { isKnownDocSlug } from '@/lib/domain/docs/navigation';
 import { MEDIA_MARKDOWN, preferredType } from '@/lib/infra/http/accept';
 import {
+  ALTERNATIVES_LOCALE,
+  ALTERNATIVES_PREFIX,
+  isAlternativeSlug,
+} from '@/lib/seo/alternatives/slugs';
+import {
   FOOD_PAGE_PREFIX,
   foodPageKey,
   isFoodLocale,
@@ -118,6 +123,28 @@ export function unknownFoodPageTarget(pathname: string): string | null {
       : foodPageKey(locale, decoded.slice(FOOD_PAGE_PREFIX.length + 1)) !==
         null;
   return known ? null : `/${locale}/not-found`;
+}
+
+/**
+ * The 404 target for an unknown alternatives URL, or null when the path is a
+ * real alternatives page or not under `/alternatives` at all. The pages are
+ * English only and have no hub, so the bare folder and any Vietnamese URL 404.
+ */
+export function unknownAlternativePageTarget(pathname: string): string | null {
+  const split = splitLocale(pathname);
+  if (!split) return null;
+  const { locale, rest } = split;
+  if (
+    rest !== ALTERNATIVES_PREFIX &&
+    !rest.startsWith(`${ALTERNATIVES_PREFIX}/`)
+  )
+    return null;
+  const decoded = pagePath(rest);
+  if (decoded === null) return null;
+  const slug = decoded.slice(ALTERNATIVES_PREFIX.length + 1);
+  return locale === ALTERNATIVES_LOCALE && isAlternativeSlug(slug)
+    ? null
+    : `/${locale}/not-found`;
 }
 
 /**
