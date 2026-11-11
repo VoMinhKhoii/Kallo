@@ -15,10 +15,11 @@ const LI_2024: Source = {
 };
 
 export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
-  metaTitle: 'MyFitnessPal Alternatives (2026): 7 Apps, Prices Checked',
+  metaTitle: 'MyFitnessPal Alternatives (2026): 7 Apps, Free and Paid',
   description:
     'Seven MyFitnessPal alternatives, what each one gives you free (barcode scanner included or not), and the US price, checked on the vendors’ own pages.',
-  title: 'MyFitnessPal alternatives',
+  title: 'MyFitnessPal alternatives in 2026: 7 apps, free and paid',
+  publishedOn: '2026-11-11',
   checkedOn: '2026-11-11',
   answer:
     'The closest MyFitnessPal alternatives are Lose It! for the same simple calorie budget, Cronometer and MyNetDiary for free plans that still include a barcode scanner, and FatSecret for a free diary on phone and web. Yazio and MacroFactor add AI photo logging; MacroFactor has no free plan. Kallo, which we make, drops the database search: you type the meal the way you would say it, and that is a Premium feature once Kallo’s beta ends.',
@@ -60,6 +61,7 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
   options: [
     {
       name: 'Lose It!',
+      headline: 'the same simple calorie budget',
       logs: 'Search; photo, voice and barcode on Premium',
       free: 'Calorie budget, weight-loss plan, community',
       paid: 'Premium, $39.99 a year',
@@ -78,6 +80,7 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'Cronometer',
+      headline: 'free barcode scanning and about 95 nutrients',
       logs: 'Search, barcode; photo and voice on Gold',
       free: 'Unlimited barcode scanning, about 95 nutrients, custom recipes',
       paid: 'Gold, $10.99 a month or $59.99 a year',
@@ -98,6 +101,7 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'MyNetDiary',
+      headline: 'a free barcode scanner and no ads',
       logs: 'Search, barcode, voice; photo on a paid plan',
       free: 'Unlimited diary, barcode scanner, voice logging, no ads',
       paid: 'Not on its website; the US App Store lists Premium at $8.99 to $59.99 without saying the period',
@@ -118,6 +122,7 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'FatSecret',
+      headline: 'a free diary on phone and web',
       logs: 'Search, barcode, photo',
       free: 'The app and its web diary; Premium adds meal plans',
       paid: 'Premium, listed at $38.99 and $59.99 a year',
@@ -142,6 +147,7 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'Yazio',
+      headline: 'a free barcode scanner, AI photo logging on Pro',
       logs: 'Photo, voice, text, barcode',
       free: 'Food diary, barcode scanner, fasting timer',
       paid: 'Pro, listed at $23.90 and $47.90 a year',
@@ -164,6 +170,7 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'MacroFactor',
+      headline: 'AI logging and a weekly coach, no free plan',
       logs: 'Photo, typed description, voice, barcode, nutrition label',
       free: 'None after the trial',
       paid: '$11.99 a month or $71.99 a year',
@@ -182,6 +189,7 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
     },
     {
       name: 'Kallo',
+      headline: 'type the meal instead of searching for it',
       ours: true,
       logs: 'Typed text, barcode, nutrition label',
       free: 'Barcode scanning, manual logging, macros. Typing a meal is Premium. Everything is free while Kallo is in beta',
@@ -197,12 +205,22 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
       sources: [
         { label: 'Kallo pricing', url: 'https://kallo.fit/en/pricing' },
         {
+          label: 'How describing a meal works',
+          url: 'https://kallo.fit/en/docs/logging/describe-a-meal',
+        },
+        {
           label: 'Kallo on the App Store',
           url: 'https://apps.apple.com/us/app/id6775761392',
         },
       ],
     },
   ],
+  extra: {
+    heading: 'MyFitnessPal alternatives with a free barcode scanner',
+    body: [
+      'MyFitnessPal has kept its barcode scanner for Premium since 1 October 2022. Cronometer, MyNetDiary, Yazio and Kallo scan barcodes on their free plans. FatSecret lists its scanner with its general features, not its Premium ones. Lose It! keeps barcode scanning for Premium, and MacroFactor has no free plan.',
+    ],
+  },
   dataHeading: 'What moves the number more than the database',
   data: (f) =>
     `A database entry can’t know how much oil went into the pan or how full the bowl was. We logged ${f.dishes} everyday meals in Kallo ${f.perDish} common ways each, ${f.meals} meals in all. For the typical dish, the heaviest version had ${f.ratio}× the calories of the lightest. Kallo counted cooking oil in ${f.withOil} of them, and in ${f.unnamed} nobody had mentioned oil, butter or frying. Whichever app you pick, log the portion and the cooking fat.`,
