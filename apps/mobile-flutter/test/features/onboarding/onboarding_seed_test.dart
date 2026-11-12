@@ -255,13 +255,12 @@ void main() {
     test('the language on screen beats the phone; a saved one beats both', () {
       ({OnboardingAnswers answers, OnboardingDeviceHints device}) seed({
         ProfileRow? profile,
-      }) =>
-          buildOnboardingAnswers(
-            profile: profile,
-            deviceRegion: 'VN',
-            deviceLanguage: 'vi',
-            activeLocale: 'en',
-          );
+      }) => buildOnboardingAnswers(
+        profile: profile,
+        deviceRegion: 'VN',
+        deviceLanguage: 'vi',
+        activeLocale: 'en',
+      );
 
       expect(seed().answers.preferredLocale, 'en');
       // The phone's language still earns the "From your phone" note.
