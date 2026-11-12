@@ -208,23 +208,6 @@ export const VIETNAM_RDA: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
   vitaminB12Mcg: perSex(2.4, 2.4, 'mcg'),
 };
 
-/**
- * Targets their source states per 1000 kcal eaten. The table value stays the
- * floor; a calorie target above the one the table assumed raises it at this
- * rate (`reference-targets.ts`). Keyed by source because the rate belongs to
- * the source's row: VN 2016 Bảng 32 and 34 for B1 and B2, and NASEM's fiber AI,
- * which is 14 g per 1000 kcal by definition.
- */
-export const ENERGY_SCALED_TARGETS: Partial<
-  Record<
-    Exclude<TargetSource, 'unsupported'>,
-    Partial<Record<NutritionNutrientKey, number>>
-  >
-> = {
-  vietnam_rda: { vitaminB1Mg: 0.5, vitaminB2Mg: 0.6 },
-  nasem: { fiberG: 14 },
-};
-
 export const WHO_FAO: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
   calciumMg: {
     male: { value: 1000, unit: 'mg' },
@@ -429,6 +412,23 @@ export const NASEM_DRI: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
     male: { value: 2300, unit: 'mg' },
     female: { value: 2300, unit: 'mg' },
   },
+};
+
+/**
+ * Targets their source states per 1000 kcal eaten. The table value stays the
+ * floor; a calorie target above the one the table assumed raises it at this
+ * rate (`reference-targets.ts`). Keyed by source because the rate belongs to
+ * the source's row: VN 2016 Bảng 32 and 34 for B1 and B2, and NASEM's fiber AI,
+ * which is 14 g per 1000 kcal by definition.
+ */
+export const ENERGY_SCALED_TARGETS: Partial<
+  Record<
+    Exclude<TargetSource, 'unsupported'>,
+    Partial<Record<NutritionNutrientKey, number>>
+  >
+> = {
+  vietnam_rda: { vitaminB1Mg: 0.5, vitaminB2Mg: 0.6 },
+  nasem: { fiberG: 14 },
 };
 
 export const TARGET_KEYS: NutritionNutrientKey[] = [

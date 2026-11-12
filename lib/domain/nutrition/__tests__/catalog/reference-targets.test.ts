@@ -16,6 +16,7 @@ const baseProfile = {
   age: 30,
   countryOfOrigin: 'Vietnam',
   countryOfResidence: 'Vietnam',
+  calorieTarget: null,
 };
 
 describe('resolveMicronutrientTargets', () => {
@@ -483,7 +484,7 @@ describe('age-banded entries', () => {
     // covers every banded key at once — including the ones added later.
     for (const context of contexts) {
       for (const biologicalSex of sexes) {
-        const profile = { ...context, biologicalSex };
+        const profile = { ...context, biologicalSex, calorieTarget: null };
         expect(resolveMicronutrientTargets({ ...profile, age: null })).toEqual(
           resolveMicronutrientTargets({ ...profile, age: 20 })
         );

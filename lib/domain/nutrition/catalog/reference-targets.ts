@@ -22,7 +22,7 @@ interface NutritionProfileForTargets {
   age: number | null;
   countryOfOrigin: string | null;
   countryOfResidence: string | null;
-  calorieTarget?: number | null;
+  calorieTarget: number | null;
 }
 
 export interface MicronutrientTarget {
@@ -104,7 +104,7 @@ function resolveBiologicalSex(value: string | null): BiologicalSex | null {
   return null;
 }
 
-/// Round a derived (averaged) target to a sensible precision: whole numbers at
+/// Round a derived (averaged or energy-scaled) target to a sensible precision: whole numbers at
 /// scale, one decimal for small values like vitamin B6 (~2.1 mg).
 function roundTarget(value: number): number {
   return value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
@@ -117,7 +117,7 @@ function applyEnergyRate(
   value: number,
   key: NutritionNutrientKey,
   source: Exclude<TargetSource, 'unsupported'>,
-  calorieTarget: number | null | undefined
+  calorieTarget: number | null
 ): number {
   const rate = ENERGY_SCALED_TARGETS[source]?.[key];
   if (rate === undefined || !calorieTarget || calorieTarget <= 0) {
