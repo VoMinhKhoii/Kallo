@@ -125,6 +125,29 @@ void main() {
     expect(tester.getRect(find.byType(StepBackdrop)), screen);
   });
 
+  testWidgets('the form sits centred under the wordmark, and scrolls instead '
+      'of overflowing once the keyboard is up', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app('/sign-in/email'));
+    await tester.pumpAndSettle();
+
+    // Centred: the gap above the title matches the gap under the footnote.
+    final body = tester.getRect(find.byType(CustomScrollView));
+    final title = tester.getRect(find.text('Welcome back'));
+    final footer = tester.getRect(find.byType(AuthLegalLinks));
+    expect((title.top - body.top) - (body.bottom - footer.bottom), lessThan(2));
+    expect(title.top - body.top, greaterThan(40));
+
+    // A small phone with the keyboard up: nothing overflows.
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 260);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Send code'), findsOneWidget);
+  });
+
   testWidgets('/sign-in/email greets a returning user, with the code form', (
     tester,
   ) async {
