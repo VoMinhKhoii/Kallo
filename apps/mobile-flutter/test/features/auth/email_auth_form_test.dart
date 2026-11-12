@@ -105,6 +105,8 @@ Widget _app(_FakeAuthController auth) => ProviderScope(
 
 Future<void> _sendCode(WidgetTester tester, String email) async {
   await tester.enterText(find.byType(TextField), email);
+  // A frame first, as a finger always gets: the button wakes on the rebuild.
+  await tester.pump();
   await tester.tap(find.text('Send code'));
   await tester.pumpAndSettle();
 }
@@ -150,8 +152,37 @@ void main() {
 
     await _sendCode(tester, 'not-an-email');
 
+    // "Send code" stays held, so the tap does nothing at all.
+    expect(auth.sends, isEmpty);
+    expect(find.text('Enter a valid email address'), findsNothing);
+
+    // The keyboard's Done still says why.
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
     expect(auth.sends, isEmpty);
     expect(find.text('Enter a valid email address'), findsOneWidget);
+  });
+
+  testWidgets('"Send code" wakes only once the address is complete', (
+    tester,
+  ) async {
+    final auth = _FakeAuthController();
+    await tester.pumpWidget(_app(auth));
+    await tester.pumpAndSettle();
+
+    Opacity button() => tester.widget<Opacity>(
+      find
+          .ancestor(of: find.text('Send code'), matching: find.byType(Opacity))
+          .first,
+    );
+
+    expect(button().opacity, 0.6);
+    await tester.enterText(find.byType(TextField), 'khoi@example');
+    await tester.pump();
+    expect(button().opacity, 0.6);
+    await tester.enterText(find.byType(TextField), 'khoi@example.com');
+    await tester.pump();
+    expect(button().opacity, 1.0);
   });
 
   testWidgets('a refused Turnstile token reads as its own line, not a '

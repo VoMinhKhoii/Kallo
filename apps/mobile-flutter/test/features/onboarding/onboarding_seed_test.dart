@@ -248,6 +248,24 @@ void main() {
       expect(_seed(draft: _draft).device.localeFromDevice, isFalse);
     });
 
+    test('the language on screen beats the phone; a saved one beats both', () {
+      ({OnboardingAnswers answers, OnboardingDeviceHints device}) seed({
+        ProfileRow? profile,
+      }) =>
+          buildOnboardingAnswers(
+            profile: profile,
+            deviceRegion: 'VN',
+            deviceLanguage: 'vi',
+            activeLocale: 'en',
+          );
+
+      expect(seed().answers.preferredLocale, 'en');
+      // The phone's language still earns the "From your phone" note.
+      expect(seed().device.localeFromDevice, isTrue);
+      expect(seed().device.deviceLanguage, 'vi');
+      expect(seed(profile: _profile).answers.preferredLocale, 'vi');
+    });
+
     test('a device language Kallo does not ship falls back to en', () {
       final seed = _seed(language: 'en', region: 'DE');
       expect(seed.answers.preferredLocale, 'en');

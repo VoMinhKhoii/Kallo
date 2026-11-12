@@ -63,15 +63,15 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   bool _busy = false;
   bool _reportedSeedError = false;
 
-  /// Resolved ONCE, the first time every source has settled: every save
-  /// invalidates `profileProvider`, so a re-read would overwrite answers the
-  /// user is in the middle of giving.
+  /// Resolved ONCE, the first time every source has settled: a save
+  /// invalidates `profileProvider`, so a re-read would overwrite answers.
   void _resolveStart(ProfileRow? profile, OnboardingDraft? draft) {
     final seeded = buildOnboardingAnswers(
       profile: profile,
       draft: draft,
       deviceRegion: deviceRegionCode(),
       deviceLanguage: deviceLanguageCode(),
+      activeLocale: context.locale.languageCode,
     );
     _answers = seeded.answers;
     _device = seeded.device;

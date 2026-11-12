@@ -89,7 +89,7 @@ class StartScreen extends StatelessWidget {
                         // only then gives some up.
                         const Flexible(child: _PreviewBox()),
                         Text(
-                          tr('onboarding.start.title'),
+                          context.tr('onboarding.start.title'),
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -100,7 +100,7 @@ class StartScreen extends StatelessWidget {
                     ),
                   ),
                   KalloButton(
-                    title: tr('onboarding.start.cta'),
+                    title: context.tr('onboarding.start.cta'),
                     variant: KalloButtonVariant.cta,
                     onPressed: () => context.push('/onboarding'),
                   ),
@@ -117,7 +117,7 @@ class StartScreen extends StatelessWidget {
                   // to `/welcome` re-parses the location and drops the pushed
                   // matches).
                   MetaAction(
-                    label: tr('onboarding.start.haveAccount'),
+                    label: context.tr('onboarding.start.haveAccount'),
                     onTap: () => context.push('/sign-in'),
                   ),
                   const SizedBox(height: KalloSpacing.sp3),
@@ -298,8 +298,12 @@ class _DevicePreview extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius - outline),
-        child: const Image(
-          image: AssetImage('assets/onboarding/log_preview.webp'),
+        // The Log screen in the app's own language, so English never opens
+        // on a Vietnamese meal log.
+        child: Image(
+          image: AssetImage(
+            'assets/onboarding/log_preview_${context.locale.languageCode}.webp',
+          ),
           fit: BoxFit.cover,
           alignment: Alignment.topCenter,
           excludeFromSemantics: true,

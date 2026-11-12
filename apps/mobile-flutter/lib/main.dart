@@ -121,6 +121,9 @@ Future<void> _boot() async {
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('vi')],
       path: 'assets/l10n',
+      // English until the user picks Vietnamese in the app, whatever the
+      // phone speaks. A picked language is saved and wins over this.
+      startLocale: const Locale('en'),
       fallbackLocale: const Locale('en'),
       child: ProviderScope(
         overrides: [

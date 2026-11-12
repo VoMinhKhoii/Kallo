@@ -51,9 +51,12 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
 
   AuthFormController get _controller => ref.read(widget.provider.notifier);
 
+  static final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+  bool get _emailLooksValid => _emailPattern.hasMatch(_email.text.trim());
+
   bool _validate() {
-    final email = _email.text.trim();
-    final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+    final ok = _emailLooksValid;
     setState(() => _emailError = ok ? null : tr('auth.signIn.emailError'));
     return ok;
   }
@@ -98,7 +101,8 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
           enabled: !busy,
           errorText: _emailError,
           onChanged: (_) {
-            // Rebuilt on every keystroke so the review password can appear.
+            // Rebuilt on every keystroke so the review password can appear
+            // and "Send code" wakes once the address is complete.
             setState(() => _emailError = null);
             _controller.clearMessages();
           },
@@ -133,8 +137,12 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
                     _isReviewAccount
                         ? tr('auth.dialog.signInTab')
                         : tr('auth.email.sendCode'),
-                // Held only while the check is still producing a token.
-                busy: busy || (!_isReviewAccount && !_turnstile.ready),
+                // Held until the address looks like one, and while the check
+                // is still producing a token.
+                busy:
+                    busy ||
+                    !_emailLooksValid ||
+                    (!_isReviewAccount && !_turnstile.ready),
                 loading: state.emailBusy,
                 onPressed: _submit,
               ),

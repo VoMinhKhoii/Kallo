@@ -101,13 +101,25 @@ describe('EmailStep', () => {
     expect(signInWithOtp.mock.calls[0][0].options.captchaToken).toBeUndefined();
   });
 
-  it('refuses an invalid address without calling Supabase', async () => {
+  it('holds "Send code" until the address is complete, and says why on blur', async () => {
+    const user = userEvent.setup();
     render(<EmailStep />);
-    await submit('khoi@example');
+    const button = screen.getByRole('button', { name: 'sendCode' });
+    expect(button).toBeDisabled();
 
+    await user.type(
+      screen.getByPlaceholderText('emailPlaceholder'),
+      'khoi@example'
+    );
+    expect(button).toBeDisabled();
+    await user.tab();
     await waitFor(() =>
       expect(screen.getByText('emailError')).toBeInTheDocument()
     );
+
+    await user.type(screen.getByPlaceholderText('emailPlaceholder'), '.com');
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(screen.queryByText('emailError')).not.toBeInTheDocument();
     expect(signInWithOtp).not.toHaveBeenCalled();
   });
 

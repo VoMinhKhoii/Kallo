@@ -89,12 +89,18 @@ CookingHabits cookingHabitsFrom(
 
 /// Resolve every screen's opening answer. [deviceRegion] / [deviceLanguage]
 /// are passed in rather than read here so the merge stays pure.
+///
+/// [activeLocale] is the language the app is showing. With nothing saved it
+/// outranks the phone's language: the app opens in English until the user
+/// picks Vietnamese, and screen 1 must preselect the language on screen, or
+/// Continue would store `vi` under an English UI.
 ({OnboardingAnswers answers, OnboardingDeviceHints device})
 buildOnboardingAnswers({
   ProfileRow? profile,
   OnboardingDraft? draft,
   required String? deviceRegion,
   required String deviceLanguage,
+  String? activeLocale,
 }) {
   final step1 = draft?.step1;
   final step2 = draft?.step2;
@@ -116,6 +122,7 @@ buildOnboardingAnswers({
     // answer, never a correction of one the user already gave.
     preferredLocale:
         supportedLocaleOrNull(savedLocale) ??
+        supportedLocaleOrNull(activeLocale) ??
         supportedLocaleOrNull(deviceLanguage) ??
         kDefaultLocale,
     countryOfOrigin:
