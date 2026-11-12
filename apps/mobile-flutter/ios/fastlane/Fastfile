@@ -164,7 +164,7 @@ platform :ios do
       ruby_env_keys.each { |k| saved[k] = ENV.delete(k) }
       begin
         sh("flutter", "build", "ios", "--release", "--no-codesign",
-           "--build-name=1.0.2", "--build-number=#{next_build}",
+           "--build-name=1.0.3", "--build-number=#{next_build}",
            "--dart-define=API_BASE_URL=#{API_BASE_URL}",
            "--dart-define=WEB_BASE_URL=#{WEB_BASE_URL}",
            "--dart-define=SUPABASE_URL=#{SUPABASE_URL}",
