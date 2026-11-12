@@ -106,13 +106,14 @@ class StepSession extends ChangeNotifier {
     ProfileRow? profile, {
     String? activeLocale,
   }) {
+    final active = supportedLocaleOrNull(activeLocale);
     final seeded = buildOnboardingAnswers(
       profile: profile,
       draft: null,
       deviceRegion: deviceRegionCode(),
       deviceLanguage: deviceLanguageCode(),
+      activeLocale: active ?? kDefaultLocale,
     );
-    final active = supportedLocaleOrNull(activeLocale);
     if (active != null) seeded.answers.preferredLocale = active;
     return StepSession(step, seeded.answers, seeded.device, stored: profile);
   }

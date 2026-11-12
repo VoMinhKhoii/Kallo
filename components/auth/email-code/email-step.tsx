@@ -36,10 +36,13 @@ export function EmailStep() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { email: '' },
+    // The button stays held until the address is complete, which also blocks
+    // Enter, so leaving the field is what says why.
+    mode: 'onTouched',
   });
 
   const onSubmit = async ({ email }: Values) => {
@@ -87,7 +90,7 @@ export function EmailStep() {
         )}
         <button
           type="submit"
-          disabled={loading || waitingForCheck}
+          disabled={loading || waitingForCheck || !isValid}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-kallo-ink px-4 py-3 font-medium font-sans-display text-kallo-surface text-sm tracking-tight transition-all duration-200 hover:bg-kallo-ink-hover disabled:opacity-60"
         >
           {loading && <Loader2 className="size-icon-inline animate-spin" />}
