@@ -969,28 +969,33 @@ describe('POST /api/analyze-meal', () => {
     const edge = 600 / 1.1;
     const staged = mockInsertValues.mock.calls[0][0].pipelineResult;
     expect(staged.displayedNutrition.caloriesKcal).toBeCloseTo(edge);
+    // Grams are held to the read's grams: 200 g against 550 g.
     expect(staged.mealItems[0].ingredients[0].estimatedGrams).toBeCloseTo(
-      (200 * edge) / 300
+      550 / 1.1
     );
     expect(generateStructuredOutput.mock.calls[0][0].userMessage).toContain(
       'Phở bò tái'
     );
   });
 
-  it('skips the plain read when the user typed a weight', async () => {
-    mockAnalyzeMeal.mockResolvedValue({
-      success: true,
-      data: mockPipelineData,
+  it('leaves a part the user weighed as computed, whatever the read says', async () => {
+    const typed = structuredClone(mockPipelineData);
+    Object.assign(typed.mealItems[0].ingredients[0], {
+      typedAmount: 'grams' as const,
     });
-    const generateStructuredOutput = vi.fn();
+    mockAnalyzeMeal.mockResolvedValue({ success: true, data: typed });
+    const generateStructuredOutput = vi.fn().mockResolvedValue({
+      foods: [{ name: 'ức gà', grams: 200, kcal: 600 }],
+      totalKcal: 600,
+    });
     mockCreateGeminiClient.mockReturnValue({ generateStructuredOutput });
 
     const res = await POST(createRequest(mealRequestBody('200g ức gà')));
     await readSSEEvents(res);
 
-    expect(generateStructuredOutput).not.toHaveBeenCalled();
     const staged = mockInsertValues.mock.calls[0][0].pipelineResult;
     expect(staged.displayedNutrition.caloriesKcal).toBe(300);
+    expect(staged.mealItems[0].ingredients[0].estimatedGrams).toBe(200);
   });
 
   it('passes request locale as fallback for mixed-language meal input', async () => {

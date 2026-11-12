@@ -269,8 +269,7 @@ Once the new revision is fully promoted and no older revision can serve traffic,
 > ingredient is searched by four strings Call 1 writes (rawName, canonicalName, queryEn,
 > nameVi) against every distinct string that names a card (`match_food_card_texts`, HNSW over
 > `food_card_texts`, expanded to rows via `food_card_text_rows`, max-sim per row),
-> plus an in-memory trigram index over card names and BM25 of Call 1's USDA-style `tableName`
-> over row English names. Arms are fused by RRF, collapsed to one row per concept (grade/salt
+> plus an in-memory trigram index over card names. Arms are fused by RRF, collapsed to one row per concept (grade/salt
 > siblings) and cut to 8 candidates; all sources compete equally. Until a database has embedded
 > card vectors, the legacy tiers below still serve (they remain as that fallback).
 > Cards are curated data: edit `data/food-cards/cards.jsonl`, regenerate the seed migration, and

@@ -59,11 +59,47 @@ export function withoutEmptyStrings(node: unknown): unknown {
 }
 
 type Loose = Record<string, unknown>;
+const present = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
+
+/**
+ * What Call 1 left out that the pipeline has a neutral value for: a food
+ * without one of its search strings (`queryEn`, `nameVi`) takes the string
+ * retrieval falls back to anyway (`cards/query-strings.ts`), and a dish
+ * without a `cookingMethod` (Haiku skips it on drinks and packaged foods) is
+ * "as served", which names no cooking and matches none of the method rules.
+ * Tried only on an answer that failed its schema, so an answer for a schema
+ * without these fields is never touched. Returns a copy.
+ */
+export function withCallOneDefaults(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(withCallOneDefaults);
+  if (!node || typeof node !== 'object') return node;
+  const out = Object.fromEntries(
+    Object.entries(node).map(([key, value]) => [
+      key,
+      withCallOneDefaults(value),
+    ])
+  ) as Loose;
+  if (
+    typeof out.rawName === 'string' &&
+    typeof out.canonicalName === 'string'
+  ) {
+    if (!present(out.queryEn)) out.queryEn = out.canonicalName;
+    if (!present(out.nameVi)) out.nameVi = out.rawName;
+  }
+  const isCallOneDish =
+    typeof out.name === 'string' &&
+    Array.isArray(out.ingredients) &&
+    out.ingredients.some((g) => typeof (g as Loose)?.rawName === 'string');
+  if (isCallOneDish && !present(out.cookingMethod))
+    out.cookingMethod = 'as served';
+  return out;
+}
 
 /**
  * Fix the value slips seen from the models on the two pipeline schemas
  * (decomposition and grounded estimation) before the Zod parse: an explicit
- * mass or a dish `servedMassG` of 0 g means no weight was typed (Haiku writes
+ * mass or a dish `servedMassG` of 0 g means no weight was typed, and a dish
+ * `statedKcal` of 0 means no calories were typed (Haiku writes
  * `servedMassG: 0` for "no weight", and the schema's > 0 rule then failed the
  * whole Call 1); a missing dish `cookingMethod` is ""; over-long `rejectReason` /
  * `prepNotes` are cut to the schema's lengths; `refusePct` is clamped to
@@ -111,6 +147,7 @@ export function repairPipelineOutput(raw: unknown): unknown {
       m.cookingMethod = '';
     if ('servedMassG' in m && !(Number(m.servedMassG) > 0))
       delete m.servedMassG;
+    if ('statedKcal' in m && !(Number(m.statedKcal) > 0)) delete m.statedKcal;
     for (const g of (m.ingredients as Loose[] | undefined) ?? []) {
       if ('servedG' in g && !(Number(g.servedG) > 0)) delete g.servedG;
       const mass = g.explicitMass as Loose | undefined;

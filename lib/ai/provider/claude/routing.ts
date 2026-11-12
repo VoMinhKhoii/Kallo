@@ -6,7 +6,10 @@ import type {
   StructuredOutputOptions,
   StructuredOutputParams,
 } from '../types';
-import type { createClaudeStructuredOutput } from './structured-output';
+import {
+  type createClaudeStructuredOutput,
+  slipReason,
+} from './structured-output';
 
 export type ClaudeStructuredOutput = ReturnType<
   typeof createClaudeStructuredOutput
@@ -148,7 +151,8 @@ function fallbackHooks<O extends AttemptHooks>(
 function describe(err: unknown): string {
   if (!(err instanceof Error)) return String(err);
   const status = (err as { status?: unknown }).status;
-  return typeof status === 'number' ? `${status} ${err.name}` : err.name;
+  if (typeof status === 'number') return `${status} ${err.name}`;
+  return err.name === 'ZodError' ? `ZodError: ${slipReason(err)}` : err.name;
 }
 
 let warnedNoKey = false;

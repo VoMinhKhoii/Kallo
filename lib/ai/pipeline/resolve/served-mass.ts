@@ -78,8 +78,11 @@ function isLiquidDish(dish: DecomposedDishV2): boolean {
 /**
  * Scale every weighed dish's free parts so the as-served grams of the dish add
  * up to its `servedMassG`. A part pinned by a weight or package size of its
- * own keeps it and counts toward the total; a part the resolver withheld
- * ships nothing and is skipped. Returns new state and how many dishes moved.
+ * own keeps it and counts toward the total, and so does a part the user gave
+ * an amount for while other parts can still move; a part the resolver
+ * withheld ships nothing and is skipped. A dish whose typed part weights
+ * already reach its weight is left alone. Returns new state and how many
+ * dishes moved.
  */
 export function scaleToServedMass(state: RunState): {
   state: RunState;
@@ -92,8 +95,10 @@ export function scaleToServedMass(state: RunState): {
     const target = dish.servedMassG;
     if (!target) return;
     let pinned = 0;
+    let counted = 0;
     let free = 0;
     let call2Free = false;
+    const countedParts: GroundedIngredientEstimate[] = [];
     const freeParts: GroundedIngredientEstimate[] = [];
     pairs.forEach(({ mealItemIdx, ingredient, ground }, f) => {
       if (mealItemIdx !== d || !ground) return;
@@ -109,11 +114,27 @@ export function scaleToServedMass(state: RunState): {
       // be scaled.
       if (portionAnchor(portion)) pinned += grams;
       else {
-        free += grams;
-        freeParts.push(ground);
         call2Free ||= !isRescuePart(portion);
+        if (ingredient.count && !isRescuePart(portion)) {
+          counted += grams;
+          countedParts.push(ground);
+        } else {
+          free += grams;
+          freeParts.push(ground);
+        }
       }
     });
+    // The typed part weights alone reach the dish weight: the two contradict,
+    // and squeezing the other parts into what is left would crush them.
+    if (target <= pinned) return;
+    // A part the user gave an amount for ("2 tablespoons", "50ml", "2
+    // tortillas") keeps Call 2's size for that amount and counts toward the
+    // total, unless nothing else is left to move or it leaves no room.
+    if (free > 0 && target > pinned + counted) pinned += counted;
+    else {
+      free += counted;
+      freeParts.push(...countedParts);
+    }
     if (free <= 0) return;
     const unlistedLiquid =
       isLiquidDish(dish) && !dish.ingredients.some(isLiquidPart);

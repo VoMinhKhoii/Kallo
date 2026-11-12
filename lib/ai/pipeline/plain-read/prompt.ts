@@ -26,11 +26,30 @@ export const plainReadSchema = z.object({
     .array(
       z.object({
         name: z.string().describe('The food, as the person called it.'),
+        // The read answers with no thinking, so the fields are its working:
+        // written before `grams`, the count and the size of one piece make it
+        // size one piece and multiply. Without them it jumps to a total and
+        // overshoots counted and small items (293 sourced-range meals: 76–79
+        // outside the range without, 62 with; far misses 2–4 against 2).
+        pieces: z
+          .number()
+          .nonnegative()
+          .finite()
+          .describe(
+            'How many pieces, units or servings of it the person ate (1 when it is one item or one serving).'
+          ),
+        gramsEach: z
+          .number()
+          .nonnegative()
+          .finite()
+          .describe(
+            'Grams of ONE such piece, unit or serving, at the size the person named.'
+          ),
         grams: z
           .number()
           .nonnegative()
           .finite()
-          .describe('Grams of this food the person ate.'),
+          .describe('Grams of this food the person ate: pieces x gramsEach.'),
         kcal: z
           .number()
           .nonnegative()

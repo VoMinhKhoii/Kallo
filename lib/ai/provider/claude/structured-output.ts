@@ -25,6 +25,7 @@ import {
   isShortOfPlan,
   repairPipelineOutput,
   toClaudeSchema,
+  withCallOneDefaults,
   withoutEmptyStrings,
 } from './schema';
 
@@ -96,6 +97,23 @@ function schemaSlip(message: string): Error {
   const err = new Error(message);
   err.name = 'ZodError';
   return err;
+}
+
+/**
+ * Which fields a schema slip broke and how ("mealItems.0.servedMassG
+ * too_small"), for the log: field paths and rule names only, never the
+ * model's values.
+ */
+export function slipReason(err: unknown): string {
+  const issues = (err as { issues?: unknown }).issues;
+  if (!Array.isArray(issues))
+    return err instanceof Error ? err.message.slice(0, 80) : 'unknown';
+  return issues
+    .slice(0, 3)
+    .map((i: { path?: PropertyKey[]; code?: string }) =>
+      `${(i.path ?? []).map(String).join('.')} ${i.code ?? ''}`.trim()
+    )
+    .join('; ');
 }
 
 export function createClaudeStructuredOutput(
@@ -179,6 +197,10 @@ export function createClaudeStructuredOutput(
           answer = withoutEmptyStrings(raw);
           parsed = params.schema.safeParse(answer);
         }
+        if (!parsed.success) {
+          answer = withCallOneDefaults(answer);
+          parsed = params.schema.safeParse(answer);
+        }
         if (!parsed.success) throw parsed.error;
         // Trace the answer the pipeline used, so a dry-run replay of it
         // (which skips repair and validation) matches the live run.
@@ -194,7 +216,9 @@ export function createClaudeStructuredOutput(
         const slip = err instanceof Error && err.name === 'ZodError';
         if (!slip || attempt >= MAX_ATTEMPTS || params.abortSignal?.aborted)
           throw err;
-        console.error(`[claude] ${params.model} re-asking after a schema slip`);
+        console.error(
+          `[claude] ${params.model} re-asking after a schema slip (${slipReason(err)})`
+        );
       }
     }
   }

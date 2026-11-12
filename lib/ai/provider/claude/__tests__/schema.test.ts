@@ -6,6 +6,7 @@ import {
   isShortOfPlan,
   repairPipelineOutput,
   toClaudeSchema,
+  withCallOneDefaults,
   withoutEmptyStrings,
 } from '../schema';
 
@@ -69,6 +70,52 @@ describe('repairPipelineOutput', () => {
     }) as { mealItems: { vesselToken?: string }[] };
     expect(out.mealItems[0].vesselToken).toBeUndefined();
     expect(out.mealItems[1].vesselToken).toBe('ly');
+  });
+
+  it('drops typed calories of 0', () => {
+    const out = repairPipelineOutput({
+      mealItems: [{ name: 'Phở', statedKcal: 0, ingredients: [{}] }],
+    }) as { mealItems: { statedKcal?: number }[] };
+    expect(out.mealItems[0].statedKcal).toBeUndefined();
+  });
+
+  it('withCallOneDefaults fills a missing search string and cooking method, on a copy', () => {
+    const raw = {
+      mealItems: [
+        {
+          name: 'Phở',
+          ingredients: [
+            { rawName: 'bánh phở', canonicalName: 'Bánh phở', nameVi: ' ' },
+            {
+              rawName: 'bò',
+              canonicalName: 'Thịt bò',
+              queryEn: 'lean beef',
+              nameVi: 'thịt bò',
+            },
+            { ingredientName: 'Cơm', grossG: 100 },
+          ],
+        },
+      ],
+    };
+    const out = withCallOneDefaults(raw) as typeof raw;
+    expect(out.mealItems[0].ingredients[0]).toMatchObject({
+      queryEn: 'Bánh phở',
+      nameVi: 'bánh phở',
+    });
+    expect(out.mealItems[0].ingredients[1].queryEn).toBe('lean beef');
+    expect(out.mealItems[0].ingredients[2]).toEqual({
+      ingredientName: 'Cơm',
+      grossG: 100,
+    });
+    expect('queryEn' in raw.mealItems[0].ingredients[0]).toBe(false);
+    // The dish had no cooking method; a Call 2 dish (no rawName foods) gets none.
+    expect((out.mealItems[0] as { cookingMethod?: string }).cookingMethod).toBe(
+      'as served'
+    );
+    const call2 = withCallOneDefaults({
+      mealItems: [{ name: 'Cơm', ingredients: [{ ingredientName: 'Cơm' }] }],
+    }) as { mealItems: Record<string, unknown>[] };
+    expect('cookingMethod' in call2.mealItems[0]).toBe(false);
   });
 
   it('drops a Call 2 ingredient at 0 g and a dish left with none', () => {
@@ -156,7 +203,7 @@ describe('repairPipelineOutput', () => {
     expect(pho.cookingMethod).toBe('');
     expect('servedMassG' in pho).toBe(false);
     expect(pho.ingredients[0].explicitMass).toBeUndefined();
-    // nameVi is not filled in: it is optional, and absent on main's schema.
+    // nameVi is not filled in here: only an answer that fails its schema is.
     expect('nameVi' in pho.ingredients[0]).toBe(false);
     expect((pho.ingredients[0].prepNotes as string[])[0]).toHaveLength(60);
     expect(rice.ingredients[0].refusePct).toBe(80);

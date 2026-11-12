@@ -33,6 +33,12 @@ import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import type { AppDb } from '@/lib/infra/db/client';
 import { createDecompositionStreamController } from './decomposition-stream';
 import { withStageLogV2 } from './stage-log';
+import { holdCaloriesToText } from './text-checks/calories';
+import {
+  holdNamesToEnglish,
+  holdWeighStateToDescription,
+} from './text-checks/described';
+import { holdWeightsToText } from './text-checks/weights';
 
 type StreamedMealItemIds = ReturnType<
   ReturnType<
@@ -263,6 +269,13 @@ export async function runGroundedDecomposition(args: {
 
   // Language guard passed — release buffered item_name events to the client.
   flushBufferedItemNames();
+
+  // Hold what Call 1 extracted to the text before anything reads it.
+  holdWeightsToText(decomposition, rawInput);
+  holdCaloriesToText(decomposition, rawInput);
+  holdWeighStateToDescription(decomposition);
+  if (userContext.outputLanguage === 'en')
+    holdNamesToEnglish(decomposition, rawInput);
 
   // Capitalize meal-item and ingredient display names in place — same
   // pattern v1 uses (decomposition-stage.ts emitUnstreamed flush) so the UI always shows
