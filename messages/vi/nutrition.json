@@ -56,7 +56,8 @@
     "vitamins": "Vitamin",
     "minerals": "Khoáng chất",
     "other": "Khác",
-    "sourceNote": "Mục tiêu theo tham chiếu WHO/FAO · RDA Việt Nam · NASEM DRI."
+    "sourceNote": "Mục tiêu theo tham chiếu WHO/FAO · RDA Việt Nam · NASEM DRI.",
+    "sourceDetail": "Mục tiêu là mức khuyến nghị đã công bố cho người trưởng thành cùng tuổi và giới tính với bạn. Cân nặng không làm mục tiêu thay đổi. Chất xơ, cùng B1 và B2 theo bảng Việt Nam, tăng theo mục tiêu calo của bạn. Kallo không theo dõi i-ốt, vì i-ốt chủ yếu đến từ muối i-ốt. Nhật ký ăn uống không cho biết bạn có thiếu vi chất hay không; muốn biết cần đi khám và xét nghiệm máu."
   },
   "more": {
     "show": "Xem thêm vi chất",

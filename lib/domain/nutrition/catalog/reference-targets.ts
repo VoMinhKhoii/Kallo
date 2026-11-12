@@ -7,6 +7,7 @@ import { NUTRIENT_META } from './nutrients';
 import {
   type AgeBand,
   type BiologicalSex,
+  ENERGY_SCALED_TARGETS,
   NASEM_DRI,
   REFERENCE_SOURCES,
   TARGET_KEYS,
@@ -21,6 +22,7 @@ interface NutritionProfileForTargets {
   age: number | null;
   countryOfOrigin: string | null;
   countryOfResidence: string | null;
+  calorieTarget?: number | null;
 }
 
 export interface MicronutrientTarget {
@@ -39,14 +41,15 @@ function isAgeBanded(entry: TargetEntry): entry is { ageBands: AgeBand[] } {
 
 /** The age an unknown age scores as. We only require a known age when crossing
  * a threshold materially changes the recommendation, so a profile without one
- * is read as a young adult — the population every published table centres on. */
-const ASSUMED_ADULT_AGE = 19;
+ * is read as a young adult — the population every published table centres on.
+ * 20, not 19: the VN 2016 tables put 19 in their 15–19 teen band. */
+const ASSUMED_ADULT_AGE = 20;
 
 function resolveAgeBand(
   entry: { ageBands: AgeBand[] },
   age: number | null
 ): TargetRow {
-  // An unknown age resolves the SAME way a 19-year-old does, said out loud.
+  // An unknown age resolves the SAME way a 20-year-old does, said out loud.
   // This used to be "take the last band", which was only ever young-adult by
   // coincidence: it holds for a two-band [50+, 0] table, where the catch-all IS
   // the adult row, and breaks the moment a table publishes child bands below it
@@ -105,6 +108,22 @@ function resolveBiologicalSex(value: string | null): BiologicalSex | null {
 /// scale, one decimal for small values like vitamin B6 (~2.1 mg).
 function roundTarget(value: number): number {
   return value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
+}
+
+/// A target its source states per 1000 kcal (ENERGY_SCALED_TARGETS) rises with
+/// the user's calorie target. The table value stays the floor: it already
+/// assumed an ordinary intake, and a cut should not lower a vitamin target.
+function applyEnergyRate(
+  value: number,
+  key: NutritionNutrientKey,
+  source: Exclude<TargetSource, 'unsupported'>,
+  calorieTarget: number | null | undefined
+): number {
+  const rate = ENERGY_SCALED_TARGETS[source]?.[key];
+  if (rate === undefined || !calorieTarget || calorieTarget <= 0) {
+    return value;
+  }
+  return Math.max(value, roundTarget((rate * calorieTarget) / 1000));
 }
 
 function getDefaultUnit(key: NutritionNutrientKey): 'g' | 'mg' | 'mcg' {
@@ -200,7 +219,7 @@ export function resolveMicronutrientTargets(
 
     targets[key] = {
       key,
-      value,
+      value: applyEnergyRate(value, key, source, profile.calorieTarget),
       unit,
       source,
       sourceLabelKey: REFERENCE_SOURCES[source].labelKey,

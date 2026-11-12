@@ -68,151 +68,161 @@ export interface AgeBand {
 }
 export type TargetEntry = TargetRow | { ageBands: AgeBand[] };
 
+/** One published row: the male and female value in the same unit. */
+function perSex(
+  male: number,
+  female: number,
+  unit: 'g' | 'mg' | 'mcg'
+): TargetRow {
+  return { male: { value: male, unit }, female: { value: female, unit } };
+}
+
+/** Age bands in the descending `[minAge, row]` order `AgeBand` needs. */
+function bands(...entries: [number, TargetRow][]): { ageBands: AgeBand[] } {
+  return { ageBands: entries.map(([minAge, row]) => ({ minAge, row })) };
+}
+
+// Vietnam Ministry of Health / National Institute of Nutrition, "Nhu cầu dinh
+// dưỡng khuyến nghị cho người Việt Nam" (2016). Every value below is the RDA or
+// AI the book prints for that table and age band, copied as printed. Onboarding
+// starts at 13 (`bodyMetricsSchema`), so each entry's `minAge: 0` catch-all is
+// the book's 12–14 row, the youngest band Kallo serves.
 export const VIETNAM_RDA: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
-  // Macro-minerals & trace minerals (Bộ Y tế / VDD 2016)
-  calciumMg: {
-    male: { value: 1000, unit: 'mg' },
-    female: { value: 1000, unit: 'mg' },
-  },
-  ironMg: {
-    // Premenopausal women need more iron (menstrual losses); the RDA drops to
-    // the male level at 50. Age-unknown resolves to the <50 band (female 24).
-    ageBands: [
-      {
-        minAge: 50,
-        row: {
-          male: { value: 10, unit: 'mg' },
-          female: { value: 10, unit: 'mg' },
-        },
-      },
-      {
-        minAge: 0,
-        row: {
-          male: { value: 10, unit: 'mg' },
-          female: { value: 24, unit: 'mg' },
-        },
-      },
-    ],
-  },
-  magnesiumMg: {
-    // Bảng 18, RDA, 20–29 yr.
-    male: { value: 340, unit: 'mg' },
-    female: { value: 270, unit: 'mg' },
-  },
-  phosphorusMg: {
-    male: { value: 700, unit: 'mg' },
-    female: { value: 700, unit: 'mg' },
-  },
-  potassiumMg: {
-    // Bảng 47, AI, 20–29 yr.
-    male: { value: 2500, unit: 'mg' },
-    female: { value: 2000, unit: 'mg' },
-  },
-  sodiumMg: {
-    // Bảng 46, "Mục tiêu chế độ ăn (DG)" <2000 mg/day for adults — VN
-    // adopts the WHO Guideline 2012 ceiling. Treated as ceiling target.
-    male: { value: 2000, unit: 'mg' },
-    female: { value: 2000, unit: 'mg' },
-  },
-  zincMg: {
-    // Bảng 20, RDA, moderate-absorption tier (mixed VN diet).
-    male: { value: 10, unit: 'mg' },
-    female: { value: 8, unit: 'mg' },
-  },
-  copperMcg: {
-    // Bảng 23, RDA, 20–29 yr.
-    male: { value: 900, unit: 'mcg' },
-    female: { value: 900, unit: 'mcg' },
-  },
-  manganeseMg: {
-    // Bảng 25, AI, 20–29 yr (sourced by VN MoH from IOM 2006).
-    male: { value: 2.3, unit: 'mg' },
-    female: { value: 1.8, unit: 'mg' },
-  },
+  // Bảng 16, RDA.
+  calciumMg: bands(
+    [70, perSex(1000, 1000, 'mg')],
+    [50, perSex(800, 900, 'mg')],
+    [20, perSex(800, 800, 'mg')],
+    [0, perSex(1000, 1000, 'mg')]
+  ),
+  // Bảng 19, RDA for a diet of medium iron bioavailability (~10% absorbed:
+  // 30–90 g meat or fish, or 25–75 mg vitamin C a day), the same middle tier
+  // zinc uses. Women 50–69 take the post-menopause row; girls 12–14 the
+  // menstruating row, since onboarding starts at 13.
+  ironMg: bands(
+    [70, perSex(11.0, 9.4, 'mg')],
+    [50, perSex(11.9, 10.0, 'mg')],
+    [20, perSex(11.9, 26.1, 'mg')],
+    [15, perSex(17.5, 29.7, 'mg')],
+    [0, perSex(15.3, 32.6, 'mg')]
+  ),
+  // Bảng 18, RDA.
+  magnesiumMg: bands(
+    [70, perSex(320, 260, 'mg')],
+    [50, perSex(350, 290, 'mg')],
+    [30, perSex(370, 290, 'mg')],
+    [20, perSex(340, 270, 'mg')],
+    [15, perSex(350, 300, 'mg')],
+    [0, perSex(290, 280, 'mg')]
+  ),
+  // Bảng 17, RDA.
+  phosphorusMg: bands(
+    [20, perSex(700, 700, 'mg')],
+    [0, perSex(1250, 1250, 'mg')]
+  ),
+  // Bảng 47, AI.
+  potassiumMg: bands(
+    [20, perSex(2500, 2000, 'mg')],
+    [15, perSex(2800, 2100, 'mg')],
+    [0, perSex(2400, 2200, 'mg')]
+  ),
+  // Bảng 46, "Mục tiêu chế độ ăn (DG)" <2000 mg/day from 12 years up — VN
+  // adopts the WHO Guideline 2012 ceiling. Treated as ceiling target.
+  sodiumMg: perSex(2000, 2000, 'mg'),
+  // Bảng 20, RDA, medium-absorption tier (mixed VN diet).
+  zincMg: bands(
+    [70, perSex(9.0, 7.0, 'mg')],
+    [15, perSex(10.0, 8.0, 'mg')],
+    [0, perSex(9.0, 8.0, 'mg')]
+  ),
+  // Bảng 23, RDA.
+  copperMcg: bands(
+    [20, perSex(900, 900, 'mcg')],
+    [15, perSex(890, 890, 'mcg')],
+    [0, perSex(700, 700, 'mcg')]
+  ),
+  // Bảng 25, AI.
+  manganeseMg: bands(
+    [20, perSex(2.3, 1.8, 'mg')],
+    [15, perSex(2.2, 1.6, 'mg')],
+    [0, perSex(1.9, 1.6, 'mg')]
+  ),
   // Vitamins
-  vitaminAMcg: {
-    male: { value: 850, unit: 'mcg' },
-    female: { value: 700, unit: 'mcg' },
-  },
-  vitaminDMcg: {
-    // Bảng 28, RDA. Age split at 50: 19–49 → 15 µg, ≥50 → 20 µg.
-    ageBands: [
-      {
-        minAge: 50,
-        row: {
-          male: { value: 20, unit: 'mcg' },
-          female: { value: 20, unit: 'mcg' },
-        },
-      },
-      {
-        minAge: 0,
-        row: {
-          male: { value: 15, unit: 'mcg' },
-          female: { value: 15, unit: 'mcg' },
-        },
-      },
-    ],
-  },
-  vitaminEMg: {
-    // Bảng 29, AI for α-tocopherol, 20–29 yr.
-    male: { value: 6.5, unit: 'mg' },
-    female: { value: 6.0, unit: 'mg' },
-  },
-  vitaminKMcg: {
-    // Bảng 30, AI, 20–29 yr.
-    male: { value: 150, unit: 'mcg' },
-    female: { value: 150, unit: 'mcg' },
-  },
-  vitaminCMg: {
-    male: { value: 70, unit: 'mg' },
-    female: { value: 70, unit: 'mg' },
-  },
-  vitaminB1Mg: {
-    male: { value: 1.4, unit: 'mg' },
-    female: { value: 1.1, unit: 'mg' },
-  },
-  vitaminB2Mg: {
-    male: { value: 1.4, unit: 'mg' },
-    female: { value: 1.1, unit: 'mg' },
-  },
-  vitaminPpMg: {
-    male: { value: 16, unit: 'mg' },
-    female: { value: 14, unit: 'mg' },
-  },
-  vitaminB5Mg: {
-    // Bảng 36, RDA — sex-independent.
-    male: { value: 5, unit: 'mg' },
-    female: { value: 5, unit: 'mg' },
-  },
-  vitaminB6Mg: {
-    // Bảng 37, RDA. Age split at 50.
-    ageBands: [
-      {
-        minAge: 50,
-        row: {
-          male: { value: 1.7, unit: 'mg' },
-          female: { value: 1.5, unit: 'mg' },
-        },
-      },
-      {
-        minAge: 0,
-        row: {
-          male: { value: 1.3, unit: 'mg' },
-          female: { value: 1.3, unit: 'mg' },
-        },
-      },
-    ],
-  },
-  vitaminB9Mcg: {
-    // Bảng 38, RDA, 20–29 yr (µg DFE).
-    male: { value: 400, unit: 'mcg' },
-    female: { value: 400, unit: 'mcg' },
-  },
-  vitaminB12Mcg: {
-    // Bảng 39, RDA.
-    male: { value: 2.4, unit: 'mcg' },
-    female: { value: 2.4, unit: 'mcg' },
-  },
+  // Bảng 27, RDA (µg RAE).
+  vitaminAMcg: bands(
+    [70, perSex(800, 650, 'mcg')],
+    [50, perSex(850, 700, 'mcg')],
+    [30, perSex(900, 700, 'mcg')],
+    [18, perSex(850, 650, 'mcg')],
+    [15, perSex(900, 650, 'mcg')],
+    [0, perSex(800, 700, 'mcg')]
+  ),
+  // Bảng 28, RDA.
+  vitaminDMcg: bands([50, perSex(20, 20, 'mcg')], [0, perSex(15, 15, 'mcg')]),
+  // Bảng 29, AI for α-tocopherol.
+  vitaminEMg: bands([18, perSex(6.5, 6.0, 'mg')], [0, perSex(7.5, 6.0, 'mg')]),
+  // Bảng 30, AI.
+  vitaminKMcg: bands(
+    [18, perSex(150, 150, 'mcg')],
+    [15, perSex(160, 160, 'mcg')],
+    [0, perSex(150, 150, 'mcg')]
+  ),
+  // Bảng 41, RDA.
+  vitaminCMg: bands([15, perSex(100, 100, 'mg')], [0, perSex(95, 95, 'mg')]),
+  // Bảng 31, RDA. Bảng 32 sets these for moderate activity at 0.5 mg per
+  // 1000 kcal eaten; ENERGY_SCALED_TARGETS applies that rate above them.
+  vitaminB1Mg: bands(
+    [70, perSex(1.1, 1.0, 'mg')],
+    [30, perSex(1.2, 1.0, 'mg')],
+    [20, perSex(1.3, 1.1, 'mg')],
+    [15, perSex(1.4, 1.2, 'mg')],
+    [0, perSex(1.4, 1.3, 'mg')]
+  ),
+  // Bảng 33, RDA. Bảng 34: 0.6 mg per 1000 kcal eaten (ENERGY_SCALED_TARGETS).
+  vitaminB2Mg: bands(
+    [70, perSex(1.3, 1.1, 'mg')],
+    [30, perSex(1.4, 1.2, 'mg')],
+    [20, perSex(1.5, 1.2, 'mg')],
+    [15, perSex(1.7, 1.4, 'mg')],
+    [0, perSex(1.6, 1.4, 'mg')]
+  ),
+  // Bảng 35, RDA.
+  vitaminPpMg: bands([15, perSex(16, 14, 'mg')], [0, perSex(12, 12, 'mg')]),
+  // Bảng 36, RDA — sex-independent.
+  vitaminB5Mg: bands([15, perSex(5, 5, 'mg')], [0, perSex(4, 4, 'mg')]),
+  // Bảng 37, RDA.
+  vitaminB6Mg: bands(
+    [50, perSex(1.7, 1.5, 'mg')],
+    [20, perSex(1.3, 1.3, 'mg')],
+    [15, perSex(1.3, 1.2, 'mg')],
+    [0, perSex(1.2, 1.1, 'mg')]
+  ),
+  // Bảng 38, RDA (µg DFE). The book prints 300 for boys 15–19 beside an EAR of
+  // 320; an RDA cannot sit below its EAR, so that cell is read as the 400 the
+  // adult and female rows carry.
+  vitaminB9Mcg: bands(
+    [15, perSex(400, 400, 'mcg')],
+    [0, perSex(300, 400, 'mcg')]
+  ),
+  // Bảng 39, RDA.
+  vitaminB12Mcg: perSex(2.4, 2.4, 'mcg'),
+};
+
+/**
+ * Targets their source states per 1000 kcal eaten. The table value stays the
+ * floor; a calorie target above the one the table assumed raises it at this
+ * rate (`reference-targets.ts`). Keyed by source because the rate belongs to
+ * the source's row: VN 2016 Bảng 32 and 34 for B1 and B2, and NASEM's fiber AI,
+ * which is 14 g per 1000 kcal by definition.
+ */
+export const ENERGY_SCALED_TARGETS: Partial<
+  Record<
+    Exclude<TargetSource, 'unsupported'>,
+    Partial<Record<NutritionNutrientKey, number>>
+  >
+> = {
+  vietnam_rda: { vitaminB1Mg: 0.5, vitaminB2Mg: 0.6 },
+  nasem: { fiberG: 14 },
 };
 
 export const WHO_FAO: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
@@ -333,8 +343,9 @@ export const WHO_FAO: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
 // potassium, phosphorus). Adults 19–50 y unless noted.
 export const NASEM_DRI: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
   // NASEM 2005 Macronutrients DRI — total fiber, Adequate Intake by sex and
-  // age (the 14 g / 1,000 kcal basis tabulated). Neither VN MoH 2016 nor
-  // WHO/FAO 2004 publish a fiber figure, so every context resolves it here.
+  // age (the 14 g / 1,000 kcal basis tabulated). WHO/FAO 2004 publishes no
+  // fiber figure, and VN MoH 2016 Bảng 15 reprints this NASEM table, so every
+  // context resolves it here.
   // Onboarding accepts ages from 13 up (`bodyMetricsSchema` in
   // `lib/domain/onboarding/schemas.ts`), so a profile CAN be a minor and the
   // adult AI would over-target them; the child bands below are the rest of the
@@ -381,7 +392,7 @@ export const NASEM_DRI: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
         // publishes nothing below 1 y (infants have an AI for total fat, not
         // fiber), so the youngest published band is the honest floor — there
         // is no separate infant row to lose. An age-unknown profile does NOT
-        // land here: it resolves as a 19-year-old (see resolveAgeBand), which
+        // land here: it resolves as a 20-year-old (see resolveAgeBand), which
         // is why the duplicate adult row that used to sit at the bottom of
         // this table is gone.
         minAge: 0,

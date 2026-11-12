@@ -153,7 +153,7 @@
     "sources": {
       "caption": "Targets from WHO/FAO · Vietnam RDA · NASEM DRI",
       "title": "Where targets come from",
-      "intro": "Daily targets are drawn from internationally recognized reference intakes, matched to your profile (age, sex, and region).",
+      "intro": "Targets are published intakes for an adult of your age and sex. Your weight doesn't change them. Fiber, plus B1 and B2 on Vietnam's table, go up with your calorie target. Kallo doesn't track iodine, which mostly comes from iodized salt. A food log can't tell you if you're low in a nutrient; that takes a check-up and blood tests.",
       "whoFao": "WHO/FAO — Vitamin and Mineral Requirements in Human Nutrition, 2nd ed. (2004)",
       "vietnamRda": "Vietnam Ministry of Health — Recommended Dietary Allowances (2016)",
       "nasem": "NASEM — Dietary Reference Intakes (1997–2019)"
