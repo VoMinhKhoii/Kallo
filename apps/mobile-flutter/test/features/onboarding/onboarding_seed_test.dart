@@ -61,11 +61,13 @@ const _draft = OnboardingDraft(
   OnboardingDraft? draft,
   String? region = 'AU',
   String language = 'en',
+  String active = 'en',
 }) => buildOnboardingAnswers(
   profile: profile,
   draft: draft,
   deviceRegion: region,
   deviceLanguage: language,
+  activeLocale: active,
 );
 
 OnboardingAnswers _answers({
@@ -134,7 +136,8 @@ void main() {
         expect(seed.device.deviceCountry, 'Vietnam');
         expect(answers.countryOfOrigin, 'Vietnam');
         expect(answers.countryOfResidence, 'Vietnam');
-        expect(answers.preferredLocale, 'vi');
+        // The language is the one on screen, never the phone's.
+        expect(answers.preferredLocale, 'en');
         // Nothing invents a body: the metrics stay blank and screen 6 says so.
         expect(answers.biologicalSex, isNull);
         expect(answers.weightKg, isNull);
@@ -165,11 +168,12 @@ void main() {
       }
     });
 
-    test('the phone fills every blank when there is nothing saved', () {
+    test('the phone fills the countries when nothing is saved, not the '
+        'language', () {
       final seed = _seed(region: 'AU', language: 'vi');
       expect(seed.answers.countryOfOrigin, 'Australia');
       expect(seed.answers.countryOfResidence, 'Australia');
-      expect(seed.answers.preferredLocale, 'vi');
+      expect(seed.answers.preferredLocale, 'en');
     });
 
     test('precedence is per FIELD, not per source', () {

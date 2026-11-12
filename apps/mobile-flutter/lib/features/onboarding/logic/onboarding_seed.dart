@@ -90,17 +90,18 @@ CookingHabits cookingHabitsFrom(
 /// Resolve every screen's opening answer. [deviceRegion] / [deviceLanguage]
 /// are passed in rather than read here so the merge stays pure.
 ///
-/// [activeLocale] is the language the app is showing. With nothing saved it
-/// outranks the phone's language: the app opens in English until the user
-/// picks Vietnamese, and screen 1 must preselect the language on screen, or
-/// Continue would store `vi` under an English UI.
+/// [activeLocale] is the language the app is showing, and with nothing saved
+/// it is screen 1's preselection, not the phone's language: the app opens in
+/// English until the user picks Vietnamese, so preselecting the phone's `vi`
+/// would let Continue store `vi` under an English UI. [deviceLanguage] only
+/// places the "From your phone" note.
 ({OnboardingAnswers answers, OnboardingDeviceHints device})
 buildOnboardingAnswers({
   ProfileRow? profile,
   OnboardingDraft? draft,
   required String? deviceRegion,
   required String deviceLanguage,
-  String? activeLocale,
+  required String activeLocale,
 }) {
   final step1 = draft?.step1;
   final step2 = draft?.step2;
@@ -118,12 +119,10 @@ buildOnboardingAnswers({
       tryParseGoal(profile?.goal) ?? tryParseGoal(_str(step2, 'goal'));
 
   final answers = OnboardingAnswers(
-    // A saved locale always wins: the phone's guess is only ever the FIRST
-    // answer, never a correction of one the user already gave.
+    // A saved locale always wins; otherwise the language on screen.
     preferredLocale:
         supportedLocaleOrNull(savedLocale) ??
         supportedLocaleOrNull(activeLocale) ??
-        supportedLocaleOrNull(deviceLanguage) ??
         kDefaultLocale,
     countryOfOrigin:
         profile?.countryOfOrigin ??

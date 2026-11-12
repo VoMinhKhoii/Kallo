@@ -36,8 +36,7 @@ export function EmailStep() {
   const {
     register,
     handleSubmit,
-    watch,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { email: '' },
@@ -70,8 +69,6 @@ export function EmailStep() {
   // the server decides, and while it only monitors it accepts the request.
   const waitingForCheck =
     turnstile.required && !turnstile.token && !turnstile.failed;
-  // Held until the address is complete.
-  const emailComplete = schema.safeParse({ email: watch('email') }).success;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -93,7 +90,7 @@ export function EmailStep() {
         )}
         <button
           type="submit"
-          disabled={loading || waitingForCheck || !emailComplete}
+          disabled={loading || waitingForCheck || !isValid}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-kallo-ink px-4 py-3 font-medium font-sans-display text-kallo-surface text-sm tracking-tight transition-all duration-200 hover:bg-kallo-ink-hover disabled:opacity-60"
         >
           {loading && <Loader2 className="size-icon-inline animate-spin" />}
