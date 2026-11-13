@@ -16,6 +16,7 @@ import { BodyGoalRows } from '@/components/settings/profile/body-goal-rows';
 import { CookingRows } from '@/components/settings/profile/cooking-rows';
 import { RegionalRows } from '@/components/settings/profile/regional-rows';
 import { SetupPrompt } from '@/components/settings/profile/setup-prompt';
+import { RemindersRow } from '@/components/settings/reminders/reminders-row';
 import { SharingRow } from '@/components/settings/sharing/sharing-row';
 import type { SettingsPageId } from '@/lib/domain/settings/pages';
 import { ProfileFormPage } from './profile-form-page';
@@ -79,6 +80,9 @@ function pageBody(
               a profile exists. */}
           <AppearanceRow />
           {profile && <RegionalRows />}
+          {profile && (
+            <RemindersRow initialValue={profile.mealRemindersEnabled} />
+          )}
         </SettingsGroup>
       );
     case 'cooking':

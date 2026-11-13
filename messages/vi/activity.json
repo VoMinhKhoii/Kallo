@@ -75,5 +75,11 @@
       "accepted": "Đã thêm",
       "unavailable": "Không còn hiệu lực"
     }
+  },
+  "reminder": {
+    "yesterday": "Hôm qua dừng ở {calories, number} kcal. Còn thiếu món nào không?",
+    "morning": "Từ sáng tới giờ bạn đã ăn gì?",
+    "afternoon": "Từ sáng còn món nào chưa ghi không? Bạn đang ở {calories, number} kcal.",
+    "evening": "Hôm nay còn {left, number} kcal. Ăn thêm gì không, hay xong rồi?"
   }
 }

@@ -34,6 +34,10 @@
       "simple": { "limit": 600, "period": 60 }
     }
   ],
+  // The meal-reminder tick (src/worker.ts → runReminderTick). Times are UTC;
+  // the app reads each user's own clock, so a quarter-hour grid covers every
+  // zone, the :30 and :45 ones included.
+  "triggers": { "crons": ["*/15 * * * *"] },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,

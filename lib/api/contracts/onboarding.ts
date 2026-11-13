@@ -131,6 +131,11 @@ export const sharingPreferencesSchema = z.object({
   autoShareToCircle: z.boolean(),
 });
 
+/** Request body for `PUT /api/v1/profile/reminders` — the one reminders switch. */
+export const reminderPreferencesSchema = z.object({
+  mealReminders: z.boolean(),
+});
+
 /**
  * Request body for `PUT /api/v1/profile/ai-consent`: `true` records consent to
  * third-party AI processing (now), `false` withdraws it (NULL).

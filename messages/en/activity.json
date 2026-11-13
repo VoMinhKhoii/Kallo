@@ -75,5 +75,11 @@
       "accepted": "Added",
       "unavailable": "No longer available"
     }
+  },
+  "reminder": {
+    "yesterday": "Yesterday ended at {calories, number} kcal. Anything missing?",
+    "morning": "What have you had so far today?",
+    "afternoon": "Anything since this morning? You're at {calories, number} kcal.",
+    "evening": "{left, number} kcal left today. Anything else, or done for today?"
   }
 }

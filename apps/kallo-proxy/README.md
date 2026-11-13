@@ -20,6 +20,8 @@ The Cloudflare Worker in front of the `kallo-prod` Cloud Run service. It runs on
 | `invite` | `GET /api/v1/groups/invite/{slug}` | 100 / min | same |
 | `barcode-image` | `/api/v1/barcode/image/{code}` | 100 / min | same |
 
+3. **Runs the meal-reminder cron** (see "Reminder cron" below).
+
 Every refusal carries `Retry-After: 60` and is the exact shape the app itself
 answers with, so no client knows the edge exists.
 
@@ -56,6 +58,32 @@ for i in $(seq 1 105); do curl -s -o /dev/null -w '%{http_code}\n' https://kallo
 **Rollback:** `bunx wrangler rollback` returns to the previous version (the
 pre-repo pass-through), or **Workers & Pages → kallo-proxy → Deployments** in
 the dashboard.
+
+## Reminder cron
+
+`triggers.crons` in `wrangler.jsonc` fires `scheduled()` every 15 minutes (UTC
+:00/:15/:30/:45), which POSTs `https://$ORIGIN/api/v1/reminders/tick` with
+`X-Origin-Verify` and `Authorization: Bearer $REMINDER_TICK_SECRET`. The app
+works out who is at a checkpoint on their own clock (`docs/NOTIFICATIONS.md` →
+"Reminders"). Cloudflare cron triggers fire on time; GitHub Actions' schedule
+is best-effort and often late, which is why the tick lives here. A failed or
+missed tick is retried by the next one: each checkpoint stays open 90 minutes.
+
+One-time setup, after the Cloud Run secret `kallo-prod-reminder-tick-secret`
+exists (`docs/GOOGLE_CLOUD_RUN.md` → "Meal reminders"):
+
+```bash
+cd apps/kallo-proxy
+gcloud secrets versions access latest --secret=kallo-prod-reminder-tick-secret \
+  | bunx wrangler secret put REMINDER_TICK_SECRET
+bunx wrangler deploy            # registers the cron trigger
+```
+
+Without `REMINDER_TICK_SECRET` the cron logs `reminder tick skipped` and calls
+nothing. Watch it under **Workers & Pages → kallo-proxy → Logs** (each run logs
+the tick's summary: candidates, due, sent, skipped, waiting, delivered). To
+stop reminders without a deploy, delete the Worker secret
+(`bunx wrangler secret delete REMINDER_TICK_SECRET`).
 
 ### Make `ORIGIN_SECRET` a secret
 

@@ -22,6 +22,7 @@ import {
   friendRemovals,
   friendships,
   mealItems,
+  mealReminders,
   mealShareInvites,
   mealShareReactions,
   mealShareReplies,
@@ -61,6 +62,9 @@ const authClaims: JsonSchema = {
   description:
     'Profile claims from Supabase Auth (sign-up form, Google, Apple), limited to an allowlist. Tokens and app_metadata are never included.',
 };
+
+// Every reminder-log column except the owner's own id.
+const { userId: _owner, ...reminderColumns } = columns(mealReminders);
 
 export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
   DataExport: object(
@@ -256,7 +260,13 @@ export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
       ),
       pushDevices: list(
         object({
-          ...columns(pushTokens, ['id', 'platform', 'lastSeenAt', 'createdAt']),
+          ...columns(pushTokens, [
+            'id',
+            'platform',
+            'lastSeenAt',
+            'lastPushedAt',
+            'createdAt',
+          ]),
           tokenHint: {
             type: 'string',
             description:
@@ -264,6 +274,7 @@ export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
           },
         })
       ),
+      mealReminders: list(object(reminderColumns)),
       support: object({
         feedback: list(
           object(

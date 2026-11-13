@@ -8,6 +8,7 @@
 // ten-direct-files structure limit.
 
 import { z } from 'zod';
+import { isValidTimeZone } from '@/lib/core/date/zoned';
 import {
   beforeCursorSchema,
   uuidSchema,
@@ -53,6 +54,16 @@ export const pushTokenBodySchema = z.object({
    *  web registration would store a token we could never deliver to. The DB
    *  CHECK stays wider on purpose; narrowing happens at the edge. */
   platform: z.literal('ios'),
+  /** The device's IANA time zone (`Asia/Ho_Chi_Minh`), which the reminder
+   *  tick reads the user's clock in. Optional so older builds still register;
+   *  a zone this server cannot resolve is dropped rather than failing the
+   *  registration — losing a reminder beats losing the device. */
+  timeZone: z
+    .string()
+    .max(64)
+    .refine(isValidTimeZone)
+    .optional()
+    .catch(undefined),
 });
 
 /** DELETE only needs the token — the owner comes from the session. */

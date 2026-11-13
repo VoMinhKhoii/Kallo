@@ -167,6 +167,11 @@
     "autoShareHint": "Tắt cho đến khi bạn tự bật. Khi bật, mỗi bữa ăn mới sẽ được chia sẻ với vòng kết nối ngay lúc bạn lưu. Bạn bè chỉ thấy các bữa được chia sẻ sau khi đã kết nối.",
     "error": "Không thể cập nhật chia sẻ"
   },
+  "reminders": {
+    "label": "Nhắc ghi bữa ăn",
+    "hint": "Nhắc trên iPhone khi hôm nay còn ghi thiếu so với mục tiêu, tối đa bốn lần một ngày.",
+    "error": "Không thể cập nhật nhắc ghi bữa ăn. Vui lòng thử lại."
+  },
   "aiConsent": {
     "label": "Phân tích bữa ăn bằng AI",
     "hint": "Gửi bữa ăn bạn nhập, ảnh nhãn bạn quét và từ khoá bạn tìm nguyên liệu đến Google Gemini để ước tính dinh dưỡng. Khi tắt, việc ghi bữa ăn bằng AI và quét nhãn sẽ tạm dừng.",
