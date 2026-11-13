@@ -9,6 +9,7 @@
  * - last, a dish the user weighed has its parts scaled to that weight
  *   (`resolve/served-mass.ts`).
  */
+import { isDishCount } from '@/lib/ai/pipeline/contracts/dish-count';
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
 import {
@@ -159,9 +160,12 @@ export function dropOilInFriedRows(state: RunState): {
       foods.every((f) => isFriedRow(state, pairs[f].ground, f))
     )
       for (const f of oils) {
-        // An amount the user stated ("1 muỗng dầu ô liu") is what they ate.
-        const { count, explicitMass } = pairs[f].ingredient;
-        if (count == null && !explicitMass) drop.add(f);
+        // An amount the user stated ("1 muỗng dầu ô liu") is what they ate;
+        // the dish's count Call 1 put on every part ("2 omelettes") is not.
+        const oil = pairs[f].ingredient;
+        const stated =
+          (oil.count != null && !isDishCount(mi, oil)) || oil.explicitMass;
+        if (!stated) drop.add(f);
       }
   }
   if (drop.size === 0) return { state, dropped: 0 };
