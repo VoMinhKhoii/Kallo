@@ -7,11 +7,14 @@ import { NUTRIENT_META } from './nutrients';
 import {
   type AgeBand,
   type BiologicalSex,
+  ENERGY_SCALED_TARGETS,
+  IRON_UPPER_LIMIT_MG,
+  IRON_WEIGHT_RULES,
+  type IronWeightRule,
   NASEM_DRI,
   REFERENCE_SOURCES,
   TARGET_KEYS,
   type TargetEntry,
-  type TargetRow,
   VIETNAM_RDA,
   WHO_FAO,
 } from './reference-target-tables';
@@ -21,6 +24,9 @@ interface NutritionProfileForTargets {
   age: number | null;
   countryOfOrigin: string | null;
   countryOfResidence: string | null;
+  calorieTarget: number | null;
+  /** Latest weigh-in; Drizzle reads the decimal column as a string. */
+  weightKg: string | null;
 }
 
 export interface MicronutrientTarget {
@@ -39,25 +45,23 @@ function isAgeBanded(entry: TargetEntry): entry is { ageBands: AgeBand[] } {
 
 /** The age an unknown age scores as. We only require a known age when crossing
  * a threshold materially changes the recommendation, so a profile without one
- * is read as a young adult — the population every published table centres on. */
-const ASSUMED_ADULT_AGE = 19;
+ * is read as a young adult — the population every published table centres on.
+ * 20, not 19: the VN 2016 tables put 19 in their 15–19 teen band. */
+const ASSUMED_ADULT_AGE = 20;
 
-function resolveAgeBand(
-  entry: { ageBands: AgeBand[] },
-  age: number | null
-): TargetRow {
-  // An unknown age resolves the SAME way a 19-year-old does, said out loud.
+function resolveAgeBand<Row>(bands: AgeBand<Row>[], age: number | null): Row {
+  // An unknown age resolves the SAME way a 20-year-old does, said out loud.
   // This used to be "take the last band", which was only ever young-adult by
   // coincidence: it holds for a two-band [50+, 0] table, where the catch-all IS
   // the adult row, and breaks the moment a table publishes child bands below it
   // — fiber had to carry a duplicate adult row at `minAge: 0` to survive it.
   if (age === null || !Number.isFinite(age)) {
-    return resolveAgeBand(entry, ASSUMED_ADULT_AGE);
+    return resolveAgeBand(bands, ASSUMED_ADULT_AGE);
   }
-  for (const band of entry.ageBands) {
+  for (const band of bands) {
     if (age >= band.minAge) return band.row;
   }
-  return entry.ageBands[entry.ageBands.length - 1].row;
+  return bands[bands.length - 1].row;
 }
 
 // Nutrient direction:
@@ -101,10 +105,55 @@ function resolveBiologicalSex(value: string | null): BiologicalSex | null {
   return null;
 }
 
-/// Round a derived (averaged) target to a sensible precision: whole numbers at
+/// Round a derived (averaged or energy-scaled) target to a sensible precision: whole numbers at
 /// scale, one decimal for small values like vitamin B6 (~2.1 mg).
 function roundTarget(value: number): number {
-  return value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
+  return value >= 10 ? Math.round(value) : roundToTenth(value);
+}
+
+/// Iron stays at 0.1 mg at every size, the precision its tables print it at;
+/// roundTarget would turn WHO's 19.6 into 20.
+function roundToTenth(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+/// A target its source states per 1000 kcal (ENERGY_SCALED_TARGETS) rises with
+/// the user's calorie target. The table value stays the floor: it already
+/// assumed an ordinary intake, and a cut should not lower a vitamin target.
+function applyEnergyRate(
+  value: number,
+  key: NutritionNutrientKey,
+  source: Exclude<TargetSource, 'unsupported'>,
+  calorieTarget: number | null
+): number {
+  const rate = ENERGY_SCALED_TARGETS[source]?.[key];
+  if (rate === undefined || !calorieTarget || calorieTarget <= 0) {
+    return value;
+  }
+  return Math.max(value, roundTarget((rate * calorieTarget) / 1000));
+}
+
+function parseWeightKg(value: string | null): number | null {
+  const weight = Number(value);
+  return value !== null && Number.isFinite(weight) && weight > 0
+    ? weight
+    : null;
+}
+
+/// Iron follows the person's weight: the table's value plus the basal loss of
+/// every kg above the weight the table assumed (IRON_WEIGHT_RULES). The table
+/// value stays the floor, as it does for the calorie rates.
+function applyBodyWeight(
+  value: number,
+  rule: IronWeightRule | undefined,
+  sex: BiologicalSex,
+  age: number | null,
+  weightKg: number | null
+): number {
+  if (!rule || weightKg === null) return value;
+  const reference = resolveAgeBand(rule.referenceWeights, age)[sex];
+  const adjusted = value + rule.perKg * Math.max(0, weightKg - reference);
+  return Math.min(IRON_UPPER_LIMIT_MG, roundToTenth(adjusted));
 }
 
 function getDefaultUnit(key: NutritionNutrientKey): 'g' | 'mg' | 'mcg' {
@@ -133,6 +182,7 @@ export function resolveMicronutrientTargets(
 ): Record<NutritionNutrientKey, MicronutrientTarget> {
   const vietnameseContext = isVietnameseContext(profile);
   const sex = resolveBiologicalSex(profile.biologicalSex);
+  const weightKg = parseWeightKg(profile.weightKg);
   const targets = Object.fromEntries(
     Object.keys(NUTRIENT_META).map((key) => [
       key,
@@ -180,27 +230,32 @@ export function resolveMicronutrientTargets(
     }
 
     const targetRow = isAgeBanded(entry)
-      ? resolveAgeBand(entry, profile.age)
+      ? resolveAgeBand(entry.ageBands, profile.age)
       : entry;
+
+    const weightRule = key === 'ironMg' ? IRON_WEIGHT_RULES[source] : undefined;
+    const forSex = (rowSex: BiologicalSex) =>
+      applyBodyWeight(
+        targetRow[rowSex].value,
+        weightRule,
+        rowSex,
+        profile.age,
+        weightKg
+      );
 
     // When biological sex is unknown we still give a usable target instead of
     // "no target": the sex-neutral mean of the male/female RDA. For
     // sex-independent nutrients the mean equals either value, so this is a
     // no-op there.
-    let value: number | null;
-    let unit: (typeof targetRow.male)['unit'];
-    if (sex) {
-      const target = targetRow[sex];
-      value = target.value;
-      unit = target.unit;
-    } else {
-      value = roundTarget((targetRow.male.value + targetRow.female.value) / 2);
-      unit = targetRow.male.unit;
-    }
+    const round = key === 'ironMg' ? roundToTenth : roundTarget;
+    const value = sex
+      ? forSex(sex)
+      : round((forSex('male') + forSex('female')) / 2);
+    const unit = targetRow.male.unit;
 
     targets[key] = {
       key,
-      value,
+      value: applyEnergyRate(value, key, source, profile.calorieTarget),
       unit,
       source,
       sourceLabelKey: REFERENCE_SOURCES[source].labelKey,

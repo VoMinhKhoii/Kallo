@@ -51,6 +51,8 @@ const VI_DOCS: DocRegistry = {
   'tracking/weight': () => import('@/content/docs/vi/tracking/weight.mdx'),
   'tracking/nutrition': () =>
     import('@/content/docs/vi/tracking/nutrition.mdx'),
+  'tracking/nutrient-targets': () =>
+    import('@/content/docs/vi/tracking/nutrient-targets.mdx'),
   'circle/friends-and-feed': () =>
     import('@/content/docs/vi/circle/friends-and-feed.mdx'),
   'circle/groups-and-chats': () =>
@@ -91,6 +93,8 @@ const EN_DOCS: DocRegistry = {
   'tracking/weight': () => import('@/content/docs/en/tracking/weight.mdx'),
   'tracking/nutrition': () =>
     import('@/content/docs/en/tracking/nutrition.mdx'),
+  'tracking/nutrient-targets': () =>
+    import('@/content/docs/en/tracking/nutrient-targets.mdx'),
   'circle/friends-and-feed': () =>
     import('@/content/docs/en/circle/friends-and-feed.mdx'),
   'circle/groups-and-chats': () =>
