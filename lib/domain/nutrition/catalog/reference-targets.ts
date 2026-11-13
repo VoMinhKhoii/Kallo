@@ -141,7 +141,8 @@ function parseWeightKg(value: string | null): number | null {
 }
 
 /// Iron follows the person's weight: the table's value plus the basal loss of
-/// every kg above or below the weight the table assumed (IRON_WEIGHT_RULES).
+/// every kg above the weight the table assumed (IRON_WEIGHT_RULES). The table
+/// value stays the floor, as it does for the calorie rates.
 function applyBodyWeight(
   value: number,
   rule: IronWeightRule | undefined,
@@ -151,7 +152,7 @@ function applyBodyWeight(
 ): number {
   if (!rule || weightKg === null) return value;
   const reference = resolveAgeBand(rule.referenceWeights, age)[sex];
-  const adjusted = value + rule.perKg * (weightKg - reference);
+  const adjusted = value + rule.perKg * Math.max(0, weightKg - reference);
   return Math.min(IRON_UPPER_LIMIT_MG, roundToTenth(adjusted));
 }
 

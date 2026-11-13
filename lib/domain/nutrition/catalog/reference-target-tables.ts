@@ -455,9 +455,11 @@ export const ENERGY_SCALED_TARGETS: Partial<
  * is about 14 µg per kg per day (WHO/FAO 2004 §13.2.1; IOM 2001 eq. 1), and it
  * is an adult man's whole requirement, so his row divided by the reference
  * weight it assumes gives the dietary iron per kg at that table's
- * bioavailability. A person heavier or lighter than the reference loses that
- * much more or less, added to every row: menstrual losses do not depend on
- * weight. Capped at the 45 mg upper limit (IOM 2001, cited by VN 2016).
+ * bioavailability. A person heavier than the reference loses that much more,
+ * added to every row: menstrual losses do not depend on weight. A lighter
+ * person keeps the table value, which already covers the lighter half of the
+ * population it was set for. Capped at the 45 mg upper limit (IOM 2001, cited
+ * by VN 2016).
  */
 export interface IronWeightRule {
   perKg: number;
