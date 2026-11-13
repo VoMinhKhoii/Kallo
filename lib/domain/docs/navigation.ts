@@ -34,7 +34,12 @@ export const DOCS_SECTIONS: DocsSection[] = [
   },
   {
     id: 'tracking',
-    slugs: ['tracking/dashboard', 'tracking/weight', 'tracking/nutrition'],
+    slugs: [
+      'tracking/dashboard',
+      'tracking/weight',
+      'tracking/nutrition',
+      'tracking/nutrient-targets',
+    ],
   },
   {
     id: 'circle',
