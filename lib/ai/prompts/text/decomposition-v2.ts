@@ -733,7 +733,7 @@ const DECOMPOSITION_RULES = `<decomposition_check>
   - A dish is never an ingredient. Fried rice, biryani, curries, stews, soups and noodle soups, porridges, salads, sandwiches, burgers, wraps, rolls, dumplings and buns, fritters and pancakes, desserts made from several foods, milk tea, milk coffee, smoothies, and a dipping sauce mixed at the table must each be replaced by their parts: the starch, the protein, the vegetables, the cooking fat, the sauce or broth, the sugar, the milk. Name each part as the single food it is.
   - If an ingredient's rawName repeats or paraphrases its dish's name, or names something made of several foods, split it into those foods.
   - Keep an item whole only when it is genuinely one product or one food (a bread roll, a cheese, a sausage, a sealed packaged product such as a candy bar or a bottled drink, plain cooked rice, a single fruit or vegetable). A restaurant or chain menu item (a Whopper, a Big Mac, a Subway sub) is a dish: split it like any other.
-  - A count never keeps a dish whole: "2 burgers" or "3 slices of pizza" split into their parts, and every part carries the count and unit.
+  - A count never keeps a dish whole: "2 burgers" or "3 slices of pizza" split into their parts, and every part carries the count and unit. A vessel word that sizes the whole dish ("2 tô phở", "2 bowls of ramen") stays on the meal item as vesselToken, never on the parts.
 </decomposition_check>
 
 <implied_components>

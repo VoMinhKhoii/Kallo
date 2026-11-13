@@ -51,6 +51,25 @@ describe('isDishCount', () => {
     expect(isDishCount(d, d.ingredients[1])).toBe(true);
   });
 
+  it('keeps measure words the unit lexicon does not list as typed', () => {
+    for (const unit of [
+      'tablespoon',
+      'tablespoons',
+      'cups',
+      'ml',
+      'muỗng canh',
+      'lạng',
+    ]) {
+      const d = dish(['egg', 2, unit], ['oil', 2, unit]);
+      expect(isDishCount(d, d.ingredients[1])).toBe(false);
+    }
+  });
+
+  it('keeps a shared bowl or cup container as typed', () => {
+    const d = dish(['cơm', 1, 'chén'], ['canh', 1, 'chén']);
+    expect(isDishCount(d, d.ingredients[0])).toBe(false);
+  });
+
   it('never calls a part without a count a dish count', () => {
     const d = dish(['egg', 2, 'omelette'], ['oil']);
     expect(isDishCount(d, d.ingredients[1])).toBe(false);

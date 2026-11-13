@@ -7,6 +7,14 @@ import { nameKey } from '@/lib/core/text/name-key';
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
+ * Spoon, cup, weight and volume words the unit lexicon does not list
+ * ("tablespoon", "cups", "ml", "muỗng canh"). An amount in one of these is
+ * always typed for its part. Matched on the unit's first word.
+ */
+const MEASURE =
+  /^(?:tbsps?|tsps?|tablespoons?|teaspoons?|spoons?|spoonfuls?|cups?|ml|cl|dl|l|litres?|liters?|oz|ounces?|lbs?|pounds?|g|gr|grams?|kg|kilos?|lạng|muỗng|muong|thìa|thia|scoops?|pumps?|shots?)$/u;
+
+/**
  * Whether a part's count is the dish's count rather than an amount the user
  * gave for that part. Call 1 puts a counted dish's count on every part it
  * splits into ("2 burgers" → bun, patty and frying oil, each `count: 2,
@@ -14,7 +22,7 @@ import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
  * the same unit, belongs to the dish. The cooking oil may or may not carry
  * it, so it is not asked. A dish where only some foods are counted ("2 quả
  * trứng, 2 quả cà chua và rau") keeps those as typed, and so does a shared
- * spoon, cup or gram measure ("1 muỗng dầu, 1 muỗng nước mắm"). Code that
+ * spoon, cup, gram or bowl measure ("1 muỗng dầu, 1 muỗng nước mắm"). Code that
  * treats a counted part as typed (a stated oil, a part's fixed size in a
  * weighed dish) asks this first.
  */
@@ -24,8 +32,10 @@ export function isDishCount(
 ): boolean {
   if (part.count == null) return false;
   const unit = resolveUnitType(part.unitToken);
-  if (unit === 'volume' || unit === 'mass') return false;
+  if (unit === 'volume' || unit === 'mass' || unit === 'container')
+    return false;
   const key = nameKey(part.unitToken ?? '');
+  if (MEASURE.test(key.split(/\s+/)[0] ?? '')) return false;
   const foods = dish.ingredients.filter(
     (i) => !isDiscreteOilIngredient(i.rawName)
   );
