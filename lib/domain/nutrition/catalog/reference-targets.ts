@@ -108,7 +108,13 @@ function resolveBiologicalSex(value: string | null): BiologicalSex | null {
 /// Round a derived (averaged or energy-scaled) target to a sensible precision: whole numbers at
 /// scale, one decimal for small values like vitamin B6 (~2.1 mg).
 function roundTarget(value: number): number {
-  return value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
+  return value >= 10 ? Math.round(value) : roundToTenth(value);
+}
+
+/// Iron stays at 0.1 mg at every size, the precision its tables print it at;
+/// roundTarget would turn WHO's 19.6 into 20.
+function roundToTenth(value: number): number {
+  return Math.round(value * 10) / 10;
 }
 
 /// A target its source states per 1000 kcal (ENERGY_SCALED_TARGETS) rises with
@@ -146,9 +152,7 @@ function applyBodyWeight(
   if (!rule || weightKg === null) return value;
   const reference = resolveAgeBand(rule.referenceWeights, age)[sex];
   const adjusted = value + rule.perKg * (weightKg - reference);
-  // To 0.1 mg, the precision the tables print iron at; roundTarget would turn
-  // WHO's 19.6 into 20 at the reference weight.
-  return Math.min(IRON_UPPER_LIMIT_MG, Math.round(adjusted * 10) / 10);
+  return Math.min(IRON_UPPER_LIMIT_MG, roundToTenth(adjusted));
 }
 
 function getDefaultUnit(key: NutritionNutrientKey): 'g' | 'mg' | 'mcg' {
@@ -242,9 +246,10 @@ export function resolveMicronutrientTargets(
     // "no target": the sex-neutral mean of the male/female RDA. For
     // sex-independent nutrients the mean equals either value, so this is a
     // no-op there.
+    const round = key === 'ironMg' ? roundToTenth : roundTarget;
     const value = sex
       ? forSex(sex)
-      : roundTarget((forSex('male') + forSex('female')) / 2);
+      : round((forSex('male') + forSex('female')) / 2);
     const unit = targetRow.male.unit;
 
     targets[key] = {

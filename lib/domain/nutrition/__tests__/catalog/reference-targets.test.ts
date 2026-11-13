@@ -646,8 +646,17 @@ describe('iron follows body weight', () => {
   });
 
   it('averages the adjusted male and female values when sex is unknown', () => {
-    // 24.3 for a man and 40.1 for a woman at 125 kg.
-    expect(iron({ biologicalSex: null, weightKg: '125.00' })).toBe(32);
+    // 24.3 for a man and 40.1 for a woman at 125 kg, kept to 0.1 mg.
+    expect(iron({ biologicalSex: null, weightKg: '125.00' })).toBe(32.2);
+    // WHO's 9.1 and 19.6 at their reference weights average to 14.35.
+    expect(
+      iron({
+        biologicalSex: null,
+        countryOfOrigin: 'US',
+        countryOfResidence: 'US',
+        age: 30,
+      })
+    ).toBe(14.4);
   });
 
   it('keeps the table value when weight is unknown', () => {
