@@ -56,8 +56,7 @@
     "vitamins": "Vitamin",
     "minerals": "Khoáng chất",
     "other": "Khác",
-    "sourceNote": "Mục tiêu theo tham chiếu WHO/FAO · RDA Việt Nam · NASEM DRI.",
-    "sourceDetail": "Mục tiêu dựa trên mức khuyến nghị đã công bố cho tuổi và giới tính của bạn. Sắt còn thay đổi theo cân nặng, vì cơ thể càng nặng thì mỗi ngày mất càng nhiều sắt. Chất xơ, B1 và niacin tăng theo mục tiêu calo của bạn; theo bảng Việt Nam thì B2 cũng vậy. Kallo không theo dõi i-ốt, vì i-ốt chủ yếu đến từ muối i-ốt. Nhật ký ăn uống không cho biết bạn có thiếu vi chất hay không; muốn biết cần đi khám và xét nghiệm máu."
+    "sourceNote": "Mục tiêu theo tham chiếu WHO/FAO · RDA Việt Nam · NASEM DRI."
   },
   "more": {
     "show": "Xem thêm vi chất",

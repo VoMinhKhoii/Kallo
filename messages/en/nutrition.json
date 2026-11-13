@@ -56,8 +56,7 @@
     "vitamins": "Vitamins",
     "minerals": "Minerals",
     "other": "Other",
-    "sourceNote": "Targets from WHO/FAO · Vietnam RDA · NASEM DRI reference intakes.",
-    "sourceDetail": "Targets start from published intakes for your age and sex. Iron also follows your weight, because a heavier body loses more iron each day. Fiber, B1 and niacin go up with your calorie target, and so does B2 on Vietnam's table. Kallo doesn't track iodine, which mostly comes from iodized salt. A food log can't tell you if you're low in a nutrient; that takes a check-up and blood tests."
+    "sourceNote": "Targets from WHO/FAO · Vietnam RDA · NASEM DRI reference intakes."
   },
   "more": {
     "show": "Show more nutrients",
