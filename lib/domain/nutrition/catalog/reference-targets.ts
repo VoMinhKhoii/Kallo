@@ -10,6 +10,7 @@ import {
   ENERGY_SCALED_TARGETS,
   IRON_UPPER_LIMIT_MG,
   IRON_WEIGHT_RULES,
+  type IronWeightRule,
   NASEM_DRI,
   REFERENCE_SOURCES,
   TARGET_KEYS,
@@ -25,7 +26,7 @@ interface NutritionProfileForTargets {
   countryOfResidence: string | null;
   calorieTarget: number | null;
   /** Latest weigh-in; Drizzle reads the decimal column as a string. */
-  weightKg: string | number | null;
+  weightKg: string | null;
 }
 
 export interface MicronutrientTarget {
@@ -48,22 +49,19 @@ function isAgeBanded(entry: TargetEntry): entry is { ageBands: AgeBand[] } {
  * 20, not 19: the VN 2016 tables put 19 in their 15–19 teen band. */
 const ASSUMED_ADULT_AGE = 20;
 
-function resolveAgeBand<Row>(
-  entry: { ageBands: { minAge: number; row: Row }[] },
-  age: number | null
-): Row {
+function resolveAgeBand<Row>(bands: AgeBand<Row>[], age: number | null): Row {
   // An unknown age resolves the SAME way a 20-year-old does, said out loud.
   // This used to be "take the last band", which was only ever young-adult by
   // coincidence: it holds for a two-band [50+, 0] table, where the catch-all IS
   // the adult row, and breaks the moment a table publishes child bands below it
   // — fiber had to carry a duplicate adult row at `minAge: 0` to survive it.
   if (age === null || !Number.isFinite(age)) {
-    return resolveAgeBand(entry, ASSUMED_ADULT_AGE);
+    return resolveAgeBand(bands, ASSUMED_ADULT_AGE);
   }
-  for (const band of entry.ageBands) {
+  for (const band of bands) {
     if (age >= band.minAge) return band.row;
   }
-  return entry.ageBands[entry.ageBands.length - 1].row;
+  return bands[bands.length - 1].row;
 }
 
 // Nutrient direction:
@@ -129,7 +127,7 @@ function applyEnergyRate(
   return Math.max(value, roundTarget((rate * calorieTarget) / 1000));
 }
 
-function parseWeightKg(value: string | number | null): number | null {
+function parseWeightKg(value: string | null): number | null {
   const weight = Number(value);
   return value !== null && Number.isFinite(weight) && weight > 0
     ? weight
@@ -140,18 +138,16 @@ function parseWeightKg(value: string | number | null): number | null {
 /// every kg above or below the weight the table assumed (IRON_WEIGHT_RULES).
 function applyBodyWeight(
   value: number,
-  key: NutritionNutrientKey,
-  source: Exclude<TargetSource, 'unsupported'>,
+  rule: IronWeightRule | undefined,
   sex: BiologicalSex,
   age: number | null,
   weightKg: number | null
 ): number {
-  const rule = key === 'ironMg' ? IRON_WEIGHT_RULES[source] : undefined;
   if (!rule || weightKg === null) return value;
-  const reference = resolveAgeBand({ ageBands: rule.referenceWeights }, age)[
-    sex
-  ];
+  const reference = resolveAgeBand(rule.referenceWeights, age)[sex];
   const adjusted = value + rule.perKg * (weightKg - reference);
+  // To 0.1 mg, the precision the tables print iron at; roundTarget would turn
+  // WHO's 19.6 into 20 at the reference weight.
   return Math.min(IRON_UPPER_LIMIT_MG, Math.round(adjusted * 10) / 10);
 }
 
@@ -229,14 +225,14 @@ export function resolveMicronutrientTargets(
     }
 
     const targetRow = isAgeBanded(entry)
-      ? resolveAgeBand(entry, profile.age)
+      ? resolveAgeBand(entry.ageBands, profile.age)
       : entry;
 
+    const weightRule = key === 'ironMg' ? IRON_WEIGHT_RULES[source] : undefined;
     const forSex = (rowSex: BiologicalSex) =>
       applyBodyWeight(
         targetRow[rowSex].value,
-        key,
-        source,
+        weightRule,
         rowSex,
         profile.age,
         weightKg

@@ -62,9 +62,9 @@ export type TargetRow = Record<
 // young adult explicitly (ASSUMED_ADULT_AGE), so no table needs a duplicate
 // adult row at the bottom to be read correctly.
 // Bands must be listed in DESCENDING `minAge` order.
-export interface AgeBand {
+export interface AgeBand<Row = TargetRow> {
   minAge: number;
-  row: TargetRow;
+  row: Row;
 }
 export type TargetEntry = TargetRow | { ageBands: AgeBand[] };
 
@@ -462,7 +462,7 @@ export const ENERGY_SCALED_TARGETS: Partial<
 export interface IronWeightRule {
   perKg: number;
   /** Reference body weight in kg, in the descending `minAge` order. */
-  referenceWeights: { minAge: number; row: Record<BiologicalSex, number> }[];
+  referenceWeights: AgeBand<Record<BiologicalSex, number>>[];
 }
 
 export const IRON_UPPER_LIMIT_MG = 45;

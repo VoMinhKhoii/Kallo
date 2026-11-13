@@ -633,7 +633,7 @@ describe('iron follows body weight', () => {
     expect(iron({ weightKg: '50.00' })).toBe(9.7);
     // For a man basal loss is the whole requirement, so WHO's row scales
     // in proportion: 9.1 × 125 / 75.
-    expect(iron({ ...us, weightKg: 125 })).toBe(15.2);
+    expect(iron({ ...us, weightKg: '125.00' })).toBe(15.2);
   });
 
   it('shifts only the basal part for a menstruating woman', () => {
