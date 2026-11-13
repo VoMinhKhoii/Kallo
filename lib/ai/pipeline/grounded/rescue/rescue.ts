@@ -15,7 +15,12 @@
  *   picks a row its own numbers contradict (`onEstimates`; not for a dish
  *   whose name the meal repeats, which waits for `apply`).
  * A mini-meal started early but not needed is thrown away. After Call 2,
- * `apply` waits at most `GRACE_MS` for the ones still needed.
+ * `apply` waits at most `GRACE_MS` for the ones still needed. A mixed dish
+ * logged as one ingredient is needed even when Call 2 kept a row for it: one
+ * row cannot stand for a burger (a lean beef patty shipped two Whopper Jr. as
+ * 0 g carbs), so its parts replace it whenever the mini-meal splits it into
+ * two or more foods. A mini-meal that returns one food (plain "bún", "soy
+ * sauce") leaves Call 2's pick alone.
  *
  * The parts' grams are scaled to what the main run would have shipped for the
  * ingredient (`./splice`); the mini-meal supplies only the recipe split.
@@ -146,7 +151,7 @@ export function rescueMealText(
  * the later starts, a false hit costs one thrown-away mini-meal.
  */
 const MIXED_DISH =
-  /\b(?:soup|salad|curry|stew|sauce|dumplings?|rolls?|cake|pudding|pie|sandwich|burger|pizza|noodles?|ramen|pho|congee|porridge|casserole|stir[- ]?fry|fried rice|katsu|tempura|wrap|taco|burrito|omelet+e?|pancake|fritters?|gyoza|bibimbap|biryani)\b|canh|s[uú]p|ch[eè]\b|b[aá]nh|b[uú]n|ph[oở]|h[uủ] ti[eế]u|mi[eế]n|ch[aá]o|g[oỏ]i|n[oộ]m|l[aẩ]u|x[oô]i|c[aà] ri|\bkho\b|chả giò|\bnem\b|c[oơ]m (?:chi[eê]n|rang)|x[ií]u m[aạ]i|h[aá] c[aả]o/i;
+  /\b(?:soup|salad|curry|stew|sauce|dumplings?|rolls?|cake|pudding|pie|sandwich|[a-z]*burgers?|pizza|noodles?|ramen|pho|congee|porridge|casserole|stir[- ]?fry|fried rice|katsu|tempura|wrap|taco|burrito|omelet+e?|pancake|fritters?|gyoza|bibimbap|biryani)\b|canh|s[uú]p|ch[eè]\b|b[aá]nh|b[uú]n|ph[oở]|h[uủ] ti[eế]u|mi[eế]n|ch[aá]o|g[oỏ]i|n[oộ]m|l[aẩ]u|x[oô]i|c[aà] ri|\bkho\b|chả giò|\bnem\b|c[oơ]m (?:chi[eê]n|rang)|x[ií]u m[aạ]i|h[aá] c[aả]o/i;
 
 /** A dish logged as one ingredient named after it, whose name says it is a mixed dish. */
 function likelyMixedDish(
@@ -164,6 +169,10 @@ function likelyMixedDish(
     [dish.name, ing.rawName, ing.canonicalName, ing.queryEn ?? ''].join(' ')
   );
 }
+
+/** The foods a mini-meal returned, not counting its cooking oil. */
+const foodCount = (parts: RescuePart[]) =>
+  parts.filter((p) => !isDiscreteOilIngredient(p.ingredient.rawName)).length;
 
 /** Run at most `limit` tasks at once; later tasks wait their turn. */
 function createLimiter(limit: number) {
@@ -259,11 +268,11 @@ export function startDishRescue(args: {
       )
     );
   };
-  /** The flat ingredients this state's estimates reject (or whose row they contradict). */
-  const rejectedBy = (run: RunState): number[] => {
+  /** Each flat ingredient's reviewed estimate and the grams it would ship. */
+  const shipped = (run: RunState) => {
     const reviewed = rejectWrongFormRows(run).state.grounded;
     const pairs = pairIngredientsWithGrounded(run.decomposition, reviewed);
-    return ingredients.flatMap((_, f) => {
+    return ingredients.map((_, f) => {
       const ground = pairs[f]?.ground;
       const grams = ground
         ? shippedEdibleGrams(
@@ -272,11 +281,23 @@ export function startDishRescue(args: {
             run.portionResolutions[f]
           )
         : 0;
-      return grams >= MIN_RESCUE_G &&
-        rejected(ground, run.matchResults[f]?.candidates.length ?? 0)
-        ? [f]
-        : [];
+      return { ground, grams };
     });
+  };
+  /** The flat ingredients this state's estimates reject (or whose row they contradict). */
+  const rejectedBy = (run: RunState): number[] =>
+    shipped(run).flatMap(({ ground, grams }, f) =>
+      grams >= MIN_RESCUE_G &&
+      rejected(ground, run.matchResults[f]?.candidates.length ?? 0)
+        ? [f]
+        : []
+    );
+  /** Mixed dishes logged as one ingredient that Call 2 kept a row for. */
+  const keptMixed = (run: RunState, rejectedNow: number[]): number[] => {
+    const all = shipped(run);
+    return [...mixed].filter(
+      (f) => !rejectedNow.includes(f) && all[f].grams >= MIN_RESCUE_G
+    );
   };
 
   // A dish whose name the meal repeats ("cơm" twice) pairs with its estimates
@@ -285,12 +306,16 @@ export function startDishRescue(args: {
   // does.
   const names = decomposition.mealItems.map((mi) => nameKey(mi.name));
   const repeated = new Set<number>();
+  const mixed = new Set<number>();
   let flat = 0;
   decomposition.mealItems.forEach((mi, d) => {
     const twice = names.indexOf(names[d]) !== names.lastIndexOf(names[d]);
     for (const ing of mi.ingredients) {
       if (twice) repeated.add(flat);
-      if (likelyMixedDish(mi, ing)) start(flat);
+      if (likelyMixedDish(mi, ing)) {
+        mixed.add(flat);
+        start(flat);
+      }
       flat++;
     }
   });
@@ -317,7 +342,9 @@ export function startDishRescue(args: {
     },
     close,
     async apply(run) {
-      const needed = rejectedBy(run).filter((f) =>
+      const rejectedNow = rejectedBy(run);
+      const kept = new Set(keptMixed(run, rejectedNow));
+      const needed = [...rejectedNow, ...kept].filter((f) =>
         rescuable(ingredients[f], run.portionResolutions[f])
       );
       if (needed.length === 0) {
@@ -340,7 +367,10 @@ export function startDishRescue(args: {
       const parts = new Map(
         needed.flatMap((f) => {
           const p = ready.get(f);
-          return p ? [[f, p] as const] : [];
+          if (!p) return [];
+          // A kept row is replaced only by a real split.
+          if (kept.has(f) && foodCount(p) < 2) return [];
+          return [[f, p] as const];
         })
       );
       if (parts.size === 0) return null;
