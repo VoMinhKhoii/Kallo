@@ -238,6 +238,7 @@ another domain module is a smell worth a second look.
 | `pipeline/grounded/text-checks/weights.ts` | holds Call 1's weights to the text: untyped weights removed, a dish weight that repeats its parts removed, a food's weight put back on that food | ok |
 | `pipeline/grounded/text-checks/calories.ts` | holds Call 1's calories to the text: untyped figures removed, a typed figure put on the dish or the one food named beside it, a per-unit figure multiplied by its count, figures about the day ignored | ok |
 | `pipeline/grounded/text-checks/described.ts` | what Call 1 wrote about a food beside its amounts: a weight on a food it describes as dry or raw is a raw weight; a Vietnamese name the user did not type shows in English in an English answer | ok |
+| `pipeline/grounded/text-checks/dish-count.ts` | whether a part's count is the dish's (Call 1 puts a counted dish's count on every part it splits into) or an amount typed for that part; asked by the fried-oil drop and the weighed-dish fit before treating a counted part as typed | ok |
 | `pipeline/grounded/text-checks/typed-facts.ts` | on the finished meal: sets a dish to the calories the user typed for it and marks the parts whose amount the user typed, so the plain-read hold leaves them | ok |
 | `pipeline/assemble/result-scale.ts` | arithmetic on a finished meal: scale a part's nutrients and carry the change into its dish and the meal totals (typed calories, the plain-read hold) | ok |
 | `pipeline/stream/` | the analyze-meal SSE state machine: cheat vs precise outcome, gates, staging | ok |

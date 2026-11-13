@@ -9,9 +9,10 @@
  * - last, a dish the user weighed has its parts scaled to that weight
  *   (`resolve/served-mass.ts`).
  */
-import { isDishCount } from '@/lib/ai/pipeline/contracts/dish-count';
+
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
+import { isDishCount } from '@/lib/ai/pipeline/grounded/text-checks/dish-count';
 import {
   selectedCandidate,
   shippedEdibleGrams,

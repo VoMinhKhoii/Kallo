@@ -7,7 +7,6 @@
  * read) adds up to what the user typed.
  */
 
-import { isDishCount } from '@/lib/ai/pipeline/contracts/dish-count';
 import type {
   DecomposedDishV2,
   DecomposedIngredientV2,
@@ -15,6 +14,7 @@ import type {
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { isRescuePart } from '@/lib/ai/pipeline/grounded/rescue/splice';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
+import { isDishCount } from '@/lib/ai/pipeline/grounded/text-checks/dish-count';
 import { scaleEstimate } from '@/lib/ai/pipeline/resolve/estimate-scale';
 import {
   portionAnchor,

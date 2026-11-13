@@ -237,6 +237,10 @@ export function startDishRescue(args: {
   const limit = createLimiter(CONCURRENCY);
   const runs = new Map<number, Promise<void>>();
   const ready = new Map<number, RescuePart[]>();
+  // Dishes whose name the meal repeats, and mixed dishes logged as one
+  // ingredient (both filled right after Call 1, below).
+  const repeated = new Set<number>();
+  const mixed = new Set<number>();
   let closed = false;
   const timeLeft = () => args.runStartedAt + RUN_DEADLINE_MS - Date.now();
   // Past the deadline a new mini-meal could not reach the response.
@@ -284,20 +288,26 @@ export function startDishRescue(args: {
       return { ground, grams };
     });
   };
-  /** The flat ingredients this state's estimates reject (or whose row they contradict). */
-  const rejectedBy = (run: RunState): number[] =>
-    shipped(run).flatMap(({ ground, grams }, f) =>
-      grams >= MIN_RESCUE_G &&
-      rejected(ground, run.matchResults[f]?.candidates.length ?? 0)
-        ? [f]
-        : []
-    );
-  /** Mixed dishes logged as one ingredient that Call 2 kept a row for. */
-  const keptMixed = (run: RunState, rejectedNow: number[]): number[] => {
+  /**
+   * The flat ingredients this state needs a mini-meal for: those its
+   * estimates reject (or whose row they contradict), and the mixed dishes
+   * logged as one ingredient that Call 2 kept a row for.
+   */
+  const neededBy = (run: RunState) => {
     const all = shipped(run);
-    return [...mixed].filter(
-      (f) => !rejectedNow.includes(f) && all[f].grams >= MIN_RESCUE_G
+    const sized = (f: number) => all[f].grams >= MIN_RESCUE_G;
+    const rejectedNow = new Set(
+      all.flatMap(({ ground }, f) =>
+        sized(f) &&
+        rejected(ground, run.matchResults[f]?.candidates.length ?? 0)
+          ? [f]
+          : []
+      )
     );
+    const kept = new Set(
+      [...mixed].filter((f) => sized(f) && !rejectedNow.has(f))
+    );
+    return { rejectedNow, kept };
   };
 
   // A dish whose name the meal repeats ("cơm" twice) pairs with its estimates
@@ -305,8 +315,6 @@ export function startDishRescue(args: {
   // streamed estimate never starts its mini-meal; `apply`, after Call 2, still
   // does.
   const names = decomposition.mealItems.map((mi) => nameKey(mi.name));
-  const repeated = new Set<number>();
-  const mixed = new Set<number>();
   let flat = 0;
   decomposition.mealItems.forEach((mi, d) => {
     const twice = names.indexOf(names[d]) !== names.lastIndexOf(names[d]);
@@ -337,13 +345,12 @@ export function startDishRescue(args: {
       estimatedSoFar.push(...items);
       if (!state) return;
       const grounded = { mealItems: estimatedSoFar };
-      for (const f of rejectedBy({ ...state, grounded }))
+      for (const f of neededBy({ ...state, grounded }).rejectedNow)
         if (!repeated.has(f)) start(f);
     },
     close,
     async apply(run) {
-      const rejectedNow = rejectedBy(run);
-      const kept = new Set(keptMixed(run, rejectedNow));
+      const { rejectedNow, kept } = neededBy(run);
       const needed = [...rejectedNow, ...kept].filter((f) =>
         rescuable(ingredients[f], run.portionResolutions[f])
       );
