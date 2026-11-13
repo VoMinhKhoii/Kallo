@@ -44,9 +44,32 @@ describe('isDishCount', () => {
     expect(isDishCount(d, d.ingredients[1])).toBe(false);
   });
 
+  it("reads the oil beside one counted food as copying that food's count", () => {
+    // "2 omelettes": the egg's count is typed, the oil only copies it.
+    const d = dish(['egg', 2, 'omelette'], ['oil', 2, 'omelette']);
+    expect(isDishCount(d, d.ingredients[0])).toBe(false);
+    expect(isDishCount(d, d.ingredients[1])).toBe(true);
+  });
+
   it('never calls a part without a count a dish count', () => {
     const d = dish(['egg', 2, 'omelette'], ['oil']);
     expect(isDishCount(d, d.ingredients[1])).toBe(false);
+  });
+
+  it('keeps equal counts typed for some foods of a dish as typed', () => {
+    // "salad 400g gồm 2 quả trứng, 2 quả cà chua và rau"
+    const d = dish(['trứng', 2, 'quả'], ['cà chua', 2, 'quả'], ['rau xà lách']);
+    expect(isDishCount(d, d.ingredients[0])).toBe(false);
+    expect(isDishCount(d, d.ingredients[1])).toBe(false);
+  });
+
+  it('reads the oil as carrying the dish count whether or not it has one', () => {
+    const d = dish(
+      ['bột gạo', 2, 'bánh xèo'],
+      ['tôm', 2, 'bánh xèo'],
+      ['dầu ăn']
+    );
+    expect(isDishCount(d, d.ingredients[0])).toBe(true);
   });
 
   it('needs the same number as well as the same unit', () => {
