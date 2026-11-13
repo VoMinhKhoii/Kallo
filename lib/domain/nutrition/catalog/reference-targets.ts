@@ -8,11 +8,12 @@ import {
   type AgeBand,
   type BiologicalSex,
   ENERGY_SCALED_TARGETS,
+  IRON_UPPER_LIMIT_MG,
+  IRON_WEIGHT_RULES,
   NASEM_DRI,
   REFERENCE_SOURCES,
   TARGET_KEYS,
   type TargetEntry,
-  type TargetRow,
   VIETNAM_RDA,
   WHO_FAO,
 } from './reference-target-tables';
@@ -23,6 +24,8 @@ interface NutritionProfileForTargets {
   countryOfOrigin: string | null;
   countryOfResidence: string | null;
   calorieTarget: number | null;
+  /** Latest weigh-in; Drizzle reads the decimal column as a string. */
+  weightKg: string | number | null;
 }
 
 export interface MicronutrientTarget {
@@ -45,10 +48,10 @@ function isAgeBanded(entry: TargetEntry): entry is { ageBands: AgeBand[] } {
  * 20, not 19: the VN 2016 tables put 19 in their 15–19 teen band. */
 const ASSUMED_ADULT_AGE = 20;
 
-function resolveAgeBand(
-  entry: { ageBands: AgeBand[] },
+function resolveAgeBand<Row>(
+  entry: { ageBands: { minAge: number; row: Row }[] },
   age: number | null
-): TargetRow {
+): Row {
   // An unknown age resolves the SAME way a 20-year-old does, said out loud.
   // This used to be "take the last band", which was only ever young-adult by
   // coincidence: it holds for a two-band [50+, 0] table, where the catch-all IS
@@ -126,6 +129,32 @@ function applyEnergyRate(
   return Math.max(value, roundTarget((rate * calorieTarget) / 1000));
 }
 
+function parseWeightKg(value: string | number | null): number | null {
+  const weight = Number(value);
+  return value !== null && Number.isFinite(weight) && weight > 0
+    ? weight
+    : null;
+}
+
+/// Iron follows the person's weight: the table's value plus the basal loss of
+/// every kg above or below the weight the table assumed (IRON_WEIGHT_RULES).
+function applyBodyWeight(
+  value: number,
+  key: NutritionNutrientKey,
+  source: Exclude<TargetSource, 'unsupported'>,
+  sex: BiologicalSex,
+  age: number | null,
+  weightKg: number | null
+): number {
+  const rule = key === 'ironMg' ? IRON_WEIGHT_RULES[source] : undefined;
+  if (!rule || weightKg === null) return value;
+  const reference = resolveAgeBand({ ageBands: rule.referenceWeights }, age)[
+    sex
+  ];
+  const adjusted = value + rule.perKg * (weightKg - reference);
+  return Math.min(IRON_UPPER_LIMIT_MG, Math.round(adjusted * 10) / 10);
+}
+
 function getDefaultUnit(key: NutritionNutrientKey): 'g' | 'mg' | 'mcg' {
   // Mirror the catalog unit when it is one a target can be expressed in
   // (fiber's card unit is 'g'); 'kcal' has no target unit, so fall back to mg.
@@ -152,6 +181,7 @@ export function resolveMicronutrientTargets(
 ): Record<NutritionNutrientKey, MicronutrientTarget> {
   const vietnameseContext = isVietnameseContext(profile);
   const sex = resolveBiologicalSex(profile.biologicalSex);
+  const weightKg = parseWeightKg(profile.weightKg);
   const targets = Object.fromEntries(
     Object.keys(NUTRIENT_META).map((key) => [
       key,
@@ -202,20 +232,24 @@ export function resolveMicronutrientTargets(
       ? resolveAgeBand(entry, profile.age)
       : entry;
 
+    const forSex = (rowSex: BiologicalSex) =>
+      applyBodyWeight(
+        targetRow[rowSex].value,
+        key,
+        source,
+        rowSex,
+        profile.age,
+        weightKg
+      );
+
     // When biological sex is unknown we still give a usable target instead of
     // "no target": the sex-neutral mean of the male/female RDA. For
     // sex-independent nutrients the mean equals either value, so this is a
     // no-op there.
-    let value: number | null;
-    let unit: (typeof targetRow.male)['unit'];
-    if (sex) {
-      const target = targetRow[sex];
-      value = target.value;
-      unit = target.unit;
-    } else {
-      value = roundTarget((targetRow.male.value + targetRow.female.value) / 2);
-      unit = targetRow.male.unit;
-    }
+    const value = sex
+      ? forSex(sex)
+      : roundTarget((forSex('male') + forSex('female')) / 2);
+    const unit = targetRow.male.unit;
 
     targets[key] = {
       key,

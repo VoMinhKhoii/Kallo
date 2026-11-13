@@ -213,10 +213,14 @@ export const WHO_FAO: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
     male: { value: 1000, unit: 'mg' },
     female: { value: 1000, unit: 'mg' },
   },
-  ironMg: {
-    male: { value: 9, unit: 'mg' },
-    female: { value: 18, unit: 'mg' },
-  },
+  // Table 13.5, 15% bioavailability column. The book's bands are 11–14, 15–17
+  // and 18+, plus postmenopausal women at 7.5 mg, read here as 51+.
+  ironMg: bands(
+    [51, perSex(9.1, 7.5, 'mg')],
+    [18, perSex(9.1, 19.6, 'mg')],
+    [15, perSex(12.5, 20.7, 'mg')],
+    [0, perSex(9.7, 21.8, 'mg')]
+  ),
   magnesiumMg: {
     // Annex 1, adults 19–65 yr.
     male: { value: 260, unit: 'mg' },
@@ -414,12 +418,19 @@ export const NASEM_DRI: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
   },
 };
 
+/** EFSA states its energy-based values per MJ; 1 MJ is 1000/4.184 kcal. */
+const PER_MJ_TO_PER_1000_KCAL = 4.184;
+
 /**
- * Targets their source states per 1000 kcal eaten. The table value stays the
- * floor; a calorie target above the one the table assumed raises it at this
- * rate (`reference-targets.ts`). Keyed by source because the rate belongs to
- * the source's row: VN 2016 Bảng 32 and 34 for B1 and B2, and NASEM's fiber AI,
- * which is 14 g per 1000 kcal by definition.
+ * Targets stated per 1000 kcal eaten, keyed by the table they sit on top of.
+ * The table value stays the floor; a calorie target above the one the table
+ * assumed raises it at this rate (`reference-targets.ts`).
+ * - VN 2016 Bảng 32 and 34: B1 0.5 mg and B2 0.6 mg per 1000 kcal.
+ * - EFSA, for the nutrients a table has no rate for: thiamin 0.1 mg/MJ (EFSA
+ *   Journal 2016;14(12):4653) and niacin 1.6 mg NE/MJ (2014;12(7):3759). EFSA
+ *   sets riboflavin as a flat 1.6 mg/day (2017;15(8):4919), so B2 has no rate
+ *   outside Vietnam's table. WHO/FAO 2004 states none of the three per energy.
+ * - NASEM's fiber AI, which is 14 g per 1000 kcal by definition.
  */
 export const ENERGY_SCALED_TARGETS: Partial<
   Record<
@@ -427,8 +438,66 @@ export const ENERGY_SCALED_TARGETS: Partial<
     Partial<Record<NutritionNutrientKey, number>>
   >
 > = {
-  vietnam_rda: { vitaminB1Mg: 0.5, vitaminB2Mg: 0.6 },
+  vietnam_rda: {
+    vitaminB1Mg: 0.5,
+    vitaminB2Mg: 0.6,
+    vitaminPpMg: 1.6 * PER_MJ_TO_PER_1000_KCAL,
+  },
+  who_fao: {
+    vitaminB1Mg: 0.1 * PER_MJ_TO_PER_1000_KCAL,
+    vitaminPpMg: 1.6 * PER_MJ_TO_PER_1000_KCAL,
+  },
   nasem: { fiberG: 14 },
+};
+
+/**
+ * Iron is the one target its tables derive from body weight. Basal iron loss
+ * is about 14 µg per kg per day (WHO/FAO 2004 §13.2.1; IOM 2001 eq. 1), and it
+ * is an adult man's whole requirement, so his row divided by the reference
+ * weight it assumes gives the dietary iron per kg at that table's
+ * bioavailability. A person heavier or lighter than the reference loses that
+ * much more or less, added to every row: menstrual losses do not depend on
+ * weight. Capped at the 45 mg upper limit (IOM 2001, cited by VN 2016).
+ */
+export interface IronWeightRule {
+  perKg: number;
+  /** Reference body weight in kg, in the descending `minAge` order. */
+  referenceWeights: { minAge: number; row: Record<BiologicalSex, number> }[];
+}
+
+export const IRON_UPPER_LIMIT_MG = 45;
+
+function weights(
+  ...entries: [number, number, number][]
+): IronWeightRule['referenceWeights'] {
+  return entries.map(([minAge, male, female]) => ({
+    minAge,
+    row: { male, female },
+  }));
+}
+
+export const IRON_WEIGHT_RULES: Partial<
+  Record<Exclude<TargetSource, 'unsupported'>, IronWeightRule>
+> = {
+  // Bảng 19 says its iron is adjusted to these Bảng 2 weights; 11.9 mg is the
+  // 20–29 man's 10%-bioavailability RDA at 61.1 kg.
+  vietnam_rda: {
+    perKg: 11.9 / 61.1,
+    referenceWeights: weights(
+      [70, 60.0, 51.8],
+      [50, 61.8, 54.7],
+      [30, 60.2, 53.1],
+      [20, 61.1, 53.0],
+      [15, 59.5, 53.6],
+      [0, 47.3, 45.9]
+    ),
+  },
+  // Table 13.5 weights; 9.1 mg is the 18+ man's 15%-bioavailability RNI at
+  // 75 kg. Postmenopausal women are tabled at 62 kg, the same as 18+.
+  who_fao: {
+    perKg: 9.1 / 75,
+    referenceWeights: weights([18, 75, 62], [15, 64, 56], [0, 45, 46]),
+  },
 };
 
 export const TARGET_KEYS: NutritionNutrientKey[] = [

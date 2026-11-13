@@ -17,6 +17,7 @@ const baseProfile = {
   countryOfOrigin: 'Vietnam',
   countryOfResidence: 'Vietnam',
   calorieTarget: null,
+  weightKg: null,
 };
 
 describe('resolveMicronutrientTargets', () => {
@@ -484,7 +485,12 @@ describe('age-banded entries', () => {
     // covers every banded key at once — including the ones added later.
     for (const context of contexts) {
       for (const biologicalSex of sexes) {
-        const profile = { ...context, biologicalSex, calorieTarget: null };
+        const profile = {
+          ...context,
+          biologicalSex,
+          calorieTarget: null,
+          weightKg: null,
+        };
         expect(resolveMicronutrientTargets({ ...profile, age: null })).toEqual(
           resolveMicronutrientTargets({ ...profile, age: 20 })
         );
@@ -573,18 +579,29 @@ describe('targets their source states per 1000 kcal', () => {
     expect(cutting.fiberG.value).toBe(38);
   });
 
-  it('leaves rows whose source gives no per-energy rate alone', () => {
-    // WHO/FAO 2004 publishes B1 as a flat RNI, so a non-VN profile keeps it.
+  it('raises B1 and niacin outside Vietnam at EFSA per-MJ rates', () => {
+    // WHO/FAO 2004 states no per-energy rate; EFSA's 0.1 mg/MJ thiamin and
+    // 1.6 mg NE/MJ niacin sit on top of the WHO rows.
     const targets = resolveMicronutrientTargets({
       ...bulking,
       countryOfOrigin: 'US',
       countryOfResidence: 'US',
     });
     expect(targets.vitaminB1Mg).toMatchObject({
-      value: 1.2,
+      value: 1.8,
       source: 'who_fao',
     });
-    expect(targets.ironMg.value).toBe(9);
+    expect(targets.vitaminPpMg.value).toBe(29);
+    // EFSA sets riboflavin per day, so B2 stays on the WHO row.
+    expect(targets.vitaminB2Mg.value).toBe(1.3);
+    expect(targets.ironMg.value).toBe(9.1);
+  });
+
+  it('raises niacin at the EFSA rate on the Vietnam table too', () => {
+    expect(resolveMicronutrientTargets(bulking).vitaminPpMg).toMatchObject({
+      value: 29,
+      source: 'vietnam_rda',
+    });
   });
 
   it('keeps the table value when the calorie target is unknown', () => {
@@ -594,5 +611,79 @@ describe('targets their source states per 1000 kcal', () => {
     });
     expect(targets.vitaminB1Mg.value).toBe(1.3);
     expect(targets.fiberG.value).toBe(38);
+  });
+});
+
+describe('iron follows body weight', () => {
+  // The TikTok review's case: the same 22-year-old man at 50 and 125 kg.
+  const man = { ...baseProfile, age: 22 };
+  const us = { countryOfOrigin: 'US', countryOfResidence: 'US' };
+  const iron = (
+    profile: Partial<Parameters<typeof resolveMicronutrientTargets>[0]>
+  ) => resolveMicronutrientTargets({ ...man, ...profile }).ironMg.value;
+
+  it('keeps the table value at the reference weight the table assumes', () => {
+    // VN 2016 Bảng 2: 61.1 kg for men 20–29; WHO/FAO Table 13.5: 75 kg.
+    expect(iron({ weightKg: '61.10' })).toBe(11.9);
+    expect(iron({ ...us, weightKg: '75.00' })).toBe(9.1);
+  });
+
+  it('adds or removes the basal loss of every kg away from it', () => {
+    expect(iron({ weightKg: '125.00' })).toBe(24.3);
+    expect(iron({ weightKg: '50.00' })).toBe(9.7);
+    // For a man basal loss is the whole requirement, so WHO's row scales
+    // in proportion: 9.1 × 125 / 75.
+    expect(iron({ ...us, weightKg: 125 })).toBe(15.2);
+  });
+
+  it('shifts only the basal part for a menstruating woman', () => {
+    // 26.1 mg at 53.0 kg; 17 kg more adds 17 × 11.9 / 61.1 mg.
+    expect(iron({ biologicalSex: 'female', weightKg: '70.00' })).toBe(29.4);
+  });
+
+  it('stops at the 45 mg upper limit', () => {
+    expect(iron({ biologicalSex: 'female', weightKg: '200.00' })).toBe(45);
+  });
+
+  it('averages the adjusted male and female values when sex is unknown', () => {
+    // 24.3 for a man and 40.1 for a woman at 125 kg.
+    expect(iron({ biologicalSex: null, weightKg: '125.00' })).toBe(32);
+  });
+
+  it('keeps the table value when weight is unknown', () => {
+    expect(iron({ weightKg: null })).toBe(11.9);
+  });
+
+  it('leaves every other nutrient at its table value', () => {
+    const light = resolveMicronutrientTargets({ ...man, weightKg: '50.00' });
+    const heavy = resolveMicronutrientTargets({ ...man, weightKg: '125.00' });
+    const { ironMg: _lightIron, ...lightRest } = light;
+    const { ironMg: _heavyIron, ...heavyRest } = heavy;
+    expect(heavyRest).toEqual(lightRest);
+  });
+});
+
+describe('WHO/FAO 2004 iron, as Table 13.5 prints it', () => {
+  const who = {
+    ...baseProfile,
+    countryOfOrigin: 'US',
+    countryOfResidence: 'US',
+  };
+
+  it('gives women 19.6 mg and 7.5 mg after menopause (15% column)', () => {
+    const female = { ...who, biologicalSex: 'female' };
+    expect(
+      resolveMicronutrientTargets({ ...female, age: 30 }).ironMg.value
+    ).toBe(19.6);
+    expect(
+      resolveMicronutrientTargets({ ...female, age: 55 }).ironMg.value
+    ).toBe(7.5);
+  });
+
+  it('bands teens at 11–14 and 15–17', () => {
+    const at = (age: number, biologicalSex: string) =>
+      resolveMicronutrientTargets({ ...who, age, biologicalSex }).ironMg.value;
+    expect([at(13, 'male'), at(13, 'female')]).toEqual([9.7, 21.8]);
+    expect([at(16, 'male'), at(16, 'female')]).toEqual([12.5, 20.7]);
   });
 });
