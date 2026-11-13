@@ -158,7 +158,7 @@ jobs:
           echo "ready=true" >> "$GITHUB_OUTPUT"
           wc -l prompt.md
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.prompt.outputs.ready == 'true'
         with:
           node-version: 22
