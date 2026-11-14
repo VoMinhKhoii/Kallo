@@ -99,11 +99,9 @@ export function classifyDishClass(
  * one ingredient measured in cups ("phở with a cup of broth") says nothing
  * about what the dish was served in.
  *
- * And to a single SERVING. The envelope's guard band and `midG` describe one
- * vessel, while the dish grams describe `count` of them — so promoting "3 cups
- * of milk" would fit a three-cup total into a one-cup band and tell the
- * estimator the portion is far too small. The dish-level `vesselToken` path is
- * unaffected: that token already describes the dish as served.
+ * And to a single SERVING: "3 cups of milk" stays a plain counted food that
+ * Call 2 sizes from its count, as it did before the band followed a dish
+ * vessel's count (`vesselCount`). Promoting it as well is a separate change.
  */
 function dishVesselToken(dish: DishLike): string | undefined {
   if (dish.vesselToken) return dish.vesselToken;
@@ -147,17 +145,16 @@ function riceBowls(dish: DishLike, vesselToken: string): number | null {
 function vesselCount(dish: DishLike, vesselToken: string): number {
   const token = normalizeVesselToken(vesselToken);
   const counts = new Set(
-    dish.ingredients
-      .filter(
-        (i) =>
-          i.count !== undefined &&
-          i.count > 0 &&
-          normalizeVesselToken(i.unitToken ?? '') === token
-      )
-      .map((i) => i.count)
+    dish.ingredients.flatMap((i) =>
+      i.count !== undefined &&
+      i.count > 0 &&
+      normalizeVesselToken(i.unitToken ?? '') === token
+        ? [i.count]
+        : []
+    )
   );
   const [count] = counts;
-  return counts.size === 1 && count !== undefined ? count : 1;
+  return counts.size === 1 ? count : 1;
 }
 
 export function resolveVesselEnvelope(
@@ -187,8 +184,15 @@ export function resolveVesselEnvelope(
       ? 3
       : resolved.tier;
   const dishClass = classifyDishClass(dish, resolved.family);
-  const vessels = bowls ? 1 : vesselCount(dish, vesselToken);
-  const band = guardBandG(resolved.family, tier, dishClass);
+  // Every band describes one vessel; the dish is that many of them.
+  const servings = bowls ?? vesselCount(dish, vesselToken);
+  const oneVessel: GramsBand = bowls
+    ? riceBowl
+    : {
+        ...guardBandG(resolved.family, tier, dishClass),
+        mid: midG(resolved.family, tier, dishClass),
+      };
+  const scale = (g: number) => Math.round(g * servings);
 
   return {
     family: resolved.family,
@@ -196,23 +200,13 @@ export function resolveVesselEnvelope(
     dishClass,
     token: vesselToken,
     vesselMl: VESSEL_FAMILIES[resolved.family].tiers[tier].ml,
-    guardG: bowls
-      ? {
-          low: Math.round(riceBowl.low * bowls),
-          high: Math.round(riceBowl.high * bowls),
-        }
-      : {
-          low: Math.round(band.low * vessels),
-          high: Math.round(band.high * vessels),
-        },
-    midG: bowls
-      ? Math.round(riceBowl.mid * bowls)
-      : Math.round(midG(resolved.family, tier, dishClass) * vessels),
+    guardG: { low: scale(oneVessel.low), high: scale(oneVessel.high) },
+    midG: scale(oneVessel.mid),
     // The picker opens no lower than 60% of its small bowl, so a part bowl
     // brings its own size; several bowls keep the plain bowl sizes rather
     // than call two bowls "small".
-    ...(bowls && bowls <= 1 && isSmallBowlG(Math.round(riceBowl.mid * bowls))
-      ? { smallBowlG: Math.round(riceBowl.mid * bowls) }
+    ...(bowls && bowls <= 1 && isSmallBowlG(scale(riceBowl.mid))
+      ? { smallBowlG: scale(riceBowl.mid) }
       : {}),
   };
 }
