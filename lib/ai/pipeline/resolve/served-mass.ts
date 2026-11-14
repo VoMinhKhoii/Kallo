@@ -6,6 +6,7 @@
  * behind what the bridge ships (bones and shells included: what the scale
  * read) adds up to what the user typed.
  */
+
 import type {
   DecomposedDishV2,
   DecomposedIngredientV2,
@@ -13,6 +14,7 @@ import type {
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { isRescuePart } from '@/lib/ai/pipeline/grounded/rescue/splice';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
+import { isDishCount } from '@/lib/ai/pipeline/grounded/text-checks/dish-count';
 import { scaleEstimate } from '@/lib/ai/pipeline/resolve/estimate-scale';
 import {
   portionAnchor,
@@ -115,7 +117,11 @@ export function scaleToServedMass(state: RunState): {
       if (portionAnchor(portion)) pinned += grams;
       else {
         call2Free ||= !isRescuePart(portion);
-        if (ingredient.count && !isRescuePart(portion)) {
+        if (
+          ingredient.count &&
+          !isDishCount(dish, ingredient) &&
+          !isRescuePart(portion)
+        ) {
           counted += grams;
           countedParts.push(ground);
         } else {

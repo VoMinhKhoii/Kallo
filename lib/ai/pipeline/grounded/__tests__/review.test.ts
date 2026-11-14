@@ -340,6 +340,29 @@ describe('dropOilInFriedRows', () => {
     expect(dropOilInFriedRows(state).dropped).toBe(0);
   });
 
+  it("drops the oil that only carries the dish's count", () => {
+    // "2 omelettes": Call 1 puts count 2 on the egg and on the frying oil.
+    const state = stateOf([
+      {
+        name: 'Omelettes',
+        cookingMethod: 'fried',
+        parts: [
+          {
+            name: 'egg',
+            g: 100,
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          oil,
+        ],
+      },
+    ]);
+    const parts = state.decomposition.mealItems[0].ingredients;
+    parts[0] = { ...parts[0], count: 2, unitToken: 'omelette' };
+    parts[1] = { ...parts[1], count: 2, unitToken: 'omelette' };
+    expect(dropOilInFriedRows(state).dropped).toBe(1);
+  });
+
   it('ignores seasonings and fats pan-fried without oil', () => {
     const fried = stateOf([
       {

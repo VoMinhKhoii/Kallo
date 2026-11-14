@@ -366,14 +366,15 @@ ${RAMEN_EXAMPLE}
           "name": "bánh bao trứng cút",
           "cookingMethod": "hấp",
           "ingredients": [
-            { "rawName": "bánh bao", "canonicalName": "Bánh bao nhân thịt", "count": 2, "unitToken": "bánh bao" },
+            { "rawName": "vỏ bánh bao", "canonicalName": "Steamed wheat bun dough", "count": 2, "unitToken": "bánh bao" },
+            { "rawName": "thịt heo xay", "canonicalName": "Pork, ground, cooked", "count": 2, "unitToken": "bánh bao" },
             { "rawName": "trứng cút", "canonicalName": "Trứng chim cút", "count": 2, "unitToken": "quả" }
           ]
         }
       ]
     }
     </output>
-    <!-- "2 bánh bao" → count=2, unitToken="bánh bao". NO grams: the server portion resolver turns 2 × the bánh-bao prior into grams. The quail eggs inside inherit count=2. -->
+    <!-- A counted filled bun still splits into its wrapper and its filling. "2 bánh bao" → count=2, unitToken="bánh bao" on every part, so each is sized for two buns. NO grams. The quail eggs inside inherit count=2. -->
   </example>
 
   <example>
@@ -529,7 +530,10 @@ ${INJECTION_EXAMPLE}`,
           "name": "pepperoni pizza",
           "cookingMethod": "baked",
           "ingredients": [
-            { "rawName": "pepperoni pizza", "canonicalName": "Pizza with pepperoni", "count": 2, "unitToken": "slice" }
+            { "rawName": "pizza crust", "canonicalName": "Pizza crust, baked", "count": 2, "unitToken": "slice" },
+            { "rawName": "mozzarella", "canonicalName": "Mozzarella cheese, part skim", "count": 2, "unitToken": "slice" },
+            { "rawName": "pepperoni", "canonicalName": "Pepperoni, pork and beef", "count": 2, "unitToken": "slice" },
+            { "rawName": "tomato sauce", "canonicalName": "Pizza sauce, tomato", "count": 2, "unitToken": "slice" }
           ]
         },
         {
@@ -542,7 +546,7 @@ ${INJECTION_EXAMPLE}`,
       ]
     }
     </output>
-    <!-- "2 slices" → count=2, unitToken="slice" on the composite pizza ingredient. NO grams: the server portion resolver turns 2 × the slice prior into grams. The drink is its own meal item; "a coke" carries no verbatim counter word, so no count is invented. -->
+    <!-- A counted dish still splits into the foods it is made of. "2 slices" → count=2, unitToken="slice" on EVERY part, so each part is sized for two slices. NO grams. The drink is its own meal item; "a coke" carries no verbatim counter word, so no count is invented. -->
   </example>
 
 ${RAMEN_EXAMPLE}
@@ -573,7 +577,7 @@ ${RAMEN_EXAMPLE}
 
   <example>
     <input>bbq plate: pulled pork, 2 pork ribs, mac and cheese, coleslaw, cornbread</input>
-    <!-- Multi-item feast. Composed dishes WITHOUT a DB row decompose to single foods (pulled pork → pork shoulder + BBQ sauce; mac and cheese → macaroni + cheddar + milk + butter; coleslaw → cabbage + coleslaw dressing); cornbread exists as a bakery row → keep whole. "2 pork ribs" → count on the rib ingredient. Smoked/braised meats carry no separate frying fat. -->
+    <!-- Multi-item feast. Composed dishes WITHOUT a DB row decompose to single foods (pulled pork → pork shoulder + BBQ sauce; mac and cheese → macaroni + cheddar + milk + butter; coleslaw → cabbage + coleslaw dressing); cornbread is one baked bread → keep whole. "2 pork ribs" → count on the rib ingredient. Smoked/braised meats carry no separate frying fat. -->
     <output>
     {
       "isFood": true,
@@ -728,7 +732,8 @@ const DECOMPOSITION_RULES = `<decomposition_check>
   - An ingredient is ONE food that a food-composition table lists on its own: a meat, poultry, fish or seafood (with its cut or part), an egg, a grain, rice or noodle, a bread or wrapper, a vegetable or fruit, a legume or nut, a dairy product, an oil or fat, a sugar or syrup, a sauce or condiment base (fish sauce, soy sauce, chili sauce, mayonnaise), a drink base (coffee, tea, beer, soda, juice), or one packaged product sold as a single item (a branded milk carton, a yogurt cup, a candy bar, an instant-noodle pack).
   - A dish is never an ingredient. Fried rice, biryani, curries, stews, soups and noodle soups, porridges, salads, sandwiches, burgers, wraps, rolls, dumplings and buns, fritters and pancakes, desserts made from several foods, milk tea, milk coffee, smoothies, and a dipping sauce mixed at the table must each be replaced by their parts: the starch, the protein, the vegetables, the cooking fat, the sauce or broth, the sugar, the milk. Name each part as the single food it is.
   - If an ingredient's rawName repeats or paraphrases its dish's name, or names something made of several foods, split it into those foods.
-  - Keep an item whole only when it is genuinely one product or one food (a bread roll, a cheese, a sausage, a branded packaged item, plain cooked rice, a single fruit or vegetable).
+  - Keep an item whole only when it is genuinely one product or one food (a bread roll, a cheese, a sausage, a sealed packaged product such as a candy bar or a bottled drink, plain cooked rice, a single fruit or vegetable). A restaurant or chain menu item (a Whopper, a Big Mac, a Subway sub) is a dish: split it like any other.
+  - A count never keeps a dish whole: "2 burgers" or "3 slices of pizza" split into their parts, and every part carries the count and unit. A vessel word that sizes the whole dish ("2 tô phở", "2 bowls of ramen") stays on the meal item as vesselToken, never on the parts.
 </decomposition_check>
 
 <implied_components>

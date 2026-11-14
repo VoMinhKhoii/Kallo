@@ -36,6 +36,8 @@ type Part = {
   portion?: PortionResolution;
   /** The user typed an amount for this part ("2 tortillas"). */
   count?: number;
+  /** The unit of that count ("tortilla", "bánh xèo"). */
+  unit?: string;
 };
 
 /** One dish; every part matched one row (c1) and Call 2 gave it `g` grams and g/4 g carbohydrate. */
@@ -55,6 +57,7 @@ function stateOf(
           rawName: p.name,
           canonicalName: p.name,
           ...(p.count ? { count: p.count } : {}),
+          ...(p.unit ? { unitToken: p.unit } : {}),
         })),
       },
     ],
@@ -354,6 +357,19 @@ describe('scaleToServedMass', () => {
     );
     // 400 − 60 for the tortilla = 340 for the free parts, from 300.
     expect(grams(out.state)).toEqual([60, 227, 113]);
+  });
+
+  it("moves parts that only carry the dish's count with the rest", () => {
+    // "2 bánh xèo 400g": Call 1 puts the dish's count on every food it
+    // splits into; none of them is a typed amount, so all of them move.
+    const out = scaleToServedMass(
+      stateOf({ name: 'Bánh xèo', servedMassG: 400 }, [
+        { name: 'bột gạo', g: 200, count: 2, unit: 'bánh xèo' },
+        { name: 'tôm', g: 100, count: 2, unit: 'bánh xèo' },
+        { name: 'dầu ăn', g: 20 },
+      ])
+    );
+    expect(grams(out.state)).toEqual([250, 125, 25]);
   });
 
   it('scales the parts with an amount too when they leave no room', () => {
