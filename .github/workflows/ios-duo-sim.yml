@@ -1,0 +1,68 @@
+name: iOS Duo simulator
+
+# TEMPORARY while the iPhone Duo adaptation is in review: what can the Duo
+# simulator on GitHub's Xcode 27 image be told from the command line? Runs on
+# pushes that touch this file, and by hand. Standard macOS runners are free for
+# a public repository.
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/iphone-duo]
+    paths: ['.github/workflows/ios-duo-sim.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-duo-sim-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: xcode-27
+    timeout-minutes: 20
+    steps:
+      - name: Toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          xcrun simctl list devicetypes | grep -i -E 'duo|fold' || true
+          xcrun simctl list devices available | grep -i -B2 -A2 duo || true
+
+      - name: What simctl and devicectl offer
+        run: |
+          mkdir -p out
+          xcrun simctl help > out/simctl-help.txt 2>&1 || true
+          for sub in io ui status_bar spawn boot; do
+            xcrun simctl help "$sub" > "out/simctl-help-$sub.txt" 2>&1 || true
+          done
+          xcrun devicectl help > out/devicectl-help.txt 2>&1 || true
+          xcrun devicectl help device > out/devicectl-help-device.txt 2>&1 || true
+          grep -i -n -E 'fold|hinge|pose|posture|orient|rotat|display' out/*.txt || true
+
+      - name: Boot the Duo simulator and look at it
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in sorted(d.items()) if "27-1" in k for x in v if "Duo" in x["name"]))')
+          echo "UDID=$UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl io "$UDID" enumerate > out/io-enumerate.txt 2>&1 || true
+          cat out/io-enumerate.txt
+          sleep 20
+          xcrun simctl io "$UDID" screenshot out/home-default.png || true
+          for display in internal external; do
+            xcrun simctl io "$UDID" screenshot --display="$display" "out/home-$display.png" || true
+          done
+          xcrun simctl ui "$UDID" > out/simctl-ui.txt 2>&1 || true
+          cat out/simctl-ui.txt
+          xcrun simctl spawn "$UDID" defaults read com.apple.springboard 2>/dev/null | head -40 || true
+          ls -la ~/Library/Developer/CoreSimulator/Devices/"$UDID"/ || true
+          plutil -p ~/Library/Developer/CoreSimulator/Devices/"$UDID"/device.plist || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: duo-sim-discovery
+          path: out
+          retention-days: 7
