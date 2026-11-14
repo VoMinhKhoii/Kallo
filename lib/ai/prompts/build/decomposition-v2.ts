@@ -15,9 +15,9 @@ import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
  * the LLM sees the matched DB row's state and can scope the number
  * correctly without the convertCookedToRaw fudge.
  *
- * Additive vs v1: `stateHint` (closed enum) + `stateNote` (free-form short
- * phrase) preserve the user's signal about whether they weighed raw or
- * cooked, but as informational hints — not forcing functions.
+ * Additive vs v1: `stateHint` (closed enum) preserves the user's signal about
+ * whether they weighed raw or cooked, but as an informational hint — not a
+ * forcing function.
  *
  * Prompt-cache layout: static instructions + `<user_context>` come FIRST so
  * Vertex's implicit context cache (≥2048 token threshold) can hit on the

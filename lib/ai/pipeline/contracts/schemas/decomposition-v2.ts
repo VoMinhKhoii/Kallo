@@ -59,13 +59,9 @@ export const decomposedIngredientV2Schema = z
       .describe(
         'Hint extracted from the user\'s text. "raw_weight" when the user explicitly said the weight was measured before cooking ("cân sống", "raw weight", "before cooking"); "cooked_weight" when they pinned to as-eaten ("đã nấu xong cân", "after cooking"); "unspecified" or omit when neither — Call 2 infers from cooking method.'
       ),
-    stateNote: z
-      .string()
-      .max(80)
-      .optional()
-      .describe(
-        'Free-form short verbatim user phrase that informed `stateHint`. Helps Call 2 disambiguate unusual phrasings. Optional.'
-      ),
+    // Legacy: kept so stored decompositions still parse. Call 1 no longer
+    // writes it (see `mealDecompositionV2CallSchema`).
+    stateNote: z.string().max(80).optional(),
     // ---- Structured quantity evidence (Phase 3, NLP-shaped) --------------
     // Extraction ONLY. The LLM never computes grams here — the server-side
     // portion resolver turns (count × unitToken × sizeModifier) into a grams
@@ -135,10 +131,9 @@ function dishSchemaOf<I extends z.ZodType>(ingredient: I) {
         .describe(
           "Free-form default cooking method for the dish in the user's language. It applies only to ingredients without their own cookingMethod override."
         ),
-      cuisineNote: z
-        .string()
-        .optional()
-        .describe('Optional regional/style note for disambiguation.'),
+      // Legacy: kept so stored decompositions still parse. Call 1 no longer
+      // writes it (see `mealDecompositionV2CallSchema`).
+      cuisineNote: z.string().optional(),
       vesselToken: z
         .string()
         .min(1)
