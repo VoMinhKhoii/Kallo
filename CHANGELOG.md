@@ -1,5 +1,59 @@
 # Changelog
 
+## [1.23.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.22.0...v1.23.0) (2026-11-14)
+
+
+### Features
+
+* **ai:** fall back to Haiku on Vertex before Gemini ([#562](https://github.com/VoMinhKhoii/Kallo/issues/562)) ([1dd8573](https://github.com/VoMinhKhoii/Kallo/commit/1dd8573c1c791a0807160b7d7b0f059d876872b8))
+* **ai:** hold each meal near a plain Sonnet read ([#576](https://github.com/VoMinhKhoii/Kallo/issues/576)) ([c4d2275](https://github.com/VoMinhKhoii/Kallo/commit/c4d22754a15b61bc7e98f8848d4ccc9ef76f3a91))
+* **ios:** home-screen Today widget in small, medium and large ([#553](https://github.com/VoMinhKhoii/Kallo/issues/553)) ([4c36125](https://github.com/VoMinhKhoii/Kallo/commit/4c3612551001c2234281b1d999d3080838471dbc))
+* **landing:** link each demo to the page that explains it, add a label scanning help page ([#575](https://github.com/VoMinhKhoii/Kallo/issues/575)) ([f60475e](https://github.com/VoMinhKhoii/Kallo/commit/f60475e107fd4bee67ea376d0cdea82368d10266))
+* **landing:** redesign the landing page and speed up first paint ([#572](https://github.com/VoMinhKhoii/Kallo/issues/572)) ([3510543](https://github.com/VoMinhKhoii/Kallo/commit/351054334f0a107f2042a64a17ee9624f7be9bec))
+* **mobile:** grow the sent message while it is held ([#554](https://github.com/VoMinhKhoii/Kallo/issues/554)) ([b9848f4](https://github.com/VoMinhKhoii/Kallo/commit/b9848f4e8af52d8ce38703cf9060e17e270f73f7))
+* **mobile:** one 500ms hold menu for the sent message and the meal cards ([#559](https://github.com/VoMinhKhoii/Kallo/issues/559)) ([9ed99f0](https://github.com/VoMinhKhoii/Kallo/commit/9ed99f0d9548d4c750a3c441d5c5dcef37e4938c))
+* **mobile:** open in English until the user picks Vietnamese ([#587](https://github.com/VoMinhKhoii/Kallo/issues/587)) ([1ab46e1](https://github.com/VoMinhKhoii/Kallo/commit/1ab46e11d9a2e34afdb780b3b2395dbcd5d5a0e1))
+* **nutrition:** fit micronutrient targets to the book, body weight and calories ([#589](https://github.com/VoMinhKhoii/Kallo/issues/589)) ([c79ac7d](https://github.com/VoMinhKhoii/Kallo/commit/c79ac7dfffca4bc689a7cd680bee1b2c384168d6))
+* **seo:** add "Kallo vs Cal AI" and "Kallo vs MyFitnessPal" pages ([#585](https://github.com/VoMinhKhoii/Kallo/issues/585)) ([c6f5540](https://github.com/VoMinhKhoii/Kallo/commit/c6f5540401ce3f3377f88bff2e864a7128f6530b))
+* **seo:** add a "Cal AI alternatives" page ([#583](https://github.com/VoMinhKhoii/Kallo/issues/583)) ([88064ee](https://github.com/VoMinhKhoii/Kallo/commit/88064ee91f85c7fbd05a330af61e1bd235103f38))
+* **seo:** add a "MyFitnessPal alternatives" page ([#584](https://github.com/VoMinhKhoii/Kallo/issues/584)) ([db321b2](https://github.com/VoMinhKhoii/Kallo/commit/db321b2f3ea294bc67216789217b7dae1126ec1c))
+* **seo:** link food pages, calculators, data page and docs to each other ([#558](https://github.com/VoMinhKhoii/Kallo/issues/558)) ([f661b14](https://github.com/VoMinhKhoii/Kallo/commit/f661b14e85ed7eb9f1cd0118ce17d6b586250f03))
+* **web:** neutral fills for the Graphite dark theme ([#548](https://github.com/VoMinhKhoii/Kallo/issues/548)) ([b047f2f](https://github.com/VoMinhKhoii/Kallo/commit/b047f2f73a0b55ca2237be1b8f4e7f620aa75172))
+* **web:** size icons by role, reply field above the thread, border-only field focus ([#547](https://github.com/VoMinhKhoii/Kallo/issues/547)) ([048c06c](https://github.com/VoMinhKhoii/Kallo/commit/048c06cdb7979547976cd286b4afa9d3d0f90ecd))
+
+
+### Bug Fixes
+
+* **ai:** hold what the user typed in code and cover weighed meals with the plain read ([#586](https://github.com/VoMinhKhoii/Kallo/issues/586)) ([57c569c](https://github.com/VoMinhKhoii/Kallo/commit/57c569c20a9f671f2253bf6a5dbadfc228960521))
+* **ai:** read a dish servedMassG of 0 as no weight in Claude answers ([#557](https://github.com/VoMinhKhoii/Kallo/issues/557)) ([20d5358](https://github.com/VoMinhKhoii/Kallo/commit/20d535873bdb7f0af3b3a5361ecd4e348c4ec6bc))
+* **ai:** split counted dishes and burgers into their parts ([#590](https://github.com/VoMinhKhoii/Kallo/issues/590)) ([58f2c48](https://github.com/VoMinhKhoii/Kallo/commit/58f2c482c6debaa596393321c31d491837b6b7fc))
+* **ai:** stop bad Gemini values from failing the whole meal ([#566](https://github.com/VoMinhKhoii/Kallo/issues/566)) ([052561a](https://github.com/VoMinhKhoii/Kallo/commit/052561a6e63f3091eecf27e866b7e424db37db39))
+* **ai:** stop Call 2 answers from dropping foods ([#563](https://github.com/VoMinhKhoii/Kallo/issues/563)) ([fd08767](https://github.com/VoMinhKhoii/Kallo/commit/fd08767a5a5cb3c43978afa1f7c6b4070adc5de6))
+* **auth:** keep App Review demo sign-in and bump iOS to 1.0.2 ([#565](https://github.com/VoMinhKhoii/Kallo/issues/565)) ([00936e6](https://github.com/VoMinhKhoii/Kallo/commit/00936e677e56d86c64c7a17f3445894670137802))
+* **auth:** sign out only this browser on web, not every device ([#578](https://github.com/VoMinhKhoii/Kallo/issues/578)) ([33ab997](https://github.com/VoMinhKhoii/Kallo/commit/33ab997e12019a917e45f3056d78d57f9ec6f7a8))
+* **card-index:** retry a failed load on the next request, not on a timer ([#556](https://github.com/VoMinhKhoii/Kallo/issues/556)) ([94bfcb0](https://github.com/VoMinhKhoii/Kallo/commit/94bfcb0a99a898d1853b36ce34cb78bb3ff3596a))
+* **circle:** keep a post's kcal on one line and give the thread more room ([#549](https://github.com/VoMinhKhoii/Kallo/issues/549)) ([62b97c2](https://github.com/VoMinhKhoii/Kallo/commit/62b97c2decefa6136be595006512e12f29b348fe))
+* **circle:** tidy the share-a-meal sheet ([#569](https://github.com/VoMinhKhoii/Kallo/issues/569)) ([d52811c](https://github.com/VoMinhKhoii/Kallo/commit/d52811ce1fda2ef3864a9d4753a271d55a6c8443))
+* **i18n:** keep every toast to one short line on iOS and web ([#568](https://github.com/VoMinhKhoii/Kallo/issues/568)) ([49ff2de](https://github.com/VoMinhKhoii/Kallo/commit/49ff2de13fcac409dcf1a39bd77ba13b5cb112ee))
+* **landing:** show the painted background whole, at a quarter of the size ([#574](https://github.com/VoMinhKhoii/Kallo/issues/574)) ([ff58094](https://github.com/VoMinhKhoii/Kallo/commit/ff580945b8f7d1975116b1f362e52f9aac428339))
+* **logging:** clear relog picks from the composer when a meal is sent ([#571](https://github.com/VoMinhKhoii/Kallo/issues/571)) ([f80b5d4](https://github.com/VoMinhKhoii/Kallo/commit/f80b5d4d13c35074bea06144c04d1c4c6e162e66))
+* **logging:** keep every dish's vessels open on the tape in meal edit ([#573](https://github.com/VoMinhKhoii/Kallo/issues/573)) ([d45c281](https://github.com/VoMinhKhoii/Kallo/commit/d45c281d5e55982d72d15821f1b6c2193eda6145))
+* **seo:** serve public pages as plain HTML, with structured data and a meal table ([#561](https://github.com/VoMinhKhoii/Kallo/issues/561)) ([2144897](https://github.com/VoMinhKhoii/Kallo/commit/214489785de11d359f2cc93ff7c149608edf4788))
+* **web:** answer 404, not 500, for a first segment that is not a locale ([#579](https://github.com/VoMinhKhoii/Kallo/issues/579)) ([e437ac7](https://github.com/VoMinhKhoii/Kallo/commit/e437ac7d3ea9b526fb9b7466f5d746184c5ea0ea))
+
+
+### Performance
+
+* **ai:** keep the shared Claude prompt prefix cached for an hour ([#570](https://github.com/VoMinhKhoii/Kallo/issues/570)) ([b508fa4](https://github.com/VoMinhKhoii/Kallo/commit/b508fa431ecfcaeebb82a3948031c4c4090e96e2))
+* **circle:** speed up feed navigation and simplify font loading ([6275375](https://github.com/VoMinhKhoii/Kallo/commit/62753754a608585ee6aef51eeecf9df40e90a449))
+* **web:** load PostHog on first use, zod/mini and per-area illustrations ([#552](https://github.com/VoMinhKhoii/Kallo/issues/552)) ([bf592ed](https://github.com/VoMinhKhoii/Kallo/commit/bf592ed44c169d9b377a5adaac4f55c3c3e4d365))
+* **web:** run the public pages' animations in CSS so content paints without JS ([#555](https://github.com/VoMinhKhoii/Kallo/issues/555)) ([725ae62](https://github.com/VoMinhKhoii/Kallo/commit/725ae62b2b6990fcac781fe0e484c03fd6a652ca))
+
+
+### Documentation
+
+* add security lessons and point code review at them ([#545](https://github.com/VoMinhKhoii/Kallo/issues/545)) ([d91eabf](https://github.com/VoMinhKhoii/Kallo/commit/d91eabf0eae8c6eb8c8d6f035d818e432bb3aa65))
+
 ## [1.22.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.21.0...v1.22.0) (2026-11-02)
 
 
