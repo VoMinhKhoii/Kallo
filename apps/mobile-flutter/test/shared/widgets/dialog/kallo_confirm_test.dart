@@ -103,6 +103,19 @@ Color _fill(WidgetTester tester, String label) =>
         .color;
 
 void main() {
+  for (final width in [466.0, 951.0]) {
+    testWidgets('alert centres outside side column at $width', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 669);
+      tester.view.viewPadding = const FakeViewPadding(right: 84, bottom: 34);
+      tester.view.padding = const FakeViewPadding(right: 84, bottom: 34);
+      addTearDown(tester.view.reset);
+      await _open(tester, _host(onResult: (_) {}));
+      final rect = tester.getRect(find.byKey(kKalloConfirmSurface));
+      expect(rect.center.dx, (width - 84) / 2);
+      expect(rect.right, lessThanOrEqualTo(width - 84));
+    });
+  }
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {

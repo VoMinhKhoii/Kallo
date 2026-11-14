@@ -11,6 +11,8 @@ import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
 import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
 import 'package:kallo_mobile/shell/nav/pill_nav_bar.dart';
+import 'package:kallo_mobile/shell/nav/pill_nav_surface.dart';
+import 'package:kallo_mobile/shell/nav/pill_nav_veil.dart';
 import 'package:kallo_mobile/shell/tab_scaffold.dart';
 
 import '../l10n_test_loader.dart';
@@ -50,6 +52,13 @@ class _CounterPageState extends State<_CounterPage> {
                   ),
             ),
         child: const Text('sheet'),
+      ),
+      Expanded(
+        child: ListView.builder(
+          itemCount: 100,
+          itemExtent: 48,
+          itemBuilder: (_, i) => Text('row $i'),
+        ),
       ),
     ],
   );
@@ -107,7 +116,7 @@ GoRouter _router() => GoRouter(
   ],
 );
 
-Widget _app() => ProviderScope(
+Widget _app({GoRouter? router}) => ProviderScope(
   overrides: [
     onboardingResumeProvider.overrideWithValue(false),
     mealShareInvitesProvider.overrideWith((_) async => const []),
@@ -123,7 +132,7 @@ Widget _app() => ProviderScope(
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
             locale: context.locale,
-            routerConfig: _router(),
+            routerConfig: router ?? _router(),
           ),
     ),
   ),
@@ -139,6 +148,98 @@ void main() {
           (call) async => call.method == 'getAll' ? <String, Object>{} : null,
         );
     await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets('folding preserves branch identity, counter and scroll offset', (
+    tester,
+  ) async {
+    final router = _router();
+    addTearDown(router.dispose);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.viewPadding = const FakeViewPadding(top: 62, bottom: 34);
+    tester.view.padding = const FakeViewPadding(top: 62, bottom: 34);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(router: router));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('bump'));
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, 30));
+    await tester.pumpAndSettle();
+    final branch = tester.state(find.byType(_CounterPage));
+    final scroll = tester.state<ScrollableState>(find.byType(Scrollable));
+    final offset = scroll.position.pixels;
+    expect(offset, greaterThan(0));
+    await tester.tap(find.bySemanticsLabel('Nutrition'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('bump'));
+    await tester.pump();
+    for (final pose in [
+      (const Size(466, 678), const FakeViewPadding(right: 84, bottom: 34)),
+      (const Size(951, 669), const FakeViewPadding(right: 84, bottom: 34)),
+      (const Size(475, 669), const FakeViewPadding(left: 84, bottom: 34)),
+      (const Size(669, 951), const FakeViewPadding(top: 82, bottom: 34)),
+    ]) {
+      tester.view.physicalSize = pose.$1;
+      tester.view.viewPadding = pose.$2;
+      tester.view.padding = pose.$2;
+      await tester.pumpAndSettle();
+      expect(find.text('nutrition:1'), findsOneWidget);
+      final rect = tester.getRect(find.byType(PillNavSurface));
+      if (pose.$2.right == 84 || pose.$2.left == 84) {
+        expect(rect.size, const Size(56, 276));
+        expect(rect.center.dx, pose.$2.left == 84 ? 42 : pose.$1.width - 42);
+        expect(rect.bottom, pose.$1.height - 34 - 8);
+      } else {
+        expect(rect.width, 420);
+        expect(rect.center.dx, pose.$1.width / 2);
+      }
+    }
+    await tester.tap(find.bySemanticsLabel('Today'));
+    await tester.pumpAndSettle();
+    expect(tester.state(find.byType(_CounterPage)), same(branch));
+    expect(find.text('dash:1'), findsOneWidget);
+    expect(
+      tester.state<ScrollableState>(find.byType(Scrollable)),
+      same(scroll),
+    );
+    expect(scroll.position.pixels, offset);
+  });
+
+  testWidgets('short column centres pill and keyboard hides it toward edge', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(678, 466);
+    tester.view.viewPadding = const FakeViewPadding(right: 84, bottom: 34);
+    tester.view.padding = const FakeViewPadding(right: 84, bottom: 34);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(find.byType(PillNavSurface)).center,
+      const Offset(636, 233),
+    );
+    final branchContext = tester.element(find.byType(_CounterPage));
+    expect(MediaQuery.paddingOf(branchContext).bottom, 34);
+    expect(MediaQuery.paddingOf(branchContext).right, 84);
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<PillNavVeil>(find.byType(PillNavVeil)).hidden,
+      isFalse,
+    );
+    tester.view.viewInsets = const FakeViewPadding(bottom: 200);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<AnimatedSlide>(find.byType(AnimatedSlide)).offset,
+      const Offset(1, 0),
+    );
+    expect(
+      tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
+      0,
+    );
   });
 
   testWidgets('bar hugs the bottom and leaves the body its height', (

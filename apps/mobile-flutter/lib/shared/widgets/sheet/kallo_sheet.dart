@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../shell/window/window_layout.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
@@ -48,12 +49,6 @@ class SheetContentInset extends InheritedWidget {
       oldWidget.horizontal != horizontal;
 }
 
-/// Shared chrome for every modal bottom sheet in the app.
-///
-/// One surface (solid white, top-rounded at [kCardRadius]) and one header
-/// (`KalloSheetHeader`, in kallo_sheet_header.dart) so the hand-rolled sheets
-/// stop diverging. Callers keep their own body and height mechanics.
-
 /// Opens a modal sheet with the standard transparent-background chrome — the
 /// surface itself is painted by [KalloSheetSurface], which the [builder] returns.
 ///
@@ -61,17 +56,11 @@ class SheetContentInset extends InheritedWidget {
 /// 9/16 of the screen and clips the rest, taking the action row off-screen —
 /// the three sheets that hadn't opted out all overflowed on a short phone or in
 /// landscape. Safe by default now. Sizing to content is only half of it: see
-/// [KalloSheetSurface.scrollable]. Guarded by `test/sheet_overflow_test.dart`.
+/// [KalloSheetSurface.scrollable]. Guarded by `test/shared/sheet_overflow_test.dart`.
 ///
-/// [useRootNavigator] is TRUE and not optional. Opened from a shell BRANCH
-/// screen (Circle, Nutrition, …) the nearest navigator is the branch's own,
-/// which lives inside the shell Scaffold's `body` — and a Scaffold paints its
-/// `bottomNavigationBar` after the body, so the pill nav sat ON TOP of the
-/// open sheet: it covered Circle's create-group CTA, and a tap on it switched
-/// tabs behind the sheet. Pushing onto the root navigator puts the sheet above
-/// the whole shell. `Navigator.of(sheetContext).pop()` inside a sheet still
-/// dismisses it — that context sits under the sheet's own route, which is now
-/// the root navigator's. Guarded by `test/shell/pill_nav_test.dart`.
+/// Always uses the root navigator: a branch navigator sits inside the shell
+/// body, underneath its pill. Root ownership keeps the sheet and its barrier
+/// above every navigation target (`test/shell/pill_nav_test.dart`).
 Future<T?> showNhamSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -82,6 +71,8 @@ Future<T?> showNhamSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
     backgroundColor: Colors.transparent,
+    // The surface owns horizontal placement, including the fold-side pane.
+    constraints: const BoxConstraints(maxWidth: double.infinity),
     barrierColor: barrierColor,
     useRootNavigator: true,
     builder: builder,
@@ -91,6 +82,8 @@ Future<T?> showNhamSheet<T>(
 /// The standard sheet surface: solid white, top corners rounded at the calm
 /// card radius. Callers pass their own [constraints] (max-height slice) and,
 /// optionally, [padding] for content-hugging sheets.
+/// The surface owns the safe horizontal bounds so direct callers also avoid
+/// the control column and, in two panes, the fold.
 ///
 /// Set [scrollable] on a sheet whose body is a plain content [Column] with no
 /// scroll view of its own: it caps the surface at [maxHeightFraction] and lets
@@ -138,6 +131,16 @@ class KalloSheetSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = WindowLayout.of(context);
+    var left = layout.viewPadding.left;
+    var right = layout.viewPadding.right;
+    if (layout.twoPane && layout.hasControlColumn) {
+      if (layout.controlEdge == ControlEdge.right) {
+        left = layout.foldX + kFoldGutter / 2;
+      } else {
+        right = layout.size.width - layout.foldX + kFoldGutter / 2;
+      }
+    }
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     var effective = constraints;
     var body = child;
@@ -157,25 +160,38 @@ class KalloSheetSurface extends StatelessWidget {
     // OUTSIDE the decoration: the surface has to end where the keyboard
     // begins, not merely inset its contents and paint white behind it.
     return Padding(
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      child: Container(
-        constraints: effective,
-        padding: padding,
-        clipBehavior: clipBehavior,
-        // A squircle, not a rounded rect: the top corners ramp their
-        // curvature the way every iOS sheet's do. `ShapeDecoration` is what
-        // takes a `ShapeBorder` — note it spells shadows `shadows`.
-        decoration: ShapeDecoration(
-          color: color ?? KalloColors.sheet,
-          shape: KalloShapes.squircleTop(kSheetRadius),
-          // Sheets are TRUE elevation on the borderless-card canvas.
-          shadows: kSheetShadows,
-        ),
-        // Published INSIDE the padding, so the header it reaches is measuring
-        // the same content column its neighbours sit in.
-        child: SheetContentInset(
-          horizontal: padding?.resolve(Directionality.of(context)).left ?? 0,
-          child: body,
+      padding: EdgeInsets.fromLTRB(left, 0, right, keyboardInset),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: Container(
+            constraints: effective,
+            padding: padding,
+            clipBehavior: clipBehavior,
+            // A squircle, not a rounded rect: the top corners ramp their
+            // curvature the way every iOS sheet's do. `ShapeDecoration` is what
+            // takes a `ShapeBorder` — note it spells shadows `shadows`.
+            decoration: ShapeDecoration(
+              color: color ?? KalloColors.sheet,
+              shape: KalloShapes.squircleTop(kSheetRadius),
+              // Sheets are TRUE elevation on the borderless-card canvas.
+              shadows: kSheetShadows,
+            ),
+            // Published INSIDE the padding, so the header it reaches is measuring
+            // the same content column its neighbours sit in.
+            child: SheetContentInset(
+              horizontal:
+                  padding?.resolve(Directionality.of(context)).left ?? 0,
+              child: MediaQuery.removePadding(
+                context: context,
+                removeLeft: true,
+                removeRight: true,
+                child: body,
+              ),
+            ),
+          ),
         ),
       ),
     );
