@@ -24,7 +24,7 @@ jobs:
     runs-on: xcode-27
     timeout-minutes: 20
     steps:
-      - name: Drive Device Hub's pose controls
+      - name: Click Device Hub's pose buttons
         run: |
           mkdir -p out
           UDID=$(xcrun simctl list devices available -j \
@@ -34,41 +34,47 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b > out/bootstatus.txt 2>&1 || true
           open -a "Device Hub"
           sleep 25
-          ax() { osascript -e "tell application \"System Events\" to tell process \"DeviceHub\" to $1" 2>&1; }
-          for menu in Device Controls View; do
-            echo "== $menu"; ax "get name of every menu item of menu 1 of menu bar item \"$menu\" of menu bar 1"
-            ax "get name of every menu item of menu 1 of every menu item of menu 1 of menu bar item \"$menu\" of menu bar 1"
-          done | tee out/menus.txt
-          echo "== window"; ax "get {role, description, title} of every UI element of window 1" | tee out/window.txt
-          ax "get entire contents of window 1" > out/window-contents.txt 2>&1 || true
-          head -c 6000 out/window-contents.txt
+          echo "== assistive access"
+          osascript -e 'tell application "System Events" to get UI elements enabled' 2>&1 || true
+          sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" \
+            "select service, client, auth_value from access where service in ('kTCCServiceAccessibility','kTCCServicePostEvent','kTCCServiceAppleEvents')" 2>&1 | head -40 || true
+          sqlite3 "$HOME/Library/Application Support/com.apple.TCC/TCC.db" \
+            "select service, client, auth_value from access where service in ('kTCCServiceAccessibility','kTCCServicePostEvent','kTCCServiceAppleEvents')" 2>&1 | head -40 || true
+          csrutil status 2>&1 || true
+          system_profiler SPDisplaysDataType 2>/dev/null | grep -i -E 'resolution|display type' || true
+
+          cat > click.swift <<'SWIFT'
+          import CoreGraphics
+          import Foundation
+          let a = CommandLine.arguments
+          let p = CGPoint(x: Double(a[1])!, y: Double(a[2])!)
+          let src = CGEventSource(stateID: .hidSystemState)
+          for type in [CGEventType.mouseMoved, .leftMouseDown, .leftMouseUp] {
+            let e = CGEvent(mouseEventSource: src, mouseType: type, mouseCursorPosition: p, mouseButton: .left)!
+            e.post(tap: .cghidEventTap)
+            usleep(120_000)
+          }
+          print("clicked \(p)")
+          SWIFT
+          sed -i '' 's/^          //' click.swift
+          swiftc -O click.swift -o click 2>&1 | tail -3
+          state() {
+            xcrun devicectl device info displays --device "$UDID" 2>&1 | grep -E '^▿|backlight|currentOrientation' | tr '\n' ' '; echo
+          }
           shot() {
             xcrun simctl io "$UDID" screenshot --display=1 "out/$1-outer.png" 2>&1 | tail -1 || true
             xcrun simctl io "$UDID" screenshot --display=3 "out/$1-inner.png" 2>&1 | tail -1 || true
-            xcrun devicectl device info displays --device "$UDID" 2>&1 | grep -E 'LCD|backlight|currentOrientation' || true
+            screencapture -x "out/$1-desktop.png"
           }
-          shot closed
-          screencapture -x out/desktop-before.png
-
-      - name: Try every pose-like menu item
-        run: |
-          UDID=$(xcrun simctl list devices -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for v in d.values() for x in v if x["state"]=="Booted"))')
-          ax() { osascript -e "tell application \"System Events\" to tell process \"DeviceHub\" to $1" 2>&1; }
-          n=0
-          grep -o -i -E '[A-Za-z ]*(open|fold|pose|flat|closed|laptop|tent|book)[A-Za-z ]*' out/menus.txt | sort -u | while read -r item; do
-            n=$((n+1))
-            echo "== click: $item"
-            for menu in Device Controls; do
-              ax "click menu item \"$item\" of menu 1 of menu bar item \"$menu\" of menu bar 1" | head -2
-              ax "click menu item \"$item\" of menu 1 of (first menu item of menu 1 of menu bar item \"$menu\" of menu bar 1 whose name contains \"Pose\")" | head -2
-            done
-            sleep 6
-            slug=$(echo "$item" | tr ' A-Z' '-a-z' | tr -cd 'a-z-')
-            xcrun simctl io "$UDID" screenshot --display=1 "out/pose-$slug-outer.png" 2>&1 | tail -1 || true
-            xcrun simctl io "$UDID" screenshot --display=3 "out/pose-$slug-inner.png" 2>&1 | tail -1 || true
-            xcrun devicectl device info displays --device "$UDID" 2>&1 | grep -E 'backlight' || true
-            screencapture -x "out/desktop-$slug.png"
-          done
+          osascript -e 'tell application "Device Hub" to activate' 2>&1 || true
+          sleep 2
+          echo "== closed"; state; shot closed
+          # Pose buttons in the bottom bar of a 1024x768 desktop, read off a
+          # screenshot of the previous run: closed, partly open, fully open.
+          echo "== fully open"; ./click 743 679; sleep 8; state; shot open
+          echo "== partly open"; ./click 708 679; sleep 8; state; shot partly
+          echo "== rotate"; ./click 638 679; sleep 8; state; shot partly-rotated
+          echo "== closed again"; ./click 674 679; sleep 8; state; shot closed-again
 
       - uses: actions/upload-artifact@v4
         if: always()
