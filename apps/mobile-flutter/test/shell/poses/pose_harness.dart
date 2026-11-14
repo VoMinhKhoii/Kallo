@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -7,53 +6,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/router.dart';
-import 'package:kallo_mobile/features/dashboard/data/dashboard_cache.dart';
-import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
-import 'package:kallo_mobile/models/social/circle.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
-import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:kallo_mobile/shell/kallo_app_theme.dart';
 import 'package:kallo_mobile/shared/widgets/mascot/bun_mascot.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app_fonts.dart';
 import '../../l10n_test_loader.dart';
 import 'fixture_api.dart';
 import 'fixtures.dart';
+import 'pose_overrides.dart';
 import 'poses.dart';
-
-final _session = Session(
-  accessToken: 'synthetic-pose-token',
-  tokenType: 'bearer',
-  user: const User(
-    id: 'pose-viewer',
-    appMetadata: {},
-    userMetadata: {},
-    aud: 'authenticated',
-    email: 'alex@example.invalid',
-    createdAt: '2026-01-01T00:00:00Z',
-    lastSignInAt: '2026-11-01T00:00:00Z',
-  ),
-);
-
-/// No disk reads/writes or cache state shared between matrix cases.
-class _MemoryDashboardCache extends DashboardCache {
-  @override
-  Future<Map<String, dynamic>?> takeOnce(
-    String userId,
-    String date,
-    int tz,
-  ) async => null;
-
-  @override
-  Future<void> save(
-    String userId,
-    String date,
-    int tz,
-    Map<String, dynamic> bundle,
-  ) async {}
-}
 
 Future<void> initializePoseHarness() async {
   final messenger =
@@ -107,20 +70,7 @@ Future<Future<void> Function()> bootPose(
   final errors = _ProviderErrors();
   final container = ProviderContainer(
     observers: [errors],
-    overrides: [
-      apiClientProvider.overrideWithValue(api),
-      dashboardCacheProvider.overrideWithValue(_MemoryDashboardCache()),
-      // The ambient badge stream polls forever; retain the real paged feed,
-      // but supply a finite badge snapshot so disposal cannot await a tick.
-      circleFeedProvider.overrideWith(
-        (_) =>
-            Stream.value(fixtures.posts.map(CircleFeedEntry.fromJson).toList()),
-      ),
-      authEventsProvider.overrideWithValue(const Stream<AuthState>.empty()),
-      currentSessionReaderProvider.overrideWithValue(
-        () => signedIn ? _session : null,
-      ),
-    ],
+    overrides: poseOverrides(fixtures: fixtures, api: api, signedIn: signedIn),
   );
   // Resolve the auth seed before routing: there are no native auth events to
   // refresh a router that first reads the session in its loading state.
