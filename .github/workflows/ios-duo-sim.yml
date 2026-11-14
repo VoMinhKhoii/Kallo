@@ -1,9 +1,18 @@
 name: iOS Duo simulator
 
-# TEMPORARY while the iPhone Duo adaptation is in review: builds the app for
-# the simulator with Xcode 27.1 and looks at it on the iPhone Duo simulator
-# that ships on GitHub's Xcode 27 image. Runs on pushes that touch this file,
-# and by hand. Standard macOS runners are free for a public repository.
+# Screenshots of the app on the iPhone Duo simulator, in every pose.
+#
+# The widget tests in apps/mobile-flutter/test/shell/poses render the app at
+# Duo's window sizes; only the simulator draws the system's side: the status
+# column, the Dynamic Island, the fold. GitHub's Xcode 27 image ships the Duo
+# simulator, so this needs no local Xcode 27.
+#
+# Neither simctl nor devicectl can open or fold the simulated device. Device
+# Hub can, so the job posts mouse clicks at its pose buttons. Their positions
+# were read off a screenshot of the runner's 1024x768 desktop; if Device Hub's
+# layout changes, the `desktop-*.png` artifacts show where they went.
+#
+# TEMPORARY trigger: pushes to the adaptation branch that touch this file.
 on:
   workflow_dispatch:
   push:
@@ -18,32 +27,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Probe: neither simctl nor devicectl can open or fold the simulated Duo,
-  # but the runner can script Device Hub's own controls through System Events.
-  fold-controls:
+  tour:
     runs-on: xcode-27
-    timeout-minutes: 20
+    timeout-minutes: 60
     steps:
-      - name: Click Device Hub's pose buttons
+      - uses: actions/checkout@v4
+
+      # The repo pins Flutter 3.44.1, which predates Xcode 27. This job doubles
+      # as the check that the app builds on the 3.47 line with Xcode 27.1.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.x
+          channel: stable
+          cache: true
+
+      - name: Build the fixture tour for the simulator
+        working-directory: apps/mobile-flutter
         run: |
-          set +e
+          flutter --version
+          flutter pub get
+          flutter build ios --simulator --debug \
+            -t test/shell/poses/sim_tour_main.dart 2>&1 | tail -40
+
+      - name: Boot Duo and open Device Hub
+        run: |
           mkdir -p out
           UDID=$(xcrun simctl list devices available -j \
             | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in sorted(d.items()) if "27-1" in k for x in v if "Duo" in x["name"]))')
-          echo "UDID=$UDID"
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b > out/bootstatus.txt 2>&1 || true
+          xcrun simctl install "$UDID" apps/mobile-flutter/build/ios/iphonesimulator/Runner.app
           open -a "Device Hub"
           sleep 25
-          echo "== assistive access"
-          osascript -e 'tell application "System Events" to get UI elements enabled' 2>&1 || true
-          sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" \
-            "select service, client, auth_value from access where service in ('kTCCServiceAccessibility','kTCCServicePostEvent','kTCCServiceAppleEvents')" 2>&1 | head -40 || true
-          sqlite3 "$HOME/Library/Application Support/com.apple.TCC/TCC.db" \
-            "select service, client, auth_value from access where service in ('kTCCServiceAccessibility','kTCCServicePostEvent','kTCCServiceAppleEvents')" 2>&1 | head -40 || true
-          csrutil status 2>&1 || true
-          system_profiler SPDisplaysDataType 2>/dev/null | grep -i -E 'resolution|display type' || true
-
           cat > click.swift <<'SWIFT'
           import CoreGraphics
           import Foundation
@@ -55,107 +71,55 @@ jobs:
             e.post(tap: .cghidEventTap)
             usleep(120_000)
           }
-          print("clicked \(p)")
           SWIFT
-          sed -i '' 's/^          //' click.swift
-          swiftc -O click.swift -o click 2>&1 | tail -3
-          state() {
-            xcrun devicectl device info displays --device "$UDID" 2>&1 | grep -E '^▿|backlight|currentOrientation' | tr '\n' ' '; echo
+          swiftc -O click.swift -o click
+          osascript -e 'tell application "Device Hub" to activate' || true
+
+      - name: Tour every pose
+        run: |
+          set +e
+          ROUTES="/dashboard /logging /nutrition /circle /settings /sign-in /paywall"
+          state() { xcrun devicectl device info displays --device "$UDID" 2>&1 | grep -E '^▿|backlight|currentOrientation' | tr '\n' ' '; echo; }
+          # fold <closed|partly|open>: Device Hub's three pose buttons.
+          fold() {
+            case "$1" in closed) x=674 ;; partly) x=708 ;; open) x=743 ;; esac
+            ./click "$x" 679; sleep 6
           }
-          shot() {
-            xcrun simctl io "$UDID" screenshot --display=1 "out/$1-outer.png" 2>&1 | tail -1 || true
-            xcrun simctl io "$UDID" screenshot --display=3 "out/$1-inner.png" 2>&1 | tail -1 || true
-            screencapture -x "out/$1-desktop.png" 2>&1 | tail -1
+          turn() { xcrun devicectl device orientation set --device "$UDID" "$1" 2>&1 | tail -1; sleep 5; }
+          # tour <pose name> <display id>
+          tour() {
+            mkdir -p "out/$1"
+            state > "out/$1/displays.txt"; cat "out/$1/displays.txt"
+            screencapture -x "out/desktop-$1.png" 2>/dev/null
+            for route in $ROUTES; do
+              name=$(echo "$route" | tr -d '/')
+              SIMCTL_CHILD_DUO_ROUTE="$route" xcrun simctl launch --terminate-running-process \
+                --stdout="$PWD/out/$1/$name.log" --stderr="$PWD/out/$1/$name.err" \
+                "$UDID" com.khoivo.nham > /dev/null 2>&1
+              sleep 9
+              xcrun simctl io "$UDID" screenshot --display="$2" "out/$1/$name.png" 2>&1 | tail -1
+              grep -a DUO_METRICS "out/$1/$name.log" | tail -1
+            done
           }
-          osascript -e 'tell application "Device Hub" to activate' 2>&1 || true
-          sleep 2
-          echo "== processes"
-          osascript -e 'tell application "System Events" to get {name, bundle identifier, background only, frontmost} of every process whose name contains "Device"' 2>&1
-          hub() { osascript -e "tell application \"System Events\" to tell (first process whose name contains \"Device\" and background only is false) to $1" 2>&1; }
-          hub "get name of every menu bar item of menu bar 1"
-          for menu in Device Controls; do
-            echo "== menu $menu"
-            hub "get name of every menu item of menu 1 of menu bar item \"$menu\" of menu bar 1"
-          done
-          hub "get {role, subrole, description} of every UI element of window 1" | cut -c1-1500
-          hub "get {role, description, help, title} of every button of window 1" | cut -c1-2500
-          echo "== closed"; state; shot closed
-          # Pose buttons in the bottom bar of a 1024x768 desktop, read off a
-          # screenshot of the previous run: closed, partly open, fully open.
-          echo "== fully open"; ./click 743 679; sleep 8; state; shot open
-          echo "== partly open"; ./click 708 679; sleep 8; state; shot partly
-          echo "== rotate"; ./click 638 679; sleep 8; state; shot partly-rotated
-          echo "== closed again"; ./click 674 679; sleep 8; state; shot closed-again
+          turn portrait
+          fold closed;            tour closed-portrait 1
+          turn landscapeLeft;     tour closed-landscape-left 1
+          turn landscapeRight;    tour closed-landscape-right 1
+          turn portrait
+          fold open;              tour open 3
+          turn landscapeLeft;     tour open-turned 3
+          turn portrait
+          fold partly;            tour partly-open 3
+          turn landscapeLeft;     tour partly-open-turned 3
+          turn portrait
+          fold closed
+          grep -a -h DUO_METRICS out/*/*.log | sort | uniq -c | sort -rn | head -30 > out/metrics.txt
+          cat out/metrics.txt
+          find out -name '*.err' -size 0 -delete
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: duo-fold-controls
+          name: duo-sim-tour
           path: out
-          retention-days: 7
-
-  duo:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: xcode-27
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: What devicectl can do to a device
-        run: |
-          mkdir -p out
-          for sub in orientation simulate capture appResize settings; do
-            xcrun devicectl help device "$sub" > "out/devicectl-$sub.txt" 2>&1 || true
-            # One level down: every subcommand the help lists.
-            awk '/^SUBCOMMANDS:/{f=1;next} /^$/{if(f>1)f=0} f{f++; print $1}' "out/devicectl-$sub.txt" \
-              | grep -E '^[a-zA-Z]' | while read -r nested; do
-                xcrun devicectl help device "$sub" "$nested" > "out/devicectl-$sub-$nested.txt" 2>&1 || true
-              done
-          done
-          tail -n +1 out/devicectl-*.txt
-
-      # Flutter 3.44.1 (the repo's pin) predates Xcode 27; 3.44.8 and the 3.47
-      # line carry the fixes. This job tells us whether the app builds on 3.47.
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: 3.47.x
-          channel: stable
-          cache: true
-
-      - name: Build for the simulator
-        working-directory: apps/mobile-flutter
-        run: |
-          flutter --version
-          flutter pub get
-          flutter build ios --simulator --debug \
-            --dart-define=SUPABASE_URL=https://example.supabase.co \
-            --dart-define=SUPABASE_ANON_KEY=duo-sim-probe \
-            --dart-define=API_BASE_URL=http://127.0.0.1:9 2>&1 | tail -60
-
-      - name: Run it on the Duo simulator
-        run: |
-          UDID=$(xcrun simctl list devices available -j \
-            | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in sorted(d.items()) if "27-1" in k for x in v if "Duo" in x["name"]))')
-          echo "UDID=$UDID"
-          xcrun simctl boot "$UDID"
-          xcrun simctl bootstatus "$UDID" -b > out/bootstatus.txt 2>&1 || true
-          tail -3 out/bootstatus.txt
-          xcrun simctl install "$UDID" apps/mobile-flutter/build/ios/iphonesimulator/Runner.app
-          shot() { # shot <name>: both displays, whichever is lit
-            xcrun simctl io "$UDID" screenshot --display=1 "out/$1-outer.png" 2>&1 | tail -1 || true
-            xcrun simctl io "$UDID" screenshot --display=3 "out/$1-inner.png" 2>&1 | tail -1 || true
-          }
-          sleep 15
-          shot home
-          xcrun simctl launch "$UDID" com.khoivo.nham || true
-          sleep 40
-          shot app-default
-          xcrun devicectl list devices > out/devicectl-devices.txt 2>&1 || true
-          cat out/devicectl-devices.txt
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: duo-sim
-          path: out
-          retention-days: 7
+          retention-days: 14
