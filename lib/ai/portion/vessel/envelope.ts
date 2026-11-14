@@ -138,6 +138,28 @@ function riceBowls(dish: DishLike, vesselToken: string): number | null {
   return rice.count !== undefined && rice.count > 0 ? rice.count : 1;
 }
 
+/**
+ * How many of the dish's vessel the user ate: the count its parts carry in the
+ * vessel's own word ("2 tô phở" → 2 on bánh phở, beef and broth). The band
+ * and mid grams describe one vessel, so "2 bowls of ramen" must not be fit
+ * into one bowl. Parts that disagree, or no such count, read as one.
+ */
+function vesselCount(dish: DishLike, vesselToken: string): number {
+  const token = normalizeVesselToken(vesselToken);
+  const counts = new Set(
+    dish.ingredients
+      .filter(
+        (i) =>
+          i.count !== undefined &&
+          i.count > 0 &&
+          normalizeVesselToken(i.unitToken ?? '') === token
+      )
+      .map((i) => i.count)
+  );
+  const [count] = counts;
+  return counts.size === 1 && count !== undefined ? count : 1;
+}
+
 export function resolveVesselEnvelope(
   dish: DishLike,
   riceBowl: GramsBand = riceBowlFor({})
@@ -165,6 +187,8 @@ export function resolveVesselEnvelope(
       ? 3
       : resolved.tier;
   const dishClass = classifyDishClass(dish, resolved.family);
+  const vessels = bowls ? 1 : vesselCount(dish, vesselToken);
+  const band = guardBandG(resolved.family, tier, dishClass);
 
   return {
     family: resolved.family,
@@ -177,10 +201,13 @@ export function resolveVesselEnvelope(
           low: Math.round(riceBowl.low * bowls),
           high: Math.round(riceBowl.high * bowls),
         }
-      : guardBandG(resolved.family, tier, dishClass),
+      : {
+          low: Math.round(band.low * vessels),
+          high: Math.round(band.high * vessels),
+        },
     midG: bowls
       ? Math.round(riceBowl.mid * bowls)
-      : midG(resolved.family, tier, dishClass),
+      : Math.round(midG(resolved.family, tier, dishClass) * vessels),
     // The picker opens no lower than 60% of its small bowl, so a part bowl
     // brings its own size; several bowls keep the plain bowl sizes rather
     // than call two bowls "small".

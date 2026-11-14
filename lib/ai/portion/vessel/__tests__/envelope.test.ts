@@ -539,6 +539,43 @@ describe('container word on the ingredient instead of the dish', () => {
     ).toBe('cup');
   });
 
+  it('sizes a dish for every vessel its parts count', () => {
+    const bowl = (count?: number) =>
+      resolveVesselEnvelope({
+        name: 'Tonkotsu ramen',
+        vesselToken: 'bowl',
+        ingredients: ['Ramen noodles', 'Pork broth', 'Chashu pork'].map(
+          (rawName) => ({
+            rawName,
+            count,
+            unitToken: count ? 'bowl' : undefined,
+          })
+        ),
+      });
+    const one = bowl();
+    const two = bowl(2);
+    expect(one).not.toBeNull();
+    expect(two?.guardG).toEqual({
+      low: Math.round((one?.guardG.low ?? 0) * 2),
+      high: Math.round((one?.guardG.high ?? 0) * 2),
+    });
+    expect(two?.midG).toBe(Math.round((one?.midG ?? 0) * 2));
+  });
+
+  it('reads parts that count the vessel differently as one vessel', () => {
+    const envelope = (counts: number[]) =>
+      resolveVesselEnvelope({
+        name: 'Phở bò',
+        vesselToken: 'tô',
+        ingredients: counts.map((count, i) => ({
+          rawName: `part ${i}`,
+          count,
+          unitToken: 'tô',
+        })),
+      });
+    expect(envelope([2, 3])?.guardG).toEqual(envelope([1, 1])?.guardG);
+  });
+
   it('ignores a composed dish where one ingredient is measured in cups', () => {
     // "phở with a cup of broth" says nothing about what the DISH was served in.
     expect(
