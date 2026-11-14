@@ -18,7 +18,74 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Probe: is there any command-line way to open, fold or half-fold the
+  # simulated Duo? Device Hub has buttons for it; nothing documents a CLI.
+  fold-controls:
+    runs-on: xcode-27
+    timeout-minutes: 20
+    steps:
+      - name: Look for hinge controls
+        run: |
+          mkdir -p out
+          DEV=$(xcode-select -p)
+          echo "DEV=$DEV"
+          ls "$DEV/Applications" > out/dev-apps.txt 2>&1 || true
+          cat out/dev-apps.txt
+          for tool in simctl devicectl; do
+            bin=$(xcrun -f "$tool")
+            strings "$bin" | grep -i -E 'hinge|fold|posture|pose' | sort -u | head -80 > "out/strings-$tool.txt" || true
+            echo "== $tool"; cat "out/strings-$tool.txt"
+          done
+          xcrun devicectl help device info > out/devicectl-info.txt 2>&1 || true
+          awk '/^SUBCOMMANDS:/{f=1;next} f&&/^  [a-zA-Z]/{print $1}' out/devicectl-info.txt | while read -r nested; do
+            xcrun devicectl help device info "$nested" > "out/devicectl-info-$nested.txt" 2>&1 || true
+          done
+          cat out/devicectl-info.txt
+          xcrun simctl help io > out/simctl-io.txt 2>&1 || true
+          sed -n '/screenConfig/,$p' out/simctl-io.txt
+          find /Library/Developer/PrivateFrameworks "$DEV/Library/PrivateFrameworks" -maxdepth 1 -iname '*Simulator*' 2>/dev/null | head -20
+          for fw in /Library/Developer/PrivateFrameworks/CoreSimulator.framework/CoreSimulator \
+                    "$DEV/Library/PrivateFrameworks/SimulatorKit.framework/SimulatorKit"; do
+            [ -f "$fw" ] && { echo "== $fw"; strings "$fw" | grep -i -E 'hinge|posture|foldState|unfold' | sort -u | head -60; } || true
+          done > out/strings-frameworks.txt 2>&1
+          cat out/strings-frameworks.txt
+
+      - name: Boot Duo and try what was found
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in sorted(d.items()) if "27-1" in k for x in v if "Duo" in x["name"]))')
+          echo "UDID=$UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b > out/bootstatus.txt 2>&1 || true
+          sleep 10
+          xcrun devicectl device info displays --device "$UDID" > out/displays.txt 2>&1 || true
+          cat out/displays.txt
+          xcrun devicectl device info details --device "$UDID" > out/details.txt 2>&1 || true
+          grep -i -n -E 'hinge|fold|posture|display|orientation' out/details.txt | head -40 || true
+          xcrun devicectl device orientation get --device "$UDID" 2>&1 | tail -3 || true
+          xcrun simctl io "$UDID" screenConfig --display=3 2>&1 | head -30 || true
+          xcrun simctl io "$UDID" screenshot --display=3 out/inner-before.png 2>&1 | tail -1 || true
+          xcrun devicectl device orientation set --device "$UDID" landscapeLeft 2>&1 | tail -3 || true
+          sleep 5
+          xcrun simctl io "$UDID" screenshot --display=1 out/outer-landscape.png 2>&1 | tail -1 || true
+          # Can this session script the GUI at all?
+          osascript -e 'tell application "System Events" to get name of every process whose background only is false' 2>&1 | head -5 || true
+          open -a "Device Hub" 2>&1 | head -3 || true
+          sleep 20
+          osascript -e 'tell application "System Events" to get name of every process whose background only is false' 2>&1 | head -5 || true
+          osascript -e 'tell application "System Events" to tell (first process whose name contains "Device Hub") to get name of every menu bar item of menu bar 1' 2>&1 | head -5 || true
+          osascript -e 'tell application "System Events" to tell (first process whose name contains "Device Hub") to get name of every menu item of menu 1 of menu bar item "Device" of menu bar 1' 2>&1 | head -5 || true
+          screencapture -x out/desktop.png 2>&1 | tail -1 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: duo-fold-controls
+          path: out
+          retention-days: 7
+
   duo:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: xcode-27
     timeout-minutes: 45
     steps:
