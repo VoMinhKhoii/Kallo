@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_regions.dart';
 
 import '../../../theme/kallo_motion.dart';
 import 'toast_dismiss_gestures.dart';
@@ -163,11 +165,15 @@ class _TopToastState extends State<_TopToast> with TickerProviderStateMixin {
       ),
     );
 
+    // PaneScope will supply the raising pane once the screens split.
+    final frame = WindowRegions(WindowLayout.of(context)).near;
     return Positioned(
       top: 0,
-      left: 0,
-      right: 0,
+      left: frame.left,
+      right: MediaQuery.sizeOf(context).width - frame.right,
       child: SafeArea(
+        left: false,
+        right: false,
         // Non-action toasts never eat taps; action toasts must be tappable.
         //
         // Which is also why [ToastDismissGestures] is fitted to the action

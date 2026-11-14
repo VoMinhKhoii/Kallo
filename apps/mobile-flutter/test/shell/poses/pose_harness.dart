@@ -85,6 +85,7 @@ Future<Future<void> Function()> bootPose(
   Pose pose,
   String route, {
   bool signedIn = true,
+  double textScale = 1,
 }) async {
   final dpr = pose.devicePixelRatio;
   BunMascot.debugRandom = Random(0);
@@ -157,6 +158,13 @@ Future<Future<void> Function()> bootPose(
               (context) => MaterialApp.router(
                 debugShowCheckedModeBanner: false,
                 theme: kalloAppTheme(),
+                builder:
+                    (context, child) => MediaQuery(
+                      data: MediaQuery.of(
+                        context,
+                      ).copyWith(textScaler: TextScaler.linear(textScale)),
+                      child: child!,
+                    ),
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
                 locale: context.locale,

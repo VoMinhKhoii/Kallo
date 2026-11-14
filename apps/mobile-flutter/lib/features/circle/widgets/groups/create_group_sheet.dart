@@ -81,62 +81,78 @@ class _CreateGroupSheetState extends ConsumerState<CreateGroupSheet> {
                 MediaQuery.viewInsetsOf(context).bottom) *
             .88,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          KalloSheetHeader(title: tr('groups.createGroup.title')),
-          Flexible(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _name,
-                    maxLength: 60,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      labelText: tr('groups.createGroup.nameLabel'),
-                      hintText: tr('groups.createGroup.namePlaceholder'),
-                    ),
-                  ),
-                  Text(
-                    tr('groups.createGroup.membersLabel'),
-                    style: dashMeta(),
-                  ),
-                  const SizedBox(height: KalloSpacing.sp2),
-                  CreateGroupMemberPicker(
-                    friends: ref.watch(visibleCircleFriendsProvider),
-                    searchController: _search,
-                    selected: _selected,
-                    onChanged: () => setState(() {}),
-                    onRetry: () => ref.invalidate(circleFriendsProvider),
-                    onAddFriend: () {
-                      Navigator.pop(context);
-                      showAddFriendSheet(context);
-                    },
-                  ),
-                  const SizedBox(height: KalloSpacing.sp3),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: canSubmit ? _submit : null,
-                      child: Text(
-                        tr(
-                          _creating
-                              ? 'groups.createGroup.creating'
-                              : 'groups.createGroup.submit',
+      child: LayoutBuilder(
+        builder: (context, bounds) {
+          final short = bounds.maxHeight < 400;
+          Widget scrolling(Widget child) =>
+              short
+                  ? SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    child: child,
+                  )
+                  : child;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              KalloSheetHeader(title: tr('groups.createGroup.title')),
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: scrolling(
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          controller: _name,
+                          maxLength: 60,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            labelText: tr('groups.createGroup.nameLabel'),
+                            hintText: tr('groups.createGroup.namePlaceholder'),
+                          ),
                         ),
-                      ),
+                        Text(
+                          tr('groups.createGroup.membersLabel'),
+                          style: dashMeta(),
+                        ),
+                        const SizedBox(height: KalloSpacing.sp2),
+                        CreateGroupMemberPicker(
+                          inFlow: short,
+                          friends: ref.watch(visibleCircleFriendsProvider),
+                          searchController: _search,
+                          selected: _selected,
+                          onChanged: () => setState(() {}),
+                          onRetry: () => ref.invalidate(circleFriendsProvider),
+                          onAddFriend: () {
+                            Navigator.pop(context);
+                            showAddFriendSheet(context);
+                          },
+                        ),
+                        const SizedBox(height: KalloSpacing.sp3),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: canSubmit ? _submit : null,
+                            child: Text(
+                              tr(
+                                _creating
+                                    ? 'groups.createGroup.creating'
+                                    : 'groups.createGroup.submit',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

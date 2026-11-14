@@ -71,23 +71,45 @@ class MealBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(
-                capitalizeFirst(title),
-                maxLines: titleMaxLines,
-                overflow: TextOverflow.ellipsis,
-                style: dashBody(),
-              ),
-            ),
-            if (kcalPlacement == MealBlockKcal.titleRight && kcal != null) ...[
-              const SizedBox(width: 8),
-              kcal,
-            ],
-            if (titleTrailing != null) titleTrailing!,
-          ],
+        LayoutBuilder(
+          builder: (context, bounds) {
+            // A 358pt card at large text loses the dish's second line to kcal.
+            final stacked =
+                bounds.maxWidth < 330 ||
+                MediaQuery.textScalerOf(context).scale(16) > 16;
+            final row = Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    capitalizeFirst(title),
+                    maxLines: titleMaxLines,
+                    overflow: TextOverflow.ellipsis,
+                    style: dashBody(),
+                  ),
+                ),
+                if (!stacked &&
+                    kcalPlacement == MealBlockKcal.titleRight &&
+                    kcal != null) ...[
+                  const SizedBox(width: 8),
+                  kcal,
+                ],
+                if (titleTrailing != null) titleTrailing!,
+              ],
+            );
+            return stacked &&
+                    kcalPlacement == MealBlockKcal.titleRight &&
+                    kcal != null
+                ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    row,
+                    const SizedBox(height: 6),
+                    Align(alignment: Alignment.centerRight, child: kcal),
+                  ],
+                )
+                : row;
+          },
         ),
         if (middle != null) middle!,
         const SizedBox(height: 8),

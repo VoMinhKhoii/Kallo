@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../shared/widgets/sheet/kallo_sheet.dart';
 import '../../../../../../theme/calm_tokens.dart';
-import '../../../../../../theme/kallo_shapes.dart';
 import 'drag.dart';
 import 'page_stack.dart';
 import 'panel.dart';
@@ -128,15 +127,14 @@ class _ScanSheetState extends State<ScanSheet>
     // Only a deeper page has a level to go back to; a horizontal drag armed
     // on a first-level page would only steal a scroll that set off at a slant.
     final canGoBack = widget.page.level > 0;
-    final surface = DecoratedBox(
-      decoration: ShapeDecoration(
-        color: kPage,
-        shape: KalloShapes.squircleTop(kSheetRadius),
-        shadows: kSheetShadows,
-      ),
+    final surface = KalloSheetSurface(
+      color: kPage,
       child: Padding(
         padding: EdgeInsets.only(
-          bottom: scanSheetBottomInset(MediaQuery.of(context)),
+          // The shared surface already lifts clear of the keyboard.
+          bottom: scanSheetBottomInset(
+            MediaQuery.of(context).copyWith(viewInsets: EdgeInsets.zero),
+          ),
         ),
         child: ScanPageStack(
           key: _pages,

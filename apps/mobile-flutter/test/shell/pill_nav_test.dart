@@ -188,7 +188,7 @@ void main() {
       expect(find.text('nutrition:1'), findsOneWidget);
       final rect = tester.getRect(find.byType(PillNavSurface));
       if (pose.$2.right == 84 || pose.$2.left == 84) {
-        expect(rect.size, const Size(56, 276));
+        expect(rect.size, const Size(56, 272));
         expect(rect.center.dx, pose.$2.left == 84 ? 42 : pose.$1.width - 42);
         expect(rect.bottom, pose.$1.height - 34 - 8);
       } else {

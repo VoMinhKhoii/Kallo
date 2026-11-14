@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_regions.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
@@ -86,10 +88,7 @@ Future<bool> showKalloConfirm(
     // `dialogTheme.barrierColor`. Same black/50 the nav drawer, the sheets and
     // the web dialog use.
     barrierColor: kKalloAlertBarrier,
-    // These confirms open from inside bottom sheets, which now live on the
-    // root navigator too (see `showNhamSheet`). Keeping the dialog explicitly
-    // rooted means it is never owned by a surface that can be dismissed out
-    // from under it.
+    // Root ownership keeps a closing sheet from dismissing its confirm.
     useRootNavigator: true,
   );
   return confirmed ?? false;
@@ -113,24 +112,24 @@ class _KalloConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = description;
-    // Use the route's safe constraints, rather than a caller's text settings.
-    // The system's side control column is not part of the alert's canvas.
-    return SafeArea(
-      top: false,
-      bottom: false,
+    final regions = WindowRegions(WindowLayout.of(context));
+    return Padding(
+      padding: regions.insets(regions.dialog),
       child: LayoutBuilder(
         builder:
             (context, screen) => Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp6),
                 child: SizedBox(
-                  width: kalloAlertWidth(screen.maxWidth),
+                  width: kalloAlertWidth(screen.maxWidth).clamp(
+                    0,
+                    regions.layout.hasControlColumn ||
+                            regions.layout.regularWidth
+                        ? 270
+                        : kKalloAlertMaxWidth,
+                  ),
                   child: KalloAlertSurface(
-                    // Outside any Material, `WidgetsApp`'s fallback DefaultTextStyle
-                    // is the red/double-yellow-underline error style, and every
-                    // `Text(style: …)` here MERGES onto it — which is where the
-                    // yellow underline under the title came from. Naming the default
-                    // (with an explicit `decoration: none`) is the fix.
+                    // A raw dialog needs an explicit undecorated text default.
                     child: DefaultTextStyle(
                       style: dashBody().copyWith(
                         decoration: TextDecoration.none,

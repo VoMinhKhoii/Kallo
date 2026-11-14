@@ -40,7 +40,7 @@ void main() {
       await tester.tap(find.text('go'));
       await tester.pumpAndSettle();
       final rect = tester.getRect(find.byType(TopToastPill));
-      expect(rect.center.dx, (width - 84) / 2);
+      expect(rect.center.dx, width >= 840 ? 681.25 : (width - 84) / 2);
       expect(rect.right, lessThanOrEqualTo(width - 84));
       await tester.pumpAndSettle(const Duration(seconds: 3));
     });

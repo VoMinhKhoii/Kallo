@@ -111,9 +111,15 @@ class ScanPanel extends StatelessWidget {
       duration: KalloMotion.page,
       curve: KalloEase.decelerate,
       builder:
-          (context, top, child) => SizedBox(
-            height: media.size.height * (1 - top) - scanSheetBottomInset(media),
-            child: child,
+          (context, top, child) => LayoutBuilder(
+            builder:
+                (_, bounds) => SizedBox(
+                  height: math.min(
+                    bounds.maxHeight,
+                    media.size.height * (1 - top) - scanSheetBottomInset(media),
+                  ),
+                  child: child,
+                ),
           ),
       child: content,
     );

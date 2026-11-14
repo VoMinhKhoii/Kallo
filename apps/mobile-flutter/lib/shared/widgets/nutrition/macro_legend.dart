@@ -58,13 +58,28 @@ class MacroLegend extends StatelessWidget {
         ],
       );
     }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        if (leading != null) leading!,
-        ...entries,
-        if (trailing != null) trailing!,
-      ],
+    final children = <Widget>[
+      if (leading != null) leading!,
+      ...entries,
+      if (trailing != null) trailing!,
+    ];
+    return LayoutBuilder(
+      builder: (context, bounds) {
+        // At 320pt and larger text the numeric cluster needs a second line.
+        if (bounds.maxWidth < 280 ||
+            MediaQuery.textScalerOf(context).scale(12) > 12) {
+          return Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 8,
+            runSpacing: 6,
+            children: children,
+          );
+        }
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: children,
+        );
+      },
     );
   }
 

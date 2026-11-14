@@ -68,7 +68,7 @@ void main() {
       });
     }
   }
-  testWidgets('wide sheet caps and centres at 640', (tester) async {
+  testWidgets('wide sheet stays in its near pane', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1200, 800);
     addTearDown(tester.view.reset);
@@ -89,7 +89,7 @@ void main() {
         (w) => w is Container && w.decoration is ShapeDecoration,
       ),
     );
-    expect(rect.width, 640);
-    expect(rect.center.dx, 600);
+    expect(rect.width, 580);
+    expect(rect.center.dx, 910);
   });
 }

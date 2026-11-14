@@ -139,34 +139,39 @@ void main() {
 
   for (final surface in _surfaces) {
     for (final pose in poses) {
-      // KNOWN: Circle's populated MacroLegend Row (macro_legend.dart:61)
-      // overflows right by 13 / 3.0 / 8.7 px at 320x480. No lib/ fix here.
-      final knownOverflow = surface.name == 'circle' && pose.name == 'tiny';
-      testWidgets('${surface.name} / ${pose.name}', (tester) async {
-        final dispose = await bootPose(
-          tester,
-          pose,
-          surface.route,
-          signedIn: surface.name != 'sign-in',
-        );
-        try {
-          await _openSheet(tester, surface.name);
-          expect(find.byType(surface.widget), findsOneWidget);
-          expect(
-            tester.takeException(),
-            isNull,
-            reason: '${surface.name} / ${pose.name}',
+      for (final scale in pose.name == 'outer-portrait' ? [1.0, 1.3] : [1.0]) {
+        final suffix = scale == 1 ? '' : '__text-1.3';
+        testWidgets('${surface.name} / ${pose.name}$suffix', (tester) async {
+          final dispose = await bootPose(
+            tester,
+            pose,
+            surface.route,
+            signedIn: surface.name != 'sign-in',
+            textScale: scale,
           );
-          await _capture(tester, '${surface.name}__${pose.name}');
-          if (surface.scroll) {
-            await _scrollToEnd(tester, surface.widget);
-            await _capture(tester, '${surface.name}__${pose.name}__end');
+          try {
+            await _openSheet(tester, surface.name);
+            expect(find.byType(surface.widget), findsOneWidget);
+            expect(
+              tester.takeException(),
+              isNull,
+              reason: '${surface.name} / ${pose.name}',
+            );
+            await _capture(tester, '${surface.name}__${pose.name}$suffix');
+            if (surface.scroll) {
+              await _scrollToEnd(tester, surface.widget);
+              await _capture(
+                tester,
+                '${surface.name}__${pose.name}$suffix'
+                '__end',
+              );
+            }
+            expect(tester.takeException(), isNull);
+          } finally {
+            await dispose();
           }
-          expect(tester.takeException(), isNull);
-        } finally {
-          await dispose();
-        }
-      }, skip: knownOverflow);
+        });
+      }
     }
   }
 }

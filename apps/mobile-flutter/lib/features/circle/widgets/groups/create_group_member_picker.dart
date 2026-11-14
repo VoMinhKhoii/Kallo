@@ -20,6 +20,7 @@ class CreateGroupMemberPicker extends StatelessWidget {
     required this.onRetry,
     required this.onAddFriend,
     super.key,
+    this.inFlow = false,
   });
 
   final AsyncValue<List<CircleMember>> friends;
@@ -28,21 +29,22 @@ class CreateGroupMemberPicker extends StatelessWidget {
   final VoidCallback onChanged;
   final VoidCallback onRetry;
   final VoidCallback onAddFriend;
+  final bool inFlow;
+
+  Widget _fit(Widget child) => inFlow ? child : Flexible(child: child);
 
   @override
   Widget build(BuildContext context) => friends.when(
     loading:
-        () => Flexible(
-          child: Align(
+        () => _fit(
+          Align(
             alignment: Alignment.topCenter,
             child: FriendListSkeleton(semanticsLabel: tr('common.loading')),
           ),
         ),
     error:
-        (_, __) => Flexible(
-          child: Center(
-            child: CircleErrorCard(compact: true, onRetry: onRetry),
-          ),
+        (_, __) => _fit(
+          Center(child: CircleErrorCard(compact: true, onRetry: onRetry)),
         ),
     data: (members) {
       final accepted = members.where((friend) => friend.isAccepted).toList();
@@ -51,8 +53,20 @@ class CreateGroupMemberPicker extends StatelessWidget {
       final filtered = accepted.where(
         (friend) => friend.profile.label.toLowerCase().contains(query),
       );
-      return Flexible(
-        child: Column(
+      final rows = [
+        for (final friend in filtered)
+          FriendPickRow(
+            profile: friend.profile,
+            selected: selected.contains(friend.profile.userId),
+            onTap: () {
+              final id = friend.profile.userId;
+              selected.contains(id) ? selected.remove(id) : selected.add(id);
+              onChanged();
+            },
+          ),
+      ];
+      return _fit(
+        Column(
           children: [
             TextField(
               controller: searchController,
@@ -77,34 +91,22 @@ class CreateGroupMemberPicker extends StatelessWidget {
               ),
             ),
             const SizedBox(height: KalloSpacing.sp1),
-            Expanded(
-              child:
-                  filtered.isEmpty
-                      ? Center(
-                        child: Text(
-                          tr('groups.createGroup.noMatches'),
-                          style: dashMeta(),
-                        ),
-                      )
-                      : ListView(
-                        children: [
-                          for (final friend in filtered)
-                            FriendPickRow(
-                              profile: friend.profile,
-                              selected: selected.contains(
-                                friend.profile.userId,
-                              ),
-                              onTap: () {
-                                final id = friend.profile.userId;
-                                selected.contains(id)
-                                    ? selected.remove(id)
-                                    : selected.add(id);
-                                onChanged();
-                              },
-                            ),
-                        ],
-                      ),
-            ),
+            if (inFlow)
+              filtered.isEmpty
+                  ? Text(tr('groups.createGroup.noMatches'), style: dashMeta())
+                  : Column(children: rows)
+            else
+              Expanded(
+                child:
+                    filtered.isEmpty
+                        ? Center(
+                          child: Text(
+                            tr('groups.createGroup.noMatches'),
+                            style: dashMeta(),
+                          ),
+                        )
+                        : ListView(children: rows),
+              ),
           ],
         ),
       );

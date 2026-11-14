@@ -21,6 +21,7 @@ import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 class FeedList extends StatelessWidget {
   const FeedList({
     super.key,
+    this.header,
     required this.view,
     required this.dockHeight,
     required this.scrollController,
@@ -38,6 +39,7 @@ class FeedList extends StatelessWidget {
   });
 
   final FeedViewState view;
+  final Widget? header;
 
   /// A confirm is in flight — every staged card's controls go inert.
   final bool confirmPending;
@@ -106,6 +108,7 @@ class FeedList extends StatelessWidget {
       // Split, not summed: the empty state eases dock-height steps and must
       // not ease the keyboard's own frame-by-frame ramp a second time.
       return FeedNoMealsView(
+        header: header,
         view: view,
         dockHeight: dockHeight,
         keyboardInset: keyboardInset,
@@ -129,6 +132,7 @@ class FeedList extends StatelessWidget {
             // under already measures its own safe-area inset.
             slivers:
                 (_) => [
+                  if (header != null) SliverToBoxAdapter(child: header),
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(
                       KalloSpacing.sp3,

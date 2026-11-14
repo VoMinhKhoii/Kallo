@@ -112,7 +112,7 @@ void main() {
       addTearDown(tester.view.reset);
       await _open(tester, _host(onResult: (_) {}));
       final rect = tester.getRect(find.byKey(kKalloConfirmSurface));
-      expect(rect.center.dx, (width - 84) / 2);
+      expect(rect.center.dx, width >= 840 ? 681.25 : (width - 84) / 2);
       expect(rect.right, lessThanOrEqualTo(width - 84));
     });
   }

@@ -45,7 +45,33 @@ AnchoredMenuPlacement placeAnchoredMenu({
   required double menuHeight,
   required bool leading,
   double? lift,
+  Rect? bounds,
 }) {
+  if (bounds != null) {
+    final placed = placeAnchoredMenu(
+      anchor: anchor.shift(-bounds.topLeft),
+      overlay: bounds.size,
+      padding: EdgeInsets.only(
+        top: math.max(0, padding.top - bounds.top),
+        bottom: math.max(0, padding.bottom - (overlay.height - bounds.bottom)),
+      ),
+      viewInsets: EdgeInsets.only(
+        bottom: math.max(
+          0,
+          viewInsets.bottom - (overlay.height - bounds.bottom),
+        ),
+      ),
+      menuHeight: menuHeight,
+      leading: leading,
+      lift: lift,
+    );
+    return (
+      item: placed.item.shift(bounds.topLeft),
+      top: placed.top + bounds.top,
+      left: placed.left + bounds.left,
+      flipped: placed.flipped,
+    );
+  }
   const gap = KalloSpacing.sp2;
   final ceiling = padding.top + KalloSpacing.sp3;
   final floor = overlay.height - math.max(padding.bottom, viewInsets.bottom);

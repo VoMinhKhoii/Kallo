@@ -38,9 +38,11 @@ class PaywallPurchaseFace extends ConsumerStatefulWidget {
     this.storeUnavailable = false,
     this.onboarding = false,
     super.key,
+    this.scrollingHeader,
   });
 
   final EntitlementState entitlement;
+  final Widget? scrollingHeader;
   final PaywallState state;
   final VoidCallback onStayFree;
 
@@ -131,6 +133,8 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
   /// content is taller than the screen, it simply scrolls as before.
   Widget _pitch(PaywallOffer offer, bool purchasing) => CustomScrollView(
     slivers: [
+      if (widget.scrollingHeader != null)
+        SliverToBoxAdapter(child: widget.scrollingHeader),
       // The padding goes INSIDE the fill, not around it as a SliverPadding:
       // SliverFillRemaining fills whatever is left of the viewport, so a
       // SliverPadding's bottom inset landed below the fold — the card ran

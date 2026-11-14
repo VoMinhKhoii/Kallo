@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
-/// System insets measured on the Duo simulator with Flutter 3.47.7
-/// (duo-flutter-findings.md in the adaptation research scratchpad).
+/// The windows iPhone Duo hands an app, plus a classic phone both ways up.
+///
+/// Sizes and insets are what Flutter 3.47.7 reports on the Duo simulator
+/// (iOS 27.1): flutter/flutter#193025 and #195928. Apple publishes no point
+/// sizes, so treat these as observations to re-measure, not constants. The
+/// Split View and pinned-video rows are estimates: nobody has published those
+/// windows' insets.
 class Pose {
   const Pose(this.name, this.size, this.padding);
 
@@ -39,4 +44,6 @@ const poses = [
   Pose('pip-pinned', Size(951, 420), EdgeInsets.only(right: 84, bottom: 34)),
   Pose('tiny', Size(320, 480), EdgeInsets.only(top: 20)),
   Pose('huge', Size(1200, 800), EdgeInsets.fromLTRB(0, 24, 0, 20)),
+  // On its side a classic phone has EQUAL side insets: no control column.
+  Pose('phone-landscape', Size(874, 402), EdgeInsets.fromLTRB(62, 0, 62, 21)),
 ];

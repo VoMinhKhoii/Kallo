@@ -14,6 +14,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_regions.dart';
 
 import '../../../theme/kallo_motion.dart';
 import 'anchored_menu_backdrop.dart';
@@ -112,7 +114,27 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
       rows: widget.rows.length,
       header: widget.header != null,
     );
+    final layout = WindowLayout.of(context);
+    final regions = WindowRegions(layout);
+    var bounds = regions.paneFor(widget.anchor.center.dx);
+    if (regions.laptop) {
+      bounds =
+          widget.anchor.center.dy < layout.size.height / 2
+              ? Rect.fromLTRB(
+                bounds.left,
+                0,
+                bounds.right,
+                layout.size.height / 2 - kFoldGutter / 2,
+              )
+              : Rect.fromLTRB(
+                bounds.left,
+                layout.size.height / 2 + kFoldGutter / 2,
+                bounds.right,
+                bounds.bottom,
+              );
+    }
     final (:item, :top, :left, :flipped) = placeAnchoredMenu(
+      bounds: bounds,
       anchor: widget.anchor,
       overlay: overlaySize,
       padding: MediaQuery.paddingOf(context),

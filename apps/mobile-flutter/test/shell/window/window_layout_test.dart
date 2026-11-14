@@ -27,11 +27,13 @@ void main() {
     expect(layout.twoPane, isFalse);
   });
 
-  test('a phone on its side has equal side insets, so no control column', () {
+  test('a phone on its side has no fold: one column, nothing kept clear', () {
     final layout = _resolve(874, 402, left: 62, right: 62, bottom: 21);
     expect(layout.controlEdge, ControlEdge.bottom);
+    expect(layout.regularWidth, isTrue);
     expect(layout.compactHeight, isTrue);
     expect(layout.twoPane, isFalse);
+    expect(layout.foldAcross, isFalse);
   });
 
   test('the outer display puts the controls in a column on the right', () {
@@ -70,6 +72,7 @@ void main() {
     expect(layout.controlEdge, ControlEdge.bottom);
     expect(layout.regularWidth, isTrue);
     expect(layout.twoPane, isFalse);
+    expect(layout.foldAcross, isTrue);
   });
 
   test('the left app of a Split View has its column on the left', () {
@@ -79,9 +82,9 @@ void main() {
     expect(layout.twoPane, isFalse);
   });
 
-  test('a wide window under a pinned video is too short for two panes', () {
+  test('a wide window under a pinned video keeps two panes', () {
     final layout = _resolve(951, 420, right: 84, bottom: 34);
     expect(layout.compactHeight, isTrue);
-    expect(layout.twoPane, isFalse);
+    expect(layout.twoPane, isTrue);
   });
 }

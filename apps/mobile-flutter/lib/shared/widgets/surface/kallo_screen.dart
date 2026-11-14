@@ -37,6 +37,9 @@ class Screen extends StatelessWidget {
     final Widget page = SafeArea(
       top: top,
       bottom: bottom,
+      minimum: EdgeInsets.only(
+        top: top && MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+      ),
       // Tap anywhere on empty surface to dismiss the keyboard — the native
       // mobile expectation. Interactive descendants (buttons, fields) win the
       // gesture arena for their own taps, so only "background" taps drop focus.

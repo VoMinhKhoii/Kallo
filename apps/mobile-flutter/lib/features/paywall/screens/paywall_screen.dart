@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shell/window/window_layout.dart';
 
 import '../../../services/billing/entitlement_state.dart';
 import '../../../services/billing/entitlements_provider.dart';
@@ -51,6 +52,9 @@ class PaywallScreen extends ConsumerWidget {
             const Positioned.fill(child: StartAurora()),
             SafeArea(
               bottom: false,
+              minimum: EdgeInsets.only(
+                top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+              ),
               child: entitlement.when(
                 data:
                     (value) =>
@@ -105,9 +109,15 @@ class PaywallScreen extends ConsumerWidget {
       children: [
         // No trailing slot: "Stay on Free" is a button at the bottom of the
         // band now, in reach of a thumb, rather than a link in the corner.
-        _header(context, stayFree: false),
+        WindowLayout.of(context).compactHeight
+            ? const SizedBox.shrink()
+            : _header(context, stayFree: false),
         Expanded(
           child: PaywallPurchaseFace(
+            scrollingHeader:
+                WindowLayout.of(context).compactHeight
+                    ? _header(context, stayFree: false)
+                    : null,
             entitlement: entitlement,
             state: state,
             storeUnavailable: storeUnavailable,

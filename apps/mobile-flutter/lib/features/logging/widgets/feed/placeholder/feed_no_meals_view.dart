@@ -14,6 +14,7 @@ import 'loading_skeletons.dart';
 class FeedNoMealsView extends StatelessWidget {
   const FeedNoMealsView({
     super.key,
+    this.header,
     required this.view,
     required this.dockHeight,
     this.keyboardInset = 0,
@@ -24,6 +25,7 @@ class FeedNoMealsView extends StatelessWidget {
   /// The floating composer dock's measured height, reserved as bottom padding
   /// so the last card can always clear it.
   final double dockHeight;
+  final Widget? header;
 
   /// `viewInsets.bottom` — the keyboard's height THIS frame. `/logging` has no
   /// `Scaffold`, so the viewport is not resized by the keyboard; the composer
@@ -45,6 +47,19 @@ class FeedNoMealsView extends StatelessWidget {
       body = const SizedBox.shrink();
     }
 
+    if (header != null) {
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: header),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: dockHeight + keyboardInset),
+              child: Center(child: body),
+            ),
+          ),
+        ],
+      );
+    }
     // The loading skeleton uses the same symmetric padding as the real cards;
     // the empty state is centered.
     if (view.isLoading) {

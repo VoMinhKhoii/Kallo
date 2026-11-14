@@ -6,7 +6,7 @@ import '../../theme/kallo_colors.dart';
 import '../../theme/kallo_gradients.dart';
 import '../../theme/calm_tokens.dart';
 
-/// The shared 52pt create disc; only its hit slot changes with the capsule.
+/// A smaller side disc leaves room for its shadow within the capsule.
 /// CupertinoTabBar cannot host this independent sheet action in a side
 /// column; retire the custom target when the platform supports that slot.
 class PillNavAddButton extends StatelessWidget {
@@ -26,11 +26,11 @@ class PillNavAddButton extends StatelessWidget {
       onTap: onTap,
       child: SizedBox(
         width: axis == Axis.vertical ? 56 : 64,
-        height: axis == Axis.vertical ? 60 : kNavHeight,
+        height: axis == Axis.vertical ? 56 : kNavHeight,
         child: Center(
           child: Container(
-            width: kNavAddSize,
-            height: kNavAddSize,
+            width: axis == Axis.vertical ? 44 : kNavAddSize,
+            height: axis == Axis.vertical ? 44 : kNavAddSize,
             decoration: const BoxDecoration(
               gradient: KalloGradients.brandSweep,
               shape: BoxShape.circle,

@@ -34,6 +34,11 @@ const double kRegularHeight = 500;
 /// keeps one bounded column.
 const double kTwoPaneWidth = 840;
 
+/// The shortest window with a control column that still splits in two. Under
+/// a pinned video Duo's inner display is wide and short, and its fold is still
+/// there: one column would put the composer and the buttons on it.
+const double kTwoPaneMinHeight = 360;
+
 /// Width of the strip down the centre of a two-pane window that holds no
 /// content: the fold. The Flutter engine measured the fold's reserved frame at
 /// 40pt on the Duo simulator (flutter/flutter#193025), protective margins
@@ -103,8 +108,21 @@ class WindowLayout {
 
   /// Two panes either side of the fold: wide enough for both, and tall enough
   /// that neither is a letterbox.
+  ///
+  /// A short window splits only where there is a control column, which is to
+  /// say only where there is a fold to keep clear. A classic phone on its side
+  /// is just as wide and has no fold, so it keeps one bounded column.
   bool get twoPane =>
-      regularWidth && !compactHeight && size.width >= kTwoPaneWidth;
+      regularWidth &&
+      size.width >= kTwoPaneWidth &&
+      (hasControlColumn ? size.height >= kTwoPaneMinHeight : !compactHeight);
+
+  /// One regular-width column with the fold running ACROSS it: Duo's inner
+  /// display held tall, where the lower half is the base of a laptop. Pinned
+  /// controls, sheets and dialogs keep out of the band at mid-height. A phone
+  /// on its side is regular width too, but far too short to be this.
+  bool get foldAcross =>
+      regularWidth && !twoPane && !hasControlColumn && !compactHeight;
 
   /// The fold's x in window coordinates. It runs down the centre of the
   /// DISPLAY, so with a control column on one side it is off-centre in the

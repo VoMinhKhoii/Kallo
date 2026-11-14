@@ -159,6 +159,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Edit meal'), findsOneWidget);
     expect(find.text('450 g'), findsOneWidget);
+    await tester.ensureVisible(
+      find.bySemanticsLabel('One more serving of Chicken burrito bowl'),
+    );
+    await tester.pumpAndSettle();
 
     await tester.tap(
       find.bySemanticsLabel('One more serving of Chicken burrito bowl'),

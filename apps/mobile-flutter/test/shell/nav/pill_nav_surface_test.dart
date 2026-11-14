@@ -22,7 +22,7 @@ void main() {
                 children: [
                   SizedBox(key: Key('target'), width: 56, height: 48),
                   SizedBox(width: 56, height: 48),
-                  SizedBox(width: 56, height: 60),
+                  SizedBox(width: 56, height: 56),
                   SizedBox(width: 56, height: 48),
                   SizedBox(width: 56, height: 48),
                 ],
@@ -31,7 +31,7 @@ void main() {
           ),
         ),
       );
-      expect(tester.getSize(find.byType(PillNavSurface)), const Size(56, 276));
+      expect(tester.getSize(find.byType(PillNavSurface)), const Size(56, 272));
       expect(
         tester.getSize(find.byKey(const Key('target'))),
         const Size(56, 48),

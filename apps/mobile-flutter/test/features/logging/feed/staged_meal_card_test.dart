@@ -145,6 +145,13 @@ void main() {
 
     // "Discard" against "Keep" — both options name their own outcome, on the
     // native alert surface the confirm moved to on 2026-09-03.
+    await tester.ensureVisible(
+      find.descendant(
+        of: find.byKey(kKalloConfirmSurface),
+        matching: find.text('Discard'),
+      ),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(
         of: find.byKey(kKalloConfirmSurface),

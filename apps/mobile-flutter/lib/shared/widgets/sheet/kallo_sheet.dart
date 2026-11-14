@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_regions.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
@@ -79,11 +80,7 @@ Future<T?> showNhamSheet<T>(
   );
 }
 
-/// The standard sheet surface: solid white, top corners rounded at the calm
-/// card radius. Callers pass their own [constraints] (max-height slice) and,
-/// optionally, [padding] for content-hugging sheets.
-/// The surface owns the safe horizontal bounds so direct callers also avoid
-/// the control column and, in two panes, the fold.
+/// The shared sheet chrome owns safe bounds, fold placement and keyboard lift.
 ///
 /// Set [scrollable] on a sheet whose body is a plain content [Column] with no
 /// scroll view of its own: it caps the surface at [maxHeightFraction] and lets
@@ -132,17 +129,14 @@ class KalloSheetSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final layout = WindowLayout.of(context);
-    var left = layout.viewPadding.left;
-    var right = layout.viewPadding.right;
-    if (layout.twoPane && layout.hasControlColumn) {
-      if (layout.controlEdge == ControlEdge.right) {
-        left = layout.foldX + kFoldGutter / 2;
-      } else {
-        right = layout.size.width - layout.foldX + kFoldGutter / 2;
-      }
-    }
+    final regions = WindowRegions(layout);
+    final frame = regions.near;
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     var effective = constraints;
+    final frameHeight =
+        regions.laptop && keyboardInset == 0
+            ? layout.size.height / 2 - kFoldGutter / 2
+            : layout.size.height - keyboardInset - 12;
     var body = child;
     if (scrollable) {
       effective ??= BoxConstraints(
@@ -157,15 +151,22 @@ class KalloSheetSurface extends StatelessWidget {
         child: child,
       );
     }
-    // OUTSIDE the decoration: the surface has to end where the keyboard
-    // begins, not merely inset its contents and paint white behind it.
+    effective = (effective ?? const BoxConstraints()).enforce(
+      BoxConstraints(maxHeight: frameHeight.clamp(0, double.infinity)),
+    );
+    // Lift the decoration itself above the keyboard.
     return Padding(
-      padding: EdgeInsets.fromLTRB(left, 0, right, keyboardInset),
+      padding: EdgeInsets.fromLTRB(
+        frame.left,
+        0,
+        layout.size.width - frame.right,
+        keyboardInset,
+      ),
       child: Align(
         alignment: Alignment.bottomCenter,
         heightFactor: 1,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
+          constraints: BoxConstraints(maxWidth: regions.laptop ? 560 : 640),
           child: Container(
             constraints: effective,
             padding: padding,

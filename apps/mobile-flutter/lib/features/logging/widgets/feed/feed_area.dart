@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../../../shell/window/window_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/widgets/surface/scroll_separator.dart';
@@ -273,14 +274,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       onDiscardReveal: mealActions.discardStaged,
     );
 
-    // The hairline anchors under the macro summary, not under the date strip
-    // above it: the summary does not scroll, so a rule any higher would claim
-    // content had passed beneath it when it had not.
     return ScrollSeparator(
-      header: MacroSummary(view: view, profile: profile),
+      header:
+          WindowLayout.of(context).compactHeight
+              ? const SizedBox.shrink()
+              : MacroSummary(view: view, profile: profile),
 
-      // Filled, not bottom-anchored: the dock must be BOUNDED by this Stack or
-      // the `/` picker grows past its top and is clipped. See [FeedComposer].
       overlay: Positioned.fill(
         child: FeedComposer(
           view: view,
@@ -308,11 +307,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           onHeightChanged: (height) => _rebuild(() => _dockHeight = height),
         ),
       ),
-      // The card list. The composer floats over its bottom edge as an
-      // `overlay`, NOT as a child — it owns a multiline field whose own
-      // vertical Scrollable would otherwise reach the hairline listener as a
-      // depth-0 sibling and raise the rule while the feed sat at the top.
+      // Keep composer scroll notifications outside the feed's hairline listener.
       child: FeedList(
+        header:
+            WindowLayout.of(context).compactHeight
+                ? MacroSummary(view: view, profile: profile)
+                : null,
         view: view,
         dockHeight: _dockHeight,
         scrollController: _scrollController,
