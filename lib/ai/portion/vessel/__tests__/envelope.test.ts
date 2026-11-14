@@ -562,6 +562,37 @@ describe('container word on the ingredient instead of the dish', () => {
     expect(two?.midG).toBe(Math.round((one?.midG ?? 0) * 2));
   });
 
+  it('reads one part counted in the vessel word as its own amount', () => {
+    // Every part has its own amount; only the broth is counted in "bowl".
+    const envelope = (broth?: number) =>
+      resolveVesselEnvelope({
+        name: 'Tonkotsu ramen',
+        vesselToken: 'bowl',
+        ingredients: [
+          { rawName: 'ramen noodles', count: 1, unitToken: 'packet' },
+          { rawName: 'chashu pork', count: 2, unitToken: 'slice' },
+          {
+            rawName: 'pork broth',
+            ...(broth ? { count: broth, unitToken: 'bowl' } : {}),
+          },
+        ],
+      });
+    expect(envelope(0.5)?.guardG).toEqual(envelope()?.guardG);
+  });
+
+  it('reads a one-food dish counted in its vessel as that many vessels', () => {
+    const envelope = (count?: number) =>
+      resolveVesselEnvelope({
+        name: 'Cơm chiên',
+        vesselToken: 'dĩa',
+        ingredients: [
+          { rawName: 'cơm chiên', count, unitToken: count ? 'dĩa' : undefined },
+          { rawName: 'dầu ăn' },
+        ],
+      });
+    expect(envelope(2)?.midG).toBe(Math.round((envelope()?.midG ?? 0) * 2));
+  });
+
   it('reads parts that count the vessel differently as one vessel', () => {
     const envelope = (counts: number[]) =>
       resolveVesselEnvelope({

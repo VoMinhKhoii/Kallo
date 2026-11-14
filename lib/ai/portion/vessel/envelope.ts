@@ -15,6 +15,7 @@ import {
 } from '@/lib/ai/portion/vessel/geometry';
 import { resolvePieceVessel } from '@/lib/ai/portion/vessel/piece';
 import type { PipelineMealItem } from '@/lib/ai/types/result';
+import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
 
 export interface DishLike {
   name: string;
@@ -140,19 +141,24 @@ function riceBowls(dish: DishLike, vesselToken: string): number | null {
  * How many of the dish's vessel the user ate: the count its parts carry in the
  * vessel's own word ("2 tô phở" → 2 on bánh phở, beef and broth). The band
  * and mid grams describe one vessel, so "2 bowls of ramen" must not be fit
- * into one bowl. Parts that disagree, or no such count, read as one.
+ * into one bowl. The count is the dish's only when it spread to at least two
+ * foods, or the dish has one food: a lone "half a bowl of broth" beside
+ * noodles and pork counted in their own words is the broth's amount. Parts
+ * that disagree, or no such count, read as one.
  */
 function vesselCount(dish: DishLike, vesselToken: string): number {
   const token = normalizeVesselToken(vesselToken);
-  const counts = new Set(
-    dish.ingredients.flatMap((i) =>
+  const carrying = dish.ingredients.filter(
+    (i) =>
       i.count !== undefined &&
       i.count > 0 &&
       normalizeVesselToken(i.unitToken ?? '') === token
-        ? [i.count]
-        : []
-    )
   );
+  const foods = dish.ingredients.filter(
+    (i) => !isDiscreteOilIngredient(i.rawName ?? '')
+  ).length;
+  if (carrying.length < Math.min(2, Math.max(1, foods))) return 1;
+  const counts = new Set(carrying.map((i) => i.count as number));
   const [count] = counts;
   return counts.size === 1 ? count : 1;
 }
