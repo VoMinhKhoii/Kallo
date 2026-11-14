@@ -26,6 +26,7 @@ jobs:
     steps:
       - name: Click Device Hub's pose buttons
         run: |
+          set +e
           mkdir -p out
           UDID=$(xcrun simctl list devices available -j \
             | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in sorted(d.items()) if "27-1" in k for x in v if "Duo" in x["name"]))')
@@ -64,10 +65,20 @@ jobs:
           shot() {
             xcrun simctl io "$UDID" screenshot --display=1 "out/$1-outer.png" 2>&1 | tail -1 || true
             xcrun simctl io "$UDID" screenshot --display=3 "out/$1-inner.png" 2>&1 | tail -1 || true
-            screencapture -x "out/$1-desktop.png"
+            screencapture -x "out/$1-desktop.png" 2>&1 | tail -1
           }
           osascript -e 'tell application "Device Hub" to activate' 2>&1 || true
           sleep 2
+          echo "== processes"
+          osascript -e 'tell application "System Events" to get {name, bundle identifier, background only, frontmost} of every process whose name contains "Device"' 2>&1
+          hub() { osascript -e "tell application \"System Events\" to tell (first process whose name contains \"Device\" and background only is false) to $1" 2>&1; }
+          hub "get name of every menu bar item of menu bar 1"
+          for menu in Device Controls; do
+            echo "== menu $menu"
+            hub "get name of every menu item of menu 1 of menu bar item \"$menu\" of menu bar 1"
+          done
+          hub "get {role, subrole, description} of every UI element of window 1" | cut -c1-1500
+          hub "get {role, description, help, title} of every button of window 1" | cut -c1-2500
           echo "== closed"; state; shot closed
           # Pose buttons in the bottom bar of a 1024x768 desktop, read off a
           # screenshot of the previous run: closed, partly open, fully open.
