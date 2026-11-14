@@ -10,8 +10,9 @@
 //   flutter build ios --simulator --debug -t test/shell/poses/sim_tour_main.dart
 //   SIMCTL_CHILD_DUO_ROUTE=/nutrition xcrun simctl launch <udid> com.khoivo.nham
 //
-// It logs the window's size and insets on every change (lines starting
-// `DUO_METRICS`), which is how the numbers in `poses.dart` get re-measured.
+// It appends the window's size and insets to `duo_metrics.txt` in the app's
+// temp folder on every change, which is how the numbers in `poses.dart` get
+// re-measured.
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -74,7 +75,17 @@ Future<void> main() async {
       ),
     ),
   );
-  WidgetsBinding.instance.addPostFrameCallback((_) => router.go(route));
+  // The router's own first redirect (splash to home) lands after the first
+  // frame; go to the requested route once that has happened, not before it.
+  void goWhenSettled() {
+    final path = router.routeInformationProvider.value.uri.path;
+    if (path == '/') return;
+    router.routeInformationProvider.removeListener(goWhenSettled);
+    if (path != route) router.go(route);
+  }
+
+  router.routeInformationProvider.addListener(goWhenSettled);
+  WidgetsBinding.instance.addPostFrameCallback((_) => goWhenSettled());
 }
 
 /// Prints what the engine reports for this window each time it changes.
@@ -85,13 +96,17 @@ class _MetricsLog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
-    // ignore: avoid_print
-    print(
-      'DUO_METRICS size=${mq.size.width}x${mq.size.height} '
-      'padding=${_ltrb(mq.padding)} viewPadding=${_ltrb(mq.viewPadding)} '
-      'viewInsets=${_ltrb(mq.viewInsets)} dpr=${mq.devicePixelRatio} '
-      'displayFeatures=${mq.displayFeatures.length}',
-    );
+    final line =
+        'DUO_METRICS size=${mq.size.width}x${mq.size.height} '
+        'padding=${_ltrb(mq.padding)} viewPadding=${_ltrb(mq.viewPadding)} '
+        'viewInsets=${_ltrb(mq.viewInsets)} dpr=${mq.devicePixelRatio} '
+        'displayFeatures=${mq.displayFeatures.length}';
+    // A file as well as the log: `simctl launch --stdout` does not carry
+    // Dart's print on iOS, and the app's temp folder is easy to read back.
+    File(
+      '${Directory.systemTemp.path}/duo_metrics.txt',
+    ).writeAsStringSync('$line\n', mode: FileMode.append);
+    debugPrint(line);
     return child;
   }
 

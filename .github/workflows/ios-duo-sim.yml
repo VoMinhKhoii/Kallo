@@ -85,7 +85,13 @@ jobs:
             case "$1" in closed) x=674 ;; partly) x=708 ;; open) x=743 ;; esac
             ./click "$x" 679; sleep 6
           }
-          turn() { xcrun devicectl device orientation set --device "$UDID" "$1" 2>&1 | tail -1; sleep 5; }
+          # Device Hub's rotate button: a quarter turn each click. (devicectl's
+          # `orientation set` reports success and changes nothing on Duo.)
+          turn() { ./click 638 679; sleep 6; }
+          metrics() {
+            f="$(xcrun simctl get_app_container "$UDID" com.khoivo.nham data 2>/dev/null)/tmp/duo_metrics.txt"
+            [ -f "$f" ] && tail -1 "$f"
+          }
           # tour <pose name> <display id>
           tour() {
             mkdir -p "out/$1"
@@ -94,28 +100,28 @@ jobs:
             for route in $ROUTES; do
               name=$(echo "$route" | tr -d '/')
               SIMCTL_CHILD_DUO_ROUTE="$route" xcrun simctl launch --terminate-running-process \
-                --stdout="$PWD/out/$1/$name.log" --stderr="$PWD/out/$1/$name.err" \
                 "$UDID" com.khoivo.nham > /dev/null 2>&1
               sleep 9
               xcrun simctl io "$UDID" screenshot --display="$2" "out/$1/$name.png" 2>&1 | tail -1
-              grep -a DUO_METRICS "out/$1/$name.log" | tail -1
+              echo "$1 $name $(metrics)" | tee -a out/metrics.txt
             done
           }
-          turn portrait
-          fold closed;            tour closed-portrait 1
-          turn landscapeLeft;     tour closed-landscape-left 1
-          turn landscapeRight;    tour closed-landscape-right 1
-          turn portrait
-          fold open;              tour open 3
-          turn landscapeLeft;     tour open-turned 3
-          turn portrait
-          fold partly;            tour partly-open 3
-          turn landscapeLeft;     tour partly-open-turned 3
-          turn portrait
+          fold closed;  tour closed 1
+          turn;         tour closed-turn1 1
+          turn;         tour closed-turn2 1
+          turn;         tour closed-turn3 1
+          turn
+          fold open;    tour open 3
+          turn;         tour open-turn1 3
+          turn;         tour open-turn2 3
+          turn;         tour open-turn3 3
+          turn
+          fold partly;  tour partly-open 3
+          turn;         tour partly-open-turn1 3
+          turn; turn; turn
           fold closed
-          grep -a -h DUO_METRICS out/*/*.log | sort | uniq -c | sort -rn | head -30 > out/metrics.txt
-          cat out/metrics.txt
-          find out -name '*.err' -size 0 -delete
+          sort -u out/metrics.txt | cut -d' ' -f1,3- | sort -u > out/metrics-by-pose.txt
+          cat out/metrics-by-pose.txt
 
       - uses: actions/upload-artifact@v4
         if: always()
