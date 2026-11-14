@@ -92,7 +92,7 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
        - **Shared weights** — explicitMass.grams is what THIS user ate. When they ate only part of a weighed food, compute their part — the one number you compute: multiply the typed weight by the fraction they ate (half → × 0.5), or divide it by how many people shared it equally: "ăn nửa miếng bít tết 400g" → 200; "ăn chung 1kg tôm luộc với 3 đứa bạn" (4 người) → 250; "chia đôi bịch snack 300g với bạn" → 150. When they typed their own part ("tôi ăn 200g trong 600g gà nướng") → 200 as typed. A weight unit is not a share: "nửa ký thịt bò" → 500.
        - **Dish weights** — explicitMass belongs on an ingredient only when the weight is for that one food. When the weight is for a dish you split into several ingredients ("tô phở bò 600g", "300g mì xào bò"), set explicitMass on NONE of them; put the dish weight (their share of it when shared) in the meal item's servedMassG, and the next step splits it across the parts. A weight written AFTER a dish and its side, for the plate as a whole ("gà kho gừng với cơm, cân cả đĩa 450g"), weighs both: put them in ONE meal item with that servedMassG. A weight written on one food ("ức gà 200g với rau xào") is that food's alone; its side stays a separate item. A weight on one food beside a dish stays on that food ("ức gà 200g với một dĩa mì xào" → ức gà 200).
        - **Typed calories** — when the user typed the calories of a food themselves, from a label or a menu ("160kcal sữa chua", "trà sữa gói 90kcal", "285 kcal Starbucks latte"), make that food its own meal item and put the number in the meal item's statedKcal, as typed (their share when they ate part of it: "ăn nửa gói bánh 300kcal" → 150; a figure for each of several: "2 hộp sữa 110kcal mỗi hộp" → 220). The server sets that item's calories to it. Still list the item's ingredients as usual. NEVER write a calorie figure the user did not type.
-       - **Vague portion cues** ("nhiều cơm", "ít thịt", "extra protein", "nửa phần", "đầy bát") — no count. Capture genuinely portion-load-bearing phrases in stateNote (e.g., "ăn ít" / "đầy bát") so the resolver / Call 2 can bias the estimate.
+       - **Vague portion cues** ("nhiều cơm", "ít thịt", "extra protein", "nửa phần", "đầy bát") — no count and no field: the estimator reads them in the user's own words.
 
     2. **Identity changes** — the modifier names a different DB food entity:
        - "chỉ lòng trắng" / "egg whites only" → canonicalName for egg white, not whole egg.
@@ -105,8 +105,8 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
        - "thêm một quả trứng" / "with extra egg" as a SEPARATE ingredient → add an egg entry.
 
     4. **Weight basis** — the user explicitly says how they weighed:
-       - "cân sống" / "cân lúc sống" / "trước khi nấu" / "trọng lượng sống" / "raw weight" / "weighed raw" / "pre-cooked weight" / "before cooking" → stateHint: "raw_weight". Put the verbatim phrase in stateNote.
-       - "đã nấu xong cân" / "after cooking" / "as eaten" → stateHint: "cooked_weight" + stateNote.
+       - "cân sống" / "cân lúc sống" / "trước khi nấu" / "trọng lượng sống" / "raw weight" / "weighed raw" / "pre-cooked weight" / "before cooking" → stateHint: "raw_weight".
+       - "đã nấu xong cân" / "after cooking" / "as eaten" → stateHint: "cooked_weight".
        - No mention → omit stateHint.
 
     5. **Same-food density tweaks** — the modifier changes how the same food was prepared, not what it is:
@@ -130,7 +130,7 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
        - **Shared weights** — explicitMass.grams is what THIS user ate. When they ate only part of a weighed food, compute their part — the one number you compute: multiply the typed weight by the fraction they ate (half → × 0.5), or divide it by how many people shared it equally: "half of a 400g steak" → 200; "split 600g of ribs between the 3 of us" → 200; "shared a 300g bag of chips with a friend" → 150. When they typed their own part ("I had 150g of the 500g salmon fillet") → 150 as typed. A weight unit is not a share: "half a pound of ground beef" → 227.
        - **Dish weights** — explicitMass belongs on an ingredient only when the weight is for that one food. When the weight is for a dish you split into several ingredients ("300g of pad thai", "a 400g burrito"), set explicitMass on NONE of them; put the dish weight (their share of it when shared) in the meal item's servedMassG, and the next step splits it across the parts. A weight written AFTER a dish and its side, for the plate as a whole ("teriyaki salmon and rice, 450g total"), weighs both: put them in ONE meal item with that servedMassG. A weight written on one food ("200g grilled chicken with a side of coleslaw") is that food's alone; its side stays a separate item. A weight on one food beside a dish stays on that food ("200g grilled chicken with a side of coleslaw" → chicken 200).
        - **Typed calories** — when the user typed the calories of a food themselves, from a label or a menu ("a 160 kcal yogurt cup", "285 kcal Starbucks latte", "protein bar 170 cal"), make that food its own meal item and put the number in the meal item's statedKcal, as typed (their share when they ate part of it: "half of a 300 kcal bag of chips" → 150; a figure for each of several: "2 cookies, 80 kcal each" → 160). The server sets that item's calories to it. Still list the item's ingredients as usual. NEVER write a calorie figure the user did not type.
-       - **Vague portion cues** ("extra rice", "light on the dressing", "a heaping plate", "just a little pasta", "half portion") — no count. Capture genuinely portion-load-bearing phrases in stateNote (e.g., "extra rice" / "heaping plate") so the resolver / Call 2 can bias the estimate.
+       - **Vague portion cues** ("extra rice", "light on the dressing", "a heaping plate", "just a little pasta", "half portion") — no count and no field: the estimator reads them in the user's own words.
 
     2. **Identity changes** — the modifier names a different DB food entity:
        - "egg whites only" → canonicalName for egg white, not whole egg.
@@ -143,8 +143,8 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
        - "with an extra egg" / "add bacon" as a SEPARATE ingredient → add that entry.
 
     4. **Weight basis** — the user explicitly says how they weighed:
-       - "raw weight" / "weighed raw" / "pre-cooked weight" / "before cooking" → stateHint: "raw_weight". Put the verbatim phrase in stateNote.
-       - "weighed after cooking" / "as eaten" → stateHint: "cooked_weight" + stateNote.
+       - "raw weight" / "weighed raw" / "pre-cooked weight" / "before cooking" → stateHint: "raw_weight".
+       - "weighed after cooking" / "as eaten" → stateHint: "cooked_weight".
        - No mention → omit stateHint.
 
     5. **Same-food density tweaks** — the modifier changes how the same food was prepared, not what it is:
@@ -296,7 +296,7 @@ const EXAMPLES: Record<DecompositionPromptLocale, string> = {
           "name": "ức gà nấu chậm",
           "cookingMethod": "nấu",
           "ingredients": [
-            { "rawName": "ức gà", "canonicalName": "Ức gà", "stateHint": "raw_weight", "stateNote": "cân sống", "explicitMass": { "grams": 300, "basis": "edible" } }
+            { "rawName": "ức gà", "canonicalName": "Ức gà", "stateHint": "raw_weight", "explicitMass": { "grams": 300, "basis": "edible" } }
           ]
         }
       ]
@@ -553,7 +553,7 @@ ${RAMEN_EXAMPLE}
 
   <example>
     <input>chipotle chicken burrito bowl: white rice, black beans, grilled chicken, corn salsa, cheese, extra rice</input>
-    <!-- "bowl" here is part of the DISH NAME, not a vessel word sizing the serving → no vesselToken. Composed fast-casual order → decompose to DB-matchable INGREDIENTS (the composition DB has no "burrito bowl" row). "extra rice" is a vague portion cue → stateNote on the rice. Unstated optional toppings (guacamole, sour cream) are omitted per strict adherence. -->
+    <!-- "bowl" here is part of the DISH NAME, not a vessel word sizing the serving → no vesselToken. Composed fast-casual order → decompose to DB-matchable INGREDIENTS (the composition DB has no "burrito bowl" row). "extra rice" is a vague portion cue → no field; the estimator reads it in the text. Unstated optional toppings (guacamole, sour cream) are omitted per strict adherence. -->
     <output>
     {
       "isFood": true,
@@ -563,7 +563,7 @@ ${RAMEN_EXAMPLE}
           "name": "chicken burrito bowl",
           "cookingMethod": "assembled",
           "ingredients": [
-            { "rawName": "white rice", "canonicalName": "White rice, cooked", "stateNote": "extra rice" },
+            { "rawName": "white rice", "canonicalName": "White rice, cooked" },
             { "rawName": "black beans", "canonicalName": "Black beans, cooked" },
             { "rawName": "grilled chicken", "canonicalName": "Chicken breast, grilled" },
             { "rawName": "corn salsa", "canonicalName": "Corn salsa" },
@@ -689,8 +689,8 @@ export function decompositionV2PromptText(
     2. Identify each user-facing meal item, then list its ingredients. Decompose composed dishes into SINGLE-FOOD ingredients the composition database can match — a dish or component name ("chả trứng", "coleslaw") is not an ingredient when it is itself made of simpler foods.
     3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
     4. Emit the dish-wrapped schema exactly:
-       mealItems[]: { name, cookingMethod, cuisineNote?, vesselToken?, vesselSize?, servedMassG?, statedKcal?, ingredients[] }
-       ingredients[]: { rawName, canonicalName, cookingMethod?, stateHint?, stateNote?, count?, unitToken?, sizeModifier?, explicitMass?, prepNotes? }
+       mealItems[]: { name, cookingMethod, vesselToken?, vesselSize?, servedMassG?, statedKcal?, ingredients[] }
+       ingredients[]: { rawName, canonicalName, cookingMethod?, stateHint?, count?, unitToken?, sizeModifier?, explicitMass?, prepNotes? }
   </task>
 
 ${NAMING_RULE[locale]}

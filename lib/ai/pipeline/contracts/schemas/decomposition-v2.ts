@@ -176,7 +176,7 @@ function dishSchemaOf<I extends z.ZodType>(ingredient: I) {
     .strict();
 }
 
-function mealSchemaOf<I extends z.ZodType>(ingredient: I) {
+function mealSchemaOf<D extends z.ZodType>(dish: D) {
   return z.object({
     isFood: z
       .boolean()
@@ -184,7 +184,7 @@ function mealSchemaOf<I extends z.ZodType>(ingredient: I) {
         'Whether the input describes recognizable food or meal items. false for gibberish, non-food, or unrelated text.'
       ),
     mealItems: z
-      .array(dishSchemaOf(ingredient))
+      .array(dish)
       .describe(
         'Meal decomposed into user-facing items with ingredient breakdown. Empty array when isFood is false.'
       ),
@@ -200,9 +200,7 @@ function mealSchemaOf<I extends z.ZodType>(ingredient: I) {
 export const decomposedDishV2Schema = dishSchemaOf(
   decomposedIngredientV2Schema
 );
-export const mealDecompositionV2Schema = mealSchemaOf(
-  decomposedIngredientV2Schema
-);
+export const mealDecompositionV2Schema = mealSchemaOf(decomposedDishV2Schema);
 
 export type StateHint = z.infer<typeof stateHintSchema>;
 export type SizeModifier = z.infer<typeof sizeModifierSchema>;
@@ -217,12 +215,18 @@ export type MealDecompositionV2 = z.infer<typeof mealDecompositionV2Schema>;
  * The schema Call 1 is asked to fill: the stored shape with the card-retrieval
  * query strings required, so the model always writes them. Its output is a
  * valid `MealDecompositionV2`.
+ *
+ * It leaves out the two free-text notes. Each optional field slows Claude's
+ * first compile of a new schema: with both notes it took 125 s cold, without
+ * them 25 s. `stateNote` only echoed the user's words, which Call 2 reads in
+ * the meal text itself; `cuisineNote` was read by nothing downstream.
  */
 export const mealDecompositionV2CallSchema = mealSchemaOf(
-  decomposedIngredientV2Schema.omit({ statedKcal: true }).required({
-    queryEn: true,
-    nameVi: true,
-  })
+  dishSchemaOf(
+    decomposedIngredientV2Schema
+      .omit({ statedKcal: true, stateNote: true })
+      .required({ queryEn: true, nameVi: true })
+  ).omit({ cuisineNote: true })
 );
 
 /**
