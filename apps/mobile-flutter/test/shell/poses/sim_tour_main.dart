@@ -8,11 +8,13 @@
 // screenshot the simulator:
 //
 //   flutter build ios --simulator --debug -t test/shell/poses/sim_tour_main.dart
-//   SIMCTL_CHILD_DUO_ROUTE=/nutrition xcrun simctl launch <udid> com.khoivo.nham
+//   echo /nutrition > "$(xcrun simctl get_app_container <udid> com.khoivo.nham data)/tmp/duo_route.txt"
+//   xcrun simctl launch --terminate-running-process <udid> com.khoivo.nham
 //
 // It appends the window's size and insets to `duo_metrics.txt` in the app's
 // temp folder on every change, which is how the numbers in `poses.dart` get
 // re-measured.
+import 'dart:async';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -35,7 +37,7 @@ Future<void> main() async {
   await initializeDateFormatting();
   GoogleFonts.config.allowRuntimeFetching = false;
 
-  final route = Platform.environment['DUO_ROUTE'] ?? '/dashboard';
+  final route = _requestedRoute();
   final fixtures = PoseFixtures();
   final container = ProviderContainer(
     overrides: poseOverrides(
@@ -75,17 +77,36 @@ Future<void> main() async {
       ),
     ),
   );
-  // The router's own first redirect (splash to home) lands after the first
-  // frame; go to the requested route once that has happened, not before it.
-  void goWhenSettled() {
+  // The router's own first redirect (splash to home) lands a few frames
+  // after launch, and a `go` before it is overwritten. Keep asking until the
+  // router is where the script wants it.
+  var tries = 0;
+  Timer.periodic(const Duration(milliseconds: 300), (timer) {
     final path = router.routeInformationProvider.value.uri.path;
-    if (path == '/') return;
-    router.routeInformationProvider.removeListener(goWhenSettled);
-    if (path != route) router.go(route);
-  }
+    _note('DUO_ROUTE wanted=$route at=$path try=$tries');
+    if (path == route || ++tries > 20) return timer.cancel();
+    if (path != '/') router.go(route);
+  });
+}
 
-  router.routeInformationProvider.addListener(goWhenSettled);
-  WidgetsBinding.instance.addPostFrameCallback((_) => goWhenSettled());
+/// The route to open: a file the script drops in the app's temp folder, or
+/// the `DUO_ROUTE` environment variable, or Today.
+String _requestedRoute() {
+  final file = File('${Directory.systemTemp.path}/duo_route.txt');
+  if (file.existsSync()) {
+    final wanted = file.readAsStringSync().trim();
+    if (wanted.startsWith('/')) return wanted;
+  }
+  return Platform.environment['DUO_ROUTE'] ?? '/dashboard';
+}
+
+/// A file as well as the log: `simctl launch --stdout` does not carry Dart's
+/// print on iOS, and the app's temp folder is easy to read back.
+void _note(String line) {
+  File(
+    '${Directory.systemTemp.path}/duo_metrics.txt',
+  ).writeAsStringSync('$line\n', mode: FileMode.append);
+  debugPrint(line);
 }
 
 /// Prints what the engine reports for this window each time it changes.
@@ -101,12 +122,7 @@ class _MetricsLog extends StatelessWidget {
         'padding=${_ltrb(mq.padding)} viewPadding=${_ltrb(mq.viewPadding)} '
         'viewInsets=${_ltrb(mq.viewInsets)} dpr=${mq.devicePixelRatio} '
         'displayFeatures=${mq.displayFeatures.length}';
-    // A file as well as the log: `simctl launch --stdout` does not carry
-    // Dart's print on iOS, and the app's temp folder is easy to read back.
-    File(
-      '${Directory.systemTemp.path}/duo_metrics.txt',
-    ).writeAsStringSync('$line\n', mode: FileMode.append);
-    debugPrint(line);
+    _note(line);
     return child;
   }
 

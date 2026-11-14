@@ -90,7 +90,7 @@ jobs:
           turn() { ./click 638 679; sleep 6; }
           metrics() {
             f="$(xcrun simctl get_app_container "$UDID" com.khoivo.nham data 2>/dev/null)/tmp/duo_metrics.txt"
-            [ -f "$f" ] && tail -1 "$f"
+            [ -f "$f" ] && { grep DUO_METRICS "$f" | tail -1; grep DUO_ROUTE "$f" | tail -1; } | tr '\n' ' '
           }
           # tour <pose name> <display id>
           tour() {
@@ -99,13 +99,16 @@ jobs:
             screencapture -x "out/desktop-$1.png" 2>/dev/null
             for route in $ROUTES; do
               name=$(echo "$route" | tr -d '/')
+              data=$(xcrun simctl get_app_container "$UDID" com.khoivo.nham data 2>/dev/null)
+              mkdir -p "$data/tmp"; echo "$route" > "$data/tmp/duo_route.txt"; : > "$data/tmp/duo_metrics.txt"
               SIMCTL_CHILD_DUO_ROUTE="$route" xcrun simctl launch --terminate-running-process \
                 "$UDID" com.khoivo.nham > /dev/null 2>&1
-              sleep 9
+              sleep 10
               xcrun simctl io "$UDID" screenshot --display="$2" "out/$1/$name.png" 2>&1 | tail -1
               echo "$1 $name $(metrics)" | tee -a out/metrics.txt
             done
           }
+          xcrun simctl launch "$UDID" com.khoivo.nham > /dev/null 2>&1; sleep 8
           fold closed;  tour closed 1
           turn;         tour closed-turn1 1
           turn;         tour closed-turn2 1
@@ -120,7 +123,7 @@ jobs:
           turn;         tour partly-open-turn1 3
           turn; turn; turn
           fold closed
-          sort -u out/metrics.txt | cut -d' ' -f1,3- | sort -u > out/metrics-by-pose.txt
+          grep -o '^[a-z0-9-]* \|DUO_METRICS [^D]*' out/metrics.txt | paste - - | sort -u > out/metrics-by-pose.txt
           cat out/metrics-by-pose.txt
 
       - uses: actions/upload-artifact@v4
