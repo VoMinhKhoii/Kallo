@@ -124,6 +124,7 @@ class _SettingsList extends ConsumerWidget {
     ];
 
     return Screen(
+      bounded: true,
       glow: true,
       bottom: false,
       child: ScrollSeparator(

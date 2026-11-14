@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/kallo_colors.dart';
 import 'aurora_glow.dart';
+import '../panes/page_column.dart';
+import '../panes/page_window.dart';
+import '../../../shell/window/window_layout.dart';
 
 /// Full-bleed cream screen with safe-area insets.
 ///
@@ -22,6 +25,7 @@ class Screen extends StatelessWidget {
     this.top = true,
     this.bottom = true,
     this.glow = false,
+    this.bounded = false,
   });
 
   final Widget child;
@@ -31,6 +35,7 @@ class Screen extends StatelessWidget {
   /// A main page (Today, Log, Nutrition, Circle, Settings): paints the
   /// [AuroraGlow] behind its top in Aurora. Nothing in Light or Dark.
   final bool glow;
+  final bool bounded;
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +56,18 @@ class Screen extends StatelessWidget {
         // Transparent Material ancestor so TextField/InkWell descendants
         // resolve their Material lookup without painting over the cream
         // surface.
-        child: Material(type: MaterialType.transparency, child: child),
+        child: Material(
+          type: MaterialType.transparency,
+          child: bounded ? PageColumn(child: child) : child,
+        ),
       ),
     );
-    return ColoredBox(
-      color: KalloColors.surface,
-      child: glow ? AuroraGlow(child: page) : page,
+    return PageWindow(
+      layout: WindowLayout.of(context),
+      child: ColoredBox(
+        color: KalloColors.surface,
+        child: glow ? AuroraGlow(child: page) : page,
+      ),
     );
   }
 }

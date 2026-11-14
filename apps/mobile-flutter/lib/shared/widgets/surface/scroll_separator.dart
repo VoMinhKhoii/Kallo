@@ -29,6 +29,8 @@ class ScrollSeparator extends StatefulWidget {
     required this.child,
     this.overlay,
     this.threshold = 1,
+    this.overlayHairline = false,
+    this.showHairline = true,
   });
 
   /// The pinned header the hairline sits under.
@@ -54,6 +56,10 @@ class ScrollSeparator extends StatefulWidget {
   /// should arrive as soon as anything has slid under the header.
   final double threshold;
 
+  /// Split panes share the header's baseline, so the rule overlays the scroll.
+  final bool overlayHairline;
+  final bool showHairline;
+
   @override
   State<ScrollSeparator> createState() => _ScrollSeparatorState();
 }
@@ -78,12 +84,13 @@ class _ScrollSeparatorState extends State<ScrollSeparator> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         widget.header,
-        AnimatedOpacity(
-          opacity: _scrolled ? 1 : 0,
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          child: SizedBox(height: 1, child: ColoredBox(color: kHairline)),
-        ),
+        if (widget.showHairline && !widget.overlayHairline)
+          AnimatedOpacity(
+            opacity: _scrolled ? 1 : 0,
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            child: SizedBox(height: 1, child: ColoredBox(color: kHairline)),
+          ),
         Expanded(
           child: Stack(
             children: [
@@ -94,6 +101,22 @@ class _ScrollSeparatorState extends State<ScrollSeparator> {
                 ),
               ),
               if (widget.overlay != null) widget.overlay!,
+              if (widget.showHairline && widget.overlayHairline)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      opacity: _scrolled ? 1 : 0,
+                      duration: const Duration(milliseconds: 150),
+                      child: SizedBox(
+                        height: 1,
+                        child: ColoredBox(color: kHairline),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

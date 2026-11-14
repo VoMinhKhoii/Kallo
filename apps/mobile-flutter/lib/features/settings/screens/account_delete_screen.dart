@@ -86,6 +86,7 @@ class _AccountDeleteScreenState extends ConsumerState<AccountDeleteScreen> {
     final entitlement = ref.watch(entitlementsProvider(userId)).valueOrNull;
 
     return Screen(
+      bounded: true,
       bottom: false,
       child: ScrollSeparator(
         header: InlineNavBar(

@@ -243,6 +243,7 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
       ),
     };
     return Screen(
+      bounded: true,
       // The dock pays the home indicator itself, so the page must not also
       // reserve it — that would float the composer above the edge.
       bottom: false,

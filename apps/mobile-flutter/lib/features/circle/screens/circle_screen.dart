@@ -38,6 +38,7 @@ class CircleScreen extends ConsumerWidget {
             ?.title ??
         '';
     return Screen(
+      bounded: true,
       glow: true,
       bottom: false,
       child: ScrollSeparator(
