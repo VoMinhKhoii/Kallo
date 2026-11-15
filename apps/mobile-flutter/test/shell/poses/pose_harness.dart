@@ -16,6 +16,7 @@ import '../../l10n_test_loader.dart';
 import 'fixture_api.dart';
 import 'fixtures.dart';
 import 'pose_overrides.dart';
+import '../../features/circle/circle_feed_test_support.dart';
 import 'poses.dart';
 
 Future<void> initializePoseHarness() async {
@@ -49,6 +50,7 @@ Future<Future<void> Function()> bootPose(
   String route, {
   bool signedIn = true,
   double textScale = 1,
+  FakeApiClient? apiOverride,
 }) async {
   final dpr = pose.devicePixelRatio;
   BunMascot.debugRandom = Random(0);
@@ -66,7 +68,7 @@ Future<Future<void> Function()> bootPose(
   addTearDown(tester.view.reset);
 
   final fixtures = PoseFixtures();
-  final api = fixtureApi(fixtures);
+  final api = apiOverride ?? fixtureApi(fixtures);
   final errors = _ProviderErrors();
   final container = ProviderContainer(
     observers: [errors],

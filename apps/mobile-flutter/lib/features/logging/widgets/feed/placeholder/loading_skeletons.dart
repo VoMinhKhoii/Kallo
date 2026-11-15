@@ -18,12 +18,28 @@ import 'pulse.dart';
 /// layout when the day arrives. The tile grid this replaced matched nothing
 /// that had ever rendered here.
 class MacroSummarySkeleton extends StatelessWidget {
-  const MacroSummarySkeleton({super.key});
+  const MacroSummarySkeleton({super.key, this.full = false});
+  final bool full;
 
   @override
   Widget build(BuildContext context) {
     Widget pill(double width, double height) =>
         skeletonBar(width, height, KalloColors.track);
+
+    if (full) {
+      return Pulse(
+        child: Column(
+          children: [
+            pill(kCalorieDialRadius * 2, gaugeHeight(kCalorieDialRadius)),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [for (var i = 0; i < 3; i++) pill(88, 88)],
+            ),
+          ],
+        ),
+      );
+    }
 
     return Pulse(
       child: LayoutBuilder(

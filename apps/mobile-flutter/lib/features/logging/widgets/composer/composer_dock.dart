@@ -4,6 +4,8 @@ import '../../../../shared/widgets/surface/measured_height.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/logging_spacing.dart';
+import '../../../../shell/window/window_layout.dart';
+import '../../../../shared/widgets/panes/page_window.dart';
 
 /// The composer's floating dock: the feed FLOWS UNDER it. The list runs the
 /// full height of the tab and its cards pass behind the dock as you scroll,
@@ -51,6 +53,8 @@ class ComposerDock extends StatelessWidget {
     // frame; animating it again would lag the keyboard and double-animate the
     // dismiss into the flicker this exists to remove.
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final layout = PageWindow.of(context);
+    final nearLeft = layout.controlEdge == ControlEdge.left;
     // `padding.bottom` is the home indicator ALREADY netted against the
     // keyboard — `max(viewPadding.bottom - viewInsets.bottom, 0)` — so paying
     // it inside a box that is itself lifted by `keyboardInset` is one
@@ -111,9 +115,9 @@ class ComposerDock extends StatelessWidget {
               child: Container(
                 color: KalloColors.surface,
                 padding: EdgeInsets.fromLTRB(
-                  KalloSpacing.sp3,
+                  layout.twoPane && !nearLeft ? 0 : KalloSpacing.sp3,
                   0,
-                  KalloSpacing.sp3,
+                  layout.twoPane && nearLeft ? 0 : KalloSpacing.sp3,
                   bottomInset + LoggingSpacing.block,
                 ),
                 child: child,

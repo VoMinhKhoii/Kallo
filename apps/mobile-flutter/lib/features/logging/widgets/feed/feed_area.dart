@@ -1,6 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import '../../../../shell/window/window_layout.dart';
+import '../../../../shared/widgets/panes/page_window.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/widgets/surface/scroll_separator.dart';
@@ -28,16 +28,21 @@ import 'feed_footer.dart';
 import 'feed_list.dart';
 import 'feed_scroll_pin.dart';
 import 'summary/macro_summary.dart';
+import 'feed_panes.dart';
 
 /// The day's meal feed: macro summary header, the scrollable card list, the
 /// pending/streaming footer, and the natural-language meal input.
-///
-/// Ported 1:1 from web `components/logging/feed/feed-area.tsx`.
 class FeedArea extends ConsumerStatefulWidget {
-  const FeedArea({super.key, required this.profile, required this.date});
+  const FeedArea({
+    super.key,
+    required this.profile,
+    required this.date,
+    this.farHeader,
+  });
 
   final LoggingProfile profile;
   final String date;
+  final Widget? farHeader;
 
   @override
   ConsumerState<FeedArea> createState() => _FeedAreaState();
@@ -46,19 +51,14 @@ class FeedArea extends ConsumerStatefulWidget {
 class _FeedAreaState extends ConsumerState<FeedArea> {
   final MealInputController _inputController = MealInputController();
 
-  /// The composer's text AND relog picks, for this visit — [ComposerDraftHost].
   late final ComposerDraftHost _draft = ComposerDraftHost(ref);
   MentionTextEditingController get _textController => _draft.controller;
 
-  /// The `/` picker: whether it is open, on which token, and the debounced
-  /// query behind it.
   late final RelogPickerController _picker = RelogPickerController(
     composer: _textController,
     onChanged: _rebuild,
   );
 
-  /// The analysis on screen: what is in flight, what failed, and what has been
-  /// revealed but not yet confirmed.
   late final FeedAnalysisRun _analysis = FeedAnalysisRun(
     composer: _textController,
     input: _inputController,
@@ -66,7 +66,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     onScrollToAnswer: () => _pin.pinToBottom(widget.date),
   );
 
-  /// Which of the three shapes a submit is, and running it.
   late final ComposerSubmitter _submitter = ComposerSubmitter(
     composer: _textController,
     run: _analysis,
@@ -74,18 +73,15 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     onStaged: () => _pin.pinToBottom(widget.date),
   );
 
-  /// True while a "log it again" occasion is being re-staged server-side.
   bool _stagingRepeat = false;
 
-  /// Scrolls the freshly-revealed answer into view (nothing scrolled it before).
   final ScrollController _scrollController = ScrollController();
+  final _nearKey = GlobalKey(debugLabel: 'logging-feed');
 
   /// Carries a new turn to the top of the screen — see [FeedScrollPin], which
   /// does it once per request and then lets go.
   final FeedScrollPinHandle _pin = FeedScrollPinHandle();
 
-  /// Inline error for a failed confirm (saving a meal) — not analysis errors,
-  /// which surface as the failed-attempt card.
   String? _errorText;
 
   /// The floating composer dock's measured height — the scroll padding the
@@ -105,14 +101,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// failed DELETE removes it too (the data was never locally changed).
   final Set<String> _pendingRemovalIds = <String>{};
 
-  /// A meal parked by an off-feed composer, claimed exactly once.
   final PendingMealHandoff _handoff = PendingMealHandoff();
 
   LoggingDayArgs get _dayArgs =>
       LoggingDayArgs(widget.profile.userId, widget.date);
 
-  /// What the controllers call when something changed — and the one door every
-  /// `setState` goes through, so late work never lands on a dead State.
   void _rebuild([VoidCallback? change]) {
     if (mounted) setState(change ?? () {});
   }
@@ -163,7 +156,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     );
   }
 
-  /// An action failed: surface it as the composer's inline error line.
   void _showActionError() =>
       _rebuild(() => _errorText = 'errors.internal'.tr());
 
@@ -274,9 +266,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       onDiscardReveal: mealActions.discardStaged,
     );
 
-    return ScrollSeparator(
+    final twoPane = PageWindow.of(context).twoPane;
+    final near = ScrollSeparator(
+      key: _nearKey,
       header:
-          WindowLayout.of(context).compactHeight
+          twoPane || PageWindow.of(context).compactHeight
               ? const SizedBox.shrink()
               : MacroSummary(view: view, profile: profile),
 
@@ -310,7 +304,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       // Keep composer scroll notifications outside the feed's hairline listener.
       child: FeedList(
         header:
-            WindowLayout.of(context).compactHeight
+            !twoPane && PageWindow.of(context).compactHeight
                 ? MacroSummary(view: view, profile: profile)
                 : null,
         view: view,
@@ -328,6 +322,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         onConfirm: confirmActions.confirmPending,
         onConfirmCheat: confirmActions.confirmCheatPending,
       ),
+    );
+    return FeedPanes(
+      near: near,
+      farHeader: widget.farHeader,
+      summary: MacroSummary(view: view, profile: profile, full: true),
+      onRefresh: mealActions.refreshDay,
     );
   }
 }

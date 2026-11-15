@@ -24,13 +24,50 @@ import '../../composer/entrances.dart';
 import '../placeholder/loading_skeletons.dart';
 
 class MacroSummary extends StatelessWidget {
-  const MacroSummary({super.key, required this.view, required this.profile});
+  const MacroSummary({
+    super.key,
+    required this.view,
+    required this.profile,
+    this.full = false,
+  });
 
   final FeedViewState view;
   final LoggingProfile profile;
+  final bool full;
 
   @override
   Widget build(BuildContext context) {
+    if (full) {
+      return Column(
+        children: [
+          const SizedBox(height: LoggingSpacing.block),
+          if (view.isLoading || view.hasError)
+            const MacroSummarySkeleton(full: true)
+          else ...[
+            CalorieDial(
+              logged: view.dailyCalories.toDouble(),
+              target: profile.calorieTarget.toDouble(),
+              goal: profile.goal,
+              atLeast: view.incompleteTotals.contains('calories'),
+            ),
+            const SizedBox(height: LoggingSpacing.block),
+            MacroDialRow(
+              atLeast: view.incompleteTotals,
+              current: {
+                'protein': view.dailyProtein,
+                'carbohydrate': view.dailyCarbs,
+                'fat': view.dailyFat,
+              },
+              target: {
+                'protein': profile.proteinTargetG,
+                'carbohydrate': profile.carbsTargetG,
+                'fat': profile.fatTargetG,
+              },
+            ),
+          ],
+        ],
+      );
+    }
     return FadeInUp(
       child: Container(
         // Clear in Aurora, so the page's glow runs on behind the dials

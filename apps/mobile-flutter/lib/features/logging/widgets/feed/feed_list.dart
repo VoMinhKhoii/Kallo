@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../shell/window/window_layout.dart';
+import '../../../../shared/widgets/panes/page_window.dart';
 
 import '../../../../models/logging/cheat.dart';
 import '../../../../models/logging/meal.dart';
@@ -15,8 +17,7 @@ import 'placeholder/feed_no_meals_view.dart';
 import 'staged_meal_card.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 
-/// The scrollable day: every meal card — saved and staged alike, in the order
-/// they were logged — with the live [footer] as the last item, plus the day's
+/// Saved and staged meal cards in logged order, with the live [footer], plus
 /// error / empty / first-load branches.
 class FeedList extends StatelessWidget {
   const FeedList({
@@ -135,9 +136,17 @@ class FeedList extends StatelessWidget {
                   if (header != null) SliverToBoxAdapter(child: header),
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(
-                      KalloSpacing.sp3,
+                      PageWindow.of(context).twoPane &&
+                              PageWindow.of(context).controlEdge !=
+                                  ControlEdge.left
+                          ? 0
+                          : KalloSpacing.sp3,
                       0,
-                      KalloSpacing.sp3,
+                      PageWindow.of(context).twoPane &&
+                              PageWindow.of(context).controlEdge ==
+                                  ControlEdge.left
+                          ? 0
+                          : KalloSpacing.sp3,
                       reserve,
                     ),
                     sliver: SliverList(
