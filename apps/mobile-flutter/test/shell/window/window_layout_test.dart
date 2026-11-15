@@ -82,6 +82,14 @@ void main() {
     expect(layout.twoPane, isFalse);
   });
 
+  test('the gap above a header follows the display\'s corners', () {
+    expect(_resolve(402, 874, top: 62, bottom: 34).topCornerGap, 0);
+    expect(_resolve(466, 678, right: 84, bottom: 34).topCornerGap, 12);
+    expect(_resolve(475, 669, left: 84, bottom: 34).topCornerGap, 12);
+    expect(_resolve(951, 669, right: 84, bottom: 34).topCornerGap, 28);
+    expect(_resolve(669, 951, top: 82, bottom: 34).topCornerGap, 0);
+  });
+
   test('a wide window under a pinned video keeps two panes', () {
     final layout = _resolve(951, 420, right: 84, bottom: 34);
     expect(layout.compactHeight, isTrue);

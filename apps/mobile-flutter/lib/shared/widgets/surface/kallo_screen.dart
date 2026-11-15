@@ -43,7 +43,7 @@ class Screen extends StatelessWidget {
       top: top,
       bottom: bottom,
       minimum: EdgeInsets.only(
-        top: top && WindowLayout.of(context).hasControlColumn ? 12 : 0,
+        top: top ? WindowLayout.of(context).topCornerGap : 0,
       ),
       // Tap anywhere on empty surface to dismiss the keyboard — the native
       // mobile expectation. Interactive descendants (buttons, fields) win the

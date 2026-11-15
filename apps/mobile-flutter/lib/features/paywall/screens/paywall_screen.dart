@@ -56,7 +56,7 @@ class PaywallScreen extends ConsumerWidget {
               right: false,
               bottom: false,
               minimum: EdgeInsets.only(
-                top: WindowLayout.of(context).hasControlColumn ? 12 : 0,
+                top: WindowLayout.of(context).topCornerGap,
               ),
               child: entitlement.when(
                 data:

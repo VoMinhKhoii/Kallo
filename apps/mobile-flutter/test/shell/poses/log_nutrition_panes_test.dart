@@ -111,7 +111,7 @@ void main() {
     expect(input.left, 495.5);
     expect(input.right, 855);
     expect(input.bottom, 623);
-    expect(tester.getRect(find.byType(TimelineStrip)).top, 60);
+    expect(tester.getRect(find.byType(TimelineStrip)).top, 76);
     tester.view.viewInsets = const FakeViewPadding(bottom: 440);
     tester.view.padding = const FakeViewPadding(right: 168);
     await tester.pump();

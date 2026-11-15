@@ -51,8 +51,9 @@ void main() {
       expect(day.right, 455.5);
       expect(weight.left, 495.5);
       expect(weight.right, 855);
-      expect(tester.getRect(find.byType(WeekStrip)).top, 60);
-      expect(tester.getRect(find.byType(KalloRefreshableScroll).last).top, 60);
+      // 28 above the header row (the inner display's corner), then its 48.
+      expect(tester.getRect(find.byType(WeekStrip)).top, 76);
+      expect(tester.getRect(find.byType(KalloRefreshableScroll).last).top, 76);
       expect(tester.getRect(find.byType(KalloWordmark)).left, 12);
       expect(tester.getRect(find.byType(ProfileAvatarButton)).right, 855);
       final pager = tester.widget<DayPager>(find.byType(DayPager));
@@ -101,7 +102,7 @@ void main() {
     final args =
         tester.widget<DashboardContent>(find.byType(DashboardContent)).args;
     final before = container.read(dashboardBundleProvider(args)).value;
-    await tester.dragFrom(const Offset(700, 75), const Offset(0, 350));
+    await tester.dragFrom(const Offset(700, 120), const Offset(0, 350));
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
@@ -155,7 +156,7 @@ void main() {
       resize(tester, innerLandscape);
       await settlePose(tester);
       expect(far().pixels, 80);
-      await tester.dragFrom(const Offset(700, 75), const Offset(0, -100));
+      await tester.dragFrom(const Offset(700, 120), const Offset(0, -100));
       await tester.pumpAndSettle();
       resize(tester, outerPortrait);
       await settlePose(tester);

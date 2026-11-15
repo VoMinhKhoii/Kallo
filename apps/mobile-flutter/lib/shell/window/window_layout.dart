@@ -40,6 +40,12 @@ const double kTwoPaneWidth = 840;
 /// there: one column would put the composer and the buttons on it.
 const double kTwoPaneMinHeight = 360;
 
+/// Gap above a page's header on Duo's outer display and in Split View.
+const double kOuterCornerGap = 12;
+
+/// Gap above a page's header in a two-pane window (Duo's inner display).
+const double kInnerCornerGap = 28;
+
 /// Width of the strip down the centre of a two-pane window that holds no
 /// content: the fold. The Flutter engine measured the fold's reserved frame at
 /// 40pt on the Duo simulator (flutter/flutter#193025), protective margins
@@ -105,6 +111,20 @@ class WindowLayout {
     ControlEdge.right => viewPadding.right,
     ControlEdge.bottom => 0,
   };
+
+  /// Room a page leaves above its header where the system reserves none.
+  ///
+  /// A window with a control column has no top inset, and its top corners are
+  /// rounded. On the outer display [kOuterCornerGap] clears them. The inner
+  /// display's corners are much larger: measured on the simulator's device
+  /// frame, the curve only meets the edge 50 to 80pt down, and at 12 the
+  /// wordmark's first letter sat 3pt from it.
+  double get topCornerGap =>
+      !hasControlColumn
+          ? 0
+          : twoPane
+          ? kInnerCornerGap
+          : kOuterCornerGap;
 
   /// Width left for content once both side insets are taken out.
   double get contentWidth => size.width - viewPadding.horizontal;

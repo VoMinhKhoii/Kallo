@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_shapes.dart';
+import 'list_row.dart';
 
 /// A grouped list card — the Settings anchor anatomy generalized app-wide
 /// (native pass, 2026-08-31): solid white, radius 22, NO border/shadow,
@@ -30,6 +31,11 @@ class GroupedListCard extends StatelessWidget {
   /// two were the same number — which would have quietly stopped being true the
   /// day this padding moved.
   static const double contentInset = KalloSpacing.sp4;
+
+  /// Height of the rule between two rows.
+  static const double separatorHeight = 1;
+
+  static bool _isSelected(Widget row) => row is ListRow && row.selected;
 
   final List<Widget> children;
 
@@ -69,9 +75,14 @@ class GroupedListCard extends StatelessWidget {
               for (var i = 0; i < children.length; i++) ...[
                 if (i > 0 && showSeparators)
                   Container(
-                    height: 1,
+                    height: separatorHeight,
                     margin: EdgeInsets.only(left: separatorInset),
-                    color: kHairline,
+                    // No rule beside a selected row: its wash covers the gap,
+                    // the way iOS drops the separators around a selected cell.
+                    color:
+                        _isSelected(children[i - 1]) || _isSelected(children[i])
+                            ? null
+                            : kHairline,
                   ),
                 children[i],
               ],

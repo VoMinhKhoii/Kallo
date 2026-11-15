@@ -4,6 +4,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import 'grouped_list_card.dart';
+import 'list_row_wash.dart';
 import 'list_row_trailing.dart';
 
 /// One row inside a [GroupedListCard] — the Settings anchor anatomy
@@ -82,16 +83,7 @@ class _ListRowState extends State<ListRow> {
     final row = Stack(
       clipBehavior: Clip.none,
       children: [
-        Positioned(
-          left: -GroupedListCard.contentInset,
-          right: -GroupedListCard.contentInset,
-          top: 0,
-          bottom: 0,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            color: _pressed || widget.selected ? fill : Colors.transparent,
-          ),
-        ),
+        ListRowWash(color: fill, pressed: _pressed, selected: widget.selected),
         Container(
           constraints: BoxConstraints(
             minHeight: widget.subline != null ? 64 : 52,
