@@ -42,6 +42,7 @@ class AboutSection extends StatelessWidget {
       children: [
         ListRow(
           icon: LucideIcons.messageSquare300,
+          selected: SettingsNavigator.selectedOf(context) == FeedbackScreen,
           label: tr('settings.feedback.rowLabel'),
           showChevron: true,
           onTap: () => _openFeedback(context),

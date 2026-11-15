@@ -10,6 +10,7 @@ import '../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../shared/widgets/list/list_row.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../../../shared/widgets/panes/list_pane.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../circle/screens/circle_manage_screen.dart';
 import '../../onboarding/data/profile_row.dart';
@@ -127,19 +128,22 @@ class _SettingsList extends ConsumerWidget {
       bounded: true,
       glow: true,
       bottom: false,
-      child: ScrollSeparator(
-        header: PageHeader(
-          title: tr('settings.title'),
-          // The root's back leaves settings entirely, so it pops the ROUTER,
-          // not the nested navigator.
-          onBack: () => GoRouter.of(context).pop(),
-        ),
-        child: ListView.separated(
-          padding: SettingsSpacing.rowList(context),
-          itemCount: items.length,
-          itemBuilder: (_, i) => items[i],
-          separatorBuilder:
-              (_, __) => const SizedBox(height: SettingsSpacing.group),
+      child: ListPane(
+        emptyDetail: const SizedBox.shrink(),
+        child: ScrollSeparator(
+          header: PageHeader(
+            title: tr('settings.title'),
+            // The root's back leaves settings entirely, so it pops the ROUTER,
+            // not the nested navigator.
+            onBack: () => GoRouter.of(context).pop(),
+          ),
+          child: ListView.separated(
+            padding: SettingsSpacing.rowList(context),
+            itemCount: items.length,
+            itemBuilder: (_, i) => items[i],
+            separatorBuilder:
+                (_, __) => const SizedBox(height: SettingsSpacing.group),
+          ),
         ),
       ),
     );
@@ -165,6 +169,7 @@ class _NutritionProfileGroup extends StatelessWidget {
       children: [
         ListRow(
           icon: LucideIcons.user300,
+          selected: SettingsNavigator.selectedOf(context) == AboutYouPage,
           label: tr('settings.rows.aboutYou'),
           subline: ProfileSummaries.aboutYou(profile, locale),
           showChevron: true,
@@ -172,6 +177,7 @@ class _NutritionProfileGroup extends StatelessWidget {
         ),
         ListRow(
           icon: LucideIcons.target300,
+          selected: SettingsNavigator.selectedOf(context) == GoalPacePage,
           label: tr('settings.rows.goalPace'),
           subline: ProfileSummaries.goal(profile, locale),
           showChevron: true,
@@ -179,6 +185,7 @@ class _NutritionProfileGroup extends StatelessWidget {
         ),
         ListRow(
           icon: LucideIcons.utensilsCrossed300,
+          selected: SettingsNavigator.selectedOf(context) == CookingPage,
           label: tr('settings.rows.cooking'),
           subline: ProfileSummaries.cooking(profile),
           showChevron: true,
@@ -186,6 +193,7 @@ class _NutritionProfileGroup extends StatelessWidget {
         ),
         ListRow(
           icon: LucideIcons.globe300,
+          selected: SettingsNavigator.selectedOf(context) == RegionPage,
           label: tr('settings.rows.region'),
           subline: ProfileSummaries.region(profile, locale),
           showChevron: true,

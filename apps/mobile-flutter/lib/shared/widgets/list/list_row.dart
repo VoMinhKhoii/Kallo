@@ -30,6 +30,7 @@ class ListRow extends StatefulWidget {
     this.busy = false,
     this.showChevron = false,
     this.trailing,
+    this.selected = false,
   });
 
   /// Lucide glyph for the leading 24pt slot — ink (red on a [danger] row).
@@ -58,6 +59,7 @@ class ListRow extends StatefulWidget {
 
   final bool showChevron;
   final Widget? trailing;
+  final bool selected;
 
   @override
   State<ListRow> createState() => _ListRowState();
@@ -81,7 +83,7 @@ class _ListRowState extends State<ListRow> {
       duration: const Duration(milliseconds: 150),
       curve: Curves.easeInOut,
       constraints: BoxConstraints(minHeight: widget.subline != null ? 64 : 52),
-      color: _pressed ? fill : Colors.transparent,
+      color: _pressed || widget.selected ? fill : Colors.transparent,
       child: Row(
         children: [
           if (widget.icon != null || widget.leading != null) ...[

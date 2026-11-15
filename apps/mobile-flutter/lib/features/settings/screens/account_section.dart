@@ -280,6 +280,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     rows.add(
       ListRow(
         icon: LucideIcons.trash2300,
+        selected: SettingsNavigator.selectedOf(context) == AccountDeleteScreen,
         label: tr('settings.account.delete'),
         danger: true,
         // Not this row's own action: deleting the account while an export is

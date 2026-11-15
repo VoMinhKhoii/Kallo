@@ -1580,6 +1580,7 @@
       "replyError": "Couldn't post your reply",
       "openThread": "Open thread",
       "threadTitle": "Replies",
+      "chooseThread": "Choose a post to see its replies.",
       "noReplies": "No replies yet",
       "noRepliesBody": "Be the first to say something.",
       "threadGone": "This post isn't here any more",

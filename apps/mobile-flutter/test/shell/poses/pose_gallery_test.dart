@@ -10,6 +10,8 @@ import 'package:kallo_mobile/features/logging/widgets/meal_edit/meal_edit_sheet.
 import 'package:kallo_mobile/features/logging/widgets/persisted/persisted_meal_card_content.dart';
 import 'package:kallo_mobile/features/nutrition/screens/nutrition_screen.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_screen.dart';
+import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
+import 'package:kallo_mobile/features/settings/screens/steps/about_you_page.dart';
 import 'package:kallo_mobile/features/settings/screens/settings_screen.dart';
 import 'package:kallo_mobile/features/auth/screens/sign_in_screen.dart';
 import 'package:kallo_mobile/features/paywall/screens/paywall_screen.dart';
@@ -66,6 +68,18 @@ const _surfaces = <Surface>[
   ),
   (name: 'toast', route: '/dashboard', widget: TopToastPill, scroll: false),
   (name: 'menu', route: '/logging', widget: AnchoredMenuLayer, scroll: false),
+  (
+    name: 'thread',
+    route: '/circle/thread-detail',
+    widget: CircleThreadScreen,
+    scroll: true,
+  ),
+  (
+    name: 'body-metrics',
+    route: '/settings',
+    widget: AboutYouPage,
+    scroll: true,
+  ),
 ];
 
 Future<void> _capture(WidgetTester tester, String name) async {
@@ -125,6 +139,11 @@ Future<void> _scrollToEnd(WidgetTester tester, Type surface) async {
 }
 
 Future<void> _openSheet(WidgetTester tester, String surface) async {
+  if (surface == 'body-metrics' &&
+      find.byType(AboutYouPage).evaluate().isEmpty) {
+    await tester.tap(find.text('Body metrics'));
+    await tester.pumpAndSettle();
+  }
   if (surface == 'confirm' || surface == 'toast') {
     final context = tester.element(find.byType(DashboardScreen));
     if (surface == 'confirm') {

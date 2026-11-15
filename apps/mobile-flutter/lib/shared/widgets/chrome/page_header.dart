@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../shell/header/app_header_back_button.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
+import '../panes/detail_pane.dart';
 
 /// A pushed page's ONE top bar: a 44×44 back chevron with the page title on
 /// the same line, 28/600 (`kPageTitle`) in ink.
@@ -46,10 +47,11 @@ class PageHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: KalloSpacing.sp1),
       child: Row(
         children: [
-          AppHeaderBackButton(
-            onBack: onBack ?? () => Navigator.of(context).maybePop(),
-          ),
-          const SizedBox(width: KalloSpacing.sp1),
+          if (!DetailPane.of(context))
+            AppHeaderBackButton(
+              onBack: onBack ?? () => Navigator.of(context).maybePop(),
+            ),
+          if (!DetailPane.of(context)) const SizedBox(width: KalloSpacing.sp1),
           Expanded(
             child: Text(
               title,

@@ -50,7 +50,7 @@ class CircleThreadScreen extends ConsumerStatefulWidget {
 }
 
 class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
-  final _focus = FocusNode();
+  FocusNode get _focus => ref.read(threadFocusProvider(widget.shareId));
   final _scroll = ScrollController();
 
   /// Which post, in which feed — the key both the view and the refetch read.
@@ -84,7 +84,6 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
 
   @override
   void dispose() {
-    _focus.dispose();
     _scroll.dispose();
     _dockHeight.dispose();
     super.dispose();
@@ -181,6 +180,7 @@ class _CircleThreadScreenState extends ConsumerState<CircleThreadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(threadFocusProvider(widget.shareId));
     final view = ref.watch(threadEntryProvider(_ref));
     // A page that has shown a post does not go blank while it refetches one.
     //

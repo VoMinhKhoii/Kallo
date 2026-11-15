@@ -153,4 +153,30 @@ class PoseFixtures {
         'repliesTotal': 0,
       },
   ];
+
+  Map<String, dynamic> get thread => {
+    ...posts.first,
+    'meal': {
+      ...posts.first['meal'] as Map<String, dynamic>,
+      'shareId': 'thread-detail',
+    },
+    'replies': [
+      for (var i = 0; i < 2; i++)
+        {
+          'id': 'pose-reply-$i',
+          'isSelf': false,
+          'author': {
+            'userId': 'pose-replier-$i',
+            'handle': 'sam_sample',
+            'displayName': 'Sam Taylor',
+          },
+          'body':
+              i == 0
+                  ? 'That looks like a good start to the day.'
+                  : 'I will try this tomorrow.',
+          'createdAt': '${date(0)}T13:30:00Z',
+        },
+    ],
+    'repliesTotal': 2,
+  };
 }

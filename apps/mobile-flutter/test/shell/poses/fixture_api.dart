@@ -12,6 +12,7 @@ FakeApiClient fixtureApi(PoseFixtures f) => FakeApiClient((request) {
     '/api/v1/nutrition/overview' => nutritionFixture(f),
     '/api/v1/groups/profile' => {'profile': f.circleProfile},
     '/api/v1/groups/feed' => {'feed': f.posts},
+    '/api/v1/groups/shares/thread-detail' => {'entry': f.thread},
     '/api/v1/groups/friends/feed' => {'entries': f.posts, 'nextCursor': null},
     '/api/v1/groups/friends/read-marker' => {
       'lastReadAt': '${f.date(0)}T00:00:00Z',

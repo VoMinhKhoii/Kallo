@@ -27,6 +27,7 @@ import 'features/onboarding/screens/welcome_setup_screen.dart';
 import 'features/paywall/screens/paywall_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'router_redirect.dart';
+import 'shared/widgets/panes/detail_pane_route.dart';
 import 'shell/route_error_screen.dart';
 import 'shell/splash_screen.dart';
 import 'shell/tab_scaffold.dart';
@@ -193,18 +194,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       // `:shareId` SHADOWS any literal `/circle/<word>` segment — go_router
       // takes the first match — so a future one must be declared BEFORE this
       // route, exactly as `/circle/invite/:slug` already is above.
-      GoRoute(
-        path: '/circle/:shareId',
-        parentNavigatorKey: _rootKey,
-        pageBuilder:
-            (context, state) => MaterialPage<void>(
-              child: CircleThreadScreen(
-                shareId: state.pathParameters['shareId'] ?? '',
-                scope: state.uri.queryParameters['scope'],
-                autofocusComposer: state.uri.queryParameters['compose'] == '1',
-              ),
-            ),
-      ),
 
       // The pill-nav destinations — each its own branch so state/scroll
       // persist across tab switches. Order matches the bar: dashboard,
@@ -238,6 +227,21 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/circle',
                 builder: (context, state) => const CircleScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':shareId',
+                    parentNavigatorKey: _rootKey,
+                    pageBuilder:
+                        (context, state) => DetailPanePage<void>(
+                          child: CircleThreadScreen(
+                            shareId: state.pathParameters['shareId'] ?? '',
+                            scope: state.uri.queryParameters['scope'],
+                            autofocusComposer:
+                                state.uri.queryParameters['compose'] == '1',
+                          ),
+                        ),
+                  ),
+                ],
               ),
             ],
           ),
