@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod/mini';
 import { useWaitlistSignup } from '@/hooks/auth/use-waitlist-signup';
+import { useResetOnReveal } from '@/hooks/ui/use-reset-on-reveal';
 import type {
   WaitlistSignupInput,
   WaitlistSource,
@@ -25,6 +26,9 @@ export function WaitlistPill({ source }: { source: WaitlistSource }) {
   const t = useTranslations('landing.hero.waitlist');
   const locale = useLocale();
   const signup = useWaitlistSignup();
+  // The page stays mounted, hidden, across navigation: coming back shows the
+  // form again rather than the last visit's result.
+  useResetOnReveal(signup.reset);
   const fieldId = `${source}-waitlist-email`;
   const errorId = `${source}-waitlist-error`;
 

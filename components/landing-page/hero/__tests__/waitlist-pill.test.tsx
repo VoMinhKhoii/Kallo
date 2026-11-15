@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
+import { Activity, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WaitlistPill } from '../waitlist-pill';
 
@@ -128,5 +128,40 @@ describe('WaitlistPill source', () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).source).toBe('cta');
+  });
+});
+
+describe('WaitlistPill across navigation', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+  });
+
+  // Cache Components hides the landing page with <Activity> on navigation
+  // instead of unmounting it. Coming back must show the form again, not the
+  // last visit's "check your inbox".
+  it('clears the check-your-inbox state when the page is shown again', async () => {
+    const client = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
+    const page = (mode: 'visible' | 'hidden') => (
+      <QueryClientProvider client={client}>
+        <Activity mode={mode}>
+          <WaitlistPill source="hero" />
+        </Activity>
+      </QueryClientProvider>
+    );
+    const view = render(page('visible'));
+    const user = userEvent.setup();
+
+    await user.type(screen.getByPlaceholderText(EMAIL_FIELD), 'a@b.co');
+    await user.click(screen.getByRole('button', { name: /submit/ }));
+    expect(await screen.findByText('success')).toBeInTheDocument();
+
+    view.rerender(page('hidden'));
+    view.rerender(page('visible'));
+
+    expect(screen.queryByText('success')).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText(EMAIL_FIELD)).toBeInTheDocument();
   });
 });
