@@ -10,7 +10,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
 import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
-import 'package:kallo_mobile/shell/nav/pill_nav_bar.dart';
+import 'package:kallo_mobile/shell/nav/pill_nav_bottom.dart';
 import 'package:kallo_mobile/shell/nav/pill_nav_surface.dart';
 import 'package:kallo_mobile/shell/nav/pill_nav_veil.dart';
 import 'package:kallo_mobile/shell/tab_scaffold.dart';
@@ -254,7 +254,7 @@ void main() {
     // extendBody rewriting the body's MediaQuery.padding.bottom) every tab
     // body SafeArea'd down to zero height.
     final surface = tester.getSize(find.byType(MaterialApp));
-    final bar = tester.getRect(find.byType(PillNavBar));
+    final bar = tester.getRect(find.byType(PillNavBottom));
     expect(
       bar.height,
       lessThan(160),
@@ -307,14 +307,14 @@ void main() {
     expect(find.text('logging-page'), findsOneWidget);
     // Full-screen push: the shell (and its bar) sits covered beneath the
     // route — offstage, not on the logging screen.
-    expect(find.byType(PillNavBar), findsNothing);
+    expect(find.byType(PillNavBottom), findsNothing);
 
     // Back returns to the tab the user left (the real screen's chevron
     // calls maybePop; the stub page has no chrome, so pop via the router).
     GoRouter.of(tester.element(find.text('logging-page'))).pop();
     await tester.pumpAndSettle();
     expect(find.text('dash:0'), findsOneWidget);
-    expect(find.byType(PillNavBar), findsOneWidget);
+    expect(find.byType(PillNavBottom), findsOneWidget);
   });
 
   testWidgets('a sheet opened from a branch screen paints above the pill nav', (
@@ -335,7 +335,7 @@ void main() {
 
     // Precondition: the sheet really does cover the nav. Without this the tap
     // assertion below could pass for the wrong reason.
-    final navRect = tester.getRect(find.byType(PillNavBar));
+    final navRect = tester.getRect(find.byType(PillNavBottom));
     final sheetRect = tester.getRect(find.byType(KalloSheetSurface));
     expect(
       sheetRect.overlaps(navRect),

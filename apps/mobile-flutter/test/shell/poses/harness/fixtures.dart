@@ -1,4 +1,5 @@
-import '../../features/settings/settings_test_support.dart' show kFullProfile;
+import '../../../features/settings/settings_test_support.dart'
+    show kFullProfile;
 
 /// Entirely synthetic fixtures; dates follow the app's local "today".
 class PoseFixtures {

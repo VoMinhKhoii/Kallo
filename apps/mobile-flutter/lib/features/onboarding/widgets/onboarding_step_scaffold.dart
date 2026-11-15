@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import '../../../shell/window/window_layout.dart';
 import 'narrative/onboarding_answer.dart';
 import 'narrative/onboarding_step_panes.dart';
 
@@ -79,25 +78,21 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
     // The band runs to the PHYSICAL bottom edge, so the button on it carries
     // the home indicator's inset itself.
     final inset = MediaQuery.viewPaddingOf(context).bottom;
-    final twoPane = WindowLayout.of(context).twoPane;
     return LayoutBuilder(
       builder:
           (context, box) => Stack(
             children: [
               const Positioned.fill(child: StepBackdrop()),
-              if (twoPane)
-                OnboardingStepPanes(
-                  screen: screen,
-                  title: spec.title,
-                  direction: direction,
-                  onBack: onBack,
-                  onSkip: onSkip,
-                  answer: _body(box.biggest, inset),
-                )
-              else
+              OnboardingStepPanes(
+                screen: screen,
+                title: spec.title,
+                direction: direction,
+                onBack: onBack,
+                onSkip: onSkip,
+                answer: _body(box.biggest, inset),
                 // Only the chrome is inset, and only at the top: the band below it
                 // reaches the screen's bottom edge on purpose.
-                SafeArea(
+                single: SafeArea(
                   bottom: false,
                   minimum: EdgeInsets.only(
                     top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
@@ -139,6 +134,7 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                     ),
                   ),
                 ),
+              ),
             ],
           ),
     );

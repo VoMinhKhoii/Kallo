@@ -11,9 +11,8 @@ import 'package:kallo_mobile/features/paywall/screens/paywall_purchase_face.dart
 import 'package:kallo_mobile/features/paywall/widgets/pitch/plan_comparison.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/plan_toggle.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
-import 'pose_harness.dart';
-import 'poses.dart';
-import 'window_resize_test.dart' show resize;
+import 'harness/pose_harness.dart';
+import 'harness/poses.dart';
 
 void main() {
   setUpAll(initializePoseHarness);

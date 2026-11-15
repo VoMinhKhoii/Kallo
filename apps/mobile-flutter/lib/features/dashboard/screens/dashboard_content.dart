@@ -4,7 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../shared/widgets/feedback/kallo_refresh.dart';
+import '../../../shared/widgets/panes/pane_scroll.dart';
 import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../theme/kallo_motion.dart';
 import '../../logging/logic/timeline_utils.dart' hide WeekStrip;
@@ -17,6 +17,7 @@ import '../widgets/today/day_pager.dart';
 import '../widgets/today/today_section.dart';
 import '../widgets/chrome/week_strip.dart';
 import '../widgets/weight/weight_chart.dart';
+import '../../../shell/window/two_pane_transition.dart';
 import '../../../shell/window/window_layout.dart';
 import '../../../shared/widgets/panes/two_pane_scaffold.dart';
 
@@ -46,25 +47,21 @@ class DashboardContent extends StatefulWidget {
   State<DashboardContent> createState() => DashboardContentState();
 }
 
-class DashboardContentState extends State<DashboardContent> {
+class DashboardContentState extends State<DashboardContent>
+    with TwoPaneTransition {
   // The day whose summary the Today card shows; tapping a strip day or swiping
   // the card changes it. The window is unbounded into the past and clamped at
   // today, so pages map to dates through `logic/day_window.dart` instead of
   // indexing a fixed list — today is [kDayPageBase], the last page.
   int _page = kDayPageBase;
   final _pagerKey = GlobalKey();
-  final _farScroll = ScrollController();
-  final _nearScroll = ScrollController();
 
-  // Global keys, so a fold or a rotation MOVES each scroll view to its new
-  // place in the tree instead of mounting a second one on the same
-  // controller. That keeps the offset, and it keeps the controller on one
-  // position at a time.
+  // One key per pane, so a fold or a rotation moves each scroll view and its
+  // offset to its new place in the tree (see [PaneScroll]).
   final _farKey = GlobalKey(debugLabel: 'dashboard-far');
   final _nearKey = GlobalKey(debugLabel: 'dashboard-near');
   final _progressKey = GlobalKey();
   bool _nearTouchedLast = false;
-  bool? _wasTwoPane;
   final PageController _pageController = PageController(
     initialPage: kDayPageBase,
   );
@@ -73,8 +70,6 @@ class DashboardContentState extends State<DashboardContent> {
 
   @override
   void dispose() {
-    _farScroll.dispose();
-    _nearScroll.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -108,16 +103,17 @@ class DashboardContentState extends State<DashboardContent> {
   ///
   /// Two frames late on purpose: the first lays the single column out at its
   /// new width, and the day card only reports its height on the one after. An
-  /// offset taken any earlier is short by however much that card grew.
-  void _revealProgressOnceSettled() {
+  /// offset taken any earlier is short by however much that card grew. This
+  /// runs after the first; the scroll waits for the second.
+  @override
+  void onTwoPaneChanged(bool wasTwoPane) {
+    if (!wasTwoPane || !_nearTouchedLast) return;
     final binding = WidgetsBinding.instance;
     binding.addPostFrameCallback((_) {
-      binding.addPostFrameCallback((_) {
-        final target = _progressKey.currentContext;
-        if (mounted && target != null) Scrollable.ensureVisible(target);
-      });
-      binding.scheduleFrame();
+      final target = _progressKey.currentContext;
+      if (mounted && target != null) Scrollable.ensureVisible(target);
     });
+    binding.scheduleFrame();
   }
 
   /// Swipe → update selection + fire the same selection haptic the strip uses.
@@ -141,10 +137,6 @@ class DashboardContentState extends State<DashboardContent> {
   Widget build(BuildContext context) {
     final locale = context.locale.toString();
     final layout = WindowLayout.of(context);
-    if (_wasTwoPane == true && !layout.twoPane && _nearTouchedLast) {
-      _revealProgressOnceSettled();
-    }
-    _wasTwoPane = layout.twoPane;
 
     final children = <Widget>[
       // SECTION 1 — week strip + the paged day-viewer (the wordmark
@@ -208,20 +200,19 @@ class DashboardContentState extends State<DashboardContent> {
     ];
     Widget scroll(
       List<Widget> items,
-      ScrollController controller,
+      bool near,
       EdgeInsets padding,
     ) => NotificationListener<ScrollStartNotification>(
       onNotification: (notification) {
         if (notification.depth == 0 && notification.dragDetails != null) {
-          _nearTouchedLast = controller == _nearScroll;
+          _nearTouchedLast = near;
         }
         return false;
       },
       // Bouncing physics and refresh as the first sliver hold the page down
       // for the whole refetch, rather than releasing it before data arrives.
-      child: KalloRefreshableScroll(
-        key: controller == _nearScroll ? _nearKey : _farKey,
-        controller: controller,
+      child: PaneScroll(
+        key: near ? _nearKey : _farKey,
         onRefresh: widget.onRefresh,
         slivers:
             (bottom) => [
@@ -242,24 +233,21 @@ class DashboardContentState extends State<DashboardContent> {
             ],
       ),
     );
-    if (!layout.twoPane) {
-      return scroll(
+    return TwoPaneScaffold(
+      single: scroll(
         children,
-        _farScroll,
+        false,
         // AppHeader pays 4 below itself; 8 here completes the 12pt rhythm.
         paneInsets(context, slot: PaneSlot.single, top: 8),
-      );
-    }
-    return TwoPaneScaffold(
-      header: const SizedBox.shrink(),
+      ),
       far: scroll(
         children.take(2).toList(),
-        _farScroll,
+        false,
         paneInsets(context, slot: PaneSlot.far),
       ),
       near: scroll(
         children.skip(2).toList(),
-        _nearScroll,
+        true,
         paneInsets(context, slot: PaneSlot.near),
       ),
     );

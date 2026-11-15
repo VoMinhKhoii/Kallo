@@ -8,39 +8,9 @@ import 'package:kallo_mobile/features/paywall/screens/paywall_purchase_face.dart
 import 'package:kallo_mobile/features/paywall/widgets/plans/plan_toggle.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/paywall_buy_band.dart';
 import 'package:kallo_mobile/features/paywall/widgets/pitch/plan_comparison.dart';
-import 'package:kallo_mobile/shared/widgets/toast/top_toast.dart';
-import 'package:kallo_mobile/shared/widgets/toast/top_toast_pill.dart';
-import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
-import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
-import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
-import 'package:kallo_mobile/shell/nav/pill_nav_surface.dart';
 
-import 'pose_harness.dart';
-import 'poses.dart';
-
-void resize(WidgetTester tester, Pose pose) {
-  final dpr = pose.devicePixelRatio;
-  tester.view.physicalSize = pose.size * dpr;
-  final padding = FakeViewPadding(
-    left: pose.padding.left * dpr,
-    top: pose.padding.top * dpr,
-    right: pose.padding.right * dpr,
-    bottom: pose.padding.bottom * dpr,
-  );
-  tester.view.padding = padding;
-  tester.view.viewPadding = padding;
-}
-
-Rect sheetRect(WidgetTester tester) => tester.getRect(
-  find
-      .descendant(
-        of: find.byType(KalloSheetSurface),
-        matching: find.byWidgetPredicate(
-          (w) => w is Container && w.decoration is ShapeDecoration,
-        ),
-      )
-      .first,
-);
+import 'harness/pose_harness.dart';
+import 'harness/poses.dart';
 
 void main() {
   setUpAll(initializePoseHarness);
@@ -136,116 +106,6 @@ void main() {
     }
     await dispose();
   });
-  testWidgets('toast stays twelve points below the top safe inset on resize', (
-    tester,
-  ) async {
-    final dispose = await bootPose(tester, outerPortrait, '/dashboard');
-    showTopToast(tester.element(find.byType(PillNavSurface)), 'Meal saved');
-    await tester.pumpAndSettle();
-    for (final pose in [outerPortrait, innerPortrait, innerLandscape]) {
-      resize(tester, pose);
-      await tester.pumpAndSettle();
-      expect(
-        tester.getRect(find.byType(TopToastPill)).top,
-        pose.padding.top + 12,
-      );
-    }
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpAndSettle();
-    await dispose();
-  });
-  testWidgets('capsule is 272 tall and follows the column', (tester) async {
-    final dispose = await bootPose(tester, outerPortrait, '/dashboard');
-    expect(
-      tester.getRect(find.byType(PillNavSurface)),
-      const Rect.fromLTRB(390, 364, 446, 636),
-    );
-    resize(tester, outerLandscape);
-    await settlePose(tester);
-    expect(
-      tester.getRect(find.byType(PillNavSurface)),
-      const Rect.fromLTRB(602, 97, 658, 369),
-    );
-    resize(tester, innerLandscape);
-    await settlePose(tester);
-    expect(tester.getRect(find.byType(PillNavSurface)).left, 875);
-    resize(tester, huge);
-    await settlePose(tester);
-    final pill = tester.getRect(find.byType(PillNavSurface));
-    expect(pill.width, 420);
-    expect(pill.center.dx, 290);
-    await dispose();
-  });
-
-  testWidgets('weight sheet keeps 68.6 while its frame moves', (tester) async {
-    final dispose = await bootPose(tester, outerPortrait, '/dashboard');
-    await tester.tap(find.bySemanticsLabel('Add'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Log weight'));
-    await tester.pumpAndSettle();
-    final field = find.byType(EditableText).last;
-    await tester.enterText(field, '68.6');
-    expect(sheetRect(tester).left, 0);
-    expect(sheetRect(tester).right, 382);
-    expect(sheetRect(tester).bottom, 678);
-    void checkCorners({required bool left, required bool right}) {
-      final container = tester.widget<Container>(
-        find
-            .descendant(
-              of: find.byType(KalloSheetSurface),
-              matching: find.byWidgetPredicate(
-                (w) => w is Container && w.decoration is ShapeDecoration,
-              ),
-            )
-            .first,
-      );
-      final shape =
-          (container.decoration! as ShapeDecoration).shape
-              as RoundedSuperellipseBorder;
-      final corners = shape.borderRadius.resolve(TextDirection.ltr);
-      expect(corners.bottomLeft.x, left ? 34 : 0);
-      expect(corners.bottomRight.x, right ? 34 : 0);
-    }
-
-    checkCorners(left: false, right: true);
-    for (final pose in [innerLandscape, innerPortrait, outerPortrait]) {
-      resize(tester, pose);
-      await tester.pumpAndSettle();
-      expect(tester.widget<EditableText>(field).controller.text, '68.6');
-      if (pose == innerLandscape) {
-        checkCorners(left: true, right: true);
-        expect(sheetRect(tester).left, 495.5);
-        expect(sheetRect(tester).right, 867);
-      }
-      if (pose == innerPortrait) {
-        checkCorners(left: true, right: true);
-        expect(sheetRect(tester).left, 54.5);
-        expect(sheetRect(tester).right, 614.5);
-        expect(sheetRect(tester).top, greaterThanOrEqualTo(495.5));
-      }
-    }
-    expect(tester.takeException(), isNull);
-    await dispose();
-  });
-
-  testWidgets('confirm centres above the fold or in the near pane', (
-    tester,
-  ) async {
-    final dispose = await bootPose(tester, innerLandscape, '/dashboard');
-    showKalloConfirm(
-      tester.element(find.byType(PillNavSurface)),
-      title: 'Remove?',
-      confirmLabel: 'Remove',
-      cancelLabel: 'Keep',
-    );
-    await tester.pumpAndSettle();
-    expect(tester.getCenter(find.byKey(kKalloConfirmSurface)).dx, 681.25);
-    resize(tester, innerPortrait);
-    await tester.pumpAndSettle();
-    expect(tester.getCenter(find.byKey(kKalloConfirmSurface)).dy, 268.75);
-    await dispose();
-  });
-
   testWidgets('Nutrition keeps its branch and scroll across folding', (
     tester,
   ) async {

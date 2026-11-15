@@ -4,103 +4,330 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kallo_mobile/features/auth/screens/email_auth_screen.dart';
+import 'package:kallo_mobile/features/auth/screens/sign_in_screen.dart';
+import 'package:kallo_mobile/features/auth/widgets/auth_submit_button.dart';
+import 'package:kallo_mobile/features/circle/screens/circle_screen.dart';
+import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
+import 'package:kallo_mobile/features/circle/widgets/thread/reply_pill.dart';
 import 'package:kallo_mobile/features/dashboard/screens/dashboard_screen.dart';
 import 'package:kallo_mobile/features/logging/screens/logging_screen.dart';
 import 'package:kallo_mobile/features/logging/widgets/meal_edit/meal_edit_sheet.dart';
 import 'package:kallo_mobile/features/logging/widgets/persisted/persisted_meal_card_content.dart';
 import 'package:kallo_mobile/features/nutrition/screens/nutrition_screen.dart';
-import 'package:kallo_mobile/features/circle/screens/circle_screen.dart';
-import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
-import 'package:kallo_mobile/features/settings/screens/steps/about_you_page.dart';
-import 'package:kallo_mobile/features/settings/screens/settings_screen.dart';
-import 'package:kallo_mobile/features/auth/screens/sign_in_screen.dart';
-import 'package:kallo_mobile/features/paywall/screens/paywall_screen.dart';
-import 'package:kallo_mobile/features/onboarding/screens/start_screen.dart';
 import 'package:kallo_mobile/features/onboarding/screens/onboarding_screen.dart';
-import 'package:kallo_mobile/features/auth/screens/email_auth_screen.dart';
-import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
-import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
+import 'package:kallo_mobile/features/onboarding/screens/start_screen.dart';
+import 'package:kallo_mobile/features/paywall/screens/paywall_screen.dart';
+import 'package:kallo_mobile/features/paywall/widgets/pitch/plan_comparison.dart';
+import 'package:kallo_mobile/features/paywall/widgets/plans/paywall_buy_band.dart';
+import 'package:kallo_mobile/features/paywall/widgets/plans/plan_toggle.dart';
+import 'package:kallo_mobile/features/settings/screens/settings_screen.dart';
+import 'package:kallo_mobile/features/settings/screens/steps/about_you_page.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
+import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/gauge_dial.dart';
+import 'package:kallo_mobile/shared/widgets/list/grouped_list_card.dart';
+import 'package:kallo_mobile/shared/widgets/menu/anchored_menu_layer.dart';
+import 'package:kallo_mobile/shared/widgets/menu/kallo_menu_card.dart';
+import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
 import 'package:kallo_mobile/shared/widgets/toast/top_toast.dart';
 import 'package:kallo_mobile/shared/widgets/toast/top_toast_pill.dart';
-import 'package:kallo_mobile/shared/widgets/menu/anchored_menu_layer.dart';
 
-import 'pose_harness.dart';
-import 'poses.dart';
-import 'review_measurements.dart';
+import 'harness/pose_harness.dart';
+import 'harness/poses.dart';
 
 const _out = String.fromEnvironment('DUO_OUT');
 
-typedef Surface = ({String name, String route, Type widget, bool scroll});
-const _surfaces = <Surface>[
-  (name: 'today', route: '/dashboard', widget: DashboardScreen, scroll: true),
-  (name: 'log', route: '/logging', widget: LoggingScreen, scroll: true),
-  (
-    name: 'nutrition',
-    route: '/nutrition',
-    widget: NutritionScreen,
-    scroll: true,
+/// Overlays are checked only where their frame changes: the outer display,
+/// Split View and the inner display both ways.
+const _overlayPoses = {
+  'outer-portrait',
+  'split-left',
+  'inner-portrait',
+  'inner-landscape',
+};
+
+/// Poses rendered again at 1.3x text, the largest size the layouts promise.
+const _textScalePoses = {'outer-portrait', 'inner-landscape', 'inner-portrait'};
+
+/// Geometry recorded beside the renders, so review numbers are reproducible.
+/// It goes to the gallery log, not into golden pixels.
+class Measurements {
+  Measurements(this.tester);
+  final WidgetTester tester;
+  final values = <String, Object>{};
+
+  /// Records [finder]'s first rect under [name] when it is on screen.
+  void rect(String name, Finder finder) {
+    if (finder.evaluate().isNotEmpty) {
+      values[name] = tester.getRect(finder.first);
+    }
+  }
+}
+
+/// One screen or overlay the gallery renders. Everything particular to it
+/// rides on its entry, so adding a surface is one entry in [_surfaces].
+class Surface {
+  const Surface(
+    this.name,
+    this.route,
+    this.widget, {
+    this.scroll = true,
+    this.signedIn = true,
+    this.poses,
+    this.open,
+    this.check,
+    this.measure,
+    this.close,
+  });
+
+  final String name;
+  final String route;
+
+  /// The widget that must be on screen once [open] has run.
+  final Type widget;
+
+  /// Whether the gallery also scrolls it to its end and renders that.
+  final bool scroll;
+
+  /// False for the flows a signed-out user sees.
+  final bool signedIn;
+
+  /// The pose names it is rendered at; null renders every pose.
+  final Set<String>? poses;
+
+  /// The steps from [route] to the surface, such as opening a sheet.
+  final Future<void> Function(WidgetTester tester)? open;
+
+  /// Assertions for this surface at one pose, run once it is open.
+  final void Function(WidgetTester tester, Pose pose)? check;
+
+  /// What to record in the gallery log under DUO_OUT.
+  final void Function(Measurements m)? measure;
+
+  /// Clean-up before the app is torn down, such as letting a toast expire.
+  final Future<void> Function(WidgetTester tester)? close;
+}
+
+Future<void> _openAddSheet(WidgetTester tester) async {
+  await tester.tap(find.bySemanticsLabel('Add'));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _holdFirstMeal(WidgetTester tester) async {
+  final card = find.byType(PersistedMealCardContent).first;
+  await tester.ensureVisible(card);
+  await tester.pumpAndSettle();
+  await tester.longPress(card);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _continueOnboarding(WidgetTester tester) async {
+  await tester.tap(find.text('Continue'));
+  await settlePose(tester);
+}
+
+void _measureOnboarding(Measurements m) {
+  m.rect('Skip', find.text('Skip'));
+  m.values['question count'] =
+      find.text('Where do you cook?').evaluate().length;
+}
+
+final _surfaces = <Surface>[
+  Surface(
+    'today',
+    '/dashboard',
+    DashboardScreen,
+    measure: (m) {
+      m.rect('salmon', find.text('Grilled salmon, roasted potatoes'));
+      m.rect('kcal', find.text('620 kcal'));
+    },
   ),
-  (name: 'circle', route: '/circle', widget: CircleScreen, scroll: true),
-  (name: 'settings', route: '/settings', widget: SettingsScreen, scroll: true),
-  (name: 'sign-in', route: '/sign-in', widget: SignInScreen, scroll: true),
-  (name: 'paywall', route: '/paywall', widget: PaywallScreen, scroll: true),
-  (
-    name: 'add-sheet',
-    route: '/dashboard',
-    widget: KalloSheetSurface,
+  Surface(
+    'log',
+    '/logging',
+    LoggingScreen,
+    measure:
+        (m) =>
+            m.values['readout scales'] =
+                m.tester
+                    .widgetList<GaugeDial>(find.byType(GaugeDial))
+                    .map((dial) => dial.readoutScale)
+                    .toList(),
+  ),
+  Surface(
+    'nutrition',
+    '/nutrition',
+    NutritionScreen,
+    measure: (m) {
+      m.values['range font sizes'] = [
+        for (final label in ['7 days', '30 days', '90 days'])
+          MediaQuery.textScalerOf(m.tester.element(find.text(label))).scale(16),
+      ];
+      m.rect('30 days', find.text('30 days'));
+      m.rect('90 days', find.text('90 days'));
+      m.rect('axis 1500', find.text('1500'));
+    },
+  ),
+  Surface(
+    'circle',
+    '/circle',
+    CircleScreen,
+    measure: (m) {
+      for (final text in ['460 kcal', 'P 22g', 'C 48g', 'F 20g']) {
+        m.rect(text, find.text(text));
+      }
+    },
+  ),
+  Surface(
+    'settings',
+    '/settings',
+    SettingsScreen,
+    measure: (m) => m.rect('card', find.byType(GroupedListCard)),
+  ),
+  const Surface('sign-in', '/sign-in', SignInScreen, signedIn: false),
+  Surface(
+    'paywall',
+    '/paywall',
+    PaywallScreen,
+    measure: (m) {
+      m.rect('band', find.byType(PaywallBuyBand));
+      m.rect('toggle', find.byType(PlanToggle));
+      m.rect('table', find.byType(PlanComparison));
+    },
+  ),
+  const Surface(
+    'add-sheet',
+    '/dashboard',
+    KalloSheetSurface,
     scroll: false,
+    open: _openAddSheet,
   ),
-  (
-    name: 'weight-sheet',
-    route: '/dashboard',
-    widget: KalloSheetSurface,
-    scroll: true,
+  Surface(
+    'weight-sheet',
+    '/dashboard',
+    KalloSheetSurface,
+    open: (tester) async {
+      await _openAddSheet(tester);
+      await tester.tap(find.text('Log weight'));
+      await tester.pumpAndSettle();
+    },
   ),
-  (
-    name: 'meal-edit-sheet',
-    route: '/logging',
-    widget: MealEditSheet,
-    scroll: true,
+  Surface(
+    'meal-edit-sheet',
+    '/logging',
+    MealEditSheet,
+    open: (tester) async {
+      await _holdFirstMeal(tester);
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+    },
   ),
-  (
-    name: 'confirm',
-    route: '/dashboard',
-    widget: KalloAlertSurface,
+  Surface(
+    'confirm',
+    '/dashboard',
+    KalloAlertSurface,
     scroll: false,
+    poses: _overlayPoses,
+    open: (tester) async {
+      showKalloConfirm(
+        tester.element(find.byType(DashboardScreen)),
+        title: 'Remove meal?',
+        description: 'This meal will be removed from your day.',
+        confirmLabel: 'Remove',
+        cancelLabel: 'Keep meal',
+        destructive: true,
+      );
+      await tester.pumpAndSettle();
+    },
+    measure: (m) => m.rect('alert', find.byType(KalloAlertSurface)),
   ),
-  (name: 'toast', route: '/dashboard', widget: TopToastPill, scroll: false),
-  (name: 'menu', route: '/logging', widget: AnchoredMenuLayer, scroll: false),
-  (
-    name: 'thread',
-    route: '/circle/thread-detail',
-    widget: CircleThreadScreen,
-    scroll: true,
+  Surface(
+    'toast',
+    '/dashboard',
+    TopToastPill,
+    scroll: false,
+    poses: _overlayPoses,
+    open: (tester) async {
+      showTopToast(tester.element(find.byType(DashboardScreen)), 'Meal saved');
+      await tester.pumpAndSettle();
+    },
+    measure: (m) => m.rect('toast', find.byType(TopToastPill)),
+    close: (tester) async {
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+    },
   ),
-  (
-    name: 'body-metrics',
-    route: '/settings',
-    widget: AboutYouPage,
-    scroll: true,
+  Surface(
+    'menu',
+    '/logging',
+    AnchoredMenuLayer,
+    scroll: false,
+    poses: _overlayPoses,
+    open: _holdFirstMeal,
+    measure: (m) => m.rect('menu', find.byType(KalloMenuCard)),
   ),
-  (name: 'start', route: '/start', widget: StartScreen, scroll: false),
-  (
-    name: 'email-auth',
-    route: '/sign-in/email',
-    widget: EmailAuthScreen,
-    scroll: true,
+  Surface(
+    'thread',
+    '/circle/thread-detail',
+    CircleThreadScreen,
+    check: (tester, pose) {
+      if (pose.name != 'inner-landscape') return;
+      expect(
+        tester.getRect(find.text('Replies')).top,
+        closeTo(tester.getRect(find.text('Circle')).top, .5),
+      );
+    },
+    measure: (m) {
+      m.rect('Circle', find.text('Circle'));
+      m.rect('Replies', find.text('Replies'));
+      m.rect('composer', find.byType(ReplyPill));
+    },
   ),
-  (
-    name: 'countries',
-    route: '/onboarding',
-    widget: OnboardingScreen,
-    scroll: true,
+  Surface(
+    'body-metrics',
+    '/settings',
+    AboutYouPage,
+    open: (tester) async {
+      if (find.byType(AboutYouPage).evaluate().isNotEmpty) return;
+      await tester.tap(find.text('Body metrics'));
+      await tester.pumpAndSettle();
+    },
   ),
-  (
-    name: 'metrics',
-    route: '/onboarding',
-    widget: OnboardingScreen,
-    scroll: true,
+  const Surface('start', '/start', StartScreen, scroll: false, signedIn: false),
+  Surface(
+    'email-auth',
+    '/sign-in/email',
+    EmailAuthScreen,
+    signedIn: false,
+    measure: (m) {
+      m.rect('Send code', find.text('Send code'));
+      m.rect('submit button', find.byType(AuthSubmitButton));
+    },
+  ),
+  Surface(
+    'countries',
+    '/onboarding',
+    OnboardingScreen,
+    signedIn: false,
+    open: _continueOnboarding,
+    check: (tester, pose) {
+      if (pose.name != 'pip-pinned') return;
+      expect(find.text('Where do you cook?'), findsOneWidget);
+    },
+    measure: _measureOnboarding,
+  ),
+  Surface(
+    'metrics',
+    '/onboarding',
+    OnboardingScreen,
+    signedIn: false,
+    open: (tester) async {
+      await _continueOnboarding(tester);
+      await tester.tap(find.text('Skip'));
+      await settlePose(tester);
+    },
+    measure: _measureOnboarding,
   ),
 ];
 
@@ -110,6 +337,13 @@ Future<void> _capture(WidgetTester tester, String name) async {
     find.byType(MaterialApp),
     matchesGoldenFile(Uri.file('$_out/$name.png')),
   );
+}
+
+void _measure(WidgetTester tester, Surface surface, String pose) {
+  if (_out.isEmpty) return;
+  final m = Measurements(tester);
+  surface.measure?.call(m);
+  debugPrint('REVIEW ${surface.name}/$pose ${m.values}');
 }
 
 /// Exercise every intermediate frame while dragging, including lazy cards.
@@ -160,57 +394,6 @@ Future<void> _scrollToEnd(WidgetTester tester, Type surface) async {
   );
 }
 
-Future<void> _openSheet(WidgetTester tester, String surface) async {
-  if (surface == 'countries' || surface == 'metrics') {
-    await tester.tap(find.text('Continue'));
-    await settlePose(tester);
-    if (surface == 'metrics') {
-      await tester.tap(find.text('Skip'));
-      await settlePose(tester);
-    }
-  }
-  if (surface == 'body-metrics' &&
-      find.byType(AboutYouPage).evaluate().isEmpty) {
-    await tester.tap(find.text('Body metrics'));
-    await tester.pumpAndSettle();
-  }
-  if (surface == 'confirm' || surface == 'toast') {
-    final context = tester.element(find.byType(DashboardScreen));
-    if (surface == 'confirm') {
-      showKalloConfirm(
-        context,
-        title: 'Remove meal?',
-        description: 'This meal will be removed from your day.',
-        confirmLabel: 'Remove',
-        cancelLabel: 'Keep meal',
-        destructive: true,
-      );
-    } else {
-      showTopToast(context, 'Meal saved');
-    }
-    await tester.pumpAndSettle();
-  }
-  if (surface == 'add-sheet' || surface == 'weight-sheet') {
-    await tester.tap(find.bySemanticsLabel('Add'));
-    await tester.pumpAndSettle();
-    if (surface == 'weight-sheet') {
-      await tester.tap(find.text('Log weight'));
-      await tester.pumpAndSettle();
-    }
-  }
-  if (surface == 'meal-edit-sheet' || surface == 'menu') {
-    final card = find.byType(PersistedMealCardContent).first;
-    await tester.ensureVisible(card);
-    await tester.pumpAndSettle();
-    await tester.longPress(card);
-    await tester.pumpAndSettle();
-    if (surface == 'meal-edit-sheet') {
-      await tester.tap(find.text('Edit'));
-      await tester.pumpAndSettle();
-    }
-  }
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
@@ -226,50 +409,23 @@ void main() {
 
   for (final surface in _surfaces) {
     for (final pose in poses) {
-      if (['confirm', 'toast', 'menu'].contains(surface.name) &&
-          ![
-            'outer-portrait',
-            'split-left',
-            'inner-portrait',
-            'inner-landscape',
-          ].contains(pose.name)) {
+      if (surface.poses != null && !surface.poses!.contains(pose.name)) {
         continue;
       }
       for (final scale
-          in [
-                'outer-portrait',
-                'inner-landscape',
-                'inner-portrait',
-              ].contains(pose.name)
-              ? [1.0, 1.3]
-              : [1.0]) {
+          in _textScalePoses.contains(pose.name) ? [1.0, 1.3] : [1.0]) {
         final suffix = scale == 1 ? '' : '__text-1.3';
         testWidgets('${surface.name} / ${pose.name}$suffix', (tester) async {
           final dispose = await bootPose(
             tester,
             pose,
             surface.route,
-            signedIn:
-                ![
-                  'sign-in',
-                  'start',
-                  'email-auth',
-                  'countries',
-                  'metrics',
-                ].contains(surface.name),
+            signedIn: surface.signedIn,
             textScale: scale,
           );
           try {
-            await _openSheet(tester, surface.name);
-            if (surface.name == 'thread' && pose.name == 'inner-landscape') {
-              expect(
-                tester.getRect(find.text('Replies')).top,
-                closeTo(tester.getRect(find.text('Circle')).top, .5),
-              );
-            }
-            if (surface.name == 'countries' && pose.name == 'pip-pinned') {
-              expect(find.text('Where do you cook?'), findsOneWidget);
-            }
+            await surface.open?.call(tester);
+            surface.check?.call(tester, pose);
             expect(find.byType(surface.widget), findsOneWidget);
             expect(
               tester.takeException(),
@@ -277,19 +433,10 @@ void main() {
               reason: '${surface.name} / ${pose.name}',
             );
             await _capture(tester, '${surface.name}__${pose.name}$suffix');
-            if (_out.isNotEmpty) {
-              reviewMeasurements(tester, surface.name, '${pose.name}$suffix');
-            }
+            _measure(tester, surface, '${pose.name}$suffix');
             if (surface.scroll) {
               await _scrollToEnd(tester, surface.widget);
-              if (_out.isNotEmpty) {
-                reviewMeasurements(
-                  tester,
-                  surface.name,
-                  '${pose.name}$suffix'
-                  '__end',
-                );
-              }
+              _measure(tester, surface, '${pose.name}${suffix}__end');
               await _capture(
                 tester,
                 '${surface.name}__${pose.name}$suffix'
@@ -298,10 +445,7 @@ void main() {
             }
             expect(tester.takeException(), isNull);
           } finally {
-            if (surface.name == 'toast') {
-              await tester.pump(const Duration(seconds: 3));
-              await tester.pumpAndSettle();
-            }
+            await surface.close?.call(tester);
             await dispose();
           }
         });

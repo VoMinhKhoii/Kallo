@@ -1,12 +1,13 @@
 import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../../../shared/widgets/feedback/kallo_refresh.dart';
+import '../../../../shared/widgets/panes/pane_scroll.dart';
 import '../../../../shell/window/window_layout.dart';
 import '../../../../shared/widgets/panes/two_pane_scaffold.dart';
 
 /// Moves the keyed scroll views when the fold changes the section arrangement.
-/// Both offsets belong to this owner, rather than to either layout branch.
+/// Both panes' keys, and so their offsets, belong to this owner rather than
+/// to either layout branch.
 class NutritionPanes extends StatefulWidget {
   const NutritionPanes({
     super.key,
@@ -23,17 +24,8 @@ class NutritionPanes extends StatefulWidget {
 }
 
 class _NutritionPanesState extends State<NutritionPanes> {
-  final _far = ScrollController();
-  final _near = ScrollController();
   final _farKey = GlobalKey();
   final _nearKey = GlobalKey();
-
-  @override
-  void dispose() {
-    _far.dispose();
-    _near.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,9 +34,8 @@ class _NutritionPanesState extends State<NutritionPanes> {
       key: PageStorageKey(near ? 'nutrition-near' : 'nutrition-far'),
       behavior: HitTestBehavior.translucent,
       onTap: widget.onClearSelection,
-      child: KalloRefreshableScroll(
+      child: PaneScroll(
         key: near ? _nearKey : _farKey,
-        controller: near ? _near : _far,
         onRefresh: widget.onRefresh,
         slivers:
             (bottom) => widget.page(
@@ -55,9 +46,8 @@ class _NutritionPanesState extends State<NutritionPanes> {
             ),
       ),
     );
-    if (!layout.twoPane) return scroll(false);
     return TwoPaneScaffold(
-      header: const SizedBox.shrink(),
+      single: scroll(false),
       far: scroll(false),
       near: scroll(true),
     );

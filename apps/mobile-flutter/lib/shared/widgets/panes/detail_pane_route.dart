@@ -3,6 +3,18 @@ import 'package:flutter/material.dart';
 import '../../../shell/window/window_layout.dart';
 import 'detail_pane_frame.dart';
 
+/// Whether opening a detail should replace the one already shown rather than
+/// push a second page on it.
+///
+/// Beside the list there is one detail at a time: picking another item swaps
+/// the detail shown, it does not stack a second page on it. Stacked, going
+/// back to the first Circle post left two live composers for it sharing one
+/// focus node, and "back" walked through every item picked. In one column
+/// each pick pushes over the list as usual. Circle (a go_router page) and
+/// Settings (a nested Navigator) both ask here.
+bool replacesDetail(BuildContext context, {required bool hasDetail}) =>
+    WindowLayout.of(context).twoPane && hasDetail;
+
 /// Transparent outside the detail so the existing list remains interactive.
 /// Material transitions and back gestures still own compact-window pushes.
 class DetailPaneRoute<T> extends PageRoute<T>

@@ -168,13 +168,15 @@ flutter test test/shell/poses --update-goldens --dart-define=DUO_OUT=/absolute/o
 ```
 
 `DUO_OUT` must be an absolute path. The images are for review and are never committed or
-compared. Windows live in `test/shell/poses/poses.dart`, screens in the list at the top of
-`pose_gallery_test.dart`. Add to the end of either list: other tests in the folder pick
-poses by position. Shadows render as solid slabs in these images (a test-mode artefact),
+compared. Windows are named in `test/shell/poses/harness/poses.dart`, beside the boot and
+`resize` helpers the other window tests share. Screens are the list at the top of
+`pose_gallery_test.dart`, and each entry carries its own steps to open it and what to
+measure. Add to the end of either list: the renders depend on the order the cases run in.
+Shadows render as solid slabs in these images (a test-mode artefact),
 so judge shadows on a device.
 
 **The simulator tour** shows what only iOS draws: the status column, the Dynamic Island,
-the fold. `.github/workflows/ios-duo-sim.yml` builds `test/shell/poses/sim_tour_main.dart`
+the fold. `.github/workflows/ios-duo-sim.yml` builds `test/shell/poses/sim/sim_tour_main.dart`
 (the same fixtures as the pose suite, as an app) on GitHub's `xcode-27` runner, which
 ships Xcode 27.1 and the iPhone Duo simulator, then closes, opens, half-folds and turns
 the simulated phone and uploads a screenshot of each screen in each pose. Run it from the

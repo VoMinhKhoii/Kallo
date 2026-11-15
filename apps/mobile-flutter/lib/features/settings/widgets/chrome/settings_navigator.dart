@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../shell/window/two_pane_transition.dart';
 import '../../../../shell/window/window_layout.dart';
 import '../../../../shared/widgets/panes/detail_pane_route.dart';
 import '../../screens/steps/about_you_page.dart';
@@ -42,10 +43,10 @@ class SettingsNavigator extends StatefulWidget {
   State<SettingsNavigator> createState() => _SettingsNavigatorState();
 }
 
-class _SettingsNavigatorState extends State<SettingsNavigator> {
+class _SettingsNavigatorState extends State<SettingsNavigator>
+    with TwoPaneTransition {
   final GlobalKey<NavigatorState> _navigator = GlobalKey<NavigatorState>();
   final _selected = ValueNotifier<Type?>(null);
-  bool _opening = false;
 
   @override
   void dispose() {
@@ -55,7 +56,7 @@ class _SettingsNavigatorState extends State<SettingsNavigator> {
 
   Future<void> open(Widget page) async {
     final navigator = _navigator.currentState!;
-    if (WindowLayout.of(context).twoPane && navigator.canPop()) {
+    if (replacesDetail(context, hasDetail: navigator.canPop())) {
       if (_selected.value == page.runtimeType) return;
       if (!await navigator.maybePop()) return;
     }
@@ -64,20 +65,26 @@ class _SettingsNavigatorState extends State<SettingsNavigator> {
     if (mounted && !navigator.canPop()) _selected.value = null;
   }
 
+  /// Beside the list the detail pane is never empty: a two-pane window at
+  /// the nested root opens About you. That is checked when the window becomes
+  /// two panes (including a first mount in one) and when the stack is back at
+  /// its root, a frame after each, once the navigator has settled.
+  @override
+  void onTwoPaneChanged(bool wasTwoPane) {
+    if (!wasTwoPane) _openFirstDetail();
+  }
+
+  void _openFirstDetail() {
+    if (_canPop && !_navigator.currentState!.canPop()) {
+      open(const AboutYouPage());
+    }
+  }
+
   /// Whether a pop should close the whole tab — true only at the nested root.
   bool _canPop = true;
 
   @override
   Widget build(BuildContext context) {
-    if (WindowLayout.of(context).twoPane && _canPop && !_opening) {
-      _opening = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (mounted && !_navigator.currentState!.canPop()) {
-          await open(const AboutYouPage());
-        }
-        _opening = false;
-      });
-    }
     return SettingsSelection(
       notifier: _selected,
       child: PopScope(
@@ -93,7 +100,13 @@ class _SettingsNavigatorState extends State<SettingsNavigator> {
               // The notification lands mid-build (a route was just pushed or
               // popped), so defer the rebuild to the next frame.
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) setState(() => _canPop = canPop);
+                if (!mounted) return;
+                setState(() => _canPop = canPop);
+                if (canPop && WindowLayout.of(context).twoPane) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _openFirstDetail();
+                  });
+                }
               });
             }
             return false; // the root navigator wants it too

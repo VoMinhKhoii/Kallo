@@ -1,4 +1,4 @@
-import '../../features/circle/circle_feed_test_support.dart';
+import '../../../features/circle/circle_feed_test_support.dart';
 import 'fixtures.dart';
 import 'nutrition_fixture.dart';
 

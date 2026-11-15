@@ -12,6 +12,7 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/widgets/panes/detail_pane_route.dart';
 import '../../../shell/window/window_layout.dart';
 import '../data/thread_providers.dart';
 
@@ -60,12 +61,10 @@ void openCircleThread(
     }
     return;
   }
-  // Beside the feed there is one detail at a time: picking another post
-  // swaps the thread shown, it does not stack a second page on it. Stacked,
-  // going back to the first post left two live composers for it sharing one
-  // focus node, and "back" walked through every post picked.
-  if (WindowLayout.of(context).twoPane &&
-      router.state.pathParameters.containsKey('shareId')) {
+  if (replacesDetail(
+    context,
+    hasDetail: router.state.pathParameters.containsKey('shareId'),
+  )) {
     router.pushReplacement(location);
     return;
   }

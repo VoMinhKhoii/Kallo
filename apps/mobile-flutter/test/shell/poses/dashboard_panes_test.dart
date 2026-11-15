@@ -13,9 +13,8 @@ import 'package:kallo_mobile/features/dashboard/widgets/weight/weight_chart.dart
 import 'package:kallo_mobile/features/dashboard/widgets/chrome/week_strip.dart';
 import 'package:kallo_mobile/shared/widgets/brand/kallo_wordmark.dart';
 import 'package:kallo_mobile/shell/header/profile_avatar_button.dart';
-import 'pose_harness.dart';
-import 'poses.dart';
-import 'window_resize_test.dart' show resize;
+import 'harness/pose_harness.dart';
+import 'harness/poses.dart';
 
 void main() {
   setUpAll(initializePoseHarness);

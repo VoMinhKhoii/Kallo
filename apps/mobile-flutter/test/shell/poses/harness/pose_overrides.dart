@@ -7,7 +7,7 @@ import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../features/circle/circle_feed_test_support.dart';
+import '../../../features/circle/circle_feed_test_support.dart';
 import 'fixtures.dart';
 
 final _session = Session(

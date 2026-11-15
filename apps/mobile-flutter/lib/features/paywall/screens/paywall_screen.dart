@@ -181,36 +181,35 @@ class PaywallScreen extends ConsumerWidget {
   /// Every note face keeps the header link, so the screen is always closable
   /// two ways.
   Widget _note(BuildContext context, Widget child, {bool stayFree = false}) =>
-      WindowLayout.of(context).twoPane
-          ? NarrativePanes(
-            far: Align(
-              alignment: Alignment.topCenter,
-              child: _header(context, stayFree: stayFree),
-            ),
-            near: Center(
+      NarrativePanes(
+        far: Align(
+          alignment: Alignment.topCenter,
+          child: _header(context, stayFree: stayFree),
+        ),
+        near: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(gutter),
+            child: child,
+          ),
+        ),
+        single: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _header(context, stayFree: stayFree),
+            Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(gutter),
+                padding: const EdgeInsets.fromLTRB(
+                  gutter,
+                  KalloSpacing.sp4,
+                  gutter,
+                  KalloSpacing.sp8,
+                ),
                 child: child,
               ),
             ),
-          )
-          : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _header(context, stayFree: stayFree),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(
-                    gutter,
-                    KalloSpacing.sp4,
-                    gutter,
-                    KalloSpacing.sp8,
-                  ),
-                  child: child,
-                ),
-              ),
-            ],
-          );
+          ],
+        ),
+      );
 
   Widget _header(BuildContext context, {required bool stayFree}) => Builder(
     builder:

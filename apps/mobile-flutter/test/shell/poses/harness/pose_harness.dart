@@ -11,12 +11,12 @@ import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/shell/kallo_app_theme.dart';
 import 'package:kallo_mobile/shared/widgets/mascot/bun_mascot.dart';
 
-import '../../app_fonts.dart';
-import '../../l10n_test_loader.dart';
+import '../../../app_fonts.dart';
+import '../../../l10n_test_loader.dart';
 import 'fixture_api.dart';
 import 'fixtures.dart';
 import 'pose_overrides.dart';
-import '../../features/circle/circle_feed_test_support.dart';
+import '../../../features/circle/circle_feed_test_support.dart';
 import 'poses.dart';
 
 Future<void> initializePoseHarness() async {
@@ -153,6 +153,21 @@ Future<void> settlePose(WidgetTester tester) async {
   } else {
     await tester.pumpAndSettle();
   }
+}
+
+/// Moves the running app to [pose]'s window: size, insets and padding, as a
+/// fold, a rotation or Split View would.
+void resize(WidgetTester tester, Pose pose) {
+  final dpr = pose.devicePixelRatio;
+  tester.view.physicalSize = pose.size * dpr;
+  final padding = FakeViewPadding(
+    left: pose.padding.left * dpr,
+    top: pose.padding.top * dpr,
+    right: pose.padding.right * dpr,
+    bottom: pose.padding.bottom * dpr,
+  );
+  tester.view.padding = padding;
+  tester.view.viewPadding = padding;
 }
 
 class _ProviderErrors extends ProviderObserver {

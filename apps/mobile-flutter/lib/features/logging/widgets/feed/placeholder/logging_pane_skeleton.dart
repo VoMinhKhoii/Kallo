@@ -14,7 +14,10 @@ class LoggingPaneSkeleton extends StatelessWidget {
     glow: true,
     bottom: false,
     child: SkeletonPulse(
+      // Two-pane windows only: logging_screen mounts its own one-column
+      // silhouette, outside this Screen, everywhere else.
       child: TwoPaneScaffold(
+        single: null,
         header: const SizedBox(height: 44),
         far: const Padding(
           padding: EdgeInsets.only(left: 12),

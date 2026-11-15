@@ -4,16 +4,19 @@ import 'package:go_router/go_router.dart';
 
 import '../theme/kallo_colors.dart';
 import 'nav/nav_visibility.dart';
-import 'nav/pill_nav_bar.dart';
+import 'nav/pill_nav_bottom.dart';
+import 'nav/pill_nav_column.dart';
 import 'window/window_layout.dart';
 
 /// App shell for the primary surfaces (native pass, 2026-08-31).
 ///
 /// The web-parity hamburger + left drawer is retired — this is the sanctioned
-/// divergence the redesign is built around. A floating [PillNavBar] carries
-/// the four destinations plus the center "+" Add sheet; Settings pushes over
-/// the shell from the dashboard avatar; the Log tab pushes the logging feed
-/// full-screen (see nav/nav_actions.dart).
+/// divergence the redesign is built around. A floating pill carries the four
+/// destinations plus the center "+" Add sheet; Settings pushes over the shell
+/// from the dashboard avatar; the Log tab pushes the logging feed full-screen
+/// (see nav/nav_actions.dart). This shell picks where the pill goes: standing
+/// in a control column ([PillNavColumn]) or over the bottom edge
+/// ([PillNavBottom]).
 ///
 /// go_router's [StatefulNavigationShell] still backs the branches so each
 /// destination keeps its state/scroll across switches. `extendBody` lets the
@@ -64,7 +67,7 @@ class TabScaffold extends ConsumerWidget {
               // the original keyboard signal and its uncompressed slot.
               child: MediaQuery(
                 data: MediaQuery.of(context),
-                child: PillNavBar(navigationShell: navigationShell),
+                child: PillNavColumn(navigationShell: navigationShell),
               ),
             ),
         ],
@@ -72,7 +75,7 @@ class TabScaffold extends ConsumerWidget {
       bottomNavigationBar:
           layout.hasControlColumn
               ? null
-              : PillNavBar(navigationShell: navigationShell),
+              : PillNavBottom(navigationShell: navigationShell),
     );
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 
-import '../../../shell/window/window_layout.dart';
 import 'two_pane_scaffold.dart';
 
 /// Reparents the list's scroll view rather than attaching a second position.
@@ -19,11 +18,6 @@ class _ListPaneState extends State<ListPane> {
   @override
   Widget build(BuildContext context) {
     final child = KeyedSubtree(key: _list, child: widget.child);
-    if (!WindowLayout.of(context).twoPane) return child;
-    return TwoPaneScaffold(
-      header: const SizedBox.shrink(),
-      far: child,
-      near: widget.emptyDetail,
-    );
+    return TwoPaneScaffold(single: child, far: child, near: widget.emptyDetail);
   }
 }

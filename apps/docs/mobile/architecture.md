@@ -163,7 +163,8 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   stay unread. Remote group-list changes reconcile at most once per minute of feed
   loads. Older servers without receipts keep the original list-refetch behavior.
 - **Navigation:** `go_router` with a `StatefulShellRoute` behind a **floating pill
-  tab bar** (`shell/nav/pill_nav_bar.dart`; the web-parity drawer/hamburger retired in
+  tab bar** (`shell/nav/pill_nav_bottom.dart`, or `pill_nav_column.dart` where the
+  window has a control column, both around `pill_nav_capsule.dart`; the web-parity drawer/hamburger retired in
   the 2026-08-31 native pass). Branches: dashboard, nutrition, circle (+ off-bar
   admin); the bar's center `+` opens the Add sheet (meal / weight). **Log pushes
   full-screen** over the shell as a root `MaterialPage` (the composer owns its
@@ -217,7 +218,7 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   lose state, so each pane's scroll view sits under a `GlobalKey` and moves between
   arrangements instead of being rebuilt; the selected day, a draft in the composer, an
   analysis in flight and an open thread all survive. The window sizes and insets are
-  written down in `test/shell/poses/poses.dart`, measured on the Duo simulator. Flutter
+  written down in `test/shell/poses/harness/poses.dart`, measured on the Duo simulator. Flutter
   does not report the fold on iOS (`MediaQuery.displayFeatures` is empty), so the app
   cannot tell flat from half-folded and always keeps the fold strip clear.
 - **Motion:** durations and curves are tokens (`theme/kallo_motion.dart`: `KalloMotion`,

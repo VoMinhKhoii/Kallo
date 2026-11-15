@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../../shell/window/window_layout.dart';
-import '../../../shell/window/window_layout_scope.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
 import '../../../shell/window/window_regions.dart';
 
 import '../../../services/billing/entitlement_state.dart';
@@ -127,25 +127,21 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
               ? _toggle(offer, purchasing)
               : null,
     );
-    if (layout.twoPane) {
-      final far = regions.far;
-      return Stack(
-        children: [
-          Positioned(
-            left: far.left,
-            width: far.width,
-            top: 0,
-            bottom: 0,
-            child: MediaQuery.removeViewPadding(
-              context: context,
-              removeLeft: true,
-              removeRight: true,
-              child: WindowLayoutScope(
-                layout: layout,
-                child: _pitch(offer, purchasing),
-              ),
-            ),
+    final pitch = _pitch(offer, purchasing);
+    return Stack(
+      children: [
+        NarrativePanes(
+          far: pitch,
+          near: const SizedBox.shrink(),
+          single: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [Expanded(child: pitch), band],
           ),
+        ),
+        // Beside the fold the band runs from the near pane out to the screen
+        // edge on the controls' side, past the pane's safe area, so it is
+        // placed here rather than as the near pane.
+        if (layout.twoPane)
           Positioned(
             left: layout.nearLeft ? 0 : regions.near.left,
             right:
@@ -156,12 +152,7 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
             bottom: 0,
             child: Align(alignment: Alignment.bottomCenter, child: band),
           ),
-        ],
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [Expanded(child: _pitch(offer, purchasing)), band],
+      ],
     );
   }
 

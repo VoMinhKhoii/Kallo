@@ -1,18 +1,18 @@
 // An app entrypoint, not a test: the pose fixtures on a real simulator.
 //
-// The widget tests in this folder render the app at iPhone Duo's window sizes,
+// The widget tests in `test/shell/poses/` render the app at iPhone Duo's window sizes,
 // but only the Duo simulator draws the system's side of the picture: the
 // status column, the Dynamic Island, the fold. This boots the production
 // router and shell against the same fake API the tests use, signed in, and
 // goes straight to one route, so a script can launch it once per surface and
 // screenshot the simulator:
 //
-//   flutter build ios --simulator --debug -t test/shell/poses/sim_tour_main.dart
+//   flutter build ios --simulator --debug -t test/shell/poses/sim/sim_tour_main.dart
 //   echo /nutrition > "$(xcrun simctl get_app_container <udid> com.khoivo.nham data)/tmp/duo_route.txt"
 //   xcrun simctl launch --terminate-running-process <udid> com.khoivo.nham
 //
 // It appends the window's size and insets to `duo_metrics.txt` in the app's
-// temp folder on every change, which is how the numbers in `poses.dart` get
+// temp folder on every change, which is how the numbers in `harness/poses.dart` get
 // re-measured.
 import 'dart:async';
 import 'dart:io';
@@ -27,9 +27,9 @@ import 'package:kallo_mobile/router.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/shell/kallo_app_theme.dart';
 
-import 'fixture_api.dart';
-import 'fixtures.dart';
-import 'pose_overrides.dart';
+import '../harness/fixture_api.dart';
+import '../harness/fixtures.dart';
+import '../harness/pose_overrides.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

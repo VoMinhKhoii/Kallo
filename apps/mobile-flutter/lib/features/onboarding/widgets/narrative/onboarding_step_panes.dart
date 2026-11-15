@@ -7,6 +7,7 @@ import '../../../../theme/kallo_theme.dart';
 import 'onboarding_question.dart';
 
 /// The question stays far from the controls; the keyed answer stays beside them.
+/// A one-column window shows [single], the step's own column.
 class OnboardingStepPanes extends StatelessWidget {
   const OnboardingStepPanes({
     super.key,
@@ -14,6 +15,7 @@ class OnboardingStepPanes extends StatelessWidget {
     required this.title,
     required this.direction,
     required this.answer,
+    required this.single,
     this.onBack,
     this.onSkip,
   });
@@ -21,10 +23,12 @@ class OnboardingStepPanes extends StatelessWidget {
   final String title;
   final int direction;
   final Widget answer;
+  final Widget single;
   final VoidCallback? onBack;
   final VoidCallback? onSkip;
   @override
   Widget build(BuildContext context) => NarrativePanes(
+    single: single,
     far: SafeArea(
       bottom: false,
       minimum: const EdgeInsets.only(top: 12),

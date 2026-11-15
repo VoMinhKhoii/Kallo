@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../shell/window/window_layout.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
 import '../widgets/narrative/start_task.dart';
 
@@ -59,31 +58,28 @@ class StartScreen extends StatelessWidget {
       body: Stack(
         children: [
           const Positioned.fill(child: StartAurora()),
-          if (WindowLayout.of(context).twoPane)
-            const NarrativePanes(
-              far: SafeArea(
-                minimum: EdgeInsets.only(top: 12),
-                child: Column(
-                  children: [
-                    SizedBox(height: _headerTop),
-                    SizedBox(
-                      height: WordmarkBar.rowHeight,
-                      child: Center(
-                        child: KalloWordmark(height: _wordmarkHeight),
-                      ),
+          NarrativePanes(
+            far: const SafeArea(
+              minimum: EdgeInsets.only(top: 12),
+              child: Column(
+                children: [
+                  SizedBox(height: _headerTop),
+                  SizedBox(
+                    height: WordmarkBar.rowHeight,
+                    child: Center(
+                      child: KalloWordmark(height: _wordmarkHeight),
                     ),
-                    SizedBox(height: _headerGap),
-                    Expanded(child: _PreviewBox()),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: _headerGap),
+                  Expanded(child: _PreviewBox()),
+                ],
               ),
-              near: SafeArea(
-                minimum: EdgeInsets.only(top: 12),
-                child: StartTask(),
-              ),
-            )
-          else
-            SafeArea(
+            ),
+            near: const SafeArea(
+              minimum: EdgeInsets.only(top: 12),
+              child: StartTask(),
+            ),
+            single: SafeArea(
               minimum: EdgeInsets.only(
                 top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
               ),
@@ -162,6 +158,7 @@ class StartScreen extends StatelessWidget {
                 ),
               ),
             ),
+          ),
         ],
       ),
     );

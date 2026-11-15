@@ -18,6 +18,7 @@ import '../widgets/timeline/partial_yesterday_prompt.dart';
 import '../widgets/timeline/picker_dismiss_layer.dart';
 import '../widgets/timeline/timeline_picker.dart';
 import '../data/handoff_slots.dart';
+import '../../../shell/window/two_pane_transition.dart';
 import '../../../shell/window/window_layout.dart';
 import '../../../shell/header/app_header_back_button.dart';
 import '../widgets/timeline/timeline_strip.dart';
@@ -35,7 +36,8 @@ class LoggingScreen extends ConsumerStatefulWidget {
   ConsumerState<LoggingScreen> createState() => _LoggingScreenState();
 }
 
-class _LoggingScreenState extends ConsumerState<LoggingScreen> {
+class _LoggingScreenState extends ConsumerState<LoggingScreen>
+    with TwoPaneTransition {
   late String _selectedDate = todayDateString();
 
   /// Whether the date picker is showing its week strip.
@@ -47,13 +49,18 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
   /// painters, the composer, the list) on the very frame of the tap. That was
   /// the lag between touching the chip and anything moving.
   final ValueNotifier<bool> _pickerExpanded = ValueNotifier(false);
-  bool _wasTwoPane = false;
 
   @override
   void dispose() {
     _pickerExpanded.dispose();
     super.dispose();
   }
+
+  /// Either way the picker starts closed. Two panes show the open strip in
+  /// the far pane and no picker, and a picker left open would leave its
+  /// outside-tap layer catching taps over the feed.
+  @override
+  void onTwoPaneChanged(bool wasTwoPane) => _pickerExpanded.value = false;
 
   @override
   Widget build(BuildContext context) {
@@ -81,8 +88,6 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
     final today = todayDateString();
     final yesterday = addDays(today, -1);
     final twoPane = WindowLayout.of(context).twoPane;
-    if (twoPane || _wasTwoPane) _pickerExpanded.value = false;
-    _wasTwoPane = twoPane;
 
     // A meal composed on the dashboard means TODAY. This screen lives in an
     // indexedStack branch, so [_selectedDate] survives tab switches — page back

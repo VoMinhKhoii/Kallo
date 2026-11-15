@@ -7,8 +7,8 @@ import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
 import 'package:kallo_mobile/shell/window/window_layout.dart';
-import 'pose_harness.dart';
-import 'poses.dart';
+import 'harness/pose_harness.dart';
+import 'harness/poses.dart';
 
 const _out = String.fromEnvironment('DUO_OUT');
 Future<void> _capture(WidgetTester tester, String name) async {

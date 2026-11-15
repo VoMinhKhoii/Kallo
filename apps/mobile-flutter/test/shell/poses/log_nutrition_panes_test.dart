@@ -6,19 +6,19 @@ import 'package:kallo_mobile/models/logging/streaming.dart';
 import 'package:kallo_mobile/features/logging/data/stream_analysis_controller.dart';
 import 'package:kallo_mobile/features/logging/widgets/streaming/streaming_entry.dart';
 import '../../features/circle/circle_feed_test_support.dart';
-import 'fixture_api.dart';
-import 'fixtures.dart';
+import 'harness/fixture_api.dart';
+import 'harness/fixtures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_area.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_list.dart';
+import 'package:kallo_mobile/features/logging/widgets/timeline/timeline_picker.dart';
 import 'package:kallo_mobile/features/logging/widgets/timeline/timeline_strip.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
 import 'package:kallo_mobile/features/nutrition/widgets/summary/day_summary.dart';
 import 'package:kallo_mobile/features/nutrition/widgets/scope/range_selector.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_refresh.dart';
-import 'pose_harness.dart';
-import 'poses.dart';
-import 'window_resize_test.dart' show resize;
+import 'harness/pose_harness.dart';
+import 'harness/poses.dart';
 
 void main() {
   setUpAll(initializePoseHarness);
@@ -70,6 +70,20 @@ void main() {
       await dispose();
     },
   );
+
+  testWidgets('Log closes an open date picker when it unfolds', (tester) async {
+    final dispose = await bootPose(tester, outerPortrait, '/logging');
+    tester.widget<DateMorph>(find.byType(DateMorph)).onExpand();
+    await tester.pumpAndSettle();
+    expect(tester.widget<DateMorph>(find.byType(DateMorph)).expanded, isTrue);
+    resize(tester, innerLandscape);
+    await settlePose(tester);
+    resize(tester, outerPortrait);
+    await settlePose(tester);
+    expect(tester.widget<DateMorph>(find.byType(DateMorph)).expanded, isFalse);
+    expect(tester.takeException(), isNull);
+    await dispose();
+  });
 
   testWidgets('Log moves the live composer and selected day across the fold', (
     tester,
@@ -129,14 +143,7 @@ void main() {
     tester,
   ) async {
     final dispose = await bootPose(tester, pipPinned, '/nutrition');
-    final scrolls =
-        tester
-            .widgetList<KalloRefreshableScroll>(
-              find.byType(KalloRefreshableScroll),
-            )
-            .toList();
-    final far = scrolls.first.controller!;
-    final near = scrolls.last.controller!;
+    final (far, near) = _paneScrolls(tester);
     expect(far.position.maxScrollExtent, greaterThan(0));
     expect(near.position.maxScrollExtent, greaterThan(0));
     far.jumpTo(far.position.maxScrollExtent / 2);
@@ -147,8 +154,10 @@ void main() {
     await settlePose(tester);
     resize(tester, pipPinned);
     await settlePose(tester);
-    expect(far.offset, offsets.$1);
-    expect(near.offset, offsets.$2);
+    // The near pane was unmounted in one column, so read the panes again.
+    final (farAfter, nearAfter) = _paneScrolls(tester);
+    expect(farAfter.offset, offsets.$1);
+    expect(nearAfter.offset, offsets.$2);
     await dispose();
   });
 
@@ -167,17 +176,12 @@ void main() {
       );
       summary.onSelect(thursday);
       await settlePose(tester);
-      final scrolls =
-          tester
-              .widgetList<KalloRefreshableScroll>(
-                find.byType(KalloRefreshableScroll),
-              )
-              .toList();
-      scrolls.first.controller!.jumpTo(40);
-      scrolls.last.controller!.jumpTo(60);
+      final (far, near) = _paneScrolls(tester);
+      far.jumpTo(40);
+      near.jumpTo(60);
       await settlePose(tester);
-      final farOffset = scrolls.first.controller!.offset;
-      final nearOffset = scrolls.last.controller!.offset;
+      final farOffset = far.offset;
+      final nearOffset = near.offset;
       for (final pose in [outerPortrait, innerLandscape, pipPinned]) {
         resize(tester, pose);
         await settlePose(tester);
@@ -186,14 +190,28 @@ void main() {
           thursday,
         );
         if (pose != outerPortrait) {
-          expect(scrolls.first.controller!.offset, farOffset);
-          expect(scrolls.last.controller!.offset, nearOffset);
+          final (far, near) = _paneScrolls(tester);
+          expect(far.offset, farOffset);
+          expect(near.offset, nearOffset);
         }
         expect(tester.takeException(), isNull);
       }
       await dispose();
     },
   );
+}
+
+/// The far and near panes' scroll controllers, as mounted now. Each pane owns
+/// its controller, so a pane that a one-column window unmounts comes back
+/// with a new one; its offset is what must survive.
+(ScrollController, ScrollController) _paneScrolls(WidgetTester tester) {
+  final scrolls =
+      tester
+          .widgetList<KalloRefreshableScroll>(
+            find.byType(KalloRefreshableScroll),
+          )
+          .toList();
+  return (scrolls.first.controller!, scrolls.last.controller!);
 }
 
 class _StreamingApi extends FakeApiClient {

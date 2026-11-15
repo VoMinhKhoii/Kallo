@@ -15,11 +15,10 @@ import 'package:kallo_mobile/shared/widgets/form/save_dock.dart';
 import 'package:kallo_mobile/shared/widgets/list/list_row.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'pose_harness.dart';
-import 'poses.dart';
-import 'window_resize_test.dart' show resize;
-import 'fixtures.dart';
-import 'fixture_api.dart';
+import 'harness/pose_harness.dart';
+import 'harness/poses.dart';
+import 'harness/fixtures.dart';
+import 'harness/fixture_api.dart';
 
 void main() {
   setUpAll(initializePoseHarness);

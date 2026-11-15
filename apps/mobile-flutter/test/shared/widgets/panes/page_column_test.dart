@@ -4,9 +4,8 @@ import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 import 'package:kallo_mobile/shared/widgets/list/grouped_list_card.dart';
 import 'package:kallo_mobile/features/logging/widgets/persisted/persisted_meal_card_content.dart';
 import 'package:kallo_mobile/shell/nav/pill_nav_surface.dart';
-import 'pose_harness.dart';
-import 'poses.dart';
-import 'window_resize_test.dart' show resize;
+import '../../../shell/poses/harness/pose_harness.dart';
+import '../../../shell/poses/harness/poses.dart';
 
 void main() {
   setUpAll(initializePoseHarness);

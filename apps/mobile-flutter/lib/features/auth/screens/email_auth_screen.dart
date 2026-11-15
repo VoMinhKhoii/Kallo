@@ -103,35 +103,30 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           // of the screen, behind the status bar, exactly as it does on the
           // `/save-plan` screen this route is pushed from.
           const Positioned.fill(child: StepBackdrop()),
-          if (WindowLayout.of(context).twoPane)
-            NarrativePanes(
-              far: Stack(
-                children: [
-                  const Center(child: WelcomeBrand()),
-                  SafeArea(
-                    bottom: false,
-                    minimum: const EdgeInsets.only(top: 12),
-                    child: Align(
-                      alignment: Alignment.topLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: WordmarkBar.rowInset,
-                        ),
-                        child: AuthBackButton(
-                          onBack: state.busy ? null : _back,
-                        ),
+          NarrativePanes(
+            far: Stack(
+              children: [
+                const Center(child: WelcomeBrand()),
+                SafeArea(
+                  bottom: false,
+                  minimum: const EdgeInsets.only(top: 12),
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: WordmarkBar.rowInset,
                       ),
+                      child: AuthBackButton(onBack: state.busy ? null : _back),
                     ),
                   ),
-                ],
-              ),
-              near: SafeArea(
-                minimum: const EdgeInsets.only(top: 12),
-                child: task,
-              ),
-            )
-          else
-            SafeArea(
+                ),
+              ],
+            ),
+            near: SafeArea(
+              minimum: const EdgeInsets.only(top: 12),
+              child: task,
+            ),
+            single: SafeArea(
               minimum: EdgeInsets.only(
                 top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
               ),
@@ -154,6 +149,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                 ],
               ),
             ),
+          ),
         ],
       ),
     );

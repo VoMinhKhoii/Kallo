@@ -2,7 +2,7 @@ import '../../../../shared/widgets/panes/pane_insets.dart';
 import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../../../shared/widgets/feedback/kallo_refresh.dart';
+import '../../../../shared/widgets/panes/pane_scroll.dart';
 import '../../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../../shared/widgets/panes/two_pane_scaffold.dart';
 import '../../../../shell/window/window_layout.dart';
@@ -33,13 +33,6 @@ class FeedPanes extends StatefulWidget {
 class _FeedPanesState extends State<FeedPanes> {
   final _nearKey = GlobalKey(debugLabel: 'logging-feed');
   final _farKey = GlobalKey();
-  final _farScroll = ScrollController();
-
-  @override
-  void dispose() {
-    _farScroll.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,12 +58,10 @@ class _FeedPanesState extends State<FeedPanes> {
         !layout.twoPane && layout.compactHeight ? widget.compactSummary : null,
       ),
     );
-    if (!layout.twoPane) return near;
     return TwoPaneScaffold(
-      header: const SizedBox.shrink(),
-      far: KalloRefreshableScroll(
+      single: near,
+      far: PaneScroll(
         key: _farKey,
-        controller: _farScroll,
         onRefresh: widget.onRefresh,
         slivers:
             (bottom) => [
