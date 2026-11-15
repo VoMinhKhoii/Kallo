@@ -3,11 +3,11 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { type CSSProperties, useRef } from 'react';
 import { useScrollSettle } from '@/hooks/landing/use-scroll-settle';
-import { AppStoreButton } from '../app-store-button';
 import { heroStill, landingClip } from '../media/media';
 import { ProductVideo } from '../media/product-video';
 import { HeroHeadline } from './headline';
 import { HeroStill } from './hero-still';
+import { WaitlistPill } from './waitlist-pill';
 import { WebSignUpLink } from './web-sign-up-link';
 
 const rise = (step: number) => ({ '--rise-step': step }) as CSSProperties;
@@ -37,9 +37,9 @@ export function PaintedHero() {
         </p>
         <div
           style={rise(2)}
-          className="mt-8 flex animate-rise flex-wrap items-center justify-center gap-3"
+          className="mt-8 flex w-full animate-rise flex-col items-center gap-2"
         >
-          <AppStoreButton />
+          <WaitlistPill source="hero" />
           <WebSignUpLink />
         </div>
         {/* No `animate-rise` here: the film's opening frame is the page's

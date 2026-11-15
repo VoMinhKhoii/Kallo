@@ -7,7 +7,8 @@
     "docs": "Tài liệu",
     "signIn": "Đăng nhập",
     "features": "Tính năng",
-    "getStarted": "Theo dõi thông minh hơn"
+    "getStarted": "Theo dõi thông minh hơn",
+    "getStartedShort": "Bắt đầu theo dõi"
   },
   "hero": {
     "headline": {
@@ -57,7 +58,19 @@
       }
     },
     "useWeb": "Dùng thử trên web",
-    "videoLabel": "Một bữa sáng được gõ vào Kallo bằng lời thường rồi tách thành từng món kèm calo"
+    "videoLabel": "Một bữa sáng được gõ vào Kallo bằng lời thường rồi tách thành từng món kèm calo",
+    "waitlist": {
+      "label": "Địa chỉ email",
+      "placeholder": "ban@email.com",
+      "submit": "Vào danh sách chờ",
+      "submitting": "Đang gửi…",
+      "success": "Kiểm tra hộp thư",
+      "successBody": "Chúng tôi vừa gửi bạn một liên kết. Nhấn vào đó để xác nhận — chỉ còn bước đó thôi.",
+      "invalidEmail": "Nhập địa chỉ email hợp lệ.",
+      "error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
+      "rateLimited": "Bạn thử hơi nhiều lần. Vui lòng đợi một lát rồi thử lại.",
+      "privacy": "Một email để xác nhận, một email khi ứng dụng di động ra mắt. Không gì khác."
+    }
   },
   "understanding": {
     "videoLabel": "Hai lần ghi cùng một bữa sáng đặt cạnh nhau, lần ghi chi tiết có nhiều calo hơn",
@@ -206,9 +219,6 @@
     "already": "Bạn đã có trong danh sách rồi",
     "expired": "Liên kết đã hết hạn",
     "invalid": "Liên kết không hợp lệ"
-  },
-  "appStore": {
-    "label": "Tải về trên App Store"
   },
   "showcase": {
     "phones": {

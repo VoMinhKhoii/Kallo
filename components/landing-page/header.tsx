@@ -9,7 +9,6 @@ import { useHeaderOverFooter } from '@/hooks/landing/use-header-over-footer';
 import { useHeaderScrolled } from '@/hooks/landing/use-header-scrolled';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
-import { AppStoreButton } from './app-store-button';
 import { AUTH_CTAS_LIVE } from './cta-hold';
 import { LocaleSwitcher } from './locale-switcher';
 import { scrollToAnchorId } from './scroll-to-anchor';
@@ -119,7 +118,22 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
           >
             {t('signIn')}
           </Button>
-          <AppStoreButton compact />
+          {/* Black, not the brown `header-cta`: the page is black and white
+              throughout, the waitlist pill included. */}
+          <Button
+            variant="landing-ink"
+            size="header"
+            // Tighter on phones, where the label shares one row with the
+            // wordmark and both switchers. Under 400px even that is short of
+            // the full label (measured at 360px: ~144px free, 165px needed),
+            // so those widths get the short one.
+            className="whitespace-nowrap px-3.5 font-sans-display text-[13px] sm:px-6 sm:text-sm"
+            disabled={!AUTH_CTAS_LIVE}
+            onClick={() => openDialog('sign-up')}
+          >
+            <span className="min-[400px]:hidden">{t('getStartedShort')}</span>
+            <span className="hidden min-[400px]:inline">{t('getStarted')}</span>
+          </Button>
         </div>
       </div>
     </header>

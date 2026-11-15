@@ -6,7 +6,8 @@ import { useAuthDialog } from '@/components/auth/auth-provider';
 import { isPlainClick } from '@/lib/core/ui/plain-click';
 
 /**
- * The way in for anyone not on an iPhone: plain text beside Apple's badge.
+ * The way in today, under the waitlist: plain text, so the pill stays the
+ * one button.
  *
  * A real link, so a tap before the page's scripts have arrived still lands on
  * sign-up (`?auth=sign-up` opens the dialog). Once hydrated it opens in place.
