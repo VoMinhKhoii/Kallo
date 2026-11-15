@@ -173,7 +173,9 @@ compared. Windows are named in `test/shell/poses/harness/poses.dart`, beside the
 `pose_gallery_test.dart`, and each entry carries its own steps to open it and what to
 measure. Add to the end of either list: the renders depend on the order the cases run in.
 Shadows render as solid slabs in these images (a test-mode artefact),
-so judge shadows on a device.
+so judge shadows on a device. For a quick look without one, a scratch test can boot a
+pose with `bootPose`, set `debugDisableShadows = false`, pump, write the PNG with
+`matchesGoldenFile`, and set the flag back to `true` in a `finally`.
 
 **The simulator tour** shows what only iOS draws: the status column, the Dynamic Island,
 the fold. `.github/workflows/ios-duo-sim.yml` builds `test/shell/poses/sim/sim_tour_main.dart`
