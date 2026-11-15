@@ -96,6 +96,34 @@ void main() {
     await dispose();
   });
 
+  testWidgets('picking another post swaps the thread beside the feed', (
+    tester,
+  ) async {
+    final dispose = await bootPose(tester, poses[5], '/circle');
+    final context = tester.element(find.byType(CircleScreen));
+    for (final id in ['friend-share-0', 'friend-share-1', 'friend-share-0']) {
+      openCircleThread(context, shareId: id);
+      await settlePose(tester);
+      expect(
+        find.byType(CircleThreadScreen, skipOffstage: false),
+        findsOneWidget,
+        reason: 'one detail at a time after opening $id',
+      );
+      expect(
+        tester
+            .widget<CircleThreadScreen>(find.byType(CircleThreadScreen))
+            .shareId,
+        id,
+      );
+    }
+    // One step back from any number of picks is the feed with nothing open.
+    GoRouter.of(tester.element(find.byType(CircleThreadScreen))).pop();
+    await settlePose(tester);
+    expect(find.byType(CircleThreadScreen, skipOffstage: false), findsNothing);
+    expect(find.text('Choose a post to see its replies.'), findsOneWidget);
+    await dispose();
+  });
+
   testWidgets('Settings keeps dirty Body metrics in its nested stack', (
     tester,
   ) async {

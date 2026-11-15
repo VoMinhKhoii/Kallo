@@ -233,6 +233,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                     parentNavigatorKey: _rootKey,
                     pageBuilder:
                         (context, state) => DetailPanePage<void>(
+                          // One page per thread: swapping the post beside the
+                          // feed replaces the route, composer and all.
+                          key: state.pageKey,
                           child: CircleThreadScreen(
                             shareId: state.pathParameters['shareId'] ?? '',
                             scope: state.uri.queryParameters['scope'],

@@ -60,5 +60,14 @@ void openCircleThread(
     }
     return;
   }
+  // Beside the feed there is one detail at a time: picking another post
+  // swaps the thread shown, it does not stack a second page on it. Stacked,
+  // going back to the first post left two live composers for it sharing one
+  // focus node, and "back" walked through every post picked.
+  if (PageWindow.of(context).twoPane &&
+      router.state.pathParameters.containsKey('shareId')) {
+    router.pushReplacement(location);
+    return;
+  }
   router.push(location);
 }
