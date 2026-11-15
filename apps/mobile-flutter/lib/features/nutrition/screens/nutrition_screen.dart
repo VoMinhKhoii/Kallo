@@ -1,3 +1,5 @@
+import '../../../shared/widgets/panes/pane_insets.dart';
+import '../../../shared/widgets/panes/pane_slot.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -124,8 +126,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           padding: const EdgeInsets.fromLTRB(_side, 0, _side, _side),
           child: Row(
             textDirection:
-                WindowLayout.of(context).twoPane &&
-                        WindowLayout.of(context).controlEdge == ControlEdge.left
+                WindowLayout.of(context).mirrored
                     ? TextDirection.rtl
                     : TextDirection.ltr,
             children: [
@@ -137,9 +138,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment:
-                      WindowLayout.of(context).twoPane &&
-                              WindowLayout.of(context).controlEdge ==
-                                  ControlEdge.left
+                      WindowLayout.of(context).mirrored
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
                   child: Text(
@@ -176,7 +175,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           onRefresh:
               () =>
                   ref.read(nutritionOverviewProvider(_arg).notifier).refetch(),
-          page: (bottom, near) => _page(async, isFetching, bottom, near),
+          page: (bottom, slot) => _page(async, isFetching, bottom, slot),
         ),
       ),
     );
@@ -191,26 +190,22 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     AsyncValue<NutritionOverview> async,
     bool isFetching,
     double bottomInset,
-    bool? near,
+    PaneSlot slot,
   ) {
     final overview = async.valueOrNull;
     if (overview != null) {
-      return _scrollPage(_buildBody(overview, near), bottomInset, near);
+      return _scrollPage(_buildBody(overview, slot), bottomInset, slot);
     }
-    if (near == true && !async.isLoading) return [];
-    if (near == true) {
+    if (slot == PaneSlot.near && !async.isLoading) return [];
+    if (slot == PaneSlot.near) {
       return _scrollPage(
-        const NutritionSkeleton(nutrientsOnly: true),
+        const NutritionSkeleton(slot: PaneSlot.near),
         bottomInset,
-        near,
+        slot,
       );
     }
     if (async.isLoading) {
-      return _scrollPage(
-        NutritionSkeleton(caloriesOnly: near == false),
-        bottomInset,
-        near,
-      );
+      return _scrollPage(NutritionSkeleton(slot: slot), bottomInset, slot);
     }
     // The failed page has nothing on it but the state card, so the card sits
     // at the MIDDLE of it rather than under the title with the rest blank —
@@ -234,16 +229,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   }
 
   /// The scrolling page: [body] under the title, then the source line.
-  EdgeInsets _paneInsets(bool? near, double bottom) {
-    if (near == null) return EdgeInsets.fromLTRB(_side, 0, _side, bottom);
-    final left =
-        near == (WindowLayout.of(context).controlEdge == ControlEdge.left);
-    return EdgeInsets.fromLTRB(left ? _side : 0, 0, left ? 0 : _side, bottom);
-  }
-
-  List<Widget> _scrollPage(Widget body, double bottomInset, bool? near) => [
+  List<Widget> _scrollPage(Widget body, double bottomInset, PaneSlot slot) => [
     SliverPadding(
-      padding: _paneInsets(near, 0),
+      padding: paneInsets(context, slot: slot, side: _side),
       sliver: SliverToBoxAdapter(child: body),
     ),
     // The source line belongs to the PAGE, not to the section above it — the
@@ -253,16 +241,21 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       // The inset clears the floating pill nav — this is a tab, and the bar
       // hovers over the last thing on the page. It is paid INSIDE the fill: a
       // trailing spacer sliver would push the tail off the viewport.
-      padding: _paneInsets(near, bottomInset),
+      padding: paneInsets(
+        context,
+        slot: slot,
+        side: _side,
+        bottom: bottomInset,
+      ),
       // Once per page. In two panes the targets it credits are the vitamin
       // and mineral ones, so it closes the pane that shows them.
-      footer: near == false ? null : const SourceAttribution(),
+      footer: slot == PaneSlot.far ? null : const SourceAttribution(),
     ),
   ];
 
   /// The content page's body. Every figure on it is resolved first — one pass
   /// over the overview and the tapped column — so what follows is layout.
-  Widget _buildBody(NutritionOverview overview, bool? near) {
+  Widget _buildBody(NutritionOverview overview, PaneSlot slot) {
     final view = OverviewSelection.resolve(
       overview,
       selectedIndex: _selectedIndex,
@@ -277,7 +270,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (near != true) ...[
+        if (slot != PaneSlot.near) ...[
           // The section header names the scope the figure is averaged over. The
           // unit used to carry it ("kcal per complete day"); saying it once here
           // keeps the figure clean without leaving the scope inferable only from
@@ -336,12 +329,12 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             ),
           ],
         ],
-        if (near != false) ...[
+        if (slot != PaneSlot.far) ...[
           if (overview.micronutrientsLocked) const MicronutrientsLockedCard(),
           ..._group(
             tr('nutrition.nutrientGroups.vitamins'),
             view.vitamins,
-            first: near == true,
+            first: slot == PaneSlot.near,
           ),
           ..._group(tr('nutrition.nutrientGroups.minerals'), view.minerals),
         ],

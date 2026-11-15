@@ -45,7 +45,7 @@ void main() {
   testWidgets(
     'Today panes keep yesterday across folding and have an empty gutter',
     (tester) async {
-      final dispose = await bootPose(tester, poses[5], '/dashboard');
+      final dispose = await bootPose(tester, innerLandscape, '/dashboard');
       final day = tester.getRect(find.byType(DayPager));
       final weight = tester.getRect(find.byType(WeightChart));
       expect(day.left, 12);
@@ -61,7 +61,7 @@ void main() {
       await settlePose(tester);
       final page = pager.controller.page;
       final state = tester.state(find.byType(DayPager));
-      resize(tester, poses[1]);
+      resize(tester, outerPortrait);
       await settlePose(tester);
       expect(tester.state(find.byType(DayPager)), same(state));
       expect(
@@ -69,11 +69,11 @@ void main() {
         page,
       );
       expect(find.text('Yesterday'), findsWidgets);
-      resize(tester, poses[3]);
+      resize(tester, innerPortrait);
       await settlePose(tester);
       expect(tester.getRect(find.byType(DayPager)).left, 54.5);
       expect(tester.getRect(find.byType(DayPager)).right, 614.5);
-      resize(tester, poses.last);
+      resize(tester, phoneLandscape);
       await settlePose(tester);
       expect(tester.getRect(find.byType(DayPager)).left, 157);
       expect(tester.getRect(find.byType(DayPager)).width, 560);
@@ -85,7 +85,7 @@ void main() {
   testWidgets('near pull refreshes the bundle with only its own held inset', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[5], '/dashboard');
+    final dispose = await bootPose(tester, innerLandscape, '/dashboard');
     final context = tester.element(find.byType(DashboardContent));
     final container = ProviderScope.containerOf(context);
     final api = container.read(apiClientProvider) as FakeApiClient;
@@ -136,7 +136,7 @@ void main() {
   testWidgets(
     'Today restores far offset and reveals Progress after a near drag',
     (tester) async {
-      final dispose = await bootPose(tester, poses[5], '/dashboard');
+      final dispose = await bootPose(tester, innerLandscape, '/dashboard');
       ScrollPosition far() =>
           tester
               .state<ScrollableState>(
@@ -150,15 +150,15 @@ void main() {
               .position;
       far().jumpTo(80);
       await tester.pumpAndSettle();
-      resize(tester, poses[1]);
+      resize(tester, outerPortrait);
       await settlePose(tester);
       expect(far().pixels, 80);
-      resize(tester, poses[5]);
+      resize(tester, innerLandscape);
       await settlePose(tester);
       expect(far().pixels, 80);
       await tester.dragFrom(const Offset(700, 75), const Offset(0, -100));
       await tester.pumpAndSettle();
-      resize(tester, poses[1]);
+      resize(tester, outerPortrait);
       await settlePose(tester);
       // Progress comes up under the header row, or as far up as the content
       // below it allows: on the outer display the two cards are shorter than
@@ -170,7 +170,7 @@ void main() {
         isTrue,
         reason: 'Progress at $progressTop, offset ${far().pixels}',
       );
-      expect(progressTop, lessThan(poses[1].size.height / 2));
+      expect(progressTop, lessThan(outerPortrait.size.height / 2));
       await dispose();
     },
   );

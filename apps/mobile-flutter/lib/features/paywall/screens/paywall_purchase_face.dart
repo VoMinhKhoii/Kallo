@@ -93,6 +93,12 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
       widget.state.phase == PaywallPhase.unavailable ||
       widget.state.phase == PaywallPhase.loadError;
 
+  bool get _twoPane => WindowLayout.of(context).twoPane;
+
+  bool get _tableAtNaturalHeight =>
+      WindowLayout.of(context).foldAcross &&
+      MediaQuery.textScalerOf(context).scale(16) > 16;
+
   @override
   Widget build(BuildContext context) {
     final offer = paywallOffer(
@@ -122,11 +128,7 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
               : null,
     );
     if (layout.twoPane) {
-      final far = regions.paneFor(
-        layout.controlEdge == ControlEdge.left
-            ? regions.safe.right
-            : regions.safe.left,
-      );
+      final far = regions.far;
       return Stack(
         children: [
           Positioned(
@@ -140,13 +142,12 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
               removeRight: true,
               child: WindowLayoutScope(
                 layout: layout,
-                child: _pitch(offer, purchasing, twoPane: true),
+                child: _pitch(offer, purchasing),
               ),
             ),
           ),
           Positioned(
-            left:
-                layout.controlEdge == ControlEdge.left ? 0 : regions.near.left,
+            left: layout.nearLeft ? 0 : regions.near.left,
             right:
                 layout.controlEdge == ControlEdge.right
                     ? 0
@@ -187,11 +188,7 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
   /// void under it, so the table takes whatever height is left instead
   /// ([SliverFillRemaining]) and spreads its rows to fill it. When the
   /// content is taller than the screen, it simply scrolls as before.
-  Widget _pitch(
-    PaywallOffer offer,
-    bool purchasing, {
-    bool twoPane = false,
-  }) => LayoutBuilder(
+  Widget _pitch(PaywallOffer offer, bool purchasing) => LayoutBuilder(
     builder:
         (context, bounds) => CustomScrollView(
           key: _pitchKey,
@@ -207,12 +204,12 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   PaywallPurchaseFace.gutter +
-                      (twoPane ? 0 : MediaQuery.viewPaddingOf(context).left),
+                      (_twoPane ? 0 : MediaQuery.viewPaddingOf(context).left),
                   KalloSpacing.sp2,
                   PaywallPurchaseFace.gutter +
-                      (twoPane ? 0 : MediaQuery.viewPaddingOf(context).right),
+                      (_twoPane ? 0 : MediaQuery.viewPaddingOf(context).right),
                   KalloSpacing.sp4 +
-                      (twoPane ? MediaQuery.viewPaddingOf(context).bottom : 0),
+                      (_twoPane ? MediaQuery.viewPaddingOf(context).bottom : 0),
                 ),
                 child: Center(
                   child: ConstrainedBox(
@@ -220,12 +217,11 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
                     child: _pitchColumn(
                       offer,
                       purchasing,
-                      twoPane,
                       math.min(
                         420,
                         bounds.maxWidth -
                             2 * PaywallPurchaseFace.gutter -
-                            (twoPane
+                            (_twoPane
                                 ? 0
                                 : MediaQuery.viewPaddingOf(context).horizontal),
                       ),
@@ -239,34 +235,28 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
   );
 
   Widget _pitchSliver(Widget child) =>
-      WindowLayout.of(context).foldAcross &&
-              MediaQuery.textScalerOf(context).scale(16) > 16
+      _tableAtNaturalHeight
           ? SliverToBoxAdapter(child: child)
           : SliverFillRemaining(hasScrollBody: false, child: child);
 
-  Widget _pitchColumn(
-    PaywallOffer offer,
-    bool purchasing,
-    bool twoPane,
-    double tableWidth,
-  ) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      PaywallGuide(line: offer.guideLine),
-      const SizedBox(height: KalloSpacing.sp3_5),
-      if (offer.showPeriodToggle && !twoPane) ...[
-        _toggle(offer, purchasing),
-        const SizedBox(height: KalloSpacing.sp2_5),
-      ],
-      // Large text needs the table's natural height in the bounded column;
-      // a flex allocation can be shorter than its wrapped rows.
-      if (WindowLayout.of(context).foldAcross &&
-          MediaQuery.textScalerOf(context).scale(16) > 16)
-        PlanComparison(availableWidth: tableWidth)
-      else
-        Expanded(child: PlanComparison(availableWidth: tableWidth)),
-    ],
-  );
+  Widget _pitchColumn(PaywallOffer offer, bool purchasing, double tableWidth) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PaywallGuide(line: offer.guideLine),
+          const SizedBox(height: KalloSpacing.sp3_5),
+          if (offer.showPeriodToggle && !_twoPane) ...[
+            _toggle(offer, purchasing),
+            const SizedBox(height: KalloSpacing.sp2_5),
+          ],
+          // Large text needs the table's natural height in the bounded column;
+          // a flex allocation can be shorter than its wrapped rows.
+          if (_tableAtNaturalHeight)
+            PlanComparison(availableWidth: tableWidth)
+          else
+            Expanded(child: PlanComparison(availableWidth: tableWidth)),
+        ],
+      );
 
   Widget _toggle(PaywallOffer offer, bool purchasing) => PlanToggle(
     monthlyLabel: tr('paywall.toggleMonthly'),

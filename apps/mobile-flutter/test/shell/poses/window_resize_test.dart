@@ -47,7 +47,7 @@ void main() {
   testWidgets('compact Log shows two reachable meal cards after scrolling', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[2], '/logging');
+    final dispose = await bootPose(tester, outerLandscape, '/logging');
     final scroll =
         tester
             .state<ScrollableState>(
@@ -82,11 +82,11 @@ void main() {
   testWidgets('Log keeps its composer draft across compact height', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[1], '/logging');
+    final dispose = await bootPose(tester, outerPortrait, '/logging');
     final state = tester.state(find.byType(FeedArea));
     final field = find.byType(EditableText).last;
     await tester.enterText(field, '2 eggs and toast');
-    for (final pose in [poses[2], poses[1]]) {
+    for (final pose in [outerLandscape, outerPortrait]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(FeedArea)), same(state));
@@ -100,13 +100,18 @@ void main() {
   testWidgets('Paywall keeps purchase state across compact height', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[1], '/paywall');
+    final dispose = await bootPose(tester, outerPortrait, '/paywall');
     final state = tester.state(find.byType(PaywallPurchaseFace));
     final toggle = tester.widget<PlanToggle>(find.byType(PlanToggle));
     final yearly = toggle.onChanged == null ? toggle.yearly : !toggle.yearly;
     toggle.onChanged?.call(yearly);
     await tester.pump();
-    for (final pose in [poses[5], poses[8], poses[2], poses[1]]) {
+    for (final pose in [
+      innerLandscape,
+      pipPinned,
+      outerLandscape,
+      outerPortrait,
+    ]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(PaywallPurchaseFace)), same(state));
@@ -114,11 +119,11 @@ void main() {
       final table = tester.widget<PlanComparison>(find.byType(PlanComparison));
       expect(table.availableWidth, lessThanOrEqualTo(420));
       final band = tester.getRect(find.byType(PaywallBuyBand));
-      if (pose == poses[1] || pose == poses[2]) {
+      if (pose == outerPortrait || pose == outerLandscape) {
         expect(band.left, 0);
         expect(band.right, pose.size.width);
       }
-      if (pose == poses[5] || pose == poses[8]) {
+      if (pose == innerLandscape || pose == pipPinned) {
         expect(
           tester.getRect(find.byType(PlanToggle)).left,
           greaterThanOrEqualTo(495.5),
@@ -134,10 +139,10 @@ void main() {
   testWidgets('toast stays twelve points below the top safe inset on resize', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[1], '/dashboard');
+    final dispose = await bootPose(tester, outerPortrait, '/dashboard');
     showTopToast(tester.element(find.byType(PillNavSurface)), 'Meal saved');
     await tester.pumpAndSettle();
-    for (final pose in [poses[1], poses[3], poses[5]]) {
+    for (final pose in [outerPortrait, innerPortrait, innerLandscape]) {
       resize(tester, pose);
       await tester.pumpAndSettle();
       expect(
@@ -150,21 +155,21 @@ void main() {
     await dispose();
   });
   testWidgets('capsule is 272 tall and follows the column', (tester) async {
-    final dispose = await bootPose(tester, poses[1], '/dashboard');
+    final dispose = await bootPose(tester, outerPortrait, '/dashboard');
     expect(
       tester.getRect(find.byType(PillNavSurface)),
       const Rect.fromLTRB(390, 364, 446, 636),
     );
-    resize(tester, poses[2]);
+    resize(tester, outerLandscape);
     await settlePose(tester);
     expect(
       tester.getRect(find.byType(PillNavSurface)),
       const Rect.fromLTRB(602, 97, 658, 369),
     );
-    resize(tester, poses[5]);
+    resize(tester, innerLandscape);
     await settlePose(tester);
     expect(tester.getRect(find.byType(PillNavSurface)).left, 875);
-    resize(tester, poses[10]);
+    resize(tester, huge);
     await settlePose(tester);
     final pill = tester.getRect(find.byType(PillNavSurface));
     expect(pill.width, 420);
@@ -173,7 +178,7 @@ void main() {
   });
 
   testWidgets('weight sheet keeps 68.6 while its frame moves', (tester) async {
-    final dispose = await bootPose(tester, poses[1], '/dashboard');
+    final dispose = await bootPose(tester, outerPortrait, '/dashboard');
     await tester.tap(find.bySemanticsLabel('Add'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Log weight'));
@@ -203,16 +208,16 @@ void main() {
     }
 
     checkCorners(left: false, right: true);
-    for (final pose in [poses[5], poses[3], poses[1]]) {
+    for (final pose in [innerLandscape, innerPortrait, outerPortrait]) {
       resize(tester, pose);
       await tester.pumpAndSettle();
       expect(tester.widget<EditableText>(field).controller.text, '68.6');
-      if (pose == poses[5]) {
+      if (pose == innerLandscape) {
         checkCorners(left: true, right: true);
         expect(sheetRect(tester).left, 495.5);
         expect(sheetRect(tester).right, 867);
       }
-      if (pose == poses[3]) {
+      if (pose == innerPortrait) {
         checkCorners(left: true, right: true);
         expect(sheetRect(tester).left, 54.5);
         expect(sheetRect(tester).right, 614.5);
@@ -226,7 +231,7 @@ void main() {
   testWidgets('confirm centres above the fold or in the near pane', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[5], '/dashboard');
+    final dispose = await bootPose(tester, innerLandscape, '/dashboard');
     showKalloConfirm(
       tester.element(find.byType(PillNavSurface)),
       title: 'Remove?',
@@ -235,7 +240,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.getCenter(find.byKey(kKalloConfirmSurface)).dx, 681.25);
-    resize(tester, poses[3]);
+    resize(tester, innerPortrait);
     await tester.pumpAndSettle();
     expect(tester.getCenter(find.byKey(kKalloConfirmSurface)).dy, 268.75);
     await dispose();
@@ -244,7 +249,7 @@ void main() {
   testWidgets('Nutrition keeps its branch and scroll across folding', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[1], '/nutrition');
+    final dispose = await bootPose(tester, outerPortrait, '/nutrition');
     final screen = tester.state(find.byType(NutritionScreen));
     final scroll =
         find
@@ -256,7 +261,7 @@ void main() {
     final position = tester.state<ScrollableState>(scroll).position;
     position.jumpTo(120);
     await tester.pump();
-    for (final pose in [poses[5], poses[1]]) {
+    for (final pose in [innerLandscape, outerPortrait]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(NutritionScreen)), same(screen));

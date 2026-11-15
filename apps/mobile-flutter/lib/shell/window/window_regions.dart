@@ -7,8 +7,6 @@ class WindowRegions {
   const WindowRegions(this.layout);
   final WindowLayout layout;
 
-  bool get laptop => layout.foldAcross;
-
   Rect get safe => Rect.fromLTRB(
     layout.viewPadding.left,
     0,
@@ -34,14 +32,13 @@ class WindowRegions {
   }
 
   Rect get near =>
-      layout.twoPane
-          ? paneFor(
-            layout.controlEdge == ControlEdge.left ? safe.left : safe.right,
-          )
-          : safe;
+      layout.twoPane ? paneFor(layout.nearLeft ? safe.left : safe.right) : safe;
+
+  Rect get far =>
+      layout.twoPane ? paneFor(layout.nearLeft ? safe.right : safe.left) : safe;
 
   Rect get dialog =>
-      laptop
+      layout.foldAcross
           ? Rect.fromLTRB(
             safe.left,
             layout.viewPadding.top,

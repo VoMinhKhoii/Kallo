@@ -29,7 +29,7 @@ class OnboardingQuestion extends StatelessWidget {
         total: kOnboardingScreenCount,
         gutter: 12,
         progressPadding:
-            WindowLayout.of(context).controlEdge == ControlEdge.left
+            WindowLayout.of(context).nearLeft
                 ? const EdgeInsets.only(right: 12)
                 : const EdgeInsets.only(left: 12),
         progressLabel: tr(

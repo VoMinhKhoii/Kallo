@@ -49,7 +49,7 @@ void main() {
                 : handler(request);
     final dispose = await bootPose(
       tester,
-      poses[5],
+      innerLandscape,
       '/circle',
       apiOverride: api,
     );
@@ -82,7 +82,7 @@ void main() {
     openCircleThread(context, shareId: 'friend-share-0', compose: true);
     await settlePose(tester);
     expect(tester.state(find.byType(ThreadComposer)), same(composer));
-    for (final pose in [poses[1], poses[5], poses[1]]) {
+    for (final pose in [outerPortrait, innerLandscape, outerPortrait]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(CircleThreadScreen)), same(thread));
@@ -99,7 +99,7 @@ void main() {
   testWidgets('picking another post swaps the thread beside the feed', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[5], '/circle');
+    final dispose = await bootPose(tester, innerLandscape, '/circle');
     final context = tester.element(find.byType(CircleScreen));
     for (final id in ['friend-share-0', 'friend-share-1', 'friend-share-0']) {
       openCircleThread(context, shareId: id);
@@ -127,7 +127,7 @@ void main() {
   testWidgets('Settings keeps dirty Body metrics in its nested stack', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[5], '/settings');
+    final dispose = await bootPose(tester, innerLandscape, '/settings');
     final step = tester.state(find.byType(SettingsStepPage));
     final selected = tester
         .widgetList<ListRow>(find.byType(ListRow))
@@ -138,7 +138,7 @@ void main() {
     await tester.enterText(field, '70');
     await settlePose(tester);
     expect(tester.widget<SaveDock>(find.byType(SaveDock)).visible, isTrue);
-    for (final pose in [poses[1], poses[5], poses[1]]) {
+    for (final pose in [outerPortrait, innerLandscape, outerPortrait]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(SettingsStepPage)), same(step));
@@ -151,7 +151,7 @@ void main() {
   testWidgets('wide Settings list remains interactive beside routed details', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[5], '/settings');
+    final dispose = await bootPose(tester, innerLandscape, '/settings');
     final row = find.byWidgetPredicate(
       (w) => w is ListRow && w.label == 'Goal & pace',
     );

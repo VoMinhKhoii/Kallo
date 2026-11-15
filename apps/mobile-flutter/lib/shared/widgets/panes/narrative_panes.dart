@@ -5,7 +5,7 @@ import '../../../shell/window/window_layout_scope.dart';
 import '../../../shell/window/window_regions.dart';
 
 /// Narrative backgrounds stay full bleed while the task avoids the fold.
-/// Callers key stateful children above this frame so folding moves them.
+/// Callers choose the single-column layout; this frame places the two panes.
 class NarrativePanes extends StatelessWidget {
   const NarrativePanes({super.key, required this.far, required this.near});
 
@@ -16,11 +16,7 @@ class NarrativePanes extends StatelessWidget {
   Widget build(BuildContext context) {
     final layout = WindowLayout.of(context);
     final regions = WindowRegions(layout);
-    final farRect = regions.paneFor(
-      layout.controlEdge == ControlEdge.left
-          ? regions.safe.right
-          : regions.safe.left,
-    );
+    final farRect = regions.far;
     return Stack(
       children: [
         for (final pane in [(farRect, far), (regions.near, near)])

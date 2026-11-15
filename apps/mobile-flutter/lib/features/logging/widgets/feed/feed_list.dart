@@ -1,10 +1,9 @@
+import '../../../../shared/widgets/panes/pane_insets.dart';
+import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:flutter/material.dart';
-import '../../../../shell/window/window_layout.dart';
-import '../../../../shared/widgets/panes/page_window.dart';
 
 import '../../../../models/logging/cheat.dart';
 import '../../../../models/logging/meal.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/feed/feed_entries.dart';
 import '../../logic/feed/view_state.dart';
@@ -135,19 +134,10 @@ class FeedList extends StatelessWidget {
                 (_) => [
                   if (header != null) SliverToBoxAdapter(child: header),
                   SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                      PageWindow.of(context).twoPane &&
-                              PageWindow.of(context).controlEdge !=
-                                  ControlEdge.left
-                          ? 0
-                          : KalloSpacing.sp3,
-                      0,
-                      PageWindow.of(context).twoPane &&
-                              PageWindow.of(context).controlEdge ==
-                                  ControlEdge.left
-                          ? 0
-                          : KalloSpacing.sp3,
-                      reserve,
+                    padding: paneInsets(
+                      context,
+                      slot: PaneSlot.near,
+                      bottom: reserve,
                     ),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(

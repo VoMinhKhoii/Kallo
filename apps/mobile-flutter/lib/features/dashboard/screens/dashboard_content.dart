@@ -1,3 +1,5 @@
+import '../../../shared/widgets/panes/pane_insets.dart';
+import '../../../shared/widgets/panes/pane_slot.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,7 +19,6 @@ import '../widgets/chrome/week_strip.dart';
 import '../widgets/weight/weight_chart.dart';
 import '../../../shell/window/window_layout.dart';
 import '../../../shared/widgets/panes/two_pane_scaffold.dart';
-import '../../../shared/widgets/panes/page_window.dart';
 
 import '../widgets/chrome/dashboard_section.dart';
 
@@ -139,7 +140,7 @@ class DashboardContentState extends State<DashboardContent> {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.toString();
-    final layout = PageWindow.of(context);
+    final layout = WindowLayout.of(context);
     if (_wasTwoPane == true && !layout.twoPane && _nearTouchedLast) {
       _revealProgressOnceSettled();
     }
@@ -241,21 +242,20 @@ class DashboardContentState extends State<DashboardContent> {
       return scroll(
         children,
         _farScroll,
-        const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        paneInsets(context, slot: PaneSlot.single, top: 8),
       );
     }
-    final nearLeft = layout.controlEdge == ControlEdge.left;
     return TwoPaneScaffold(
       header: const SizedBox.shrink(),
       far: scroll(
         children.take(2).toList(),
         _farScroll,
-        EdgeInsets.only(left: nearLeft ? 0 : 12, right: nearLeft ? 12 : 0),
+        paneInsets(context, slot: PaneSlot.far),
       ),
       near: scroll(
         children.skip(2).toList(),
         _nearScroll,
-        EdgeInsets.only(left: nearLeft ? 12 : 0, right: nearLeft ? 0 : 12),
+        paneInsets(context, slot: PaneSlot.near),
       ),
     );
   }

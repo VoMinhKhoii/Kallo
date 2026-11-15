@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../theme/kallo_colors.dart';
 import 'aurora_glow.dart';
 import '../panes/page_column.dart';
-import '../panes/page_window.dart';
 import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_layout_scope.dart';
 
 /// Full-bleed cream screen with safe-area insets.
 ///
@@ -62,7 +62,7 @@ class Screen extends StatelessWidget {
         ),
       ),
     );
-    return PageWindow(
+    return WindowLayoutScope(
       layout: WindowLayout.of(context),
       child: ColoredBox(
         color: KalloColors.surface,

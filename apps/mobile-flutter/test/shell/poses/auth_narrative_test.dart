@@ -19,9 +19,14 @@ void main() {
   setUpAll(initializePoseHarness);
 
   testWidgets('start keeps its route element on a fold', (tester) async {
-    final dispose = await bootPose(tester, poses[5], '/start', signedIn: false);
+    final dispose = await bootPose(
+      tester,
+      innerLandscape,
+      '/start',
+      signedIn: false,
+    );
     final element = tester.element(find.byType(StartScreen));
-    for (final pose in [poses[1], poses[5]]) {
+    for (final pose in [outerPortrait, innerLandscape]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.element(find.byType(StartScreen)), same(element));
@@ -36,7 +41,7 @@ void main() {
   ) async {
     final dispose = await bootPose(
       tester,
-      poses[5],
+      innerLandscape,
       '/onboarding',
       signedIn: false,
     );
@@ -47,7 +52,7 @@ void main() {
     final state = tester.state(find.byType(StepAboutYou));
     final field = find.byType(EditableText).first;
     await tester.enterText(field, '28');
-    for (final pose in [poses[2], poses[5]]) {
+    for (final pose in [outerLandscape, innerLandscape]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(StepAboutYou)), same(state));
@@ -62,7 +67,7 @@ void main() {
   ) async {
     final dispose = await bootPose(
       tester,
-      poses[5],
+      innerLandscape,
       '/sign-in/email',
       signedIn: false,
     );
@@ -72,7 +77,7 @@ void main() {
     final before = tester.widget<EditableText>(field);
     before.controller.selection = const TextSelection.collapsed(offset: 4);
     expect(before.focusNode.hasFocus, isTrue);
-    for (final pose in [poses[1], poses[5]]) {
+    for (final pose in [outerPortrait, innerLandscape]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(EmailAuthForm)), same(form));
@@ -90,7 +95,7 @@ void main() {
     (tester) async {
       final dispose = await bootPose(
         tester,
-        poses[5],
+        innerLandscape,
         '/sign-in',
         signedIn: false,
       );
@@ -99,7 +104,7 @@ void main() {
       expect(rect.left, 519.5);
       expect(rect.width, 323.5);
       debugPrint('sign-in task: $rect');
-      for (final pose in [poses[1], poses[5]]) {
+      for (final pose in [outerPortrait, innerLandscape]) {
         resize(tester, pose);
         await settlePose(tester);
         expect(tester.state(find.byType(AuthPage)), same(state));
@@ -111,7 +116,7 @@ void main() {
   testWidgets('country scroll and wizard step survive folding', (tester) async {
     final dispose = await bootPose(
       tester,
-      poses[5],
+      innerLandscape,
       '/onboarding',
       signedIn: false,
     );
@@ -133,7 +138,7 @@ void main() {
     expect(button.left, 519.5);
     expect(button.width, 323.5);
     debugPrint('onboarding CTA: $button; country offset: ${position.pixels}');
-    for (final pose in [poses[1], poses[5]]) {
+    for (final pose in [outerPortrait, innerLandscape]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(OnboardingStepScaffold)), same(scaffold));
@@ -153,7 +158,7 @@ void main() {
   testWidgets('paywall retains selection and pitch scroll through folding', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[5], '/paywall');
+    final dispose = await bootPose(tester, innerLandscape, '/paywall');
     final state = tester.state(find.byType(PaywallPurchaseFace));
     final scroll =
         find
@@ -175,7 +180,7 @@ void main() {
       tester.getRect(find.byType(PlanToggle)).left,
       greaterThanOrEqualTo(495.5),
     );
-    for (final pose in [poses[1], poses[5]]) {
+    for (final pose in [outerPortrait, innerLandscape]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(PaywallPurchaseFace)), same(state));

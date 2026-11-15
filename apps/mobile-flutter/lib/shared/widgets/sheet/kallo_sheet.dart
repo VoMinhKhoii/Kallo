@@ -122,11 +122,11 @@ class KalloSheetSurface extends StatelessWidget {
     final layout = WindowLayout.of(context);
     final regions = WindowRegions(layout);
     final frame = regions.near;
-    final centered = frame.width > (regions.laptop ? 560 : 640);
+    final centered = frame.width > (regions.layout.foldAcross ? 560 : 640);
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     var effective = constraints;
     final frameHeight =
-        regions.laptop && keyboardInset == 0
+        regions.layout.foldAcross && keyboardInset == 0
             ? layout.size.height / 2 - kFoldGutter / 2
             : layout.size.height - keyboardInset - 12;
     var body = child;
@@ -155,7 +155,9 @@ class KalloSheetSurface extends StatelessWidget {
         alignment: Alignment.bottomCenter,
         heightFactor: 1,
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: regions.laptop ? 560 : 640),
+          constraints: BoxConstraints(
+            maxWidth: regions.layout.foldAcross ? 560 : 640,
+          ),
           child: Container(
             constraints: effective,
             padding: padding,

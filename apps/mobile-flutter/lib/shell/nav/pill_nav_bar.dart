@@ -124,7 +124,7 @@ class PillNavBar extends ConsumerWidget {
     }
     // Keep this wrapper's height even when hidden: Scaffold publishes its
     // measured height as the branch's bottom scroll clearance.
-    final far = WindowRegions(layout).paneFor(0);
+    final far = WindowRegions(layout).far;
     return veil(
       Padding(
         padding: EdgeInsets.fromLTRB(

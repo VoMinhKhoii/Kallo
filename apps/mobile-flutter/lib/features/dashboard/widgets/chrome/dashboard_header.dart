@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import '../../../../shared/widgets/brand/kallo_wordmark.dart';
-import '../../../../shared/widgets/panes/page_window.dart';
 import '../../../../shell/header/app_header.dart';
 import '../../../../shell/header/profile_avatar_button.dart';
 import '../../../../shell/window/window_layout.dart';
@@ -11,8 +10,8 @@ class DashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final layout = PageWindow.of(context);
-    final mirror = layout.twoPane && layout.controlEdge == ControlEdge.left;
+    final layout = WindowLayout.of(context);
+    final mirror = layout.mirrored;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: AppHeader(

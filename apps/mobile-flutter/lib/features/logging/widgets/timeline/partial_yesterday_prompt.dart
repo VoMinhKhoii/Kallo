@@ -1,8 +1,9 @@
+import '../../../../shared/widgets/panes/pane_insets.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../../../shared/widgets/panes/page_window.dart';
+import '../../../../shell/window/window_layout.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
@@ -64,11 +65,11 @@ class PartialYesterdayPrompt extends ConsumerWidget {
     final t = 'logging.feedArea.partialYesterdayPrompt';
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        PageWindow.of(context).twoPane ? 0 : KalloSpacing.sp3,
-        KalloSpacing.sp3,
-        PageWindow.of(context).twoPane ? 0 : KalloSpacing.sp3,
-        0,
+      padding: paneInsets(
+        context,
+        // FeedPanes already pads the far header in two-pane mode.
+        side: WindowLayout.of(context).twoPane ? 0 : KalloSpacing.sp3,
+        top: KalloSpacing.sp3,
       ),
       child: Container(
         padding: const EdgeInsets.all(KalloSpacing.sp3),

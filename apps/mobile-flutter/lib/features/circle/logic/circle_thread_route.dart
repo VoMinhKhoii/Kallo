@@ -12,7 +12,7 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/widgets/panes/page_window.dart';
+import '../../../shell/window/window_layout.dart';
 import '../data/thread_providers.dart';
 
 /// `/circle/<shareId>[?scope=<groupId>][&compose=1]`.
@@ -50,7 +50,7 @@ void openCircleThread(
     scope: scope,
     compose: compose,
   );
-  if (PageWindow.of(context).twoPane &&
+  if (WindowLayout.of(context).twoPane &&
       router.state.uri.path == Uri.parse(location).path) {
     if (compose) {
       ProviderScope.containerOf(
@@ -64,7 +64,7 @@ void openCircleThread(
   // swaps the thread shown, it does not stack a second page on it. Stacked,
   // going back to the first post left two live composers for it sharing one
   // focus node, and "back" walked through every post picked.
-  if (PageWindow.of(context).twoPane &&
+  if (WindowLayout.of(context).twoPane &&
       router.state.pathParameters.containsKey('shareId')) {
     router.pushReplacement(location);
     return;

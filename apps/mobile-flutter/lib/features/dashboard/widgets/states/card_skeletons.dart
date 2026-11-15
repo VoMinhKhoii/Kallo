@@ -13,7 +13,7 @@ import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/feedback/skeleton.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/dashboard_spacing.dart';
-import '../../../../shared/widgets/panes/page_window.dart';
+import '../../../../shell/window/window_layout.dart';
 import 'dashboard_pane_skeleton.dart';
 
 /// Inner placeholder rows for the Today card — hero + ring, three macro rows, a
@@ -125,7 +125,7 @@ class DashboardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (PageWindow.of(context).twoPane) {
+    if (WindowLayout.of(context).twoPane) {
       return DashboardPaneSkeleton(onRefresh: onRefresh);
     }
     // The pulse comes from the caller (one outer SkeletonPulse); every card /

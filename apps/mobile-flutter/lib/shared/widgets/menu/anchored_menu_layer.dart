@@ -117,7 +117,7 @@ class _AnchoredMenuLayerState extends State<AnchoredMenuLayer> {
     final layout = WindowLayout.of(context);
     final regions = WindowRegions(layout);
     var bounds = regions.paneFor(widget.anchor.center.dx);
-    if (regions.laptop) {
+    if (regions.layout.foldAcross) {
       bounds =
           widget.anchor.center.dy < layout.size.height / 2
               ? Rect.fromLTRB(

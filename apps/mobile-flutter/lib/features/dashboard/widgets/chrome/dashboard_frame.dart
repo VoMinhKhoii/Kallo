@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import '../../../../shared/widgets/panes/page_window.dart';
+import '../../../../shell/window/window_layout.dart';
 import '../../../../shared/widgets/surface/scroll_separator.dart';
 
 /// Split scrolls draw their own hairlines, leaving the fold strip empty.
@@ -16,7 +16,7 @@ class DashboardFrame extends StatelessWidget {
         Expanded(
           child: ScrollSeparator(
             header: const SizedBox.shrink(),
-            showHairline: !PageWindow.of(context).twoPane,
+            showHairline: !WindowLayout.of(context).twoPane,
             child: child,
           ),
         ),

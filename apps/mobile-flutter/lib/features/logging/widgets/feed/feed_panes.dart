@@ -1,7 +1,8 @@
+import '../../../../shared/widgets/panes/pane_insets.dart';
+import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
-import '../../../../shared/widgets/panes/page_window.dart';
 import '../../../../shared/widgets/panes/two_pane_scaffold.dart';
 import '../../../../shell/window/window_layout.dart';
 
@@ -36,9 +37,8 @@ class _FeedPanesState extends State<FeedPanes> {
 
   @override
   Widget build(BuildContext context) {
-    final layout = PageWindow.of(context);
+    final layout = WindowLayout.of(context);
     if (!layout.twoPane) return widget.near;
-    final nearLeft = layout.controlEdge == ControlEdge.left;
     return TwoPaneScaffold(
       header: const SizedBox.shrink(),
       far: KalloRefreshableScroll(
@@ -48,9 +48,9 @@ class _FeedPanesState extends State<FeedPanes> {
         slivers:
             (bottom) => [
               SliverPadding(
-                padding: EdgeInsets.only(
-                  left: nearLeft ? 0 : 12,
-                  right: nearLeft ? 12 : 0,
+                padding: paneInsets(
+                  context,
+                  slot: PaneSlot.far,
                   bottom: bottom + 12,
                 ),
                 sliver: SliverToBoxAdapter(

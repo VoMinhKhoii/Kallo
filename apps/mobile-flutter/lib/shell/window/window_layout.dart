@@ -95,6 +95,10 @@ class WindowLayout {
   /// True when the system's controls run down a side of the window.
   bool get hasControlColumn => controlEdge != ControlEdge.bottom;
 
+  bool get nearLeft => controlEdge == ControlEdge.left;
+
+  bool get mirrored => twoPane && nearLeft;
+
   /// Width of the control column, 0 when the controls sit on the bottom.
   double get columnWidth => switch (controlEdge) {
     ControlEdge.left => viewPadding.left,

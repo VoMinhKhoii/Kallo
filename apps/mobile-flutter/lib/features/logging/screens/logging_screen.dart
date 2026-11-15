@@ -137,8 +137,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                       height: 48,
                       child: Row(
                         mainAxisAlignment:
-                            WindowLayout.of(context).controlEdge ==
-                                    ControlEdge.left
+                            WindowLayout.of(context).nearLeft
                                 ? MainAxisAlignment.end
                                 : MainAxisAlignment.start,
                         children: [

@@ -28,7 +28,7 @@ void main() {
       final api = _StreamingApi();
       final dispose = await bootPose(
         tester,
-        poses[5],
+        innerLandscape,
         '/logging',
         apiOverride: api,
       );
@@ -56,7 +56,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(StreamingEntry), findsOneWidget);
       final element = find.byType(StreamingEntry).evaluate().single;
-      for (final pose in [poses[1], poses[5]]) {
+      for (final pose in [outerPortrait, innerLandscape]) {
         resize(tester, pose);
         await tester.pump(const Duration(milliseconds: 100));
         expect(find.byType(StreamingEntry).evaluate().single, same(element));
@@ -77,7 +77,7 @@ void main() {
     final api = _StreamingApi();
     final dispose = await bootPose(
       tester,
-      poses[5],
+      innerLandscape,
       '/logging',
       apiOverride: api,
     );
@@ -103,7 +103,7 @@ void main() {
     await tester.pump();
     expect(tester.getRect(find.byType(MealInput)).bottom, 437);
     tester.view.viewInsets = const FakeViewPadding();
-    for (final pose in [poses[1], poses[5], poses[8]]) {
+    for (final pose in [outerPortrait, innerLandscape, pipPinned]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(FeedArea)), same(owner));
@@ -114,7 +114,7 @@ void main() {
       expect(current.focusNode, same(editing.focusNode));
       expect(current.focusNode.hasFocus, isTrue);
       expect(tester.widget<FeedArea>(find.byType(FeedArea)).date, yesterday);
-      if (pose != poses[1]) {
+      if (pose != outerPortrait) {
         final rect = tester.getRect(find.byType(MealInput));
         expect(rect.left, 495.5);
         expect(rect.right, 855);
@@ -128,7 +128,7 @@ void main() {
   testWidgets('Nutrition restores both nonzero offsets after a fold', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[8], '/nutrition');
+    final dispose = await bootPose(tester, pipPinned, '/nutrition');
     final scrolls =
         tester
             .widgetList<KalloRefreshableScroll>(
@@ -143,9 +143,9 @@ void main() {
     near.jumpTo(near.position.maxScrollExtent / 2);
     await settlePose(tester);
     final offsets = (far.offset, near.offset);
-    resize(tester, poses[1]);
+    resize(tester, outerPortrait);
     await settlePose(tester);
-    resize(tester, poses[8]);
+    resize(tester, pipPinned);
     await settlePose(tester);
     expect(far.offset, offsets.$1);
     expect(near.offset, offsets.$2);
@@ -155,7 +155,7 @@ void main() {
   testWidgets(
     'Nutrition aligns sections and preserves chart selection and pane offsets',
     (tester) async {
-      final dispose = await bootPose(tester, poses[5], '/nutrition');
+      final dispose = await bootPose(tester, innerLandscape, '/nutrition');
       expect(tester.getRect(find.byType(NutritionRangeSelector)).right, 855);
       expect(
         tester.getRect(find.text('Vitamins')).top,
@@ -178,14 +178,14 @@ void main() {
       await settlePose(tester);
       final farOffset = scrolls.first.controller!.offset;
       final nearOffset = scrolls.last.controller!.offset;
-      for (final pose in [poses[1], poses[5], poses[8]]) {
+      for (final pose in [outerPortrait, innerLandscape, pipPinned]) {
         resize(tester, pose);
         await settlePose(tester);
         expect(
           tester.widget<DaySummary>(find.byType(DaySummary)).selectedIndex,
           thursday,
         );
-        if (pose != poses[1]) {
+        if (pose != outerPortrait) {
           expect(scrolls.first.controller!.offset, farOffset);
           expect(scrolls.last.controller!.offset, nearOffset);
         }

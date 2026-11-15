@@ -1,9 +1,9 @@
+import '../../../../shared/widgets/panes/pane_insets.dart';
+import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:flutter/widgets.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/feedback/skeleton.dart';
-import '../../../../shared/widgets/panes/page_window.dart';
 import '../../../../shared/widgets/panes/two_pane_scaffold.dart';
-import '../../../../shell/window/window_layout.dart';
 import '../../logic/dashboard_spacing.dart';
 import 'card_skeletons.dart';
 
@@ -13,18 +13,15 @@ class DashboardPaneSkeleton extends StatelessWidget {
   final Future<void> Function() onRefresh;
   @override
   Widget build(BuildContext context) {
-    final layout = PageWindow.of(context);
-    final nearLeft = layout.controlEdge == ControlEdge.left;
     Widget pane(bool near, List<Widget> children) => KalloRefreshableScroll(
       onRefresh: onRefresh,
       slivers:
           (bottom) => [
             SliverPadding(
-              padding: EdgeInsets.fromLTRB(
-                near == nearLeft ? 12 : 0,
-                0,
-                near == nearLeft ? 0 : 12,
-                bottom,
+              padding: paneInsets(
+                context,
+                slot: near ? PaneSlot.near : PaneSlot.far,
+                bottom: bottom,
               ),
               sliver: SliverList(delegate: SliverChildListDelegate(children)),
             ),

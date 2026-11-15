@@ -25,7 +25,7 @@ void main() {
   testWidgets('dirty detail preserves window geometry for overlays', (
     tester,
   ) async {
-    final dispose = await bootPose(tester, poses[5], '/settings');
+    final dispose = await bootPose(tester, innerLandscape, '/settings');
     final field = find.byType(EditableText).first;
     await tester.enterText(field, '70');
     FocusManager.instance.primaryFocus?.unfocus();
@@ -66,7 +66,7 @@ void main() {
     await _capture(tester, 'settings-confirm__inner-landscape');
     await dispose();
   });
-  for (final pose in [poses[5], poses[1]]) {
+  for (final pose in [innerLandscape, outerPortrait]) {
     testWidgets('Log keyboard / ${pose.name}', (tester) async {
       final dispose = await bootPose(tester, pose, '/logging');
       await tester.tap(find.byType(EditableText).last);

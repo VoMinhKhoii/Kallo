@@ -20,7 +20,7 @@ void main() {
     testWidgets(
       '$route bounds its cards and keeps the scroll across column resizing',
       (tester) async {
-        final dispose = await bootPose(tester, poses[3], route);
+        final dispose = await bootPose(tester, innerPortrait, route);
         final cards = find.byWidgetPredicate(
           (w) =>
               w is KalloCard ||
@@ -51,7 +51,7 @@ void main() {
         state.position.jumpTo(40);
         await tester.pumpAndSettle();
         final offset = state.position.pixels;
-        resize(tester, poses[2]);
+        resize(tester, outerLandscape);
         await settlePose(tester);
         expect(
           tester.stateList<ScrollableState>(vertical),

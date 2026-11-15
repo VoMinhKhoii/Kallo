@@ -57,7 +57,7 @@ class TabScaffold extends ConsumerWidget {
             Positioned(
               top: 0,
               height: layout.size.height,
-              left: layout.controlEdge == ControlEdge.left ? 0 : null,
+              left: layout.nearLeft ? 0 : null,
               right: layout.controlEdge == ControlEdge.right ? 0 : null,
               width: layout.columnWidth,
               // Scaffold consumes viewInsets in its body. Chrome still needs

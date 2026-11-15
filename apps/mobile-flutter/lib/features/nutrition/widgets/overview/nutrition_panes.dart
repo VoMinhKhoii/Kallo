@@ -1,7 +1,8 @@
+import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
-import '../../../../shared/widgets/panes/page_window.dart';
+import '../../../../shell/window/window_layout.dart';
 import '../../../../shared/widgets/panes/two_pane_scaffold.dart';
 
 /// Moves the keyed scroll views when the fold changes the section arrangement.
@@ -15,7 +16,7 @@ class NutritionPanes extends StatefulWidget {
   });
   final Future<void> Function() onRefresh;
   final VoidCallback onClearSelection;
-  final List<Widget> Function(double bottom, bool? near) page;
+  final List<Widget> Function(double bottom, PaneSlot slot) page;
 
   @override
   State<NutritionPanes> createState() => _NutritionPanesState();
@@ -36,7 +37,7 @@ class _NutritionPanesState extends State<NutritionPanes> {
 
   @override
   Widget build(BuildContext context) {
-    final layout = PageWindow.of(context);
+    final layout = WindowLayout.of(context);
     Widget scroll(bool near) => GestureDetector(
       key: PageStorageKey(near ? 'nutrition-near' : 'nutrition-far'),
       behavior: HitTestBehavior.translucent,
@@ -45,7 +46,13 @@ class _NutritionPanesState extends State<NutritionPanes> {
         key: near ? _nearKey : _farKey,
         controller: near ? _near : _far,
         onRefresh: widget.onRefresh,
-        slivers: (bottom) => widget.page(bottom, layout.twoPane ? near : null),
+        slivers:
+            (bottom) => widget.page(
+              bottom,
+              layout.twoPane
+                  ? (near ? PaneSlot.near : PaneSlot.far)
+                  : PaneSlot.single,
+            ),
       ),
     );
     if (!layout.twoPane) return scroll(false);

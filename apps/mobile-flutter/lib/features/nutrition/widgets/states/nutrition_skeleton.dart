@@ -1,3 +1,4 @@
+import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -13,13 +14,8 @@ import '../../../../theme/kallo_theme.dart';
 /// hairline-ruled header — from a layout the screen had already left behind, so
 /// the load state promised a page that never arrived.
 class NutritionSkeleton extends StatelessWidget {
-  const NutritionSkeleton({
-    super.key,
-    this.caloriesOnly = false,
-    this.nutrientsOnly = false,
-  });
-  final bool caloriesOnly;
-  final bool nutrientsOnly;
+  const NutritionSkeleton({super.key, this.slot = PaneSlot.single});
+  final PaneSlot slot;
 
   static const double _gap = KalloSpacing.sp3;
 
@@ -31,7 +27,7 @@ class NutritionSkeleton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!nutrientsOnly) ...[
+            if (slot != PaneSlot.near) ...[
               // Section header + its meta.
               const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -65,8 +61,8 @@ class NutritionSkeleton extends StatelessWidget {
               // Macro rows.
               _Card(child: _rows(3, leadingGlyph: true)),
             ],
-            if (!caloriesOnly) ...[
-              if (!nutrientsOnly) const SizedBox(height: _gap),
+            if (slot != PaneSlot.far) ...[
+              if (slot != PaneSlot.near) const SizedBox(height: _gap),
               const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

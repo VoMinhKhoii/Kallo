@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../shell/window/window_layout.dart';
-import '../../../../shared/widgets/panes/page_window.dart';
 import '../../../../shared/widgets/panes/detail_pane_route.dart';
 import '../../screens/steps/about_you_page.dart';
 import 'settings_selection.dart';
@@ -36,7 +35,7 @@ class SettingsNavigator extends StatefulWidget {
 
   static Type? selectedOf(BuildContext context) {
     final selected = SettingsSelection.of(context);
-    return PageWindow.of(context).twoPane ? selected : null;
+    return WindowLayout.of(context).twoPane ? selected : null;
   }
 
   @override

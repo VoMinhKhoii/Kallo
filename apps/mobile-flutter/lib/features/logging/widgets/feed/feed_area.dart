@@ -1,6 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import '../../../../shared/widgets/panes/page_window.dart';
+import '../../../../shell/window/window_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/widgets/surface/scroll_separator.dart';
@@ -266,11 +266,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       onDiscardReveal: mealActions.discardStaged,
     );
 
-    final twoPane = PageWindow.of(context).twoPane;
+    final twoPane = WindowLayout.of(context).twoPane;
     final near = ScrollSeparator(
       key: _nearKey,
       header:
-          twoPane || PageWindow.of(context).compactHeight
+          twoPane || WindowLayout.of(context).compactHeight
               ? const SizedBox.shrink()
               : MacroSummary(view: view, profile: profile),
 
@@ -304,7 +304,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       // Keep composer scroll notifications outside the feed's hairline listener.
       child: FeedList(
         header:
-            !twoPane && PageWindow.of(context).compactHeight
+            !twoPane && WindowLayout.of(context).compactHeight
                 ? MacroSummary(view: view, profile: profile)
                 : null,
         view: view,
