@@ -51,7 +51,7 @@ jobs:
           flutter --version
           flutter pub get
           flutter build ios --simulator --debug \
-            -t test/shell/poses/sim_tour_main.dart 2>&1 | tail -40
+            -t test/shell/poses/sim/sim_tour_main.dart 2>&1 | tail -40
 
       - name: Boot Duo and open Device Hub
         run: |
@@ -139,6 +139,31 @@ jobs:
           fold closed
           grep -o '^[a-z0-9-]* \|DUO_METRICS [^D]*' out/metrics.txt | paste - - | sort -u > out/metrics-by-pose.txt
           cat out/metrics-by-pose.txt
+
+      # The same screens on a classic iPhone, built with the same SDK: the Duo
+      # work must leave an ordinary phone looking as it did.
+      - name: Tour a classic iPhone
+        if: always()
+        run: |
+          set +e
+          xcrun simctl shutdown "$UDID" 2>&1 | tail -1
+          PHONE=$(xcrun simctl list devices available -j \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in sorted(d.items()) for x in v if x["name"]=="iPhone 18 Pro"))')
+          echo "PHONE=$PHONE"
+          xcrun simctl boot "$PHONE"
+          xcrun simctl bootstatus "$PHONE" -b > out/bootstatus-phone.txt 2>&1 || true
+          xcrun simctl install "$PHONE" apps/mobile-flutter/build/ios/iphonesimulator/Runner.app
+          xcrun simctl launch "$PHONE" com.khoivo.nham > /dev/null 2>&1; sleep 10
+          mkdir -p out/phone
+          for route in /dashboard /logging /nutrition /circle /circle/thread-detail /settings /paywall /start /sign-in /sign-in/email /onboarding; do
+            name=$(echo "${route#/}" | tr '/' '-')
+            data=$(xcrun simctl get_app_container "$PHONE" com.khoivo.nham data 2>/dev/null)
+            mkdir -p "$data/tmp"; echo "$route" > "$data/tmp/duo_route.txt"; : > "$data/tmp/duo_metrics.txt"
+            xcrun simctl launch --terminate-running-process "$PHONE" com.khoivo.nham > /dev/null 2>&1
+            sleep 8
+            xcrun simctl io "$PHONE" screenshot "out/phone/$name.png" 2>&1 | tail -1
+            echo "phone $name $(grep DUO_METRICS "$data/tmp/duo_metrics.txt" | tail -1)" | tee -a out/metrics.txt
+          done
 
       - uses: actions/upload-artifact@v4
         if: always()
