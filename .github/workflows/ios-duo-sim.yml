@@ -14,14 +14,8 @@ name: iOS Duo simulator
 #
 # A full tour takes 35 to 45 minutes: about 6 to build, 2 to boot, and 12
 # seconds per screen per pose.
-#
-# TEMPORARY trigger: pushes to the adaptation branch that touch this file.
-# Remove the `push` block before this merges; `workflow_dispatch` stays.
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/iphone-duo]
-    paths: ['.github/workflows/ios-duo-sim.yml']
 
 permissions:
   contents: read
