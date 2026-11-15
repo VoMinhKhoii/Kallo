@@ -15,6 +15,7 @@ import {
 } from '@/lib/ai/portion/vessel/geometry';
 import { resolvePieceVessel } from '@/lib/ai/portion/vessel/piece';
 import type { PipelineMealItem } from '@/lib/ai/types/result';
+import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
 
 export interface DishLike {
   name: string;
@@ -99,11 +100,9 @@ export function classifyDishClass(
  * one ingredient measured in cups ("phở with a cup of broth") says nothing
  * about what the dish was served in.
  *
- * And to a single SERVING. The envelope's guard band and `midG` describe one
- * vessel, while the dish grams describe `count` of them — so promoting "3 cups
- * of milk" would fit a three-cup total into a one-cup band and tell the
- * estimator the portion is far too small. The dish-level `vesselToken` path is
- * unaffected: that token already describes the dish as served.
+ * And to a single SERVING: "3 cups of milk" stays a plain counted food that
+ * Call 2 sizes from its count, as it did before the band followed a dish
+ * vessel's count (`vesselCount`). Promoting it as well is a separate change.
  */
 function dishVesselToken(dish: DishLike): string | undefined {
   if (dish.vesselToken) return dish.vesselToken;
@@ -138,6 +137,32 @@ function riceBowls(dish: DishLike, vesselToken: string): number | null {
   return rice.count !== undefined && rice.count > 0 ? rice.count : 1;
 }
 
+/**
+ * How many of the dish's vessel the user ate: the count its parts carry in the
+ * vessel's own word ("2 tô phở" → 2 on bánh phở, beef and broth). The band
+ * and mid grams describe one vessel, so "2 bowls of ramen" must not be fit
+ * into one bowl. The count is the dish's only when it spread to at least two
+ * foods, or the dish has one food: a lone "half a bowl of broth" beside
+ * noodles and pork counted in their own words is the broth's amount. Parts
+ * that disagree, or no such count, read as one.
+ */
+function vesselCount(dish: DishLike, vesselToken: string): number {
+  const token = normalizeVesselToken(vesselToken);
+  const carrying = dish.ingredients.filter(
+    (i) =>
+      i.count !== undefined &&
+      i.count > 0 &&
+      normalizeVesselToken(i.unitToken ?? '') === token
+  );
+  const foods = dish.ingredients.filter(
+    (i) => !isDiscreteOilIngredient(i.rawName ?? '')
+  ).length;
+  if (carrying.length < Math.min(2, Math.max(1, foods))) return 1;
+  const counts = new Set(carrying.map((i) => i.count as number));
+  const [count] = counts;
+  return counts.size === 1 ? count : 1;
+}
+
 export function resolveVesselEnvelope(
   dish: DishLike,
   riceBowl: GramsBand = riceBowlFor({})
@@ -165,6 +190,15 @@ export function resolveVesselEnvelope(
       ? 3
       : resolved.tier;
   const dishClass = classifyDishClass(dish, resolved.family);
+  // Every band describes one vessel; the dish is that many of them.
+  const servings = bowls ?? vesselCount(dish, vesselToken);
+  const oneVessel: GramsBand = bowls
+    ? riceBowl
+    : {
+        ...guardBandG(resolved.family, tier, dishClass),
+        mid: midG(resolved.family, tier, dishClass),
+      };
+  const scale = (g: number) => Math.round(g * servings);
 
   return {
     family: resolved.family,
@@ -172,20 +206,13 @@ export function resolveVesselEnvelope(
     dishClass,
     token: vesselToken,
     vesselMl: VESSEL_FAMILIES[resolved.family].tiers[tier].ml,
-    guardG: bowls
-      ? {
-          low: Math.round(riceBowl.low * bowls),
-          high: Math.round(riceBowl.high * bowls),
-        }
-      : guardBandG(resolved.family, tier, dishClass),
-    midG: bowls
-      ? Math.round(riceBowl.mid * bowls)
-      : midG(resolved.family, tier, dishClass),
+    guardG: { low: scale(oneVessel.low), high: scale(oneVessel.high) },
+    midG: scale(oneVessel.mid),
     // The picker opens no lower than 60% of its small bowl, so a part bowl
     // brings its own size; several bowls keep the plain bowl sizes rather
     // than call two bowls "small".
-    ...(bowls && bowls <= 1 && isSmallBowlG(Math.round(riceBowl.mid * bowls))
-      ? { smallBowlG: Math.round(riceBowl.mid * bowls) }
+    ...(bowls && bowls <= 1 && isSmallBowlG(scale(riceBowl.mid))
+      ? { smallBowlG: scale(riceBowl.mid) }
       : {}),
   };
 }
