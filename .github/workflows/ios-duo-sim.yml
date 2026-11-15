@@ -55,8 +55,21 @@ jobs:
           UDID=$(xcrun simctl list devices available -j \
             | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in sorted(d.items()) if "27-1" in k for x in v if "Duo" in x["name"]))')
           echo "UDID=$UDID" >> "$GITHUB_ENV"
-          xcrun simctl boot "$UDID"
-          xcrun simctl bootstatus "$UDID" -b > out/bootstatus.txt 2>&1 || true
+          # The Duo simulator sometimes reports a finished boot and is not
+          # running a moment later (Device Hub then offers "Start", and every
+          # screenshot times out). Boot until a screenshot comes back.
+          for attempt in 1 2 3; do
+            xcrun simctl boot "$UDID" 2>&1 | tail -1
+            xcrun simctl bootstatus "$UDID" -b > "out/bootstatus-$attempt.txt" 2>&1 || true
+            sleep 15
+            if xcrun simctl io "$UDID" screenshot --display=1 out/boot-check.png > /dev/null 2>&1; then
+              echo "booted on attempt $attempt"; break
+            fi
+            echo "attempt $attempt: no screen; shutting down and retrying"
+            xcrun simctl shutdown "$UDID" 2>&1 | tail -1
+            sleep 10
+            [ "$attempt" = 3 ] && { echo "::error::iPhone Duo simulator never produced a screen"; exit 1; }
+          done
           xcrun simctl install "$UDID" apps/mobile-flutter/build/ios/iphonesimulator/Runner.app
           open -a "Device Hub"
           sleep 25
@@ -103,7 +116,7 @@ jobs:
               mkdir -p "$data/tmp"; echo "$route" > "$data/tmp/duo_route.txt"; : > "$data/tmp/duo_metrics.txt"
               SIMCTL_CHILD_DUO_ROUTE="$route" xcrun simctl launch --terminate-running-process \
                 "$UDID" com.khoivo.nham > /dev/null 2>&1
-              sleep 10
+              sleep 8
               xcrun simctl io "$UDID" screenshot --display="$2" "out/$1/$name.png" 2>&1 | tail -1
               echo "$1 $name $(metrics)" | tee -a out/metrics.txt
             done
