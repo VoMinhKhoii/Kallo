@@ -22,7 +22,7 @@ import '../states/section_state.dart';
 import 'dock_targets.dart';
 import 'fade_in_down.dart';
 import '../../../../shared/widgets/gauge/calorie_dial.dart';
-import '../../../../shared/widgets/gauge/macro_dial_row.dart';
+import '../../../../shared/widgets/gauge/macros/macro_dial_row.dart';
 import 'today_first_run.dart';
 import 'today_meal_list.dart';
 

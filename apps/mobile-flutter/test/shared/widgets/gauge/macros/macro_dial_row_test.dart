@@ -6,14 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/models/nutrition/nutrition_enums.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/calorie_dial.dart';
-import 'package:kallo_mobile/shared/widgets/gauge/macro_dial_row.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/macros/macro_dial_row.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_dial.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_arc_geometry.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
-import '../../../app_fonts.dart';
-import '../../../l10n_test_loader.dart';
+import '../../../../app_fonts.dart';
+import '../../../../l10n_test_loader.dart';
 
 /// The dock's real width on a 390pt phone, less the page's 16pt inset.
 const double _dockWidth = 358;

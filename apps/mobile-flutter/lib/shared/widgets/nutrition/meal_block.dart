@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../logic/display_format.dart';
+import '../../logic/text_fit/meal_title_fit.dart';
 import '../../logic/macro_composition.dart';
 import 'composition_bar.dart';
 import 'macro_legend.dart';
@@ -93,33 +94,13 @@ class MealBlock extends StatelessWidget {
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, bounds) {
-                    final scaler = MediaQuery.textScalerOf(context);
-                    final direction = Directionality.of(context);
-                    final kcalPainter = TextPainter(
-                      text: TextSpan(text: kcalLabel, style: dashBody()),
-                      textDirection: direction,
-                      textScaler: scaler,
-                      maxLines: 1,
-                    )..layout();
-                    final titlePainter = TextPainter(
-                      text: TextSpan(
-                        text: capitalizeFirst(title),
-                        style: dashBody(),
-                      ),
-                      textDirection: direction,
-                      textScaler: scaler,
-                      maxLines: titleMaxLines,
-                    )..layout(
-                      maxWidth: (bounds.maxWidth - 8 - kcalPainter.width).clamp(
-                        0,
-                        double.infinity,
-                      ),
+                    final stacked = mealTitleNeedsStack(
+                      context,
+                      width: bounds.maxWidth,
+                      title: title,
+                      kcalLabel: kcalLabel,
+                      titleMaxLines: titleMaxLines,
                     );
-                    // Stack only when the title would lose text beside the
-                    // figure; otherwise they share the line, as on a phone.
-                    final stacked = titlePainter.didExceedMaxLines;
-                    kcalPainter.dispose();
-                    titlePainter.dispose();
                     final row = Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

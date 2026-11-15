@@ -16,20 +16,37 @@ import 'pill_nav_item.dart';
 import 'pill_nav_surface.dart';
 import 'pill_nav_veil.dart';
 
-/// One set of targets for the floating bottom pill and the side capsule.
+/// The floating pill tab bar (native pass, 2026-08-31): a 72pt-tall white
+/// capsule with the two-layer nav shadow, four tabs (Today / Log / Nutrition
+/// / Circle) around a 52pt brand-sweep "+" that opens the Add sheet.
 ///
-/// Cupertino's tab bar cannot occupy the system's asymmetric safe-area
-/// column. Retire this custom placement when it can, preserving the brand
-/// capsule's surfaces and the Log push / Add sheet actions.
+/// On a compact phone it spans the screen less [kNavInset] either side — a
+/// floating pill with fully-rounded ends, rather than a fixed 358pt island
+/// with bunched targets. Wide windows cap it at 420pt; a control column turns
+/// it into a 56pt vertical capsule with a 44pt Add disc.
+///
+/// Today, Nutrition and Circle switch shell branches; Log PUSHES the logging
+/// feed full-screen over the shell (see [goToLogging]) — the composer owns
+/// that screen's bottom edge, and swipe-back returns here. The bar slides
+/// away while the keyboard is up. The bottom bar also hides on a downward
+/// scroll, returning on the first upward flick — see NavVisibility and
+/// PillNavVeil. The side capsule stays visible while scrolling.
+///
+/// CupertinoTabBar cannot occupy the asymmetric safe-area column. Retire this
+/// custom placement when it can, preserving the Log push and Add sheet actions.
 class PillNavBar extends ConsumerWidget {
   const PillNavBar({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   void _goBranch(WidgetRef ref, int index) {
+    // Switching tabs always brings the bar back: the destination scrolls from
+    // its own offset and the user has just told us they want the nav.
     ref.read(navVisibilityProvider.notifier).reveal();
     navigationShell.goBranch(
       index,
+      // Re-tapping the active tab pops that branch to its root (the standard
+      // iOS behavior).
       initialLocation: index == navigationShell.currentIndex,
     );
   }
@@ -41,6 +58,7 @@ class PillNavBar extends ConsumerWidget {
     final axis = vertical ? Axis.vertical : Axis.horizontal;
     final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
     final bottomInset = layout.viewPadding.bottom;
+    // Branch indices after the shell reorder: dashboard, nutrition, circle.
     final current = navigationShell.currentIndex;
     final capsule = PillNavSurface(
       axis: axis,
@@ -67,6 +85,8 @@ class PillNavBar extends ConsumerWidget {
             axis: axis,
             onTap: () {
               HapticFeedback.lightImpact();
+              // The sheet lands over the bar, so leave the bar showing
+              // underneath it rather than half-slid away.
               ref.read(navVisibilityProvider.notifier).reveal();
               showAddSheet(context, ref);
             },
@@ -91,6 +111,8 @@ class PillNavBar extends ConsumerWidget {
         ],
       ),
     );
+    // Out of the way while typing; the bottom bar also hides while reading
+    // down a long branch. Both hide the same way: translation, never resizing.
     Widget veil(Widget child) => PillNavVeil(
       hidden: keyboardUp || (!vertical && !ref.watch(navVisibilityProvider)),
       direction: switch (layout.controlEdge) {
@@ -133,6 +155,10 @@ class PillNavBar extends ConsumerWidget {
           layout.twoPane ? layout.size.width - far.right + 12 : kNavInset,
           bottomInset > 0 ? bottomInset : 24,
         ),
+        // heightFactor pins the bar to the pill's own height: a bare Center
+        // EXPANDS to the Scaffold's bounded bottomNavigationBar constraints,
+        // claiming the full screen (pill mid-screen, every extendBody tab
+        // SafeArea'd to zero height — the 2026-08-31 TestFlight regression).
         child: Center(
           heightFactor: 1,
           child: ConstrainedBox(

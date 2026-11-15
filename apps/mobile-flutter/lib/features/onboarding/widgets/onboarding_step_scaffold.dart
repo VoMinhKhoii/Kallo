@@ -1,11 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import '../../../shell/window/window_layout.dart';
-import '../../../shared/widgets/panes/narrative_panes.dart';
-import '../../../shared/widgets/brand/wordmark_bar.dart';
-import 'narrative/onboarding_question.dart';
 import 'narrative/onboarding_answer.dart';
-import '../../../shared/widgets/typography/meta_action.dart';
+import 'narrative/onboarding_step_panes.dart';
 
 import '../../../shared/widgets/mascot/bun_mascot.dart';
 import '../../../theme/kallo_motion.dart';
@@ -15,8 +12,18 @@ import '../logic/onboarding_step_spec.dart';
 import 'backdrop/step_backdrop.dart';
 import 'onboarding_step_header.dart';
 
-/// Persistent wizard chrome moves the keyed answer beside its question on
-/// wide windows, preserving fields and scroll position through a fold.
+/// The onboarding's persistent chrome, and the content that slides inside it.
+///
+/// Across the six steps the backdrop, header, mascot and CTA stay mounted in
+/// their current layout. Only the title and body travel, through
+/// OnboardingStepTransition and OnboardingStepContent; the latter also catches
+/// a right-swipe back. A fold moves the keyed OnboardingAnswer into its pane
+/// without replacing its field controllers or country-list scroll position.
+///
+/// Two fixtures morph rather than hold still. The bubble retypes its new line
+/// when speech changes and animates its height instead of shoving the title
+/// in one frame. The CTA cross-fades its label from Continue to Save my plan
+/// and fades between enabled and disabled.
 class OnboardingStepScaffold extends StatefulWidget {
   const OnboardingStepScaffold({
     super.key,
@@ -69,6 +76,8 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    // The band runs to the PHYSICAL bottom edge, so the button on it carries
+    // the home indicator's inset itself.
     final inset = MediaQuery.viewPaddingOf(context).bottom;
     final twoPane = WindowLayout.of(context).twoPane;
     return LayoutBuilder(
@@ -77,55 +86,17 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
             children: [
               const Positioned.fill(child: StepBackdrop()),
               if (twoPane)
-                NarrativePanes(
-                  far: SafeArea(
-                    bottom: false,
-                    minimum: const EdgeInsets.only(top: 12),
-                    child: OnboardingQuestion(
-                      screen: screen,
-                      title: spec.title,
-                      direction: direction,
-                      onBack: onBack,
-                    ),
-                  ),
-                  near: SafeArea(
-                    bottom: false,
-                    minimum: const EdgeInsets.only(top: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(
-                          height: 44,
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              right: WordmarkBar.rowInset,
-                            ),
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child:
-                                  onSkip == null
-                                      ? null
-                                      : MetaAction(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: KalloSpacing.sp3,
-                                        ),
-                                        label: tr('common.skip'),
-                                        onTap: onSkip,
-                                      ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: _body(box.biggest, inset),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                OnboardingStepPanes(
+                  screen: screen,
+                  title: spec.title,
+                  direction: direction,
+                  onBack: onBack,
+                  onSkip: onSkip,
+                  answer: _body(box.biggest, inset),
                 )
               else
+                // Only the chrome is inset, and only at the top: the band below it
+                // reaches the screen's bottom edge on purpose.
                 SafeArea(
                   bottom: false,
                   minimum: EdgeInsets.only(
@@ -137,6 +108,8 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          // Edge to edge: the header insets its own row so the chevron
+                          // glyph lands on the gutter the title below it starts on.
                           OnboardingStepHeader(
                             step: screen,
                             total: kOnboardingScreenCount,
@@ -174,6 +147,10 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
   Widget _guideAndContent(Size field, double inset) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
+      // A longer line grows the bubble; unanimated, that shove lands on the
+      // title in one frame. NOT clipped — the bubble's tail and its shadow
+      // both live outside its box, and clipping them would change how the
+      // band reads at rest, not just mid-morph.
       AnimatedSize(
         duration: KalloMotion.quick,
         curve: KalloEase.standard,

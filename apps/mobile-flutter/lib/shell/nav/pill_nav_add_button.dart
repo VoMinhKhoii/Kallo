@@ -6,6 +6,12 @@ import '../../theme/kallo_colors.dart';
 import '../../theme/kallo_gradients.dart';
 import '../../theme/calm_tokens.dart';
 
+/// The centre action is an ink plus on KalloGradients.brandSweep, the one
+/// piece of nav chrome with its own shadow. The old flat beige btnPrimarySoft
+/// read as chrome on a white capsule rather than the thing to tap. The
+/// onboarding sweep's two hues at full opacity carry them at the phone's 52pt;
+/// the aurora's alphas cannot be reused here.
+///
 /// A smaller side disc leaves room for its shadow within the capsule.
 /// CupertinoTabBar cannot host this independent sheet action in a side
 /// column; retire the custom target when the platform supports that slot.
@@ -32,6 +38,7 @@ class PillNavAddButton extends StatelessWidget {
             width: axis == Axis.vertical ? 44 : kNavAddSize,
             height: axis == Axis.vertical ? 44 : kNavAddSize,
             decoration: const BoxDecoration(
+              // Gradient, not color: BoxDecoration takes one or the other.
               gradient: KalloGradients.brandSweep,
               shape: BoxShape.circle,
               boxShadow: [

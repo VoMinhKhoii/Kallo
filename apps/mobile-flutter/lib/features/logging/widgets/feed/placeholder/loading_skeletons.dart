@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../../../shared/widgets/gauge/calorie_dial.dart';
-import '../../../../../shared/widgets/gauge/macro_dial_row.dart';
+import '../../../../../shared/widgets/gauge/macros/macro_dial_row.dart';
 import '../../../../../shared/widgets/gauge/rounded_gauge_arc.dart';
 import '../../../logic/logging_spacing.dart';
 import 'pulse.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_theme.dart';
 import '../../logic/macro_composition.dart';
+import '../../logic/text_fit/macro_legend_fit.dart';
 
 /// The row under a calorie-share bar: a 14px food glyph and a Caption gram
 /// label per macro, spread across the full width. Optional [leading] /
@@ -66,33 +66,13 @@ class MacroLegend extends StatelessWidget {
     ];
     return LayoutBuilder(
       builder: (context, bounds) {
-        double textWidth(String text, TextStyle style) {
-          final painter = TextPainter(
-            text: TextSpan(
-              text: text,
-              style: DefaultTextStyle.of(context).style.merge(style),
-            ),
-            textDirection: Directionality.of(context),
-            textScaler: MediaQuery.textScalerOf(context),
-            maxLines: 1,
-          )..layout();
-          final width = painter.width;
-          painter.dispose();
-          return width;
-        }
-
-        double extraWidth(Widget? widget) =>
-            widget is Text
-                ? textWidth(widget.data ?? '', widget.style ?? dashBody())
-                : 0;
-        final width =
-            gramLabels.values.fold<double>(
-              0,
-              (sum, label) => sum + 18 + textWidth(label, dashCaption()),
-            ) +
-            extraWidth(leading) +
-            extraWidth(trailing) +
-            (children.length - 1) * KalloSpacing.sp3;
+        final width = macroLegendWidth(
+          context,
+          gramLabels: gramLabels,
+          leading: leading,
+          trailing: trailing,
+          childCount: children.length,
+        );
         if (width > bounds.maxWidth && (leading != null || trailing != null)) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

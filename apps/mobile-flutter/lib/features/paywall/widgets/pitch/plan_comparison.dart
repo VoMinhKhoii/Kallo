@@ -1,12 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/icons/brush_check.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/compare_rows.dart';
+import 'comparison_columns.dart';
+import 'plan_comparison_row.dart';
 
 /// The Free ↔ Pro table: the thing the screen is actually for.
 ///
@@ -22,42 +22,6 @@ class PlanComparison extends StatelessWidget {
   /// queries intrinsic height, which LayoutBuilder cannot answer.
   final double? availableWidth;
 
-  /// Fixed widths keep ticks aligned and fit the Vietnamese column headings.
-  static const double _freeColumn = 56;
-  static const double _proColumn = 92;
-
-  /// A 388pt table fits Body labels; narrower tables keep Meta labels.
-  static const double _roomyWidth = 388;
-
-  /// The type under the row labels: column heads, notes and quantities sit
-  /// one step below the label, whichever size the label is.
-  static TextStyle _small(
-    bool roomy, {
-    Color? color,
-    FontWeight weight = FontWeight.w400,
-  }) =>
-      roomy
-          ? dashMeta(color: color, weight: weight)
-          : dashCaption(color: color, weight: weight);
-
-  /// Column text that CANNOT wrap: it shrinks to fit instead.
-  ///
-  /// These two columns are fixed-width by design — that is what holds every
-  /// tick on the same two verticals however long a row label runs — so text
-  /// inside them has no room to reflow into. Wrapping was the failure mode,
-  /// not the fallback. Same `FittedBox(scaleDown)` the meta row under the buy
-  /// button and [SegmentedStrip]'s labels use, and for the same reason.
-  static Widget _columnText(String label, TextStyle style) => FittedBox(
-    fit: BoxFit.scaleDown,
-    child: Text(
-      label,
-      style: style,
-      maxLines: 1,
-      softWrap: false,
-      textAlign: TextAlign.center,
-    ),
-  );
-
   @override
   Widget build(BuildContext context) =>
       availableWidth != null
@@ -68,7 +32,7 @@ class PlanComparison extends StatelessWidget {
 
   Widget _table(double width) {
     final rows = compareRows();
-    final roomy = width >= _roomyWidth;
+    final roomy = width >= ComparisonColumns.roomyWidth;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: kCardSurface,
@@ -91,7 +55,7 @@ class PlanComparison extends StatelessWidget {
             _header(roomy),
             for (var i = 0; i < rows.length; i++) ...[
               if (i > 0) _rule,
-              _PlanComparisonRow(row: rows[i], roomy: roomy),
+              PlanComparisonRow(row: rows[i], roomy: roomy),
             ],
           ],
         ),
@@ -117,82 +81,20 @@ class PlanComparison extends StatelessWidget {
     child: Row(
       children: [
         const Spacer(),
-        _head(tr('paywall.columnFree'), _freeColumn, _small(roomy)),
+        _head(
+          tr('paywall.columnFree'),
+          ComparisonColumns.freeColumn,
+          ComparisonColumns.small(roomy),
+        ),
         _head(
           tr('paywall.columnPro'),
-          _proColumn,
-          _small(roomy, color: kInk, weight: FontWeight.w600),
+          ComparisonColumns.proColumn,
+          ComparisonColumns.small(roomy, color: kInk, weight: FontWeight.w600),
         ),
       ],
     ),
   );
 
   static Widget _head(String label, double width, TextStyle style) =>
-      SizedBox(width: width, child: _columnText(label, style));
-}
-
-/// One row of the table. Its own widget so the row's height is set by its own
-/// content — a label that wraps in Vietnamese grows only its own line.
-class _PlanComparisonRow extends StatelessWidget {
-  const _PlanComparisonRow({required this.row, required this.roomy});
-
-  final CompareRow row;
-
-  /// See [PlanComparison._roomyWidth].
-  final bool roomy;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 30),
-      padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp1),
-      child: Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(right: KalloSpacing.sp2),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    row.label,
-                    style: roomy ? dashBody() : dashMeta(color: kInk),
-                  ),
-                  if (row.note != null)
-                    Text(row.note!, style: PlanComparison._small(roomy)),
-                ],
-              ),
-            ),
-          ),
-          _cell(row.free, pro: false, width: PlanComparison._freeColumn),
-          _cell(row.pro, pro: true, width: PlanComparison._proColumn),
-        ],
-      ),
-    );
-  }
-
-  /// The Pro tick is the app's success emerald and the Free tick is muted ink:
-  /// both mean "included", and the colour is what says which column is the
-  /// offer. Exhaustive over [Cell] — a new kind fails to compile here.
-  Widget _cell(Cell value, {required bool pro, required double width}) {
-    final Widget child = switch (value) {
-      Included() => BrushCheck(
-        size: KalloIcons.tertiary,
-        color: pro ? KalloColors.successAccent : kInkMuted,
-      ),
-      Excluded() => Icon(
-        LucideIcons.minus300,
-        size: KalloIcons.tertiary,
-        color: KalloColors.textMuted50,
-      ),
-      // Same no-wrap rule as the headings: "Không giới hạn" broke across two
-      // lines against a one-glyph cell opposite it and read as a defect.
-      Quantity(:final text) => PlanComparison._columnText(
-        text,
-        PlanComparison._small(roomy, color: pro ? kInk : kInkMuted),
-      ),
-    };
-    return SizedBox(width: width, child: Center(child: child));
-  }
+      SizedBox(width: width, child: ComparisonColumns.columnText(label, style));
 }

@@ -217,6 +217,8 @@ class DashboardContentState extends State<DashboardContent> {
         }
         return false;
       },
+      // Bouncing physics and refresh as the first sliver hold the page down
+      // for the whole refetch, rather than releasing it before data arrives.
       child: KalloRefreshableScroll(
         key: controller == _nearScroll ? _nearKey : _farKey,
         controller: controller,
@@ -224,6 +226,8 @@ class DashboardContentState extends State<DashboardContent> {
         slivers:
             (bottom) => [
               SliverPadding(
+                // The shell extends behind its floating nav. Its measured
+                // height arrives here as bottom clearance, including insets.
                 padding: padding.copyWith(bottom: bottom),
                 // Built in full, not lazily: there are five children at
                 // most, and a lazy list leaves Progress unbuilt while it is
@@ -242,6 +246,7 @@ class DashboardContentState extends State<DashboardContent> {
       return scroll(
         children,
         _farScroll,
+        // AppHeader pays 4 below itself; 8 here completes the 12pt rhythm.
         paneInsets(context, slot: PaneSlot.single, top: 8),
       );
     }

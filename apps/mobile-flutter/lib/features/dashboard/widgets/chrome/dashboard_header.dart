@@ -15,11 +15,15 @@ class DashboardHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: AppHeader(
+        // Collapsing the empty leading slot puts the wordmark on the page
+        // inset rather than 44pt behind a spacer. Mirror with the pane.
         leading: mirror ? const ProfileAvatarButton() : const SizedBox.shrink(),
+        // Settings moved behind the avatar when the drawer retired.
         trailing:
             mirror ? const SizedBox.shrink() : const ProfileAvatarButton(),
         child: Align(
           alignment: mirror ? Alignment.centerRight : Alignment.centerLeft,
+          // Optical masthead height, matching the serif header it replaced.
           child: const KalloWordmark(height: 26),
         ),
       ),

@@ -1,12 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import '../../../shell/window/window_layout.dart';
-import '../../../shell/window/window_regions.dart';
 
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_theme.dart';
 import 'kallo_alert_surface.dart';
-import 'kallo_confirm_actions.dart';
+import 'kallo_confirm_dialog.dart';
 
 /// The app's ONE confirmation dialog.
 ///
@@ -77,7 +73,7 @@ Future<bool> showKalloConfirm(
     transitionDuration: kKalloAlertFade,
     transitionBuilder: kalloAlertTransition,
     pageBuilder:
-        (dialogContext, _, __) => _KalloConfirmDialog(
+        (dialogContext, _, __) => KalloConfirmDialog(
           title: title,
           description: description,
           confirmLabel: confirmLabel,
@@ -88,112 +84,11 @@ Future<bool> showKalloConfirm(
     // `dialogTheme.barrierColor`. Same black/50 the nav drawer, the sheets and
     // the web dialog use.
     barrierColor: kKalloAlertBarrier,
-    // Root ownership keeps a closing sheet from dismissing its confirm.
+    // These confirms open from inside bottom sheets, which now live on the
+    // root navigator too (see `showNhamSheet`). Keeping the dialog explicitly
+    // rooted means it is never owned by a surface that can be dismissed out
+    // from under it.
     useRootNavigator: true,
   );
   return confirmed ?? false;
-}
-
-class _KalloConfirmDialog extends StatelessWidget {
-  const _KalloConfirmDialog({
-    required this.title,
-    required this.description,
-    required this.confirmLabel,
-    required this.cancelLabel,
-    required this.destructive,
-  });
-
-  final String title;
-  final String? description;
-  final String confirmLabel;
-  final String cancelLabel;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final message = description;
-    final regions = WindowRegions(WindowLayout.of(context));
-    return Padding(
-      padding: regions.insets(regions.dialog),
-      child: LayoutBuilder(
-        builder:
-            (context, screen) => Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp6),
-                child: SizedBox(
-                  width: kalloAlertWidth(screen.maxWidth).clamp(
-                    0,
-                    regions.layout.hasControlColumn ||
-                            regions.layout.regularWidth
-                        ? 270
-                        : kKalloAlertMaxWidth,
-                  ),
-                  child: KalloAlertSurface(
-                    // A raw dialog needs an explicit undecorated text default.
-                    child: DefaultTextStyle(
-                      style: dashBody().copyWith(
-                        decoration: TextDecoration.none,
-                      ),
-                      // Two long verbs at the 1.3x Dynamic Type cap outgrow a short
-                      // phone; the card scrolls rather than overflowing.
-                      child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Padding(
-                              // The iOS 26 alert's text inset: 30pt at the
-                              // sides, the title's cap ~22pt below the top.
-                              padding: const EdgeInsets.fromLTRB(
-                                kKalloAlertTextInset,
-                                KalloSpacing.sp5,
-                                kKalloAlertTextInset,
-                                KalloSpacing.sp6,
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(title, style: kSheetTitle()),
-                                  if (message != null) ...[
-                                    const SizedBox(height: KalloSpacing.sp2),
-                                    // Muted under the title, as the system
-                                    // sets it; Body, not Meta, because 14
-                                    // read as fine print.
-                                    Text(
-                                      message,
-                                      style: dashBody(color: kInkMuted),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                kKalloAlertActionInset,
-                                0,
-                                kKalloAlertActionInset,
-                                kKalloAlertActionInset,
-                              ),
-                              child: KalloConfirmActions(
-                                confirmLabel: confirmLabel,
-                                cancelLabel: cancelLabel,
-                                destructive: destructive,
-                                onConfirm:
-                                    () => Navigator.of(context).pop(true),
-                                onCancel:
-                                    () => Navigator.of(context).pop(false),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-      ),
-    );
-  }
 }

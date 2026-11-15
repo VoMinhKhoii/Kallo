@@ -3,6 +3,7 @@ import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
+import '../../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../../shared/widgets/panes/two_pane_scaffold.dart';
 import '../../../../shell/window/window_layout.dart';
 
@@ -11,12 +12,16 @@ import '../../../../shell/window/window_layout.dart';
 class FeedPanes extends StatefulWidget {
   const FeedPanes({
     super.key,
-    required this.near,
+    required this.feed,
+    required this.overlay,
     required this.summary,
+    required this.compactSummary,
     required this.onRefresh,
     this.farHeader,
   });
-  final Widget near;
+  final Widget Function(Widget? header) feed;
+  final Widget overlay;
+  final Widget compactSummary;
   final Widget summary;
   final Widget? farHeader;
   final Future<void> Function() onRefresh;
@@ -26,6 +31,7 @@ class FeedPanes extends StatefulWidget {
 }
 
 class _FeedPanesState extends State<FeedPanes> {
+  final _nearKey = GlobalKey(debugLabel: 'logging-feed');
   final _farKey = GlobalKey();
   final _farScroll = ScrollController();
 
@@ -38,7 +44,28 @@ class _FeedPanesState extends State<FeedPanes> {
   @override
   Widget build(BuildContext context) {
     final layout = WindowLayout.of(context);
-    if (!layout.twoPane) return widget.near;
+    // The hairline sits under the pinned summary in tall single columns,
+    // and under the date strip when the summary scrolls in a short window.
+    // A rule above a pinned summary would claim content had passed beneath
+    // that summary when it had not; each arrangement anchors to its scroll.
+    final near = ScrollSeparator(
+      key: _nearKey,
+      header:
+          layout.twoPane || layout.compactHeight
+              ? const SizedBox.shrink()
+              : widget.compactSummary,
+      // Filled, not bottom-anchored: the dock must be BOUNDED by this Stack or
+      // the `/` picker grows past its top and is clipped. See FeedComposer.
+      overlay: Positioned.fill(child: widget.overlay),
+      // The card list. The composer floats over its bottom edge as an
+      // `overlay`, NOT as a child — it owns a multiline field whose own
+      // vertical Scrollable would otherwise reach the hairline listener as a
+      // depth-0 sibling and raise the rule while the feed sat at the top.
+      child: widget.feed(
+        !layout.twoPane && layout.compactHeight ? widget.compactSummary : null,
+      ),
+    );
+    if (!layout.twoPane) return near;
     return TwoPaneScaffold(
       header: const SizedBox.shrink(),
       far: KalloRefreshableScroll(
@@ -64,7 +91,7 @@ class _FeedPanesState extends State<FeedPanes> {
               ),
             ],
       ),
-      near: widget.near,
+      near: near,
     );
   }
 }

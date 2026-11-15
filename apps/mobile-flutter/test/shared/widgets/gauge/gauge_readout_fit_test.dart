@@ -7,7 +7,7 @@ import 'package:kallo_mobile/shared/widgets/gauge/gauge_arc_geometry.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_clear_area.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_dial.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_readout_type.dart';
-import 'package:kallo_mobile/shared/widgets/gauge/macro_dial_row.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/macros/macro_dial_row.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
 
 import '../../../app_fonts.dart';

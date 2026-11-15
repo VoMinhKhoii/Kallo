@@ -13,7 +13,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../../../shared/widgets/gauge/calorie_dial.dart';
-import '../../../../../shared/widgets/gauge/macro_dial_row.dart';
+import '../../../../../shared/widgets/gauge/macros/macro_dial_row.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_palette.dart';
 import '../../../../../theme/kallo_theme.dart';
