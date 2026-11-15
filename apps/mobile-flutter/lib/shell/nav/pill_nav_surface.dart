@@ -14,6 +14,16 @@ import '../../theme/kallo_theme.dart';
 ///   edge at 6% — a shadow cannot lift anything off a near-black page.
 /// - Aurora: the sheet at 82% over a 20pt blur of what scrolls beneath, with
 ///   a 1px white edge at 7% — glass over the glow.
+/// Where the capsule stands while it is in a control column.
+///
+/// A page painted above the shell beside the column (a Circle thread next to
+/// its feed) follows this to redraw the part of the capsule's shadow it
+/// covers.
+final navColumnCapsuleLink = LayerLink();
+
+/// The standing capsule's corner radius.
+const double kNavColumnRadius = 28;
+
 class PillNavSurface extends StatelessWidget {
   const PillNavSurface({
     super.key,
@@ -30,7 +40,9 @@ class PillNavSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vertical = axis == Axis.vertical;
-    final radius = BorderRadius.circular(vertical ? 28 : kNavRadius);
+    final radius = BorderRadius.circular(
+      vertical ? kNavColumnRadius : kNavRadius,
+    );
     final palette = KalloPalette.currentId;
     final edge = switch (palette) {
       KalloPaletteId.light => null,
@@ -61,13 +73,20 @@ class PillNavSurface extends StatelessWidget {
           vertical ? BoxDecoration(borderRadius: radius, border: edge) : null,
       child: child,
     );
-    if (palette != KalloPaletteId.aurora) return capsule;
-    return ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: capsule,
-      ),
+    final surface =
+        palette != KalloPaletteId.aurora
+            ? capsule
+            : ClipRRect(
+              borderRadius: radius,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: capsule,
+              ),
+            );
+    if (!vertical) return surface;
+    return CompositedTransformTarget(
+      link: navColumnCapsuleLink,
+      child: surface,
     );
   }
 }

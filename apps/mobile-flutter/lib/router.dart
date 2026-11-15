@@ -14,6 +14,7 @@ import 'features/auth/screens/sign_up_screen.dart';
 import 'features/circle/data/circle_providers.dart';
 import 'features/circle/screens/circle_screen.dart';
 import 'features/circle/screens/circle_thread_screen.dart';
+import 'features/circle/widgets/thread/thread_capsule_shadow.dart';
 import 'features/circle/screens/connect_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/logging/screens/logging_screen.dart';
@@ -236,11 +237,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                           // One page per thread: swapping the post beside the
                           // feed replaces the route, composer and all.
                           key: state.pageKey,
-                          child: CircleThreadScreen(
-                            shareId: state.pathParameters['shareId'] ?? '',
-                            scope: state.uri.queryParameters['scope'],
-                            autofocusComposer:
-                                state.uri.queryParameters['compose'] == '1',
+                          child: ThreadCapsuleShadow(
+                            child: CircleThreadScreen(
+                              shareId: state.pathParameters['shareId'] ?? '',
+                              scope: state.uri.queryParameters['scope'],
+                              autofocusComposer:
+                                  state.uri.queryParameters['compose'] == '1',
+                            ),
                           ),
                         ),
                   ),

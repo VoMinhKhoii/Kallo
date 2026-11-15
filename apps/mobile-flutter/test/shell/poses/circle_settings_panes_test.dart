@@ -5,6 +5,8 @@ import 'package:kallo_mobile/features/circle/logic/circle_thread_route.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_screen.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
 import 'package:kallo_mobile/features/circle/widgets/thread/thread_composer.dart';
+import 'package:kallo_mobile/features/circle/widgets/thread/thread_capsule_shadow.dart';
+import 'package:kallo_mobile/shell/nav/pill_nav_surface.dart';
 import 'package:kallo_mobile/features/circle/widgets/thread/reply_pill.dart';
 import 'package:kallo_mobile/features/settings/widgets/chrome/settings_step_page.dart';
 import 'package:kallo_mobile/features/settings/screens/steps/goal_pace_page.dart';
@@ -120,6 +122,35 @@ void main() {
     await settlePose(tester);
     expect(find.byType(CircleThreadScreen, skipOffstage: false), findsNothing);
     expect(find.text('Choose a post to see its replies.'), findsOneWidget);
+    await dispose();
+  });
+
+  // The thread beside the feed is painted above the tab capsule, so it covers
+  // the part of the capsule's shadow that reaches into its pane.
+  testWidgets('a thread beside the feed redraws the capsule shadow it covers', (
+    tester,
+  ) async {
+    final echo = find.descendant(
+      of: find.byType(ThreadCapsuleShadow),
+      matching: find.byType(CompositedTransformFollower),
+    );
+    final dispose = await bootPose(
+      tester,
+      innerLandscape,
+      '/circle/thread-detail',
+    );
+    expect(echo, findsOneWidget);
+    expect(
+      tester.widget<CompositedTransformFollower>(echo).link,
+      navColumnCapsuleLink,
+    );
+    expect(navColumnCapsuleLink.leaderSize?.width, 56);
+
+    // Pushed over the whole window, the thread covers the capsule as well.
+    resize(tester, outerPortrait);
+    await settlePose(tester);
+    expect(find.byType(ThreadCapsuleShadow), findsOneWidget);
+    expect(echo, findsNothing);
     await dispose();
   });
 
