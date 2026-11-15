@@ -68,7 +68,9 @@ Map<String, dynamic> nutritionFixture(PoseFixtures f) {
           'nutrientType': 'range',
         },
     ],
-    'micronutrients': nutrients,
+    // The page lists `micronutrients` then `moreNutrients`, so a nutrient
+    // belongs in one of them.
+    'micronutrients': nutrients.sublist(0, 3),
     'spotlight': [nutrients[1]],
     'steady': [nutrients[0], nutrients[2]],
     'moreNutrients': [nutrients[3]],
