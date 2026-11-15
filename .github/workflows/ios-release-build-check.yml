@@ -82,7 +82,7 @@ jobs:
             *) echo "::error::Built with $sdk, expected the iOS 27.1 SDK"; exit 1 ;;
           esac
 
-  # TEMPORARY: what the new Dart SDK changes in the lockfile and formatting,
+  # TEMPORARY: what the pinned Dart SDK still changes in the lockfile and formatting,
   # as a patch to apply on the branch. Remove before this merges.
   drift:
     runs-on: ubuntu-latest
