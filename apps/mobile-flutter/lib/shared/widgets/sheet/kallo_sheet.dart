@@ -17,16 +17,7 @@ const double kSheetContentInset = KalloSpacing.sp4; // 16
 /// gap pinched on the diagonal (owner review, 2026-09-28).
 const double kSheetRadius = kSheetContentInset + 18; // 34
 
-/// How much horizontal inset the surface has ALREADY applied to its body.
-///
-/// Exists so [KalloSheetHeader] can inherit the sheet's inset instead of
-/// hardcoding one. Sheets split into two camps: most hand
-/// [KalloSheetSurface] a `padding` and let their rows sit flush inside it,
-/// while the full-bleed ones (the scan sheet's camera frame) pad nothing and
-/// let each body step inset itself. A header that always added its own 16
-/// was right for the second camp and 32pt — a full inset too far — for the
-/// first, which is why the X sat visibly right of the row icons directly
-/// under it on the Add sheet.
+/// Shares the body's existing inset so headers do not add it twice.
 class SheetContentInset extends InheritedWidget {
   const SheetContentInset({
     required this.horizontal,
@@ -131,6 +122,7 @@ class KalloSheetSurface extends StatelessWidget {
     final layout = WindowLayout.of(context);
     final regions = WindowRegions(layout);
     final frame = regions.near;
+    final centered = frame.width > (regions.laptop ? 560 : 640);
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     var effective = constraints;
     final frameHeight =
@@ -144,8 +136,6 @@ class KalloSheetSurface extends StatelessWidget {
             (MediaQuery.sizeOf(context).height - keyboardInset) *
             maxHeightFraction,
       );
-      // shrinkWrap semantics: the sheet still hugs its content and only
-      // scrolls once the content exceeds the cap.
       body = SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         child: child,
@@ -154,7 +144,6 @@ class KalloSheetSurface extends StatelessWidget {
     effective = (effective ?? const BoxConstraints()).enforce(
       BoxConstraints(maxHeight: frameHeight.clamp(0, double.infinity)),
     );
-    // Lift the decoration itself above the keyboard.
     return Padding(
       padding: EdgeInsets.fromLTRB(
         frame.left,
@@ -171,17 +160,24 @@ class KalloSheetSurface extends StatelessWidget {
             constraints: effective,
             padding: padding,
             clipBehavior: clipBehavior,
-            // A squircle, not a rounded rect: the top corners ramp their
-            // curvature the way every iOS sheet's do. `ShapeDecoration` is what
-            // takes a `ShapeBorder` — note it spells shadows `shadows`.
             decoration: ShapeDecoration(
               color: color ?? KalloColors.sheet,
-              shape: KalloShapes.squircleTop(kSheetRadius),
-              // Sheets are TRUE elevation on the borderless-card canvas.
+              shape: KalloShapes.squircleCorners(
+                BorderRadius.only(
+                  topLeft: const Radius.circular(kSheetRadius),
+                  topRight: const Radius.circular(kSheetRadius),
+                  bottomLeft: Radius.circular(
+                    frame.left > 0 || centered ? kSheetRadius : 0,
+                  ),
+                  bottomRight: Radius.circular(
+                    frame.right < layout.size.width || centered
+                        ? kSheetRadius
+                        : 0,
+                  ),
+                ),
+              ),
               shadows: kSheetShadows,
             ),
-            // Published INSIDE the padding, so the header it reaches is measuring
-            // the same content column its neighbours sit in.
             child: SheetContentInset(
               horizontal:
                   padding?.resolve(Directionality.of(context)).left ?? 0,

@@ -6,6 +6,10 @@ import 'package:kallo_mobile/features/logging/widgets/feed/feed_list.dart';
 import 'package:kallo_mobile/features/logging/widgets/persisted/persisted_meal_card_content.dart';
 import 'package:kallo_mobile/features/paywall/screens/paywall_purchase_face.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/plan_toggle.dart';
+import 'package:kallo_mobile/features/paywall/widgets/plans/paywall_buy_band.dart';
+import 'package:kallo_mobile/features/paywall/widgets/pitch/plan_comparison.dart';
+import 'package:kallo_mobile/shared/widgets/toast/top_toast.dart';
+import 'package:kallo_mobile/shared/widgets/toast/top_toast_pill.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
 import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
@@ -98,13 +102,51 @@ void main() {
   ) async {
     final dispose = await bootPose(tester, poses[1], '/paywall');
     final state = tester.state(find.byType(PaywallPurchaseFace));
-    final yearly = tester.widget<PlanToggle>(find.byType(PlanToggle)).yearly;
-    for (final pose in [poses[2], poses[1]]) {
+    final toggle = tester.widget<PlanToggle>(find.byType(PlanToggle));
+    final yearly = toggle.onChanged == null ? toggle.yearly : !toggle.yearly;
+    toggle.onChanged?.call(yearly);
+    await tester.pump();
+    for (final pose in [poses[5], poses[8], poses[2], poses[1]]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(PaywallPurchaseFace)), same(state));
       expect(tester.widget<PlanToggle>(find.byType(PlanToggle)).yearly, yearly);
+      final table = tester.widget<PlanComparison>(find.byType(PlanComparison));
+      expect(table.availableWidth, lessThanOrEqualTo(420));
+      final band = tester.getRect(find.byType(PaywallBuyBand));
+      if (pose == poses[1] || pose == poses[2]) {
+        expect(band.left, 0);
+        expect(band.right, pose.size.width);
+      }
+      if (pose == poses[5] || pose == poses[8]) {
+        expect(
+          tester.getRect(find.byType(PlanToggle)).left,
+          greaterThanOrEqualTo(495.5),
+        );
+        expect(
+          tester.getRect(find.byType(PlanToggle)).bottom,
+          lessThan(tester.getRect(find.textContaining('Start Premium')).top),
+        );
+      }
     }
+    await dispose();
+  });
+  testWidgets('toast stays twelve points below the top safe inset on resize', (
+    tester,
+  ) async {
+    final dispose = await bootPose(tester, poses[1], '/dashboard');
+    showTopToast(tester.element(find.byType(PillNavSurface)), 'Meal saved');
+    await tester.pumpAndSettle();
+    for (final pose in [poses[1], poses[3], poses[5]]) {
+      resize(tester, pose);
+      await tester.pumpAndSettle();
+      expect(
+        tester.getRect(find.byType(TopToastPill)).top,
+        pose.padding.top + 12,
+      );
+    }
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
     await dispose();
   });
   testWidgets('capsule is 272 tall and follows the column', (tester) async {
@@ -133,15 +175,37 @@ void main() {
     expect(sheetRect(tester).left, 0);
     expect(sheetRect(tester).right, 382);
     expect(sheetRect(tester).bottom, 678);
+    void checkCorners({required bool left, required bool right}) {
+      final container = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(KalloSheetSurface),
+              matching: find.byWidgetPredicate(
+                (w) => w is Container && w.decoration is ShapeDecoration,
+              ),
+            )
+            .first,
+      );
+      final shape =
+          (container.decoration! as ShapeDecoration).shape
+              as RoundedSuperellipseBorder;
+      final corners = shape.borderRadius.resolve(TextDirection.ltr);
+      expect(corners.bottomLeft.x, left ? 34 : 0);
+      expect(corners.bottomRight.x, right ? 34 : 0);
+    }
+
+    checkCorners(left: false, right: true);
     for (final pose in [poses[5], poses[3], poses[1]]) {
       resize(tester, pose);
       await tester.pumpAndSettle();
       expect(tester.widget<EditableText>(field).controller.text, '68.6');
       if (pose == poses[5]) {
+        checkCorners(left: true, right: true);
         expect(sheetRect(tester).left, 495.5);
         expect(sheetRect(tester).right, 867);
       }
       if (pose == poses[3]) {
+        checkCorners(left: true, right: true);
         expect(sheetRect(tester).left, 54.5);
         expect(sheetRect(tester).right, 614.5);
         expect(sheetRect(tester).top, greaterThanOrEqualTo(495.5));

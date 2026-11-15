@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../../theme/calm_tokens.dart';
 
@@ -74,7 +75,19 @@ class _ScrollSeparatorState extends State<ScrollSeparator> {
     if (notification.depth != 0) return false;
     if (notification.metrics.axis != Axis.vertical) return false;
     final scrolled = notification.metrics.pixels > widget.threshold;
-    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    if (scrolled != _scrolled) {
+      _scrolled = scrolled;
+      // A resized viewport can correct its offset during layout. Repaint the
+      // hairline after that frame rather than scheduling a build inside it.
+      if (WidgetsBinding.instance.schedulerPhase ==
+          SchedulerPhase.persistentCallbacks) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() {});
+        });
+      } else {
+        setState(() {});
+      }
+    }
     return false; // never swallow it — other listeners still want it
   }
 

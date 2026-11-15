@@ -1,15 +1,4 @@
-/// The three macro dials — the same arc as the calorie dial, a third of the
-/// size, in each macro's own pigment.
-///
-/// Replaces the labelled progress bars both the dock and the logging header
-/// used to draw. A bar reads its value against a track that runs the full width
-/// of the surface, which put three long horizontal rules beside a round dial and
-/// made the two halves look unrelated. The dial repeats the calorie mark's
-/// shape, so the section reads as one family of objects.
-///
-/// The glyph carries the identity: pigment alone cannot separate three arcs
-/// this small, and the beef / wheat / droplet set is already the app's macro
-/// vocabulary (Circle's feed draws the same three).
+/// Three dials repeat the calorie mark; food glyphs distinguish their macros.
 library;
 
 import 'dart:math' as math;
@@ -21,54 +10,39 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../logic/macro_composition.dart';
 import 'gauge_dial.dart';
+import 'gauge_arc_geometry.dart';
+import 'gauge_clear_area.dart';
+import 'gauge_readout_line.dart';
 import 'gauge_readout_type.dart';
 
 /// Full size on a 390pt screen; [MacroDialRow] shrinks it on narrower ones.
 const double kMacroDialRadius = 44;
 
-/// The embedded size — see [MacroDialRow.compact].
-///
-/// 36, up from 30 (2026-09-27). The logging header hands each column ~78pt
-/// whatever the dial's size, and at 30 the ring used 60 of it with "115g"
-/// sitting ~1.5pt off the stroke. At 36 the figure clears it by ~5.4pt, it
-/// stays full size at the 1.3 text-scale cap on a typical day, and the arcs
-/// still end above the calorie dial's, so the header grows no taller. 38 was
-/// measured too: the rings then nearly touch across the gutters.
+/// At 36 the compact figures clear the stroke; 38 nearly joins the rings.
 const double kCompactMacroDialRadius = 36;
 
-/// Between two dial columns.
-///
-/// Tighter than the 8 it started at, and load-bearing: at 8 a 390pt phone left
-/// the fat label ~58pt for a word measuring ~58-62, so "CHẤT BÉO" ellipsized.
-/// The gaps are the row's only slack — the arcs already shrink, the label is
-/// the smallest size, and the 12px screen inset is the app-wide rhythm.
+/// Four-point gutters leave room for the Vietnamese fat label.
 const double _gutter = KalloSpacing.sp1; // 4
 
-/// A dial's glyph and its label. Same reason as [_gutter], and the biggest win
-/// (per-column); the glyph reads as part of the word at 2 as well as at 6.
+/// The glyph reads as part of the word with a two-point gap.
 const double _iconGap = KalloSpacing.sp0_5; // 2
 
-/// The width a row of three [radius] dials needs to draw them at that size —
-/// what a surface subtracts before handing the rest to the calorie dial.
+/// Space reserved beside the calorie dial.
 double macroDialRowWidth(double radius) =>
     kCompositionKeys.length * radius * 2 +
     (kCompositionKeys.length - 1) * _gutter;
 
-/// What a header [width] wide can spare for the calorie dial beside a
-/// compact macro row at full size, after the [gap] between them. The logging
-/// header and its skeleton both size the calorie dial from this.
+/// Remaining width for the compact calorie dial and its skeleton.
 double calorieDialRoom(double width, {double gap = KalloSpacing.sp2}) =>
     width - gap - macroDialRowWidth(kCompactMacroDialRadius);
 
-/// The label each dial wears, in the namespace every surface already reads.
 const Map<String, String> _labelKey = {
   'protein': 'dashboard.protein',
   'carbohydrate': 'dashboard.carbs',
   'fat': 'dashboard.fat',
 };
 
-/// The row owns the keys, pigments, glyphs AND labels, so a surface hands over
-/// two maps and nothing else — no caller can disagree about what "carbs" is.
+/// Owns macro keys, pigments and labels so callers cannot disagree.
 class MacroDialRow extends StatelessWidget {
   const MacroDialRow({
     required this.current,
@@ -78,9 +52,7 @@ class MacroDialRow extends StatelessWidget {
   }) : maxRadius = kMacroDialRadius,
        _isCompact = false;
 
-  /// The variant that sits beside `CalorieDial.compact` in a fixed header:
-  /// a smaller radius, and the gram figure steps from the dial's pinned 17 to
-  /// 14 so it still clears the mouth at the 1.3 text-scale cap.
+  /// Smaller figures clear the mouth beside `CalorieDial.compact`.
   const MacroDialRow.compact({
     required this.current,
     required this.target,
@@ -89,10 +61,8 @@ class MacroDialRow extends StatelessWidget {
   }) : maxRadius = kCompactMacroDialRadius,
        _isCompact = true;
 
-  /// Grams eaten so far, keyed by [kCompositionKeys].
   final Map<String, int> current;
 
-  /// Grams the day is aiming at, keyed by [kCompositionKeys].
   final Map<String, int> target;
 
   /// Keys whose [current] is a floor — a meal's unknown value was left out.
@@ -104,11 +74,47 @@ class MacroDialRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      // Three columns and two gutters. On a narrow phone the dials shrink
-      // rather than overflow — the arc holds its proportions at any size.
       final count = kCompositionKeys.length;
       final column = (constraints.maxWidth - _gutter * (count - 1)) / count;
       final radius = math.min(maxRadius, column / 2);
+      var fit = 1.0;
+      if (_isCompact) {
+        final scaler = MediaQuery.textScalerOf(context);
+        final primaryStyle = gaugeCompactFigure();
+        final secondaryStyle = gaugeDenominator();
+        final h1 =
+            scaler.scale(primaryStyle.fontSize!) * (primaryStyle.height ?? 1);
+        final h2 =
+            scaler.scale(secondaryStyle.fontSize!) *
+            (secondaryStyle.height ?? 1);
+        final tip = gaugeTipOffset(radius);
+        for (final key in kCompositionKeys) {
+          final lines = [
+            GaugeLine(
+              '${atLeast.contains(key) ? '≥' : ''}${current[key] ?? 0}g',
+              primaryStyle,
+            ),
+            GaugeLine('/${target[key] ?? 0}g', secondaryStyle),
+          ];
+          for (var i = 0; i < 2; i++) {
+            final top = i == 0 ? tip - h2 / 2 - 2 - h1 : tip - h2 / 2;
+            final width =
+                2 *
+                gaugeClearHalfWidthForBand(
+                  radius,
+                  top,
+                  top + (i == 0 ? h1 : h2),
+                );
+            final wanted = gaugeLineWidth(context, lines[i]);
+            if (wanted > width) {
+              fit = math.min(
+                fit,
+                math.max(0, width - 2 * kGaugeReadoutClearMargin) / wanted,
+              );
+            }
+          }
+        }
+      }
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -122,6 +128,7 @@ class MacroDialRow extends StatelessWidget {
                 atLeast: atLeast.contains(kCompositionKeys[i]),
                 radius: radius,
                 isCompact: _isCompact,
+                readoutScale: _isCompact ? fit : null,
               ),
             ),
           ],
@@ -139,6 +146,7 @@ class _MacroDial extends StatelessWidget {
     required this.atLeast,
     required this.radius,
     required this.isCompact,
+    required this.readoutScale,
   });
 
   final String compositionKey;
@@ -147,6 +155,7 @@ class _MacroDial extends StatelessWidget {
   final bool atLeast;
   final double radius;
   final bool isCompact;
+  final double? readoutScale;
 
   @override
   Widget build(BuildContext context) {
@@ -154,40 +163,31 @@ class _MacroDial extends StatelessWidget {
 
     return Column(
       children: [
-        // The title sits on the arc, not floating above it: the dial is drawn
-        // with no dead space over its stroke, so one tight gap binds them.
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(kMacroIcons[compositionKey]!, size: 14, color: color),
             const SizedBox(width: _iconGap),
             Flexible(
-              child: Text(
-                tr(_labelKey[compositionKey]!).toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: dashEyebrow(),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  tr(_labelKey[compositionKey]!).toUpperCase(),
+                  maxLines: 1,
+                  style: dashEyebrow(),
+                ),
               ),
             ),
           ],
         ),
-        // The FULL-SIZE dial gets air here, the compact one does not: 2 on a
-        // 44pt arc read as a label resting on the stroke — half the optical
-        // room it buys on the compact arc, which looked right on device. 6
-        // restores the same gap at the Today row's size.
+        // Larger arcs need more optical room below the label.
         SizedBox(height: isCompact ? KalloSpacing.sp0_5 : KalloSpacing.sp1_5),
         GaugeDial(
+          readoutScale: readoutScale,
           progress: target > 0 ? current / target : 0,
           radius: radius,
           fill: color,
-          // Bare figures must stay inside the ring: on device (2026-09-01)
-          // three-digit `202g` ran across the stroke on both surfaces.
           clampReadout: true,
-          // The figure steps down with the radius; the denominator does not.
-          // Holding `/140g` at one size across both variants is what makes the
-          // pair read as a value over its target rather than as two numbers of
-          // arbitrary weight — and it is the relationship the reference
-          // screenshot measures (14 over 12 compact, 17 over 12 full).
           primary: GaugeLine(
             '${atLeast ? '≥' : ''}${current}g',
             isCompact ? gaugeCompactFigure() : gaugeFigure(),

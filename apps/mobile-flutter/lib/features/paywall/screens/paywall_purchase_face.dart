@@ -1,7 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_regions.dart';
 
 import '../../../services/billing/entitlement_state.dart';
 import '../../../theme/kallo_theme.dart';
@@ -90,21 +94,59 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
     );
     final purchasing = widget.state.phase == PaywallPhase.purchasing;
     final plan = offer.plan;
+    final layout = WindowLayout.of(context);
+    final regions = WindowRegions(layout);
+    final band = PaywallBuyBand(
+      offer: offer,
+      loading: purchasing,
+      onBuy:
+          purchasing || _storeClosed || plan == null
+              ? null
+              : () => _purchase(plan),
+      onStayFree: widget.onStayFree,
+      welcome: _welcome(context),
+      toggle:
+          layout.twoPane && offer.showPeriodToggle
+              ? _toggle(offer, purchasing)
+              : null,
+    );
+    if (layout.twoPane) {
+      final far = regions.paneFor(
+        layout.controlEdge == ControlEdge.left
+            ? regions.safe.right
+            : regions.safe.left,
+      );
+      return Stack(
+        children: [
+          Positioned(
+            left: far.left,
+            width: far.width,
+            top: 0,
+            bottom: 0,
+            child: MediaQuery.removeViewPadding(
+              context: context,
+              removeLeft: true,
+              removeRight: true,
+              child: _pitch(offer, purchasing, twoPane: true),
+            ),
+          ),
+          Positioned(
+            left:
+                layout.controlEdge == ControlEdge.left ? 0 : regions.near.left,
+            right:
+                layout.controlEdge == ControlEdge.right
+                    ? 0
+                    : layout.size.width - regions.near.right,
+            top: 0,
+            bottom: 0,
+            child: Align(alignment: Alignment.bottomCenter, child: band),
+          ),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(child: _pitch(offer, purchasing)),
-        PaywallBuyBand(
-          offer: offer,
-          loading: purchasing,
-          onBuy:
-              purchasing || _storeClosed || plan == null
-                  ? null
-                  : () => _purchase(plan),
-          onStayFree: widget.onStayFree,
-          welcome: _welcome(context),
-        ),
-      ],
+      children: [Expanded(child: _pitch(offer, purchasing)), band],
     );
   }
 
@@ -131,50 +173,81 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
   /// void under it, so the table takes whatever height is left instead
   /// ([SliverFillRemaining]) and spreads its rows to fill it. When the
   /// content is taller than the screen, it simply scrolls as before.
-  Widget _pitch(PaywallOffer offer, bool purchasing) => CustomScrollView(
-    slivers: [
-      if (widget.scrollingHeader != null)
-        SliverToBoxAdapter(child: widget.scrollingHeader),
-      // The padding goes INSIDE the fill, not around it as a SliverPadding:
-      // SliverFillRemaining fills whatever is left of the viewport, so a
-      // SliverPadding's bottom inset landed below the fold — the card ran
-      // flush into the buy band and the page scrolled by that inset.
-      SliverFillRemaining(
-        hasScrollBody: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            PaywallPurchaseFace.gutter,
-            KalloSpacing.sp2,
-            PaywallPurchaseFace.gutter,
-            KalloSpacing.sp4,
-          ),
-          child: _pitchColumn(offer, purchasing),
+  Widget _pitch(
+    PaywallOffer offer,
+    bool purchasing, {
+    bool twoPane = false,
+  }) => LayoutBuilder(
+    builder:
+        (context, bounds) => CustomScrollView(
+          slivers: [
+            if (widget.scrollingHeader != null)
+              SliverToBoxAdapter(child: widget.scrollingHeader),
+            // The padding goes INSIDE the fill, not around it as a SliverPadding:
+            // SliverFillRemaining fills whatever is left of the viewport, so a
+            // SliverPadding's bottom inset landed below the fold — the card ran
+            // flush into the buy band and the page scrolled by that inset.
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  PaywallPurchaseFace.gutter +
+                      (twoPane ? 0 : MediaQuery.viewPaddingOf(context).left),
+                  KalloSpacing.sp2,
+                  PaywallPurchaseFace.gutter +
+                      (twoPane ? 0 : MediaQuery.viewPaddingOf(context).right),
+                  KalloSpacing.sp4,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: _pitchColumn(
+                      offer,
+                      purchasing,
+                      twoPane,
+                      math.min(
+                        420,
+                        bounds.maxWidth -
+                            2 * PaywallPurchaseFace.gutter -
+                            (twoPane
+                                ? 0
+                                : MediaQuery.viewPaddingOf(context).horizontal),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ),
-    ],
   );
 
-  Widget _pitchColumn(PaywallOffer offer, bool purchasing) => Column(
+  Widget _pitchColumn(
+    PaywallOffer offer,
+    bool purchasing,
+    bool twoPane,
+    double tableWidth,
+  ) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       PaywallGuide(line: offer.guideLine),
       const SizedBox(height: KalloSpacing.sp3_5),
-      if (offer.showPeriodToggle) ...[
-        PlanToggle(
-          monthlyLabel: tr('paywall.toggleMonthly'),
-          yearlyLabel: tr('paywall.toggleYearly'),
-          yearly: offer.yearly,
-          // Inert while a purchase is in flight, and on the store-closed
-          // face, where there is no second period to switch to.
-          onChanged:
-              purchasing || offer.plan == null
-                  ? null
-                  : (value) => setState(() => _yearly = value),
-        ),
+      if (offer.showPeriodToggle && !twoPane) ...[
+        _toggle(offer, purchasing),
         const SizedBox(height: KalloSpacing.sp2_5),
       ],
-      const Expanded(child: PlanComparison()),
+      Expanded(child: PlanComparison(availableWidth: tableWidth)),
     ],
+  );
+
+  Widget _toggle(PaywallOffer offer, bool purchasing) => PlanToggle(
+    monthlyLabel: tr('paywall.toggleMonthly'),
+    yearlyLabel: tr('paywall.toggleYearly'),
+    yearly: offer.yearly,
+    onChanged:
+        purchasing || offer.plan == null
+            ? null
+            : (value) => setState(() => _yearly = value),
   );
 
   Future<void> _purchase(Package plan) =>

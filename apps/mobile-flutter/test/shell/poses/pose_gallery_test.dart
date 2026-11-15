@@ -14,9 +14,15 @@ import 'package:kallo_mobile/features/settings/screens/settings_screen.dart';
 import 'package:kallo_mobile/features/auth/screens/sign_in_screen.dart';
 import 'package:kallo_mobile/features/paywall/screens/paywall_screen.dart';
 import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
+import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
+import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
+import 'package:kallo_mobile/shared/widgets/toast/top_toast.dart';
+import 'package:kallo_mobile/shared/widgets/toast/top_toast_pill.dart';
+import 'package:kallo_mobile/shared/widgets/menu/anchored_menu_layer.dart';
 
 import 'pose_harness.dart';
 import 'poses.dart';
+import 'review_measurements.dart';
 
 const _out = String.fromEnvironment('DUO_OUT');
 
@@ -52,6 +58,14 @@ const _surfaces = <Surface>[
     widget: MealEditSheet,
     scroll: true,
   ),
+  (
+    name: 'confirm',
+    route: '/dashboard',
+    widget: KalloAlertSurface,
+    scroll: false,
+  ),
+  (name: 'toast', route: '/dashboard', widget: TopToastPill, scroll: false),
+  (name: 'menu', route: '/logging', widget: AnchoredMenuLayer, scroll: false),
 ];
 
 Future<void> _capture(WidgetTester tester, String name) async {
@@ -76,6 +90,12 @@ Future<void> _scrollToEnd(WidgetTester tester, Type surface) async {
       continue;
     }
     final height = state.position.viewportDimension;
+    final rect = tester.getRect(
+      find.byElementPredicate((candidate) => candidate == element),
+    );
+    final window =
+        Offset.zero & (tester.view.physicalSize / tester.view.devicePixelRatio);
+    if (state.position.maxScrollExtent <= 0 || !rect.overlaps(window)) continue;
     if (height > largest) {
       largest = height;
       target = find.byElementPredicate((candidate) => candidate == element);
@@ -105,6 +125,22 @@ Future<void> _scrollToEnd(WidgetTester tester, Type surface) async {
 }
 
 Future<void> _openSheet(WidgetTester tester, String surface) async {
+  if (surface == 'confirm' || surface == 'toast') {
+    final context = tester.element(find.byType(DashboardScreen));
+    if (surface == 'confirm') {
+      showKalloConfirm(
+        context,
+        title: 'Remove meal?',
+        description: 'This meal will be removed from your day.',
+        confirmLabel: 'Remove',
+        cancelLabel: 'Keep meal',
+        destructive: true,
+      );
+    } else {
+      showTopToast(context, 'Meal saved');
+    }
+    await tester.pumpAndSettle();
+  }
   if (surface == 'add-sheet' || surface == 'weight-sheet') {
     await tester.tap(find.bySemanticsLabel('Add'));
     await tester.pumpAndSettle();
@@ -113,14 +149,16 @@ Future<void> _openSheet(WidgetTester tester, String surface) async {
       await tester.pumpAndSettle();
     }
   }
-  if (surface == 'meal-edit-sheet') {
+  if (surface == 'meal-edit-sheet' || surface == 'menu') {
     final card = find.byType(PersistedMealCardContent).first;
     await tester.ensureVisible(card);
     await tester.pumpAndSettle();
     await tester.longPress(card);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
+    if (surface == 'meal-edit-sheet') {
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+    }
   }
 }
 
@@ -139,6 +177,15 @@ void main() {
 
   for (final surface in _surfaces) {
     for (final pose in poses) {
+      if (['confirm', 'toast', 'menu'].contains(surface.name) &&
+          ![
+            'outer-portrait',
+            'split-left',
+            'inner-portrait',
+            'inner-landscape',
+          ].contains(pose.name)) {
+        continue;
+      }
       for (final scale in pose.name == 'outer-portrait' ? [1.0, 1.3] : [1.0]) {
         final suffix = scale == 1 ? '' : '__text-1.3';
         testWidgets('${surface.name} / ${pose.name}$suffix', (tester) async {
@@ -158,8 +205,19 @@ void main() {
               reason: '${surface.name} / ${pose.name}',
             );
             await _capture(tester, '${surface.name}__${pose.name}$suffix');
+            if (_out.isNotEmpty) {
+              reviewMeasurements(tester, surface.name, '${pose.name}$suffix');
+            }
             if (surface.scroll) {
               await _scrollToEnd(tester, surface.widget);
+              if (_out.isNotEmpty) {
+                reviewMeasurements(
+                  tester,
+                  surface.name,
+                  '${pose.name}$suffix'
+                  '__end',
+                );
+              }
               await _capture(
                 tester,
                 '${surface.name}__${pose.name}$suffix'
@@ -168,6 +226,10 @@ void main() {
             }
             expect(tester.takeException(), isNull);
           } finally {
+            if (surface.name == 'toast') {
+              await tester.pump(const Duration(seconds: 3));
+              await tester.pumpAndSettle();
+            }
             await dispose();
           }
         });

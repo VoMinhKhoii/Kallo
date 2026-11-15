@@ -51,9 +51,11 @@ class PaywallScreen extends ConsumerWidget {
           children: [
             const Positioned.fill(child: StartAurora()),
             SafeArea(
+              left: false,
+              right: false,
               bottom: false,
               minimum: EdgeInsets.only(
-                top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+                top: WindowLayout.of(context).hasControlColumn ? 12 : 0,
               ),
               child: entitlement.when(
                 data:
@@ -109,13 +111,15 @@ class PaywallScreen extends ConsumerWidget {
       children: [
         // No trailing slot: "Stay on Free" is a button at the bottom of the
         // band now, in reach of a thumb, rather than a link in the corner.
-        WindowLayout.of(context).compactHeight
+        WindowLayout.of(context).compactHeight ||
+                WindowLayout.of(context).twoPane
             ? const SizedBox.shrink()
             : _header(context, stayFree: false),
         Expanded(
           child: PaywallPurchaseFace(
             scrollingHeader:
-                WindowLayout.of(context).compactHeight
+                WindowLayout.of(context).compactHeight ||
+                        WindowLayout.of(context).twoPane
                     ? _header(context, stayFree: false)
                     : null,
             entitlement: entitlement,
@@ -194,11 +198,19 @@ class PaywallScreen extends ConsumerWidget {
         ],
       );
 
-  Widget _header(BuildContext context, {required bool stayFree}) =>
-      PaywallHeader(
-        onClose: () => _dismiss(context),
-        onStayFree: stayFree ? () => _dismiss(context) : null,
-      );
+  Widget _header(BuildContext context, {required bool stayFree}) => Builder(
+    builder:
+        (context) => Padding(
+          padding: EdgeInsets.only(
+            left: MediaQuery.viewPaddingOf(context).left,
+            right: MediaQuery.viewPaddingOf(context).right,
+          ),
+          child: PaywallHeader(
+            onClose: () => _dismiss(context),
+            onStayFree: stayFree ? () => _dismiss(context) : null,
+          ),
+        ),
+  );
 
   void _dismiss(BuildContext context) {
     if (onboarding) {

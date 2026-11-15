@@ -16,26 +16,18 @@ import '../../logic/compare_rows.dart';
 /// verticals however long a label runs, and the label column takes whatever
 /// is left rather than the columns flexing under it.
 class PlanComparison extends StatelessWidget {
-  const PlanComparison({super.key});
+  const PlanComparison({this.availableWidth, super.key});
 
-  /// The Free column only ever holds a glyph, "2 / 10" or its own heading;
-  /// Pro also carries Vietnamese "Không giới hạn", the longest cell in either
-  /// language.
-  ///
-  /// Both were measured against bundled Be Vietnam Pro metrics and both were
-  /// a hair too tight on a real handset — "Miễn phí" (48.5 measured) wrapped
-  /// inside 50 and then lost its second line to a fixed-height header row.
-  /// They carry a few points of slack now, and [_columnText] makes the fit
-  /// unconditional rather than a measurement that has to keep being right.
+  /// The pitch host supplies its constrained table width because its sliver
+  /// queries intrinsic height, which LayoutBuilder cannot answer.
+  final double? availableWidth;
+
+  /// Fixed widths keep ticks aligned and fit the Vietnamese column headings.
   static const double _freeColumn = 56;
   static const double _proColumn = 92;
 
-  /// The narrowest screen that sets the table in the app's regular reading
-  /// size (16, [dashBody]). Plus / Pro Max widths (428+) fit every label on
-  /// one line in both languages; at 393 most of the Vietnamese rows wrap and
-  /// the table outgrows the screen, so narrower phones keep one step down
-  /// (14, [dashMeta]).
-  static const double _roomyWidth = 428;
+  /// A 388pt table fits Body labels; narrower tables keep Meta labels.
+  static const double _roomyWidth = 388;
 
   /// The type under the row labels: column heads, notes and quantities sit
   /// one step below the label, whichever size the label is.
@@ -67,9 +59,16 @@ class PlanComparison extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      availableWidth != null
+          ? _table(availableWidth!)
+          : LayoutBuilder(
+            builder: (context, constraints) => _table(constraints.maxWidth),
+          );
+
+  Widget _table(double width) {
     final rows = compareRows();
-    final roomy = MediaQuery.sizeOf(context).width >= _roomyWidth;
+    final roomy = width >= _roomyWidth;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: kCardSurface,

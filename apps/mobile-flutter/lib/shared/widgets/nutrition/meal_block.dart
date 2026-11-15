@@ -71,46 +71,88 @@ class MealBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        LayoutBuilder(
-          builder: (context, bounds) {
-            // A 358pt card at large text loses the dish's second line to kcal.
-            final stacked =
-                bounds.maxWidth < 330 ||
-                MediaQuery.textScalerOf(context).scale(16) > 16;
-            final row = Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    capitalizeFirst(title),
-                    maxLines: titleMaxLines,
-                    overflow: TextOverflow.ellipsis,
-                    style: dashBody(),
-                  ),
+        if (kcalPlacement != MealBlockKcal.titleRight || kcal == null)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  capitalizeFirst(title),
+                  maxLines: titleMaxLines,
+                  overflow: TextOverflow.ellipsis,
+                  style: dashBody(),
                 ),
-                if (!stacked &&
-                    kcalPlacement == MealBlockKcal.titleRight &&
-                    kcal != null) ...[
-                  const SizedBox(width: 8),
-                  kcal,
-                ],
-                if (titleTrailing != null) titleTrailing!,
-              ],
-            );
-            return stacked &&
-                    kcalPlacement == MealBlockKcal.titleRight &&
-                    kcal != null
-                ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    row,
-                    const SizedBox(height: 6),
-                    Align(alignment: Alignment.centerRight, child: kcal),
-                  ],
-                )
-                : row;
-          },
-        ),
+              ),
+              if (titleTrailing != null) titleTrailing!,
+            ],
+          )
+        else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, bounds) {
+                    final scaler = MediaQuery.textScalerOf(context);
+                    final direction = Directionality.of(context);
+                    final kcalPainter = TextPainter(
+                      text: TextSpan(text: kcalLabel, style: dashBody()),
+                      textDirection: direction,
+                      textScaler: scaler,
+                      maxLines: 1,
+                    )..layout();
+                    final titlePainter = TextPainter(
+                      text: TextSpan(
+                        text: capitalizeFirst(title),
+                        style: dashBody(),
+                      ),
+                      textDirection: direction,
+                      textScaler: scaler,
+                      maxLines: titleMaxLines,
+                    )..layout(
+                      maxWidth: (bounds.maxWidth - 8 - kcalPainter.width).clamp(
+                        0,
+                        double.infinity,
+                      ),
+                    );
+                    // Stack only when the title would lose text beside the
+                    // figure; otherwise they share the line, as on a phone.
+                    final stacked = titlePainter.didExceedMaxLines;
+                    kcalPainter.dispose();
+                    titlePainter.dispose();
+                    final row = Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            capitalizeFirst(title),
+                            maxLines: titleMaxLines,
+                            overflow: TextOverflow.ellipsis,
+                            style: dashBody(),
+                          ),
+                        ),
+                        if (!stacked) ...[const SizedBox(width: 8), kcal],
+                      ],
+                    );
+                    return stacked
+                        ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            row,
+                            const SizedBox(height: 6),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: kcal,
+                            ),
+                          ],
+                        )
+                        : row;
+                  },
+                ),
+              ),
+              if (titleTrailing != null) titleTrailing!,
+            ],
+          ),
         if (middle != null) middle!,
         const SizedBox(height: 8),
         CompositionBar.compact(segments: segments),

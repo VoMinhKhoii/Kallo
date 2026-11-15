@@ -168,7 +168,7 @@ class _TopToastState extends State<_TopToast> with TickerProviderStateMixin {
     // PaneScope will supply the raising pane once the screens split.
     final frame = WindowRegions(WindowLayout.of(context)).near;
     return Positioned(
-      top: 0,
+      top: 12,
       left: frame.left,
       right: MediaQuery.sizeOf(context).width - frame.right,
       child: SafeArea(

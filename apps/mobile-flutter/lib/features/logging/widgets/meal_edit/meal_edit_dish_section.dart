@@ -45,7 +45,7 @@ class MealEditDishSection extends StatelessWidget {
               Expanded(
                 child: Text(
                   dish.name,
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: kSectionHeader(),
                 ),

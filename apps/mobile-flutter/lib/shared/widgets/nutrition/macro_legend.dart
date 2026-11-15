@@ -65,14 +65,46 @@ class MacroLegend extends StatelessWidget {
     ];
     return LayoutBuilder(
       builder: (context, bounds) {
-        // At 320pt and larger text the numeric cluster needs a second line.
-        if (bounds.maxWidth < 280 ||
-            MediaQuery.textScalerOf(context).scale(12) > 12) {
-          return Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            spacing: 8,
-            runSpacing: 6,
-            children: children,
+        double textWidth(String text, TextStyle style) {
+          final painter = TextPainter(
+            text: TextSpan(
+              text: text,
+              style: DefaultTextStyle.of(context).style.merge(style),
+            ),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+            maxLines: 1,
+          )..layout();
+          final width = painter.width;
+          painter.dispose();
+          return width;
+        }
+
+        double extraWidth(Widget? widget) =>
+            widget is Text
+                ? textWidth(widget.data ?? '', widget.style ?? dashBody())
+                : 0;
+        final width =
+            gramLabels.values.fold<double>(
+              0,
+              (sum, label) => sum + 18 + textWidth(label, dashCaption()),
+            ) +
+            extraWidth(leading) +
+            extraWidth(trailing);
+        if (width > bounds.maxWidth && (leading != null || trailing != null)) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (leading != null)
+                Align(alignment: Alignment.centerLeft, child: leading!),
+              if (trailing != null)
+                Align(alignment: Alignment.centerRight, child: trailing!),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: entries,
+              ),
+            ],
           );
         }
         return Row(
