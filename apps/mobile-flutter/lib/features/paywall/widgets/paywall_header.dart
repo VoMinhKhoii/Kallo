@@ -6,6 +6,7 @@ import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/typography/meta_action.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
+import '../../../shell/window/window_layout.dart';
 
 /// The paywall's chrome: close glyph left, the wordmark centred, "Stay on
 /// Free" right — the same [WordmarkBar] the onboarding steps wear, so the last
@@ -23,7 +24,7 @@ class PaywallHeader extends StatelessWidget {
   Widget build(BuildContext context) => WordmarkBar(
     // The same inset the onboarding header uses, so the glyph does not move
     // between the last wizard screen and this one.
-    gutterInset: WordmarkBar.rowInset,
+    gutterInset: WindowLayout.of(context).twoPane ? 2 : WordmarkBar.rowInset,
     leading: _close(context),
     trailing:
         onStayFree == null

@@ -37,6 +37,9 @@ class SignInScreen extends StatelessWidget {
           const AuthPage(),
           if (canGoBack)
             SafeArea(
+              minimum: EdgeInsets.only(
+                top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+              ),
               child: Padding(
                 // The gutter every other back chevron in the flow stands on,
                 // so the glyph does not move between `/start` and here.

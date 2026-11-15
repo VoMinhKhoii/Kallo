@@ -69,6 +69,15 @@ class PaywallPurchaseFace extends ConsumerStatefulWidget {
 }
 
 class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
+  final _pitchKey = GlobalKey();
+  final _pitchController = ScrollController();
+
+  @override
+  void dispose() {
+    _pitchController.dispose();
+    super.dispose();
+  }
+
   /// Null until the user touches the toggle, so the default follows whatever
   /// the offering actually carries rather than being decided in `initState`
   /// off packages that may not have arrived yet.
@@ -180,6 +189,8 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
   }) => LayoutBuilder(
     builder:
         (context, bounds) => CustomScrollView(
+          key: _pitchKey,
+          controller: _pitchController,
           slivers: [
             if (widget.scrollingHeader != null)
               SliverToBoxAdapter(child: widget.scrollingHeader),

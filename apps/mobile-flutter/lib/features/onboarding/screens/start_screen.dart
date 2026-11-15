@@ -3,6 +3,9 @@ import 'dart:math' as math;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
+import '../widgets/narrative/start_task.dart';
 
 import '../../../shared/widgets/brand/kallo_wordmark.dart';
 import '../../../shared/widgets/brand/wordmark_bar.dart';
@@ -56,75 +59,109 @@ class StartScreen extends StatelessWidget {
       body: Stack(
         children: [
           const Positioned.fill(child: StartAurora()),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: _headerTop),
-                  const SizedBox(
-                    height: WordmarkBar.rowHeight,
-                    child: Center(
-                      child: KalloWordmark(height: _wordmarkHeight),
+          if (WindowLayout.of(context).twoPane)
+            const NarrativePanes(
+              far: SafeArea(
+                minimum: EdgeInsets.only(top: 12),
+                child: Column(
+                  children: [
+                    SizedBox(height: _headerTop),
+                    SizedBox(
+                      height: WordmarkBar.rowHeight,
+                      child: Center(
+                        child: KalloWordmark(height: _wordmarkHeight),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: _headerGap),
-                  // Everything the buttons do not claim: the preview and the
-                  // promise sitting in its dissolve.
-                  //
-                  // The title starts ON the dissolve's bottom edge — its top
-                  // sits [_DevicePreview.titleOffset] BELOW the card's bottom,
-                  // where the band has been solid canvas for 29pt — so the
-                  // promise reads as rising out of the fade rather than as a
-                  // caption under a picture. Below it comes the design's 24pt
-                  // of air, and every spare point on the screen goes into the
-                  // block above, never into that gap.
-                  Expanded(
+                    SizedBox(height: _headerGap),
+                    Expanded(child: _PreviewBox()),
+                  ],
+                ),
+              ),
+              near: SafeArea(
+                minimum: EdgeInsets.only(top: 12),
+                child: StartTask(),
+              ),
+            )
+          else
+            SafeArea(
+              minimum: EdgeInsets.only(
+                top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 468),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: KalloSpacing.sp6,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Flexible, not Expanded: the preview takes its natural
-                        // height until the leftover is genuinely too short, and
-                        // only then gives some up.
-                        const Flexible(child: _PreviewBox()),
-                        Text(
-                          context.tr('onboarding.start.title'),
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: kPageTitle(),
+                        const SizedBox(height: _headerTop),
+                        const SizedBox(
+                          height: WordmarkBar.rowHeight,
+                          child: Center(
+                            child: KalloWordmark(height: _wordmarkHeight),
+                          ),
                         ),
-                        const SizedBox(height: KalloSpacing.sp6),
+                        const SizedBox(height: _headerGap),
+                        // Everything the buttons do not claim: the preview and the
+                        // promise sitting in its dissolve.
+                        //
+                        // The title starts ON the dissolve's bottom edge — its top
+                        // sits [_DevicePreview.titleOffset] BELOW the card's bottom,
+                        // where the band has been solid canvas for 29pt — so the
+                        // promise reads as rising out of the fade rather than as a
+                        // caption under a picture. Below it comes the design's 24pt
+                        // of air, and every spare point on the screen goes into the
+                        // block above, never into that gap.
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Flexible, not Expanded: the preview takes its natural
+                              // height until the leftover is genuinely too short, and
+                              // only then gives some up.
+                              const Flexible(child: _PreviewBox()),
+                              Text(
+                                context.tr('onboarding.start.title'),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: kPageTitle(),
+                              ),
+                              const SizedBox(height: KalloSpacing.sp6),
+                            ],
+                          ),
+                        ),
+                        KalloButton(
+                          title: context.tr('onboarding.start.cta'),
+                          variant: KalloButtonVariant.cta,
+                          onPressed: () => context.push('/onboarding'),
+                        ),
+                        const SizedBox(height: KalloSpacing.sp3),
+                        // The quiet way back for an account that already exists.
+                        //
+                        // PUSH, not go, for both of these: `/start` is where both
+                        // roads begin, and a `go` would replace it — leaving the
+                        // wizard's screen-1 chevron and the sign-in face with
+                        // nothing under them to return to. Every pre-auth route is
+                        // in `_preAuthRoutes`, so the redirect leaves a signed-out
+                        // user on whichever one they are standing on, and the stack
+                        // is cleared for them the moment they sign in (the redirect
+                        // to `/welcome` re-parses the location and drops the pushed
+                        // matches).
+                        MetaAction(
+                          label: context.tr('onboarding.start.haveAccount'),
+                          onTap: () => context.push('/sign-in'),
+                        ),
+                        const SizedBox(height: KalloSpacing.sp3),
                       ],
                     ),
                   ),
-                  KalloButton(
-                    title: context.tr('onboarding.start.cta'),
-                    variant: KalloButtonVariant.cta,
-                    onPressed: () => context.push('/onboarding'),
-                  ),
-                  const SizedBox(height: KalloSpacing.sp3),
-                  // The quiet way back for an account that already exists.
-                  //
-                  // PUSH, not go, for both of these: `/start` is where both
-                  // roads begin, and a `go` would replace it — leaving the
-                  // wizard's screen-1 chevron and the sign-in face with
-                  // nothing under them to return to. Every pre-auth route is
-                  // in `_preAuthRoutes`, so the redirect leaves a signed-out
-                  // user on whichever one they are standing on, and the stack
-                  // is cleared for them the moment they sign in (the redirect
-                  // to `/welcome` re-parses the location and drops the pushed
-                  // matches).
-                  MetaAction(
-                    label: context.tr('onboarding.start.haveAccount'),
-                    onTap: () => context.push('/sign-in'),
-                  ),
-                  const SizedBox(height: KalloSpacing.sp3),
-                ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

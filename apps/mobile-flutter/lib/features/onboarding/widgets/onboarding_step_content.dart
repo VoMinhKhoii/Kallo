@@ -18,9 +18,11 @@ class OnboardingStepContent extends StatelessWidget {
     required this.spec,
     required this.bottomInset,
     required this.onBack,
+    this.showTitle = true,
   });
 
   final OnboardingStepSpec spec;
+  final bool showTitle;
 
   /// Room under the scroll body for the CTA that overlays it, plus the home
   /// indicator.
@@ -37,8 +39,10 @@ class OnboardingStepContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(spec.title, style: kPageTitle()),
-          const SizedBox(height: KalloSpacing.sp3),
+          if (showTitle) ...[
+            Text(spec.title, style: kPageTitle()),
+            const SizedBox(height: KalloSpacing.sp3),
+          ],
           Expanded(
             child: SingleChildScrollView(
               primary: false,

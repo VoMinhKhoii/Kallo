@@ -1,6 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
+import '../widgets/welcome/welcome_brand.dart';
 
 import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
@@ -49,6 +52,7 @@ class EmailAuthScreen extends ConsumerStatefulWidget {
 }
 
 class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
+  final _taskKey = GlobalKey();
   static final _provider = signInControllerProvider;
 
   AuthFormController get _controller => ref.read(_provider.notifier);
@@ -64,6 +68,29 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     final state = ref.watch(_provider);
     final showCode = state.pendingEmail != null;
 
+    final task = CustomScrollView(
+      key: _taskKey,
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: kAuthInset,
+              vertical: KalloSpacing.sp5,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child:
+                    showCode
+                        ? EmailCodeView(provider: _provider, onNotice: _toast)
+                        : _form(state),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
     return Scaffold(
       backgroundColor: KalloColors.surface,
       body: Stack(
@@ -72,52 +99,57 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           // of the screen, behind the status bar, exactly as it does on the
           // `/save-plan` screen this route is pushed from.
           const Positioned.fill(child: StepBackdrop()),
-          SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: WordmarkBar.rowInset,
-                  ),
-                  child: WordmarkBar(
-                    leading: AuthBackButton(onBack: state.busy ? null : _back),
-                  ),
-                ),
-                // Centred in the space under the wordmark, as the welcome face
-                // is, rather than hung off the top with the bottom half empty.
-                // A phone too short for it (or the keyboard) scrolls instead.
-                Expanded(
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Padding(
-                          // 24 side inset — auth's documented exception to
-                          // the 12pt page rhythm ([kAuthInset]).
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: kAuthInset,
-                            vertical: KalloSpacing.sp5,
-                          ),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 420),
-                              child:
-                                  showCode
-                                      ? EmailCodeView(
-                                        provider: _provider,
-                                        onNotice: _toast,
-                                      )
-                                      : _form(state),
-                            ),
-                          ),
+          if (WindowLayout.of(context).twoPane)
+            NarrativePanes(
+              far: Stack(
+                children: [
+                  const Center(child: WelcomeBrand()),
+                  SafeArea(
+                    bottom: false,
+                    minimum: const EdgeInsets.only(top: 12),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: WordmarkBar.rowInset,
+                        ),
+                        child: AuthBackButton(
+                          onBack: state.busy ? null : _back,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              near: SafeArea(
+                minimum: const EdgeInsets.only(top: 12),
+                child: task,
+              ),
+            )
+          else
+            SafeArea(
+              minimum: EdgeInsets.only(
+                top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: WordmarkBar.rowInset,
+                    ),
+                    child: WordmarkBar(
+                      leading: AuthBackButton(
+                        onBack: state.busy ? null : _back,
+                      ),
+                    ),
+                  ),
+                  // Centred in the space under the wordmark, as the welcome face
+                  // is, rather than hung off the top with the bottom half empty.
+                  // A phone too short for it (or the keyboard) scrolls instead.
+                  Expanded(child: task),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

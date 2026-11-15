@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
+import 'welcome/welcome_brand.dart';
 
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../onboarding/widgets/backdrop/step_backdrop.dart';
@@ -90,46 +93,67 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       child: face,
     );
 
-    final Widget content = SafeArea(
-      child:
-          widget.compact
-              // Compact is a GUEST on someone else's screen, whose title sits
-              // above it: centred in the leftover space the options float in
-              // the middle of nothing, so the stack anchors to the bottom.
-              ? Align(
-                alignment: Alignment.bottomCenter,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: kAuthInset,
-                    vertical: KalloSpacing.sp3,
-                  ),
-                  child: column,
-                ),
-              )
-              // On its own screen the face fills the safe area, so the welcome
-              // can hang its buttons off the bottom; a phone too short for it
-              // (or very large text) scrolls instead of overflowing.
-              //
-              // The padding sits INSIDE the fill: a SliverPadding around it
-              // leaves the trailing inset out of the fill's extent, so the
-              // face ran 12pt past the safe area and always scrolled by 12.
-              : CustomScrollView(
-                slivers: [
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        kAuthInset,
-                        KalloSpacing.sp8,
-                        kAuthInset,
-                        KalloSpacing.sp3,
-                      ),
-                      child: Center(child: column),
+    final Widget content =
+        WindowLayout.of(context).twoPane && !widget.compact
+            ? NarrativePanes(
+              far: const Center(child: WelcomeBrand()),
+              near: SafeArea(
+                minimum: const EdgeInsets.only(top: 12),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: options,
                     ),
                   ),
-                ],
+                ),
               ),
-    );
+            )
+            : SafeArea(
+              minimum: EdgeInsets.only(
+                top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+              ),
+              child:
+                  widget.compact
+                      // Compact is a GUEST on someone else's screen, whose title sits
+                      // above it: centred in the leftover space the options float in
+                      // the middle of nothing, so the stack anchors to the bottom.
+                      ? Align(
+                        alignment: Alignment.bottomCenter,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: kAuthInset,
+                            vertical: KalloSpacing.sp3,
+                          ),
+                          child: column,
+                        ),
+                      )
+                      // On its own screen the face fills the safe area, so the welcome
+                      // can hang its buttons off the bottom; a phone too short for it
+                      // (or very large text) scrolls instead of overflowing.
+                      //
+                      // The padding sits INSIDE the fill: a SliverPadding around it
+                      // leaves the trailing inset out of the fill's extent, so the
+                      // face ran 12pt past the safe area and always scrolled by 12.
+                      : CustomScrollView(
+                        slivers: [
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                kAuthInset,
+                                KalloSpacing.sp8,
+                                kAuthInset,
+                                KalloSpacing.sp3,
+                              ),
+                              child: Center(child: column),
+                            ),
+                          ),
+                        ],
+                      ),
+            );
 
     return Stack(
       children: [

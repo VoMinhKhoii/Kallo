@@ -15,6 +15,9 @@ import 'package:kallo_mobile/features/settings/screens/steps/about_you_page.dart
 import 'package:kallo_mobile/features/settings/screens/settings_screen.dart';
 import 'package:kallo_mobile/features/auth/screens/sign_in_screen.dart';
 import 'package:kallo_mobile/features/paywall/screens/paywall_screen.dart';
+import 'package:kallo_mobile/features/onboarding/screens/start_screen.dart';
+import 'package:kallo_mobile/features/onboarding/screens/onboarding_screen.dart';
+import 'package:kallo_mobile/features/auth/screens/email_auth_screen.dart';
 import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_confirm.dart';
 import 'package:kallo_mobile/shared/widgets/dialog/kallo_alert_surface.dart';
@@ -80,6 +83,25 @@ const _surfaces = <Surface>[
     widget: AboutYouPage,
     scroll: true,
   ),
+  (name: 'start', route: '/start', widget: StartScreen, scroll: false),
+  (
+    name: 'email-auth',
+    route: '/sign-in/email',
+    widget: EmailAuthScreen,
+    scroll: true,
+  ),
+  (
+    name: 'countries',
+    route: '/onboarding',
+    widget: OnboardingScreen,
+    scroll: true,
+  ),
+  (
+    name: 'metrics',
+    route: '/onboarding',
+    widget: OnboardingScreen,
+    scroll: true,
+  ),
 ];
 
 Future<void> _capture(WidgetTester tester, String name) async {
@@ -139,6 +161,14 @@ Future<void> _scrollToEnd(WidgetTester tester, Type surface) async {
 }
 
 Future<void> _openSheet(WidgetTester tester, String surface) async {
+  if (surface == 'countries' || surface == 'metrics') {
+    await tester.tap(find.text('Continue'));
+    await settlePose(tester);
+    if (surface == 'metrics') {
+      await tester.tap(find.text('Skip'));
+      await settlePose(tester);
+    }
+  }
   if (surface == 'body-metrics' &&
       find.byType(AboutYouPage).evaluate().isEmpty) {
     await tester.tap(find.text('Body metrics'));
@@ -212,7 +242,14 @@ void main() {
             tester,
             pose,
             surface.route,
-            signedIn: surface.name != 'sign-in',
+            signedIn:
+                ![
+                  'sign-in',
+                  'start',
+                  'email-auth',
+                  'countries',
+                  'metrics',
+                ].contains(surface.name),
             textScale: scale,
           );
           try {

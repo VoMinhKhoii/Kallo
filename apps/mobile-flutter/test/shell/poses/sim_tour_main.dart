@@ -43,7 +43,13 @@ Future<void> main() async {
     overrides: poseOverrides(
       fixtures: fixtures,
       api: fixtureApi(fixtures),
-      signedIn: route != '/sign-in' && route != '/start',
+      signedIn:
+          ![
+            '/sign-in',
+            '/start',
+            '/sign-in/email',
+            '/onboarding',
+          ].contains(route),
     ),
   );
   // The router reads the session on its first redirect; resolve it first, as

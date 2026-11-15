@@ -24,6 +24,7 @@ class OnboardingStepHeader extends StatelessWidget {
     this.onSkip,
     this.skipLabel,
     this.gutter = KalloSpacing.sp6,
+    this.progressPadding,
   });
 
   /// 1-based; the bar fills `step / total`.
@@ -45,6 +46,7 @@ class OnboardingStepHeader extends StatelessWidget {
   /// out of its own inset, which is what puts the chevron GLYPH on the line
   /// the title below it starts on.
   final double gutter;
+  final EdgeInsets? progressPadding;
 
   static const double barHeight = 4;
   static const double wordmarkHeight = WordmarkBar.wordmarkHeight;
@@ -71,7 +73,10 @@ class OnboardingStepHeader extends StatelessWidget {
                 ),
       ),
       const SizedBox(height: KalloSpacing.sp3),
-      Padding(padding: EdgeInsets.symmetric(horizontal: gutter), child: _bar()),
+      Padding(
+        padding: progressPadding ?? EdgeInsets.symmetric(horizontal: gutter),
+        child: _bar(),
+      ),
     ],
   );
 

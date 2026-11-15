@@ -116,6 +116,9 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
     return Scaffold(
       backgroundColor: KalloColors.cream,
       body: SafeArea(
+        minimum: EdgeInsets.only(
+          top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+        ),
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),

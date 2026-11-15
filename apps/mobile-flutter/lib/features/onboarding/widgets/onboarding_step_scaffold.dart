@@ -1,46 +1,22 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
+import 'narrative/onboarding_question.dart';
+import 'narrative/onboarding_answer.dart';
+import '../../../shared/widgets/typography/meta_action.dart';
 
 import '../../../shared/widgets/mascot/bun_mascot.dart';
-import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/constants.dart';
 import '../logic/onboarding_step_spec.dart';
-import 'backdrop/backdrop_slice.dart';
 import 'backdrop/step_backdrop.dart';
-import 'onboarding_step_content.dart';
 import 'onboarding_step_header.dart';
-import 'onboarding_step_transition.dart';
 
-/// The onboarding's PERSISTENT chrome, and the one thing that slides inside it.
-///
-/// Everything here except the content region is mounted once and never rebuilt
-/// across the six screens: the gradient backdrop, the header (wordmark and the
-/// progress bar that fills across it), the bun with its bubble, and the black
-/// CTA pinned to the bottom. Only [OnboardingStepSpec.title] and the body under
-/// it travel — see [OnboardingStepTransition] for why, and
-/// [OnboardingStepContent] for the region itself, which is also where a
-/// right-swipe back is caught.
-///
-/// Two of the fixtures MORPH rather than hold still. The bubble retypes its new
-/// line (the mascot resets its typewriter on a `speech` change) and its height
-/// change is animated instead of jumping, so the title below it is never
-/// shoved. The CTA cross-fades its label ("Continue" → "Save my plan") and
-/// fades between enabled and disabled.
-///
-/// The CTA OVERLAYS the content rather than sitting beside it in the Column, so
-/// a long list (screen 2's A–Z countries) genuinely runs under the button and
-/// fades out behind it. A Column would have stopped the list dead above the
-/// button, and a list that ends on a hard edge reads as "that is all there is".
-///
-/// The band under the CTA is a [BackdropSlice] rather than a flat canvas fill:
-/// it has to hide the content scrolling behind it WITHOUT cutting a rectangle
-/// out of the [StepBackdrop]'s blobs. Its own top edge ramps in over
-/// [fadeHeight], which is what dissolves the last of the list — and over a
-/// screen with nothing more to show it is the same pixels over themselves, so
-/// it costs nothing to leave on.
-class OnboardingStepScaffold extends StatelessWidget {
+/// Persistent wizard chrome moves the keyed answer beside its question on
+/// wide windows, preserving fields and scroll position through a fold.
+class OnboardingStepScaffold extends StatefulWidget {
   const OnboardingStepScaffold({
     super.key,
     required this.screen,
@@ -77,50 +53,114 @@ class OnboardingStepScaffold extends StatelessWidget {
   static const double fadeHeight = 40;
 
   @override
+  State<OnboardingStepScaffold> createState() => _OnboardingStepScaffoldState();
+}
+
+class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
+  final _bodyKey = GlobalKey();
+  int get screen => widget.screen;
+  OnboardingStepSpec get spec => widget.spec;
+  int get direction => widget.direction;
+  bool get busy => widget.busy;
+  VoidCallback? get onContinue => widget.onContinue;
+  VoidCallback? get onBack => widget.onBack;
+  VoidCallback? get onSkip => widget.onSkip;
+
+  @override
   Widget build(BuildContext context) {
-    // The band runs to the PHYSICAL bottom edge, so the button on it carries
-    // the home indicator's inset itself.
     final inset = MediaQuery.viewPaddingOf(context).bottom;
+    final twoPane = WindowLayout.of(context).twoPane;
     return LayoutBuilder(
       builder:
           (context, box) => Stack(
             children: [
               const Positioned.fill(child: StepBackdrop()),
-              // Only the chrome is inset, and only at the top: the band below it
-              // reaches the screen's bottom edge on purpose.
-              SafeArea(
-                bottom: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Edge to edge: the header insets its own row so the chevron
-                    // glyph lands on the gutter the title below it starts on.
-                    OnboardingStepHeader(
-                      step: screen,
-                      total: kOnboardingScreenCount,
-                      progressLabel: tr(
-                        'onboarding.stepOf',
-                        namedArgs: {
-                          'current': '$screen',
-                          'total': '$kOnboardingScreenCount',
-                        },
-                      ),
+              if (twoPane)
+                NarrativePanes(
+                  far: SafeArea(
+                    bottom: false,
+                    minimum: const EdgeInsets.only(top: 12),
+                    child: OnboardingQuestion(
+                      screen: screen,
+                      title: spec.title,
+                      direction: direction,
                       onBack: onBack,
-                      onSkip: onSkip,
-                      skipLabel: onSkip == null ? null : tr('common.skip'),
                     ),
-                    const SizedBox(height: KalloSpacing.sp3),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: KalloSpacing.sp6,
+                  ),
+                  near: SafeArea(
+                    bottom: false,
+                    minimum: const EdgeInsets.only(top: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(
+                          height: 44,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child:
+                                onSkip == null
+                                    ? null
+                                    : MetaAction(
+                                      label: tr('common.skip'),
+                                      onTap: onSkip,
+                                    ),
+                          ),
                         ),
-                        child: _guideAndContent(box.biggest, inset),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: _body(box.biggest, inset),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                // Only the chrome is inset, and only at the top: the band below it
+                // reaches the screen's bottom edge on purpose.
+                SafeArea(
+                  bottom: false,
+                  minimum: EdgeInsets.only(
+                    top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 468),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Edge to edge: the header insets its own row so the chevron
+                          // glyph lands on the gutter the title below it starts on.
+                          OnboardingStepHeader(
+                            step: screen,
+                            total: kOnboardingScreenCount,
+                            progressLabel: tr(
+                              'onboarding.stepOf',
+                              namedArgs: {
+                                'current': '$screen',
+                                'total': '$kOnboardingScreenCount',
+                              },
+                            ),
+                            onBack: onBack,
+                            onSkip: onSkip,
+                            skipLabel:
+                                onSkip == null ? null : tr('common.skip'),
+                          ),
+                          const SizedBox(height: KalloSpacing.sp3),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: KalloSpacing.sp6,
+                              ),
+                              child: _guideAndContent(box.biggest, inset),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
             ],
           ),
     );
@@ -145,52 +185,15 @@ class OnboardingStepScaffold extends StatelessWidget {
     ],
   );
 
-  /// [field] is the whole SCREEN's box — the same one the [StepBackdrop]
-  /// behind it fills, which the CTA band needs to line its own copy of the
-  /// blobs up with it. So the band reaches the screen's bottom edge too, and
-  /// carries [inset] under the button instead of stopping short of it.
-  Widget _body(Size field, double inset) => Stack(
-    children: [
-      Positioned.fill(
-        child: OnboardingStepTransition(
-          direction: direction,
-          child: KeyedSubtree(
-            key: ValueKey(screen),
-            // Inside the keyed subtree: the swipe commits by threshold, so
-            // there is no in-flight state to carry across a screen change, and
-            // mounting per screen means the callback is always the current
-            // screen's.
-            child: OnboardingStepContent(
-              spec: spec,
-              bottomInset: ctaReserve + inset,
-              onBack: onBack,
-            ),
-          ),
-        ),
-      ),
-      Positioned(
-        left: 0,
-        right: 0,
-        bottom: 0,
-        child: BackdropSlice(
-          field: field,
-          fadeHeight: fadeHeight,
-          child: Padding(
-            padding: EdgeInsets.only(
-              top: fadeHeight,
-              bottom: KalloSpacing.sp3 + inset,
-            ),
-            child: KalloButton(
-              title: spec.ctaLabel,
-              animateTitle: true,
-              variant: KalloButtonVariant.cta,
-              loading: busy,
-              disabled: onContinue == null,
-              onPressed: onContinue,
-            ),
-          ),
-        ),
-      ),
-    ],
+  Widget _body(Size field, double inset) => OnboardingAnswer(
+    key: _bodyKey,
+    field: field,
+    inset: inset,
+    screen: screen,
+    spec: spec,
+    direction: direction,
+    busy: busy,
+    onContinue: onContinue,
+    onBack: onBack,
   );
 }

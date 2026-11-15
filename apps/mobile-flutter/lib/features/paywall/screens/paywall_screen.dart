@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shell/window/window_layout.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
 
 import '../../../services/billing/entitlement_state.dart';
 import '../../../services/billing/entitlements_provider.dart';
@@ -180,23 +181,36 @@ class PaywallScreen extends ConsumerWidget {
   /// Every note face keeps the header link, so the screen is always closable
   /// two ways.
   Widget _note(BuildContext context, Widget child, {bool stayFree = false}) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _header(context, stayFree: stayFree),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                gutter,
-                KalloSpacing.sp4,
-                gutter,
-                KalloSpacing.sp8,
-              ),
-              child: child,
+      WindowLayout.of(context).twoPane
+          ? NarrativePanes(
+            far: Align(
+              alignment: Alignment.topCenter,
+              child: _header(context, stayFree: stayFree),
             ),
-          ),
-        ],
-      );
+            near: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(gutter),
+                child: child,
+              ),
+            ),
+          )
+          : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _header(context, stayFree: stayFree),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    gutter,
+                    KalloSpacing.sp4,
+                    gutter,
+                    KalloSpacing.sp8,
+                  ),
+                  child: child,
+                ),
+              ),
+            ],
+          );
 
   Widget _header(BuildContext context, {required bool stayFree}) => Builder(
     builder:

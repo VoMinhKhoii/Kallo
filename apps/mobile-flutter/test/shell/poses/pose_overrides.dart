@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kallo_mobile/features/auth/providers/turnstile_controller.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/dashboard/data/dashboard_cache.dart';
 import 'package:kallo_mobile/models/social/circle.dart';
@@ -51,6 +52,7 @@ List<Override> poseOverrides({
   required FakeApiClient api,
   required bool signedIn,
 }) => [
+  turnstileEnabledProvider.overrideWithValue(false),
   apiClientProvider.overrideWithValue(api),
   dashboardCacheProvider.overrideWithValue(_MemoryDashboardCache()),
   // The ambient badge stream polls forever; retain the real paged feed,

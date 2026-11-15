@@ -50,7 +50,18 @@ class SavePlanScreen extends StatelessWidget {
             (context, box) => Stack(
               children: [
                 const Positioned.fill(child: StepBackdrop()),
-                SafeArea(bottom: false, child: _content(context, box.biggest)),
+                SafeArea(
+                  bottom: false,
+                  minimum: EdgeInsets.only(
+                    top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 468),
+                      child: _content(context, box.biggest),
+                    ),
+                  ),
+                ),
               ],
             ),
       ),
