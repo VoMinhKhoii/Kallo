@@ -235,7 +235,14 @@ void main() {
           ].contains(pose.name)) {
         continue;
       }
-      for (final scale in pose.name == 'outer-portrait' ? [1.0, 1.3] : [1.0]) {
+      for (final scale
+          in [
+                'outer-portrait',
+                'inner-landscape',
+                'inner-portrait',
+              ].contains(pose.name)
+              ? [1.0, 1.3]
+              : [1.0]) {
         final suffix = scale == 1 ? '' : '__text-1.3';
         testWidgets('${surface.name} / ${pose.name}$suffix', (tester) async {
           final dispose = await bootPose(
@@ -254,6 +261,15 @@ void main() {
           );
           try {
             await _openSheet(tester, surface.name);
+            if (surface.name == 'thread' && pose.name == 'inner-landscape') {
+              expect(
+                tester.getRect(find.text('Replies')).top,
+                closeTo(tester.getRect(find.text('Circle')).top, .5),
+              );
+            }
+            if (surface.name == 'countries' && pose.name == 'pip-pinned') {
+              expect(find.text('Where do you cook?'), findsOneWidget);
+            }
             expect(find.byType(surface.widget), findsOneWidget);
             expect(
               tester.takeException(),

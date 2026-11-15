@@ -78,7 +78,11 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
               horizontal: kAuthInset,
               vertical: KalloSpacing.sp5,
             ),
-            child: Center(
+            child: Align(
+              alignment:
+                  WindowLayout.of(context).foldAcross
+                      ? Alignment.bottomCenter
+                      : Alignment.center,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child:

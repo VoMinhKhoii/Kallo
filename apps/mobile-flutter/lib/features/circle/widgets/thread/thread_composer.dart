@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/widgets/surface/measured_height.dart';
 import '../../../../shared/widgets/panes/pane_insets.dart';
+import '../../../../shared/widgets/panes/detail_pane.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -145,7 +146,8 @@ class _ThreadComposerState extends ConsumerState<ThreadComposer> {
             padding: paneInsets(
               context,
               top: KalloSpacing.sp2,
-              bottom: KalloSpacing.sp2,
+              bottom:
+                  DetailPane.of(context) ? KalloSpacing.sp3 : KalloSpacing.sp2,
             ),
             // THE DOCK'S ANATOMY, stated here and nowhere else — the two
             // leaves used to tell this story again, each slightly differently.

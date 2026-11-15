@@ -5,17 +5,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
+import 'grouped_list_card.dart';
 
-/// One row inside a [GroupedListCard] — the Settings anchor anatomy
-/// generalized (native pass, 2026-08-31): optional leading 24pt glyph, Body
-/// title in REGULAR weight (Threads and the Claude app set theirs regular —
-/// medium made every row shout), Meta subline below, a quiet Meta value on
-/// the right, optional 18pt chevron. 52pt minimum single-line, 64pt with a
-/// subline; the whole row is the tap target.
-///
-/// On the white card the press affordance is the warm wash (the canvas-side
-/// rows use the neutral ink wash instead — see the original SettingsRow
-/// rationale; on white the warm wash registers again).
+/// A grouped row uses the card's full width for its warm selection wash.
 class ListRow extends StatefulWidget {
   const ListRow({
     super.key,
@@ -51,10 +43,7 @@ class ListRow extends StatefulWidget {
   final bool danger;
   final bool enabled;
 
-  /// An action started from this row is in flight — a 14pt spinner replaces
-  /// the value/chevron until it settles (account link/unlink, export, restore,
-  /// sign out), and the row stops taking taps for the duration. Pass [enabled]
-  /// only for a reason BEYOND this row's own action being busy.
+  /// Busy rows replace their affordance with a spinner and stop taking taps.
   final bool busy;
 
   final bool showChevron;
@@ -68,9 +57,6 @@ class ListRow extends StatefulWidget {
 class _ListRowState extends State<ListRow> {
   bool _pressed = false;
 
-  /// A row whose own action is in flight is not a target: [busy] already
-  /// replaced its affordance with a spinner, so leaving it tappable only let a
-  /// second tap through while the first was still running.
   bool get _interactive =>
       widget.enabled && !widget.busy && widget.onTap != null;
 
@@ -79,55 +65,76 @@ class _ListRowState extends State<ListRow> {
     final Color inkColor = widget.danger ? KalloColors.danger : kInk;
     final Color fill = widget.danger ? KalloColors.danger10 : KalloColors.hover;
 
-    final row = AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeInOut,
-      constraints: BoxConstraints(minHeight: widget.subline != null ? 64 : 52),
-      color: _pressed || widget.selected ? fill : Colors.transparent,
-      child: Row(
-        children: [
-          if (widget.icon != null || widget.leading != null) ...[
-            SizedBox(
-              width: KalloIcons.size,
-              child: Center(
-                child:
-                    widget.leading ??
-                    Icon(widget.icon, size: KalloIcons.size, color: inkColor),
-              ),
-            ),
-            const SizedBox(width: KalloSpacing.sp3),
-          ],
-          Expanded(
-            child: Padding(
-              // Only bites when the subline wraps: a two-line block keeps
-              // the same 12pt from the row's edges the one-line rows get
-              // from the minimum height.
-              padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.label, style: dashBody(color: inkColor)),
-                  if (widget.subline != null) ...[
-                    // One step more air than the 2pt it had: two stacked lines
-                    // read as one block at 2, as a label and its value at 4.
-                    const SizedBox(height: KalloSpacing.sp1),
-                    Text(
-                      widget.subline!,
-                      // A summary may take two lines ("Dầu vừa · Cơm vừa · …");
-                      // a one-line ellipsis cut exactly the part that differed.
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: dashMeta(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+    final row = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          left: -GroupedListCard.contentInset,
+          right: -GroupedListCard.contentInset,
+          top: 0,
+          bottom: 0,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            color: _pressed || widget.selected ? fill : Colors.transparent,
           ),
-          _trailing(),
-        ],
-      ),
+        ),
+        Container(
+          constraints: BoxConstraints(
+            minHeight: widget.subline != null ? 64 : 52,
+          ),
+          child: Row(
+            children: [
+              if (widget.icon != null || widget.leading != null) ...[
+                SizedBox(
+                  width: KalloIcons.size,
+                  child: Center(
+                    child:
+                        widget.leading ??
+                        Icon(
+                          widget.icon,
+                          size: KalloIcons.size,
+                          color: inkColor,
+                        ),
+                  ),
+                ),
+                const SizedBox(width: KalloSpacing.sp3),
+              ],
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: KalloSpacing.sp2,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.label,
+                        style: dashBody(color: inkColor).copyWith(
+                          fontWeight:
+                              widget.selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                        ),
+                      ),
+                      if (widget.subline != null) ...[
+                        const SizedBox(height: KalloSpacing.sp1),
+                        Text(
+                          widget.subline!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: dashMeta(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              _trailing(),
+            ],
+          ),
+        ),
+      ],
     );
 
     // Dimmed whenever the row is not taking taps, so look and behavior agree.
@@ -157,9 +164,6 @@ class _ListRowState extends State<ListRow> {
           widget.subline != null
               ? '${widget.label}, ${widget.subline}'
               : widget.label,
-      // The accessibility action goes the same way the gesture does: a busy
-      // row that still exposed `onTap` could be fired from VoiceOver while the
-      // touch target was already inert.
       onTap: _interactive ? widget.onTap : null,
       child: Opacity(opacity: opacity, child: content),
     );
@@ -176,9 +180,6 @@ class _ListRowState extends State<ListRow> {
         Text(widget.value!, style: dashMeta(tabular: true)),
       if (widget.trailing != null) widget.trailing!,
       if (widget.showChevron)
-        // Disclosure chevrons join the tertiary tier (18) rather than keeping
-        // a private 16 (Threads icon tiers, 2026-09-01): beside a 16pt row
-        // label a 16pt chevron read as a speck.
         Icon(
           LucideIcons.chevronRight300,
           size: KalloIcons.tertiary,

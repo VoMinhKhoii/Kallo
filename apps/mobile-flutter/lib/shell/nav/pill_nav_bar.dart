@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../theme/calm_tokens.dart';
 import '../window/window_layout.dart';
+import '../window/window_regions.dart';
 import 'add_sheet.dart';
 import 'nav_actions.dart';
 import 'nav_visibility.dart';
@@ -104,21 +105,32 @@ class PillNavBar extends ConsumerWidget {
         padding: EdgeInsets.only(
           bottom: layout.compactHeight ? 0 : bottomInset + 8,
         ),
-        child: Align(
-          alignment:
-              layout.compactHeight ? Alignment.center : Alignment.bottomCenter,
-          child: veil(capsule),
+        child: Transform.translate(
+          offset: Offset(
+            layout.controlEdge == ControlEdge.right
+                ? 36 - layout.columnWidth / 2
+                : layout.columnWidth / 2 - 36,
+            0,
+          ),
+          child: Align(
+            alignment:
+                layout.compactHeight
+                    ? Alignment.center
+                    : Alignment.bottomCenter,
+            child: veil(capsule),
+          ),
         ),
       );
     }
     // Keep this wrapper's height even when hidden: Scaffold publishes its
     // measured height as the branch's bottom scroll clearance.
+    final far = WindowRegions(layout).paneFor(0);
     return veil(
       Padding(
         padding: EdgeInsets.fromLTRB(
-          kNavInset,
+          layout.twoPane ? far.left + 12 : kNavInset,
           12,
-          kNavInset,
+          layout.twoPane ? layout.size.width - far.right + 12 : kNavInset,
           bottomInset > 0 ? bottomInset : 24,
         ),
         child: Center(

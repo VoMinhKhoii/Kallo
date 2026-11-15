@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
+import '../../../theme/kallo_theme.dart';
 import '../../logic/macro_composition.dart';
 
 /// The row under a calorie-share bar: a 14px food glyph and a Caption gram
@@ -90,7 +91,8 @@ class MacroLegend extends StatelessWidget {
               (sum, label) => sum + 18 + textWidth(label, dashCaption()),
             ) +
             extraWidth(leading) +
-            extraWidth(trailing);
+            extraWidth(trailing) +
+            (children.length - 1) * KalloSpacing.sp3;
         if (width > bounds.maxWidth && (leading != null || trailing != null)) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

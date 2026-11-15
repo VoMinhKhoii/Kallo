@@ -153,14 +153,22 @@ void main() {
     final dispose = await bootPose(tester, poses[1], '/dashboard');
     expect(
       tester.getRect(find.byType(PillNavSurface)),
-      const Rect.fromLTRB(396, 364, 452, 636),
+      const Rect.fromLTRB(390, 364, 446, 636),
     );
     resize(tester, poses[2]);
     await settlePose(tester);
     expect(
       tester.getRect(find.byType(PillNavSurface)),
-      const Rect.fromLTRB(608, 97, 664, 369),
+      const Rect.fromLTRB(602, 97, 658, 369),
     );
+    resize(tester, poses[5]);
+    await settlePose(tester);
+    expect(tester.getRect(find.byType(PillNavSurface)).left, 875);
+    resize(tester, poses[10]);
+    await settlePose(tester);
+    final pill = tester.getRect(find.byType(PillNavSurface));
+    expect(pill.width, 420);
+    expect(pill.center.dx, 290);
     await dispose();
   });
 

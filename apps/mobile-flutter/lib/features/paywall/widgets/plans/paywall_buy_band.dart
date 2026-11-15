@@ -32,6 +32,7 @@ class PaywallBuyBand extends StatelessWidget {
     this.loading = false,
     this.welcome,
     this.toggle,
+    this.opaque = true,
     super.key,
   });
 
@@ -49,6 +50,7 @@ class PaywallBuyBand extends StatelessWidget {
   /// secondary button. Null on every other face.
   final PaywallWelcome? welcome;
   final Widget? toggle;
+  final bool opaque;
 
   /// Above the button: the chip hangs [GoldPlanSurface.chipOverlap] over its
   /// top edge, and this keeps the whole chip inside the band, under the
@@ -61,14 +63,16 @@ class PaywallBuyBand extends StatelessWidget {
     final welcome = this.welcome;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: kPage,
-        border: Border(top: BorderSide(color: kHairline)),
+        color: opaque ? kPage : null,
+        border: opaque ? Border(top: BorderSide(color: kHairline)) : null,
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
-          KalloSpacing.sp5 + MediaQuery.viewPaddingOf(context).left,
+          (opaque ? KalloSpacing.sp5 : KalloSpacing.sp6) +
+              MediaQuery.viewPaddingOf(context).left,
           topInset,
-          KalloSpacing.sp5 + MediaQuery.viewPaddingOf(context).right,
+          (opaque ? KalloSpacing.sp5 : KalloSpacing.sp6) +
+              MediaQuery.viewPaddingOf(context).right,
           // The band owns the bottom edge, so the home indicator is its inset.
           KalloSpacing.sp6 + MediaQuery.viewPaddingOf(context).bottom,
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'window_layout_scope.dart';
 
 /// Where the window keeps its controls.
 ///
@@ -74,12 +75,14 @@ class WindowLayout {
     );
   }
 
-  /// Rebuilds its caller when the window's size or its insets change, and on
-  /// nothing else `MediaQuery` carries.
-  static WindowLayout of(BuildContext context) => WindowLayout.resolve(
-    MediaQuery.sizeOf(context),
-    MediaQuery.viewPaddingOf(context),
-  );
+  /// Keeps window geometry through pane-local inset removal, rebuilding when
+  /// the inherited window changes. Unscoped callers read MediaQuery directly.
+  static WindowLayout of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<WindowLayoutScope>()?.layout ??
+      WindowLayout.resolve(
+        MediaQuery.sizeOf(context),
+        MediaQuery.viewPaddingOf(context),
+      );
 
   final Size size;
 

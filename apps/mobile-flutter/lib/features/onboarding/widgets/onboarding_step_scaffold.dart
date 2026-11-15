@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import '../../../shell/window/window_layout.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
+import '../../../shared/widgets/brand/wordmark_bar.dart';
 import 'narrative/onboarding_question.dart';
 import 'narrative/onboarding_answer.dart';
 import '../../../shared/widgets/typography/meta_action.dart';
@@ -95,15 +96,23 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                       children: [
                         SizedBox(
                           height: 44,
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child:
-                                onSkip == null
-                                    ? null
-                                    : MetaAction(
-                                      label: tr('common.skip'),
-                                      onTap: onSkip,
-                                    ),
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              right: WordmarkBar.rowInset,
+                            ),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child:
+                                  onSkip == null
+                                      ? null
+                                      : MetaAction(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: KalloSpacing.sp3,
+                                        ),
+                                        label: tr('common.skip'),
+                                        onTap: onSkip,
+                                      ),
+                            ),
                           ),
                         ),
                         Expanded(
@@ -117,8 +126,6 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                   ),
                 )
               else
-                // Only the chrome is inset, and only at the top: the band below it
-                // reaches the screen's bottom edge on purpose.
                 SafeArea(
                   bottom: false,
                   minimum: EdgeInsets.only(
@@ -130,8 +137,6 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Edge to edge: the header insets its own row so the chevron
-                          // glyph lands on the gutter the title below it starts on.
                           OnboardingStepHeader(
                             step: screen,
                             total: kOnboardingScreenCount,
@@ -169,10 +174,6 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
   Widget _guideAndContent(Size field, double inset) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      // A longer line grows the bubble; unanimated, that shove lands on the
-      // title in one frame. NOT clipped — the bubble's tail and its shadow
-      // both live outside its box, and clipping them would change how the
-      // band reads at rest, not just mid-morph.
       AnimatedSize(
         duration: KalloMotion.quick,
         curve: KalloEase.standard,

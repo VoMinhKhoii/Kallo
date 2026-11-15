@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_layout_scope.dart';
 import '../../../shell/window/window_regions.dart';
 import 'detail_pane.dart';
 
@@ -29,15 +30,15 @@ class _DetailPaneFrameState extends State<DetailPaneFrame> {
           width: pane.width,
           top: 0,
           bottom: 0,
-          child: DetailPane(
+          child: WindowLayoutScope(
             layout: layout,
-            child: MediaQuery(
-              data: media.copyWith(
-                padding: media.padding.copyWith(left: 0, right: 0),
-                viewPadding: media.viewPadding.copyWith(left: 0, right: 0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.only(top: layout.hasControlColumn ? 12 : 0),
+            child: DetailPane(
+              child: MediaQuery(
+                data: media.copyWith(
+                  padding: media.padding.copyWith(left: 0, right: 0),
+                  viewPadding: media.viewPadding.copyWith(left: 0, right: 0),
+                ),
+                // The screen reads the preserved layout and owns its top inset.
                 child: child,
               ),
             ),

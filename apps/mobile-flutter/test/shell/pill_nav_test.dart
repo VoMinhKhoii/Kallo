@@ -189,7 +189,7 @@ void main() {
       final rect = tester.getRect(find.byType(PillNavSurface));
       if (pose.$2.right == 84 || pose.$2.left == 84) {
         expect(rect.size, const Size(56, 272));
-        expect(rect.center.dx, pose.$2.left == 84 ? 42 : pose.$1.width - 42);
+        expect(rect.center.dx, pose.$2.left == 84 ? 48 : pose.$1.width - 48);
         expect(rect.bottom, pose.$1.height - 34 - 8);
       } else {
         expect(rect.width, 420);
@@ -219,7 +219,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester.getRect(find.byType(PillNavSurface)).center,
-      const Offset(636, 233),
+      const Offset(630, 233),
     );
     final branchContext = tester.element(find.byType(_CounterPage));
     expect(MediaQuery.paddingOf(branchContext).bottom, 34);

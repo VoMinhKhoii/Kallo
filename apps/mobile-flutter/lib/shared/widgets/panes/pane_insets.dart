@@ -10,7 +10,7 @@ EdgeInsets paneInsets(
   double top = 0,
   double bottom = 0,
 }) {
-  final layout = DetailPane.layoutOf(context) ?? PageWindow.of(context);
+  final layout = PageWindow.of(context);
   final detail = DetailPane.of(context);
   final nearLeft =
       detail

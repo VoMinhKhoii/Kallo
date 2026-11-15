@@ -53,24 +53,31 @@ class GroupedListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: contentInset),
       decoration: ShapeDecoration(
         color: kCardSurface,
         shape: KalloShapes.squircle(KalloRadii.card),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0 && showSeparators)
-              Container(
-                height: 1,
-                margin: EdgeInsets.only(left: separatorInset),
-                color: kHairline,
-              ),
-            children[i],
-          ],
-        ],
+      child: ClipPath(
+        clipper: ShapeBorderClipper(
+          shape: KalloShapes.squircle(KalloRadii.card),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: contentInset),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0 && showSeparators)
+                  Container(
+                    height: 1,
+                    margin: EdgeInsets.only(left: separatorInset),
+                    color: kHairline,
+                  ),
+                children[i],
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

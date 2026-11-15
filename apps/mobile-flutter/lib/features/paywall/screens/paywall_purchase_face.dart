@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_layout_scope.dart';
 import '../../../shell/window/window_regions.dart';
 
 import '../../../services/billing/entitlement_state.dart';
@@ -106,6 +107,7 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
     final layout = WindowLayout.of(context);
     final regions = WindowRegions(layout);
     final band = PaywallBuyBand(
+      opaque: !layout.twoPane,
       offer: offer,
       loading: purchasing,
       onBuy:
@@ -136,7 +138,10 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
               context: context,
               removeLeft: true,
               removeRight: true,
-              child: _pitch(offer, purchasing, twoPane: true),
+              child: WindowLayoutScope(
+                layout: layout,
+                child: _pitch(offer, purchasing, twoPane: true),
+              ),
             ),
           ),
           Positioned(
@@ -198,16 +203,16 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
             // SliverFillRemaining fills whatever is left of the viewport, so a
             // SliverPadding's bottom inset landed below the fold — the card ran
             // flush into the buy band and the page scrolled by that inset.
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
+            _pitchSliver(
+              Padding(
                 padding: EdgeInsets.fromLTRB(
                   PaywallPurchaseFace.gutter +
                       (twoPane ? 0 : MediaQuery.viewPaddingOf(context).left),
                   KalloSpacing.sp2,
                   PaywallPurchaseFace.gutter +
                       (twoPane ? 0 : MediaQuery.viewPaddingOf(context).right),
-                  KalloSpacing.sp4,
+                  KalloSpacing.sp4 +
+                      (twoPane ? MediaQuery.viewPaddingOf(context).bottom : 0),
                 ),
                 child: Center(
                   child: ConstrainedBox(
@@ -233,6 +238,12 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
         ),
   );
 
+  Widget _pitchSliver(Widget child) =>
+      WindowLayout.of(context).foldAcross &&
+              MediaQuery.textScalerOf(context).scale(16) > 16
+          ? SliverToBoxAdapter(child: child)
+          : SliverFillRemaining(hasScrollBody: false, child: child);
+
   Widget _pitchColumn(
     PaywallOffer offer,
     bool purchasing,
@@ -247,7 +258,13 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
         _toggle(offer, purchasing),
         const SizedBox(height: KalloSpacing.sp2_5),
       ],
-      Expanded(child: PlanComparison(availableWidth: tableWidth)),
+      // Large text needs the table's natural height in the bounded column;
+      // a flex allocation can be shorter than its wrapped rows.
+      if (WindowLayout.of(context).foldAcross &&
+          MediaQuery.textScalerOf(context).scale(16) > 16)
+        PlanComparison(availableWidth: tableWidth)
+      else
+        Expanded(child: PlanComparison(availableWidth: tableWidth)),
     ],
   );
 

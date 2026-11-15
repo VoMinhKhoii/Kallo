@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_layout_scope.dart';
 import '../../../shell/window/window_regions.dart';
 
 /// Narrative backgrounds stay full bleed while the task avoids the fold.
@@ -37,7 +38,7 @@ class NarrativePanes extends StatelessWidget {
                   context: context,
                   removeLeft: true,
                   removeRight: true,
-                  child: pane.$2,
+                  child: WindowLayoutScope(layout: layout, child: pane.$2),
                 ),
               ),
             ),

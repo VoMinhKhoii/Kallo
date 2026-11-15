@@ -12,6 +12,7 @@ import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
 import '../logic/logging_spacing.dart';
+import '../logic/timeline_utils.dart' show formatTimelineDayLabel;
 import '../widgets/feed/feed_area.dart';
 import '../widgets/timeline/partial_yesterday_prompt.dart';
 import '../widgets/timeline/picker_dismiss_layer.dart';
@@ -143,6 +144,16 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                         children: [
                           AppHeaderBackButton(
                             onBack: () => Navigator.of(context).maybePop(),
+                          ),
+                          // The open strip below shows weekday and day only.
+                          // The chip it replaces also names the month, and
+                          // paging back a few weeks without one loses you.
+                          Text(
+                            formatTimelineDayLabel(
+                              _selectedDate,
+                              context.locale.toString(),
+                            ),
+                            style: dashBody(),
                           ),
                         ],
                       ),
