@@ -54,7 +54,7 @@ export interface AnalyzeMealV2Options {
   topK?: number;
   /** Concurrency for embedding + matching fan-out. Default 4. */
   matchConcurrency?: number;
-  /** Optional Call 2 temperature (default 0.4 — slightly lower than v1's 0.5 because Call 2 in v2 also owns grams). */
+  /** Optional Call 2 temperature (default 0, so the same meal gives the same answer on Gemini; Claude ignores it). */
   call2Temperature?: number;
   /**
    * Request-level trace context (user id, request id, db handle). When
@@ -102,7 +102,7 @@ export async function analyzeMealV2(
   const topK = options.topK ?? DEFAULT_K;
   const matchConcurrency =
     options.matchConcurrency ?? DEFAULT_MATCH_CONCURRENCY;
-  const call2Temperature = options.call2Temperature ?? 0.4;
+  const call2Temperature = options.call2Temperature ?? 0;
   const traceContext = options.traceContext;
   const profile = resolveModelProfile();
   const vesselEnabled = isPortionVesselEnabled();
