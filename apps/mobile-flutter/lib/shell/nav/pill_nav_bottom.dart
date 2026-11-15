@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../theme/calm_tokens.dart';
 import '../window/window_layout.dart';
-import '../window/window_regions.dart';
 import 'nav_visibility.dart';
 import 'pill_nav_capsule.dart';
 import 'pill_nav_veil.dart';
@@ -30,8 +29,6 @@ class PillNavBottom extends ConsumerWidget {
     final layout = WindowLayout.of(context);
     final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
     final bottomInset = layout.viewPadding.bottom;
-    final regions = WindowRegions(layout);
-    final leftPane = regions.paneFor(regions.safe.left);
     // Out of the way while typing, and while reading down a long branch. Both
     // hide the same way: translation, never resizing. Keep this wrapper's
     // height even when hidden: Scaffold publishes its measured height as the
@@ -41,9 +38,9 @@ class PillNavBottom extends ConsumerWidget {
       direction: const Offset(0, 1),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
-          layout.twoPane ? leftPane.left + 12 : kNavInset,
+          kNavInset,
           12,
-          layout.twoPane ? layout.size.width - leftPane.right + 12 : kNavInset,
+          kNavInset,
           bottomInset > 0 ? bottomInset : 24,
         ),
         // heightFactor pins the bar to the pill's own height: a bare Center

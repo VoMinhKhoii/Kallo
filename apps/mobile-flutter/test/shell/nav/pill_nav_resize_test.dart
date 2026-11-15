@@ -25,8 +25,9 @@ void main() {
     resize(tester, huge);
     await settlePose(tester);
     final pill = tester.getRect(find.byType(PillNavSurface));
+    // No control column, so one column however wide: the pill is centred.
     expect(pill.width, 420);
-    expect(pill.center.dx, 290);
+    expect(pill.center.dx, 600);
     await dispose();
   });
 }

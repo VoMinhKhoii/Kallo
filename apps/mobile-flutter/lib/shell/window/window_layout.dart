@@ -35,7 +35,7 @@ const double kRegularHeight = 500;
 /// keeps one bounded column.
 const double kTwoPaneWidth = 840;
 
-/// The shortest window with a control column that still splits in two. Under
+/// The shortest window that still splits in two. Under
 /// a pinned video Duo's inner display is wide and short, and its fold is still
 /// there: one column would put the composer and the buttons on it.
 const double kTwoPaneMinHeight = 360;
@@ -136,13 +136,16 @@ class WindowLayout {
   /// Two panes either side of the fold: wide enough for both, and tall enough
   /// that neither is a letterbox.
   ///
-  /// A short window splits only where there is a control column, which is to
-  /// say only where there is a fold to keep clear. A classic phone on its side
-  /// is just as wide and has no fold, so it keeps one bounded column.
+  /// Only a window with a control column splits, which is to say only where
+  /// there is a fold to keep clear. A classic phone on its side is just as
+  /// wide and has no fold, so it keeps one bounded column. So does a subtree
+  /// handed the window's size without its insets (the onboarding dialog's
+  /// card zeroes them): without this it split inside a card one pane wide.
   bool get twoPane =>
+      hasControlColumn &&
       regularWidth &&
       size.width >= kTwoPaneWidth &&
-      (hasControlColumn ? size.height >= kTwoPaneMinHeight : !compactHeight);
+      size.height >= kTwoPaneMinHeight;
 
   /// One regular-width column with the fold running ACROSS it: Duo's inner
   /// display held tall, where the lower half is the base of a laptop. Pinned

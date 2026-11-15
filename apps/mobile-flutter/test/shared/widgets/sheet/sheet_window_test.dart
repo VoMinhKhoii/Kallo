@@ -68,7 +68,10 @@ void main() {
       });
     }
   }
-  testWidgets('wide sheet stays in its near pane', (tester) async {
+  // No control column means no split, however wide the window: one column.
+  testWidgets('wide sheet without a control column stays centred', (
+    tester,
+  ) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1200, 800);
     addTearDown(tester.view.reset);
@@ -89,7 +92,7 @@ void main() {
         (w) => w is Container && w.decoration is ShapeDecoration,
       ),
     );
-    expect(rect.width, 580);
-    expect(rect.center.dx, 910);
+    expect(rect.width, 560);
+    expect(rect.center.dx, 600);
   });
 }

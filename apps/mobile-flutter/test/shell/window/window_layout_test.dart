@@ -90,6 +90,13 @@ void main() {
     expect(_resolve(669, 951, top: 82, bottom: 34).topCornerGap, 0);
   });
 
+  test('a window without a control column never splits', () {
+    // A dialog card reads the window's size with its insets zeroed, and a
+    // wide window with ordinary bars has no fold to split at.
+    expect(_resolve(951, 669).twoPane, isFalse);
+    expect(_resolve(1200, 800, top: 24, bottom: 20).twoPane, isFalse);
+  });
+
   test('a wide window under a pinned video keeps two panes', () {
     final layout = _resolve(951, 420, right: 84, bottom: 34);
     expect(layout.compactHeight, isTrue);
