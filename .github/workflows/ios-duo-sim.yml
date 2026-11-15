@@ -29,7 +29,7 @@ concurrency:
 jobs:
   tour:
     runs-on: xcode-27
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
 
@@ -78,7 +78,7 @@ jobs:
       - name: Tour every pose
         run: |
           set +e
-          ROUTES="/dashboard /logging /nutrition /circle /settings /sign-in /paywall"
+          ROUTES="/dashboard /logging /nutrition /circle /circle/thread-detail /settings /paywall /start /sign-in /sign-in/email /onboarding"
           state() { xcrun devicectl device info displays --device "$UDID" 2>&1 | grep -E '^▿|backlight|currentOrientation' | tr '\n' ' '; echo; }
           # fold <closed|partly|open>: Device Hub's three pose buttons.
           fold() {
@@ -98,7 +98,7 @@ jobs:
             state > "out/$1/displays.txt"; cat "out/$1/displays.txt"
             screencapture -x "out/desktop-$1.png" 2>/dev/null
             for route in $ROUTES; do
-              name=$(echo "$route" | tr -d '/')
+              name=$(echo "${route#/}" | tr '/' '-')
               data=$(xcrun simctl get_app_container "$UDID" com.khoivo.nham data 2>/dev/null)
               mkdir -p "$data/tmp"; echo "$route" > "$data/tmp/duo_route.txt"; : > "$data/tmp/duo_metrics.txt"
               SIMCTL_CHILD_DUO_ROUTE="$route" xcrun simctl launch --terminate-running-process \
@@ -111,14 +111,11 @@ jobs:
           xcrun simctl launch "$UDID" com.khoivo.nham > /dev/null 2>&1; sleep 8
           fold closed;  tour closed 1
           turn;         tour closed-turn1 1
-          turn;         tour closed-turn2 1
-          turn;         tour closed-turn3 1
+          turn; turn;   tour closed-turn3 1
           turn
           fold open;    tour open 3
           turn;         tour open-turn1 3
-          turn;         tour open-turn2 3
-          turn;         tour open-turn3 3
-          turn
+          turn; turn; turn
           fold partly;  tour partly-open 3
           turn;         tour partly-open-turn1 3
           turn; turn; turn
