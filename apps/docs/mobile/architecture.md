@@ -185,6 +185,41 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   exits that enter the app (`/welcome`, `/dashboard`) stay `go`. A notification tap
   seeds `/circle` and pushes the thread over it (`nav_actions.openPushDestination`)
   so a cold tap still has something underneath.
+- **Window layout (iPhone Duo):** every layout decision reads the window, through
+  `WindowLayout` (`shell/window/window_layout.dart`): its size and its safe-area insets.
+  Nothing reads the device, its idiom or its orientation, because on iPhone Duo the same
+  app moves between the outer display, the inner display, half of a Split View and a strip
+  under a pinned video, sometimes mid-session. Three cases follow from it.
+  - *A control column.* Duo's outer display, and its inner display in landscape, keep the
+    status bar and the system's bars in an 84pt column down one side (the left side for the
+    left app of a Split View, or when the closed phone is turned the other way). The side
+    insets are lopsided there, which is how the app tells: a classic phone on its side
+    reports the same inset on both sides. The tab pill turns into a vertical capsule and
+    sits in that column (`shell/tab_scaffold.dart`, `shell/nav/`); content keeps the phone
+    layout in what remains (382pt on the outer display).
+  - *Two panes.* A window at least 840pt wide with a control column splits at the fold,
+    which runs down the centre of the display (`shared/widgets/panes/two_pane_scaffold.dart`).
+    The 40pt strip over the fold stays empty, so the panes are unequal: 0 to 455.5 and
+    495.5 to 867 on a 951pt window. Today, Log and Nutrition put the day on the far side
+    and the task beside the column. Circle and Settings show list and detail
+    (`detail_pane_route.dart`): the route is the same in every window, so a thread that
+    sits beside the feed when open is pushed over it once the phone is closed. Sign-in,
+    onboarding and the paywall put the brand or the question on the far side
+    (`narrative_panes.dart`).
+  - *One bounded column.* A wide window with no control column (the inner display held
+    tall, or any phone on its side) keeps each page in a centred 560pt column
+    (`page_column.dart`). Held tall, the fold crosses the middle of the window
+    (`WindowLayout.foldAcross`): sheets and dialogs stay on one side of it, scrolling
+    content crosses it freely.
+  Sheets, dialogs, toasts and anchored menus take their frame from `WindowRegions`
+  (`shell/window/window_regions.dart`): inside the horizontal safe area, in the pane beside
+  the control column when there are two, never on the fold. A fold or a rotation must not
+  lose state, so each pane's scroll view sits under a `GlobalKey` and moves between
+  arrangements instead of being rebuilt; the selected day, a draft in the composer, an
+  analysis in flight and an open thread all survive. The window sizes and insets are
+  written down in `test/shell/poses/poses.dart`, measured on the Duo simulator. Flutter
+  does not report the fold on iOS (`MediaQuery.displayFeatures` is empty), so the app
+  cannot tell flat from half-folded and always keeps the fold strip clear.
 - **Motion:** durations and curves are tokens (`theme/kallo_motion.dart`: `KalloMotion`,
   `KalloEase`), named by role. Full rules, and the traps behind them, in `kallo-design/mobile.md`.
 - **Dialogs:** one confirmation surface, `shared/widgets/dialog/kallo_confirm.dart`

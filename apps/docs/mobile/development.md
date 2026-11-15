@@ -147,6 +147,43 @@ tells the app to send without one. To exercise the widget, set Cloudflare's test
 `.env.local` (see `.env.example`); they work on `localhost` and a LAN IP alike. The code arrives
 by email only when the dev server can send mail (`docs/EMAIL.md` → "Local development").
 
+## Checking layouts at iPhone Duo's window sizes
+
+Two tools, and neither needs Xcode 27 on your Mac.
+
+**The pose suite** renders the real router, shell and screens against a fake API at every
+window iPhone Duo hands an app, plus a classic phone both ways up, and fails on any layout
+exception. It runs with the ordinary tests:
+
+```bash
+cd apps/mobile-flutter
+flutter test test/shell/poses
+```
+
+To look at the result, ask it for PNGs (one per screen and window, about a minute for all
+of them):
+
+```bash
+flutter test test/shell/poses --update-goldens --dart-define=DUO_OUT=/absolute/output/dir
+```
+
+`DUO_OUT` must be an absolute path. The images are for review and are never committed or
+compared. Windows live in `test/shell/poses/poses.dart`, screens in the list at the top of
+`pose_gallery_test.dart`. Add to the end of either list: other tests in the folder pick
+poses by position. Shadows render as solid slabs in these images (a test-mode artefact),
+so judge shadows on a device.
+
+**The simulator tour** shows what only iOS draws: the status column, the Dynamic Island,
+the fold. `.github/workflows/ios-duo-sim.yml` builds `test/shell/poses/sim_tour_main.dart`
+(the same fixtures as the pose suite, as an app) on GitHub's `xcode-27` runner, which
+ships Xcode 27.1 and the iPhone Duo simulator, then closes, opens, half-folds and turns
+the simulated phone and uploads a screenshot of each screen in each pose. Run it from the
+Actions tab ("iOS Duo simulator"); it takes about 40 minutes and the screenshots are in
+the `duo-sim-tour` artifact. The simulator has two displays, so a screenshot needs
+`--display=1` (outer) or `--display=3` (inner). No command opens or folds the simulated
+phone, so the job clicks Device Hub's pose buttons; if Apple moves them, the
+`desktop-*.png` files in the artifact show where they went.
+
 ## Gotchas
 
 ### Gotcha: blank white/black screen on the simulator

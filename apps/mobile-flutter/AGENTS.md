@@ -31,7 +31,8 @@ lib/features/<feature>/          — feature code (auth, circle, dashboard, feed
 lib/shared/     — cross-feature widgets/helpers (second consumer required)
   widgets/<m>/                     — one folder per primitive: avatar/ brand/ chrome/
                                      dialog/ feedback/ form/ gauge/ list/ motion/ sheet/
-                                     surface/ toast/ typography/ nutrition/. No loose
+                                     surface/ toast/ typography/ nutrition/ panes/ (the
+                                     two-pane and bounded-column frames). No loose
                                      files at widgets/ root.
   logic/ data/
 lib/services/   — infrastructure edges, one subfolder per concern:
@@ -45,7 +46,8 @@ lib/shell/      — app scaffold and navigation shell: header/ (the in-flow app 
                   full-width back gesture, installed through the theme),
                   launch/ (the launch intro: a curtain above the router whose
                   first frame is the native launch K, lifted once the router
-                  leaves `/`), plus
+                  leaves `/`), window/ (what the window's size and insets
+                  ask of the layout: control column, two panes, the fold), plus
                   tab_scaffold.dart,
                   placeholder_screen.dart and route_error_screen.dart (the
                   go_router errorBuilder) — the routed surfaces the shell itself
@@ -59,6 +61,7 @@ test/           — mirrors lib/; only widget_test.dart, app_fonts.dart,
 - No `lib/data/`. It claimed to hold static data and actually held the HTTP client, analytics, env, session and billing; it merged into `lib/services/`. Static tables live with their consumer (`features/<f>/data/`) or in `lib/shared/data/`.
 - No `controls/` or `panels/` folders. Both held widgets, which put them outside the CI gate's `/widgets/` component path and silently raised their budget from 200 to 400 lines. Widgets live under `widgets/`, screens under `screens/` — nothing else.
 - Feature-first: new code goes in `lib/features/<feature>/`, promoted to `shared/`/`services/` only when a second feature consumes it. Aim for one concern and ≤10 files per folder (subfolders don't count) before splitting into sub-concern subfolders. One widget per file by default; snake_case filenames. Full rubric: `thermo-nuclear-code-quality-review` skill.
+- **Layout reads the window, never the device.** `WindowLayout` (`lib/shell/window/`) resolves the control edge, regular width, two panes and the fold from `MediaQuery` size and insets. No `Platform` checks, device names, idiom or orientation checks for layout. A wide window uses `PageColumn` (one 560pt column) or `TwoPaneScaffold` and friends in `lib/shared/widgets/panes/`; sheets, dialogs, toasts and menus take their frame from `WindowRegions`. A screen keeps ONE `State` whether it renders as one column or two, and each pane's scroll view sits under a `GlobalKey` so a fold moves it: mounting a second scroll view on the same controller crashed the first two-pane screen. Full account: `apps/docs/mobile/architecture.md`, "Window layout".
 - No feature-root loose files: every `.dart` under `lib/features/<feature>/` sits in a sub-concern folder.
 - **No barrels — and a re-export may not cross a folder.** The root `AGENTS.md` bans re-export hubs; Dart is no exception, and the structure gate's barrel rule only scans `.ts`, so this one is on you. Two shapes, one rule:
   - A file whose whole job is `export '…';` lines is a barrel — delete it and let callers import the file they need. `shared/widgets/widgets.dart` was exactly that (7 re-exports, 5 importers) and is gone. Its cost: `SectionEyebrow`, `Screen` and `TargetProgressBar` had no direct importer anywhere, so nothing could tell you who actually depended on them.
@@ -79,4 +82,5 @@ test/           — mirrors lib/; only widget_test.dart, app_fonts.dart,
   - Call `loadAppFonts()` AND `loadIconFonts()`. Without the latter every `Icon` bakes in as a tofu box, so the golden records a placeholder where the design has a glyph.
   - Give the host a real `Scaffold`. Without a `Material` ancestor every `Text` renders with Flutter's amber debug underline, and the golden records that as if it were design.
 - **Discarding a staged meal is 1:1 with web.** Both offer a trash on every unsaved card, including the answer revealed right after an analysis, behind a confirm and a 5-second undo. Mobile calls `DELETE /api/v1/meals/pending/[analysisId]` (400 = already gone); web calls `discardPendingAnalysisAction`, which returns `not_found` rather than throwing.
+- **A layout change is checked at iPhone Duo's windows too.** `flutter test test/shell/poses` renders every primary screen at each Duo window (outer display, inner display both ways, Split View, under a pinned video) and at a classic phone, and fails on a layout exception. Add `--update-goldens --dart-define=DUO_OUT=<absolute dir>` to get PNGs to look at. Append to `poses.dart` and to the surface list, never insert: sibling tests index poses by position. In these renders shadows are solid slabs and the Log card's chevron can sit a few points off; neither is a product bug. The real simulator is one manual workflow away (`apps/docs/mobile/development.md`, "Checking layouts at iPhone Duo's window sizes").
 - **Backend**: the app talks to `/api/v1/*` on the web dev server; Drizzle decimals arrive as strings, and targets are `null` for incomplete onboarding — model accordingly.
