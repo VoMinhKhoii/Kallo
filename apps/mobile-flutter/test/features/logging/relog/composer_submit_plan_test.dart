@@ -70,11 +70,10 @@ void main() {
             )
             as CombinedAnalysis;
     expect(plan.pickNames, ['Phở bò', 'Cà phê']);
-    expect(
-      plan.refs.map((r) => (r as RelogDishRef).mealItemOrder),
-      [0, 1],
-      reason: 'a name that drifted off its ref would mislabel the card',
-    );
+    expect(plan.refs.map((r) => (r as RelogDishRef).mealItemOrder), [
+      0,
+      1,
+    ], reason: 'a name that drifted off its ref would mislabel the card');
   });
 
   test('cheat mode sends the picks as PROSE, without the `/` marker', () {

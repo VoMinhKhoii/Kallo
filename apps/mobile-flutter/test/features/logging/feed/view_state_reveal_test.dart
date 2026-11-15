@@ -187,11 +187,10 @@ void main() {
         stream: StreamAnalysisState.initial,
       );
 
-      expect(
-        view.pendingConfirmations.map((p) => p.id),
-        ['a1', 'a2'],
-        reason: 'two unconfirmed meals must not read backwards',
-      );
+      expect(view.pendingConfirmations.map((p) => p.id), [
+        'a1',
+        'a2',
+      ], reason: 'two unconfirmed meals must not read backwards');
     });
   });
 

@@ -100,24 +100,22 @@ void main() {
 
   setUpGoldens();
 
-  testWidgets(
-    'the card, every cell kind beside the key that names them',
-    (tester) async {
-      // iPhone 12 Pro — the device the palette regressions were caught on.
-      tester.view.physicalSize = const Size(390, 320);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
+  testWidgets('the card, every cell kind beside the key that names them', (
+    tester,
+  ) async {
+    // iPhone 12 Pro — the device the palette regressions were caught on.
+    tester.view.physicalSize = const Size(390, 320);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(_app(const Locale('vi')));
-      // The reveal is a staggered per-cell animation; settle it or the golden
-      // records a half-drawn grid whose contents depend on frame timing.
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(_app(const Locale('vi')));
+    // The reveal is a staggered per-cell animation; settle it or the golden
+    // records a half-drawn grid whose contents depend on frame timing.
+    await tester.pumpAndSettle();
 
-      await expectLater(
-        find.byType(AdherenceHeatmap),
-        matchesGoldenFile('goldens/adherence_heatmap_vi.png'),
-      );
-    },
-    skip: skipOffGoldenPlatform,
-  );
+    await expectLater(
+      find.byType(AdherenceHeatmap),
+      matchesGoldenFile('goldens/adherence_heatmap_vi.png'),
+    );
+  }, skip: skipOffGoldenPlatform);
 }
