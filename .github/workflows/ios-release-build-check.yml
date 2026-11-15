@@ -4,14 +4,8 @@ name: iOS release build check
 # ios-testflight.yml (xcode-27 image, Xcode 27.1, the pinned Flutter) without
 # signing or uploading, so a toolchain bump can be checked before anyone runs
 # a TestFlight build. It needs no secrets and publishes nothing.
-#
-# TEMPORARY trigger: pushes to the toolchain branch that touch this file.
-# Remove the `push` block before this merges; `workflow_dispatch` stays.
 on:
   workflow_dispatch:
-  push:
-    branches: [chore/flutter-3-47-xcode-27]
-    paths: ['.github/workflows/ios-release-build-check.yml']
 
 permissions:
   contents: read
@@ -81,28 +75,3 @@ jobs:
             iphoneos27.1*) ;;
             *) echo "::error::Built with $sdk, expected the iOS 27.1 SDK"; exit 1 ;;
           esac
-
-  # TEMPORARY: what the pinned Dart SDK still changes in the lockfile and formatting,
-  # as a patch to apply on the branch. Remove before this merges.
-  drift:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/mobile-flutter
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: 3.47.9
-          channel: stable
-          cache: true
-      - name: Resolve and format
-        run: |
-          flutter pub get
-          dart format .
-          git diff --stat
-          git diff > "$RUNNER_TEMP/drift.patch"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: drift-patch
-          path: ${{ runner.temp }}/drift.patch

@@ -89,11 +89,3 @@ jobs:
           mapfile -t files < <(find test -name '*_test.dart' | LC_ALL=C sort | awk -v n="$SHARDS" -v i="$SHARD" '(NR - 1) % n == i - 1')
           echo "Shard $SHARD/$SHARDS: ${#files[@]} test files"
           flutter test "${files[@]}"
-      # TEMPORARY: upload golden failures to regenerate them on Linux. Remove before merge.
-      - name: Upload golden failures
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: golden-failures-${{ matrix.shard }}
-          path: apps/mobile-flutter/test/**/failures/
-          if-no-files-found: ignore
