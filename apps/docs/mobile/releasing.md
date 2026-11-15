@@ -215,12 +215,24 @@ to your testers.
 
 ## CI (GitHub Actions)
 
-`.github/workflows/ios-testflight.yml` runs `fastlane ios beta` on a `macos-15` runner —
+`.github/workflows/ios-testflight.yml` runs `fastlane ios beta` on GitHub's `xcode-27` runner
+(macOS 27, arm64) with Xcode 27.1 selected and Flutter 3.47.9. It runs on a
 **manual trigger only** (Actions tab → "iOS TestFlight" → Run workflow). Signing comes from
 [`fastlane match`](https://docs.fastlane.tools/actions/match/): certs + the App Store profile
 live **encrypted in a private git repo** and are fetched **read-only** in CI, so a fresh runner
 never mints a new certificate (which would burn Apple's cert cap). The `signing` lane uses match;
 `ExportOptions.plist` and the lane both reference the match profile name `match AppStore com.khoivo.nham`.
+
+The build links against the iOS 27.1 SDK. iPhone Duo shows an app built with an older SDK centred
+on its inner display with empty space around it, and an app built with 27.1 across the whole
+display ([Apple](https://developer.apple.com/iphone-duo/prepare/)). Xcode is pinned to 27.1 even
+though the image also carries 27.2, so the SDK changes only in a reviewed commit. To move it, change
+`runs-on` and `xcode-version` in this workflow and in `ios-release-build-check.yml` together.
+
+`.github/workflows/ios-release-build-check.yml` (manual) runs the same toolchain without signing
+or uploading: it installs the locked fastlane, runs `flutter build ios --release --no-codesign`,
+and fails unless the built app's `DTSDKName` is the iOS 27.1 SDK. It needs no secrets. Run it
+after a Flutter or Xcode bump, before the first TestFlight build on the new toolchain.
 
 The job installs fastlane from the committed `apps/mobile-flutter/ios/Gemfile.lock` with
 `BUNDLE_FROZEN=true`, so every gem version and checksum is pinned, and a missing or stale lock
