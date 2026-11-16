@@ -90,7 +90,7 @@ class StartScreen extends StatelessWidget {
                         // promise sitting in its dissolve.
                         //
                         // The title starts ON the dissolve's bottom edge — its top
-                        // sits [_DevicePreview.titleOffset] BELOW the card's bottom,
+                        // sits [StartDevicePreview.titleOffset] BELOW the card's bottom,
                         // where the band has been solid canvas for 29pt — so the
                         // promise reads as rising out of the fade rather than as a
                         // caption under a picture. Below it comes the design's 24pt

@@ -19,6 +19,7 @@ class OnboardingAnswer extends StatelessWidget {
   const OnboardingAnswer({
     super.key,
     required this.field,
+    required this.backdropLink,
     required this.inset,
     required this.screen,
     required this.spec,
@@ -32,6 +33,9 @@ class OnboardingAnswer extends StatelessWidget {
   /// band aligns its copy of the blobs. The band reaches the physical bottom
   /// and carries the home indicator's inset below its button.
   final Size field;
+
+  /// [BackdropSlice.link].
+  final LayerLink backdropLink;
   final double inset;
   final int screen;
   final OnboardingStepSpec spec;
@@ -66,6 +70,7 @@ class OnboardingAnswer extends StatelessWidget {
         bottom: 0,
         child: BackdropSlice(
           field: field,
+          link: backdropLink,
           fadeHeight: 40,
           child: Padding(
             padding: EdgeInsets.only(top: 40, bottom: 12 + inset),

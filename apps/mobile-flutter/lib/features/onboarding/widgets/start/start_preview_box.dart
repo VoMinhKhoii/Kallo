@@ -76,8 +76,8 @@ class _StartBlock extends StatelessWidget {
       (DishScatter.canvasWidth - StartDevicePreview.width) / 2;
 
   /// Solid down to the band's top, gone [StartDevicePreview.fadeStop] of the
-  /// way through it: a quarter of the band's length BEFORE the block ends, so
-  /// the device's bottom edge is simply gone rather than cropped.
+  /// way through it. The card's bottom edge falls inside the ramp, so it
+  /// fades out rather than being cropped.
   static Shader _dissolve(Rect bounds) => const LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,

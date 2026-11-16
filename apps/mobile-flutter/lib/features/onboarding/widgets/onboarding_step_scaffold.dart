@@ -70,6 +70,7 @@ class OnboardingStepScaffold extends StatefulWidget {
 class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
   final _bodyKey = GlobalKey();
   final _columnKey = GlobalKey();
+  final _backdropLink = LayerLink();
   int get screen => widget.screen;
   OnboardingStepSpec get spec => widget.spec;
   int get direction => widget.direction;
@@ -87,7 +88,12 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
       builder:
           (context, box) => Stack(
             children: [
-              const Positioned.fill(child: StepBackdrop()),
+              Positioned.fill(
+                child: CompositedTransformTarget(
+                  link: _backdropLink,
+                  child: const StepBackdrop(),
+                ),
+              ),
               _panes(
                 // Only the chrome is inset, and only at the top: the band below it
                 // reaches the screen's bottom edge on purpose.
@@ -167,6 +173,7 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
   Widget _body(Size field, double inset) => OnboardingAnswer(
     key: _bodyKey,
     field: field,
+    backdropLink: _backdropLink,
     inset: inset,
     screen: screen,
     spec: spec,

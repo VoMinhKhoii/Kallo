@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/auth/widgets/auth_page.dart';
 import 'package:kallo_mobile/features/auth/widgets/email_auth_form.dart';
 import 'package:kallo_mobile/features/auth/widgets/welcome/auth_options.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/backdrop/step_backdrop.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/start/start_hero.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/start/start_preview_box.dart';
 import 'package:kallo_mobile/shared/widgets/brand/kallo_wordmark.dart';
@@ -258,6 +259,56 @@ void main() {
       expect(tester.takeException(), isNull);
       await dispose();
     });
+
+    testWidgets('save-plan keeps its column through a fold', (tester) async {
+      final dispose = await bootPose(
+        tester,
+        innerLandscape,
+        '/save-plan',
+        signedIn: false,
+      );
+      expect(find.byType(StartHero), findsOneWidget);
+      expect(find.byType(KalloWordmark), findsOneWidget);
+      final state = tester.state(find.byType(AuthPage));
+      for (final pose in [outerPortrait, innerLandscape]) {
+        resize(tester, pose);
+        await settlePose(tester);
+        expect(tester.state(find.byType(AuthPage)), same(state));
+        expect(tester.takeException(), isNull);
+      }
+      await dispose();
+    });
+
+    // The strips that continue the backdrop (the wizard's button band, the
+    // save-plan options) paint their own copy of it. A copy that is not
+    // exactly over the page's shows as a seam through the colour.
+    for (final route in ['/onboarding', '/save-plan']) {
+      testWidgets('$route: the backdrop strip lies over the backdrop', (
+        tester,
+      ) async {
+        final dispose = await bootPose(
+          tester,
+          innerLandscape,
+          route,
+          signedIn: false,
+        );
+        for (final pose in [innerLandscape, outerPortrait, outerLandscape]) {
+          resize(tester, pose);
+          await settlePose(tester);
+          final copies = find.byType(StepBackdrop);
+          expect(copies, findsNWidgets(2), reason: pose.name);
+          final window = Offset.zero & pose.size;
+          for (var i = 0; i < 2; i++) {
+            expect(
+              tester.getRect(copies.at(i)),
+              rectMoreOrLessEquals(window, epsilon: .01),
+              reason: pose.name,
+            );
+          }
+        }
+        await dispose();
+      });
+    }
 
     testWidgets('sign-in: the options sit at mid height', (tester) async {
       final dispose = await bootPose(

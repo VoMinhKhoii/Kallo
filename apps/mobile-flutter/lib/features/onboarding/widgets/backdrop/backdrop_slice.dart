@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shell/window/window_layout.dart';
-import '../../../../shell/window/window_regions.dart';
 import '../../../../theme/calm_tokens.dart';
 import 'step_backdrop.dart';
 
@@ -13,14 +11,15 @@ import 'step_backdrop.dart';
 /// switcher slides one face over another). A flat canvas fill does the
 /// covering, but the moment the page behind carries blobs it also draws a hard
 /// horizontal seam straight across them. So the strip paints the canvas AND
-/// the same blob field, bottom-aligned to [field] — the box the page's own
-/// [StepBackdrop] fills — which makes it invisible against it.
+/// the same blob field, laid exactly over the page's own [StepBackdrop],
+/// which makes it invisible against it.
 ///
-/// The strip is centred on its column, and the column on the window, except
-/// beside the fold, where both call sites stand in the near pane: there the
-/// field is shifted so the strip shows the part of it that is behind that
-/// pane. Showing the middle of the field instead cut the blobs at the pane's
-/// edges.
+/// It follows the page's backdrop through [link] rather than working out
+/// where that is. The strip is centred on its column, and the column is not
+/// always centred on the page: the system's control column takes one side of
+/// the safe area, and beside the fold the column is the near pane. A copy
+/// centred on the strip was 42pt off on the outer display and half a window
+/// off beside the fold, and cut the blobs at the strip's edges.
 ///
 /// [fadeHeight] softens the strip's own top edge: the top band ramps from
 /// nothing to fully opaque, so content scrolling under it dissolves rather
@@ -31,13 +30,17 @@ class BackdropSlice extends StatelessWidget {
   const BackdropSlice({
     super.key,
     required this.field,
+    required this.link,
     this.child,
     this.fadeHeight = 0,
   });
 
-  /// The box the page's [StepBackdrop] fills. The slice sits at its BOTTOM,
-  /// which is where both call sites are.
+  /// The size of the box the page's [StepBackdrop] fills.
   final Size field;
+
+  /// The page's [StepBackdrop], wrapped in a [CompositedTransformTarget] on
+  /// this link by whoever owns the page.
+  final LayerLink link;
 
   /// What rides on the strip. Its height is the strip's height; omit it and
   /// the strip fills whatever box it is given.
@@ -51,35 +54,27 @@ class BackdropSlice extends StatelessWidget {
     children: [
       Positioned.fill(
         child: IgnorePointer(
-          child: LayoutBuilder(
-            builder: (context, box) => _paint(box.biggest, _shift(context)),
-          ),
+          child: LayoutBuilder(builder: (context, box) => _paint(box.biggest)),
         ),
       ),
       child ?? const SizedBox.expand(),
     ],
   );
 
-  /// How far the field moves so the strip's centre shows what is behind it.
-  double _shift(BuildContext context) {
-    final layout = WindowLayout.of(context);
-    if (!layout.twoPane) return 0;
-    return field.width / 2 - WindowRegions(layout).near.center.dx;
-  }
-
-  Widget _paint(Size band, double shift) {
+  Widget _paint(Size band) {
     final Widget slice = ClipRect(
       child: ColoredBox(
         color: kPage,
-        child: OverflowBox(
-          alignment: Alignment.bottomCenter,
-          minWidth: 0,
-          maxWidth: field.width,
-          minHeight: 0,
-          maxHeight: field.height,
-          child: Transform.translate(
-            offset: Offset(shift, 0),
-            child: SizedBox.fromSize(size: field, child: const StepBackdrop()),
+        child: CompositedTransformFollower(
+          link: link,
+          showWhenUnlinked: false,
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minWidth: field.width,
+            maxWidth: field.width,
+            minHeight: field.height,
+            maxHeight: field.height,
+            child: const StepBackdrop(),
           ),
         ),
       ),

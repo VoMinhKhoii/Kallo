@@ -37,8 +37,18 @@ import '../widgets/start/start_hero.dart';
 /// auth face is opaque by design (its switcher slides one face over another),
 /// so it is handed a [BackdropSlice] as its fill: the same blobs, aligned to
 /// the same box, rather than a flat canvas that would end them mid-screen.
-class SavePlanScreen extends StatelessWidget {
+class SavePlanScreen extends StatefulWidget {
   const SavePlanScreen({super.key});
+
+  @override
+  State<SavePlanScreen> createState() => _SavePlanScreenState();
+}
+
+class _SavePlanScreenState extends State<SavePlanScreen> {
+  /// A fold moves the column between the window and the near pane. Keyed, it
+  /// moves; unkeyed it was built again, and the bun retyped its line.
+  final _columnKey = GlobalKey();
+  final _backdropLink = LayerLink();
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +62,15 @@ class SavePlanScreen extends StatelessWidget {
         builder:
             (context, box) => Stack(
               children: [
-                const Positioned.fill(child: StepBackdrop()),
+                Positioned.fill(
+                  child: CompositedTransformTarget(
+                    link: _backdropLink,
+                    child: const StepBackdrop(),
+                  ),
+                ),
                 _panes(
                   SafeArea(
+                    key: _columnKey,
                     bottom: false,
                     minimum: EdgeInsets.only(
                       top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
@@ -106,7 +122,10 @@ class SavePlanScreen extends StatelessWidget {
         ),
       ),
       Expanded(
-        child: AuthPage(compact: true, background: BackdropSlice(field: field)),
+        child: AuthPage(
+          compact: true,
+          background: BackdropSlice(field: field, link: _backdropLink),
+        ),
       ),
     ],
   );
