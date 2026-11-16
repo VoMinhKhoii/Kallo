@@ -41,10 +41,11 @@ device's built-in monospace stack, with no additional font download.
 Next.js 16.3 with **Cache Components** and **Partial Prefetching** on (`next.config.ts`), which
 together give Instant Navigations. The rules the build enforces, and the choices made here:
 
-- **First paint on a slow connection.** `experimental.inlineCss` puts the stylesheet in the HTML,
-  and no `next/font` face is preloaded (`app/[locale]/layout.tsx`), so nothing queues ahead of the
-  CSS. The cost is a heavier document (about 210 KB gzipped on the landing page) because Next
-  repeats the CSS in the page data, and a brief font swap on first load. The landing page's phone
+- **First paint on a slow connection.** No `next/font` face is preloaded (`app/[locale]/layout.tsx`),
+  so nothing queues ahead of the stylesheet; the cost is a brief font swap on first load. The
+  stylesheet stays a separate, cached file: `experimental.inlineCss` was tried and dropped, because
+  Next repeats our ~200 KB stylesheet up to four times in every page's HTML (the landing page was
+  205 KB gzipped with it, 82 KB plus a 33 KB stylesheet without). The landing page's phone
   controls work before hydration (real links, plus an early theme listener in `ThemeScript`), and
   Sentry loads after the window's `load` event, so an error thrown before then is not reported.
 - **Request pipeline.** `proxy.ts` (the Next 16 name for `middleware.ts`; Node.js runtime) runs
