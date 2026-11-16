@@ -9,8 +9,15 @@ name: iOS Duo simulator
 #
 # Neither simctl nor devicectl can open or fold the simulated device. Device
 # Hub can, so the job posts mouse clicks at its pose buttons. Their positions
-# were read off a screenshot of the runner's 1024x768 desktop; if Device Hub's
-# layout changes, the `desktop-*.png` artifacts show where they went.
+# were read off screenshots of Device Hub in full screen on a 1920x1080
+# desktop; if its layout changes, the `desktop-*.png` artifacts show where
+# they went.
+#
+# Every screen is saved twice: `<pose>/<screen>.png` is the display's own
+# pixels, and `<pose>/framed/<screen>.png` is Device Hub's drawing of the
+# device around it, frame, hinge and buttons included. Device Hub's own
+# screenshot button saves the display only, so the framed picture is a crop
+# of the desktop, which is why the desktop is made larger first.
 #
 # A full tour takes 35 to 45 minutes: about 6 to build, 2 to boot, and 12
 # seconds per screen per pose.
@@ -47,9 +54,19 @@ jobs:
           flutter build ios --simulator --debug \
             -t test/shell/poses/sim/sim_tour_main.dart 2>&1 | tail -40
 
-      - name: Boot Duo and open Device Hub
+      # The runner's desktop starts at 1024x768, where the device is drawn
+      # about 400 points wide.
+      - name: Make the desktop 1920x1080
         run: |
           mkdir -p out
+          brew install displayplacer > out/brew.txt 2>&1 || true
+          ID=$(displayplacer list | awk '/Persistent screen id/{print $4; exit}')
+          displayplacer "id:$ID res:1920x1080 hz:60 color_depth:7 scaling:off" || true
+          displayplacer list | grep 'current mode' | grep -q 1920x1080 \
+            || { echo "::error::could not set the desktop to 1920x1080; Device Hub's buttons would not be where the tour clicks"; exit 1; }
+
+      - name: Boot Duo and open Device Hub
+        run: |
           UDID=$(xcrun simctl list devices available -j \
             | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in sorted(d.items()) if "27-1" in k for x in v if "Duo" in x["name"]))')
           echo "UDID=$UDID" >> "$GITHUB_ENV"
@@ -75,16 +92,29 @@ jobs:
           import CoreGraphics
           import Foundation
           let a = CommandLine.arguments
-          let p = CGPoint(x: Double(a[1])!, y: Double(a[2])!)
           let src = CGEventSource(stateID: .hidSystemState)
-          for type in [CGEventType.mouseMoved, .leftMouseDown, .leftMouseUp] {
-            let e = CGEvent(mouseEventSource: src, mouseType: type, mouseCursorPosition: p, mouseButton: .left)!
-            e.post(tap: .cghidEventTap)
-            usleep(120_000)
+          func post(_ types: [CGEventType], _ x: Double, _ y: Double) {
+            for type in types {
+              let e = CGEvent(mouseEventSource: src, mouseType: type, mouseCursorPosition: CGPoint(x: x, y: y), mouseButton: .left)!
+              e.post(tap: .cghidEventTap)
+              usleep(120_000)
+            }
           }
+          post([.mouseMoved, .leftMouseDown, .leftMouseUp], Double(a[1])!, Double(a[2])!)
+          // Park the pointer on the empty sidebar, so no tooltip or hover
+          // state is in the next picture.
+          post([.mouseMoved], 120, 700)
           SWIFT
           swiftc -O click.swift -o click
           osascript -e 'tell application "Device Hub" to activate' || true
+          # The window's green button: full screen, so the canvas is as large
+          # as the desktop and the buttons sit at known points.
+          ./click 482 142; sleep 6
+          # Zoom in three times (the device grows from about 430 points wide
+          # to about 900), then close the "Zoom Controls" tip, which would
+          # cover the device's bottom edge.
+          for z in 1 2 3; do ./click 1688 26; sleep 2; done
+          ./click 1197 1004; sleep 2
 
       - name: Tour every pose
         run: |
@@ -93,19 +123,22 @@ jobs:
           state() { xcrun devicectl device info displays --device "$UDID" 2>&1 | grep -E '^▿|backlight|currentOrientation' | tr '\n' ' '; echo; }
           # fold <closed|partly|open>: Device Hub's three pose buttons.
           fold() {
-            case "$1" in closed) x=674 ;; partly) x=708 ;; open) x=743 ;; esac
-            ./click "$x" 679; sleep 6
+            case "$1" in closed) x=1122 ;; partly) x=1156 ;; open) x=1192 ;; esac
+            ./click "$x" 1056; sleep 6
           }
           # Device Hub's rotate button: a quarter turn each click. (devicectl's
           # `orientation set` reports success and changes nothing on Duo.)
-          turn() { ./click 638 679; sleep 6; }
+          turn() { ./click 1086 1056; sleep 6; }
+          # The canvas between Device Hub's toolbar and its bottom bar, right
+          # of the sidebar: the device as drawn, on white.
+          framed() { screencapture -x -R240,60,1680,966 "$1" 2>/dev/null; }
           metrics() {
             f="$(xcrun simctl get_app_container "$UDID" com.khoivo.nham data 2>/dev/null)/tmp/duo_metrics.txt"
             [ -f "$f" ] && { grep DUO_METRICS "$f" | tail -1; grep DUO_ROUTE "$f" | tail -1; } | tr '\n' ' '
           }
           # tour <pose name> <display id>
           tour() {
-            mkdir -p "out/$1"
+            mkdir -p "out/$1/framed"
             state > "out/$1/displays.txt"; cat "out/$1/displays.txt"
             screencapture -x "out/desktop-$1.png" 2>/dev/null
             for route in $ROUTES; do
@@ -116,6 +149,7 @@ jobs:
                 "$UDID" com.khoivo.nham > /dev/null 2>&1
               sleep 8
               xcrun simctl io "$UDID" screenshot --display="$2" "out/$1/$name.png" 2>&1 | tail -1
+              framed "out/$1/framed/$name.png"
               echo "$1 $name $(metrics)" | tee -a out/metrics.txt
             done
           }
