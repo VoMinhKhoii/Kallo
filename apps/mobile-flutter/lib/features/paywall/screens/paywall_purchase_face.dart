@@ -122,10 +122,7 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
               : () => _purchase(plan),
       onStayFree: widget.onStayFree,
       welcome: _welcome(context),
-      toggle:
-          layout.twoPane && offer.showPeriodToggle
-              ? _toggle(offer, purchasing)
-              : null,
+      head: layout.twoPane ? _decisionHead(offer, purchasing) : null,
     );
     final pitch = _pitch(offer, purchasing);
     return Stack(
@@ -140,7 +137,8 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
         ),
         // Beside the fold the band runs from the near pane out to the screen
         // edge on the controls' side, past the pane's safe area, so it is
-        // placed here rather than as the near pane.
+        // placed here rather than as the near pane. It centres on the table's
+        // height: at the bottom it left the pane above it empty.
         if (layout.twoPane)
           Positioned(
             left: layout.nearLeft ? 0 : regions.near.left,
@@ -150,7 +148,7 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
                     : layout.size.width - regions.near.right,
             top: 0,
             bottom: 0,
-            child: Align(alignment: Alignment.bottomCenter, child: band),
+            child: Center(child: SingleChildScrollView(child: band)),
           ),
       ],
     );
@@ -232,22 +230,40 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
 
   Widget _pitchColumn(PaywallOffer offer, bool purchasing, double tableWidth) =>
       Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PaywallGuide(line: offer.guideLine),
-          const SizedBox(height: KalloSpacing.sp3_5),
-          if (offer.showPeriodToggle && !_twoPane) ...[
-            _toggle(offer, purchasing),
-            const SizedBox(height: KalloSpacing.sp2_5),
+          if (!_twoPane) ...[
+            PaywallGuide(line: offer.guideLine),
+            const SizedBox(height: KalloSpacing.sp3_5),
+            if (offer.showPeriodToggle) ...[
+              _toggle(offer, purchasing),
+              const SizedBox(height: KalloSpacing.sp2_5),
+            ],
           ],
           // Large text needs the table's natural height in the bounded column;
-          // a flex allocation can be shorter than its wrapped rows.
-          if (_tableAtNaturalHeight)
+          // a flex allocation can be shorter than its wrapped rows. Beside the
+          // fold the table is the whole pane, centred at its own height.
+          if (_tableAtNaturalHeight || _twoPane)
             PlanComparison(availableWidth: tableWidth)
           else
             Expanded(child: PlanComparison(availableWidth: tableWidth)),
         ],
       );
+
+  /// Beside the fold the table is one half and the decision the other, so
+  /// the title and the toggle stand over the button they belong to.
+  Widget _decisionHead(PaywallOffer offer, bool purchasing) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      PaywallGuide(line: offer.guideLine),
+      if (offer.showPeriodToggle) ...[
+        const SizedBox(height: KalloSpacing.sp3_5),
+        _toggle(offer, purchasing),
+      ],
+    ],
+  );
 
   Widget _toggle(PaywallOffer offer, bool purchasing) => PlanToggle(
     monthlyLabel: tr('paywall.toggleMonthly'),

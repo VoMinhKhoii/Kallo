@@ -41,6 +41,10 @@ class OnboardingAnswer extends StatelessWidget {
   final VoidCallback? onContinue;
   final VoidCallback? onBack;
 
+  /// The button and the 12pt under it, which the content keeps clear above
+  /// the home indicator's inset.
+  static const double buttonRoom = 62;
+
   @override
   Widget build(BuildContext context) => Stack(
     children: [
@@ -55,8 +59,8 @@ class OnboardingAnswer extends StatelessWidget {
             // screen's.
             child: OnboardingStepContent(
               spec: spec,
-              showTitle: !WindowLayout.of(context).twoPane,
-              bottomInset: 62 + inset,
+              besideQuestion: WindowLayout.of(context).twoPane,
+              bottomInset: buttonRoom + inset,
               onBack: onBack,
             ),
           ),

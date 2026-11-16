@@ -5,13 +5,13 @@ import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../shared/widgets/typography/meta_action.dart';
 import '../../../../theme/calm_tokens.dart';
 
-/// The decision stays within thumb reach beside the opening illustration.
+/// The decision sits level with the opening illustration beside it, centred
+/// on the same height rather than dropped into the bottom corner.
 class StartTask extends StatelessWidget {
   const StartTask({super.key});
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.bottomCenter,
+  Widget build(BuildContext context) => Center(
     child: SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
       child: ConstrainedBox(

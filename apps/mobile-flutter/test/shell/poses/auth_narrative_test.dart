@@ -3,12 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/auth/widgets/auth_page.dart';
 import 'package:kallo_mobile/features/auth/widgets/email_auth_form.dart';
 import 'package:kallo_mobile/features/auth/widgets/welcome/auth_options.dart';
+import 'package:kallo_mobile/features/auth/widgets/welcome/welcome_brand.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/narrative/centred_when_short.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/onboarding_step_content.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/onboarding_step_scaffold.dart';
 import 'package:kallo_mobile/features/onboarding/screens/start_screen.dart';
 import 'package:kallo_mobile/features/onboarding/screens/step_about_you.dart';
 import 'package:kallo_mobile/features/paywall/screens/paywall_purchase_face.dart';
+import 'package:kallo_mobile/features/paywall/widgets/pitch/paywall_guide.dart';
 import 'package:kallo_mobile/features/paywall/widgets/pitch/plan_comparison.dart';
+import 'package:kallo_mobile/features/paywall/widgets/plans/paywall_buy_band.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/plan_toggle.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 import 'harness/pose_harness.dart';
@@ -188,5 +192,80 @@ void main() {
       expect(tester.takeException(), isNull);
     }
     await dispose();
+  });
+
+  // Beside the fold a screen is two halves of one line. A task dropped into
+  // the bottom corner, with its other half up at the top, reads as two
+  // unrelated screens.
+  group('beside the fold the two halves share one height', () {
+    double middle(WidgetTester tester, Finder finder) =>
+        tester.getRect(finder).center.dy;
+
+    testWidgets('sign-in: the brand and the options', (tester) async {
+      final dispose = await bootPose(
+        tester,
+        innerLandscape,
+        '/sign-in',
+        signedIn: false,
+      );
+      expect(
+        middle(tester, find.byType(WelcomeBrand)),
+        closeTo(middle(tester, find.byType(AuthOptions)), 8),
+      );
+      await dispose();
+    });
+
+    testWidgets('start: the decision sits at mid height', (tester) async {
+      final dispose = await bootPose(
+        tester,
+        innerLandscape,
+        '/start',
+        signedIn: false,
+      );
+      final button = tester.getRect(find.text('Get started'));
+      expect(button.center.dy, closeTo(innerLandscape.size.height / 2, 60));
+      await dispose();
+    });
+
+    testWidgets('onboarding: a short question and a short answer', (
+      tester,
+    ) async {
+      final dispose = await bootPose(
+        tester,
+        innerLandscape,
+        '/onboarding',
+        signedIn: false,
+      );
+      final halves = find.byType(CentredWhenShort);
+      expect(halves, findsNWidgets(2));
+      // Each half fills its pane, so compare what stands inside them.
+      double inner(int i) => middle(
+        tester,
+        find.descendant(of: halves.at(i), matching: find.byType(Column)).at(1),
+      );
+      expect(inner(0), closeTo(inner(1), 16));
+      await dispose();
+    });
+
+    testWidgets('paywall: the table and the decision, title included', (
+      tester,
+    ) async {
+      final dispose = await bootPose(tester, innerLandscape, '/paywall');
+      final band = find.byType(PaywallBuyBand);
+      final guideInBand = find.descendant(
+        of: band,
+        matching: find.byType(PaywallGuide),
+      );
+      expect(guideInBand, findsOneWidget);
+      expect(
+        middle(tester, find.byType(PlanComparison)),
+        closeTo(middle(tester, band), 32),
+      );
+      resize(tester, outerPortrait);
+      await settlePose(tester);
+      expect(guideInBand, findsNothing);
+      expect(find.byType(PaywallGuide), findsOneWidget);
+      await dispose();
+    });
   });
 }

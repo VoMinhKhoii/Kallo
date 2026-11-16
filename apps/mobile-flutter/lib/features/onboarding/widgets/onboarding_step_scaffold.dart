@@ -90,6 +90,7 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                 onBack: onBack,
                 onSkip: onSkip,
                 answer: _body(box.biggest, inset),
+                bottomInset: OnboardingAnswer.buttonRoom + inset,
                 // Only the chrome is inset, and only at the top: the band below it
                 // reaches the screen's bottom edge on purpose.
                 single: SafeArea(

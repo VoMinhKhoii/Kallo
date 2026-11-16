@@ -16,6 +16,7 @@ class OnboardingStepPanes extends StatelessWidget {
     required this.direction,
     required this.answer,
     required this.single,
+    required this.bottomInset,
     this.onBack,
     this.onSkip,
   });
@@ -24,6 +25,9 @@ class OnboardingStepPanes extends StatelessWidget {
   final int direction;
   final Widget answer;
   final Widget single;
+
+  /// What the answer keeps clear at the bottom for its button.
+  final double bottomInset;
   final VoidCallback? onBack;
   final VoidCallback? onSkip;
   @override
@@ -36,6 +40,7 @@ class OnboardingStepPanes extends StatelessWidget {
         screen: screen,
         title: title,
         direction: direction,
+        bottomInset: bottomInset,
         onBack: onBack,
       ),
     ),

@@ -206,7 +206,11 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
     (`detail_pane_route.dart`): the route is the same in every window, so a thread that
     sits beside the feed when open is pushed over it once the phone is closed. Sign-in,
     onboarding and the paywall put the brand or the question on the far side
-    (`narrative_panes.dart`).
+    (`narrative_panes.dart`). Their two halves centre on one height: a task dropped into
+    the bottom corner beside a brand up at the top reads as two unrelated screens. Only
+    the onboarding step's Continue stays at the bottom, so it does not move from step to
+    step. On the paywall the table is one half and the title, the plan toggle and the
+    buttons the other.
   - *One bounded column.* A wide window with no control column (the inner display held
     tall, or any phone on its side) keeps each page in a centred 560pt column
     (`page_column.dart`). Held tall, the fold crosses the middle of the window

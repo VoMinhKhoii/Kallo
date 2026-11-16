@@ -140,12 +140,17 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     final Widget content =
         widget.compact
             ? single
+            // Beside the fold the brand and the options are two halves of
+            // one line: both centred on the same height, so the eye crosses
+            // the fold level instead of dropping to a bottom corner.
             : NarrativePanes(
-              far: const Center(child: WelcomeBrand()),
+              far: const SafeArea(
+                minimum: EdgeInsets.only(top: 12),
+                child: Center(child: WelcomeBrand()),
+              ),
               near: SafeArea(
                 minimum: const EdgeInsets.only(top: 12),
-                child: Align(
-                  alignment: Alignment.bottomCenter,
+                child: Center(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
                     child: ConstrainedBox(

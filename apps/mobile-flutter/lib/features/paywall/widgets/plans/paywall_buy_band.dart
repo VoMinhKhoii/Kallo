@@ -21,6 +21,9 @@ import 'plan_cta.dart';
 /// instead of running under it, so nothing but the canvas ever sits behind
 /// the savings chip hanging off the button.
 ///
+/// Beside the fold it is one half of the screen instead: it carries the title
+/// and the toggle as its [head] and centres on the table's height.
+///
 /// It takes the [offer] whole rather than the five strings inside it: those
 /// five must agree with each other, and `plan_offer.dart` is where they are
 /// made to.
@@ -31,7 +34,7 @@ class PaywallBuyBand extends StatelessWidget {
     required this.onStayFree,
     this.loading = false,
     this.welcome,
-    this.toggle,
+    this.head,
     this.opaque = true,
     super.key,
   });
@@ -49,7 +52,10 @@ class PaywallBuyBand extends StatelessWidget {
   /// (no charge, same exit as [onStayFree]) and buying now steps down to the
   /// secondary button. Null on every other face.
   final PaywallWelcome? welcome;
-  final Widget? toggle;
+
+  /// Beside the fold, what stands over the button: the guide, the title and
+  /// the period toggle, which a single column keeps above the table instead.
+  final Widget? head;
   final bool opaque;
 
   /// Above the button: the chip hangs [GoldPlanSurface.chipOverlap] over its
@@ -84,8 +90,8 @@ class PaywallBuyBand extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (toggle != null) ...[
-                  toggle!,
+                if (head != null) ...[
+                  head!,
                   const SizedBox(height: KalloSpacing.sp4),
                 ],
                 if (welcome != null) ...[

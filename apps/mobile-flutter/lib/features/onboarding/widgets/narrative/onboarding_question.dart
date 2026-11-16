@@ -6,6 +6,7 @@ import '../../../../theme/kallo_motion.dart';
 import '../../../../shell/window/window_layout.dart';
 import '../../data/constants.dart';
 import '../onboarding_step_header.dart';
+import 'centred_when_short.dart';
 
 /// The question stays visible while its answer scrolls beside it.
 class OnboardingQuestion extends StatelessWidget {
@@ -14,8 +15,13 @@ class OnboardingQuestion extends StatelessWidget {
     required this.screen,
     required this.title,
     required this.direction,
+    required this.bottomInset,
     this.onBack,
   });
+
+  /// The room the answer beside it keeps clear for its button, so the two
+  /// halves centre on the same height.
+  final double bottomInset;
   final int screen;
   final String title;
   final int direction;
@@ -39,41 +45,49 @@ class OnboardingQuestion extends StatelessWidget {
         onBack: onBack,
       ),
       Expanded(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              BunMascot(speech: tr('onboarding.guide.step$screen')),
-              const SizedBox(height: 12),
-              AnimatedSwitcher(
-                duration:
-                    MediaQuery.disableAnimationsOf(context)
-                        ? Duration.zero
-                        : KalloMotion.page,
-                transitionBuilder:
-                    (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: animation.drive(
-                          Tween(
-                            begin: Offset(direction * .22, 0),
-                            end: Offset.zero,
-                          ),
-                        ),
-                        child: child,
-                      ),
-                    ),
-                child: Align(
-                  key: ValueKey(screen),
-                  alignment: Alignment.centerLeft,
-                  child: Text(title, style: kPageTitle()),
+        child: LayoutBuilder(
+          builder:
+              (context, box) => SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(24, 0, 24, bottomInset),
+                child: CentredWhenShort(
+                  height: box.maxHeight - bottomInset,
+                  child: _question(context),
                 ),
               ),
-            ],
-          ),
         ),
       ),
     ],
+  );
+
+  Widget _question(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        BunMascot(speech: tr('onboarding.guide.step$screen')),
+        const SizedBox(height: 12),
+        AnimatedSwitcher(
+          duration:
+              MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : KalloMotion.page,
+          transitionBuilder:
+              (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: animation.drive(
+                    Tween(begin: Offset(direction * .22, 0), end: Offset.zero),
+                  ),
+                  child: child,
+                ),
+              ),
+          child: Align(
+            key: ValueKey(screen),
+            alignment: Alignment.centerLeft,
+            child: Text(title, style: kPageTitle()),
+          ),
+        ),
+      ],
+    ),
   );
 }
