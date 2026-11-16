@@ -62,8 +62,8 @@
     "waitlist": {
       "label": "Email address",
       "placeholder": "you@email.com",
-      "submit": "Join the waitlist",
-      "submitting": "Joining…",
+      "submit": "Get notified when iOS releases",
+      "submitting": "Sending…",
       "success": "Check your inbox",
       "successBody": "We sent you a link. Tap it to confirm — that's the only thing left to do.",
       "invalidEmail": "Enter a valid email address.",

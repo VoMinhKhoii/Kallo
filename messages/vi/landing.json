@@ -62,7 +62,7 @@
     "waitlist": {
       "label": "Địa chỉ email",
       "placeholder": "ban@email.com",
-      "submit": "Vào danh sách chờ",
+      "submit": "Thông báo khi có bản iOS",
       "submitting": "Đang gửi…",
       "success": "Kiểm tra hộp thư",
       "successBody": "Chúng tôi vừa gửi bạn một liên kết. Nhấn vào đó để xác nhận — chỉ còn bước đó thôi.",
