@@ -119,7 +119,7 @@ jobs:
       - name: Tour every pose
         run: |
           set +e
-          ROUTES="/dashboard /logging /nutrition /circle /circle/thread-detail /settings /paywall /start /sign-in /sign-in/email /onboarding"
+          ROUTES="/dashboard /logging /nutrition /circle /circle/thread-detail /settings /paywall /start /sign-in /sign-in/email /onboarding /save-plan"
           state() { xcrun devicectl device info displays --device "$UDID" 2>&1 | grep -E '^▿|backlight|currentOrientation' | tr '\n' ' '; echo; }
           # fold <closed|partly|open>: Device Hub's three pose buttons.
           fold() {
@@ -183,7 +183,7 @@ jobs:
           xcrun simctl install "$PHONE" apps/mobile-flutter/build/ios/iphonesimulator/Runner.app
           xcrun simctl launch "$PHONE" com.khoivo.nham > /dev/null 2>&1; sleep 10
           mkdir -p out/phone
-          for route in /dashboard /logging /nutrition /circle /circle/thread-detail /settings /paywall /start /sign-in /sign-in/email /onboarding; do
+          for route in /dashboard /logging /nutrition /circle /circle/thread-detail /settings /paywall /start /sign-in /sign-in/email /onboarding /save-plan; do
             name=$(echo "${route#/}" | tr '/' '-')
             data=$(xcrun simctl get_app_container "$PHONE" com.khoivo.nham data 2>/dev/null)
             mkdir -p "$data/tmp"; echo "$route" > "$data/tmp/duo_route.txt"; : > "$data/tmp/duo_metrics.txt"

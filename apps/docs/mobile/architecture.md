@@ -204,13 +204,14 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
     495.5 to 867 on a 951pt window. Today, Log and Nutrition put the day on the far side
     and the task beside the column. Circle and Settings show list and detail
     (`detail_pane_route.dart`): the route is the same in every window, so a thread that
-    sits beside the feed when open is pushed over it once the phone is closed. Sign-in,
-    onboarding and the paywall put the brand or the question on the far side
-    (`narrative_panes.dart`). Their two halves centre on one height: a task dropped into
-    the bottom corner beside a brand up at the top reads as two unrelated screens. Only
-    the onboarding step's Continue stays at the bottom, so it does not move from step to
-    step. On the paywall the table is one half and the title, the plan toggle and the
-    buttons the other.
+    sits beside the feed when open is pushed over it once the phone is closed. The signed-out
+    flow (`/start`, sign-in, email sign-in, every onboarding step, `/save-plan`) keeps
+    one thing on the far side from its first screen to its last: the start preview, the
+    wordmark over the device and its dishes (`features/onboarding/widgets/start/start_hero.dart`).
+    The near pane is the screen's own column, as on a phone, without a second wordmark.
+    The preview is a `Hero`, so it stands still while a route is pushed beside it. The
+    paywall is the exception: its table is one half and the title, the plan toggle and
+    the buttons the other, centred on one height (`narrative_panes.dart`).
   - *One bounded column.* A wide window with no control column (the inner display held
     tall, or any phone on its side) keeps each page in a centred 560pt column
     (`page_column.dart`). Held tall, the fold crosses the middle of the window

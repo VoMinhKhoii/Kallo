@@ -15,6 +15,7 @@ class WordmarkBar extends StatelessWidget {
     this.leading,
     this.trailing,
     this.gutterInset = 0,
+    this.showMark = true,
   });
 
   /// The back chevron, the close glyph — whatever the host puts in the corner.
@@ -27,6 +28,11 @@ class WordmarkBar extends StatelessWidget {
   /// 44pt target around a 24pt glyph carries 10pt of slack, and paying that
   /// back is what puts the glyph's edge on the same line as the content below.
   final double gutterInset;
+
+  /// False where the wordmark already stands in the pane beside this row
+  /// (the start preview on the far side of the fold): the row keeps its
+  /// height and its corners, and the mark is not said twice.
+  final bool showMark;
 
   /// The inset a host should hand this row when its own content sits on a
   /// 24pt gutter. A 44pt target around a 24pt glyph carries 10pt of slack per
@@ -44,7 +50,8 @@ class WordmarkBar extends StatelessWidget {
       height: rowHeight,
       child: Stack(
         children: [
-          const Center(child: KalloWordmark(height: wordmarkHeight)),
+          if (showMark)
+            const Center(child: KalloWordmark(height: wordmarkHeight)),
           if (leading != null)
             Align(alignment: Alignment.centerLeft, child: leading!),
           if (trailing != null)

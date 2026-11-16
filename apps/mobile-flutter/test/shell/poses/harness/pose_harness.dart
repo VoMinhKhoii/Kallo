@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/start/start_preview_box.dart';
 import 'package:kallo_mobile/router.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
@@ -152,6 +153,15 @@ Future<void> settlePose(WidgetTester tester) async {
     await tester.pump();
   } else {
     await tester.pumpAndSettle();
+    // The start preview's dishes are assets, and an asset only decodes in
+    // real time. Without this the first screen to show the preview renders
+    // an empty device.
+    if (find.byType(StartPreviewBox).evaluate().isNotEmpty) {
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+    }
   }
 }
 

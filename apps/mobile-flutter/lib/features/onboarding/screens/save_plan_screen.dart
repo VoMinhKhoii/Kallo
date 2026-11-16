@@ -4,6 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/mascot/bun_mascot.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
+import '../../../shell/window/window_layout.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../shell/nav/nav_actions.dart';
@@ -11,6 +13,7 @@ import '../../../theme/kallo_theme.dart';
 import '../../auth/widgets/auth_page.dart';
 import '../widgets/backdrop/backdrop_slice.dart';
 import '../widgets/backdrop/step_backdrop.dart';
+import '../widgets/start/start_hero.dart';
 
 /// The last signed-out screen (`/save-plan`): the auth surface wearing the
 /// onboarding chrome.
@@ -50,15 +53,17 @@ class SavePlanScreen extends StatelessWidget {
             (context, box) => Stack(
               children: [
                 const Positioned.fill(child: StepBackdrop()),
-                SafeArea(
-                  bottom: false,
-                  minimum: EdgeInsets.only(
-                    top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
-                  ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 468),
-                      child: _content(context, box.biggest),
+                _panes(
+                  SafeArea(
+                    bottom: false,
+                    minimum: EdgeInsets.only(
+                      top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 468),
+                        child: _content(context, box.biggest),
+                      ),
                     ),
                   ),
                 ),
@@ -68,13 +73,23 @@ class SavePlanScreen extends StatelessWidget {
     );
   }
 
+  /// Beside the fold the column is the near pane and the start preview keeps
+  /// the far one, as it has since `/start`.
+  Widget _panes(Widget column) =>
+      NarrativePanes(far: const StartHero(), near: column, single: column);
+
   Widget _content(BuildContext context, Size field) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       // The step header minus the progress bar and the Skip: the back
       // chevron returns to the wizard. It insets itself the same 4pt the
       // wizard's header does, so the glyph lands on the title's gutter.
-      WordmarkBar(gutterInset: WordmarkBar.rowInset, leading: _back(context)),
+      WordmarkBar(
+        gutterInset: WordmarkBar.rowInset,
+        // The preview beside it already carries the mark.
+        showMark: !WindowLayout.of(context).twoPane,
+        leading: _back(context),
+      ),
       Padding(
         // The chrome keeps the 24pt onboarding gutter; the auth stack
         // below brings its own (`kAuthInset`), so it must not be nested

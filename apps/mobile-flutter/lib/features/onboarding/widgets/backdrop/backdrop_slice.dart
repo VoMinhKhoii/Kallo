@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shell/window/window_layout.dart';
+import '../../../../shell/window/window_regions.dart';
 import '../../../../theme/calm_tokens.dart';
 import 'step_backdrop.dart';
 
@@ -13,6 +15,12 @@ import 'step_backdrop.dart';
 /// horizontal seam straight across them. So the strip paints the canvas AND
 /// the same blob field, bottom-aligned to [field] — the box the page's own
 /// [StepBackdrop] fills — which makes it invisible against it.
+///
+/// The strip is centred on its column, and the column on the window, except
+/// beside the fold, where both call sites stand in the near pane: there the
+/// field is shifted so the strip shows the part of it that is behind that
+/// pane. Showing the middle of the field instead cut the blobs at the pane's
+/// edges.
 ///
 /// [fadeHeight] softens the strip's own top edge: the top band ramps from
 /// nothing to fully opaque, so content scrolling under it dissolves rather
@@ -43,14 +51,23 @@ class BackdropSlice extends StatelessWidget {
     children: [
       Positioned.fill(
         child: IgnorePointer(
-          child: LayoutBuilder(builder: (context, box) => _paint(box.biggest)),
+          child: LayoutBuilder(
+            builder: (context, box) => _paint(box.biggest, _shift(context)),
+          ),
         ),
       ),
       child ?? const SizedBox.expand(),
     ],
   );
 
-  Widget _paint(Size band) {
+  /// How far the field moves so the strip's centre shows what is behind it.
+  double _shift(BuildContext context) {
+    final layout = WindowLayout.of(context);
+    if (!layout.twoPane) return 0;
+    return field.width / 2 - WindowRegions(layout).near.center.dx;
+  }
+
+  Widget _paint(Size band, double shift) {
     final Widget slice = ClipRect(
       child: ColoredBox(
         color: kPage,
@@ -60,7 +77,10 @@ class BackdropSlice extends StatelessWidget {
           maxWidth: field.width,
           minHeight: 0,
           maxHeight: field.height,
-          child: SizedBox.fromSize(size: field, child: const StepBackdrop()),
+          child: Transform.translate(
+            offset: Offset(shift, 0),
+            child: SizedBox.fromSize(size: field, child: const StepBackdrop()),
+          ),
         ),
       ),
     );

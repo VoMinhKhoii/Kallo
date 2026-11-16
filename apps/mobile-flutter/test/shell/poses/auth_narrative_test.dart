@@ -3,8 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/auth/widgets/auth_page.dart';
 import 'package:kallo_mobile/features/auth/widgets/email_auth_form.dart';
 import 'package:kallo_mobile/features/auth/widgets/welcome/auth_options.dart';
-import 'package:kallo_mobile/features/auth/widgets/welcome/welcome_brand.dart';
-import 'package:kallo_mobile/features/onboarding/widgets/narrative/centred_when_short.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/start/start_hero.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/start/start_preview_box.dart';
+import 'package:kallo_mobile/shared/widgets/brand/kallo_wordmark.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/onboarding_step_content.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/onboarding_step_scaffold.dart';
 import 'package:kallo_mobile/features/onboarding/screens/start_screen.dart';
@@ -194,24 +195,80 @@ void main() {
     await dispose();
   });
 
-  // Beside the fold a screen is two halves of one line. A task dropped into
-  // the bottom corner, with its other half up at the top, reads as two
-  // unrelated screens.
-  group('beside the fold the two halves share one height', () {
+  // Beside the fold the signed-out flow keeps one thing on the far side from
+  // its first screen to its last: the start preview. Only the near pane
+  // changes, so nothing is left hanging in a corner beside an empty half.
+  group('beside the fold', () {
     double middle(WidgetTester tester, Finder finder) =>
         tester.getRect(finder).center.dy;
 
-    testWidgets('sign-in: the brand and the options', (tester) async {
+    for (final route in [
+      '/start',
+      '/sign-in',
+      '/sign-in/email',
+      '/onboarding',
+    ]) {
+      testWidgets('$route keeps the start preview on the far side', (
+        tester,
+      ) async {
+        final dispose = await bootPose(
+          tester,
+          innerLandscape,
+          route,
+          signedIn: false,
+        );
+        final hero = tester.getRect(find.byType(StartHero));
+        expect(hero.left, 0);
+        expect(hero.right, lessThanOrEqualTo(455.5));
+        // The preview carries the wordmark, so the near pane does not say it
+        // again.
+        expect(find.byType(KalloWordmark), findsOneWidget);
+        resize(tester, outerPortrait);
+        await settlePose(tester);
+        expect(find.byType(StartHero), findsNothing);
+        expect(find.byType(KalloWordmark), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await dispose();
+      });
+    }
+
+    testWidgets('the preview stands still while a route is pushed over it', (
+      tester,
+    ) async {
+      final dispose = await bootPose(
+        tester,
+        innerLandscape,
+        '/start',
+        signedIn: false,
+      );
+      final preview = find.byType(StartPreviewBox);
+      final before = tester.getRect(preview);
+      await tester.tap(find.text('I already have an account'));
+      // Mid-push both routes are on screen, and each would paint its own
+      // preview, one sliding over the other. In flight there is one, and it
+      // has not moved with the incoming page.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(tester.takeException(), isNull);
+      expect(preview, findsOneWidget);
+      expect(tester.getRect(preview), before);
+      await settlePose(tester);
+      expect(find.byType(AuthOptions), findsOneWidget);
+      expect(tester.getRect(preview), before);
+      expect(tester.takeException(), isNull);
+      await dispose();
+    });
+
+    testWidgets('sign-in: the options sit at mid height', (tester) async {
       final dispose = await bootPose(
         tester,
         innerLandscape,
         '/sign-in',
         signedIn: false,
       );
-      expect(
-        middle(tester, find.byType(WelcomeBrand)),
-        closeTo(middle(tester, find.byType(AuthOptions)), 8),
-      );
+      final options = tester.getRect(find.byType(AuthOptions));
+      expect(options.left, greaterThanOrEqualTo(495.5));
+      expect(options.center.dy, closeTo(innerLandscape.size.height / 2, 40));
       await dispose();
     });
 
@@ -227,23 +284,19 @@ void main() {
       await dispose();
     });
 
-    testWidgets('onboarding: a short question and a short answer', (
-      tester,
-    ) async {
+    testWidgets('onboarding: the whole step is the near pane', (tester) async {
       final dispose = await bootPose(
         tester,
         innerLandscape,
         '/onboarding',
         signedIn: false,
       );
-      final halves = find.byType(CentredWhenShort);
-      expect(halves, findsNWidgets(2));
-      // Each half fills its pane, so compare what stands inside them.
-      double inner(int i) => middle(
-        tester,
-        find.descendant(of: halves.at(i), matching: find.byType(Column)).at(1),
-      );
-      expect(inner(0), closeTo(inner(1), 16));
+      for (final text in ['Choose your language', 'Continue']) {
+        expect(
+          tester.getRect(find.text(text)).left,
+          greaterThanOrEqualTo(495.5),
+        );
+      }
       await dispose();
     });
 

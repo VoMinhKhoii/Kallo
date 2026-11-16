@@ -1,23 +1,27 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'narrative/onboarding_answer.dart';
-import 'narrative/onboarding_step_panes.dart';
 
 import '../../../shared/widgets/mascot/bun_mascot.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
+import '../../../shell/window/window_layout.dart';
 import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/constants.dart';
 import '../logic/onboarding_step_spec.dart';
 import 'backdrop/step_backdrop.dart';
 import 'onboarding_step_header.dart';
+import 'start/start_hero.dart';
 
 /// The onboarding's persistent chrome, and the content that slides inside it.
 ///
 /// Across the six steps the backdrop, header, mascot and CTA stay mounted in
 /// their current layout. Only the title and body travel, through
 /// OnboardingStepTransition and OnboardingStepContent; the latter also catches
-/// a right-swipe back. A fold moves the keyed OnboardingAnswer into its pane
-/// without replacing its field controllers or country-list scroll position.
+/// a right-swipe back. Beside the fold the whole column is the near pane and
+/// the start preview stands in the far one, as it does from `/start` to
+/// `/save-plan`; a fold moves the keyed column across without replacing its
+/// field controllers or country-list scroll position.
 ///
 /// Two fixtures morph rather than hold still. The bubble retypes its new line
 /// when speech changes and animates its height instead of shoving the title
@@ -65,6 +69,7 @@ class OnboardingStepScaffold extends StatefulWidget {
 
 class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
   final _bodyKey = GlobalKey();
+  final _columnKey = GlobalKey();
   int get screen => widget.screen;
   OnboardingStepSpec get spec => widget.spec;
   int get direction => widget.direction;
@@ -83,17 +88,11 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
           (context, box) => Stack(
             children: [
               const Positioned.fill(child: StepBackdrop()),
-              OnboardingStepPanes(
-                screen: screen,
-                title: spec.title,
-                direction: direction,
-                onBack: onBack,
-                onSkip: onSkip,
-                answer: _body(box.biggest, inset),
-                bottomInset: OnboardingAnswer.buttonRoom + inset,
+              _panes(
                 // Only the chrome is inset, and only at the top: the band below it
                 // reaches the screen's bottom edge on purpose.
-                single: SafeArea(
+                SafeArea(
+                  key: _columnKey,
                   bottom: false,
                   minimum: EdgeInsets.only(
                     top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
@@ -120,6 +119,8 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                             onSkip: onSkip,
                             skipLabel:
                                 onSkip == null ? null : tr('common.skip'),
+                            // The preview beside it already carries the mark.
+                            showMark: !WindowLayout.of(context).twoPane,
                           ),
                           const SizedBox(height: KalloSpacing.sp3),
                           Expanded(
@@ -140,6 +141,9 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
           ),
     );
   }
+
+  Widget _panes(Widget column) =>
+      NarrativePanes(far: const StartHero(), near: column, single: column);
 
   Widget _guideAndContent(Size field, double inset) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,

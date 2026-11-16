@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_step_spec.dart';
-import 'narrative/centred_when_short.dart';
 import 'onboarding_step_swipe.dart';
 
 /// The sliding region of a wizard screen: the title, then the screen's own
@@ -19,15 +18,9 @@ class OnboardingStepContent extends StatelessWidget {
     required this.spec,
     required this.bottomInset,
     required this.onBack,
-    this.besideQuestion = false,
   });
 
   final OnboardingStepSpec spec;
-
-  /// The question stands in the pane beside this one. The title is over
-  /// there, and a short answer centres on the question's height instead of
-  /// hanging from the top with the rest of the pane empty under it.
-  final bool besideQuestion;
 
   /// Room under the scroll body for the CTA that overlays it, plus the home
   /// indicator.
@@ -44,27 +37,14 @@ class OnboardingStepContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!besideQuestion) ...[
-            Text(spec.title, style: kPageTitle()),
-            const SizedBox(height: KalloSpacing.sp3),
-          ],
+          Text(spec.title, style: kPageTitle()),
+          const SizedBox(height: KalloSpacing.sp3),
           Expanded(
-            child: LayoutBuilder(
-              builder:
-                  (context, box) => SingleChildScrollView(
-                    primary: false,
-                    padding: EdgeInsets.only(bottom: bottomInset),
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    // The same wrapper in every window, with nothing to
-                    // centre in when the title is above: a fold must not
-                    // change the tree over the body, or its fields would
-                    // start again empty.
-                    child: CentredWhenShort(
-                      height: besideQuestion ? box.maxHeight - bottomInset : 0,
-                      child: spec.body,
-                    ),
-                  ),
+            child: SingleChildScrollView(
+              primary: false,
+              padding: EdgeInsets.only(bottom: bottomInset),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: spec.body,
             ),
           ),
         ],

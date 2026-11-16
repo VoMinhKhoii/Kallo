@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shell/window/window_layout.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
-import '../widgets/welcome/welcome_brand.dart';
 
 import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
@@ -12,6 +11,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../onboarding/widgets/backdrop/step_backdrop.dart';
+import '../../onboarding/widgets/start/start_hero.dart';
 import '../providers/auth_form_controller.dart';
 import '../widgets/auth_controls.dart';
 import '../widgets/email_auth_form.dart';
@@ -103,30 +103,8 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           // of the screen, behind the status bar, exactly as it does on the
           // `/save-plan` screen this route is pushed from.
           const Positioned.fill(child: StepBackdrop()),
-          NarrativePanes(
-            far: Stack(
-              children: [
-                const Center(child: WelcomeBrand()),
-                SafeArea(
-                  bottom: false,
-                  minimum: const EdgeInsets.only(top: 12),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: WordmarkBar.rowInset,
-                      ),
-                      child: AuthBackButton(onBack: state.busy ? null : _back),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            near: SafeArea(
-              minimum: const EdgeInsets.only(top: 12),
-              child: task,
-            ),
-            single: SafeArea(
+          _panes(
+            SafeArea(
               minimum: EdgeInsets.only(
                 top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
               ),
@@ -137,6 +115,8 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                       horizontal: WordmarkBar.rowInset,
                     ),
                     child: WordmarkBar(
+                      // The preview beside it already carries the mark.
+                      showMark: !WindowLayout.of(context).twoPane,
                       leading: AuthBackButton(
                         onBack: state.busy ? null : _back,
                       ),
@@ -154,6 +134,11 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       ),
     );
   }
+
+  /// Beside the fold the whole column is the near pane and the start preview
+  /// keeps the far one.
+  Widget _panes(Widget column) =>
+      NarrativePanes(far: const StartHero(), near: column, single: column);
 
   Widget _form(AuthFormState state) {
     return Column(

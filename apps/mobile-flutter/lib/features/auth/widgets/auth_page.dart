@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
-import 'welcome/welcome_brand.dart';
 
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../onboarding/widgets/backdrop/step_backdrop.dart';
+import '../../onboarding/widgets/start/start_hero.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../providers/auth_form_controller.dart';
@@ -140,14 +140,12 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     final Widget content =
         widget.compact
             ? single
-            // Beside the fold the brand and the options are two halves of
-            // one line: both centred on the same height, so the eye crosses
-            // the fold level instead of dropping to a bottom corner.
+            // Beside the fold the start preview keeps the far pane, as it
+            // does through the whole signed-out flow, and the options centre
+            // beside it: the preview carries the wordmark, so they stand
+            // alone.
             : NarrativePanes(
-              far: const SafeArea(
-                minimum: EdgeInsets.only(top: 12),
-                child: Center(child: WelcomeBrand()),
-              ),
+              far: const StartHero(),
               near: SafeArea(
                 minimum: const EdgeInsets.only(top: 12),
                 child: Center(
