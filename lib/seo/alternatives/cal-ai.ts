@@ -196,7 +196,7 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
       platforms: 'Web; iPhone app coming',
       bestFor: 'People who would rather type a meal than photograph it.',
       body: [
-        'Kallo logs a meal from the sentence you would say out loud, like “leftover spaghetti bolognese and a side salad”. It splits that into ingredients and counts calories and macros from USDA and FAO food data, as a range, not one number. When the words can’t settle a portion, it asks. Typing a meal is part of Premium; the free plan keeps barcode scanning and manual logging.',
+        'Kallo logs a meal from the sentence you would say out loud, like “leftover spaghetti bolognese and a side salad”. It splits that into ingredients and counts calories and macros from USDA and FAO food data and shows the portion it assumed for each part. When the words can’t settle a portion, it asks. Typing a meal is part of Premium; the free plan keeps barcode scanning and manual logging.',
         'No independent test has measured Kallo yet. The data below is our own.',
       ],
       drawback:

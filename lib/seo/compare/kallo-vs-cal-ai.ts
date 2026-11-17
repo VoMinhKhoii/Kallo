@@ -16,7 +16,7 @@ export const KALLO_VS_CAL_AI: ComparePage = {
   publishedOn: '2026-11-11',
   checkedOn: '2026-11-11',
   answer:
-    'Cal AI starts from a photo of your plate. Kallo starts from a sentence: you type what you ate, and it shows the calories as a range and asks when the words leave a portion open. MyFitnessPal has owned Cal AI since March 2026. Cal AI runs on iOS and Android, and nothing is free after a 3-day trial. Kallo runs on the web, and an iPhone app is coming. Its free plan has barcode scanning and manual logging, and typing a meal is Premium once beta ends.',
+    'Cal AI starts from a photo of your plate. Kallo starts from a sentence: you type what you ate, and it shows the portion it assumed and asks when the words leave one open. MyFitnessPal has owned Cal AI since March 2026. Cal AI runs on iOS and Android, and nothing is free after a 3-day trial. Kallo runs on the web, and an iPhone app is coming. Its free plan has barcode scanning and manual logging, and typing a meal is Premium once beta ends.',
   disclosure:
     'We make Kallo, so this is a vendor’s comparison. Cal AI’s facts come from its own site and US App Store listing, checked on 11 November 2026. The sources are listed at the end.',
   rows: [
@@ -54,7 +54,7 @@ export const KALLO_VS_CAL_AI: ComparePage = {
       heading: 'How each one logs a meal',
       body: [
         'Cal AI is built around the camera. You snap a photo and it returns a nutrition breakdown. It also scans barcodes and reads a typed description.',
-        'Kallo is built around the sentence, like “leftover spaghetti bolognese and a side salad”. It splits the meal into ingredients and counts calories and macros from USDA and FAO food data. You get a range, with the ingredients it counted. When the words can’t settle a portion, it asks. Kallo reads a nutrition label from a photo, but it can’t log a meal from a photo of the plate.',
+        'Kallo is built around the sentence, like “leftover spaghetti bolognese and a side salad”. It splits the meal into ingredients and counts calories and macros from USDA and FAO food data. You see the ingredients it counted and the portion it assumed for each. When the words can’t settle a portion, it asks. Kallo reads a nutrition label from a photo, but it can’t log a meal from a photo of the plate.',
       ],
     },
     {

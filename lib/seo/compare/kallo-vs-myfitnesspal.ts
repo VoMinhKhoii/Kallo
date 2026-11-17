@@ -53,7 +53,7 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
       heading: 'How each one logs a meal',
       body: [
         'In MyFitnessPal you search for each food and pick an entry from the results. Premium adds barcode scanning, a photo meal scan and voice logging.',
-        'Kallo reads the whole meal from one sentence, like “leftover spaghetti bolognese and a side salad”. It splits it into ingredients, counts calories and macros, and shows a range. When the words can’t settle a portion, it asks. Barcode scanning is on the free plan; typing a meal and nutrition labels are Premium. It can’t log a meal from a photo of the plate.',
+        'Kallo reads the whole meal from one sentence, like “leftover spaghetti bolognese and a side salad”. It splits it into ingredients, counts calories and macros, and shows the portion it assumed for each part. When the words can’t settle a portion, it asks. Barcode scanning is on the free plan; typing a meal and nutrition labels are Premium. It can’t log a meal from a photo of the plate.',
       ],
     },
     {
