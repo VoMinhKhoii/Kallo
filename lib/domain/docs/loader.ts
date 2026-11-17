@@ -37,6 +37,7 @@ const VI_DOCS: DocRegistry = {
   quickstart: () => import('@/content/docs/vi/quickstart.mdx'),
   'profile-and-targets': () =>
     import('@/content/docs/vi/profile-and-targets.mdx'),
+  switching: () => import('@/content/docs/vi/switching.mdx'),
   'logging/describe-a-meal': () =>
     import('@/content/docs/vi/logging/describe-a-meal.mdx'),
   'logging/cheat-mode': () =>
@@ -79,6 +80,7 @@ const EN_DOCS: DocRegistry = {
   quickstart: () => import('@/content/docs/en/quickstart.mdx'),
   'profile-and-targets': () =>
     import('@/content/docs/en/profile-and-targets.mdx'),
+  switching: () => import('@/content/docs/en/switching.mdx'),
   'logging/describe-a-meal': () =>
     import('@/content/docs/en/logging/describe-a-meal.mdx'),
   'logging/cheat-mode': () =>

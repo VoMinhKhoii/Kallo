@@ -1,3 +1,4 @@
+import { ALTERNATIVES_CHROME } from './chrome';
 import type { AlternativePage, Source } from './types';
 
 /**
@@ -207,6 +208,14 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
           label: 'How describing a meal works',
           url: 'https://kallo.fit/en/docs/logging/describe-a-meal',
         },
+        {
+          label: 'Kallo accuracy and limits',
+          url: ALTERNATIVES_CHROME.docs.accuracy,
+        },
+        {
+          label: 'Switching from another app',
+          url: ALTERNATIVES_CHROME.docs.switching,
+        },
       ],
     },
   ],
@@ -214,6 +223,17 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
     heading: 'Cal AI alternatives on Android',
     body: [
       'Every app here except Kallo has an Android app. Of those, only SnapCalorie logs a meal from a photo for free, up to 3 times a day. Kallo has no Android app, but it works in the browser on an Android phone at kallo.fit.',
+    ],
+  },
+  choose: {
+    heading: 'How to choose a Cal AI alternative',
+    checks: [
+      'Log a meal you eat often in each app you try, and time it: a photo, a typed sentence and a database search suit different people.',
+      'See whether the app shows how unsure an estimate is, or gives every meal one number.',
+      'Read what the free plan keeps after any trial ends, barcode scanning and your history in particular.',
+      'Make sure it runs where you log: iPhone, Android, a browser, or more than one.',
+      'Find out where your meals and photos are stored, and whether you can export them if you leave.',
+      'Compare the yearly price in your own country, since store prices differ by region.',
     ],
   },
   dataHeading: 'What moves the number more than the photo',
