@@ -2080,7 +2080,7 @@
   },
   "notifications": {
     "reminderActions": {
-      "addToYesterday": "Ghi cho hôm qua",
+      "addToYesterday": "Ghi thêm cho hôm qua",
       "thatWasAll": "Vậy là đủ",
       "logMeal": "Ghi món",
       "logMore": "Ghi thêm",
