@@ -33,6 +33,15 @@ to `hooks/` without `hooks/` exporting a non-hook value.
 
 ## Rendering and caching
 
+`lib/seo/meal-data/download/` exports the committed food-page meal observations
+as CSV and JSON at `/data/meal-calorie-variation.csv` and
+`/data/meal-calorie-variation.json`. Both files contain both locale page sets;
+filter by `locale` to reproduce one analysis page. They share the page's oil
+checks and capture sources. The JSON includes the method and caveats. Reuse is
+licensed under CC BY 4.0 with credit to Kallo. These locale-free routes bypass
+locale rewriting and session refresh, retain the origin lock, and are listed
+in `/llms.txt`, not the sitemap.
+
 The locale root loads only Be Vietnam Pro and Lora, including Vietnamese
 subsets. The composer and its mention overlay use the same Be Vietnam Pro
 sans token to keep their text aligned. Code and numeric monospace use the
