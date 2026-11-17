@@ -31,7 +31,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four bowls of oatmeal, with whole milk and peanut butter, from a coffee shop, made with water and as overnight oats.`,
     lead: (span) =>
-      `About ${span} kcal. Oats are the steady part; the milk, the nut butter and the sweetener move the number. Four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Oats are the steady part; the milk, the nut butter and the sweetener move the number. Four typical bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'peanut-butter',
     breakdownLead:
       'In the bowl made with whole milk, the milk adds 150 kcal and one spoon of peanut butter 102. Together they are more than the oats.',

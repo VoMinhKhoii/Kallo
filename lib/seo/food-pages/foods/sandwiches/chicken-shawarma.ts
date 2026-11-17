@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four chicken shawarmas, a shop wrap with fries inside, a plate with rice and hummus, a light wrap and a salad bowl.`,
     lead: (span) =>
-      `About ${span} kcal. The chicken changes little from one shawarma to the next; the bread, the fries and the sauces are what move it. Four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The chicken changes little from one shawarma to the next; the bread, the fries and the sauces are what move it. Four typical ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'wrap-fries',
     breakdownLead:
       'In the shop wrap, the pita and the fries inside it each carry more calories than the chicken does.',

@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo. Bốn lần nấu mì gói thật: một gói Hảo Hảo đập hai trứng, hai gói với rau muống, một gói với xúc xích rán, và mì Indomie xào khô thêm ốp la.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo. Một vắt mì đã là phần lớn con số; thứ bạn thêm vào mới quyết định phần còn lại. Dưới đây là bốn lần nấu thật, mỗi lần gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo. Một vắt mì đã là phần lớn con số; thứ bạn thêm vào mới quyết định phần còn lại. Dưới đây là bốn lần nấu thường gặp, mỗi lần gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'xuc-xich',
     breakdownLead:
       'Một vắt mì Hảo Hảo là 352 calo, kể cả khi bỏ gói dầu; hai cây xúc xích rán thêm 345 nữa. Trứng là thứ thêm vào nhẹ nhất: mỗi quả khoảng 70 calo.',

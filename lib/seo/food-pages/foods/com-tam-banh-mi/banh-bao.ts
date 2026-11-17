@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo. Bốn phần bánh bao: Thọ Phát nhân thịt trứng muối, xá xíu, hai cái bánh bao chay và một cái đặc biệt cỡ lớn.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo. Vỏ bánh là phần nặng nhất, nên cỡ bánh quan trọng hơn loại nhân. Dưới đây là bốn lần ăn thật, mỗi lần gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo. Vỏ bánh là phần nặng nhất, nên cỡ bánh quan trọng hơn loại nhân. Dưới đây là bốn lần ăn thường gặp, mỗi lần gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'dac-biet',
     breakdownLead:
       'Ở cái bánh bao đặc biệt cỡ lớn, 150 g vỏ bánh là 333 calo; lạp xưởng thêm 88, thịt 78. Một cái bánh bao chay nhỏ, gần như chỉ có vỏ, khoảng 130 calo.',

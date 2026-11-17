@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four plates of chicken teriyaki, at a Japanese restaurant, as a rice bowl, with salad instead of rice and homemade with brown rice.`,
     lead: (span) =>
-      `About ${span} kcal. Thigh or breast and rice or no rice are the two choices that move it. Four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Thigh or breast and rice or no rice are the two choices that move it. Four typical plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'At the Japanese restaurant, the chicken thigh and the rice are over 80% of it. The glossy teriyaki sauce is only 26 kcal.',

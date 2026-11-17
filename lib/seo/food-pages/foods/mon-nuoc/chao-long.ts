@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo. Bốn bát cháo lòng: bát đầy đủ thêm quẩy, bát cháo kèm đĩa dồi lòng, tô nhỏ chỉ huyết và gan, tô lớn kiểu Sài Gòn.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo. Bát cháo khá nhẹ; quẩy và đĩa lòng dồi gọi thêm mới làm con số tăng gấp ba. Dưới đây là bốn bát thật, mỗi bát gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo. Bát cháo khá nhẹ; quẩy và đĩa lòng dồi gọi thêm mới làm con số tăng gấp ba. Dưới đây là bốn bát thường gặp, mỗi bát gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'day-du',
     breakdownLead:
       'Trong bát cháo lòng đầy đủ, hai cái quẩy đã là 351 calo, nhiều hơn cả bát cháo cùng lòng, dồi, tim, gan cộng lại (302). Bỏ quẩy, một tô nhỏ chỉ huyết và gan là khoảng 200 calo.',

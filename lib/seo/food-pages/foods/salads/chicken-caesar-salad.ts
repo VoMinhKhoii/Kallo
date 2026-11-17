@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four chicken Caesar salads, a restaurant one with full dressing, a cafe wrap, a lighter bowl without croutons and a weighed homemade one.`,
     lead: (span) =>
-      `About ${span} kcal. A Caesar is a salad in name; the dressing, the croutons and the cheese decide the number. Four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. A Caesar is a salad in name; the dressing, the croutons and the cheese decide the number. Four typical ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'In the restaurant salad, the dressing is the biggest line at 244 kcal, more than the chicken. The croutons add 120.',

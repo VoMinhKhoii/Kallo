@@ -16,7 +16,7 @@ export const KALLO_VS_CAL_AI: ComparePage = {
   publishedOn: '2026-11-11',
   checkedOn: '2026-11-11',
   answer:
-    'Cal AI starts from a photo of your plate. Kallo starts from a sentence: you type what you ate, and it shows the calories as a range and asks when the words leave a portion open. MyFitnessPal has owned Cal AI since March 2026. Cal AI runs on iOS and Android, and nothing is free after a 3-day trial. Kallo runs on iOS and the web. Its free plan has barcode scanning and manual logging, and typing a meal is Premium once beta ends.',
+    'Cal AI starts from a photo of your plate. Kallo starts from a sentence: you type what you ate, and it shows the calories as a range and asks when the words leave a portion open. MyFitnessPal has owned Cal AI since March 2026. Cal AI runs on iOS and Android, and nothing is free after a 3-day trial. Kallo runs on the web, and an iPhone app is coming. Its free plan has barcode scanning and manual logging, and typing a meal is Premium once beta ends.',
   disclosure:
     'We make Kallo, so this is a vendor’s comparison. Cal AI’s facts come from its own site and US App Store listing, checked on 11 November 2026. The sources are listed at the end.',
   rows: [
@@ -34,11 +34,14 @@ export const KALLO_VS_CAL_AI: ComparePage = {
     },
     {
       label: 'Paid (US)',
-      kallo:
-        '$29.99 a year on the web or $34.99 on the App Store, once beta ends',
+      kallo: '$29.99 a year on the web, once beta ends',
       them: 'Plans listed from $2.99 to $29.99 on the US App Store, with no billing period shown',
     },
-    { label: 'Platforms', kallo: 'iOS, web', them: 'iOS, Android' },
+    {
+      label: 'Platforms',
+      kallo: 'Web; iPhone app coming',
+      them: 'iOS, Android',
+    },
     {
       label: 'Accuracy, in its maker’s words',
       kallo:
@@ -73,7 +76,7 @@ export const KALLO_VS_CAL_AI: ComparePage = {
   ],
   dataHeading: 'Why the description matters',
   data: (f) =>
-    `We logged ${f.dishes} everyday meals in Kallo ${f.perDish} common ways each, ${f.meals} meals in all. For the typical dish, the heaviest version had ${f.ratio}× the calories of the lightest. Kallo counted cooking oil in ${f.withOil} of them, and in ${f.unnamed} nobody had mentioned oil, butter or frying. A photo shows the plate. The sentence can say how much oil went in.`,
+    `We logged ${f.dishes} everyday meals in Kallo ${f.perDish} common ways each, ${f.meals} meals in all. For the typical dish, the highest-calorie version had ${f.ratio}× the calories of the lowest. Kallo counted cooking oil in ${f.withOil} of them, and in ${f.unnamed} the description never mentioned oil, butter or frying. A photo shows the plate. The sentence can say how much oil went in.`,
   sources: [
     { label: 'Cal AI', url: 'https://www.calai.app/' },
     {
@@ -89,10 +92,6 @@ export const KALLO_VS_CAL_AI: ComparePage = {
       url: 'https://www.newswise.com/articles/photo-based-calorie-tracking-apps-may-underestimate-energy-in-meals',
     },
     { label: 'Kallo pricing', url: 'https://kallo.fit/en/pricing' },
-    {
-      label: 'Kallo on the App Store',
-      url: 'https://apps.apple.com/us/app/id6775761392',
-    },
     {
       label: 'Kallo accuracy and limits',
       url: 'https://kallo.fit/en/docs/estimates/accuracy-and-limits',

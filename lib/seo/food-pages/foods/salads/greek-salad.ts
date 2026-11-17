@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four Greek salads, a taverna plate with a slab of feta, one with grilled chicken, a light one with lemon and a side salad.`,
     lead: (span) =>
-      `About ${span} kcal. In a Greek salad, vegetables add few calories; most come from the feta and olive oil. Four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. In a Greek salad, vegetables add few calories; most come from the feta and olive oil. Four typical ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'taverna',
     breakdownLead:
       'In the taverna salad, the feta and the olive oil are almost three quarters of it. The tomatoes, pepper, cucumber and onion together are about 50 kcal.',

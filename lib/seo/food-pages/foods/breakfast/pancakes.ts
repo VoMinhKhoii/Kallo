@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four pancake breakfasts, from a diner stack with butter and syrup to protein pancakes, broken down by what is on the plate.`,
     lead: (span) =>
-      `About ${span} kcal. The batter matters less than the stack height and what you pour on it. Four real pancake breakfasts, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The batter matters less than the stack height and what you pour on it. Four typical pancake breakfasts, each typed into Kallo the way people describe them.`,
     breakdownOf: 'diner',
     breakdownLead:
       'In the diner stack, the pancakes themselves are two thirds of the plate. The syrup and the butter add another 266 kcal on top.',

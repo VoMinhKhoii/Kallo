@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four plates of chicken alfredo, from a restaurant plate with garlic bread to a light homemade sauce made with milk.`,
     lead: (span) =>
-      `About ${span} kcal. The pasta portion, the sauce and the bread on the side are what move it. Four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The pasta portion, the sauce and the bread on the side are what move it. Four typical plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'At the restaurant, the pasta is the biggest line at 311 kcal. The bread on the side adds 245, more than the alfredo sauce itself.',

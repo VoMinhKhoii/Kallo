@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một ổ. Bốn ổ bánh mì: thịt nguội pate chả lụa thêm ốp la, bánh mì thịt thường, bánh mì thịt nướng và bánh mì heo quay.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một ổ. Riêng ổ bánh mì đã khoảng 200; phần nhân quyết định phần còn lại. Dưới đây là bốn ổ thật, mỗi ổ gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một ổ. Riêng ổ bánh mì đã khoảng 200; phần nhân quyết định phần còn lại. Dưới đây là bốn ổ thường gặp, mỗi ổ gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'thit-nuong',
     breakdownLead:
       'Trong ổ bánh mì thịt nướng, 70 g thịt nướng là 280 calo, nhiều hơn cả ổ bánh (199). Ở ổ thịt thường, pate, bơ, thịt nguội và chả lụa cộng lại khoảng 250 calo.',

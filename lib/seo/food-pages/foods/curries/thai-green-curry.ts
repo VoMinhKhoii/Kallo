@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four bowls of Thai green curry, chicken at a Thai restaurant, tofu and vegetables, no rice and homemade with light coconut milk.`,
     lead: (span) =>
-      `About ${span} kcal. Much of the calorie count in a green curry comes from coconut milk. Four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Much of the calorie count in a green curry comes from coconut milk. Four typical bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'In the restaurant curry, the coconut milk is the biggest line at 257 kcal, more than the rice or the chicken.',

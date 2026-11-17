@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four avocado toasts, two slices at a cafe, one with a poached egg, whole wheat with feta and a light rye slice.`,
     lead: (span) =>
-      `About ${span} kcal. The bread and how much avocado goes on it decide the number. Four real toasts, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The bread and how much avocado goes on it decide the number. Four typical toasts, each typed into Kallo the way people describe them.`,
     breakdownOf: 'cafe',
     breakdownLead:
       'In the cafe toast, the two slices of sourdough are just over half of it. A whole avocado adds 177 kcal.',

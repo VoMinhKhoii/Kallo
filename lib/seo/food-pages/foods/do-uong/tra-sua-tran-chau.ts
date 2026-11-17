@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một ly. Bốn ly trà sữa thật: đường đen size L thêm pudding và thạch, size M 50% đường, size M không trân châu, và full topping 100% đường.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một ly. Trà gần như không có calo; trân châu, đường và topping làm nên gần hết con số. Dưới đây là bốn ly thật, mỗi ly gõ vào Kallo đúng như người ta vẫn gọi.`,
+      `Từ khoảng ${span} calo một ly. Trà gần như không có calo; trân châu, đường và topping làm nên gần hết con số. Dưới đây là bốn ly thường gặp, mỗi ly gõ vào Kallo đúng như người ta vẫn gọi.`,
     breakdownOf: 'full-topping',
     breakdownLead:
       'Trong ly full topping size L, hai loại trân châu là 483 calo, hơn nửa ly; sữa thêm 150 và đường 80. Bỏ trân châu và giảm đường, ly size M còn khoảng 130.',

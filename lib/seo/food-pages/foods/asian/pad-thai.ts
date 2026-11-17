@@ -31,7 +31,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four plates of pad thai, chicken from a Thai restaurant, half a shrimp takeout box, tofu with extra peanuts and a homemade one.`,
     lead: (span) =>
-      `About ${span} kcal. The noodles are only part of it; the oil, the sweet sauce and the peanuts add up fast. Four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The noodles are only part of it; the oil, the sweet sauce and the peanuts add up fast. Four typical plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'In the restaurant pad thai, the noodles are under a third. The sauce, the oil and the peanuts together add 216 kcal, more than the noodles.',

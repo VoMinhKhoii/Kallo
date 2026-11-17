@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four chicken sandwiches, a fast food fried one, a spicy one with fries, a grilled one and an air-fried homemade one.`,
     lead: (span) =>
-      `About ${span} kcal. Fried or grilled, the sauce and the side decide a chicken sandwich. Four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Fried or grilled, the sauce and the side decide a chicken sandwich. Four typical ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'fast-food',
     breakdownLead:
       'In the fast food sandwich, the fried chicken is half of it. The bun adds 176 kcal and the mayo 105.',

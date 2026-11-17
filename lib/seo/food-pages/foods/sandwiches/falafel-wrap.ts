@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four falafel meals, a shop wrap with hummus and tahini, a wrap with fries inside, a falafel plate and a baked homemade wrap.`,
     lead: (span) =>
-      `About ${span} kcal. Falafel is fried, and the sauces around it are rich too. Four real falafel meals, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Falafel is fried, and the sauces around it are rich too. Four typical falafel meals, each typed into Kallo the way people describe them.`,
     breakdownOf: 'shop',
     breakdownLead:
       'In the shop wrap, five falafel are the biggest line at 426 kcal. The hummus and tahini add 278, more than the pita.',

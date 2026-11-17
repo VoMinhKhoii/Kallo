@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four servings of fried chicken: a two-piece meal with sides, three pieces with skin, chicken tenders and two pieces without skin.`,
     lead: (span) =>
-      `About ${span} kcal. Which pieces, whether the skin stays on and what comes with it decide a fried chicken meal. Four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Which pieces, whether the skin stays on and what comes with it decide a fried chicken meal. Four typical ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'meal',
     breakdownLead:
       'In the two-piece meal, the chicken is about 60% of it. The mashed potatoes, gravy and coleslaw add 516 kcal.',
