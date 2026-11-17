@@ -1976,7 +1976,7 @@
     },
     "reminders": {
       "label": "Nhắc ghi bữa ăn",
-      "error": "Không thể cập nhật nhắc ghi bữa ăn. Vui lòng thử lại."
+      "error": "Không thể cập nhật nhắc ghi bữa ăn"
     }
   },
   "errors": {

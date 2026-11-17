@@ -1979,7 +1979,7 @@
     },
     "reminders": {
       "label": "Meal reminders",
-      "error": "Couldn't update meal reminders. Please try again."
+      "error": "Couldn't update meal reminders"
     }
   },
   "errors": {

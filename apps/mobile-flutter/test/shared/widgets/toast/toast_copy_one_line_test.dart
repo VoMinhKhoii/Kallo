@@ -44,6 +44,8 @@ const _indirectKeys = [
   'settings.account.linkError',
   'settings.account.loadError',
   'settings.account.unlinkError',
+  'settings.reminders.error',
+  'settings.sharing.error',
 ];
 
 /// The same, for toasts that carry the Undo action.
@@ -59,6 +61,7 @@ const _filesWithIndirectToasts = {
   'group_flows.dart',
   'meal_actions.dart',
   'moderation_flows.dart',
+  'profile_switch_row.dart',
   'pure_relog_staging.dart',
   'subscription_section.dart',
   'top_toast.dart',
