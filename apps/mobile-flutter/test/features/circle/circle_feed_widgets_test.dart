@@ -93,6 +93,39 @@ void main() {
   Widget post(CircleFeedEntry data) =>
       FeedEntry(entry: data, onOpen: () {}, onReply: () {});
 
+  testWidgets('a post remains rendered while a background refresh is pending', (
+    tester,
+  ) async {
+    final response = Completer<Object?>();
+    var calls = 0;
+    final api = FakeApiClient((request) {
+      if (request.path.endsWith('/read-marker')) {
+        return {'lastReadAt': '2026-11-10T00:00:00Z'};
+      }
+      return ++calls == 1 ? pageJson([entryJson('s1')], null) : response.future;
+    });
+    await pump(
+      tester,
+      const _FeedHost(),
+      overrides: [apiClientProvider.overrideWithValue(api)],
+    );
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(_FeedHost)),
+    );
+    final pending =
+        container.read(sharedMealFeedProvider(null).notifier).refresh();
+    await tester.pump();
+    expect(find.text('Bún chả Hà Nội'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    final changed = entryJson('s1');
+    (changed['meal'] as Map<String, dynamic>)['rawInput'] = 'Fresh meal';
+    response.complete(pageJson([changed], null));
+    await tester.pump();
+    await pending;
+    await tester.pump();
+    expect(find.text('Fresh meal'), findsOneWidget);
+  });
+
   testWidgets(
     'entry preserves diacritics and renders macros, kcal, and a missing macro',
     (tester) async {

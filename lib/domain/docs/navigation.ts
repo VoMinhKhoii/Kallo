@@ -28,12 +28,18 @@ export const DOCS_SECTIONS: DocsSection[] = [
       'logging/cheat-mode',
       'logging/manual',
       'logging/barcode',
+      'logging/nutrition-label',
       'logging/relog',
     ],
   },
   {
     id: 'tracking',
-    slugs: ['tracking/dashboard', 'tracking/weight', 'tracking/nutrition'],
+    slugs: [
+      'tracking/dashboard',
+      'tracking/weight',
+      'tracking/nutrition',
+      'tracking/nutrient-targets',
+    ],
   },
   {
     id: 'circle',

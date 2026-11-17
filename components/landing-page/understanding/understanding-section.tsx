@@ -1,7 +1,13 @@
 'use client';
 
-import { motion, useReducedMotion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
+import { type ReactNode, useRef } from 'react';
+import { useClosePileGap } from '@/hooks/landing/use-close-pile-gap';
+import { useFadeUnderPinned } from '@/hooks/landing/use-fade-under-pinned';
+import { useScrollReveal } from '@/hooks/landing/use-scroll-reveal';
+import { landingClip } from '../media/media';
+import { ProductVideo } from '../media/product-video';
+import { SectionTitle } from '../section-text/section-title';
 import { COMPARISONS_BY_LOCALE } from './comparisons';
 import { stackReleaseRem } from './stack-geometry';
 import { StackedComparison } from './stacked-comparison';
@@ -46,10 +52,17 @@ const HEADING_REM = 9.5;
  * section this page used to have pinned 300vh and ran a four-stage animation
  * off scroll offset, and it was the worst thing on the page on mobile.
  */
-export function UnderstandingSection() {
+export function UnderstandingSection({ subtitle }: { subtitle: ReactNode }) {
   const t = useTranslations('landing.understanding');
   const locale = useLocale();
-  const reduced = useReducedMotion() ?? false;
+  const introRef = useRef<HTMLDivElement>(null);
+
+  useFadeUnderPinned(introRef, HEADING_TOP_REM + HEADING_REM);
+  const sectionRef = useRef<HTMLElement>(null);
+  const pileRef = useRef<HTMLDivElement>(null);
+
+  useClosePileGap(sectionRef, pileRef);
+  useScrollReveal(sectionRef);
 
   const comparisons = COMPARISONS_BY_LOCALE[locale] ?? COMPARISONS_BY_LOCALE.en;
 
@@ -68,34 +81,19 @@ export function UnderstandingSection() {
   const headingMarginRem =
     stackReleaseRem(comparisons.length) - HEADING_TOP_REM - HEADING_REM;
 
-  // Opacity only — no `y` rise, unlike the other sections.
-  //
-  // This heading is sticky, and the first card sits flush under it. A 24px rise
-  // moves the heading but not the card, so the gap between them opened and shut
-  // as the animation played, which read as the whole section stuttering on
-  // arrival. Animating a transform on a sticky element is a bad idea besides:
-  // it shifts the box the sticky offset is measured against.
-  const reveal = reduced
-    ? {}
-    : {
-        initial: { opacity: 0 },
-        whileInView: { opacity: 1 },
-        viewport: { once: true, margin: '-80px' },
-        transition: { duration: 0.7, ease: [0.32, 0.72, 0, 1] as const },
-      };
-
   return (
     <section
+      ref={sectionRef}
       aria-labelledby="landing-understanding"
       id="how"
-      className="relative scroll-mt-20 border-kallo-border/40 border-t py-8 md:py-10"
+      className="relative scroll-mt-20 py-8 md:pt-20 md:pb-10"
     >
       {/* `md:flex-col` is load-bearing: in normal flow the heading's bottom
           margin and the pile's negative top margin are adjacent siblings and
           would COLLAPSE into a single used value, which destroys both the
           cancellation and the sticky arithmetic. Flex children do not collapse
           margins, so the two survive independently. */}
-      <div className="mx-auto max-w-[92rem] px-6 sm:px-12 md:flex md:flex-col lg:px-20">
+      <div className="mx-auto max-w-[86rem] px-6 sm:px-12 md:flex md:flex-col lg:px-20">
         {/* The hero's headline treatment at the pricing heading's size, in two
             blocks so the rule sits under the second clause rather than wherever
             the text happens to wrap.
@@ -103,26 +101,28 @@ export function UnderstandingSection() {
             Sticky, and pinned on exactly the same release threshold as the
             cards — see `headingMarginRem` for why that matters and what the
             margin below is doing. */}
-        <motion.div
-          {...reveal}
-          className="text-center md:sticky md:top-24 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)]"
+        <div
+          data-reveal=""
+          className="z-10 text-center md:sticky md:top-0 md:mb-[var(--heading-mb)] md:h-[var(--heading-h)] md:pt-24"
           style={
             {
-              '--heading-h': `${HEADING_REM}rem`,
+              '--heading-h': `${HEADING_TOP_REM + HEADING_REM}rem`,
               '--heading-mb': `${headingMarginRem}rem`,
+              // The scroll reveal (`data-reveal`, globals.css) fades
+              // only: no `y` rise, unlike the other sections. This heading is
+              // sticky and the first card sits flush under it, so a rise opened
+              // and shut the gap between them, and a transform on a sticky
+              // element shifts the box its sticky offset is measured against.
+              '--reveal-y': '0px',
             } as React.CSSProperties
           }
         >
-          <h2
-            className="font-medium font-serif text-4xl text-kallo-text leading-[1.04] tracking-[-0.03em] sm:text-5xl md:text-6xl"
+          <SectionTitle
             id="landing-understanding"
-          >
-            <span className="block">{t('titleLead')}</span>
-            <span className="block underline decoration-[0.055em] underline-offset-[0.16em]">
-              {t('titleUnderlined')}
-            </span>
-          </h2>
-        </motion.div>
+            lead={t('titleLead')}
+            rest={t('titleUnderlined')}
+          />
+        </div>
 
         {/* The pile. Sticky children release when their PARENT's bottom reaches
             them, so this container decides when the stack breaks up.
@@ -136,11 +136,25 @@ export function UnderstandingSection() {
             come from each card's own bottom margin, which is doing arithmetic
             (see StackedComparison), and a uniform gap would break it. */}
         <div
-          className="mt-10 space-y-5 md:mt-[var(--pile-mt)] md:space-y-0"
+          ref={introRef}
+          className="mt-12 text-center md:mt-[var(--intro-mt)] md:[mask-image:linear-gradient(to_bottom,transparent_calc(var(--under-heading,0px)-2rem),black_var(--under-heading,0px))]"
           style={
-            { '--pile-mt': `${-headingMarginRem}rem` } as React.CSSProperties
+            { '--intro-mt': `${-headingMarginRem}rem` } as React.CSSProperties
           }
         >
+          {subtitle}
+          <div className="overflow-hidden rounded-[1.25rem] bg-kallo-hover sm:rounded-[2rem] md:mt-10">
+            <ProductVideo
+              clip={landingClip(locale, 'diff')}
+              width={2400}
+              height={1350}
+              label={t('videoLabel')}
+              className="aspect-[4/5] object-cover md:aspect-video"
+            />
+          </div>
+        </div>
+
+        <div ref={pileRef} className="mt-10 space-y-5 md:mt-16 md:space-y-0">
           {comparisons.map((comparison, index) => (
             <StackedComparison
               key={comparison.id}
@@ -149,10 +163,6 @@ export function UnderstandingSection() {
               total={comparisons.length}
             />
           ))}
-          {/* Scroll runway after the last card is dealt, so the finished pile
-              sits complete for a beat before the container's bottom reaches it
-              and the whole stack lets go at once. */}
-          <div aria-hidden="true" className="hidden md:block md:h-[40vh]" />
         </div>
       </div>
     </section>

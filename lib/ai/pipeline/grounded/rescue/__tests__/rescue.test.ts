@@ -206,6 +206,47 @@ describe('startDishRescue', () => {
   });
 });
 
+describe('startDishRescue on a mixed dish Call 2 kept a row for', () => {
+  // "bánh flan" now has candidates and Call 2 picks one, as with two
+  // Whopper Jr. shipped on a lean beef patty row.
+  const kept = {
+    ...state,
+    matchResults: [match(0, 3), match(1, 3), match(2, 0)],
+  };
+  const picked = (): GroundedEstimation => {
+    const g = call2('c1');
+    g.mealItems[0].ingredients[0].selectedCandidateId = 'c1';
+    return g;
+  };
+  const part = (rawName: string): RescuePart => ({
+    ingredient: { rawName, canonicalName: rawName },
+    match: match(0, 2),
+    estimate: estimate(rawName, 'c1'),
+  });
+
+  it('replaces the row with the mini-meal split into several foods', async () => {
+    const rescue = rescueWith(
+      async () => [part('trứng'), part('sữa'), part('dầu ăn')],
+      { state: kept, language: 'vi', runStartedAt: Date.now() }
+    );
+    const out = await rescue.apply({ ...kept, grounded: picked() });
+
+    expect(out?.rescued).toBe(1);
+    expect(
+      out?.state.decomposition.mealItems[0].ingredients.map((i) => i.rawName)
+    ).toEqual(['trứng', 'sữa', 'dầu ăn']);
+  });
+
+  it('keeps the row when the mini-meal finds one food', async () => {
+    const rescue = rescueWith(async () => [part('bánh flan'), part('dầu ăn')], {
+      state: kept,
+      language: 'vi',
+      runStartedAt: Date.now(),
+    });
+    expect(await rescue.apply({ ...kept, grounded: picked() })).toBeNull();
+  });
+});
+
 describe('startDishRescue start points', () => {
   it('starts a mixed dish logged as one item right after Call 1, before matching', () => {
     subMealMock.mockImplementation(async () => parts);
@@ -217,6 +258,37 @@ describe('startDishRescue start points', () => {
     });
     // "bánh flan" names a mixed dish; plain "cơm" and "nước" do not.
     expect(rescue.started()).toEqual([0]);
+  });
+
+  it('starts a hamburger or cheeseburger logged as one item, not a tea', () => {
+    subMealMock.mockImplementation(async () => parts);
+    const rescue = startDishRescue({
+      decomposition: {
+        isFood: true,
+        mealSlot: null,
+        mealItems: [
+          {
+            name: 'Whopper Jr',
+            cookingMethod: 'grilled',
+            ingredients: [
+              {
+                rawName: 'Whopper jr',
+                canonicalName: 'Whopper jr',
+                // Call 1's search text says "hamburger", never "burger".
+                queryEn:
+                  'fast food whopper jr hamburger with beef patty and bun',
+              },
+            ],
+          },
+          dish('Cheeseburgers', ['cheeseburgers']),
+          dish('Bergamot tea', ['bergamot tea']),
+        ],
+      },
+      language: 'en',
+      runStartedAt: Date.now(),
+      subMeal: DEPS,
+    });
+    expect(rescue.started()).toEqual([0, 1]);
   });
 
   it('starts a mini-meal the moment a streamed estimate rejects a dish', () => {

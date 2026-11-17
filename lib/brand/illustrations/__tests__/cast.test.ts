@@ -1,18 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CAST,
+  type AreaCast,
   pickIllustration,
-  type SurfaceArea,
 } from '@/lib/brand/illustrations/cast';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
+import { DASHBOARD_CAST } from '@/lib/brand/illustrations/casts/dashboard';
+import { LOGGING_CAST } from '@/lib/brand/illustrations/casts/logging';
+import { NUTRITION_CAST } from '@/lib/brand/illustrations/casts/nutrition';
+import { SYSTEM_CAST } from '@/lib/brand/illustrations/casts/system';
 import type { Illustration } from '@/lib/brand/illustrations/illustration';
 
-const AREAS: SurfaceArea[] = [
-  'circle',
-  'logging',
-  'nutrition',
-  'dashboard',
-  'system',
-];
+const CAST = {
+  circle: CIRCLE_CAST,
+  logging: LOGGING_CAST,
+  nutrition: NUTRITION_CAST,
+  dashboard: DASHBOARD_CAST,
+  system: SYSTEM_CAST,
+} satisfies Record<string, AreaCast>;
+
+type Area = keyof typeof CAST;
+
+const AREAS = Object.keys(CAST) as Area[];
 
 /** Every record in the cast, area by area, without the area keys. */
 function everyRecord(): Illustration[] {
@@ -31,10 +39,10 @@ describe('the surface-state cast', () => {
   });
 
   it('casts the Premium-locked pose on nutrition only', () => {
-    expect(pickIllustration('nutrition', 'locked', false).slug).toBe(
+    expect(pickIllustration(CAST.nutrition, 'locked', false).slug).toBe(
       'sloth-telescope'
     );
-    expect(pickIllustration('circle', 'locked', false).slug).toBe(
+    expect(pickIllustration(CAST.circle, 'locked', false).slug).toBe(
       'capybara-telescope'
     );
   });
@@ -71,17 +79,17 @@ describe('the surface-state cast', () => {
 
   it('sleeps through every area after dark', () => {
     for (const area of AREAS) {
-      expect(pickIllustration(area, 'error', true).slug).toBe(
+      expect(pickIllustration(CAST[area], 'error', true).slug).toBe(
         CAST[area].night.slug
       );
-      expect(pickIllustration(area, 'empty', true).slug).toBe(
+      expect(pickIllustration(CAST[area], 'empty', true).slug).toBe(
         CAST[area].night.slug
       );
     }
   });
 
   it('falls back to the empty pose for a kind an area does not cast', () => {
-    expect(pickIllustration('circle', 'notFound', false).slug).toBe(
+    expect(pickIllustration(CAST.circle, 'notFound', false).slug).toBe(
       'capybara-telescope'
     );
   });

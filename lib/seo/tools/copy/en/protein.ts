@@ -8,7 +8,7 @@ export const protein: ToolCopy = {
   description:
     'How much protein you need a day for health, building muscle or losing fat, from the research ranges (ISSN, Morton 2018). Free, no sign-up.',
   title: 'Protein calculator',
-  lead: 'How much protein you need depends mostly on two things: how much you weigh and what you are training for. Pick your goal and the calculator gives the range the research supports, in grams a day.',
+  lead: 'How much protein you need depends mostly on how much you weigh and what you are training for. Pick your goal and the calculator gives the range the research supports, in grams a day.',
   sections: [
     {
       heading: 'The ranges, and where they come from',

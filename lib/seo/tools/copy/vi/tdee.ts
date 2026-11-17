@@ -14,7 +14,7 @@ export const tdee: ToolCopy = {
       heading: 'TDEE được tính thế nào?',
       paragraphs: [
         'Bước một là BMR, năng lượng cơ thể cần khi nằm yên hoàn toàn: để thở, giữ ấm, nuôi các cơ quan. Kallo dùng công thức Mifflin-St Jeor, công thức được một tổng quan năm 2005 đánh giá là sát thực tế nhất cho cả người gầy lẫn người thừa cân: 10 × cân nặng (kg) + 6,25 × chiều cao (cm) − 5 × tuổi, rồi cộng 5 nếu là nam hoặc trừ 161 nếu là nữ.',
-        'Bước hai là nhân BMR với mức vận động: 1,2 nếu bạn ngồi nhiều và gần như không tập; 1,375 nếu tập nhẹ 1–3 buổi mỗi tuần; 1,55 nếu tập 3–5 buổi; 1,725 nếu tập nặng 6–7 buổi. Kết quả làm tròn chính là TDEE. Đây đúng là các con số app Kallo dùng để đặt mục tiêu calo khi bạn đăng ký.',
+        'Bước hai là nhân BMR với mức vận động: 1,2 nếu bạn ngồi nhiều và gần như không tập; 1,375 nếu tập nhẹ 1–3 buổi mỗi tuần; 1,55 nếu tập 3–5 buổi; 1,725 nếu tập nặng 6–7 buổi. Làm tròn kết quả để có TDEE. Kallo dùng các con số này để đặt mục tiêu calo khi bạn đăng ký.',
       ],
     },
     {

@@ -1,11 +1,24 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
+import { DocsFooterColumn } from '@/components/docs/docs-footer-column';
 import { Link } from '@/i18n/navigation';
 import type { DocsNavSection } from '@/lib/domain/docs/tree';
+import { ALTERNATIVES_CHROME } from '@/lib/seo/alternatives/chrome';
+import { ALTERNATIVE_PAGES } from '@/lib/seo/alternatives/pages';
+import {
+  ALTERNATIVE_SLUGS,
+  ALTERNATIVES_LOCALE,
+  alternativePath,
+} from '@/lib/seo/alternatives/slugs';
+import { COMPARE_PAGES } from '@/lib/seo/compare/pages';
+import { COMPARE_SLUGS, comparePath } from '@/lib/seo/compare/slugs';
+import { FOODS } from '@/lib/seo/food-pages/food-registry';
+import { FOOTER_MEALS } from '@/lib/seo/food-pages/footer-meals';
 import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
 import { FOOD_PAGE_PREFIX, isFoodLocale } from '@/lib/seo/food-pages/slugs';
 import { LINKEDIN_URL } from '@/lib/seo/structured-data';
-import { TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
+import { TOOL_COPY } from '@/lib/seo/tools/content';
+import { TOOL_SLUGS, TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
 
 /**
  * The docs navigation, as a footer.
@@ -34,13 +47,13 @@ interface DocsFooterProps {
    * Two differences, both about sitting correctly under the page above.
    *
    * No gap: docs end on cream, and that gap is what stops the ink slab reading
-   * as part of the article. The landing page ends on the beige pricing band, so
+   * as part of the article. The landing page ends on its beige closing band, so
    * there the same gap is a strip of page background wedged between two solid
    * colours — a seam rather than breathing room.
    *
    * And the landing measure: the default `90rem / px-4 / sm:px-6` is matched to
    * `app/[locale]/docs/layout.tsx`, so the footer's columns line up with the
-   * article above them. The landing page frames everything at `88rem` with far
+   * article above them. The landing page frames everything at `86rem` with far
    * wider side padding, and against that the default makes the footer look like
    * it belongs to a different page.
    */
@@ -63,7 +76,7 @@ export async function DocsFooter({
       <div
         className={
           landing
-            ? 'mx-auto max-w-[92rem] px-6 py-12 sm:px-12 lg:px-20'
+            ? 'mx-auto max-w-[86rem] px-6 py-12 sm:px-12 lg:px-20'
             : 'mx-auto max-w-[90rem] px-4 py-16 sm:px-6'
         }
       >
@@ -71,34 +84,54 @@ export async function DocsFooter({
           aria-label={t('menu.label')}
           className="grid grid-cols-1 gap-x-8 gap-y-12 text-left sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
         >
-          {/* The group labels are `p`, not headings: a page's outline starts
-              at its `h1`, and nine `h2`s in the footer sat ahead of it in the
-              streamed HTML. The list stays named through `aria-labelledby`. */}
           {sections.map((section) => (
-            <div key={section.id}>
-              <p
-                className="font-sans-display font-semibold text-base text-kallo-surface dark:text-kallo-text"
-                id={`docs-footer-${section.id}`}
-              >
-                {tSections(section.id)}
-              </p>
-              <ul
-                aria-labelledby={`docs-footer-${section.id}`}
-                className="mt-5 space-y-3.5"
-              >
-                {section.links.map((link) => (
-                  <li key={link.slug}>
-                    <Link
-                      className="rounded-sm font-sans-display text-base text-kallo-stone transition-colors hover:text-kallo-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent dark:hover:text-kallo-text"
-                      href={`/docs/${link.slug}`}
-                    >
-                      {link.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <DocsFooterColumn
+              id={section.id}
+              key={section.id}
+              label={tSections(section.id)}
+              links={section.links.map((link) => ({
+                href: `/docs/${link.slug}`,
+                title: link.title,
+              }))}
+            />
           ))}
+          {isFoodLocale(locale) ? (
+            <>
+              <DocsFooterColumn
+                id="meals"
+                label={FOOD_PAGE_CHROME[locale].footerLink}
+                links={FOOTER_MEALS[locale].map((slug) => ({
+                  href: `${FOOD_PAGE_PREFIX}/${slug}`,
+                  title: FOODS[slug].copy.name,
+                }))}
+              />
+              <DocsFooterColumn
+                id="tools"
+                label={tFooter('calculators')}
+                links={TOOL_SLUGS.map((slug) => ({
+                  href: `${TOOLS_PREFIX}/${slug}`,
+                  title: TOOL_COPY[locale][slug].name,
+                }))}
+              />
+            </>
+          ) : null}
+          {/* The alternatives and comparison pages' way into the site; English only. */}
+          {locale === ALTERNATIVES_LOCALE ? (
+            <DocsFooterColumn
+              id="alternatives"
+              label={ALTERNATIVES_CHROME.footerLabel}
+              links={[
+                ...ALTERNATIVE_SLUGS.map((slug) => ({
+                  href: alternativePath(slug),
+                  title: ALTERNATIVE_PAGES[slug].title,
+                })),
+                ...COMPARE_SLUGS.map((slug) => ({
+                  href: comparePath(slug),
+                  title: COMPARE_PAGES[slug].title,
+                })),
+              ]}
+            />
+          ) : null}
         </nav>
 
         <div className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-4 border-kallo-stone/25 border-t pt-8">

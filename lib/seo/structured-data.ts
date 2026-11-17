@@ -8,6 +8,8 @@ export const SECURITY_EMAIL = 'security@kallo.fit';
 export const FOUNDER_EMAIL = 'founder@kallo.fit';
 /** The Kallo company page, linked from the site footer and `sameAs`. */
 export const LINKEDIN_URL = 'https://www.linkedin.com/company/kallo-fit/';
+/** Kallo's own Threads account, for `sameAs`. */
+export const THREADS_URL = 'https://www.threads.net/@kallo.fit';
 
 /**
  * The landing page's JSON-LD graph.
@@ -52,7 +54,13 @@ export function landingStructuredData({
           email: FOUNDER_EMAIL,
           sameAs: ['https://www.linkedin.com/in/khoi-vo-1648112a0/'],
         },
-        sameAs: [LINKEDIN_URL, 'https://github.com/VoMinhKhoii/Kallo'],
+        sameAs: [
+          LINKEDIN_URL,
+          THREADS_URL,
+          'https://github.com/VoMinhKhoii/Kallo',
+          'https://peerlist.io/kallofit',
+          'https://www.indiehackers.com/product/kallo',
+        ],
         // Locality and country, not the street address. The full address is
         // published in the privacy policy because data protection law requires
         // a controller to give one; repeating it in markup that gets scraped

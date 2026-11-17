@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../models/nutrition/nutrition_enums.dart';
 import '../../../services/auth/session_provider.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shared/widgets/feedback/skeleton.dart';
@@ -67,16 +66,9 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
       return const _LoggingSkeleton();
     }
 
-    final data = profileAsync.valueOrNull;
-    // Defaults mirror the web's DEFAULT_PROFILE so an incomplete-onboarding
-    // profile shows sensible targets, never /0g.
-    final profile = LoggingProfile(
-      userId: userId,
-      calorieTarget: (data?['calorieTarget'] as num?)?.toInt() ?? 2000,
-      proteinTargetG: (data?['proteinTargetG'] as num?)?.toInt() ?? 150,
-      carbsTargetG: (data?['carbsTargetG'] as num?)?.toInt() ?? 250,
-      fatTargetG: (data?['fatTargetG'] as num?)?.toInt() ?? 65,
-      goal: macroGoalFromWire(data?['goal'] as String?),
+    final profile = LoggingProfile.fromProfileRow(
+      userId,
+      profileAsync.valueOrNull,
     );
     final today = todayDateString();
     final yesterday = addDays(today, -1);

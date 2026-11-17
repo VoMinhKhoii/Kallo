@@ -190,7 +190,7 @@ export async function getOrCreateMyProfile(
       throw error;
     }
   }
-  throw Errors.conflict('Không thể tạo liên kết mời. Vui lòng thử lại.');
+  throw Errors.conflict('Không thể tạo liên kết mời');
 }
 
 // ---------------------------------------------------------------------------
@@ -283,7 +283,7 @@ export async function renameMyProfile(
       throw error;
     }
   }
-  throw Errors.conflict('Không thể đổi tên. Vui lòng thử lại.');
+  throw Errors.conflict('Không thể đổi tên');
 }
 
 /** Base + 2–4 random digits, always within the 20-char handle bound. */

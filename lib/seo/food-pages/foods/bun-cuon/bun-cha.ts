@@ -27,15 +27,16 @@ export const food: FoodContent = {
   copy: {
     name: 'Bún chả',
     title: 'Bún chả bao nhiêu calo?',
-    metaTitle: 'Bún chả bao nhiêu calo? 4 suất bún chả thật',
+    metaTitle: (span) =>
+      `Bún chả bao nhiêu calo? ${span} kcal, 4 suất bún chả thật`,
     description: (span) =>
-      `Khoảng ${span} calo một suất. Bốn suất bún chả thật: thêm nem cua bể và một lượt bún, chỉ ăn nửa phần bún, một suất thường và bún chả làm ở nhà.`,
+      `Khoảng ${span} calo một suất. Bốn suất bún chả: thêm nem cua bể và một lượt bún, chỉ ăn nửa phần bún, một suất thường và bún chả làm ở nhà.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một suất. Bún nhẹ hơn người ta nghĩ; thịt nướng, chả và nem gọi thêm mới là con số. Dưới đây là bốn suất thật, mỗi suất gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một suất. Bún nhẹ hơn người ta nghĩ; thịt nướng, chả và nem gọi thêm mới quyết định con số. Dưới đây là bốn suất thật, mỗi suất gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'suat-thuong',
     breakdownLead:
       'Trong một suất bún chả thường, thịt ba chỉ nướng là 296 calo và chả viên 158, còn 150 g bún chỉ 168. Gọi thêm hai cái nem và một lượt bún là suất ăn vượt 1.000.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “bún chả 1 suất, ít bún, thêm 1 cái nem”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “bún chả 1 suất, ít bún, thêm 1 cái nem”, Kallo lo phần còn lại.',
   },
 };

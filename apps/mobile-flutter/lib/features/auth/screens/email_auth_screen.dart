@@ -83,26 +83,36 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                     leading: AuthBackButton(onBack: state.busy ? null : _back),
                   ),
                 ),
+                // Centred in the space under the wordmark, as the welcome face
+                // is, rather than hung off the top with the bottom half empty.
+                // A phone too short for it (or the keyboard) scrolls instead.
                 Expanded(
-                  child: SingleChildScrollView(
-                    // 24 side inset — auth's documented exception to the 12pt page
-                    // rhythm ([kAuthInset]).
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: kAuthInset,
-                      vertical: KalloSpacing.sp5,
-                    ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 420),
-                        child:
-                            showCode
-                                ? EmailCodeView(
-                                  provider: _provider,
-                                  onNotice: _toast,
-                                )
-                                : _form(state),
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Padding(
+                          // 24 side inset — auth's documented exception to
+                          // the 12pt page rhythm ([kAuthInset]).
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: kAuthInset,
+                            vertical: KalloSpacing.sp5,
+                          ),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 420),
+                              child:
+                                  showCode
+                                      ? EmailCodeView(
+                                        provider: _provider,
+                                        onNotice: _toast,
+                                      )
+                                      : _form(state),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
@@ -116,6 +126,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   Widget _form(AuthFormState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
         // The page title, in the sans page-title token. It was Lora 26 — the
         // serif is the wordmark's voice now, and the wordmark is right above it.

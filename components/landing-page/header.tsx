@@ -1,12 +1,12 @@
 'use client';
 
-import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Button } from '@/components/ui/button';
 import { useHeaderOverFooter } from '@/hooks/landing/use-header-over-footer';
+import { useHeaderScrolled } from '@/hooks/landing/use-header-scrolled';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/core/ui/cn';
 import { AUTH_CTAS_LIVE } from './cta-hold';
@@ -14,11 +14,8 @@ import { LocaleSwitcher } from './locale-switcher';
 import { scrollToAnchorId } from './scroll-to-anchor';
 import { ThemeSwitcher } from './theme-switcher';
 
-/** The two in-page sections. Docs is a route, so it isn't in here. */
-const ANCHORS = [
-  { id: 'why', key: 'why' },
-  { id: 'pricing', key: 'pricing' },
-] as const;
+/** The one in-page section. Pricing and Docs are routes. */
+const ANCHORS = [{ id: 'features', key: 'features' }] as const;
 
 const NAV_LINK =
   'font-sans-display text-kallo-text text-sm transition-colors hover:text-kallo-text/70';
@@ -36,6 +33,7 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
   const { openDialog } = useAuthDialog();
   const headerRef = useRef<HTMLElement>(null);
   const overFooter = useHeaderOverFooter(headerRef);
+  const scrolled = useHeaderScrolled();
 
   const scrollToAnchor =
     (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -44,22 +42,33 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
     };
 
   return (
-    <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6 }}
+    <header
+      // Drops in with CSS (`animate-header-drop`, globals.css), so it is in
+      // the server's HTML rather than waiting for JS to fade it in.
       // No fill, so the page runs up behind it; the blur keeps the nav
       // readable over scrolled content. The fill comes back only over the
-      // footer, which in Light is the same ink as the header's type.
+      // footer, which in Light is the same ink as the header's type. From
+      // `md` the bar below carries its own blur and fill once scrolled, and
+      // this box stays clear and lets clicks through around it.
       ref={headerRef}
       className={cn(
-        'fixed top-0 right-0 left-0 z-50 backdrop-blur-xl transition-colors',
-        overFooter && 'bg-kallo-surface/80'
+        'fixed top-0 right-0 left-0 z-50 animate-header-drop transition-colors md:pointer-events-none',
+        scrolled
+          ? 'backdrop-blur-xl md:backdrop-blur-none'
+          : standalone && 'backdrop-blur-xl',
+        overFooter && 'bg-kallo-surface/80 md:bg-transparent'
       )}
     >
-      {/* Matches the section measure below it, so the wordmark sits on the
-          same left edge as the first meal card and the first plan. */}
-      <div className="mx-auto flex max-w-[92rem] items-center justify-between px-6 py-5 sm:px-12 lg:px-20">
+      {/* At rest it matches the section measure below it. On desktop it
+          lifts off into a floating bar as soon as the page moves. */}
+      <div
+        className={cn(
+          'mx-auto flex max-w-[86rem] items-center justify-between px-6 py-5 motion-reduce:transition-none sm:px-12 md:pointer-events-auto md:border md:border-transparent md:transition-[max-width,margin,padding,border-radius,border-color,background-color,box-shadow] md:duration-300 md:ease-out',
+          scrolled
+            ? 'md:mt-3 md:max-w-[min(60rem,calc(100%-2rem))] md:rounded-2xl md:border-kallo-text/10 md:bg-kallo-surface/80 md:px-5 md:py-2 md:shadow-lg md:backdrop-blur-xl'
+            : 'lg:px-20'
+        )}
+      >
         {/* Logo */}
         <div className="flex items-center gap-2">
           <KalloWordmark className="h-5 w-auto text-kallo-text" />
@@ -87,6 +96,9 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
               </a>
             )
           )}
+          <Link href="/pricing" className={NAV_LINK}>
+            {t('pricing')}
+          </Link>
           <Link href="/docs/overview" className={NAV_LINK}>
             {t('docs')}
           </Link>
@@ -106,8 +118,8 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
           >
             {t('signIn')}
           </Button>
-          {/* Black, not the brown `header-cta`. This page is black and white
-              throughout: the waitlist pill, every plan button, and this. */}
+          {/* Black, not the brown `header-cta`: the page is black and white
+              throughout, the waitlist pill included. */}
           <Button
             variant="landing-ink"
             size="header"
@@ -124,6 +136,6 @@ export function Header({ standalone = false }: { standalone?: boolean } = {}) {
           </Button>
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 }

@@ -7,6 +7,7 @@
 import { useTranslations } from 'next-intl';
 import { RetryAction } from '@/components/shared/surface-state/retry-action';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
 
 const SKELETON_COUNT = 4;
 
@@ -46,7 +47,7 @@ export function ActivityError({
           onRetry={onRetry}
         />
       }
-      area="circle"
+      cast={CIRCLE_CAST}
       kind="error"
       subtitle={t('error.body')}
       title={t('error.title')}

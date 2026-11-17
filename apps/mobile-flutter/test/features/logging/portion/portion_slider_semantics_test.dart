@@ -12,7 +12,7 @@ import 'package:kallo_mobile/models/nutrition/vessel.dart';
 import '../../../l10n_test_loader.dart';
 
 /// The portion ruler must be OPERABLE by assistive technology, not merely
-/// readable by it. It lives in the meal edit sheet's Size dropdown now; the
+/// readable by it. It lives under the meal edit sheet's Size row now; the
 /// guarantee travelled with it.
 ///
 /// It shipped announced-but-inert: an outer `Semantics(..., excludeSemantics:
@@ -53,7 +53,7 @@ SemanticsNode _sliderNode(WidgetTester tester) {
   return nodes.single;
 }
 
-/// Opens the edit sheet on one staged dish with its Size dropdown open.
+/// Opens the edit sheet on one staged dish, its ruler out.
 Future<void> _openPicker(
   WidgetTester tester,
   ClientVessel vessel,
@@ -84,7 +84,6 @@ Future<void> _openPicker(
                     context,
                     draft: draftFromStaged(items, items),
                     commitLabel: 'Done',
-                    sizeOpen: 'a',
                     onCommit: (_) async {},
                   ),
               child: const Text('open'),

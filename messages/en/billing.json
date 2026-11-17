@@ -2,13 +2,13 @@
   "paywall": {
     "unavailable": "Purchases aren't available right now. Please try again later.",
     "successToast": "Welcome to Kallo Premium.",
-    "successPendingToast": "Payment received — your premium access will appear shortly.",
-    "pendingToast": "Payment is pending. We’ll unlock Premium after the store confirms it.",
+    "successPendingToast": "Payment received, unlocking Premium",
+    "pendingToast": "Payment waiting for confirmation",
     "pendingTitle": "Activation is still pending",
     "pendingBody": "We have not confirmed Premium yet. You will not be charged again here; check once more after the store finishes processing.",
     "pendingCta": "Check again",
-    "errorToast": "Something went wrong with the purchase. Please try again.",
-    "sessionChangedToast": "Your signed-in account changed. Refresh this page before purchasing.",
+    "errorToast": "Purchase didn't go through",
+    "sessionChangedToast": "Account changed, refresh the page",
     "successTitle": "You're all set",
     "successBody": "Premium is active. AI meal analysis is unlocked across the app.",
     "successCta": "Start estimating"
@@ -59,6 +59,6 @@
       "subtitle": "Vitamins, minerals and fiber, tracked against your targets.",
       "cta": "Upgrade"
     },
-    "purchasesUnavailable": "Upgrades aren't available yet. Premium features unlock soon."
+    "purchasesUnavailable": "Upgrades aren't available yet"
   }
 }

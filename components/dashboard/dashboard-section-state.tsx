@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
+import { DASHBOARD_CAST } from '@/lib/brand/illustrations/casts/dashboard';
 import { cn } from '@/lib/core/ui/cn';
 
 interface DashboardSectionStateProps {
@@ -41,7 +42,7 @@ export function DashboardSectionState({
     return (
       <SurfaceState
         action={action}
-        area="dashboard"
+        cast={DASHBOARD_CAST}
         className={bare ? undefined : CARD}
         compact
         kind="error"

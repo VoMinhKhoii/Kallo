@@ -2,7 +2,7 @@
 
 This repo deploys a single production service via `cloud-run-prod.yml`:
 
-- **Production service** (`kallo-prod`): Deployed manually (`workflow_dispatch` from `main`) for a `main` SHA with a green CI run; applies pending migrations behind a GCS lease, then blue-green promotes after a smoke check
+- **Production service** (`kallo-prod`): Deployed manually (`workflow_dispatch` from `main`) for a `main` SHA with a green CI run; applies pending migrations behind a GCS lease, then blue-green promotes after a smoke check and an SEO crawl check
 - Artifact Registry: One immutable image per `main` commit SHA (built + pushed by CI; PRs build but do not push), pruned by a cleanup policy — see [Image retention](#image-retention)
 - Authentication: GitHub Actions via Workload Identity Federation (WIF)
 
@@ -10,11 +10,34 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
 
 1. A pull request runs CI, including a `docker build` (not pushed).
 2. After review and verification, merge to `main`; its CI run pushes
-   `nham:<sha>`.
+   `kallo:<sha>`.
 3. Dispatch `cloud-run-prod.yml` from `main` (optionally with a `sha`).
 4. The prod job acquires its GCS lease, tags the image `prod-<sha>`
    (exempting it from cleanup), applies pending migrations, deploys a
-   no-traffic candidate, smoke-tests it, and only then promotes traffic.
+   no-traffic candidate, smoke-tests it, crawl-checks it (below), and only
+   then promotes traffic.
+
+### SEO crawl check
+
+`scripts/seo/crawl-check.ts` reads the site the way a crawler that runs no
+JavaScript does. It fails when a sitemap page stops answering 200 without a
+redirect, loses its self canonical, its single `<title>` or its meta
+description, turns noindex (meta tag or `X-Robots-Tag`), loses its `<main>`,
+or puts its `<h1>` after the footer (the article streamed hidden, as on
+2026-11-07). It also fails when robots.txt blocks the site or stops naming the
+sitemap, when a made-up food page stops answering 404, and, with `--live`,
+when a page the live sitemap lists now answers 404 or 410 (retire a page with
+a redirect).
+
+- **CI** (`Build` job): after `next build`, starts `.next/standalone/server.js`
+  on port 3000 and runs the check with `--live https://kallo.fit`.
+- **Prod** (`Crawl check the candidate (SEO)` step, after the smoke check): runs
+  it on the candidate URL, sending the origin secret as `X-Origin-Verify`. A
+  failure leaves the candidate without traffic, like a failed smoke check. A
+  redeploy of a commit from before the script skips the step.
+- **Locally**: `bun scripts/seo/crawl-check.ts https://kallo.fit` (or a local
+  build's URL; add `--live https://kallo.fit` to compare sitemaps). It prints a
+  `PROBLEM` line for each failure and exits 1.
 
 There is no staging, internal, or preview deployment.
 Sandbox billing tests run locally (or through an explicitly approved temporary
@@ -186,9 +209,18 @@ failure, or with no build pinned, it uses the database path
 (`match_food_card_texts`). `/api/healthz` reports one word for it,
 `"cardIndex":"disabled|loading|ready|failed"`, without changing its status
 code. The deploy's smoke check requires a healthy `ready` answer within 60 s
-(polling through `failed`, which the app retries 2, 4 and 8 s later) when the
-checked-out commit has the runtime, a build was pinned, and the kill switch is
-not set; otherwise it smokes as before.
+(polling through `failed`: the app retries a failed load up to three times, on
+the first request at least 2, 4 and 8 s after each failure, so the smoke check's
+own polls start them) when the checked-out commit has the runtime, a build was
+pinned, and the kill switch is not set; otherwise it smokes as before.
+
+Retries start on requests, never on a timer: a serving container has CPU only
+while a request is in flight, and a timer-started retry on an idle container
+timed out every read and used up all three retries within minutes (2026-11-03
+and 2026-11-05, on containers started by a crawler burst that then got no
+traffic). A failure is a log line; only running out of retries goes to Sentry,
+because only then does the container search the database for the rest of its
+life.
 
 A new container loads the build **before it takes traffic**. Cloud Run gives a
 starting container full CPU (plus the startup boost) and a serving one CPU only
@@ -342,8 +374,21 @@ DATABASE_URL=... bun scripts/data/food-cards/search-artifact/build-search-artifa
 The repository variable `PIPELINE_MODEL_PROFILE` picks the models both meal
 analysis calls run on (`lib/ai/pipeline/config/model-profile.ts`). Unset
 deploys `stable` (Gemini flash-lite). `haiku` runs both calls on Claude Haiku
-5.5; any failed Claude call re-runs on the stable Gemini model, so an Anthropic
-outage degrades to today's pipeline instead of failing meals.
+5.5 through a per-call waterfall, so an Anthropic outage or an empty credit
+balance degrades instead of failing meals:
+
+1. Haiku on the Claude API (`ANTHROPIC_API_KEY`).
+2. Haiku on Vertex AI, when the app runs with `AI_PROVIDER=vertex`. It signs in
+   as the Cloud Run identity and bills to the Google Cloud project at Google's
+   rate. Only API failures reach it; a bad answer goes straight to step 3.
+   The model answers on the `global` endpoint only, and it needs quota: the
+   project's `global_online_prediction_requests_per_base_model` limit for base
+   model `anthropic-claude-haiku` starts at none (a call returns 429), so ask
+   for an increase under IAM & Admin > Quotas (requests, input tokens and
+   output tokens per minute). Until then step 3 takes over. Requests filed
+   through the Cloud Quotas API on 2026-11-07 were denied within seconds, even
+   at 20 a minute, so check Model Garden access or go through Google support.
+3. The stable Gemini model.
 
 To start the trial:
 
@@ -391,10 +436,10 @@ Set these once in your shell before running the setup commands below:
 ```bash
 export GCP_PROJECT_ID="your-project-id"
 export GCP_PROJECT_NUMBER="your-project-number"
-# The Artifact Registry repo lives in Bangkok; kallo-prod overrides this with
-# asia-southeast1 (Singapore) in cloud-run-prod.yml and pulls cross-region.
-export GCP_REGION="asia-southeast3"
-export GCP_ARTIFACT_REPO="nham"
+# Singapore, next to the Supabase database. The Artifact Registry repo and
+# kallo-prod both live here (moved from Bangkok, asia-southeast3, 2026-11-05).
+export GCP_REGION="asia-southeast1"
+export GCP_ARTIFACT_REPO="kallo"
 export GCP_WIF_POOL_ID="github-actions"
 export GCP_WIF_PROVIDER_ID="github"
 export GCP_DEPLOYER_SA_ID="github-deployer"
@@ -434,6 +479,11 @@ gcloud artifacts repositories set-cleanup-policies "$GCP_ARTIFACT_REPO" \
   --policy=scripts/cloud-run/artifact-cleanup-policy.json \
   --no-dry-run   # --dry-run logs would-be deletions (needs AR Data Write audit logs)
 ```
+
+`--no-dry-run` is required: a repo left in dry-run deletes nothing. The Bangkok
+repo sat in dry-run from 2026-09 to 2026-11 and grew to 36 GB / 1,178 images.
+Check with `gcloud artifacts repositories describe "$GCP_ARTIFACT_REPO"
+--location="$GCP_REGION" --format='value(cleanupPolicyDryRun)'` (empty = live).
 
 ## 2. Create service accounts
 
@@ -720,8 +770,8 @@ Prerequisites the Cloud Run service account needs **before** flipping
    model-availability skew across our STABLE models (`gemini-3.1-flash-lite`,
    `gemini-2.5-flash-lite`, `gemini-embedding-001`). For the record, Cloud Run
    itself runs **prod in `asia-southeast1` (Singapore)**, co-located with the
-   Supabase database, while the Artifact Registry is in `asia-southeast3`
-   (Bangkok, Thailand) — see `docs/PROD_DOMAIN_SETUP.md`.
+   Supabase database, and so is the Artifact Registry — see
+   `docs/PROD_DOMAIN_SETUP.md`.
 4. `GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1` (optional; defaults to
    `GOOGLE_CLOUD_LOCATION`). Query embeddings (`gemini-embedding-001`) use their
    own client on this location. Measured 2026-10-08: 0.27–0.49 s per warm call
@@ -738,7 +788,7 @@ fallback works without re-issuing the secret.
 | Workflow | Purpose |
 | --- | --- |
 | `CI` | Validate the repo and build the image on every PR; on `main`, push the SHA-tagged image |
-| `Cloud Run Prod` | Manual prod deploy: lease, migrations, no-traffic candidate, smoke check, promote |
+| `Cloud Run Prod` | Manual prod deploy: lease, migrations, no-traffic candidate, smoke check, SEO crawl check, promote |
 | `Card Index Refresh` | Nightly: redeploy the serving commit when the card data has moved past its search index |
 | `Translate USDA rows` | Manual USDA translation backfill into the prod DB, holding the deploy lease |
 | `Account deletion retry` | Retry account deletions that failed part-way |
@@ -748,7 +798,7 @@ fallback works without re-issuing the secret.
 Find the image digest for a known commit SHA:
 
 ```bash
-export IMAGE_TAG="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPO/nham:<commit-sha>"
+export IMAGE_TAG="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPO/kallo:<commit-sha>"
 gcloud artifacts docker images describe "$IMAGE_TAG" \
   --format='value(image_summary.digest)'
 ```
@@ -779,7 +829,8 @@ Run these after setup:
    and confirm:
    - the workflow acquires the deploy lease
    - pending migrations apply and `assert-migrations-applied` passes
-   - the no-traffic candidate passes the smoke check before traffic moves
+   - the no-traffic candidate passes the smoke check and the SEO crawl check
+     before traffic moves
    - `https://kallo.fit/api/healthz` returns the expected health JSON
 
 ## Structured pipeline trace capture
@@ -851,6 +902,36 @@ repeat IDs need no nutrition query. New candidate sets still cost a scoped
 query. Inedible and fresh-candidate reads keep their existing behavior. Validate
 production query counts/bytes and cold-start latency after rollout; synthetic
 query-delay tests do not estimate cross-region latency.
+
+### Circle feed latency
+
+`GET /api/v1/chat-groups/[groupId]/feed` includes a `Server-Timing` header and
+emits one structured `circle_feed_timing_v1` log with `status` and `stagesMs`:
+`auth`, `access`, `marker`, `page`, `enrichment` (batched hearts/replies), and
+`read` (the read-marker write). Pagination omits `marker`/`read`; an empty
+first page omits `read`. Failed requests retain completed/failed stage timings.
+These durations include database connection/pool waits; they do not measure
+the phone's network, rendering, proxy work, or container startup before the
+handler runs. Logs contain no user/group/share ids, tokens or meal content.
+`access` and `marker` now overlap (the marker's query independently enforces
+viewer visibility); both complete before `page`. Do not sum these stages as
+wall-clock latency. The initial switcher no longer fetches the ambient
+today-only wall: its existing 30-second read-marker poll already supplies the
+newest friend share time. No database schema or pool-size change is required;
+production still uses the configured larger transaction-pooler pool, while
+the default local pool is two connections. This optimization has only been
+exercised locally, not on production.
+
+Read them with the same deployment project used above:
+
+```bash
+gcloud logging read \
+  'resource.type="cloud_run_revision" AND resource.labels.service_name="kallo-prod" AND jsonPayload.kind="circle_feed_timing_v1"' \
+  --project="${GCP_PROJECT_ID}" --freshness=24h --limit=100 --format=json
+```
+
+Use these stage timings to locate a slow uncached feed before changing SQL or
+instance scaling; the mobile cache does not make the server's first read faster.
 
 ## 12. Known boundaries of the current setup
 

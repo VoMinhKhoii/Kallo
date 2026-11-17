@@ -25,19 +25,17 @@ const RATE_LIMITER_UNAVAILABLE_RETRY_AFTER_SECONDS = 10;
 const DEFAULT_MESSAGES = {
   notAuthenticated: 'You need to sign in to use this feature.',
   profileNotFound: 'Profile not found. Please sign in again.',
-  pipelineTimeout: 'Analysis took too long. Please try again.',
-  rateLimited: 'The service is busy. Please wait a moment and try again.',
-  rateLimiterUnavailable:
-    'The service is temporarily unavailable. Please try again shortly.',
+  pipelineTimeout: 'Analysis took too long',
+  rateLimited: 'The service is busy right now',
+  rateLimiterUnavailable: 'The service is unavailable right now',
   aiPaused:
     'AI logging is paused for everyone until tomorrow. Barcode scans and relogging still work.',
   featureLocked: 'Upgrade to keep using this feature.',
   aiConsentRequired:
     'Allow Kallo to send this to its AI provider before using AI features.',
-  objectionableContent:
-    'This contains language that is not allowed on Kallo. Please edit it and try again.',
-  storagePaused: 'Photo uploads are paused for now. Please try again later.',
-  internal: 'Something went wrong. Please try again.',
+  objectionableContent: 'This contains language not allowed on Kallo',
+  storagePaused: 'Photo uploads are paused for now',
+  internal: 'Something went wrong',
 } as const;
 
 export const Errors = {

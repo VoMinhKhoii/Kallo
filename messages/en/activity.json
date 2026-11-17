@@ -70,7 +70,7 @@
     "dismiss": "Dismiss",
     "modeCopy": "Full portion",
     "modeSplit": "Split portion",
-    "error": "That didn't go through. Try again.",
+    "error": "That didn't go through",
     "status": {
       "accepted": "Added",
       "unavailable": "No longer available"

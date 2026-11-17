@@ -141,7 +141,6 @@ const ing: DecomposedIngredientV2 = {
   canonicalName: 'Beef brisket',
   queryEn: 'beef brisket flat half raw',
   nameVi: 'ức bò',
-  tableName: 'Beef, brisket, flat half, raw',
 };
 
 /** The candidate lists of a call that must neither expire nor go legacy. */
@@ -358,7 +357,6 @@ describe('matchCardCandidates', () => {
       canonicalName: 'Peanuts, unsalted',
       queryEn: 'unsalted dry roasted peanuts',
       nameVi: 'đậu phộng rang không muối',
-      tableName: 'Peanuts, dry-roasted, without salt',
     };
     const [result] = await cards([unsalted], mockDb(true, hits, rows), gemini);
     const ids = result.candidates.map((c) => c.info.foodCompositionId);

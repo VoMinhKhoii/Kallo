@@ -9,6 +9,7 @@ import {
 } from '@/lib/actions/tracking/weight';
 import type { WeightSummaryData } from '@/lib/core/types/weight';
 import type { WeightLogInput } from '@/lib/core/validation/weight';
+import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
 
 type WeightSummarySnapshot = Array<
   [readonly unknown[], WeightSummaryData | undefined]
@@ -66,6 +67,8 @@ export function useLogWeight() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: weightSummaryKeys.all });
+      // The iron target follows the latest weigh-in.
+      void queryClient.invalidateQueries({ queryKey: nutritionKeys.all });
     },
   });
 }
@@ -77,6 +80,7 @@ export function useDeleteWeightLog() {
     mutationFn: deleteWeightLogAction,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: weightSummaryKeys.all });
+      await queryClient.invalidateQueries({ queryKey: nutritionKeys.all });
     },
     onError: (error) => {
       toast.error(

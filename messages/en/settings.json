@@ -99,8 +99,8 @@
     "linkedTitle": "Sign-in methods",
     "linkedConnect": "Connect",
     "linkedDisconnect": "Disconnect",
-    "linkedConnectError": "Could not connect that account. Please try again.",
-    "linkedDisconnectError": "Could not disconnect that account. Please try again.",
+    "linkedConnectError": "Couldn't connect that account",
+    "linkedDisconnectError": "Couldn't disconnect that account",
     "linkedLoadError": "Could not load your sign-in methods.",
     "linkedLoading": "Loading sign-in methods…",
     "linkedRetry": "Try again",
@@ -108,9 +108,9 @@
     "exportDescription": "A JSON file of your account, profile, meals, weights, Circle, chats, notifications, feedback, billing and app activity. Uploaded photos are listed by file path.",
     "exportAction": "Export",
     "exporting": "Preparing your data…",
-    "exportError": "Could not export your data. Please try again.",
-    "exportRateLimited": "An export is already running or you've reached today's export limit. Please try again later.",
-    "signOutError": "Couldn't sign out. Please try again.",
+    "exportError": "Could not export your data",
+    "exportRateLimited": "Export running or limit reached",
+    "signOutError": "Couldn't sign out",
     "signOutTitle": "Sign out",
     "signOutAction": "Sign out",
     "deleteTitle": "Delete account",
@@ -124,7 +124,7 @@
     "deleteConfirmAction": "Delete my account",
     "deleting": "Deleting your account…",
     "deleteCancel": "Keep my account",
-    "deleteError": "Could not delete your account. Please try again."
+    "deleteError": "Could not delete your account"
   },
   "regionalPanel": {
     "searchCountryLabel": "Search country",
@@ -136,8 +136,8 @@
     "startSetup": "Start setup"
   },
   "profilePanel": {
-    "saveError": "Failed to save settings. Please try again.",
-    "invalidError": "Some entries are invalid — please review your body metrics."
+    "saveError": "Couldn't save settings",
+    "invalidError": "Check your body metrics"
   },
   "identity": {
     "title": "Profile",
@@ -165,11 +165,11 @@
   "sharing": {
     "autoShareLabel": "Share new meals with your circle",
     "autoShareHint": "Off unless you turn it on. When on, each new meal is shared with your circle as you save it. Friends only see meals shared after you connected.",
-    "error": "Couldn't update your sharing preference. Please try again."
+    "error": "Couldn't update sharing"
   },
   "aiConsent": {
     "label": "AI meal analysis",
     "hint": "Sends the meals you type, the label photos you scan and your ingredient searches to Google Gemini to estimate nutrition. While off, AI logging and label scanning stay paused.",
-    "error": "Couldn’t update your AI preference. Please try again."
+    "error": "Couldn't update your AI choice"
   }
 }

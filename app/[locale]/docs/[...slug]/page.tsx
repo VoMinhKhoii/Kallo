@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
 import { DocsBreadcrumbs } from '@/components/docs/docs-breadcrumbs';
 import { DocsPager } from '@/components/docs/docs-pager';
 import { DocsToc } from '@/components/docs/docs-toc';
@@ -76,45 +75,20 @@ interface DocPageProps {
 }
 
 /**
- * Every doc is prerendered (`generateStaticParams`), so a direct visit gets
- * the whole page as static HTML — the boundary below resolves at build time.
- * It exists for client navigations: docs links share one prefetched App Shell
- * per route (Partial Prefetching), which cannot know the slug, so the
- * skeleton shows the instant a link is clicked and the page streams in.
+ * Every doc is prerendered (`generateStaticParams`), so a visit gets the whole
+ * page as static HTML. It sits outside `<Suspense>` on purpose: React outlines a
+ * boundary over 12.8 KB, which shipped the article as a hidden block after the
+ * footer, and crawlers that run no JavaScript read that as an empty page. Docs
+ * are what an assistant cites, so that outweighs the skeleton a click used to
+ * show. That makes a read of `params` here blocking by design, and
+ * `instant = false` says so.
  *
- * An unknown slug never gets this far with a 404 status: a slug that
- * `generateStaticParams` did not list is served from a shell whose Suspense
- * fallback has already committed a 200, so the `notFound()` in `DocContent`
- * only injects a `noindex` meta. `proxy.ts` rejects those URLs first.
+ * A mistyped slug is rejected by `proxy.ts` before it gets here; the
+ * `notFound()` below is the backstop.
  */
-export default function DocPage({ params }: DocPageProps) {
-  return (
-    <Suspense fallback={<DocSkeleton />}>
-      <DocContent params={params} />
-    </Suspense>
-  );
-}
+export const instant = false;
 
-function DocSkeleton() {
-  return (
-    <div className="xl:grid xl:grid-cols-[14rem_minmax(0,40rem)_14rem] xl:justify-center xl:gap-10">
-      <div aria-hidden="true" className="hidden xl:block" />
-      <div
-        className="mx-auto w-full min-w-0 max-w-[40rem] space-y-4 py-10 motion-safe:animate-pulse xl:mx-0"
-        aria-busy="true"
-      >
-        <div className="mx-auto h-9 w-2/3 rounded-md bg-kallo-track" />
-        <div className="mx-auto h-3 w-40 rounded-full bg-kallo-track" />
-        <hr className="mt-8 border-kallo-text border-t" />
-        {Array.from({ length: 6 }, (_, index) => (
-          <div key={index} className="h-4 w-full rounded-full bg-kallo-track" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-async function DocContent({ params }: DocPageProps) {
+export default async function DocPage({ params }: DocPageProps) {
   const { locale, slug } = await params;
   // Narrow the URL segment once. Every downstream call wants the union, and
   // three separate `as Locale` casts would each be an unchecked promise that

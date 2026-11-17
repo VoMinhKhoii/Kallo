@@ -550,8 +550,20 @@ describe('leaveChatGroup', () => {
     expect(mockTxDelete).toHaveBeenCalledTimes(1);
 
     mockDbSelect.mockReturnValueOnce(selectRows([]));
+    // The visibility-scoped marker read overlaps membership validation.
+    const marker = {
+      innerJoin: vi.fn(),
+      where: vi.fn(),
+      orderBy: vi.fn(),
+      limit: vi.fn().mockResolvedValue([]),
+    };
+    marker.innerJoin.mockReturnValue(marker);
+    marker.where.mockReturnValue(marker);
+    marker.orderBy.mockReturnValue(marker);
+    mockDbSelect.mockReturnValueOnce({ from: vi.fn().mockReturnValue(marker) });
     await expect(
       listGroupMealFeed(USER_A, { groupId: GROUP_ID })
     ).rejects.toThrow('Không tìm thấy nhóm chat.');
+    expect(mockDbUpdate).not.toHaveBeenCalled();
   });
 });

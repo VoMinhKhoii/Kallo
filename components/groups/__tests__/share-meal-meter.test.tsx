@@ -10,7 +10,6 @@ const seats = [
 function renderMeter(split: boolean, onRemove = vi.fn()) {
   render(
     <ShareMealMeter
-      emptyLabel="empty"
       evenlyLabel="evenly"
       onChange={vi.fn()}
       onRemove={onRemove}

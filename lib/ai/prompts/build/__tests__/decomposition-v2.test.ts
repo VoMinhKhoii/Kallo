@@ -208,16 +208,16 @@ describe('decomposition-v2 locale blocks', () => {
   });
 
   it('the weighed-dish examples show every field the call schema requires', () => {
-    // Call 1's schema requires queryEn, nameVi and tableName on every
+    // Call 1's schema requires queryEn and nameVi on every
     // ingredient; examples without them raised schema re-asks (Haiku probe:
     // 16 → 2 per 170 calls once these examples carried them).
     const en = buildDecompositionV2Prompt(enUserContext);
     expect(en).toMatch(
-      /"rawName":"fettuccine","canonicalName":"[^"]+","queryEn":"[^"]+","nameVi":"[^"]+","tableName":"[^"]+"/
+      /"rawName":"fettuccine","canonicalName":"[^"]+","queryEn":"[^"]+","nameVi":"[^"]+"/
     );
     const vi = buildDecompositionV2Prompt(baseUserContext);
     expect(vi).toMatch(
-      /"rawName":"mì","canonicalName":"[^"]+","queryEn":"[^"]+","nameVi":"[^"]+","tableName":"[^"]+"/
+      /"rawName":"mì","canonicalName":"[^"]+","queryEn":"[^"]+","nameVi":"[^"]+"/
     );
   });
 

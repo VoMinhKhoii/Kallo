@@ -725,8 +725,8 @@ export const analysisModelBudgetEvents = pgTable(
     // billed at the cached rate; thought is billed as output on top of it.
     cachedTokens: integer('cached_tokens').notNull().default(0),
     thoughtTokens: integer('thought_tokens').notNull().default(0),
-    // Subset of input written to Claude's cache, billed 1.25x input. Rows
-    // before 2026-10-15 carry 0: the count was not kept then.
+    // Subset of input written to Claude's cache, billed above input (see
+    // pricing.ts). Rows before 2026-10-15 carry 0: the count was not kept then.
     cacheWriteTokens: integer('cache_write_tokens').notNull().default(0),
     // USD for an attempt row, priced at write time from pricing.ts. NULL for
     // the reservation row, an attempt with no usage, or an unpriced model.

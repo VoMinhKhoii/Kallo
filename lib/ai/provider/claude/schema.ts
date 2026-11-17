@@ -8,6 +8,7 @@
  * re-ask costs a full 4-5 s call).
  */
 import type { ProviderJsonSchema } from '@/lib/ai/prompts/schema';
+import { nameKey } from '@/lib/core/text/name-key';
 
 /** Keywords Claude rejects; `description` adds tokens without changing what it emits. */
 const UNSUPPORTED = new Set([
@@ -58,29 +59,97 @@ export function withoutEmptyStrings(node: unknown): unknown {
 }
 
 type Loose = Record<string, unknown>;
+const present = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
 
 /**
- * Fix the value slips seen from Claude on the two pipeline schemas
+ * What Call 1 left out that the pipeline has a neutral value for: a food
+ * without one of its search strings (`queryEn`, `nameVi`) takes the string
+ * retrieval falls back to anyway (`cards/query-strings.ts`), and a dish
+ * without a `cookingMethod` (Haiku skips it on drinks and packaged foods) is
+ * "as served", which names no cooking and matches none of the method rules.
+ * Tried only on an answer that failed its schema, so an answer for a schema
+ * without these fields is never touched. Returns a copy.
+ */
+export function withCallOneDefaults(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(withCallOneDefaults);
+  if (!node || typeof node !== 'object') return node;
+  const out = Object.fromEntries(
+    Object.entries(node).map(([key, value]) => [
+      key,
+      withCallOneDefaults(value),
+    ])
+  ) as Loose;
+  if (
+    typeof out.rawName === 'string' &&
+    typeof out.canonicalName === 'string'
+  ) {
+    if (!present(out.queryEn)) out.queryEn = out.canonicalName;
+    if (!present(out.nameVi)) out.nameVi = out.rawName;
+  }
+  const isCallOneDish =
+    typeof out.name === 'string' &&
+    Array.isArray(out.ingredients) &&
+    out.ingredients.some((g) => typeof (g as Loose)?.rawName === 'string');
+  if (isCallOneDish && !present(out.cookingMethod))
+    out.cookingMethod = 'as served';
+  return out;
+}
+
+/**
+ * Fix the value slips seen from the models on the two pipeline schemas
  * (decomposition and grounded estimation) before the Zod parse: an explicit
- * mass of 0 g means no mass; a missing dish `cookingMethod` is ""; over-long `rejectReason` /
+ * mass or a dish `servedMassG` of 0 g means no weight was typed, and a dish
+ * `statedKcal` of 0 means no calories were typed (Haiku writes
+ * `servedMassG: 0` for "no weight", and the schema's > 0 rule then failed the
+ * whole Call 1); a missing dish `cookingMethod` is ""; over-long `rejectReason` /
  * `prepNotes` are cut to the schema's lengths; `refusePct` is clamped to
- * 0-80; a meal item with no ingredients is dropped. Fields a schema does not
- * have are left alone.
+ * 0-80; a Call 2 ingredient at 0 g is dropped, and a `servedG` of 0 means no
+ * plate weight; a `vesselToken` over the schema's 16 characters is dropped; a
+ * meal item left with no ingredients is dropped when its name is unique (a
+ * repeated name is kept, see below). Fields a schema
+ * does not have are left alone.
  */
 export function repairPipelineOutput(raw: unknown): unknown {
   if (!raw || typeof raw !== 'object') return raw;
   const out = raw as Loose;
   if (!Array.isArray(out.mealItems)) return raw;
+  for (const m of out.mealItems as Loose[]) {
+    // A Call 2 ingredient at 0 g is no answer for it (Call 2 asks again).
+    if (
+      Array.isArray(m?.ingredients) &&
+      m.ingredients.some((g) => 'grossG' in (g as Loose))
+    )
+      m.ingredients = (m.ingredients as Loose[]).filter(
+        (g) => Number(g.grossG) > 0
+      );
+  }
+  // Estimates pair to dishes by name and occurrence (resolve/dish-slots.ts),
+  // so dropping one of two same-name dishes would hand the next one's answer
+  // to its slot. Keep an emptied repeated dish: the parse then fails and the
+  // call is asked again, as before this repair.
+  const names = new Map<string, number>();
+  const keyOf = (m: Loose) => nameKey(String(m?.mealItemName ?? m?.name ?? ''));
+  for (const m of out.mealItems as Loose[])
+    names.set(keyOf(m), (names.get(keyOf(m)) ?? 0) + 1);
   out.mealItems = (out.mealItems as Loose[]).filter(
-    (m) => !Array.isArray(m?.ingredients) || m.ingredients.length > 0
+    (m) =>
+      !Array.isArray(m?.ingredients) ||
+      m.ingredients.length > 0 ||
+      (names.get(keyOf(m)) ?? 0) > 1
   );
   for (const m of out.mealItems as Loose[]) {
+    if (typeof m.vesselToken === 'string' && m.vesselToken.length > 16)
+      delete m.vesselToken;
     if (
       ('cookingMethod' in m || 'name' in m) &&
       typeof m.cookingMethod !== 'string'
     )
       m.cookingMethod = '';
+    if ('servedMassG' in m && !(Number(m.servedMassG) > 0))
+      delete m.servedMassG;
+    if ('statedKcal' in m && !(Number(m.statedKcal) > 0)) delete m.statedKcal;
     for (const g of (m.ingredients as Loose[] | undefined) ?? []) {
+      if ('servedG' in g && !(Number(g.servedG) > 0)) delete g.servedG;
       const mass = g.explicitMass as Loose | undefined;
       if (mass && !(Number(mass.grams) > 0)) delete g.explicitMass;
       if (typeof g.rejectReason === 'string' && g.rejectReason.length > 120)

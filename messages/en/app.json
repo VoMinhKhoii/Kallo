@@ -31,13 +31,13 @@
     "minimize": "Minimize",
     "minimizedTitle": "Finish your profile",
     "restoreLabel": "Resume profile setup, step {current} of {total}",
-    "saveError": "Could not save setup reminder. Please try again."
+    "saveError": "Could not save setup reminder"
   },
   "userMenu": {
     "openMenu": "Open account menu",
     "settings": "Settings",
     "signOut": "Sign out",
-    "signOutError": "Could not sign out. Please try again.",
+    "signOutError": "Could not sign out",
     "account": "Account",
     "expandOnHover": "Expand on hover"
   },

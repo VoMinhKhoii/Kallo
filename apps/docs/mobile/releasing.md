@@ -48,8 +48,13 @@ The Key ID / Issuer ID / Team ID are baked into the `Fastfile` (they're useless 
 - **Bundle id:** `com.khoivo.nham` — intentionally the **same as the earlier RN port**, so the Flutter
   build appears as a new build of the existing App Store Connect record (App id `6775761392`),
   with the same testers. (The Flutter project's original `com.nham.kalloMobile` was changed for this.)
-- **Marketing version:** `1.0.0` (from `pubspec.yaml`'s `version:`). Bump it there when you want a
-  new version train.
+- **Marketing version:** set by `--build-name` in the Fastfile's `beta` lane; keep `pubspec.yaml`'s
+  `version:` the same. Bump both before each new App Store version: a build only attaches to the
+  version it is stamped with, and a version that is live takes no more builds.
+- **App Review sign-in:** email sign-in is code-only, but a reviewer cannot read the demo account's
+  mailbox, so that one address (`kAppReviewEmail`, matching App Store Connect's App Review
+  Information) gets a password field. Change them together, and keep the auth proxy's password
+  grant ungated while reviews use this account.
 
 ## Production config
 
@@ -149,6 +154,31 @@ App Store builds (distribution signing) use **production**; since dev builds poi
 `APNS_PRODUCTION` per backend environment. The Simulator can receive **sandbox** pushes on supported
 hosts (Xcode 14+, iOS 16+, Apple silicon or T2, macOS 13+); verify production delivery and
 device-specific behavior on a physical device.
+
+### Home-screen widget (App Group) — what CI cannot do for you
+
+The widget adds a third bundle, the WidgetKit extension
+`com.khoivo.nham.TodayWidget` (`ios/TodayWidget/`, embedded in Runner), and an **App Group**
+the app and the widget share (`group.com.khoivo.nham`). One-time, by a human, before the next
+TestFlight build:
+
+1. Apple Developer → Identifiers → the **App Groups** filter → **+** → App Group, description
+   "Kallo widget", identifier `group.com.khoivo.nham`.
+2. Identifiers → `com.khoivo.nham` → enable **App Groups** → Configure → tick
+   `group.com.khoivo.nham` → Save. The entitlement is already in `Runner.entitlements`; a profile
+   without it fails codesign.
+3. Identifiers → **+** → App ID `com.khoivo.nham.TodayWidget` → enable **App Groups** → Configure
+   → tick `group.com.khoivo.nham` → Save (`TodayWidget.entitlements` carries it).
+4. From `apps/mobile-flutter/ios`, with `MATCH_GIT_URL` / `MATCH_PASSWORD` exported:
+   `bundle exec fastlane match appstore --force`. The Matchfile now lists all three bundle ids, so
+   this regenerates the app's profile (new capability) and mints the widget's. CI fails at `match`
+   until this has run.
+
+The lane signs the widget with its own profile and `ExportOptions.plist` maps it;
+`test/ios/today_widget_test.dart` guards the wiring. Debug builds sign it automatically with the
+same team. The widget needs iOS 17 (its deployment target); on iOS 15–16 the app runs as before and
+the widget is simply not offered. How the widget works and how to test it:
+[today-widget.md](./today-widget.md).
 
 ## Export compliance
 

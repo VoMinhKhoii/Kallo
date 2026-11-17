@@ -46,17 +46,14 @@ jobs:
       SERVICE_NAME: kallo-prod
       # Prod runs in Singapore to co-locate with the Supabase DB (AWS
       # ap-southeast-1) — DB-query latency dominates for this app, and Cloudflare's
-      # edge absorbs user-facing latency regardless. This deliberately differs from
-      # vars.GCP_REGION (asia-southeast3 / Bangkok), where the Artifact Registry is.
+      # edge absorbs user-facing latency regardless. The Artifact Registry
+      # (vars.GCP_REGION) is in the same region.
       PROD_REGION: asia-southeast1
-      # IMAGE_TAG stays on vars.GCP_REGION: the image is built + pushed to the
-      # Bangkok Artifact Registry by CI. Cloud Run in Singapore pulls it
-      # cross-region (a minor cold-start cost only).
       # The commit being deployed: the dispatcher's explicit sha input, or the
       # tip of the dispatched ref (main). Referenced everywhere the old
       # workflow_run trigger supplied head_sha.
       DEPLOY_SHA: ${{ inputs.sha != '' && inputs.sha || github.sha }}
-      IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ inputs.sha != '' && inputs.sha || github.sha }}
+      IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/kallo:${{ inputs.sha != '' && inputs.sha || github.sha }}
       # deploy-lease.sh takes its lock object from LEASE_BUCKET/LEASE_OBJECT;
       # translate-usda.yml holds the same lock while it writes to the prod DB.
       LEASE_BUCKET: ${{ vars.GCS_PROD_LEASE_BUCKET }}
@@ -542,6 +539,22 @@ jobs:
             esac
           fi
           ./scripts/cloud-run/smoke-check.sh "$SMOKE_URL" "${smoke_args[@]}"
+      - name: Crawl check the candidate (SEO)
+        # The same check CI runs on the build, now with prod settings, before
+        # the candidate takes traffic: a page that turns noindex, 404s or hides
+        # its article never reaches search engines.
+        env:
+          SMOKE_URL: ${{ env.SMOKE_URL }}
+        run: |
+          # A redeploy of a commit from before the check has no script to run.
+          if [ ! -f scripts/seo/crawl-check.ts ]; then
+            echo "This commit predates scripts/seo/crawl-check.ts; skipping."
+            exit 0
+          fi
+          ORIGIN_SHARED_SECRET="$(gcloud secrets versions access latest --secret=kallo-prod-origin-shared-secret)"
+          echo "::add-mask::$ORIGIN_SHARED_SECRET"
+          export ORIGIN_SHARED_SECRET
+          bun scripts/seo/crawl-check.ts "$SMOKE_URL" --live https://kallo.fit
       - name: Promote candidate after smoke pass
         # Only for an existing service: shift 100% traffic to the validated
         # (latest) revision, then drop the candidate tag. On a first deploy the

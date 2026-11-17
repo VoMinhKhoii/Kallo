@@ -1,24 +1,28 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
 import { OAuthErrorToast } from '@/components/auth/oauth-error-toast';
 import {
   AuthRequestConfig,
   type AuthSearchParams,
 } from '@/components/auth/request-config/auth-request-config';
 import { DocsFooter } from '@/components/docs/docs-footer';
-import { AmbientWash } from '@/components/landing-page/ambient-wash';
 import { Header } from '@/components/landing-page/header';
-import { MealCardHero } from '@/components/landing-page/hero/meal-card-hero';
-import { PricingSection } from '@/components/landing-page/pricing/pricing-section';
+import { PaintedHero } from '@/components/landing-page/hero/painted-hero';
+import { PageCanvas } from '@/components/landing-page/page-canvas';
+import { BeyondMacros } from '@/components/landing-page/showcase/beyond-macros';
+import { DownloadClose } from '@/components/landing-page/showcase/download-close';
+import { PhoneTrio } from '@/components/landing-page/showcase/phone-trio';
+import { TypingAlternatives } from '@/components/landing-page/showcase/typing-alternatives';
 import { SignedInRedirect } from '@/components/landing-page/signed-in-redirect';
+import { MealDataNote } from '@/components/landing-page/understanding/meal-data-note';
 import { UnderstandingSection } from '@/components/landing-page/understanding/understanding-section';
 import { WaitlistStatusToast } from '@/components/landing-page/waitlist/waitlist-status-toast';
 import { AppThemeProvider } from '@/components/providers/theme/app-theme-provider';
-import type { Locale } from '@/i18n/config';
 import { routing } from '@/i18n/routing';
 import { getDocsTree } from '@/lib/domain/docs/tree';
 import { alternateLanguages } from '@/lib/seo/alternates';
@@ -75,11 +79,15 @@ export default async function Home({
   searchParams: Promise<AuthSearchParams>;
 }) {
   const { locale } = await params;
+  // The layout's notFound() does not stop this page: they render in parallel,
+  // so a non-locale first segment (`/:param`) would reach the food-page data
+  // below and crash with a 500 instead of a 404.
+  if (!hasLocale(routing.locales, locale)) notFound();
 
   // The docs footer, not a marketing one: it is already the full site directory
   // (including Legal), and its espresso ground is what ends the page — a cream
   // footer under a cream page needs a rule and still reads as more page.
-  const sections = await getDocsTree(locale as Locale);
+  const sections = await getDocsTree(locale);
 
   const t = await getTranslations({ locale, namespace: 'metadata' });
   const structuredData = landingStructuredData({
@@ -101,17 +109,18 @@ export default async function Home({
           // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is raw script text built locally, not user input — see comment above.
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
-        {/* One fixed layer behind everything, so the drift runs the whole way
-            down instead of stopping where the hero ends. */}
-        <AmbientWash />
+        <PageCanvas />
         <Header />
         <main>
-          <MealCardHero />
-          <UnderstandingSection />
-          <PricingSection />
+          <PaintedHero />
+          <PhoneTrio />
+          <UnderstandingSection subtitle={<MealDataNote locale={locale} />} />
+          <TypingAlternatives />
+          <BeyondMacros />
+          <DownloadClose />
         </main>
         <DocsFooter landing sections={sections} />
-        <AuthDialog />
+        <LazyAuthDialog />
         <Suspense fallback={null}>
           <OAuthErrorToast />
           <WaitlistStatusToast />

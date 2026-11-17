@@ -237,3 +237,15 @@ describe('page responses', () => {
     );
   });
 });
+
+describe('matcher', () => {
+  it('lets the landing media through without a locale redirect', async () => {
+    const { config } = await import('../proxy');
+    const [pattern] = config.matcher;
+    const matches = (path: string) => new RegExp(`^${pattern}$`).test(path);
+
+    expect(matches('/landing/video/en/log.mp4')).toBe(false);
+    expect(matches('/landing/hero/stacks-of-wheat-1920.avif')).toBe(false);
+    expect(matches('/en/pricing')).toBe(true);
+  });
+});

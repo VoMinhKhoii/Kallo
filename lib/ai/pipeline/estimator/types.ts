@@ -40,7 +40,7 @@ export interface GroundedEstimatorInput {
   mealItems: MealItemWithCandidates[];
   /** Personalization context (country, cooking habits) for the prompt. */
   userContext: PromptPersonalizationContext;
-  /** Call-2 sampling temperature (orchestrator default 0.4). */
+  /** Call-2 sampling temperature (orchestrator default 0). */
   temperature: number;
 }
 

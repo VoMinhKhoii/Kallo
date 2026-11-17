@@ -27,6 +27,11 @@ class AddFriendRow extends StatelessWidget {
   /// than vanishing, so the list does not reshuffle under the finger.
   final bool enabled;
 
+  static const double _avatar = 32;
+
+  /// A row's full height, which the sheet sizes its list from.
+  static const double height = _avatar + KalloSpacing.sp2 * 2;
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
@@ -50,7 +55,7 @@ class AddFriendRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
             child: Row(
               children: [
-                ProfileAvatarDisc(profile: profile, size: 32),
+                ProfileAvatarDisc(profile: profile, size: _avatar),
                 const SizedBox(width: KalloSpacing.sp3),
                 Expanded(child: Text(profile.label, style: dashBody())),
               ],

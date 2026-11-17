@@ -2,8 +2,9 @@
  * Stage 4 of the grounded run: Call-2 output → the final `PipelineResult`.
  *
  * Bridges the v2 shapes onto the v1 inputs the shared resolver expects,
- * reconciles ingredient ids, assembles displayed totals, and — when the portion
- * vessel flag is on — re-attaches each meal item's vessel envelope. Runs inside
+ * reconciles ingredient ids, assembles displayed totals, re-attaches each meal
+ * item's vessel envelope when the portion vessel flag is on, and sets a dish
+ * to the calories the user typed for it. Runs inside
  * ONE `assembly` stage log so the admin timeline shows a single row for the
  * whole bridge → reconcile → assemble hop.
  */
@@ -22,6 +23,7 @@ import {
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { withStageLogV2 } from './stage-log';
+import { holdToTypedCalories, markTypedParts } from './text-checks/typed-facts';
 
 export type AssemblyStageResult = ReturnType<typeof assembleResult> & {
   bridged: ReturnType<typeof bridgeV2ToV1>;
@@ -90,6 +92,13 @@ export function runAssemblyStage(args: {
       return {
         bridged,
         ...assembled,
+        // Calories the user typed for a dish replace the estimate, and every
+        // part with a typed amount is marked so no later scaling moves it.
+        result: markTypedParts(
+          holdToTypedCalories(assembled.result, decomposition.mealItems),
+          decomposition,
+          portionResolutions
+        ),
       };
     }
   );

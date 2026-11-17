@@ -22,6 +22,8 @@ interface MealEditDialogProps {
   initial: MealEditDraft;
   /** The meal's words, under the title. */
   subtitle?: string;
+  /** The dish tapped on the card, which the dialog opens scrolled to. */
+  openOnDish?: string;
   /** "Save" for a saved meal, "Done" for an unsaved one. */
   commitLabel: string;
   /** Resolves to close; throws to stay open for a retry (the caller toasts). */
@@ -64,6 +66,7 @@ export function MealEditDialog(props: MealEditDialogProps) {
 function MealEditBody({
   onOpenChange,
   initial,
+  openOnDish,
   commitLabel,
   onCommit,
   saving,
@@ -110,6 +113,7 @@ function MealEditBody({
             key={dish.key}
             draft={draft}
             dish={dish}
+            openedOn={openOnDish === dish.key}
             onDraft={setDraft}
           />
         ))}

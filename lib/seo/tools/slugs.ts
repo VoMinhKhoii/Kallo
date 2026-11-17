@@ -14,6 +14,13 @@ export const TOOL_SLUGS = [
 
 export type ToolSlug = (typeof TOOL_SLUGS)[number];
 
+/**
+ * The day the calculator pages' copy or links last changed in a way a reader
+ * sees, for their sitemap date. Bump it with such a change, never on a deploy
+ * alone.
+ */
+export const TOOL_PAGES_REVISED = '2026-11-05';
+
 /** The locale-relative folder every tool page sits under. */
 export const TOOLS_PREFIX = '/tools';
 

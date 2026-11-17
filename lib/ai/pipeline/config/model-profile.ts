@@ -51,9 +51,9 @@ export const NEXT_PROFILE: ModelProfile = {
 /**
  * Claude Haiku 5.5 for both calls (`PIPELINE_MODEL_PROFILE=haiku`), for a
  * production trial: the Meal Arena hill climb (ttr DEV-129) was tuned on
- * Haiku. Every Claude call falls back to the stable Gemini model on any
- * failure (`createPipelineLlm`), so this profile cannot take the pipeline
- * down. Escalation stays off, and the cheat-meal estimate stays on Gemini:
+ * Haiku. A Claude call that fails moves to Haiku on Vertex AI, then to the
+ * stable Gemini model (`createPipelineLlm`), so this profile cannot take the
+ * pipeline down. Escalation stays off, and the cheat-meal estimate stays on Gemini:
  * only the two benchmarked calls move.
  */
 export const HAIKU_PROFILE: ModelProfile = {

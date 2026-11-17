@@ -10,6 +10,7 @@ import {
   useRemoveFriend,
 } from '@/hooks/social/circle/use-friends';
 import type { CircleMember } from '@/lib/actions/groups/types';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
 import { ProfileIdentity } from './profile-identity';
 
 /** The signed-in user's accepted connections, each with Remove/Block actions
@@ -37,7 +38,7 @@ export function CircleList() {
   if (circle.length === 0) {
     return (
       <SurfaceState
-        area="circle"
+        cast={CIRCLE_CAST}
         compact
         kind="empty"
         subtitle={t('empty')}

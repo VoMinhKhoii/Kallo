@@ -39,7 +39,7 @@ export const tdee: ToolCopy = {
     {
       heading: 'What to do with it',
       paragraphs: [
-        'Maintenance is the anchor every other target hangs on. Losing weight means eating below it, gaining means eating above it, and the calorie deficit calculator turns a goal weight and a pace into a daily number and a date. The hard part is knowing what you actually eat, which is where most estimates go wrong: a "small" bowl of pasta or a splash of oil changes the total more than the formula ever will.',
+        'Maintenance is the anchor every other target hangs on. Eat below it to lose weight or above it to gain. The calorie deficit calculator turns a goal weight and pace into a daily target and date. The hard part is knowing what you actually eat, which is where most estimates go wrong: a "small" bowl of pasta or a splash of oil moves the number more than the formula ever will.',
       ],
     },
   ],

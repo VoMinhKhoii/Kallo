@@ -2,13 +2,13 @@
   "paywall": {
     "unavailable": "Hiện chưa thể mua. Vui lòng thử lại sau.",
     "successToast": "Chào mừng đến với Kallo Premium.",
-    "successPendingToast": "Đã nhận thanh toán — quyền premium sẽ xuất hiện trong giây lát.",
-    "pendingToast": "Thanh toán đang chờ xử lý. Premium sẽ mở sau khi cửa hàng xác nhận.",
+    "successPendingToast": "Đã nhận thanh toán, đang mở Premium",
+    "pendingToast": "Thanh toán đang chờ xác nhận",
     "pendingTitle": "Kích hoạt vẫn đang chờ",
     "pendingBody": "Kallo chưa xác nhận Premium. Bạn sẽ không bị tính phí thêm tại đây; hãy kiểm tra lại sau khi cửa hàng xử lý xong.",
     "pendingCta": "Kiểm tra lại",
-    "errorToast": "Có lỗi khi mua. Vui lòng thử lại.",
-    "sessionChangedToast": "Tài khoản đăng nhập đã thay đổi. Hãy tải lại trang trước khi mua.",
+    "errorToast": "Không hoàn tất được giao dịch",
+    "sessionChangedToast": "Tài khoản đã đổi, hãy tải lại trang",
     "successTitle": "Xong rồi",
     "successBody": "Premium đã kích hoạt. Phân tích bữa ăn bằng AI đã được mở khóa trong toàn ứng dụng.",
     "successCta": "Bắt đầu ước lượng"
@@ -59,6 +59,6 @@
       "subtitle": "Vitamin, khoáng chất và chất xơ theo mục tiêu của bạn.",
       "cta": "Nâng cấp"
     },
-    "purchasesUnavailable": "Hiện chưa thể nâng cấp. Các tính năng Premium sẽ sớm được mở."
+    "purchasesUnavailable": "Hiện chưa thể nâng cấp"
   }
 }

@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
 import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
 import {
   DocsH2,
@@ -12,14 +12,21 @@ import {
   DocsParagraph,
   DocsUnorderedList,
 } from '@/components/docs/mdx/prose';
+import { FoodLinkList } from '@/components/seo/food-page/food-link-list';
+import { LinkedSentence } from '@/components/seo/food-page/linked-sentence';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
+import { JsonLd } from '@/components/seo/json-ld';
 import { ToolCalculator } from '@/components/seo/tools/tool-calculator';
 import { ToolLinkList } from '@/components/seo/tools/tool-link-list';
 import { isLocale, locales } from '@/i18n/config';
 import { alternateLanguages } from '@/lib/seo/alternates';
+import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
+import { FOOD_PAGE_PREFIX, FOOD_SLUGS } from '@/lib/seo/food-pages/slugs';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
+import { toolStructuredData } from '@/lib/seo/page-structured-data';
 import { SITE_URL } from '@/lib/seo/site';
 import { HUB_COPY, TOOL_COPY, TOOL_UI } from '@/lib/seo/tools/content';
+import { exampleMealPages } from '@/lib/seo/tools/example-meals';
 import {
   isToolSlug,
   TOOL_SLUGS,
@@ -38,6 +45,13 @@ import {
 interface ToolPageProps {
   params: Promise<{ locale: string; tool: string }>;
 }
+
+// Deliberately blocking (`instant = false`): the page must not sit inside a
+// `<Suspense>` for its params. React outlines a boundary over 12.8 KB, so the
+// whole article shipped as a hidden block after the footer, moved into place
+// by a script. Crawlers that run no JavaScript read that as an empty page.
+// Every URL is prerendered (`generateStaticParams`), so the wait is a prefetch.
+export const instant = false;
 
 export function generateStaticParams() {
   return locales.flatMap((locale) =>
@@ -68,23 +82,26 @@ export async function generateMetadata({
   };
 }
 
-export default function ToolPage({ params }: ToolPageProps) {
-  return (
-    <Suspense fallback={null}>
-      <ToolContent params={params} />
-    </Suspense>
-  );
-}
-
-async function ToolContent({ params }: ToolPageProps) {
+export default async function ToolPage({ params }: ToolPageProps) {
   const { locale, tool } = await params;
   if (!isLocale(locale) || !isToolSlug(tool)) notFound();
   const copy = TOOL_COPY[locale][tool];
   const hub = HUB_COPY[locale];
+  const browse = FOOD_PAGE_CHROME[locale].browse;
   const t = await getTranslations({ locale, namespace: 'landing.header' });
 
   return (
     <AuthProvider>
+      <JsonLd
+        data={toolStructuredData({
+          locale,
+          url: `${SITE_URL}/${locale}${TOOLS_PREFIX}/${tool}`,
+          name: copy.name,
+          description: copy.description,
+          hubName: hub.title,
+          hubPath: `/${locale}${TOOLS_PREFIX}`,
+        })}
+      />
       <article className="mx-auto w-full min-w-0 max-w-[40rem] py-10">
         <div className="mt-3 text-center">
           <h1 className="text-balance font-bold font-serif text-h1 text-kallo-text">
@@ -109,6 +126,15 @@ async function ToolContent({ params }: ToolPageProps) {
               ))}
             </section>
           ))}
+
+          <DocsH2>{hub.exampleMeals.heading}</DocsH2>
+          <DocsParagraph>{hub.exampleMeals.lead}</DocsParagraph>
+          <FoodLinkList pages={exampleMealPages(locale, tool)} />
+          <LinkedSentence
+            {...browse}
+            href={FOOD_PAGE_PREFIX}
+            link={browse.link(FOOD_SLUGS[locale].length)}
+          />
 
           <DocsH2>{hub.sourcesHeading}</DocsH2>
           <DocsUnorderedList>
@@ -136,7 +162,7 @@ async function ToolContent({ params }: ToolPageProps) {
           </div>
         </div>
       </article>
-      <AuthDialog />
+      <LazyAuthDialog />
       <Suspense fallback={null}>
         <AuthRequestConfig />
       </Suspense>

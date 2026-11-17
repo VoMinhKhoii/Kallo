@@ -1,0 +1,121 @@
+---
+title: How micronutrient targets are set
+description: Where Kallo's vitamin and mineral targets come from, and how your weight and calorie target raise iron, B vitamins and fiber.
+lastUpdated: '2026-11-13'
+---
+
+Every card on the [Nutrition](/docs/tracking/nutrition) page compares what you
+ate with a daily target. Each target is a published reference intake for your
+age and sex. Kallo adjusts one only where the source itself gives a rule for
+it: iron follows your weight, and fiber and a few B vitamins follow your
+calorie target. Kallo doesn't invent or tune any number.
+
+## Which reference table you get
+
+If Vietnam is your country of origin or residence, your targets come from the
+Vietnam RDA 2016, published by the National Institute of Nutrition and the
+Ministry of Health. Everyone else gets the WHO/FAO 2004 reference values.
+WHO/FAO publishes nothing for copper, manganese, phosphorus, potassium, sodium
+or fiber, so those come from the US National Academies (NASEM) for everyone.
+
+Your profile picks the row in that table:
+
+| What your profile has | What the target uses |
+| --- | --- |
+| Your age | The table's band for that age |
+| No age | The band for a 20-year-old |
+| No biological sex | The average of the male and female values |
+| No weight | The table value, with no weight adjustment |
+| No calorie target | The table value, with no calorie adjustment |
+
+How much iron your body absorbs depends on what else you eat, so each table
+prints several iron columns. Kallo uses the Vietnam table's 10% column and WHO's 15% column. WHO
+gives women after menopause 7.5 mg of iron a day, and Kallo applies it from
+age 51, where the US tables also start their older-women band.
+
+## Iron follows your weight
+
+Iron is the one target these tables work out from body weight. The body loses
+about 14 µg of iron per kg per day through skin and gut (WHO/FAO 2004; IOM
+2001), and for an adult man that loss is the whole requirement. Each table
+assumes a reference body weight, so Kallo adds the extra loss for every kg you
+weigh above it:
+
+| Table | Adult reference weight, men / women | Extra iron per kg |
+| --- | --- | --- |
+| Vietnam RDA 2016 | 61.1 / 53.0 kg (ages 20–29) | 0.195 mg |
+| WHO/FAO 2004 | 75 / 62 kg | 0.121 mg |
+
+For a 22-year-old man:
+
+| Weight | Vietnam | WHO/FAO |
+| --- | --- | --- |
+| 50 kg | 11.9 mg | 9.1 mg |
+| 75 kg | 14.6 mg | 9.1 mg |
+| 125 kg | 24.3 mg | 15.2 mg |
+
+If you weigh less than the reference, you keep the table value, which already
+covers the lighter half of the people it was set for. Each age band has its
+own reference weight, and the target never goes above 45 mg a day, the
+tolerable upper intake for adults.
+
+For women, period losses don't depend on weight, so only the body-weight part
+moves. A 25-year-old Vietnamese woman at 70 kg gets 26.1 + 17 × 0.195 =
+29.4 mg.
+
+Kallo uses your latest weigh-in, so logging a new weight updates the target
+straight away.
+
+## B vitamins and fiber follow your calorie target
+
+B1 and niacin help the body turn food into energy, so some sources state them
+per 1,000 kcal eaten. NASEM states fiber the same way. For these, the target
+rises with your calorie target. The table value stays the floor, so a cut
+never lowers a target.
+
+| Nutrient | Per 1,000 kcal | Applies to | Source |
+| --- | --- | --- | --- |
+| Vitamin B1 (thiamin) | 0.5 mg | Vietnam table | Vietnam RDA 2016 |
+| Vitamin B1 (thiamin) | 0.42 mg | Everyone else | EFSA 2016 |
+| Vitamin B2 (riboflavin) | 0.6 mg | Vietnam table | Vietnam RDA 2016 |
+| Niacin | 6.7 mg | Everyone | EFSA 2014 |
+| Fiber | 14 g | Everyone | NASEM 2005 |
+
+Outside Vietnam B2 stays at the table value: Europe's food safety authority
+(EFSA) sets riboflavin at a flat 1.6 mg a day.
+
+On an ordinary intake these targets stay at the table value. A Vietnamese
+man's B1 starts rising only above 2,600 kcal. On a 4,375 kcal bulk, a 22-year-old man gets:
+
+| Nutrient | Vietnam | Elsewhere |
+| --- | --- | --- |
+| Vitamin B1 | 2.2 mg | 1.8 mg |
+| Vitamin B2 | 2.6 mg | 1.3 mg |
+| Niacin | 29 mg | 29 mg |
+| Fiber | 61 g | 61 g |
+
+<Callout label="A target is not a diagnosis">
+A food log can't tell you whether you are low in a nutrient. The US Institute
+of Medicine says intake data alone can't judge one person's nutritional
+status; that takes a clinical exam and blood tests. Read these targets as a
+reference to compare your log against, and see a doctor if you are worried
+about a deficiency.
+</Callout>
+
+Kallo has no iodine target: its food data has no iodine figures, and most
+iodine comes from iodized salt anyway.
+
+## Sources
+
+- [Nhu cầu dinh dưỡng khuyến nghị cho người Việt Nam](https://tranbinhduong.com/wp-content/uploads/2024/09/NIN_Vietamese-RDAs-2016.pdf),
+  National Institute of Nutrition / Ministry of Health, 2016
+- [Vitamin and mineral requirements in human nutrition](https://iris.who.int/handle/10665/42716),
+  WHO/FAO, 2nd edition, 2004: chapter 13 (iron)
+- [Dietary Reference Intakes for vitamin A, vitamin K, … iron, … and zinc](https://nap.nationalacademies.org/read/10026/chapter/11),
+  Institute of Medicine, 2001: iron chapter
+- [Dietary Reference Intakes: applications in dietary assessment](https://nap.nationalacademies.org/catalog/9956),
+  Institute of Medicine, 2000
+- EFSA dietary reference values for
+  [thiamin](https://efsa.europa.eu/en/efsajournal/pub/4653) (2016),
+  [niacin](https://efsa.europa.eu/en/efsajournal/pub/3759) (2014) and
+  [riboflavin](https://efsa.europa.eu/en/efsajournal/pub/4919) (2017)

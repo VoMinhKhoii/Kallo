@@ -26,7 +26,7 @@ export interface RecordAnalysisModelBudgetEventInput {
   cachedTokens?: number | null;
   /** Thinking tokens — billed as output, not included in `outputTokens`. */
   thoughtTokens?: number | null;
-  /** Subset of `inputTokens` written to Claude's cache (billed 1.25x input). */
+  /** Subset of `inputTokens` written to Claude's cache (billed 2x input). */
   cacheWriteTokens?: number | null;
   /** USD the attempt cost; null when unknown (no usage, unpriced model). */
   costUsd?: number | null;

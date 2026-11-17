@@ -14,7 +14,8 @@ import 'package:kallo_mobile/services/auth/session_provider.dart';
 import '../../l10n_test_loader.dart';
 
 /// Email sign-in is code-only: the address, "Send code", then the 6-digit
-/// code. One form signs in and signs up, and nothing asks for a password.
+/// code. One form signs in and signs up, and only the App Review demo account
+/// is asked for a password.
 final _provider =
     StateNotifierProvider.autoDispose<AuthFormController, AuthFormState>(
       AuthFormController.new,
@@ -28,6 +29,7 @@ class _FakeAuthController extends AuthController {
 
   final sends = <Map<String, Object?>>[];
   final verifies = <String>[];
+  final passwordSignIns = <String>[];
   AuthException? sendError;
   AuthException? verifyError;
 
@@ -43,6 +45,15 @@ class _FakeAuthController extends AuthController {
       'captcha': captchaToken,
     });
     if (sendError != null) throw sendError!;
+  }
+
+  @override
+  Future<AuthResponse> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    passwordSignIns.add('$email:$password');
+    return AuthResponse();
   }
 
   @override
@@ -94,6 +105,8 @@ Widget _app(_FakeAuthController auth) => ProviderScope(
 
 Future<void> _sendCode(WidgetTester tester, String email) async {
   await tester.enterText(find.byType(TextField), email);
+  // A frame first, as a finger always gets: the button wakes on the rebuild.
+  await tester.pump();
   await tester.tap(find.text('Send code'));
   await tester.pumpAndSettle();
 }
@@ -139,8 +152,37 @@ void main() {
 
     await _sendCode(tester, 'not-an-email');
 
+    // "Send code" stays held, so the tap does nothing at all.
+    expect(auth.sends, isEmpty);
+    expect(find.text('Enter a valid email address'), findsNothing);
+
+    // The keyboard's Done still says why.
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
     expect(auth.sends, isEmpty);
     expect(find.text('Enter a valid email address'), findsOneWidget);
+  });
+
+  testWidgets('"Send code" wakes only once the address is complete', (
+    tester,
+  ) async {
+    final auth = _FakeAuthController();
+    await tester.pumpWidget(_app(auth));
+    await tester.pumpAndSettle();
+
+    Opacity button() => tester.widget<Opacity>(
+      find
+          .ancestor(of: find.text('Send code'), matching: find.byType(Opacity))
+          .first,
+    );
+
+    expect(button().opacity, 0.6);
+    await tester.enterText(find.byType(TextField), 'khoi@example');
+    await tester.pump();
+    expect(button().opacity, 0.6);
+    await tester.enterText(find.byType(TextField), 'khoi@example.com');
+    await tester.pump();
+    expect(button().opacity, 1.0);
   });
 
   testWidgets('a refused Turnstile token reads as its own line, not a '
@@ -158,10 +200,7 @@ void main() {
     await _sendCode(tester, 'khoi@example.com');
 
     expect(find.byType(EmailCodeView), findsNothing);
-    expect(
-      find.textContaining("couldn't confirm you're a person"),
-      findsOneWidget,
-    );
+    expect(find.text("Couldn't confirm you're a person"), findsOneWidget);
   });
 
   testWidgets('a code that arrives whole verifies by itself; a wrong one says '
@@ -241,6 +280,56 @@ void main() {
 
     expect(auth.sends, hasLength(2));
     expect(find.text('Send a new code in 60s'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('the App Review address, in any case, signs in by password '
+      'and mails no code', (tester) async {
+    final auth = _FakeAuthController();
+    await tester.pumpWidget(_app(auth));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), ' Test@Kallo.fit ');
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNWidgets(2));
+    expect(find.text('Send code'), findsNothing);
+
+    await tester.enterText(find.byType(TextField).last, 'secret');
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+
+    expect(auth.passwordSignIns, ['Test@Kallo.fit:secret']);
+    expect(auth.sends, isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('the review address with no password sends nothing', (
+    tester,
+  ) async {
+    final auth = _FakeAuthController();
+    await tester.pumpWidget(_app(auth));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'test@kallo.fit');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+
+    expect(auth.passwordSignIns, isEmpty);
+    expect(auth.sends, isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('any other address never sees a password field', (tester) async {
+    final auth = _FakeAuthController();
+    await tester.pumpWidget(_app(auth));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'test@kallo.fit.evil.com');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('Send code'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 }

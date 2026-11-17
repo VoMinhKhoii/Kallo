@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Trà sữa trân châu',
     title: 'Trà sữa trân châu bao nhiêu calo?',
-    metaTitle: '1 ly trà sữa bao nhiêu calo? 4 ly trà sữa thật',
+    metaTitle: (span) =>
+      `1 ly trà sữa bao nhiêu calo? ${span} kcal, 4 ly trà sữa thật`,
     description: (span) =>
       `Khoảng ${span} calo một ly. Bốn ly trà sữa thật: đường đen size L thêm pudding và thạch, size M 50% đường, size M không trân châu, và full topping 100% đường.`,
     lead: (span) =>
@@ -36,6 +37,6 @@ export const food: FoodContent = {
     breakdownLead:
       'Trong ly full topping size L, hai loại trân châu là 483 calo, hơn nửa ly; sữa thêm 150 và đường 80. Bỏ trân châu và giảm đường, ly size M còn khoảng 130.',
     tryLine:
-      'Gõ ly của bạn như khi gọi món, kiểu “trà sữa size M, 30% đường, thêm trân châu trắng”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi gọi món: “trà sữa size M, 30% đường, thêm trân châu trắng”, Kallo lo phần còn lại.',
   },
 };

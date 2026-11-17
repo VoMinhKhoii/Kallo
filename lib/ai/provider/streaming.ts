@@ -101,7 +101,8 @@ export function createStructuredOutputStream({
 
         if (!accumulated)
           throw new Error('Gemini stream returned empty response');
-        return params.schema.parse(JSON.parse(accumulated));
+        const raw = JSON.parse(accumulated);
+        return params.schema.parse(params.repair ? params.repair(raw) : raw);
       },
       { label: `${params.model}-stream`, onAttempt }
     );

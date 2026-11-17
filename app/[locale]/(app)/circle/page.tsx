@@ -1,15 +1,19 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { FriendsFeed } from '@/components/groups/friends-feed';
+import { Suspense } from 'react';
+import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
+import { CircleFeedPanel } from '@/components/groups/navigation/circle-feed-panel';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('metadata.groups');
   return { title: t('title') };
 }
 
-/** The default "All" view: every accepted friend's shared meals merged into
- * one Threads-style feed. The bare /groups route — the pill row and group
- * routes navigate away from here. */
+/** The same URL-driven renderer handles All and local group selections. */
 export default async function GroupsPage() {
-  return <FriendsFeed />;
+  return (
+    <Suspense fallback={<CircleWallSkeleton />}>
+      <CircleFeedPanel />
+    </Suspense>
+  );
 }

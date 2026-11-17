@@ -23,6 +23,9 @@ class SheetCircleButton extends StatelessWidget {
   /// the sheet's corner, which is why [kSheetRadius] is 34.
   static const double size = 36;
 
+  /// How far a 44pt tap target reaches past the circle on each side.
+  static const double targetOverhang = (KalloIcons.hit - size) / 2;
+
   final IconData icon;
 
   /// Spoken name ("Close", "Back").

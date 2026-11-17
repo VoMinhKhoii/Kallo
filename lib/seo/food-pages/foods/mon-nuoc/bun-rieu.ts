@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bún riêu',
     title: 'Bún riêu bao nhiêu calo?',
-    metaTitle: '1 tô bún riêu bao nhiêu calo? 4 tô bún riêu thật',
+    metaTitle: (span) =>
+      `1 tô bún riêu bao nhiêu calo? ${span} kcal, 4 tô bún riêu thật`,
     description: (span) =>
       `Khoảng ${span} calo một tô. Bốn tô bún riêu thật: bát đầy đủ riêu ốc đậu bắp bò, tô nhỏ chỉ riêu và cà chua, tô lớn kiểu Sài Gòn thêm giò heo, và tô đặc biệt thêm mỡ nước.`,
     lead: (span) =>
@@ -36,6 +37,6 @@ export const food: FoodContent = {
     breakdownLead:
       'Ở tô đặc biệt, riêu cua chỉ 57 calo; đậu phụ rán (204), bắp bò (187) và một thìa mỡ nước (121) mới là phần nặng. Tô nhỏ chỉ có riêu và cà chua là 223.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “bún riêu tô nhỏ, thêm đậu, không mỡ nước”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “bún riêu tô nhỏ, thêm đậu, không mỡ nước”, Kallo lo phần còn lại.',
   },
 };

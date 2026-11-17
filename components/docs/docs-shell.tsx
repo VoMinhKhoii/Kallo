@@ -25,9 +25,9 @@ export async function DocsShell({
       <LightOnly />
       <DocsHeader searchEntries={searchEntries} />
 
-      <div className="mx-auto w-full max-w-[90rem] flex-1 px-4 sm:px-6">
+      <main className="mx-auto w-full max-w-[90rem] flex-1 px-4 sm:px-6">
         {children}
-      </div>
+      </main>
 
       <DocsFooter sections={sections} />
     </div>

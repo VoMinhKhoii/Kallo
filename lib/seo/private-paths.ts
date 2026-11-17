@@ -1,3 +1,5 @@
+import { ALTERNATIVES_PREFIX } from '@/lib/seo/alternatives/slugs';
+import { COMPARE_PREFIX } from '@/lib/seo/compare/slugs';
 import { FOOD_PAGE_PREFIX } from '@/lib/seo/food-pages/slugs';
 import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
@@ -39,6 +41,8 @@ export const PUBLIC_NON_MARKDOWN_PREFIXES = [
   FOOD_PAGE_PREFIX,
   MEAL_DATA_PATH,
   TOOLS_PREFIX,
+  ALTERNATIVES_PREFIX,
+  COMPARE_PREFIX,
 ] as const;
 
 /** True when `path` is one of `prefixes` or sits under one of them. */

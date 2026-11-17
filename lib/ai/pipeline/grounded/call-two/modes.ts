@@ -24,6 +24,7 @@ import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-can
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import type { GeminiCallTrace } from '@/lib/ai/provider/provider';
 import { fetchWithTimeout } from '@/lib/core/async/fetch-with-timeout';
+import { fillOmitted } from './fill-omitted';
 import { type ChunkEmitContext, emitChunkItemMacros } from './item-macros';
 
 /**
@@ -100,6 +101,19 @@ export interface RunCallTwoResult {
   failedMealItemNames: string[];
 }
 
+/** What the re-ask needs; its budget is measured when it is about to run. */
+function fillArgs(args: RunCallTwoArgs) {
+  return {
+    estimator: args.estimator,
+    mealItems: args.mealItems,
+    originalPrompt: args.originalPrompt,
+    promptCtx: args.promptCtx,
+    temperature: args.temperature,
+    budgetMs: chunkedPhaseBudgetMs(args.runStartedAt),
+    onAttemptComplete: args.onAttemptComplete,
+  };
+}
+
 /**
  * Run Call 2. `fastPath`, when provided, is the pre-computed synthesized
  * estimation for a fully-grounded meal (the orchestrator decides eligibility
@@ -135,7 +149,10 @@ export async function runCallTwo(
       onAttemptComplete: args.onAttemptComplete,
     });
     return {
-      grounded: result.estimation,
+      grounded: await fillOmitted(result.estimation, {
+        ...fillArgs(args),
+        skipMealItemNames: result.failedMealItemNames,
+      }),
       mode: 'chunked',
       chunkCount: result.chunkCount,
       failedChunkCount: result.failedChunkCount,
@@ -172,7 +189,7 @@ export async function runCallTwo(
     'grounded-nutrition'
   );
   return {
-    grounded,
+    grounded: await fillOmitted(grounded, fillArgs(args)),
     mode: 'single',
     chunkCount: 1,
     failedChunkCount: 0,

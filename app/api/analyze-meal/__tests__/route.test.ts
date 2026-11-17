@@ -951,6 +951,53 @@ describe('POST /api/analyze-meal', () => {
     );
   });
 
+  it('holds the staged meal near the plain read', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+    const generateStructuredOutput = vi.fn().mockResolvedValue({
+      foods: [{ name: 'phở bò tái', grams: 550, kcal: 600 }],
+      totalKcal: 600,
+    });
+    mockCreateGeminiClient.mockReturnValue({ generateStructuredOutput });
+
+    const res = await POST(createRequest(mealRequestBody('Phở bò tái')));
+    await readSSEEvents(res);
+
+    // 300 kcal against a 600 kcal read: scaled to the band's low edge.
+    const edge = 600 / 1.1;
+    const staged = mockInsertValues.mock.calls[0][0].pipelineResult;
+    expect(staged.displayedNutrition.caloriesKcal).toBeCloseTo(edge);
+    // Grams are held to the read's grams: 200 g against 550 g.
+    expect(staged.mealItems[0].ingredients[0].estimatedGrams).toBeCloseTo(
+      550 / 1.1
+    );
+    expect(generateStructuredOutput.mock.calls[0][0].userMessage).toContain(
+      'Phở bò tái'
+    );
+  });
+
+  it('leaves a part the user weighed as computed, whatever the read says', async () => {
+    const typed = structuredClone(mockPipelineData);
+    Object.assign(typed.mealItems[0].ingredients[0], {
+      typedAmount: 'grams' as const,
+    });
+    mockAnalyzeMeal.mockResolvedValue({ success: true, data: typed });
+    const generateStructuredOutput = vi.fn().mockResolvedValue({
+      foods: [{ name: 'ức gà', grams: 200, kcal: 600 }],
+      totalKcal: 600,
+    });
+    mockCreateGeminiClient.mockReturnValue({ generateStructuredOutput });
+
+    const res = await POST(createRequest(mealRequestBody('200g ức gà')));
+    await readSSEEvents(res);
+
+    const staged = mockInsertValues.mock.calls[0][0].pipelineResult;
+    expect(staged.displayedNutrition.caloriesKcal).toBe(300);
+    expect(staged.mealItems[0].ingredients[0].estimatedGrams).toBe(200);
+  });
+
   it('passes request locale as fallback for mixed-language meal input', async () => {
     mockAnalyzeMeal.mockResolvedValue({
       success: true,
@@ -1261,8 +1308,7 @@ describe('POST /api/analyze-meal', () => {
       {
         type: 'error',
         code: 'partial_analysis_failure',
-        message:
-          'Part of your meal could not be analyzed just now. Please try again.',
+        message: 'Couldn’t analyze part of your meal',
         retryable: true,
       },
     ]);
@@ -1298,8 +1344,7 @@ describe('POST /api/analyze-meal', () => {
       {
         type: 'error',
         code: 'partial_analysis_failure',
-        message:
-          'Could not work out the nutrition for "Mì gói". Please try describing that part differently.',
+        message: 'Try rewording "Mì gói"',
         retryable: true,
       },
     ]);
@@ -1331,8 +1376,7 @@ describe('POST /api/analyze-meal', () => {
 
     expect(events[0]).toMatchObject({
       code: 'partial_analysis_failure',
-      message:
-        'Could not work out the nutrition for part of this meal. Please try describing it differently.',
+      message: 'Try rewording part of this meal',
     });
     expect(mockLogUnmatchedIngredients).not.toHaveBeenCalled();
   });
@@ -1367,8 +1411,7 @@ describe('POST /api/analyze-meal', () => {
       {
         type: 'error',
         code: 'empty_nutrition',
-        message:
-          'Could not estimate nutrition for this meal. Please try describing it differently.',
+        message: 'Try rewording this meal',
         retryable: true,
       },
     ]);

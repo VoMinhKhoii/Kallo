@@ -234,7 +234,7 @@ export function useStreamAnalysis({
           // The watchdog aborted a silent, un-terminated stream — surface it as
           // a retryable timeout. A user-initiated cancel() leaves timedOut
           // false and stays silent.
-          if (timedOut) fail('Analysis timed out. Please try again.');
+          if (timedOut) fail('Analysis timed out');
           return 'notStaged';
         }
 

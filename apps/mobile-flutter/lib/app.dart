@@ -14,6 +14,7 @@ import 'features/circle/logic/circle_deep_links.dart';
 import 'features/dashboard/data/dashboard_cache.dart';
 import 'features/logging/data/logging_providers.dart';
 import 'features/notifications/logic/push_registration.dart';
+import 'features/today_widget/logic/today_widget_sync.dart';
 import 'router.dart';
 import 'shell/kallo_app_theme.dart';
 import 'shell/launch/launch_curtain.dart';
@@ -123,10 +124,15 @@ class _NhamAppState extends ConsumerState<KalloApp>
           builder:
               (context, child) => MediaQuery.withClampedTextScaling(
                 maxScaleFactor: 1.3,
-                // Below the localizations, so the reminder buttons are
-                // registered with real titles (see [ReminderCategories]).
-                child: ReminderCategories(
-                  child: LaunchCurtain(ready: launchReady, child: child!),
+                // Below the localizations, so the widget's copy resolves to
+                // words rather than keys; writes the day for the home-screen
+                // widget and routes its tap.
+                child: TodayWidgetSync(
+                  // Below the localizations, so the reminder buttons are
+                  // registered with real titles (see [ReminderCategories]).
+                  child: ReminderCategories(
+                    child: LaunchCurtain(ready: launchReady, child: child!),
+                  ),
                 ),
               ),
           // easy_localization wiring (locale source of truth lives on the

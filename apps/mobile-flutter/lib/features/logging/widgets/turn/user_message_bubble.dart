@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../shared/widgets/menu/kallo_anchored_menu.dart';
+import '../../../../shared/widgets/menu/kallo_hold_menu.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import 'sent_bubble.dart';
 import '../../data/handoff_slots.dart';
@@ -41,17 +42,19 @@ enum _Action { copy, edit }
 /// because this bubble renders in three meal cards and the live turn's footer,
 /// none of which can see the composer's controller.
 ///
-/// **The menu is the app's own** ([showKalloAnchoredMenu]), not
+/// **The menu is the app's own** ([KalloHoldMenu]), not
 /// `CupertinoContextMenu` — which is what shipped here until 2026-09-08. The
 /// system route relocates the pressed widget into a preview slot of its own
 /// and scales it 1.15x, so the bubble slid out from under the finger every
 /// time; it also hands the actions Cupertino's chrome instead of Be Vietnam
 /// Pro, and stretches the hold to iOS's 800ms preview timeout. The owned menu
-/// is the ChatGPT behaviour: the bubble does not move (a pinned copy is drawn
-/// at the rect the [GlobalKey] measured), the card hangs off its trailing
+/// is the ChatGPT behaviour: the bubble does not move (a pinned copy lifts in
+/// place at the rect the hold measured), the card hangs off its trailing
 /// edge, the header says when it was sent, and the hold is Material's 500ms.
 /// The exception is recorded under boundary 3 of *Cupertino wherever it
 /// exists* in `.agents/skills/kallo-design/mobile.md`.
+///
+/// The meal cards open the same menu on the same hold (2026-11-05).
 ///
 /// The action glyphs come from Lucide, the one icon font this app bundles.
 /// `CupertinoIcons.doc_on_clipboard` sat here until 2026-09-05 and painted as
@@ -73,10 +76,6 @@ class UserMessageBubble extends ConsumerStatefulWidget {
 }
 
 class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
-  /// On the pill, not on this widget: the menu anchors to the BUBBLE's rect,
-  /// and this widget's own box is the full-width row it is aligned inside.
-  final GlobalKey _pill = GlobalKey();
-
   /// Park the message for the composer to pick up — the composer applies it
   /// and says what it displaced ([listenForComposerRefill]).
   void _edit() {
@@ -91,48 +90,10 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
     showTopToast(context, 'logging.messageCopied'.tr());
   }
 
-  Future<void> _openMenu(double pageWidth) async {
-    final pill = _pill.currentContext?.findRenderObject() as RenderBox?;
-    final overlay =
-        Overlay.of(context, rootOverlay: true).context.findRenderObject()
-            as RenderBox?;
-    if (pill == null || overlay == null) return;
-    final anchor =
-        pill.localToGlobal(Offset.zero, ancestor: overlay) & pill.size;
-
-    final action = await showKalloAnchoredMenu<_Action>(
-      context,
-      anchor: anchor,
-      header: widget.sentAt,
-      // The still copy, floated over the blur at the rect the page's own
-      // bubble occupies — which is what lets the page's blur run underneath it
-      // without the message itself going soft.
-      pinned: SentBubble(text: widget.text, pageWidth: pageWidth),
-      actions: [
-        KalloMenuAction(
-          label: 'logging.copyMessage'.tr(),
-          icon: LucideIcons.copy300,
-          value: _Action.copy,
-        ),
-        KalloMenuAction(
-          label: 'logging.edit'.tr(),
-          icon: LucideIcons.pencil300,
-          value: _Action.edit,
-        ),
-      ],
-    );
-    if (!mounted) return;
-    // Awaiting the menu is what puts these AFTER the route has popped: the
-    // copy toast is an OverlayEntry and would otherwise land under the scrim.
-    switch (action) {
-      case _Action.copy:
-        await _copy();
-      case _Action.edit:
-        _edit();
-      case null:
-        break;
-    }
-  }
+  void _run(_Action action) => switch (action) {
+    _Action.copy => _copy(),
+    _Action.edit => _edit(),
+  };
 
   @override
   Widget build(BuildContext context) => Align(
@@ -156,13 +117,25 @@ class _UserMessageBubbleState extends ConsumerState<UserMessageBubble> {
                 customSemanticsActions: {
                   CustomSemanticsAction(label: 'logging.edit'.tr()): _edit,
                 },
-                child: GestureDetector(
-                  // Opaque: the whole pill answers the hold, not just the glyph
-                  // run of text under the finger.
-                  behavior: HitTestBehavior.opaque,
-                  onLongPress: () => _openMenu(page.maxWidth),
+                // On the pill, not on this widget: the menu anchors to the
+                // BUBBLE's rect, and this widget's own box is the full-width
+                // row it is aligned inside.
+                child: KalloHoldMenu<_Action>(
+                  header: widget.sentAt,
+                  onSelected: _run,
+                  actions: [
+                    KalloMenuAction(
+                      label: 'logging.copyMessage'.tr(),
+                      icon: LucideIcons.copy300,
+                      value: _Action.copy,
+                    ),
+                    KalloMenuAction(
+                      label: 'logging.edit'.tr(),
+                      icon: LucideIcons.pencil300,
+                      value: _Action.edit,
+                    ),
+                  ],
                   child: SentBubble(
-                    key: _pill,
                     text: widget.text,
                     pageWidth: page.maxWidth,
                   ),

@@ -4,8 +4,11 @@
  * Sources: https://ai.google.dev/gemini-api/docs/pricing (paid tier, text
  * input), read 2026-09-25 — Vertex bills the same list rates for these
  * models; https://platform.claude.com/docs/en/about-claude/pricing, read
- * 2026-10-10 (Claude: prompts up to 100k tokens; a 5-minute cache write bills
- * 1.25x input — `CACHE_WRITE_INPUT_MULTIPLIER`, not a field here).
+ * 2026-10-10 (Claude: prompts up to 100k tokens; a 1-hour cache write bills
+ * 2x input — `CACHE_WRITE_INPUT_MULTIPLIER`, not a field here).
+ * https://cloud.google.com/model-garden/partner-models/pricing, read 2026-11-07
+ * (Claude on Vertex: 10% above the Claude API; its cached rate was not listed,
+ * so it follows the Claude API's 10% of input).
  * Re-check the page when a model is added or a cost number looks wrong — a
  * stale rate silently skews every cost report built on this file.
  */
@@ -16,6 +19,9 @@ export interface ModelRate {
   /** Rate for response tokens, thinking tokens included. */
   outputPerMTokUsd: number;
 }
+
+/** Added to a model's name for the calls that ran on Vertex AI's Claude. */
+export const VERTEX_RATE_SUFFIX = '@vertex';
 
 export const MODEL_RATES: Record<string, ModelRate> = {
   'gemini-3.1-flash-lite': {
@@ -54,13 +60,30 @@ export const MODEL_RATES: Record<string, ModelRate> = {
     cachedInputPerMTokUsd: 0.01,
     outputPerMTokUsd: 0.5,
   },
+  [`claude-haiku-5-5${VERTEX_RATE_SUFFIX}`]: {
+    inputPerMTokUsd: 0.11,
+    cachedInputPerMTokUsd: 0.011,
+    outputPerMTokUsd: 0.55,
+  },
+  // The plain read (lib/ai/pipeline/plain-read). Read 2026-11-10.
+  'claude-sonnet-5-5': {
+    inputPerMTokUsd: 2,
+    cachedInputPerMTokUsd: 0.2,
+    outputPerMTokUsd: 10,
+  },
+  [`claude-sonnet-5-5${VERTEX_RATE_SUFFIX}`]: {
+    inputPerMTokUsd: 2.2,
+    cachedInputPerMTokUsd: 0.22,
+    outputPerMTokUsd: 11,
+  },
 };
 
 /**
- * Claude bills prompt tokens written to its 5-minute cache at 1.25x input.
- * Gemini's implicit cache has no write charge, so its attempts report 0.
+ * Claude bills prompt tokens written to its 1-hour cache at 2x input, the
+ * lifetime every call asks for (`claude/structured-output.ts`). Gemini's
+ * implicit cache has no write charge, so its attempts report 0.
  */
-export const CACHE_WRITE_INPUT_MULTIPLIER = 1.25;
+export const CACHE_WRITE_INPUT_MULTIPLIER = 2;
 
 /** The token counts one attempt was billed for, as the budget row stores them. */
 export interface BilledTokens {

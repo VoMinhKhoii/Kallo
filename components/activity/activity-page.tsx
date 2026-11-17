@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { useNotificationFeed } from '@/hooks/notifications/use-notification-feed';
 import { useMarkNotificationsSeen } from '@/hooks/notifications/use-notification-state';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
 import type {
   NotificationFeedPage,
   NotificationItem,
@@ -92,7 +93,7 @@ export function ActivityPage() {
       {!(feed.isPending || feed.isError) &&
         (items.length === 0 ? (
           <SurfaceState
-            area="circle"
+            cast={CIRCLE_CAST}
             kind="emptyAlt"
             subtitle={t('empty.description')}
             title={t('empty.title')}

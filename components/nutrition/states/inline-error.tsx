@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { RetryAction } from '@/components/shared/surface-state/retry-action';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
+import { NUTRITION_CAST } from '@/lib/brand/illustrations/casts/nutrition';
 
 interface InlineErrorProps {
   isRetrying: boolean;
@@ -30,7 +31,7 @@ export function InlineError({
           onRetry={onRetry}
         />
       }
-      area="nutrition"
+      cast={NUTRITION_CAST}
       className="rounded-2xl border border-kallo-border/60 bg-card"
       kind="error"
       subtitle={message}

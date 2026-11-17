@@ -27,7 +27,8 @@ export const food: FoodContent = {
   copy: {
     name: 'Bún bò Huế',
     title: 'Bún bò Huế bao nhiêu calo?',
-    metaTitle: '1 tô bún bò Huế bao nhiêu calo? 4 tô thật',
+    metaTitle: (span) =>
+      `1 tô bún bò Huế bao nhiêu calo? ${span} kcal, 4 tô thật`,
     description: (span) =>
       `Khoảng ${span} calo một tô. Bốn tô bún bò Huế thật: tô đặc biệt giò heo chả cua thêm huyết, tô thường chỉ bắp bò, tô thường thêm một khúc giò và một tô mẹ nấu ở nhà.`,
     lead: (span) =>
@@ -36,6 +37,6 @@ export const food: FoodContent = {
     breakdownLead:
       'Một khúc giò heo (93 g) là 226 calo, ngang cả phần bún (221). Tô thường chỉ có bắp bò là 317; thêm giò là gần gấp đôi. Húp hết 450 g nước dùng chỉ thêm 62.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “bún bò Huế tô thường, không giò, ít bún”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “bún bò Huế tô thường, không giò, ít bún”, Kallo lo phần còn lại.',
   },
 };

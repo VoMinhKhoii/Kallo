@@ -2,6 +2,17 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Not the web app, so their class-like strings must not become CSS, which ships
+   inside every page's HTML (`experimental.inlineCss`). */
+@source not "../apps";
+@source not "../docs";
+@source not "../data";
+@source not "../scripts";
+@source not "../supabase";
+@source not "../e2e";
+@source not "../.agents";
+@source not "../.claude";
+
 /* Both dark themes (Graphite `.dark` and `.aurora`) turn on the `dark:`
    variant — see lib/core/theme/themes.ts. */
 @custom-variant dark (&:is(.dark *, .aurora *));
@@ -32,7 +43,9 @@
      diacritics), matching the mobile app's single-typeface calm system.
      Replaces Geist/DM Sans as the primary UI face. */
   --font-sans: var(--font-vi-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
   --font-serif: var(--font-lora), Georgia, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -640,6 +653,62 @@
   @media (prefers-reduced-motion: reduce) {
     .animate-pulse-dot {
       animation: none;
+    }
+  }
+
+  /* The public pages' entrance and scroll reveals, in CSS so they play from
+     the server-rendered HTML. Driven from JS (motion's `initial`), the server
+     sent the landing hero at opacity 0 and it stayed invisible until every
+     script had loaded and run: about 9 s on Fast 3G. Each one keeps the
+     curve, distance, duration and reduced-motion behaviour it had in motion. */
+
+  /* The hero's staggered rise on first paint. `--rise-step` sets the order
+     (90 ms apart). Reduced motion gets the hero with no animation. */
+  @keyframes kallo-rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+      filter: blur(6px);
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-rise {
+      animation: kallo-rise 0.85s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+      animation-delay: calc(var(--rise-step, 0) * 90ms);
+    }
+  }
+
+  /* The landing header's drop-in, on the curve motion played it with
+     (measured frame by frame: ease-out). It runs under reduced motion too, as
+     it always has: the header never read the setting. */
+  @keyframes kallo-header-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+  }
+  .animate-header-drop {
+    animation: kallo-header-drop 0.6s ease-out backwards;
+  }
+
+  /* Fade-up for blocks marked `data-reveal`. Visible in the HTML: a block in
+     view on first paint (or with no JS) plays it straight away, and
+     `useScrollReveal` sets `pending` on blocks still below the fold, then
+     `shown` once one is 80px into the viewport, which plays it again (motion's
+     `whileInView`, once). Reduced motion: no animation, never hidden. */
+  @keyframes kallo-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(var(--reveal-y, 24px));
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-reveal] {
+      animation: kallo-reveal 0.7s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+    }
+    [data-reveal="pending"] {
+      animation: none;
+      opacity: 0;
     }
   }
 }
