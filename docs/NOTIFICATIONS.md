@@ -400,14 +400,14 @@ Status: server + web implemented (`feat/meal-reminders`); the iOS half (categori
 
 Everything above starts with a person doing something. Reminders start with a clock. There are **no meal slots**: at four fixed LOCAL times Kallo checks how much of the day's calorie target (`user_profiles.calorie_target`) is logged. Four checkpoints means **at most four reminders a day** by construction. No target → no reminders.
 
-| Local time | Fires when | Type | Copy (EN) | iOS category → buttons |
+| Local time | Fires when | Type | Main line (EN) | iOS category → buttons |
 |---|---|---|---|---|
-| 08:00 | yesterday has ≥1 meal, is not closed, ended under `PARTIAL_DAY_FRACTION` (85%) of target | `reminder.yesterday` | "Yesterday ended at 1,243 kcal. Anything missing?" | `REMINDER_YESTERDAY` → Add to yesterday (opens logging on yesterday) · That was all (closes yesterday, no UI) |
-| 10:00 | today under 1/4 | `reminder.checkpoint` | "What have you had so far today?" | `REMINDER_LOG` → Log a meal |
-| 15:00 | today under 2/4 | `reminder.checkpoint` | "Anything since this morning? You're at 540 kcal." | `REMINDER_LOG` → Log a meal |
-| 21:00 | today under 3/4 | `reminder.checkpoint` | "689 kcal left today. Anything else, or done for today?" | `REMINDER_EVENING` → Log more · I'm done for today (closes today, no UI) |
+| 08:00 | yesterday has ≥1 meal, is not closed, ended under `PARTIAL_DAY_FRACTION` (85%) of target | `reminder.yesterday` | "Hey! Anything from yesterday you forgot to log?" | `REMINDER_YESTERDAY` → Add to yesterday (opens logging on yesterday) · That was all (closes yesterday, no UI) |
+| 10:00 | today under 1/4 | `reminder.checkpoint` | "Morning ☀️ What did you have for breakfast?" | `REMINDER_LOG` → Log a meal |
+| 15:00 | today under 2/4 | `reminder.checkpoint` | "How was lunch? Take a moment to log what you had." | `REMINDER_LOG` → Log a meal |
+| 21:00 | today under 3/4 | `reminder.checkpoint` | "Let’s wrap up today! Add anything you haven’t logged yet." | `REMINDER_EVENING` → Log more · I'm done for today (closes today, no UI) |
 
-Copy lives in `messages/{en,vi}/activity.json` → `reminder.*`, rendered server-side in `preferred_locale` (`lib/domain/reminders/copy.ts`); numbers are live and locale-grouped (`1,243` / `1.243`). No title line: the notice is headed by the app. Button titles are NOT on the wire — iOS draws them from the category the app registers on the device in its own language.
+Copy lives in `messages/{en,vi}/activity.json` → `reminder.*`, chosen server-side in `preferred_locale` (`lib/domain/reminders/copy.ts`). Each checkpoint has 20 lines (the first is the main line above) and takes one per day by the local date it is sent, so the same reminder never repeats on back-to-back days; line *n* in English and Vietnamese is the same slot. The lines carry no numbers, since the lock screen is public. No title line: the notice is headed by the app. Button titles are NOT on the wire — iOS draws them from the category the app registers on the device in its own language.
 
 ### Gates (`lib/domain/reminders/gates.ts`, pure)
 
@@ -443,7 +443,7 @@ Push only, like `chat.message`: **no notifications row, no badge**. `apns-collap
 ```jsonc
 {
   "aps": {
-    "alert": { "body": "689 kcal left today. Anything else, or done for today?" },
+    "alert": { "body": "Dinner logged? Then off to bed 😴" },
     "sound": "default",
     "thread-id": "reminders",
     "category": "REMINDER_EVENING"   // REMINDER_YESTERDAY | REMINDER_LOG | REMINDER_EVENING

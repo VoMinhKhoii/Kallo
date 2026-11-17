@@ -22,6 +22,8 @@ const devices = vi.hoisted(() => ({
 vi.mock('@/lib/domain/notifications/push-devices', () => devices);
 
 import { verifyCloseDayToken } from '@/lib/domain/reminders/action-token';
+import { reminderCopy } from '@/lib/domain/reminders/copy';
+import { CHECKPOINTS } from '@/lib/domain/reminders/schedule';
 import { runReminderTick } from '@/lib/domain/reminders/tick';
 import type { PushMessage, PushSender } from '@/lib/infra/push/types';
 
@@ -134,7 +136,8 @@ describe('runReminderTick', () => {
     expect(message).toMatchObject({
       token: 'aa',
       title: '',
-      body: '689 kcal left today. Anything else, or done for today?',
+      // The evening line for 4 November (`copy.ts` picks one per date).
+      body: reminderCopy(CHECKPOINTS[3], 'en', '2026-11-04'),
       category: 'REMINDER_EVENING',
       collapseKey: 'reminder:2026-11-04',
     });

@@ -13,15 +13,13 @@ import type { DueReminder } from './facts';
 /** One reminder that won its claim and now goes to every device of its user. */
 export interface OutgoingReminder {
   due: DueReminder;
-  /** The total the copy quotes — known, never a floor (gate 3). */
-  dayCalories: number;
 }
 
 /** HTTP/2 streams per batch — well under APNs' concurrent-stream ceiling. */
 const SEND_CHUNK = 100;
 
 function messagesFor(
-  { due, dayCalories }: OutgoingReminder,
+  { due }: OutgoingReminder,
   tokens: string[],
   actionSecret: string,
   now: Date
@@ -30,10 +28,7 @@ function messagesFor(
   const body = reminderCopy(
     checkpoint,
     toPushLocale(candidate.preferredLocale),
-    {
-      dayCalories,
-      calorieTarget: candidate.calorieTarget,
-    }
+    due.today
   );
   const data: Record<string, string> = {
     type: checkpoint.type,

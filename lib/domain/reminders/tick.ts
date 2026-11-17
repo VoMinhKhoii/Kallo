@@ -103,7 +103,7 @@ export async function runReminderTick(input: {
       reason: decision.action === 'skip' ? decision.reason : null,
     });
     if (decision.action === 'send') {
-      outgoing.push({ due: d, dayCalories: facts.dayCalories });
+      outgoing.push({ due: d });
     }
   }
 
