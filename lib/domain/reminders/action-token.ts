@@ -3,7 +3,7 @@ import { createHmac } from 'node:crypto';
 import { timingSafeMatch } from '@/lib/infra/security/webhook-request';
 
 /**
- * The capability a reminder's "That was all" / "I'm done for today" button
+ * The capability a reminder's "That was everything" button
  * carries: close THIS day for THIS user, until it expires.
  *
  * The button runs from the lock screen, in the background, with no app UI and

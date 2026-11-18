@@ -402,10 +402,10 @@ Everything above starts with a person doing something. Reminders start with a cl
 
 | Local time | Fires when | Type | Main line (EN) | iOS category → buttons |
 |---|---|---|---|---|
-| 08:00 | yesterday has ≥1 meal, is not closed, ended under `PARTIAL_DAY_FRACTION` (85%) of target | `reminder.yesterday` | "Hey! Anything from yesterday you forgot to log?" | `REMINDER_YESTERDAY` → Add to yesterday (opens logging on yesterday) · That was all (closes yesterday, no UI) |
+| 08:00 | yesterday has ≥1 meal, is not closed, ended under `PARTIAL_DAY_FRACTION` (85%) of target | `reminder.yesterday` | "Hey! Anything from yesterday you forgot to log?" | `REMINDER_YESTERDAY` → Add to yesterday (opens logging on yesterday) · That was everything (closes yesterday, no UI) |
 | 10:00 | today under 1/4 | `reminder.checkpoint` | "Morning ☀️ What did you have for breakfast?" | `REMINDER_LOG` → Log a meal |
 | 15:00 | today under 2/4 | `reminder.checkpoint` | "How was lunch? Take a moment to log what you had." | `REMINDER_LOG` → Log a meal |
-| 21:00 | today under 3/4 | `reminder.checkpoint` | "Let’s wrap up today! Add anything you haven’t logged yet." | `REMINDER_EVENING` → Log more · I'm done for today (closes today, no UI) |
+| 21:00 | today under 3/4 | `reminder.checkpoint` | "Let’s wrap up today! Add anything you haven’t logged yet." | `REMINDER_EVENING` → Log more · That was everything (closes today, no UI) |
 
 Copy lives in `messages/{en,vi}/activity.json` → `reminder.*`, chosen server-side in `preferred_locale` (`lib/domain/reminders/copy.ts`). Each checkpoint has 20 lines (the first is the main line above) and takes one per day by the local date it is sent, so the same reminder never repeats on back-to-back days; line *n* in English and Vietnamese is the same slot. The lines carry no numbers, since the lock screen is public. No title line: the notice is headed by the app. Button titles are NOT on the wire — iOS draws them from the category the app registers on the device in its own language.
 
@@ -455,11 +455,11 @@ Push only, like `chat.message`: **no notifications row, no badge**. `apns-collap
 }
 ```
 
-Tap / "Add to yesterday" / "Log a meal" / "Log more" open the app on the Today logging screen for `date`. "That was all" / "I'm done for today" run in the background: the app POSTs `{token: actionToken}` to `POST /api/v1/reminders/close-day` natively, without the user's session (refreshing a Supabase session from native code would rotate the refresh token out from under the app). The token is `<userId>.<date>.<dayStart s>.<dayEnd s>.<exp s>.<HMAC-SHA256(REMINDER_ACTION_SECRET, "close-day|" + the first five)>`, valid 36 h (`lib/domain/reminders/action-token.ts`). The day's UTC bounds are signed in as the reminder computed them, so a device reporting another zone afterwards cannot change which meals that button's day covers. A forged or expired token is a 401 before any database read; a leaked one can only close that one day of that account, which is what its button does anyway.
+Tap / "Add to yesterday" / "Log a meal" / "Log more" open the app on the Today logging screen for `date`. "That was everything" runs in the background: the app POSTs `{token: actionToken}` to `POST /api/v1/reminders/close-day` natively, without the user's session (refreshing a Supabase session from native code would rotate the refresh token out from under the app). The token is `<userId>.<date>.<dayStart s>.<dayEnd s>.<exp s>.<HMAC-SHA256(REMINDER_ACTION_SECRET, "close-day|" + the first five)>`, valid 36 h (`lib/domain/reminders/action-token.ts`). The day's UTC bounds are signed in as the reminder computed them, so a device reporting another zone afterwards cannot change which meals that button's day covers. A forged or expired token is a 401 before any database read; a leaked one can only close that one day of that account, which is what its button does anyway.
 
 ### Closing a day
 
-Closing reuses the existing "Mình ăn đủ rồi" mark: one `day_completion_marks` row per day, one-way, `closeDay` in `lib/domain/meals/day-completion.ts` shared by `POST /api/v1/logging/day/complete` and the reminder button. **Today may now be closed** (a day that has not started may not; an empty day still may not), but only from the 21:00 reminder's "I'm done for today": the app's screens add no new UI and keep offering "That's everything I ate" for under-logged past days only. A mark on today means the progress views grade today at its real calories instead of setting it aside as partial — the attestation's whole point — and stops that day's reminders; meals logged after closing still count.
+Closing reuses the existing "Mình ăn đủ rồi" mark: one `day_completion_marks` row per day, one-way, `closeDay` in `lib/domain/meals/day-completion.ts` shared by `POST /api/v1/logging/day/complete` and the reminder button. **Today may now be closed** (a day that has not started may not; an empty day still may not), but only from the 21:00 reminder's "That was everything": the app's screens add no new UI and keep offering "That's everything I ate" for under-logged past days only. A mark on today means the progress views grade today at its real calories instead of setting it aside as partial — the attestation's whole point — and stops that day's reminders; meals logged after closing still count.
 
 ### Data
 

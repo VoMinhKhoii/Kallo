@@ -7,7 +7,7 @@ import { readBoundedJson } from '@/lib/infra/http/bounded-body';
 const MAX_BODY_BYTES = 1024;
 
 /**
- * A reminder's lock-screen "That was all" / "I'm done for today" button. The
+ * A reminder's lock-screen "That was everything" button. The
  * iOS app posts the token the push carried, from the background, with no
  * session: the signed token IS the authorization (`action-token.ts`), so this
  * route takes no Bearer header. A forged or expired token is a 401 before any

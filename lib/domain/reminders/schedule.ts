@@ -14,11 +14,11 @@ export type ReminderType = 'reminder.checkpoint' | 'reminder.yesterday';
 
 /** iOS categories (registered by the app, `AppDelegate.swift`). */
 export const REMINDER_CATEGORY = {
-  /** "Add to yesterday" (opens the app) · "That was all" (closes, no UI). */
+  /** "Add to yesterday" (opens the app) · "That was everything" (closes, no UI). */
   yesterday: 'REMINDER_YESTERDAY',
   /** "Log a meal" (opens the app). */
   log: 'REMINDER_LOG',
-  /** "Log more" (opens the app) · "I'm done for today" (closes, no UI). */
+  /** "Log more" (opens the app) · "That was everything" (closes, no UI). */
   evening: 'REMINDER_EVENING',
 } as const;
 

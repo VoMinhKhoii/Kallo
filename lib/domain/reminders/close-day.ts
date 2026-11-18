@@ -4,7 +4,7 @@ import { closeDay } from '@/lib/domain/meals/day-completion';
 import { verifyCloseDayToken } from './action-token';
 
 /**
- * "That was all" / "I'm done for today", pressed on the lock screen. The token
+ * "That was everything", pressed on the lock screen. The token
  * names the user, the day and that day's UTC bounds as the reminder computed
  * them (`action-token.ts`); `closeDay` applies the same rules as the in-app
  * button (no future day, no empty day, one-way, idempotent).

@@ -9,7 +9,7 @@ import { dayCompletionMarks, meals } from '@/lib/infra/db/schema';
  * rồi" / "That's everything I ate"). The same row silences that day's
  * reminders and lets the progress views count it at its real calories.
  *
- * Today may be closed (only the 21:00 reminder's "I'm done for today" offers
+ * Today may be closed (only the 21:00 reminder's "That was everything" offers
  * it; the app's own screens keep it for past days); a day that has not started
  * yet may not — the caller resolves the day's
  * UTC bounds in the user's own clock and this refuses a start still ahead.

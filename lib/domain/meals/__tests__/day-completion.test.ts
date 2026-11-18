@@ -35,7 +35,7 @@ describe('closeDay', () => {
     firstMeal.mockResolvedValue([{ id: 'meal-1' }]);
   });
 
-  it('closes today — the reminder\'s "I’m done for today" while the day is still running', async () => {
+  it('closes today — the reminder\'s "That was everything" while the day is still running', async () => {
     await closeDay({ userId: USER, ...TODAY, now: NOW });
     expect(insertValues).toHaveBeenCalledWith({
       userId: USER,

@@ -63,8 +63,8 @@ step of `cloud-run-prod.yml`; a deploy with only one of them fails on purpose:
   `kallo-proxy` Worker (`apps/kallo-proxy/README.md` → "Reminder cron"), whose
   cron trigger calls the route every 15 minutes.
 - `kallo-prod-reminder-action-secret` → `REMINDER_ACTION_SECRET`: the HMAC key
-  for the signed token a reminder's lock-screen "That was all" / "I'm done for
-  today" button posts to `POST /api/v1/reminders/close-day`. Server-only; never
+  for the signed token a reminder's lock-screen "That was everything" button
+  posts to `POST /api/v1/reminders/close-day`. Server-only; never
   give it to the Worker. Rotating it voids the buttons on reminders already
   delivered (at most 36 hours' worth).
 

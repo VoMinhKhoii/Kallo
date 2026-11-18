@@ -12,7 +12,7 @@ import { timingSafeMatch } from '@/lib/infra/security/webhook-request';
  *
  * Unconfigured (no tick or action secret) answers 503 rather than running
  * half a feature: a reminder without its action token would offer a
- * "That was all" button that cannot work.
+ * "That was everything" button that cannot work.
  */
 export async function POST(request: Request) {
   const tickSecret = process.env.REMINDER_TICK_SECRET;
