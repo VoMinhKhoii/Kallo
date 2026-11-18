@@ -183,8 +183,9 @@ the fold. `.github/workflows/ios-duo-sim.yml` builds `test/shell/poses/sim/sim_t
 ships Xcode 27.1 and the iPhone Duo simulator, then closes, opens, half-folds and turns
 the simulated phone and uploads two pictures of each screen in each pose: the display's
 own pixels (`<pose>/<screen>.png`) and the device with its frame around it
-(`<pose>/framed/<screen>.png`). Run it from the Actions tab ("iOS Duo simulator"); it
-takes about 40 minutes and the pictures are in the `duo-sim-tour` artifact. The simulator
+(`<pose>/framed/<screen>.png`). A route written `/onboarding@5` opens the wizard on its
+fifth screen. Run it from the Actions tab ("iOS Duo simulator"); it
+takes about an hour and the pictures are in the `duo-sim-tour` artifact. The simulator
 has two displays, so a screenshot needs `--display=1` (outer) or `--display=3` (inner).
 No command opens or folds the simulated phone, so the job clicks Device Hub's pose
 buttons; if Apple moves them, the `desktop-*.png` files in the artifact show where they

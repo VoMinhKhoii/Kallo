@@ -11,10 +11,14 @@
 //   echo /nutrition > "$(xcrun simctl get_app_container <udid> com.khoivo.nham data)/tmp/duo_route.txt"
 //   xcrun simctl launch --terminate-running-process <udid> com.khoivo.nham
 //
+// `/onboarding@5` opens the wizard on its fifth screen (the long one, cooking
+// habits) by handing it a draft that already reached the fourth.
+//
 // It appends the window's size and insets to `duo_metrics.txt` in the app's
 // temp folder on every change, which is how the numbers in `harness/poses.dart` get
 // re-measured.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -22,6 +26,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/router.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
@@ -37,20 +42,29 @@ Future<void> main() async {
   await initializeDateFormatting();
   GoogleFonts.config.allowRuntimeFetching = false;
 
-  final route = _requestedRoute();
+  final requested = _requestedRoute().split('@');
+  final route = requested.first;
+  final screen = requested.length > 1 ? int.tryParse(requested[1]) : null;
   final fixtures = PoseFixtures();
   final container = ProviderContainer(
-    overrides: poseOverrides(
-      fixtures: fixtures,
-      api: fixtureApi(fixtures),
-      signedIn:
-          ![
-            '/sign-in',
-            '/start',
-            '/sign-in/email',
-            '/onboarding',
-          ].contains(route),
-    ),
+    overrides: [
+      ...poseOverrides(
+        fixtures: fixtures,
+        api: fixtureApi(fixtures),
+        signedIn:
+            ![
+              '/sign-in',
+              '/start',
+              '/sign-in/email',
+              '/onboarding',
+            ].contains(route),
+      ),
+      // In memory, so a draft seeded for one launch is not in the simulator's
+      // keychain for the next.
+      onboardingDraftStoreProvider.overrideWithValue(
+        OnboardingDraftStore(storage: _MemoryStore(openOn: screen)),
+      ),
+    ],
   );
   // The router reads the session on its first redirect; resolve it first, as
   // the app does on a warm launch.
@@ -104,6 +118,28 @@ String _requestedRoute() {
     if (wanted.startsWith('/')) return wanted;
   }
   return Platform.environment['DUO_ROUTE'] ?? '/dashboard';
+}
+
+/// The onboarding draft's storage for one launch: empty, or holding a draft
+/// that reached the screen before the one the script asked for.
+class _MemoryStore implements KeyValueStore {
+  _MemoryStore({int? openOn}) {
+    if (openOn == null || openOn < 2) return;
+    _values[kOnboardingDraftKey] = jsonEncode(
+      OnboardingDraft(screenReached: openOn - 1).toJson(),
+    );
+  }
+
+  final _values = <String, String>{};
+
+  @override
+  Future<String?> read(String key) async => _values[key];
+
+  @override
+  Future<void> write(String key, String value) async => _values[key] = value;
+
+  @override
+  Future<void> delete(String key) async => _values.remove(key);
 }
 
 /// A file as well as the log: `simctl launch --stdout` does not carry Dart's
