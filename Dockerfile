@@ -88,4 +88,14 @@ USER nextjs
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# --no-memory-reducer: V8's memory reducer starts a full garbage collection
+# a few seconds after allocation drops off, to shrink the heap while idle. On
+# Cloud Run the CPU is throttled between requests, so that collection crawls
+# along with almost no CPU and is still running when the next burst arrives,
+# which then waits on it: prod logged full-GC "pauses" of 3.4-6.3 s and a full
+# GC lined up with each stalled burst of app-launch calls (gc-pause logs,
+# 2026-11-18). Without the reducer, full collections happen only when the heap
+# actually needs one, during a request, with the CPU allocated. The cost is a
+# heap that does not shrink while idle, well within the 2 GiB. V8 flags other
+# than a few are refused in NODE_OPTIONS, so it goes here.
+CMD ["node", "--no-memory-reducer", "server.js"]
