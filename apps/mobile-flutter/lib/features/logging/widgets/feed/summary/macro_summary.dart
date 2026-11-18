@@ -87,46 +87,36 @@ class MacroSummary extends StatelessWidget {
             view.isLoading
                 ? const MacroSummarySkeleton()
                 : LayoutBuilder(
-                  builder:
-                      (context, constraints) => Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CalorieDial.compact(
-                            logged: view.dailyCalories.toDouble(),
-                            target: profile.calorieTarget.toDouble(),
-                            goal: profile.goal,
-                            atLeast: view.incompleteTotals.contains('calories'),
-                            // What the macros can spare at their full size:
-                            // the calorie dial shrinks and drops its verb
-                            // before it squeezes them (review of #396).
-                            maxWidth: calorieDialRoom(constraints.maxWidth),
-                          ),
-                          // The calorie dial is the widest single mark in
-                          // the row; everything left over goes to the three
-                          // macros, which shrink to fit rather than overflow,
-                          // so this gap is width taken straight off their
-                          // labels. At 12 the Vietnamese fat label ellipsized;
-                          // 8 is the smallest step that still reads as a gap
-                          // between two kinds of mark. The screen inset either
-                          // side stays at the app-wide 12 (page rhythm).
-                          const SizedBox(width: KalloSpacing.sp2),
-                          Expanded(
-                            child: MacroDialRow.compact(
-                              atLeast: view.incompleteTotals,
-                              current: {
-                                'protein': view.dailyProtein,
-                                'carbohydrate': view.dailyCarbs,
-                                'fat': view.dailyFat,
-                              },
-                              target: {
-                                'protein': profile.proteinTargetG,
-                                'carbohydrate': profile.carbsTargetG,
-                                'fat': profile.fatTargetG,
-                              },
-                            ),
-                          ),
-                        ],
+                  builder: (context, constraints) {
+                    // What the macros can spare at their full size: the
+                    // calorie dial shrinks and drops its verb before it
+                    // squeezes them (review of #396).
+                    final room = calorieDialRoom(constraints.maxWidth);
+                    // The row spaces all four marks evenly, so the header
+                    // reads as one row at any width (see leadRowFit). The
+                    // screen inset either side stays at the app-wide 12.
+                    return MacroDialRow.compact(
+                      leading: CalorieDial.compact(
+                        logged: view.dailyCalories.toDouble(),
+                        target: profile.calorieTarget.toDouble(),
+                        goal: profile.goal,
+                        atLeast: view.incompleteTotals.contains('calories'),
+                        maxWidth: room,
                       ),
+                      leadingWidth: compactCalorieDialRadius(room) * 2,
+                      atLeast: view.incompleteTotals,
+                      current: {
+                        'protein': view.dailyProtein,
+                        'carbohydrate': view.dailyCarbs,
+                        'fat': view.dailyFat,
+                      },
+                      target: {
+                        'protein': profile.proteinTargetG,
+                        'carbohydrate': profile.carbsTargetG,
+                        'fat': profile.fatTargetG,
+                      },
+                    );
+                  },
                 ),
       ),
     );

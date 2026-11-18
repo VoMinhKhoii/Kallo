@@ -7,13 +7,19 @@
 /// the dashboard-shaped layouts live here.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/feedback/skeleton.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/dashboard_spacing.dart';
+import '../../logic/today_dial_layout.dart';
+import 'dash_skeleton_header.dart';
 import 'dashboard_pane_skeleton.dart';
+import 'today_row_skeleton.dart';
 
 /// Inner placeholder rows for the Today card — hero + ring, three macro rows, a
 /// divider gap, two meal rows. Mirrors the real card so the swap is calm. Used
@@ -51,9 +57,14 @@ List<Widget> todayCardSkeletonChildren() => [
   ],
   // Stands in for the real card's hairline: section above + section below.
   const SizedBox(height: DashboardSpacing.section * 2),
-  const SkeletonBar(widthFactor: 0.7, height: 13, radius: 4),
-  const SizedBox(height: DashboardSpacing.row * 2),
-  const SkeletonBar(widthFactor: 0.55, height: 13, radius: 4),
+  ...todayMealSkeletonChildren(),
+];
+
+/// The two meal rows at the foot of the Today placeholder.
+List<Widget> todayMealSkeletonChildren() => const [
+  SkeletonBar(widthFactor: 0.7, height: 13, radius: 4),
+  SizedBox(height: DashboardSpacing.row * 2),
+  SkeletonBar(widthFactor: 0.55, height: 13, radius: 4),
 ];
 
 /// Inner placeholder rows for the Weight card — hero + stat, input field,
@@ -73,34 +84,35 @@ List<Widget> weightCardSkeletonChildren() => const [
   SkeletonBar(height: 96, radius: 10),
 ];
 
-/// The out-of-card section-header placeholder. Unlike the shared
-/// [SkeletonHeader] it is spaced at [DashboardSpacing.block] and sized to the
-/// 17/600 title beside its 12 muted meta, matching [SectionHeaderRow] (which
-/// carries no margin of its own — the parent stack owns the gap), so
-/// loading→data doesn't jump.
-class DashSkeletonHeader extends StatelessWidget {
-  const DashSkeletonHeader({super.key});
-  @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.only(bottom: DashboardSpacing.block),
-    child: SkeletonPulse(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          SkeletonBar(width: 120, height: 18, radius: 4),
-          SkeletonBar(width: 52, height: 12, radius: 4),
-        ],
-      ),
-    ),
-  );
-}
-
-/// The Today card placeholder (header + card), under one pulse.
+/// The Today card placeholder (header + card), under one pulse. Where Today
+/// draws its dials in one row, the placeholder takes that row's shape too.
 class TodayCardSkeleton extends StatelessWidget {
   const TodayCardSkeleton({super.key});
   @override
-  Widget build(BuildContext context) =>
-      SkeletonCard(children: todayCardSkeletonChildren());
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      if (!todayDialsInOneRow(context, constraints.maxWidth)) {
+        return SkeletonCard(children: todayCardSkeletonChildren());
+      }
+      // The real title is one line of kSectionHeader, a little taller than
+      // the bar standing in for it. Making up the difference here puts the
+      // calorie placeholder on the rect its arc lands on.
+      final title = kSectionHeader();
+      final line =
+          MediaQuery.textScalerOf(context).scale(title.fontSize!) *
+          title.height!;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(height: math.max(0, line - kDashSkeletonTitleHeight)),
+          const TodayRowSkeleton(),
+          const SizedBox(height: DashboardSpacing.sectionBreak),
+          const DashSkeletonHeader(),
+          SkeletonCard(children: todayMealSkeletonChildren()),
+        ],
+      );
+    },
+  );
 }
 
 /// The Weight card placeholder (header + card), under one pulse.

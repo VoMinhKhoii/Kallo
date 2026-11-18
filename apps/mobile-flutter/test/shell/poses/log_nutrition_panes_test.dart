@@ -14,6 +14,8 @@ import 'package:kallo_mobile/features/logging/widgets/feed/feed_list.dart';
 import 'package:kallo_mobile/features/logging/widgets/timeline/timeline_picker.dart';
 import 'package:kallo_mobile/features/logging/widgets/timeline/timeline_strip.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
+import 'package:kallo_mobile/features/logging/widgets/feed/summary/macro_summary.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
 import 'package:kallo_mobile/features/nutrition/widgets/summary/day_summary.dart';
 import 'package:kallo_mobile/features/nutrition/widgets/scope/range_selector.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_refresh.dart';
@@ -199,6 +201,51 @@ void main() {
       await dispose();
     },
   );
+
+  // The owner saw the calorie dial sit hard left, half as far from protein as
+  // protein from carbs, with empty space after fat (iPhone Duo, 2026-11-18).
+  for (final pose in [
+    outerLandscape,
+    const Pose(
+      'outer-landscape-left',
+      Size(678, 466),
+      EdgeInsets.only(left: 84, bottom: 34),
+    ),
+    innerPortrait,
+    outerPortrait,
+    phone,
+  ]) {
+    testWidgets('Log spaces its four dials evenly at ${pose.name}', (
+      tester,
+    ) async {
+      final dispose = await bootPose(tester, pose, '/logging');
+      final row = tester.getRect(find.byType(MacroSummary));
+      final arcs =
+          tester
+              .widgetList(
+                find.descendant(
+                  of: find.byType(MacroSummary),
+                  matching: find.byType(RoundedGaugeArc),
+                ),
+              )
+              .map((arc) => tester.getRect(find.byWidget(arc)))
+              .toList();
+      expect(arcs, hasLength(4));
+      final gaps = [
+        for (var i = 1; i < 4; i++) arcs[i].left - arcs[i - 1].right,
+      ];
+      for (final gap in gaps) {
+        expect(gap, closeTo(gaps.first, 1), reason: '$gaps');
+      }
+      // Balanced: as far from the row's left edge as from its right.
+      expect(
+        arcs.first.left - row.left,
+        closeTo(row.right - arcs.last.right, 1),
+      );
+      expect(tester.takeException(), isNull);
+      await dispose();
+    });
+  }
 }
 
 /// The far and near panes' scroll controllers, as mounted now. Each pane owns

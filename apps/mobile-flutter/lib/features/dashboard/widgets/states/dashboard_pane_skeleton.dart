@@ -6,6 +6,7 @@ import '../../../../shared/widgets/feedback/skeleton.dart';
 import '../../../../shared/widgets/panes/two_pane_scaffold.dart';
 import '../../logic/dashboard_spacing.dart';
 import 'card_skeletons.dart';
+import 'dash_skeleton_header.dart';
 
 /// Loading previews the same independent panes as the loaded dashboard.
 /// A one-column window shows [single], the full-page silhouette.

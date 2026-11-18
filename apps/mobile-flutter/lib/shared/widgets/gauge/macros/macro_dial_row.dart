@@ -39,20 +39,46 @@ const double kCompactMacroDialRadius = 36;
 /// Tighter than the 8 it started at, and load-bearing: at 8 a 390pt phone left
 /// the fat label ~58pt for a word measuring ~58-62, so "CHẤT BÉO" ellipsized.
 /// Tight gaps spare the label from scaling down further — the arcs already
-/// shrink, and the 12px screen inset is the app-wide rhythm.
-const double _gutter = KalloSpacing.sp1; // 4
+/// shrink, and the 12px screen inset is the app-wide rhythm. Public so a
+/// skeleton standing in for the row spaces its marks the same way.
+const double kMacroDialGutter = KalloSpacing.sp1; // 4
 
 /// The width a row of three [radius] dials needs to draw them at that size —
 /// what a surface subtracts before handing the rest to the calorie dial.
 double macroDialRowWidth(double radius) =>
     kCompositionKeys.length * radius * 2 +
-    (kCompositionKeys.length - 1) * _gutter;
+    (kCompositionKeys.length - 1) * kMacroDialGutter;
 
 /// What a header [width] wide can spare for the calorie dial beside a
 /// compact macro row at full size, after the [gap] between them. The logging
 /// header and its skeleton both size the calorie dial from this.
 double calorieDialRoom(double width, {double gap = KalloSpacing.sp2}) =>
     width - gap - macroDialRowWidth(kCompactMacroDialRadius);
+
+/// How a row of [leadingWidth] then three macro dials fills [width]: the
+/// dials' radius, and the [inset] each mark keeps on both of its sides.
+///
+/// Every mark gets the same inset, so the three gaps between the four arcs
+/// come out equal (gutter plus two insets) and the row ends the same
+/// distance from both of its edges. The calorie dial and protein used to sit
+/// half as far apart as protein and carbs, with the leftover piled up after
+/// fat (iPhone Duo, 2026-11-18). The dials only shrink once the insets are
+/// gone, so no width draws them smaller than the old layout did.
+({double radius, double inset}) leadRowFit(
+  double width, {
+  required double leadingWidth,
+  required double maxRadius,
+}) {
+  final count = kCompositionKeys.length;
+  final room = width - leadingWidth - count * kMacroDialGutter;
+  final radius = math.max(0.0, math.min(maxRadius, room / count / 2));
+  final inset = (room - count * radius * 2) / (2 * (count + 1));
+  return (radius: radius, inset: math.max(0.0, inset));
+}
+
+/// The width a lead row needs to draw its three dials at [radius].
+double leadRowWidth(double leadingWidth, double radius) =>
+    leadingWidth + kCompositionKeys.length * (radius * 2 + kMacroDialGutter);
 
 /// The row owns the keys, pigments, glyphs AND labels, so a surface hands over
 /// two maps and nothing else — no caller can disagree about what "carbs" is.
@@ -61,6 +87,9 @@ class MacroDialRow extends StatelessWidget {
     required this.current,
     required this.target,
     this.atLeast = const {},
+    this.leading,
+    this.leadingWidth = 0,
+    this.crossAxisAlignment = CrossAxisAlignment.start,
     super.key,
   }) : maxRadius = kMacroDialRadius,
        _isCompact = false;
@@ -72,6 +101,9 @@ class MacroDialRow extends StatelessWidget {
     required this.current,
     required this.target,
     this.atLeast = const {},
+    this.leading,
+    this.leadingWidth = 0,
+    this.crossAxisAlignment = CrossAxisAlignment.start,
     super.key,
   }) : maxRadius = kCompactMacroDialRadius,
        _isCompact = true;
@@ -85,6 +117,17 @@ class MacroDialRow extends StatelessWidget {
   /// Keys whose [current] is a floor — a meal's unknown value was left out.
   final Set<String> atLeast;
 
+  /// A dial drawn first in the same row, spaced as one of the four marks
+  /// (see [leadRowFit]). The Log header and Today on a short, wide window
+  /// both lead with the calorie dial, so the two rows cannot drift apart.
+  final Widget? leading;
+
+  /// How wide [leading]'s arc draws: the spacing is measured from it.
+  final double leadingWidth;
+
+  /// Where the macro dials sit against a taller [leading].
+  final CrossAxisAlignment crossAxisAlignment;
+
   final double maxRadius;
   final bool _isCompact;
 
@@ -94,8 +137,15 @@ class MacroDialRow extends StatelessWidget {
       // Three columns and two gutters. On a narrow phone the dials shrink
       // rather than overflow — the arc holds its proportions at any size.
       final count = kCompositionKeys.length;
-      final column = (constraints.maxWidth - _gutter * (count - 1)) / count;
-      final radius = math.min(maxRadius, column / 2);
+      final lead = leading;
+      final column = (constraints.maxWidth - kMacroDialGutter * (count - 1)) / count;
+      final leadFit = leadRowFit(
+        constraints.maxWidth,
+        leadingWidth: leadingWidth,
+        maxRadius: maxRadius,
+      );
+      final radius =
+          lead == null ? math.min(maxRadius, column / 2) : leadFit.radius;
       final fit =
           _isCompact
               ? macroReadoutFit(
@@ -106,11 +156,18 @@ class MacroDialRow extends StatelessWidget {
                 atLeast: atLeast,
               )
               : 1.0;
+      // Each macro column is its arc plus the lead inset either side, so a
+      // column's centre is its arc's centre and the gaps come out even.
       return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: crossAxisAlignment,
         children: [
+          if (lead != null)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: leadFit.inset),
+              child: lead,
+            ),
           for (var i = 0; i < count; i++) ...[
-            if (i > 0) const SizedBox(width: _gutter),
+            if (i > 0 || lead != null) const SizedBox(width: kMacroDialGutter),
             Expanded(
               child: MacroDial(
                 compositionKey: kCompositionKeys[i],
