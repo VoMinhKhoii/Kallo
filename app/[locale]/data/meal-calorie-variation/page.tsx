@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
-import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
+import { ClientAuthRequestConfig } from '@/components/auth/request-config/client-auth-request-config';
 import { DocsH2, DocsLink, DocsParagraph } from '@/components/docs/mdx/prose';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
 import { JsonLd } from '@/components/seo/json-ld';
@@ -142,9 +141,7 @@ export default async function MealDataPage({ params }: MealDataProps) {
         </div>
       </article>
       <LazyAuthDialog />
-      <Suspense fallback={null}>
-        <AuthRequestConfig />
-      </Suspense>
+      <ClientAuthRequestConfig />
     </AuthProvider>
   );
 }

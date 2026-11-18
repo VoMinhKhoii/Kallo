@@ -25,7 +25,8 @@ import { createClient } from '@/lib/infra/supabase/client';
 export function EmailStep() {
   const t = useTranslations('auth.emailCode');
   const locale = useLocale();
-  const { next, showCode, turnstileSiteKey } = useAuthDialog();
+  const { next, showCode, turnstileSiteKey, requestConfigPending } =
+    useAuthDialog();
   const turnstile = useTurnstile(turnstileSiteKey, locale);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -67,8 +68,11 @@ export function EmailStep() {
   // Until the check hands over a token there is nothing the send could carry.
   // A check that could not run at all (script blocked) does not hold the form:
   // the server decides, and while it only monitors it accepts the request.
+  // On a static page the site key arrives after load; until it does, a null
+  // key is not "Turnstile off", so the send waits for it too.
   const waitingForCheck =
-    turnstile.required && !turnstile.token && !turnstile.failed;
+    requestConfigPending ||
+    (turnstile.required && !turnstile.token && !turnstile.failed);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
