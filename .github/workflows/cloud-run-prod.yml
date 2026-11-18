@@ -478,14 +478,15 @@ jobs:
           # pg_advisory_xact_lock. Migrations ("Read prod database URL" above)
           # stay on the session-mode secret, which `supabase db push` needs.
           #
-          # NODE_OPTIONS=--max-semi-space-size=64 gives V8 a 64 MB young
-          # generation (default 16 MB). The process holds a ~165 MB long-lived
+          # NODE_OPTIONS=--max-semi-space-size=64 gives V8 a 64 MiB semi-space
+          # (default 16 MiB); the young generation is three of them, so up to
+          # ~192 MiB instead of ~48 MiB. The process holds a ~165 MB long-lived
           # heap (card catalog), so every full collection has to mark it, and
           # with the default young space so much was promoted that a full GC ran
           # every 30-60 s, pausing every request in flight for 80-460 ms (gc-pause
-          # logs, 2026-11-18). With 64 MB, full collections stop once the heap
-          # has grown after boot; 128 MB measured no better. Costs at most
-          # ~150 MB of the 2 GiB, of which ~800 MB is in use.
+          # logs, 2026-11-18). With a 64 MiB semi-space, full collections stop
+          # once the heap has grown after boot; 128 MiB measured no better.
+          # Costs at most ~144 MiB more of the 2 GiB, of which ~800 MB is in use.
           #
           # Note `flags` is a folded scalar: everything indented under it is one
           # string of gcloud arguments, so `#` inside it is NOT a comment.
