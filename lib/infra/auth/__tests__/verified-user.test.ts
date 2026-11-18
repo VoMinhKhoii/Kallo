@@ -58,6 +58,90 @@ describe('verifyUser', () => {
     expect(signOut).not.toHaveBeenCalled();
   });
 
+  it('shares one session query between concurrent checks of the same session', async () => {
+    token({ sub: 'u1', session_id: 's1' });
+    const fake = createFakeDb();
+    fake.queueExecute([liveRow]);
+
+    const users = await Promise.all([
+      verifyUser(supabase, fake.db),
+      verifyUser(supabase, fake.db),
+      verifyUser(supabase, fake.db),
+    ]);
+
+    expect(users.map((user) => user?.id)).toEqual(['u1', 'u1', 'u1']);
+    expect(fake.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('shares across separately bundled db objects over the same client', async () => {
+    // Each bundled copy of db/client.ts exports its own `db` proxy; they share
+    // one postgres client, which is what the lookups are keyed by.
+    token({ sub: 'u1', session_id: 's1' });
+    const fake = createFakeDb();
+    fake.queueExecute([liveRow]);
+    const client = {};
+    const copyA = Object.assign(Object.create(fake.db), { $client: client });
+    const copyB = Object.assign(Object.create(fake.db), { $client: client });
+
+    const [a, b] = await Promise.all([
+      verifyUser(supabase, copyA),
+      verifyUser(supabase, copyB),
+    ]);
+
+    expect([a?.id, b?.id]).toEqual(['u1', 'u1']);
+    expect(fake.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks again on the next request, so a revoked session ends at once', async () => {
+    token({ sub: 'u1', session_id: 's1' });
+    const fake = createFakeDb();
+    fake.queueExecute([liveRow]);
+    fake.queueExecute([]);
+
+    expect(await verifyUser(supabase, fake.db)).not.toBeNull();
+    expect(await verifyUser(supabase, fake.db)).toBeNull();
+    expect(fake.execute).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps different sessions apart', async () => {
+    getClaims
+      .mockResolvedValueOnce({
+        data: { claims: { sub: 'u1', session_id: 's1' } },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: { claims: { sub: 'u1', session_id: 's2' } },
+        error: null,
+      });
+    const fake = createFakeDb();
+    fake.queueExecute([liveRow]);
+    fake.queueExecute([]);
+
+    const [a, b] = await Promise.all([
+      verifyUser(supabase, fake.db),
+      verifyUser(supabase, fake.db),
+    ]);
+
+    expect(a?.id).toBe('u1');
+    expect(b).toBeNull();
+    expect(fake.execute).toHaveBeenCalledTimes(2);
+  });
+
+  it('shares a failed lookup as a failure, never as a sign-out', async () => {
+    token({ sub: 'u1', session_id: 's1' });
+    const fake = createFakeDb();
+    fake.execute.mockRejectedValueOnce(new Error('connection terminated'));
+
+    const results = await Promise.allSettled([
+      verifyUser(supabase, fake.db),
+      verifyUser(supabase, fake.db),
+    ]);
+
+    expect(results.map((r) => r.status)).toEqual(['rejected', 'rejected']);
+    expect(fake.execute).toHaveBeenCalledTimes(1);
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
   it('checks the Bearer token it is given', async () => {
     token({ sub: 'u1', session_id: 's1' });
     const fake = createFakeDb();
