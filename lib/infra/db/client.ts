@@ -1,3 +1,4 @@
+import { instrumentPostgresJsSql } from '@sentry/core';
 import type { ExtractTablesWithRelations } from 'drizzle-orm';
 import { drizzle, type PostgresJsTransaction } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -36,22 +37,28 @@ function getClient() {
         'DATABASE_URL is not set — cannot connect to the database.'
       );
     }
-    _client = postgres(encodeDbUrl(url), {
-      // Small by default: on Supabase's session-mode pooler (5432) every pool
-      // connection pins one of the database's few real ones. Prod connects
-      // through transaction mode (6543), where connections are shared, and
-      // raises it with DB_POOL_MAX (cloud-run-prod.yml). A too-small pool lets
-      // one request's concurrent writes starve its own critical-path insert
-      // (see the analyze-meal SSE hang).
-      max: Number(process.env.DB_POOL_MAX) || 2,
-      // Bound establishing a *new* connection so a dead pooler fails fast
-      // instead of hanging the acquiring query indefinitely.
-      connect_timeout:
-        Number(process.env.DB_CONNECT_TIMEOUT_S) ||
-        DB_CONNECT_TIMEOUT_DEFAULT_S,
-      // Prepared statements are unsupported in PgBouncer transaction mode.
-      prepare: false,
-    });
+    // Wrapped so each query is a Sentry span inside the traced request. The
+    // automatic postgres.js hook never applied here (no db spans in prod
+    // traces even with `postgres` external), so slow API requests showed one
+    // opaque span and DB wait could not be told apart from CPU.
+    _client = instrumentPostgresJsSql(
+      postgres(encodeDbUrl(url), {
+        // Small by default: on Supabase's session-mode pooler (5432) every pool
+        // connection pins one of the database's few real ones. Prod connects
+        // through transaction mode (6543), where connections are shared, and
+        // raises it with DB_POOL_MAX (cloud-run-prod.yml). A too-small pool lets
+        // one request's concurrent writes starve its own critical-path insert
+        // (see the analyze-meal SSE hang).
+        max: Number(process.env.DB_POOL_MAX) || 2,
+        // Bound establishing a *new* connection so a dead pooler fails fast
+        // instead of hanging the acquiring query indefinitely.
+        connect_timeout:
+          Number(process.env.DB_CONNECT_TIMEOUT_S) ||
+          DB_CONNECT_TIMEOUT_DEFAULT_S,
+        // Prepared statements are unsupported in PgBouncer transaction mode.
+        prepare: false,
+      })
+    );
   }
   return _client;
 }
