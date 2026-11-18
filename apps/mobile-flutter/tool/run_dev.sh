@@ -69,8 +69,11 @@ API_BASE_URL="${API_BASE_URL:-http://localhost:3000}"
 # signed into dev but pointed at prod gets a 401 on every call, and each one
 # costs prod Supabase a rejected /auth/v1/user (it dragged the dashboard's
 # success rate to 38.7% on 2026-11-17).
-PROD_SUPABASE_REF="oudpzhfzirgjbhrzcett"
-if [[ "$API_BASE_URL" =~ kallo\.fit|kallo-prod.*\.run\.app ]] && [[ "$SUPABASE_URL" != *"$PROD_SUPABASE_REF"* ]]; then
+PROD_HOSTS='kallo\.fit|kallo-prod[^/]*\.run\.app'
+# Prod auth is the project URL itself or the app's own proxy in front of it
+# (`<API_BASE_URL>/api/supabase-proxy`, what the release lane ships).
+PROD_SUPABASE="oudpzhfzirgjbhrzcett\\.supabase\\.co|($PROD_HOSTS)/api/supabase-proxy"
+if [[ "$API_BASE_URL" =~ $PROD_HOSTS ]] && ! [[ "$SUPABASE_URL" =~ $PROD_SUPABASE ]]; then
   echo "API_BASE_URL is prod ($API_BASE_URL) but SUPABASE_URL is not the prod project."
   echo "Point both at prod (SUPABASE_URL + SUPABASE_ANON_KEY) or both at dev."
   exit 1
