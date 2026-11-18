@@ -8,6 +8,7 @@ import {
   sessionCookieOptions,
   sessionCookieWriteOptions,
 } from '@/lib/infra/supabase/cookie-options';
+import { sharedRefreshFetch } from '@/lib/infra/supabase/shared-refresh';
 import { needsSignIn } from '@/lib/seo/private-paths';
 
 export async function updateSession(
@@ -25,6 +26,9 @@ export async function updateSession(
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookieOptions: sessionCookieOptions(),
+      // One refresh per expired session, however many requests carry it (see
+      // shared-refresh.ts).
+      global: { fetch: sharedRefreshFetch },
       cookies: {
         getAll() {
           return request.cookies.getAll();
