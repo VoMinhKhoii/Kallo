@@ -32,9 +32,25 @@ export const RETRY_AFTER_FAILURE_MS = 30 * 1000;
 /** A key fetch slower than this is abandoned. */
 export const FETCH_TIMEOUT_MS = 3000;
 
-let held: { value: SigningKeys; loadedAt: number } | undefined;
-let loading: Promise<void> | undefined;
-let failedAt: number | undefined;
+interface KeyState {
+  held?: { value: SigningKeys; loadedAt: number };
+  loading?: Promise<void>;
+  failedAt?: number;
+}
+
+/**
+ * One state per process, not per module copy. Next bundles `instrumentation.ts`
+ * apart from the route handlers, so each gets its own copy of this module: kept
+ * in module variables, the boot preload filled a copy no route ever read, and
+ * the first request after a deploy still fetched the keys (seen in Sentry on
+ * revision 00368).
+ */
+const STATE_KEY = Symbol.for('kallo.auth.signingKeys');
+function keyState(): KeyState {
+  const store = globalThis as typeof globalThis & { [STATE_KEY]?: KeyState };
+  store[STATE_KEY] ??= {};
+  return store[STATE_KEY];
+}
 
 async function fetchKeys(): Promise<SigningKeys | undefined> {
   const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/.well-known/jwks.json`;
@@ -52,24 +68,28 @@ async function fetchKeys(): Promise<SigningKeys | undefined> {
 
 /** Starts one background load, unless one is running or just failed. */
 function startLoad(now: number): Promise<void> {
-  if (loading) return loading;
-  if (failedAt !== undefined && now - failedAt < RETRY_AFTER_FAILURE_MS) {
+  const state = keyState();
+  if (state.loading) return state.loading;
+  if (
+    state.failedAt !== undefined &&
+    now - state.failedAt < RETRY_AFTER_FAILURE_MS
+  ) {
     return Promise.resolve();
   }
-  loading = fetchKeys()
+  state.loading = fetchKeys()
     .then((value) => {
-      if (value) held = { value, loadedAt: now };
-      failedAt = undefined;
+      if (value) state.held = { value, loadedAt: now };
+      state.failedAt = undefined;
     })
     .catch((error: unknown) => {
       // Keep whatever is held: a failed refresh never drops good keys.
-      failedAt = now;
+      state.failedAt = now;
       console.warn('[auth] signing key fetch failed', error);
     })
     .finally(() => {
-      loading = undefined;
+      state.loading = undefined;
     });
-  return loading;
+  return state.loading;
 }
 
 /**
@@ -78,6 +98,7 @@ function startLoad(now: number): Promise<void> {
  * is loaded in the background for the requests after this one.
  */
 export function signingKeys(now: number = Date.now()): SigningKeys | undefined {
+  const { held } = keyState();
   if (!held || now - held.loadedAt > REFRESH_AFTER_MS) void startLoad(now);
   return held?.value;
 }
@@ -89,7 +110,8 @@ export function preloadSigningKeys(now: number = Date.now()): Promise<void> {
 
 /** Test seam: forget everything. */
 export function resetSigningKeysForTests(): void {
-  held = undefined;
-  loading = undefined;
-  failedAt = undefined;
+  const state = keyState();
+  state.held = undefined;
+  state.loading = undefined;
+  state.failedAt = undefined;
 }

@@ -105,6 +105,24 @@ describe('signingKeys', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('shares the keys between separately bundled copies of this module', async () => {
+    // Next bundles instrumentation.ts apart from the routes: the boot preload
+    // runs in one module copy and requests read another.
+    fetchMock.mockResolvedValue(jwksResponse([KEY_A]));
+    vi.resetModules();
+    const bootCopy = await import('@/lib/infra/auth/signing-keys/signing-keys');
+    vi.resetModules();
+    const routeCopy = await import(
+      '@/lib/infra/auth/signing-keys/signing-keys'
+    );
+    expect(routeCopy).not.toBe(bootCopy);
+
+    await bootCopy.preloadSigningKeys(0);
+
+    expect(routeCopy.signingKeys(1)).toEqual({ keys: [KEY_A] });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('treats an empty key set as a failed load', async () => {
     fetchMock.mockResolvedValueOnce(jwksResponse([]));
     await preloadSigningKeys(0);
