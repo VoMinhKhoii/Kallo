@@ -19,7 +19,7 @@ export interface DocsSection {
 export const DOCS_SECTIONS: DocsSection[] = [
   {
     id: 'start',
-    slugs: ['overview', 'quickstart', 'profile-and-targets'],
+    slugs: ['overview', 'quickstart', 'profile-and-targets', 'switching'],
   },
   {
     id: 'logging',

@@ -1,3 +1,4 @@
+import { ALTERNATIVES_CHROME } from './chrome';
 import type { AlternativePage, Source } from './types';
 
 /**
@@ -208,6 +209,14 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
           label: 'How describing a meal works',
           url: 'https://kallo.fit/en/docs/logging/describe-a-meal',
         },
+        {
+          label: 'Kallo accuracy and limits',
+          url: ALTERNATIVES_CHROME.docs.accuracy,
+        },
+        {
+          label: 'Switching from another app',
+          url: ALTERNATIVES_CHROME.docs.switching,
+        },
       ],
     },
   ],
@@ -215,6 +224,17 @@ export const MYFITNESSPAL_ALTERNATIVES: AlternativePage = {
     heading: 'MyFitnessPal alternatives with a free barcode scanner',
     body: [
       'MyFitnessPal has kept its barcode scanner for Premium since 1 October 2022. Cronometer, MyNetDiary, Yazio and Kallo scan barcodes on their free plans. FatSecret lists its scanner with its general features, not its Premium ones. Lose It! keeps barcode scanning for Premium, and MacroFactor has no free plan.',
+    ],
+  },
+  choose: {
+    heading: 'How to choose a MyFitnessPal alternative',
+    checks: [
+      'Log a meal you eat often in each app you try, and time it: a database search, a photo and a typed sentence suit different people.',
+      'See whether the app shows how unsure an estimate is, or gives every meal one number.',
+      'Read what the free plan keeps after any trial ends, barcode scanning and your history in particular.',
+      'Make sure it runs where you log: iPhone, Android, a browser, or more than one.',
+      'Find out where your diary is stored, and whether you can export it if you leave.',
+      'Compare the yearly price in your own country, since store prices differ by region.',
     ],
   },
   dataHeading: 'What moves the number more than the database',

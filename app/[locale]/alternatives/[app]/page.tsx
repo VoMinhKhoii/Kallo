@@ -1,6 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { DocsH2, DocsLink, DocsParagraph } from '@/components/docs/mdx/prose';
+import {
+  DocsH2,
+  DocsLink,
+  DocsListItem,
+  DocsParagraph,
+  DocsUnorderedList,
+} from '@/components/docs/mdx/prose';
 import {
   OptionSection,
   SourceLine,
@@ -114,6 +120,13 @@ export default async function AlternativesPage({
           ))}
         </>
       ) : null}
+
+      <DocsH2>{copy.choose.heading}</DocsH2>
+      <DocsUnorderedList>
+        {copy.choose.checks.map((check) => (
+          <DocsListItem key={check}>{check}</DocsListItem>
+        ))}
+      </DocsUnorderedList>
 
       {vs ? (
         <DocsParagraph>

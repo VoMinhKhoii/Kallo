@@ -44,6 +44,8 @@ export interface AlternativePage {
   options: AlternativeOption[];
   /** One plain question the searches around this app ask, answered after the apps. */
   extra?: { heading: string; body: string[] };
+  /** Plain checks a reader can apply to any app, Kallo included. One sentence each. */
+  choose: { heading: string; checks: string[] };
   dataHeading: string;
   /** Kallo's own numbers, from the committed food-page captures. */
   data: (facts: MealDataFacts) => string;
