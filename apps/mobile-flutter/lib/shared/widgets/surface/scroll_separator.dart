@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../../theme/calm_tokens.dart';
 
@@ -29,6 +30,8 @@ class ScrollSeparator extends StatefulWidget {
     required this.child,
     this.overlay,
     this.threshold = 1,
+    this.overlayHairline = false,
+    this.showHairline = true,
   });
 
   /// The pinned header the hairline sits under.
@@ -54,6 +57,10 @@ class ScrollSeparator extends StatefulWidget {
   /// should arrive as soon as anything has slid under the header.
   final double threshold;
 
+  /// Split panes share the header's baseline, so the rule overlays the scroll.
+  final bool overlayHairline;
+  final bool showHairline;
+
   @override
   State<ScrollSeparator> createState() => _ScrollSeparatorState();
 }
@@ -68,7 +75,19 @@ class _ScrollSeparatorState extends State<ScrollSeparator> {
     if (notification.depth != 0) return false;
     if (notification.metrics.axis != Axis.vertical) return false;
     final scrolled = notification.metrics.pixels > widget.threshold;
-    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    if (scrolled != _scrolled) {
+      _scrolled = scrolled;
+      // A resized viewport can correct its offset during layout. Repaint the
+      // hairline after that frame rather than scheduling a build inside it.
+      if (WidgetsBinding.instance.schedulerPhase ==
+          SchedulerPhase.persistentCallbacks) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() {});
+        });
+      } else {
+        setState(() {});
+      }
+    }
     return false; // never swallow it — other listeners still want it
   }
 
@@ -78,12 +97,13 @@ class _ScrollSeparatorState extends State<ScrollSeparator> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         widget.header,
-        AnimatedOpacity(
-          opacity: _scrolled ? 1 : 0,
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          child: SizedBox(height: 1, child: ColoredBox(color: kHairline)),
-        ),
+        if (widget.showHairline && !widget.overlayHairline)
+          AnimatedOpacity(
+            opacity: _scrolled ? 1 : 0,
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            child: SizedBox(height: 1, child: ColoredBox(color: kHairline)),
+          ),
         Expanded(
           child: Stack(
             children: [
@@ -94,6 +114,22 @@ class _ScrollSeparatorState extends State<ScrollSeparator> {
                 ),
               ),
               if (widget.overlay != null) widget.overlay!,
+              if (widget.showHairline && widget.overlayHairline)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      opacity: _scrolled ? 1 : 0,
+                      duration: const Duration(milliseconds: 150),
+                      child: SizedBox(
+                        height: 1,
+                        child: ColoredBox(color: kHairline),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

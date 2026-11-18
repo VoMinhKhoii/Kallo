@@ -7,6 +7,7 @@ import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/feedback/kallo_surface_state.dart';
 import '../../../../shared/widgets/feedback/sliver_centered_state.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../../shared/widgets/panes/pane_insets.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/feed_providers.dart';
@@ -71,12 +72,13 @@ class ThreadFeed extends ConsumerWidget {
         // first post's card lands, so it sits exactly where that card will —
         // which is why it goes down the CONTENT path and not the state one.
         loading:
-            () => _contentScroll([
+            () => _contentScroll(context, [
               const SizedBox(height: KalloSpacing.sp3),
               const CircleWallSkeleton(),
             ]),
         error:
             (_, __) => _stateScroll(
+              context,
               CircleErrorCard(onRetry: onRetry, isRetrying: feed.isLoading),
             ),
         data:
@@ -89,8 +91,8 @@ class ThreadFeed extends ConsumerWidget {
   /// The page's own inset. The side inset is the app-wide 12 on every sliver
   /// under the header; only the BOTTOM differs, and which sliver pays it is
   /// the whole distinction between the two helpers below.
-  static EdgeInsets _pad(double top, double bottom) =>
-      EdgeInsets.fromLTRB(KalloSpacing.sp3, top, KalloSpacing.sp3, bottom);
+  static EdgeInsets _pad(BuildContext context, double top, double bottom) =>
+      paneInsets(context, top: top, bottom: bottom);
 
   /// The header's own sliver: full width, [KalloSpacing.sp1_5] under the
   /// page title.
@@ -106,17 +108,18 @@ class ThreadFeed extends ConsumerWidget {
   /// the floating pill nav — without it the last post's action row sits under
   /// the bar. The inset is the bar's measured height, which the shell reports
   /// as the body's bottom padding.
-  Widget _contentScroll(List<Widget> children) => KalloRefreshableScroll(
-    onRefresh: onRefresh,
-    slivers:
-        (bottomInset) => [
-          _headerSliver,
-          SliverPadding(
-            padding: _pad(0, bottomInset),
-            sliver: SliverList(delegate: SliverChildListDelegate(children)),
-          ),
-        ],
-  );
+  Widget _contentScroll(BuildContext context, List<Widget> children) =>
+      KalloRefreshableScroll(
+        onRefresh: onRefresh,
+        slivers:
+            (bottomInset) => [
+              _headerSliver,
+              SliverPadding(
+                padding: _pad(context, 0, bottomInset),
+                sliver: SliverList(delegate: SliverChildListDelegate(children)),
+              ),
+            ],
+      );
 
   /// The same scroll view holding a SURFACE STATE — empty, failed — instead of
   /// feed content: the header stays at the top, and [state] takes the whole
@@ -127,17 +130,18 @@ class ThreadFeed extends ConsumerWidget {
   /// The header sliver therefore pays NO bottom inset; the inset is paid inside
   /// the fill sliver instead, since a trailing spacer below a sliver that
   /// already fills the viewport lands below the fold and pushes nothing.
-  Widget _stateScroll(Widget state) => KalloRefreshableScroll(
-    onRefresh: onRefresh,
-    slivers:
-        (bottomInset) => [
-          _headerSliver,
-          SliverCenteredState(
-            padding: _pad(KalloSpacing.sp3, bottomInset),
-            child: state,
-          ),
-        ],
-  );
+  Widget _stateScroll(BuildContext context, Widget state) =>
+      KalloRefreshableScroll(
+        onRefresh: onRefresh,
+        slivers:
+            (bottomInset) => [
+              _headerSliver,
+              SliverCenteredState(
+                padding: _pad(context, KalloSpacing.sp3, bottomInset),
+                child: state,
+              ),
+            ],
+      );
 
   Widget _dataList(
     BuildContext context,
@@ -152,7 +156,7 @@ class ThreadFeed extends ConsumerWidget {
           withoutBlockedReplies(blocks, entry),
     ];
     if (entries.isEmpty) {
-      return _stateScroll(_empty());
+      return _stateScroll(context, _empty());
     }
     final children = <Widget>[];
     for (final day in groupEntriesByDay(entries)) {
@@ -173,7 +177,7 @@ class ThreadFeed extends ConsumerWidget {
         ),
       );
     }
-    return _contentScroll(children);
+    return _contentScroll(context, children);
   }
 
   /// Nothing on the wall yet. "Add a friend" wears the black `cta` — the tier

@@ -23,6 +23,93 @@ void main() {
     fat: 12,
   ));
 
+  testWidgets('title fit, rather than width or scale, decides kcal stacking', (
+    tester,
+  ) async {
+    Future<void> pump(String title, double scale) => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+            child: SizedBox(
+              width: 325,
+              child: MealBlock(
+                title: title,
+                segments: composition.segments,
+                gramLabels: const {},
+                kcalLabel: '620 kcal',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    const title = 'Grilled salmon, roasted potatoes';
+    await pump(title, 1);
+    expect(
+      tester.getTopLeft(find.text('620 kcal')).dy,
+      tester.getTopLeft(find.text(title)).dy,
+    );
+    await pump('Eggs', 1.3);
+    expect(
+      tester.getTopLeft(find.text('620 kcal')).dy,
+      tester.getTopLeft(find.text('Eggs')).dy,
+    );
+    await pump(
+      'Grilled salmon, roasted potatoes with vegetables and lemon sauce',
+      1.3,
+    );
+    expect(
+      tester.getTopLeft(find.text('620 kcal')).dy,
+      greaterThan(
+        tester
+            .getBottomLeft(
+              find.text(
+                'Grilled salmon, roasted potatoes with vegetables and lemon sauce',
+              ),
+            )
+            .dy,
+      ),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('large text keeps all macros on one row below kcal', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(1.3)),
+            child: SizedBox(
+              width: 260,
+              child: MealBlock(
+                title: 'Eggs and toast',
+                segments: composition.segments,
+                gramLabels: const {
+                  'protein': 'P 22g',
+                  'carbohydrate': 'C 48g',
+                  'fat': 'F 20g',
+                },
+                kcalLabel: '460 kcal',
+                kcalPlacement: MealBlockKcal.legendLeading,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final tops = [
+      for (final text in ['P 22g', 'C 48g', 'F 20g'])
+        tester.getTopLeft(find.text(text)).dy,
+    ];
+    expect(tops[1], tops[0]);
+    expect(tops[2], tops[0]);
+    expect(tester.getBottomLeft(find.text('460 kcal')).dy, lessThan(tops[0]));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('renders title, macro legend and kcal on the title row', (
     tester,
   ) async {

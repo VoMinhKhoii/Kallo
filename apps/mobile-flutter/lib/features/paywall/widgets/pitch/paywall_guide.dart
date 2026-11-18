@@ -31,7 +31,10 @@ class PaywallGuide extends StatelessWidget {
     children: [
       BunMascot(size: bunSize, speech: line),
       const SizedBox(height: KalloSpacing.sp3),
-      Text(tr('paywall.choosePlan'), style: kPageTitle()),
+      title(),
     ],
   );
+
+  /// The title alone, for a window too short to give the bun its line.
+  static Widget title() => Text(tr('paywall.choosePlan'), style: kPageTitle());
 }

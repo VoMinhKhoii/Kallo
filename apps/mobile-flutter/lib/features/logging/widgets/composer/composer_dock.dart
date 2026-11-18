@@ -1,3 +1,5 @@
+import '../../../../shared/widgets/panes/pane_insets.dart';
+import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/surface/measured_height.dart';
@@ -110,11 +112,10 @@ class ComposerDock extends StatelessWidget {
             Flexible(
               child: Container(
                 color: KalloColors.surface,
-                padding: EdgeInsets.fromLTRB(
-                  KalloSpacing.sp3,
-                  0,
-                  KalloSpacing.sp3,
-                  bottomInset + LoggingSpacing.block,
+                padding: paneInsets(
+                  context,
+                  slot: PaneSlot.near,
+                  bottom: bottomInset + LoggingSpacing.block,
                 ),
                 child: child,
               ),

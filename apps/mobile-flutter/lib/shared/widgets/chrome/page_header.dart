@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../shell/header/app_header_back_button.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
+import '../panes/detail_pane.dart';
 
 /// A pushed page's ONE top bar: a 44×44 back chevron with the page title on
 /// the same line, 28/600 (`kPageTitle`) in ink.
@@ -43,23 +44,31 @@ class PageHeader extends StatelessWidget {
     return Padding(
       // The app-wide root inset, minus the 12 the back slot reclaims so the
       // chevron sits where the artboard puts it.
-      padding: const EdgeInsets.only(bottom: KalloSpacing.sp1),
-      child: Row(
-        children: [
-          AppHeaderBackButton(
-            onBack: onBack ?? () => Navigator.of(context).maybePop(),
-          ),
-          const SizedBox(width: KalloSpacing.sp1),
-          Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: kPageTitle(),
+      padding: EdgeInsets.only(
+        top: DetailPane.of(context) ? 2 : 0,
+        bottom: DetailPane.of(context) ? 2 : KalloSpacing.sp1,
+      ),
+      child: SizedBox(
+        height: DetailPane.of(context) ? 44 : null,
+        child: Row(
+          children: [
+            if (!DetailPane.of(context))
+              AppHeaderBackButton(
+                onBack: onBack ?? () => Navigator.of(context).maybePop(),
+              ),
+            if (!DetailPane.of(context))
+              const SizedBox(width: KalloSpacing.sp1),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: kPageTitle(),
+              ),
             ),
-          ),
-          const SizedBox(width: KalloSpacing.sp3),
-        ],
+            const SizedBox(width: KalloSpacing.sp3),
+          ],
+        ),
       ),
     );
   }

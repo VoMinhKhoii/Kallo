@@ -132,13 +132,16 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
                 tr('nutrition.candidates.error'),
                 style: dashMeta(color: kInkMuted),
               ),
-          data: (response) => _foods(response, vi),
+          data:
+              (response) => LayoutBuilder(
+                builder: (_, bounds) => _foods(response, vi, bounds.maxWidth),
+              ),
         ),
       ],
     );
   }
 
-  Widget _foods(CandidatesResponse response, bool vi) {
+  Widget _foods(CandidatesResponse response, bool vi, double width) {
     final pool = response.foods;
     if (pool.isEmpty) {
       return Text(
@@ -170,6 +173,7 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
           children: [
             for (final f in visible)
               _FoodChip(
+                maxWidth: width * 0.62,
                 label: vi ? f.name : f.nameEn,
                 reserved: _reserved.contains(f.id),
                 onTap: () {
@@ -200,17 +204,17 @@ class _FoodChip extends StatelessWidget {
     required this.label,
     required this.reserved,
     required this.onTap,
+    required this.maxWidth,
   });
 
   final String label;
   final bool reserved;
   final VoidCallback onTap;
+  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
-    // A long food name can be wider than the row; Wrap can't break inside a
-    // child, so cap the chip and let the label ellipsize.
-    final maxWidth = MediaQuery.of(context).size.width * 0.62;
+    // The chip's cap comes from the sheet's local content width.
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

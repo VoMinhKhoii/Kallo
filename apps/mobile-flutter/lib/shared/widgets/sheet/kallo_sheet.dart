@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_regions.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_shapes.dart';
+import 'sheet_content_inset.dart';
+
+export 'sheet_content_inset.dart';
 
 /// The line every sheet's content starts on, header and body alike.
 const double kSheetContentInset = KalloSpacing.sp4; // 16
@@ -15,45 +20,6 @@ const double kSheetContentInset = KalloSpacing.sp4; // 16
 /// gap pinched on the diagonal (owner review, 2026-09-28).
 const double kSheetRadius = kSheetContentInset + 18; // 34
 
-/// How much horizontal inset the surface has ALREADY applied to its body.
-///
-/// Exists so [KalloSheetHeader] can inherit the sheet's inset instead of
-/// hardcoding one. Sheets split into two camps: most hand
-/// [KalloSheetSurface] a `padding` and let their rows sit flush inside it,
-/// while the full-bleed ones (the scan sheet's camera frame) pad nothing and
-/// let each body step inset itself. A header that always added its own 16
-/// was right for the second camp and 32pt — a full inset too far — for the
-/// first, which is why the X sat visibly right of the row icons directly
-/// under it on the Add sheet.
-class SheetContentInset extends InheritedWidget {
-  const SheetContentInset({
-    required this.horizontal,
-    required super.child,
-    super.key,
-  });
-
-  /// Horizontal padding the surface applies around [child].
-  final double horizontal;
-
-  /// 0 when read outside a [KalloSheetSurface] — the header then owns the
-  /// whole inset, which is the standalone case its own test renders.
-  static double of(BuildContext context) =>
-      context
-          .dependOnInheritedWidgetOfExactType<SheetContentInset>()
-          ?.horizontal ??
-      0;
-
-  @override
-  bool updateShouldNotify(SheetContentInset oldWidget) =>
-      oldWidget.horizontal != horizontal;
-}
-
-/// Shared chrome for every modal bottom sheet in the app.
-///
-/// One surface (solid white, top-rounded at [kCardRadius]) and one header
-/// (`KalloSheetHeader`, in kallo_sheet_header.dart) so the hand-rolled sheets
-/// stop diverging. Callers keep their own body and height mechanics.
-
 /// Opens a modal sheet with the standard transparent-background chrome — the
 /// surface itself is painted by [KalloSheetSurface], which the [builder] returns.
 ///
@@ -61,9 +27,9 @@ class SheetContentInset extends InheritedWidget {
 /// 9/16 of the screen and clips the rest, taking the action row off-screen —
 /// the three sheets that hadn't opted out all overflowed on a short phone or in
 /// landscape. Safe by default now. Sizing to content is only half of it: see
-/// [KalloSheetSurface.scrollable]. Guarded by `test/sheet_overflow_test.dart`.
+/// [KalloSheetSurface.scrollable]. Guarded by `test/shared/sheet_overflow_test.dart`.
 ///
-/// [useRootNavigator] is TRUE and not optional. Opened from a shell BRANCH
+/// Root navigator ownership is TRUE and not optional. Opened from a shell BRANCH
 /// screen (Circle, Nutrition, …) the nearest navigator is the branch's own,
 /// which lives inside the shell Scaffold's `body` — and a Scaffold paints its
 /// `bottomNavigationBar` after the body, so the pill nav sat ON TOP of the
@@ -82,14 +48,18 @@ Future<T?> showNhamSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
     backgroundColor: Colors.transparent,
+    // The surface owns horizontal placement, including the fold-side pane.
+    constraints: const BoxConstraints(maxWidth: double.infinity),
     barrierColor: barrierColor,
     useRootNavigator: true,
     builder: builder,
   );
 }
 
-/// The standard sheet surface: solid white, top corners rounded at the calm
-/// card radius. Callers pass their own [constraints] (max-height slice) and,
+/// Shared chrome for every modal bottom sheet: one solid surface, rounded at
+/// [kSheetRadius], and one KalloSheetHeader stop hand-rolled sheets diverging.
+/// The window frame bounds the surface; callers keep their own body and height
+/// mechanics. Callers pass their own [constraints] (max-height slice) and,
 /// optionally, [padding] for content-hugging sheets.
 ///
 /// Set [scrollable] on a sheet whose body is a plain content [Column] with no
@@ -139,6 +109,9 @@ class KalloSheetSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final frame = WindowRegions(
+      WindowLayout.of(context),
+    ).sheetFrame(keyboardInset: keyboardInset, radius: kSheetRadius);
     var effective = constraints;
     var body = child;
     if (scrollable) {
@@ -154,28 +127,44 @@ class KalloSheetSurface extends StatelessWidget {
         child: child,
       );
     }
+    effective = (effective ?? const BoxConstraints()).enforce(
+      BoxConstraints(maxHeight: frame.maxHeight),
+    );
     // OUTSIDE the decoration: the surface has to end where the keyboard
     // begins, not merely inset its contents and paint white behind it.
     return Padding(
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      child: Container(
-        constraints: effective,
-        padding: padding,
-        clipBehavior: clipBehavior,
-        // A squircle, not a rounded rect: the top corners ramp their
-        // curvature the way every iOS sheet's do. `ShapeDecoration` is what
-        // takes a `ShapeBorder` — note it spells shadows `shadows`.
-        decoration: ShapeDecoration(
-          color: color ?? KalloColors.sheet,
-          shape: KalloShapes.squircleTop(kSheetRadius),
-          // Sheets are TRUE elevation on the borderless-card canvas.
-          shadows: kSheetShadows,
-        ),
-        // Published INSIDE the padding, so the header it reaches is measuring
-        // the same content column its neighbours sit in.
-        child: SheetContentInset(
-          horizontal: padding?.resolve(Directionality.of(context)).left ?? 0,
-          child: body,
+      padding: frame.padding,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: frame.maxWidth),
+          child: Container(
+            constraints: effective,
+            padding: padding,
+            clipBehavior: clipBehavior,
+            // A squircle, not a rounded rect: the top corners ramp their
+            // curvature the way every iOS sheet's do. `ShapeDecoration` is what
+            // takes a `ShapeBorder` — note it spells shadows `shadows`.
+            decoration: ShapeDecoration(
+              color: color ?? KalloColors.sheet,
+              shape: KalloShapes.squircleCorners(frame.corners),
+              // Sheets are TRUE elevation on the borderless-card canvas.
+              shadows: kSheetShadows,
+            ),
+            // Published INSIDE the padding, so the header it reaches is measuring
+            // the same content column its neighbours sit in.
+            child: SheetContentInset(
+              horizontal:
+                  padding?.resolve(Directionality.of(context)).left ?? 0,
+              child: MediaQuery.removePadding(
+                context: context,
+                removeLeft: true,
+                removeRight: true,
+                child: body,
+              ),
+            ),
+          ),
         ),
       ),
     );

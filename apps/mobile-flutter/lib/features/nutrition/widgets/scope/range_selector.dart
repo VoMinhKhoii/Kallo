@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/nutrition/nutrition.dart';
+import '../../../../theme/calm_tokens.dart';
 import '../../../../shared/widgets/form/segmented/segmented_strip.dart';
 
 // 7 days / 30 days / 90 days — the timeframe toggle on the page-title row.
@@ -40,26 +41,49 @@ class NutritionRangeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    var widest = 0.0;
+    for (final range in _ranges) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: tr('nutrition.range.$range'),
+          style: DefaultTextStyle.of(
+            context,
+          ).style.merge(dashBody(weight: FontWeight.w500)),
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: scaler,
+      )..layout();
+      if (painter.width > widest) widest = painter.width;
+      painter.dispose();
+    }
+    final available = (216 - 2 * SegmentedStrip.inset) / 3 - 8;
+    final factor = widest > available ? available / widest : 1.0;
     return Opacity(
       opacity: disabled ? 0.6 : 1,
       child: IgnorePointer(
         ignoring: disabled,
         child: SizedBox(
           width: 216,
-          child: SegmentedStrip(
-            options: [
-              for (final range in _ranges)
-                OptionStripItem(
-                  value: range,
-                  label: tr('nutrition.range.$range'),
-                ),
-            ],
-            // NOT clamped to a valid index: `1d` is still a valid server
-            // response (retired from this control, kept in the API), and
-            // clamping would light up `7d` as though the user had picked it.
-            // -1 hides the thumb instead.
-            activeIndex: _ranges.indexOf(resolvedRange),
-            onChange: (range) => onRangeChange(_inputFor(range)),
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(scaler.scale(16) / 16 * factor),
+            ),
+            child: SegmentedStrip(
+              options: [
+                for (final range in _ranges)
+                  OptionStripItem(
+                    value: range,
+                    label: tr('nutrition.range.$range'),
+                  ),
+              ],
+              // NOT clamped to a valid index: `1d` is still a valid server
+              // response (retired from this control, kept in the API), and
+              // clamping would light up `7d` as though the user had picked it.
+              // -1 hides the thumb instead.
+              activeIndex: _ranges.indexOf(resolvedRange),
+              onChange: (range) => onRangeChange(_inputFor(range)),
+            ),
           ),
         ),
       ),

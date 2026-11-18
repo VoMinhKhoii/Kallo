@@ -21,6 +21,7 @@ class PillNavItem extends ConsumerWidget {
     required this.active,
     required this.onTap,
     this.showInviteBadge = false,
+    this.axis = Axis.horizontal,
   });
 
   final IconData icon;
@@ -41,6 +42,7 @@ class PillNavItem extends ConsumerWidget {
   /// The Circle tab carries the pending-invite badge that used to live on
   /// the retired hamburger.
   final bool showInviteBadge;
+  final Axis axis;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,50 +52,51 @@ class PillNavItem extends ConsumerWidget {
             false);
     final color = active ? kInk : kInkMuted;
 
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: active,
-        label: label,
-        excludeSemantics: true,
-        onTap: onTap,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            HapticFeedback.selectionClick();
-            onTap();
-          },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(
-                    active ? (activeIcon ?? icon) : icon,
-                    size: KalloIcons.primary,
-                    color: color,
-                  ),
-                  if (hasInvites)
-                    const Positioned(top: -2, right: -2, child: InviteBadge()),
-                ],
-              ),
-              if (kNavShowsLabels) ...[
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: KalloTextStyles.sansFamily,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
-                    color: color,
-                  ),
+    final target = Semantics(
+      button: true,
+      selected: active,
+      label: label,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  active ? (activeIcon ?? icon) : icon,
+                  size: KalloIcons.primary,
+                  color: color,
                 ),
+                if (hasInvites)
+                  const Positioned(top: -2, right: -2, child: InviteBadge()),
               ],
+            ),
+            if (kNavShowsLabels) ...[
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: KalloTextStyles.sansFamily,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w400,
+                  color: color,
+                ),
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );
+    return axis == Axis.horizontal
+        ? Expanded(child: target)
+        : SizedBox(width: 56, height: 48, child: target);
   }
 }

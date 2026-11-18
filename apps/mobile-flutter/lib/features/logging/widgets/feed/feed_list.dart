@@ -1,8 +1,9 @@
+import '../../../../shared/widgets/panes/pane_insets.dart';
+import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../models/logging/cheat.dart';
 import '../../../../models/logging/meal.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/feed/feed_entries.dart';
 import '../../logic/feed/view_state.dart';
@@ -15,12 +16,12 @@ import 'placeholder/feed_no_meals_view.dart';
 import 'staged_meal_card.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 
-/// The scrollable day: every meal card — saved and staged alike, in the order
-/// they were logged — with the live [footer] as the last item, plus the day's
+/// Saved and staged meal cards in logged order, with the live [footer], plus
 /// error / empty / first-load branches.
 class FeedList extends StatelessWidget {
   const FeedList({
     super.key,
+    this.header,
     required this.view,
     required this.dockHeight,
     required this.scrollController,
@@ -38,6 +39,7 @@ class FeedList extends StatelessWidget {
   });
 
   final FeedViewState view;
+  final Widget? header;
 
   /// A confirm is in flight — every staged card's controls go inert.
   final bool confirmPending;
@@ -106,6 +108,7 @@ class FeedList extends StatelessWidget {
       // Split, not summed: the empty state eases dock-height steps and must
       // not ease the keyboard's own frame-by-frame ramp a second time.
       return FeedNoMealsView(
+        header: header,
         view: view,
         dockHeight: dockHeight,
         keyboardInset: keyboardInset,
@@ -129,12 +132,12 @@ class FeedList extends StatelessWidget {
             // under already measures its own safe-area inset.
             slivers:
                 (_) => [
+                  if (header != null) SliverToBoxAdapter(child: header),
                   SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                      KalloSpacing.sp3,
-                      0,
-                      KalloSpacing.sp3,
-                      reserve,
+                    padding: paneInsets(
+                      context,
+                      slot: PaneSlot.near,
+                      bottom: reserve,
                     ),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(

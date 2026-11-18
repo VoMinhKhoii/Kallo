@@ -18,11 +18,11 @@ import '../../../../shared/widgets/typography/section_header_row.dart';
 import '../../logic/dashboard_spacing.dart';
 import '../../logic/meal_order.dart';
 import '../states/card_skeletons.dart';
+import '../states/dash_skeleton_header.dart';
 import '../states/section_state.dart';
 import 'dock_targets.dart';
 import 'fade_in_down.dart';
-import '../../../../shared/widgets/gauge/calorie_dial.dart';
-import '../../../../shared/widgets/gauge/macro_dial_row.dart';
+import 'today_dials.dart';
 import 'today_first_run.dart';
 import 'today_meal_list.dart';
 
@@ -124,28 +124,16 @@ class _Dock extends StatelessWidget {
             child: SectionHeaderRow(title: dateLabel),
           ),
 
-          // (a) The calorie dial, straight on the canvas. No card: the arc
-          // draws its own shape, and a border around a round mark only fenced
-          // it in.
-          CalorieDial(
-            logged: calories.toDouble(),
-            target: targets.calorieTarget,
-            goal: targets.goal,
-          ),
-
-          const SizedBox(height: DashboardSpacing.block),
-
-          // (b) The three macros, the same dial a third of the size.
-          MacroDialRow(
+          // (a) The calorie dial, straight on the canvas, and (b) the three
+          // macros, the same dial a third of the size. No card: the arc draws
+          // its own shape, and a border around a round mark only fenced it in.
+          TodayDials(
+            calories: calories,
+            targets: targets,
             current: {
               'protein': round0(totalProtein),
               'carbohydrate': round0(totalCarbs),
               'fat': round0(totalFat),
-            },
-            target: {
-              'protein': targets.proteinTargetG.round(),
-              'carbohydrate': targets.carbsTargetG.round(),
-              'fat': targets.fatTargetG.round(),
             },
           ),
 

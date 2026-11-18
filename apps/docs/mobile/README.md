@@ -14,7 +14,7 @@ The app talks to the **same** backend (`/api/v1` REST + SSE) and the same Supaba
 
 - **[development.md](./development.md)** — run the app locally on the iOS Simulator, the dev loop, env config, gotchas.
 - **[releasing.md](./releasing.md)** — build + ship to TestFlight (fastlane, signing, App Store Connect API key, export compliance).
-- **[architecture.md](./architecture.md)** — project structure, stack, state/navigation/data layers, web parity.
+- **[architecture.md](./architecture.md)** — project structure, stack, state/navigation/data layers, web parity, and how layouts adapt to iPhone Duo's windows.
 - **[today-widget.md](./today-widget.md)** — the iOS home-screen "Today" widget: data flow, the dial port, themes, testing it on the Simulator.
 
 ## TL;DR

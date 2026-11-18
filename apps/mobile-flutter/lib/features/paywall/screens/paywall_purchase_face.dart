@@ -4,22 +4,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../services/billing/entitlement_state.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_regions.dart';
 import '../../../theme/kallo_theme.dart';
+import '../../onboarding/widgets/start/start_hero.dart';
 import '../data/paywall_controller.dart';
 import '../logic/paywall_result.dart';
 import '../logic/plan_offer.dart';
 import '../logic/plan_pricing.dart';
+import '../widgets/paywall_gutter.dart';
+import '../widgets/paywall_split.dart';
+import '../widgets/paywall_top_inset.dart';
 import '../widgets/pitch/paywall_guide.dart';
-import '../widgets/pitch/plan_comparison.dart';
+import '../widgets/pitch/paywall_pitch.dart';
 import '../widgets/plans/paywall_buy_band.dart';
 import '../widgets/plans/plan_toggle.dart';
 
 /// The face a free or lapsed user sees: the bun's one line, the title, the
 /// monthly/yearly toggle, the Free ↔ Pro table, and the pinned buy band.
 ///
-/// It lives beside [PaywallScreen] rather than under `widgets/` because it is
-/// the screen's BODY, not a peer of the pieces it arranges — it reaches across
-/// `pitch/` and `plans/` to assemble them, which is the layer above both.
+/// It sits beside [PaywallScreen], not in `widgets/`: it assembles both.
 ///
 /// **The selection lives here, not in [PaywallState].** The choice belongs to
 /// this screen's session, not to a purchase machine that rebuilds on every
@@ -34,6 +39,7 @@ class PaywallPurchaseFace extends ConsumerStatefulWidget {
   const PaywallPurchaseFace({
     required this.entitlement,
     required this.state,
+    required this.header,
     required this.onStayFree,
     this.storeUnavailable = false,
     this.onboarding = false,
@@ -44,6 +50,10 @@ class PaywallPurchaseFace extends ConsumerStatefulWidget {
   final PaywallState state;
   final VoidCallback onStayFree;
 
+  /// The close glyph and the wordmark: pinned over the pitch where the
+  /// window has the height, scrolled with it where it does not.
+  final Widget header;
+
   /// The screen could not even read the entitlement, so nothing here can be
   /// bought. Same face, dead button — see [_storeClosed].
   final bool storeUnavailable;
@@ -52,17 +62,22 @@ class PaywallPurchaseFace extends ConsumerStatefulWidget {
   /// the band leads with starting it rather than buying (see [PaywallWelcome]).
   final bool onboarding;
 
-  /// The design's 20, not the screen's header inset: the table's two columns
-  /// are what set this width, and at 24 the Vietnamese labels wrap a row
-  /// early.
-  static const double gutter = KalloSpacing.sp5;
-
   @override
   ConsumerState<PaywallPurchaseFace> createState() =>
       _PaywallPurchaseFaceState();
 }
 
 class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
+  /// Keyed, the pitch keeps its scroll as a fold or a rotation moves it.
+  final _pitchKey = GlobalKey();
+  final _pitchController = ScrollController();
+
+  @override
+  void dispose() {
+    _pitchController.dispose();
+    super.dispose();
+  }
+
   /// Null until the user touches the toggle, so the default follows whatever
   /// the offering actually carries rather than being decided in `initState`
   /// off packages that may not have arrived yet.
@@ -88,22 +103,50 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
     );
     final purchasing = widget.state.phase == PaywallPhase.purchasing;
     final plan = offer.plan;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(child: _pitch(offer, purchasing)),
-        PaywallBuyBand(
-          offer: offer,
-          loading: purchasing,
-          onBuy:
-              purchasing || _storeClosed || plan == null
-                  ? null
-                  : () => _purchase(plan),
-          onStayFree: widget.onStayFree,
-          welcome: _welcome(context),
-        ),
-      ],
+    final layout = WindowLayout.of(context);
+    final split = PaywallSplit.fits(layout);
+    final toggle = offer.showPeriodToggle ? _toggle(offer, purchasing) : null;
+    final band = PaywallBuyBand(
+      opaque: !split && !layout.twoPane,
+      offer: offer,
+      loading: purchasing,
+      onBuy:
+          purchasing || _storeClosed || plan == null
+              ? null
+              : () => _purchase(plan),
+      onStayFree: widget.onStayFree,
+      welcome: _welcome(context),
+      head: split ? _decisionHead(toggle) : null,
     );
+    final pitch = PaywallPitch(
+      key: _pitchKey,
+      controller: _pitchController,
+      header: layout.compactHeight && !split ? widget.header : null,
+      guideLine: split ? null : offer.guideLine,
+      toggle: split ? null : toggle,
+    );
+    if (split) {
+      return PaywallSplit(header: widget.header, table: pitch, decision: band);
+    }
+    // One gutter for the column, header and band included. `near` is the
+    // pane beside a fold, or the safe width without one.
+    final column = PaywallGutter(
+      value: PaywallGutter.forWidth(WindowRegions(layout).near.width),
+      child: PaywallTopInset(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (!layout.compactHeight) widget.header,
+            Expanded(child: pitch),
+            band,
+          ],
+        ),
+      ),
+    );
+    // Beside the fold the paywall is the last screen of the signed-out flow
+    // and wears its far pane: the start preview. The near pane is the phone's
+    // column, header included.
+    return NarrativePanes(far: const StartHero(), near: column, single: column);
   }
 
   PaywallWelcome? _welcome(BuildContext context) {
@@ -121,56 +164,29 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
     );
   }
 
-  /// Scrolls, and only this half does: with the system text size turned up
-  /// the table outgrows any phone, and it is the half a user can afford to go
-  /// looking for (see [PaywallBuyBand]).
-  ///
-  /// On a tall phone the table would stop short of the buy band and leave a
-  /// void under it, so the table takes whatever height is left instead
-  /// ([SliverFillRemaining]) and spreads its rows to fill it. When the
-  /// content is taller than the screen, it simply scrolls as before.
-  Widget _pitch(PaywallOffer offer, bool purchasing) => CustomScrollView(
-    slivers: [
-      // The padding goes INSIDE the fill, not around it as a SliverPadding:
-      // SliverFillRemaining fills whatever is left of the viewport, so a
-      // SliverPadding's bottom inset landed below the fold — the card ran
-      // flush into the buy band and the page scrolled by that inset.
-      SliverFillRemaining(
-        hasScrollBody: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            PaywallPurchaseFace.gutter,
-            KalloSpacing.sp2,
-            PaywallPurchaseFace.gutter,
-            KalloSpacing.sp4,
-          ),
-          child: _pitchColumn(offer, purchasing),
-        ),
-      ),
+  /// Beside the table the decision carries the title and the toggle over
+  /// the button they belong to. The bun's line is left to the taller
+  /// windows: these are all short.
+  Widget _decisionHead(Widget? toggle) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      PaywallGuide.title(),
+      if (toggle != null) ...[
+        const SizedBox(height: KalloSpacing.sp3_5),
+        toggle,
+      ],
     ],
   );
 
-  Widget _pitchColumn(PaywallOffer offer, bool purchasing) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      PaywallGuide(line: offer.guideLine),
-      const SizedBox(height: KalloSpacing.sp3_5),
-      if (offer.showPeriodToggle) ...[
-        PlanToggle(
-          monthlyLabel: tr('paywall.toggleMonthly'),
-          yearlyLabel: tr('paywall.toggleYearly'),
-          yearly: offer.yearly,
-          // Inert while a purchase is in flight, and on the store-closed
-          // face, where there is no second period to switch to.
-          onChanged:
-              purchasing || offer.plan == null
-                  ? null
-                  : (value) => setState(() => _yearly = value),
-        ),
-        const SizedBox(height: KalloSpacing.sp2_5),
-      ],
-      const Expanded(child: PlanComparison()),
-    ],
+  Widget _toggle(PaywallOffer offer, bool purchasing) => PlanToggle(
+    monthlyLabel: tr('paywall.toggleMonthly'),
+    yearlyLabel: tr('paywall.toggleYearly'),
+    yearly: offer.yearly,
+    onChanged:
+        purchasing || offer.plan == null
+            ? null
+            : (value) => setState(() => _yearly = value),
   );
 
   Future<void> _purchase(Package plan) =>

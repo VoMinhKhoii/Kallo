@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../../theme/kallo_shapes.dart';
+import 'list_row.dart';
 
 /// A grouped list card — the Settings anchor anatomy generalized app-wide
 /// (native pass, 2026-08-31): solid white, radius 22, NO border/shadow,
@@ -31,6 +32,11 @@ class GroupedListCard extends StatelessWidget {
   /// day this padding moved.
   static const double contentInset = KalloSpacing.sp4;
 
+  /// Height of the rule between two rows.
+  static const double separatorHeight = 1;
+
+  static bool _isSelected(Widget row) => row is ListRow && row.selected;
+
   final List<Widget> children;
 
   /// Left inset of the separator, aligning it with the text column — 36 when
@@ -53,24 +59,36 @@ class GroupedListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: contentInset),
       decoration: ShapeDecoration(
         color: kCardSurface,
         shape: KalloShapes.squircle(KalloRadii.card),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0 && showSeparators)
-              Container(
-                height: 1,
-                margin: EdgeInsets.only(left: separatorInset),
-                color: kHairline,
-              ),
-            children[i],
-          ],
-        ],
+      child: ClipPath(
+        clipper: ShapeBorderClipper(
+          shape: KalloShapes.squircle(KalloRadii.card),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: contentInset),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0 && showSeparators)
+                  Container(
+                    height: separatorHeight,
+                    margin: EdgeInsets.only(left: separatorInset),
+                    // No rule beside a selected row: its wash covers the gap,
+                    // the way iOS drops the separators around a selected cell.
+                    color:
+                        _isSelected(children[i - 1]) || _isSelected(children[i])
+                            ? null
+                            : kHairline,
+                  ),
+                children[i],
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

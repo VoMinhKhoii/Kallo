@@ -147,6 +147,7 @@ class _IdentityScreenState extends ConsumerState<IdentityScreen> {
     }
 
     return Screen(
+      bounded: true,
       bottom: false,
       child: ScrollSeparator(
         header: InlineNavBar(

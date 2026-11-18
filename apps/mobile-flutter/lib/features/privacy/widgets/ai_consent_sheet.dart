@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,17 +20,13 @@ import '../data/ai_consent_providers.dart';
 /// resolves with the answer: true once consent is recorded on the server,
 /// false for "Not now", the X or a tap on the barrier — nothing is sent.
 ///
-/// A Cupertino route (`apps/mobile-flutter/AGENTS.md` §2), and the modal
-/// POPUP rather than `CupertinoSheetRoute`: this is a two-button decision that
-/// hugs its content, like an action sheet, and `CupertinoSheetRoute` has no
-/// content-hugging mode — it would present the question as a near-full-height
-/// page (`mobile.md`, the `SheetRoute` migration row). The route paints no
-/// `Material`, so the content gets a transparent one for [KalloButton] and the
-/// text theme; the barrier is the app's scrim, as the confirm alert's is.
+/// The shared host keeps this content-hugging decision clear of the fold and
+/// side controls. CupertinoSheetRoute has no content-hugging mode; retire the
+/// exception when its sizing and safe-pane placement support this decision.
 Future<bool> showAiConsentSheet(BuildContext context) async {
   HapticFeedback.lightImpact(); // a decision is being asked for
-  final agreed = await showCupertinoModalPopup<bool>(
-    context: context,
+  final agreed = await showNhamSheet<bool>(
+    context,
     barrierColor: KalloColors.scrim,
     builder:
         (_) => const Material(

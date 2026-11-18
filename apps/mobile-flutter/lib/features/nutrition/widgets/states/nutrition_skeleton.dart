@@ -1,3 +1,4 @@
+import '../../../../shared/widgets/panes/pane_slot.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -13,7 +14,8 @@ import '../../../../theme/kallo_theme.dart';
 /// hairline-ruled header — from a layout the screen had already left behind, so
 /// the load state promised a page that never arrived.
 class NutritionSkeleton extends StatelessWidget {
-  const NutritionSkeleton({super.key});
+  const NutritionSkeleton({super.key, this.slot = PaneSlot.single});
+  final PaneSlot slot;
 
   static const double _gap = KalloSpacing.sp3;
 
@@ -25,48 +27,52 @@ class NutritionSkeleton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Section header + its meta.
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                SkeletonBar(width: 88, height: 17, radius: 9999),
-                SkeletonBar(width: 140, height: 12, radius: 9999),
-              ],
-            ),
-            const SizedBox(height: _gap),
-            // Calorie card: hero + scope switch, date span, chart.
-            const _Card(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            if (slot != PaneSlot.near) ...[
+              // Section header + its meta.
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SkeletonBar(width: 128, height: 40, radius: 9999),
-                      SkeletonBar(width: 72, height: 12, radius: 9999),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  SkeletonBar(width: 112, height: 12, radius: 9999),
-                  SizedBox(height: _gap),
-                  SkeletonBar(height: 140, radius: 12),
+                  SkeletonBar(width: 88, height: 17, radius: 9999),
+                  SkeletonBar(width: 140, height: 12, radius: 9999),
                 ],
               ),
-            ),
-            const SizedBox(height: _gap),
-            // Macro rows.
-            _Card(child: _rows(3, leadingGlyph: true)),
-            const SizedBox(height: _gap),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                SkeletonBar(width: 96, height: 17, radius: 9999),
-                SkeletonBar(width: 76, height: 12, radius: 9999),
-              ],
-            ),
-            const SizedBox(height: _gap),
-            _Card(child: _rows(4, leadingGlyph: false)),
+              const SizedBox(height: _gap),
+              // Calorie card: hero + scope switch, date span, chart.
+              const _Card(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SkeletonBar(width: 128, height: 40, radius: 9999),
+                        SkeletonBar(width: 72, height: 12, radius: 9999),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    SkeletonBar(width: 112, height: 12, radius: 9999),
+                    SizedBox(height: _gap),
+                    SkeletonBar(height: 140, radius: 12),
+                  ],
+                ),
+              ),
+              const SizedBox(height: _gap),
+              // Macro rows.
+              _Card(child: _rows(3, leadingGlyph: true)),
+            ],
+            if (slot != PaneSlot.far) ...[
+              if (slot != PaneSlot.near) const SizedBox(height: _gap),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SkeletonBar(width: 96, height: 17, radius: 9999),
+                  SkeletonBar(width: 76, height: 12, radius: 9999),
+                ],
+              ),
+              const SizedBox(height: _gap),
+              _Card(child: _rows(4, leadingGlyph: false)),
+            ],
           ],
         ),
       ),

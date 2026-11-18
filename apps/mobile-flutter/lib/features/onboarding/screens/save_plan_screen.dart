@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/mascot/bun_mascot.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../shell/nav/nav_actions.dart';
@@ -11,6 +12,7 @@ import '../../../theme/kallo_theme.dart';
 import '../../auth/widgets/auth_page.dart';
 import '../widgets/backdrop/backdrop_slice.dart';
 import '../widgets/backdrop/step_backdrop.dart';
+import '../widgets/start/start_hero.dart';
 
 /// The last signed-out screen (`/save-plan`): the auth surface wearing the
 /// onboarding chrome.
@@ -34,8 +36,18 @@ import '../widgets/backdrop/step_backdrop.dart';
 /// auth face is opaque by design (its switcher slides one face over another),
 /// so it is handed a [BackdropSlice] as its fill: the same blobs, aligned to
 /// the same box, rather than a flat canvas that would end them mid-screen.
-class SavePlanScreen extends StatelessWidget {
+class SavePlanScreen extends StatefulWidget {
   const SavePlanScreen({super.key});
+
+  @override
+  State<SavePlanScreen> createState() => _SavePlanScreenState();
+}
+
+class _SavePlanScreenState extends State<SavePlanScreen> {
+  /// A fold moves the column between the window and the near pane. Keyed, it
+  /// moves; unkeyed it was built again, and the bun retyped its line.
+  final _columnKey = GlobalKey();
+  final _backdropLink = LayerLink();
 
   @override
   Widget build(BuildContext context) {
@@ -49,13 +61,37 @@ class SavePlanScreen extends StatelessWidget {
         builder:
             (context, box) => Stack(
               children: [
-                const Positioned.fill(child: StepBackdrop()),
-                SafeArea(bottom: false, child: _content(context, box.biggest)),
+                Positioned.fill(
+                  child: CompositedTransformTarget(
+                    link: _backdropLink,
+                    child: const StepBackdrop(),
+                  ),
+                ),
+                _panes(
+                  SafeArea(
+                    key: _columnKey,
+                    bottom: false,
+                    minimum: EdgeInsets.only(
+                      top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 468),
+                        child: _content(context, box.biggest),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
       ),
     );
   }
+
+  /// Beside the fold the column is the near pane and the start preview keeps
+  /// the far one, as it has since `/start`.
+  Widget _panes(Widget column) =>
+      NarrativePanes(far: const StartHero(), near: column, single: column);
 
   Widget _content(BuildContext context, Size field) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -80,7 +116,10 @@ class SavePlanScreen extends StatelessWidget {
         ),
       ),
       Expanded(
-        child: AuthPage(compact: true, background: BackdropSlice(field: field)),
+        child: AuthPage(
+          compact: true,
+          background: BackdropSlice(field: field, link: _backdropLink),
+        ),
       ),
     ],
   );

@@ -30,6 +30,10 @@ import 'kallo_theme.dart';
 /// The rule of thumb is the ratio: squircle when the radius is a fraction of
 /// the shorter side, circular when it IS the shorter side.
 abstract final class KalloShapes {
+  /// Sheets round exposed bottom corners as well as their top corners.
+  static RoundedSuperellipseBorder squircleCorners(BorderRadius corners) =>
+      RoundedSuperellipseBorder(borderRadius: corners);
+
   /// A squircle border at [radius], for [ShapeDecoration.shape] and anything
   /// else taking a [ShapeBorder].
   static RoundedSuperellipseBorder squircle(

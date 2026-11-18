@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
@@ -50,7 +52,7 @@ class SegmentedLabel extends StatelessWidget {
       scale: scale,
       alignment: anchor,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: inset),
+        padding: EdgeInsets.symmetric(horizontal: math.max(inset, 4)),
         child: Center(
           child: FittedBox(
             fit: BoxFit.scaleDown,

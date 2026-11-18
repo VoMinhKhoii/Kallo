@@ -287,8 +287,9 @@ void main() {
   testWidgets('opening onto a lower dish scrolls its ruler into view', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(390, 700));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 700);
+    addTearDown(tester.view.reset);
     final items = [
       for (final id in ['a', 'b', 'c', 'd'])
         MealItem(
@@ -369,6 +370,10 @@ void main() {
     );
     final commits = await _open(tester, draftFromPersisted(meal));
     expect(find.text('350 ml'), findsOneWidget);
+    await tester.ensureVisible(
+      find.bySemanticsLabel('One less serving of Latte'),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('One less serving of Latte'));
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Remove Latte'));

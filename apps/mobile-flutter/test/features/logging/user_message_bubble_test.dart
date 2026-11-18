@@ -251,6 +251,9 @@ void main() {
     testWidgets('the bubble lifts in place, about its right edge', (
       tester,
     ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(500, 844);
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(_wrapLocalized(sent));
       await tester.pumpAndSettle();
       final resting = tester.getRect(bubbleBoxes());

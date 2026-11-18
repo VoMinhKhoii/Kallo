@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_theme.dart';
 import '../../../../../shared/widgets/gauge/calorie_dial.dart';
-import '../../../../../shared/widgets/gauge/macro_dial_row.dart';
+import '../../../../../shared/widgets/gauge/macros/macro_dial_row.dart';
 import '../../../../../shared/widgets/gauge/rounded_gauge_arc.dart';
 import '../../../logic/logging_spacing.dart';
 import 'pulse.dart';
@@ -18,46 +18,62 @@ import 'pulse.dart';
 /// layout when the day arrives. The tile grid this replaced matched nothing
 /// that had ever rendered here.
 class MacroSummarySkeleton extends StatelessWidget {
-  const MacroSummarySkeleton({super.key});
+  const MacroSummarySkeleton({super.key, this.full = false});
+  final bool full;
 
   @override
   Widget build(BuildContext context) {
     Widget pill(double width, double height) =>
         skeletonBar(width, height, KalloColors.track);
 
+    if (full) {
+      return Pulse(
+        child: Column(
+          children: [
+            pill(kCalorieDialRadius * 2, gaugeHeight(kCalorieDialRadius)),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [for (var i = 0; i < 3; i++) pill(88, 88)],
+            ),
+          ],
+        ),
+      );
+    }
+
     return Pulse(
       child: LayoutBuilder(
         builder: (context, constraints) {
+          // The live row's own spacing (leadRowFit), so the marks do not
+          // shift sideways when the day arrives.
           final calorie = compactCalorieDialRadius(
-            calorieDialRoom(constraints.maxWidth, gap: KalloSpacing.sp3),
+            calorieDialRoom(constraints.maxWidth),
+          );
+          final fit = leadRowFit(
+            constraints.maxWidth,
+            leadingWidth: calorie * 2,
+            maxRadius: kCompactMacroDialRadius,
           );
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              pill(calorie * 2, gaugeHeight(calorie)),
-              const SizedBox(width: KalloSpacing.sp3),
-              Expanded(
-                child: Row(
-                  children: [
-                    for (var i = 0; i < 3; i++) ...[
-                      if (i > 0) const SizedBox(width: KalloSpacing.sp2),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            pill(44, 11),
-                            const SizedBox(height: KalloSpacing.sp0_5),
-                            pill(
-                              kCompactMacroDialRadius * 2,
-                              gaugeHeight(kCompactMacroDialRadius),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: fit.inset),
+                child: pill(calorie * 2, gaugeHeight(calorie)),
               ),
+              for (var i = 0; i < 3; i++) ...[
+                const SizedBox(width: kMacroDialGutter),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      pill(44, 11),
+                      const SizedBox(height: KalloSpacing.sp0_5),
+                      pill(fit.radius * 2, gaugeHeight(fit.radius)),
+                    ],
+                  ),
+                ),
+              ],
             ],
           );
         },

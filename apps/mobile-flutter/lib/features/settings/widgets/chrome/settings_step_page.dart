@@ -109,6 +109,7 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
     final session = _session;
 
     return Screen(
+      bounded: true,
       bottom: false,
       child: ScrollSeparator(
         header: InlineNavBar(

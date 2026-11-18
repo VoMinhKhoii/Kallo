@@ -33,29 +33,46 @@ class ManualSearchPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        KalloSheetHeader(
-          title: 'logging.manualLogging.sheetTitle'.tr(),
-          trailing:
-              showDone
-                  ? SheetCapsuleButton(
-                    label: 'logging.manualLogging.done'.tr(),
-                    onTap: () => Navigator.of(context).pop(),
-                  )
-                  : null,
-        ),
-        ManualSearchField(controller: controller, autofocus: autofocus),
-        Expanded(
-          child: ManualSearchResults(
-            query: query,
-            resultsAsync: resultsAsync,
-            itemFor: itemFor,
-            onPick: onPick,
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, bounds) {
+        final short = bounds.maxHeight < 220;
+        final content = Column(
+          mainAxisSize: short ? MainAxisSize.min : MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            KalloSheetHeader(
+              title: 'logging.manualLogging.sheetTitle'.tr(),
+              trailing:
+                  showDone
+                      ? SheetCapsuleButton(
+                        label: 'logging.manualLogging.done'.tr(),
+                        onTap: () => Navigator.of(context).pop(),
+                      )
+                      : null,
+            ),
+            ManualSearchField(controller: controller, autofocus: autofocus),
+            if (short)
+              ManualSearchResults(
+                query: query,
+                resultsAsync: resultsAsync,
+                itemFor: itemFor,
+                onPick: onPick,
+                inFlow: true,
+              )
+            else
+              Expanded(
+                child: ManualSearchResults(
+                  query: query,
+                  resultsAsync: resultsAsync,
+                  itemFor: itemFor,
+                  onPick: onPick,
+                ),
+              ),
+          ],
+        );
+        // The header and search scroll too when they would consume the viewport.
+        return short ? SingleChildScrollView(child: content) : content;
+      },
     );
   }
 }

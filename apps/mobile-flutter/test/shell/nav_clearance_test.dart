@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
 import 'package:kallo_mobile/shared/widgets/feedback/kallo_refresh.dart';
-import 'package:kallo_mobile/shell/nav/pill_nav_bar.dart';
+import 'package:kallo_mobile/shell/nav/pill_nav_bottom.dart';
 import 'package:kallo_mobile/shell/tab_scaffold.dart';
 
 import '../l10n_test_loader.dart';
@@ -89,7 +89,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final navHeight = tester.getSize(find.byType(PillNavBar)).height;
+    final navHeight = tester.getSize(find.byType(PillNavBottom)).height;
     final padding =
         tester.widget<SliverPadding>(find.byType(SliverPadding)).padding
             as EdgeInsets;

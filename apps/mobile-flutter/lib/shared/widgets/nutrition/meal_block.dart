@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../logic/display_format.dart';
+import '../../logic/text_fit/meal_title_fit.dart';
 import '../../logic/macro_composition.dart';
 import 'composition_bar.dart';
 import 'macro_legend.dart';
@@ -71,24 +72,68 @@ class MealBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(
-                capitalizeFirst(title),
-                maxLines: titleMaxLines,
-                overflow: TextOverflow.ellipsis,
-                style: dashBody(),
+        if (kcalPlacement != MealBlockKcal.titleRight || kcal == null)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  capitalizeFirst(title),
+                  maxLines: titleMaxLines,
+                  overflow: TextOverflow.ellipsis,
+                  style: dashBody(),
+                ),
               ),
-            ),
-            if (kcalPlacement == MealBlockKcal.titleRight && kcal != null) ...[
-              const SizedBox(width: 8),
-              kcal,
+              if (titleTrailing != null) titleTrailing!,
             ],
-            if (titleTrailing != null) titleTrailing!,
-          ],
-        ),
+          )
+        else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, bounds) {
+                    final stacked = mealTitleNeedsStack(
+                      context,
+                      width: bounds.maxWidth,
+                      title: title,
+                      kcalLabel: kcalLabel,
+                      titleMaxLines: titleMaxLines,
+                    );
+                    final row = Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            capitalizeFirst(title),
+                            maxLines: titleMaxLines,
+                            overflow: TextOverflow.ellipsis,
+                            style: dashBody(),
+                          ),
+                        ),
+                        if (!stacked) ...[const SizedBox(width: 8), kcal],
+                      ],
+                    );
+                    return stacked
+                        ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            row,
+                            const SizedBox(height: 6),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: kcal,
+                            ),
+                          ],
+                        )
+                        : row;
+                  },
+                ),
+              ),
+              if (titleTrailing != null) titleTrailing!,
+            ],
+          ),
         if (middle != null) middle!,
         const SizedBox(height: 8),
         CompositionBar.compact(segments: segments),

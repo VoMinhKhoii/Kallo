@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import '../../../theme/kallo_theme.dart';
+import '../../../shared/widgets/panes/pane_insets.dart';
 
 /// Settings' ONE vertical rhythm. Settings is a presentational surface, so it
 /// keeps the design system's 12px default between stacked components
@@ -36,11 +37,10 @@ abstract final class SettingsSpacing {
   /// field's Save and the delete-account button sat under the keys with no
   /// way to scroll them out (2026-09-28). The keyboard covers the home
   /// indicator, so the larger of the two is the whole inset.
-  static EdgeInsets rowList(BuildContext context) => EdgeInsets.fromLTRB(
-    KalloSpacing.sp3, // 12
-    KalloSpacing.sp2, // 8 — with the header's own 4, the artboard's 12 gap
-    KalloSpacing.sp3,
-    KalloSpacing.sp8 + bottomInset(context), // 32 + inset
+  static EdgeInsets rowList(BuildContext context) => paneInsets(
+    context,
+    top: KalloSpacing.sp2,
+    bottom: KalloSpacing.sp8 + bottomInset(context),
   );
 
   /// The home indicator, or the keyboard while it is up — whichever reaches

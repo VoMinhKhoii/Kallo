@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shell/window/window_regions.dart';
 
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
@@ -28,13 +30,14 @@ Future<void> showOnboardingDialog(BuildContext context, WidgetRef ref) {
     transitionDuration: const Duration(milliseconds: 250),
     pageBuilder: (ctx, _, __) {
       final media = MediaQuery.of(ctx);
-      final insets = media.padding;
+      final regions = WindowRegions(WindowLayout.of(ctx));
+      final insets = regions.insets(regions.dialog);
       return Padding(
         padding: EdgeInsets.only(
           top: insets.top + KalloSpacing.sp3,
           bottom: insets.bottom + KalloSpacing.sp3,
-          left: KalloSpacing.sp3,
-          right: KalloSpacing.sp3,
+          left: insets.left + KalloSpacing.sp3,
+          right: insets.right + KalloSpacing.sp3,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),

@@ -20,6 +20,7 @@ import '../manual_subtitle.dart';
 class ManualSearchResults extends StatelessWidget {
   const ManualSearchResults({
     super.key,
+    this.inFlow = false,
     required this.query,
     required this.resultsAsync,
     required this.itemFor,
@@ -32,59 +33,64 @@ class ManualSearchResults extends StatelessWidget {
   /// The meal's item for a food id, when that food is already in it.
   final ManualLogItem? Function(String ingredientId) itemFor;
   final ValueChanged<IngredientSearchResult> onPick;
+  final bool inFlow;
 
   @override
   Widget build(BuildContext context) {
     final recents = query.isEmpty;
-    return ListView(
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewPaddingOf(context).bottom + KalloSpacing.sp4,
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Expanded(
-                child: Text(
-                  recents
-                      ? 'logging.manualLogging.recent'.tr()
-                      : 'logging.manualLogging.resultsFor'.tr(
-                        namedArgs: {'query': query},
-                      ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: kGroupLabel(),
-                ),
+    final children = <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Expanded(
+              child: Text(
+                recents
+                    ? 'logging.manualLogging.recent'.tr()
+                    : 'logging.manualLogging.resultsFor'.tr(
+                      namedArgs: {'query': query},
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: kGroupLabel(),
               ),
-              const SizedBox(width: KalloSpacing.sp3),
-              Text('logging.manualLogging.per100g'.tr(), style: kGroupLabel()),
-            ],
-          ),
+            ),
+            const SizedBox(width: KalloSpacing.sp3),
+            Text('logging.manualLogging.per100g'.tr(), style: kGroupLabel()),
+          ],
         ),
-        resultsAsync.when(
-          loading: () => _message('logging.manualLogging.searching'.tr()),
-          error: (_, __) => _message('errors.internal'.tr(), error: true),
-          data: (results) {
-            if (results.isEmpty) {
-              return _message(
-                (recents
-                        ? 'logging.manualLogging.recentsHint'
-                        : 'logging.manualLogging.noResults')
-                    .tr(),
-              );
-            }
-            return GroupedListCard(
-              separatorInset: 0,
-              children: [for (final result in results) _row(result)],
+      ),
+      resultsAsync.when(
+        loading: () => _message('logging.manualLogging.searching'.tr()),
+        error: (_, __) => _message('errors.internal'.tr(), error: true),
+        data: (results) {
+          if (results.isEmpty) {
+            return _message(
+              (recents
+                      ? 'logging.manualLogging.recentsHint'
+                      : 'logging.manualLogging.noResults')
+                  .tr(),
             );
-          },
-        ),
-      ],
+          }
+          return GroupedListCard(
+            separatorInset: 0,
+            children: [for (final result in results) _row(result)],
+          );
+        },
+      ),
+    ];
+    final padding = EdgeInsets.only(
+      bottom: MediaQuery.viewPaddingOf(context).bottom + KalloSpacing.sp4,
     );
+    return inFlow
+        ? Padding(padding: padding, child: Column(children: children))
+        : ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: padding,
+          children: children,
+        );
   }
 
   Widget _row(IngredientSearchResult result) {

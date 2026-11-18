@@ -182,6 +182,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(discarded, isEmpty, reason: 'the confirm must come first');
 
+    await tester.ensureVisible(
+      find.descendant(
+        of: find.byKey(kKalloConfirmSurface),
+        matching: find.text('Discard'),
+      ),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(
         of: find.byKey(kKalloConfirmSurface),

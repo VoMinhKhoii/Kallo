@@ -1,0 +1,204 @@
+name: iOS Duo simulator
+
+# Screenshots of the app on the iPhone Duo simulator, in every pose.
+#
+# The widget tests in apps/mobile-flutter/test/shell/poses render the app at
+# Duo's window sizes; only the simulator draws the system's side: the status
+# column, the Dynamic Island, the fold. GitHub's Xcode 27 image ships the Duo
+# simulator, so this needs no local Xcode 27.
+#
+# Neither simctl nor devicectl can open or fold the simulated device. Device
+# Hub can, so the job posts mouse clicks at its pose buttons. Their positions
+# were read off screenshots of Device Hub in full screen on a 1920x1080
+# desktop; if its layout changes, the `desktop-*.png` artifacts show where
+# they went.
+#
+# Every screen is saved twice: `<pose>/<screen>.png` is the display's own
+# pixels, and `<pose>/framed/<screen>.png` is Device Hub's drawing of the
+# device around it, frame, hinge and buttons included. Device Hub's own
+# screenshot button saves the display only, so the framed picture is a crop
+# of the desktop, which is why the desktop is made larger first.
+#
+# A full tour takes about an hour: about 6 minutes to build, 6 to boot the
+# Duo, 20 seconds per screen per pose, and up to 20 for the classic iPhone,
+# most of it that simulator's first boot.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-duo-sim-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tour:
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      # The repo pins Flutter 3.44.1, which predates Xcode 27. This job doubles
+      # as the check that the app builds on the 3.47 line with Xcode 27.1.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.x
+          channel: stable
+          cache: true
+
+      - name: Build the fixture tour for the simulator
+        working-directory: apps/mobile-flutter
+        run: |
+          flutter --version
+          flutter pub get
+          flutter build ios --simulator --debug \
+            -t test/shell/poses/sim/sim_tour_main.dart 2>&1 | tail -40
+
+      # The runner's desktop starts at 1024x768, where the device is drawn
+      # about 400 points wide.
+      - name: Make the desktop 1920x1080
+        run: |
+          mkdir -p out
+          brew install displayplacer > out/brew.txt 2>&1 || true
+          ID=$(displayplacer list | awk '/Persistent screen id/{print $4; exit}')
+          displayplacer "id:$ID res:1920x1080 hz:60 color_depth:7 scaling:off" || true
+          displayplacer list | grep 'current mode' | grep -q 1920x1080 \
+            || { echo "::error::could not set the desktop to 1920x1080; Device Hub's buttons would not be where the tour clicks"; exit 1; }
+
+      - name: Boot Duo and open Device Hub
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in sorted(d.items()) if "27-1" in k for x in v if "Duo" in x["name"]))')
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          # The Duo simulator sometimes reports a finished boot and is not
+          # running a moment later (Device Hub then offers "Start", and every
+          # screenshot times out). Boot until a screenshot comes back.
+          for attempt in 1 2 3; do
+            xcrun simctl boot "$UDID" 2>&1 | tail -1
+            xcrun simctl bootstatus "$UDID" -b > "out/bootstatus-$attempt.txt" 2>&1 || true
+            sleep 15
+            if xcrun simctl io "$UDID" screenshot --display=1 out/boot-check.png > /dev/null 2>&1; then
+              echo "booted on attempt $attempt"; break
+            fi
+            echo "attempt $attempt: no screen; shutting down and retrying"
+            xcrun simctl shutdown "$UDID" 2>&1 | tail -1
+            sleep 10
+            [ "$attempt" = 3 ] && { echo "::error::iPhone Duo simulator never produced a screen"; exit 1; }
+          done
+          xcrun simctl install "$UDID" apps/mobile-flutter/build/ios/iphonesimulator/Runner.app
+          open -a "Device Hub"
+          sleep 25
+          cat > click.swift <<'SWIFT'
+          import CoreGraphics
+          import Foundation
+          let a = CommandLine.arguments
+          let src = CGEventSource(stateID: .hidSystemState)
+          func post(_ types: [CGEventType], _ x: Double, _ y: Double) {
+            for type in types {
+              let e = CGEvent(mouseEventSource: src, mouseType: type, mouseCursorPosition: CGPoint(x: x, y: y), mouseButton: .left)!
+              e.post(tap: .cghidEventTap)
+              usleep(120_000)
+            }
+          }
+          post([.mouseMoved, .leftMouseDown, .leftMouseUp], Double(a[1])!, Double(a[2])!)
+          // Park the pointer on the empty sidebar, so no tooltip or hover
+          // state is in the next picture.
+          post([.mouseMoved], 120, 700)
+          SWIFT
+          swiftc -O click.swift -o click
+          osascript -e 'tell application "Device Hub" to activate' || true
+          # The window's green button: full screen, so the canvas is as large
+          # as the desktop and the buttons sit at known points.
+          ./click 482 142; sleep 6
+          # Zoom in three times (the device grows from about 430 points wide
+          # to about 900), then close the "Zoom Controls" tip, which would
+          # cover the device's bottom edge.
+          for z in 1 2 3; do ./click 1688 26; sleep 2; done
+          ./click 1197 1004; sleep 2
+
+      - name: Tour every pose
+        run: |
+          set +e
+          # `/onboarding@N` opens the wizard on screen N: 3 is the body metrics
+          # form, 5 the cooking habits, the longest list of options.
+          ROUTES="/dashboard /logging /nutrition /circle /circle/thread-detail /settings /paywall /start /sign-in /sign-in/email /onboarding /onboarding@3 /onboarding@5"
+          state() { xcrun devicectl device info displays --device "$UDID" 2>&1 | grep -E '^▿|backlight|currentOrientation' | tr '\n' ' '; echo; }
+          # fold <closed|partly|open>: Device Hub's three pose buttons.
+          fold() {
+            case "$1" in closed) x=1122 ;; partly) x=1156 ;; open) x=1192 ;; esac
+            ./click "$x" 1056; sleep 6
+          }
+          # Device Hub's rotate button: a quarter turn each click. (devicectl's
+          # `orientation set` reports success and changes nothing on Duo.)
+          turn() { ./click 1086 1056; sleep 6; }
+          # The canvas between Device Hub's toolbar and its bottom bar, right
+          # of the sidebar: the device as drawn, on white.
+          framed() { screencapture -x -R240,60,1680,966 "$1" 2>/dev/null; }
+          metrics() {
+            f="$(xcrun simctl get_app_container "$UDID" com.khoivo.nham data 2>/dev/null)/tmp/duo_metrics.txt"
+            [ -f "$f" ] && { grep DUO_METRICS "$f" | tail -1; grep DUO_ROUTE "$f" | tail -1; } | tr '\n' ' '
+          }
+          # tour <pose name> <display id>
+          tour() {
+            mkdir -p "out/$1/framed"
+            state > "out/$1/displays.txt"; cat "out/$1/displays.txt"
+            screencapture -x "out/desktop-$1.png" 2>/dev/null
+            for route in $ROUTES; do
+              name=$(echo "${route#/}" | tr '/@' '--')
+              data=$(xcrun simctl get_app_container "$UDID" com.khoivo.nham data 2>/dev/null)
+              mkdir -p "$data/tmp"; echo "$route" > "$data/tmp/duo_route.txt"; : > "$data/tmp/duo_metrics.txt"
+              SIMCTL_CHILD_DUO_ROUTE="$route" xcrun simctl launch --terminate-running-process \
+                "$UDID" com.khoivo.nham > /dev/null 2>&1
+              sleep 8
+              xcrun simctl io "$UDID" screenshot --display="$2" "out/$1/$name.png" 2>&1 | tail -1
+              framed "out/$1/framed/$name.png"
+              echo "$1 $name $(metrics)" | tee -a out/metrics.txt
+            done
+          }
+          xcrun simctl launch "$UDID" com.khoivo.nham > /dev/null 2>&1; sleep 8
+          fold closed;  tour closed 1
+          turn;         tour closed-turn1 1
+          turn; turn;   tour closed-turn3 1
+          turn
+          fold open;    tour open 3
+          turn;         tour open-turn1 3
+          turn; turn; turn
+          fold partly;  tour partly-open 3
+          turn;         tour partly-open-turn1 3
+          turn; turn; turn
+          fold closed
+          grep -o '^[a-z0-9-]* \|DUO_METRICS [^D]*' out/metrics.txt | paste - - | sort -u > out/metrics-by-pose.txt
+          cat out/metrics-by-pose.txt
+
+      # The same screens on a classic iPhone, built with the same SDK: the Duo
+      # work must leave an ordinary phone looking as it did.
+      - name: Tour a classic iPhone
+        if: always()
+        run: |
+          set +e
+          xcrun simctl shutdown "$UDID" 2>&1 | tail -1
+          PHONE=$(xcrun simctl list devices available -j \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in sorted(d.items()) for x in v if x["name"]=="iPhone 18 Pro"))')
+          echo "PHONE=$PHONE"
+          xcrun simctl boot "$PHONE"
+          xcrun simctl bootstatus "$PHONE" -b > out/bootstatus-phone.txt 2>&1 || true
+          xcrun simctl install "$PHONE" apps/mobile-flutter/build/ios/iphonesimulator/Runner.app
+          xcrun simctl launch "$PHONE" com.khoivo.nham > /dev/null 2>&1; sleep 10
+          mkdir -p out/phone
+          for route in /dashboard /logging /nutrition /circle /circle/thread-detail /settings /paywall /start /sign-in /sign-in/email /onboarding /onboarding@3 /onboarding@5; do
+            name=$(echo "${route#/}" | tr '/@' '--')
+            data=$(xcrun simctl get_app_container "$PHONE" com.khoivo.nham data 2>/dev/null)
+            mkdir -p "$data/tmp"; echo "$route" > "$data/tmp/duo_route.txt"; : > "$data/tmp/duo_metrics.txt"
+            xcrun simctl launch --terminate-running-process "$PHONE" com.khoivo.nham > /dev/null 2>&1
+            sleep 8
+            xcrun simctl io "$PHONE" screenshot "out/phone/$name.png" 2>&1 | tail -1
+            echo "phone $name $(grep DUO_METRICS "$data/tmp/duo_metrics.txt" | tail -1)" | tee -a out/metrics.txt
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: duo-sim-tour
+          path: out
+          retention-days: 14

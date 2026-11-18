@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
 
 import '../../../services/billing/entitlement_state.dart';
 import '../../../services/billing/entitlements_provider.dart';
@@ -10,6 +11,8 @@ import '../../../theme/kallo_theme.dart';
 import '../../onboarding/widgets/backdrop/start_aurora.dart';
 import '../data/paywall_controller.dart';
 import '../widgets/paywall_header.dart';
+import '../widgets/paywall_top_inset.dart';
+import '../widgets/paywall_gutter.dart';
 import 'paywall_purchase_face.dart';
 import '../widgets/states/paywall_premium_body.dart';
 import '../widgets/states/paywall_status.dart';
@@ -32,8 +35,8 @@ class PaywallScreen extends ConsumerWidget {
   final bool onboarding;
 
   /// Gutter for the note faces. The purchase face sets its own, narrower one
-  /// (see [PaywallPurchaseFace.gutter]), and the header spends part of it on
-  /// its own 44pt targets (see [PaywallHeader]).
+  /// (see [PaywallGutter]), and the header spends part of it on its own 44pt
+  /// targets (see [PaywallHeader]).
   static const double gutter = KalloSpacing.sp6;
 
   @override
@@ -49,38 +52,35 @@ class PaywallScreen extends ConsumerWidget {
         child: Stack(
           children: [
             const Positioned.fill(child: StartAurora()),
-            SafeArea(
-              bottom: false,
-              child: entitlement.when(
-                data:
-                    (value) =>
-                        value.hasPaidPremium
-                            ? _premium(context, value)
-                            : _purchase(context, value, state),
-                loading:
-                    () => _note(
-                      context,
-                      PaywallNote(
-                        title: tr('paywall.verifying'),
-                        body: tr('paywall.verifyPending'),
-                        leading: const PaywallSpinner(),
-                      ),
-                      stayFree: true,
+            entitlement.when(
+              data:
+                  (value) =>
+                      value.hasPaidPremium
+                          ? _premium(context, value)
+                          : _purchase(context, value, state),
+              loading:
+                  () => _note(
+                    context,
+                    PaywallNote(
+                      title: tr('paywall.verifying'),
+                      body: tr('paywall.verifyPending'),
+                      leading: const PaywallSpinner(),
                     ),
-                // The entitlement never arrived, so we cannot know this user
-                // is premium — and an unreadable entitlement is not something
-                // they can retry their way out of. Show the ordinary paywall
-                // against the conservative free snapshot with the buy button
-                // dead, rather than replacing the page with an error the user
-                // did not cause.
-                error:
-                    (_, _) => _purchase(
-                      context,
-                      EntitlementState.free,
-                      state,
-                      storeUnavailable: true,
-                    ),
-              ),
+                    stayFree: true,
+                  ),
+              // The entitlement never arrived, so we cannot know this user
+              // is premium — and an unreadable entitlement is not something
+              // they can retry their way out of. Show the ordinary paywall
+              // against the conservative free snapshot with the buy button
+              // dead, rather than replacing the page with an error the user
+              // did not cause.
+              error:
+                  (_, _) => _purchase(
+                    context,
+                    EntitlementState.free,
+                    state,
+                    storeUnavailable: true,
+                  ),
             ),
           ],
         ),
@@ -100,22 +100,15 @@ class PaywallScreen extends ConsumerWidget {
   }) {
     final mid = _midPurchase(context, state);
     if (mid != null) return mid;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // No trailing slot: "Stay on Free" is a button at the bottom of the
-        // band now, in reach of a thumb, rather than a link in the corner.
-        _header(context, stayFree: false),
-        Expanded(
-          child: PaywallPurchaseFace(
-            entitlement: entitlement,
-            state: state,
-            storeUnavailable: storeUnavailable,
-            onboarding: onboarding,
-            onStayFree: () => _dismiss(context),
-          ),
-        ),
-      ],
+    return PaywallPurchaseFace(
+      // No trailing slot: "Stay on Free" is a button at the bottom of the
+      // band now, in reach of a thumb, rather than a link in the corner.
+      header: _header(context, stayFree: false),
+      entitlement: entitlement,
+      state: state,
+      storeUnavailable: storeUnavailable,
+      onboarding: onboarding,
+      onStayFree: () => _dismiss(context),
     );
   }
 
@@ -165,30 +158,55 @@ class PaywallScreen extends ConsumerWidget {
   /// choose — and on the purchase face, which carries its own button for it.
   /// Every note face keeps the header link, so the screen is always closable
   /// two ways.
+  ///
+  /// The purchase face places its own top inset: beside the fold its far
+  /// pane is the start preview, which stands outside it.
   Widget _note(BuildContext context, Widget child, {bool stayFree = false}) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _header(context, stayFree: stayFree),
-          Expanded(
+      PaywallTopInset(
+        child: NarrativePanes(
+          far: Align(
+            alignment: Alignment.topCenter,
+            child: _header(context, stayFree: stayFree),
+          ),
+          near: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                gutter,
-                KalloSpacing.sp4,
-                gutter,
-                KalloSpacing.sp8,
-              ),
+              padding: const EdgeInsets.all(gutter),
               child: child,
             ),
           ),
-        ],
+          single: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _header(context, stayFree: stayFree),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    gutter,
+                    KalloSpacing.sp4,
+                    gutter,
+                    KalloSpacing.sp8,
+                  ),
+                  child: child,
+                ),
+              ),
+            ],
+          ),
+        ),
       );
 
-  Widget _header(BuildContext context, {required bool stayFree}) =>
-      PaywallHeader(
-        onClose: () => _dismiss(context),
-        onStayFree: stayFree ? () => _dismiss(context) : null,
-      );
+  Widget _header(BuildContext context, {required bool stayFree}) => Builder(
+    builder:
+        (context) => Padding(
+          padding: EdgeInsets.only(
+            left: MediaQuery.viewPaddingOf(context).left,
+            right: MediaQuery.viewPaddingOf(context).right,
+          ),
+          child: PaywallHeader(
+            onClose: () => _dismiss(context),
+            onStayFree: stayFree ? () => _dismiss(context) : null,
+          ),
+        ),
+  );
 
   void _dismiss(BuildContext context) {
     if (onboarding) {

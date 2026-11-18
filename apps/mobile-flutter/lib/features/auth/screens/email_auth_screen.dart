@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shell/window/window_layout.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
 
 import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
@@ -9,6 +11,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../onboarding/widgets/backdrop/step_backdrop.dart';
+import '../../onboarding/widgets/start/start_hero.dart';
 import '../providers/auth_form_controller.dart';
 import '../widgets/auth_controls.dart';
 import '../widgets/email_auth_form.dart';
@@ -49,6 +52,13 @@ class EmailAuthScreen extends ConsumerStatefulWidget {
 }
 
 class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
+  /// Held tall, the fold crosses the window at half its height, and with the
+  /// form centred that line ran through "Send code". This much lower it falls
+  /// in the gap between the email field and the button instead. The extra
+  /// top padding is twice this because the form is centred in what is left.
+  static const double _foldNudge = 24;
+
+  final _taskKey = GlobalKey();
   static final _provider = signInControllerProvider;
 
   AuthFormController get _controller => ref.read(_provider.notifier);
@@ -64,6 +74,32 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     final state = ref.watch(_provider);
     final showCode = state.pendingEmail != null;
 
+    final task = CustomScrollView(
+      key: _taskKey,
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              kAuthInset,
+              KalloSpacing.sp5 +
+                  (WindowLayout.of(context).foldAcross ? 2 * _foldNudge : 0),
+              kAuthInset,
+              KalloSpacing.sp5,
+            ),
+            child: Align(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child:
+                    showCode
+                        ? EmailCodeView(provider: _provider, onNotice: _toast)
+                        : _form(state),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
     return Scaffold(
       backgroundColor: KalloColors.surface,
       body: Stack(
@@ -72,50 +108,29 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           // of the screen, behind the status bar, exactly as it does on the
           // `/save-plan` screen this route is pushed from.
           const Positioned.fill(child: StepBackdrop()),
-          SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: WordmarkBar.rowInset,
-                  ),
-                  child: WordmarkBar(
-                    leading: AuthBackButton(onBack: state.busy ? null : _back),
-                  ),
-                ),
-                // Centred in the space under the wordmark, as the welcome face
-                // is, rather than hung off the top with the bottom half empty.
-                // A phone too short for it (or the keyboard) scrolls instead.
-                Expanded(
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Padding(
-                          // 24 side inset — auth's documented exception to
-                          // the 12pt page rhythm ([kAuthInset]).
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: kAuthInset,
-                            vertical: KalloSpacing.sp5,
-                          ),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 420),
-                              child:
-                                  showCode
-                                      ? EmailCodeView(
-                                        provider: _provider,
-                                        onNotice: _toast,
-                                      )
-                                      : _form(state),
-                            ),
-                          ),
-                        ),
+          _panes(
+            SafeArea(
+              minimum: EdgeInsets.only(
+                top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: WordmarkBar.rowInset,
+                    ),
+                    child: WordmarkBar(
+                      leading: AuthBackButton(
+                        onBack: state.busy ? null : _back,
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                  // Centred in the space under the wordmark, as the welcome face
+                  // is, rather than hung off the top with the bottom half empty.
+                  // A phone too short for it (or the keyboard) scrolls instead.
+                  Expanded(child: task),
+                ],
+              ),
             ),
           ),
         ],
@@ -123,7 +138,17 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     );
   }
 
+  /// Beside the fold the whole column is the near pane and the start preview
+  /// keeps the far one.
+  Widget _panes(Widget column) =>
+      NarrativePanes(far: const StartHero(), near: column, single: column);
+
   Widget _form(AuthFormState state) {
+    // A window this short (a phone or the closed Duo on its side) cannot show
+    // the form down to Google. The subtitle is the one line it can lose, and
+    // the seams around the form close up the last few points.
+    final short = WindowLayout.of(context).compactHeight;
+    final seam = SizedBox(height: short ? KalloSpacing.sp3 : KalloSpacing.sp5);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -136,18 +161,20 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
               : tr('auth.dialog.signInTitle'),
           style: kPageTitle(),
         ),
-        const SizedBox(height: KalloSpacing.sp2),
-        Text(
-          widget.createAccount
-              ? tr('auth.dialog.signUpSubtitle')
-              : tr('auth.dialog.signInSubtitle'),
-          style: dashBody(color: kInkMuted),
-        ),
-        const SizedBox(height: KalloSpacing.sp5),
+        if (!short) ...[
+          const SizedBox(height: KalloSpacing.sp2),
+          Text(
+            widget.createAccount
+                ? tr('auth.dialog.signUpSubtitle')
+                : tr('auth.dialog.signInSubtitle'),
+            style: dashBody(color: kInkMuted),
+          ),
+        ],
+        seam,
         EmailAuthForm(provider: _provider),
-        const SizedBox(height: KalloSpacing.sp5),
+        seam,
         const _OrDivider(),
-        const SizedBox(height: KalloSpacing.sp5),
+        seam,
         // The same two social options the welcome face offers, on the same
         // controller — so nobody has to go back to reach them.
         AppleButton(busy: state.busy, onPressed: _controller.signInWithApple),

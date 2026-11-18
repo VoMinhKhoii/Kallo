@@ -1,15 +1,16 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
+import 'grouped_list_card.dart';
+import 'list_row_wash.dart';
+import 'list_row_trailing.dart';
 
 /// One row inside a [GroupedListCard] — the Settings anchor anatomy
 /// generalized (native pass, 2026-08-31): optional leading 24pt glyph, Body
-/// title in REGULAR weight (Threads and the Claude app set theirs regular —
-/// medium made every row shout), Meta subline below, a quiet Meta value on
+/// title in regular weight except the selected detail (medium everywhere
+/// made every row shout), Meta subline below, a quiet Meta value on
 /// the right, optional 18pt chevron. 52pt minimum single-line, 64pt with a
 /// subline; the whole row is the tap target.
 ///
@@ -30,6 +31,7 @@ class ListRow extends StatefulWidget {
     this.busy = false,
     this.showChevron = false,
     this.trailing,
+    this.selected = false,
   });
 
   /// Lucide glyph for the leading 24pt slot — ink (red on a [danger] row).
@@ -58,6 +60,7 @@ class ListRow extends StatefulWidget {
 
   final bool showChevron;
   final Widget? trailing;
+  final bool selected;
 
   @override
   State<ListRow> createState() => _ListRowState();
@@ -77,55 +80,79 @@ class _ListRowState extends State<ListRow> {
     final Color inkColor = widget.danger ? KalloColors.danger : kInk;
     final Color fill = widget.danger ? KalloColors.danger10 : KalloColors.hover;
 
-    final row = AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeInOut,
-      constraints: BoxConstraints(minHeight: widget.subline != null ? 64 : 52),
-      color: _pressed ? fill : Colors.transparent,
-      child: Row(
-        children: [
-          if (widget.icon != null || widget.leading != null) ...[
-            SizedBox(
-              width: KalloIcons.size,
-              child: Center(
-                child:
-                    widget.leading ??
-                    Icon(widget.icon, size: KalloIcons.size, color: inkColor),
-              ),
-            ),
-            const SizedBox(width: KalloSpacing.sp3),
-          ],
-          Expanded(
-            child: Padding(
-              // Only bites when the subline wraps: a two-line block keeps
-              // the same 12pt from the row's edges the one-line rows get
-              // from the minimum height.
-              padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp2),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.label, style: dashBody(color: inkColor)),
-                  if (widget.subline != null) ...[
-                    // One step more air than the 2pt it had: two stacked lines
-                    // read as one block at 2, as a label and its value at 4.
-                    const SizedBox(height: KalloSpacing.sp1),
-                    Text(
-                      widget.subline!,
-                      // A summary may take two lines ("Dầu vừa · Cơm vừa · …");
-                      // a one-line ellipsis cut exactly the part that differed.
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: dashMeta(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+    final row = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ListRowWash(color: fill, pressed: _pressed, selected: widget.selected),
+        Container(
+          constraints: BoxConstraints(
+            minHeight: widget.subline != null ? 64 : 52,
           ),
-          _trailing(),
-        ],
-      ),
+          child: Row(
+            children: [
+              if (widget.icon != null || widget.leading != null) ...[
+                SizedBox(
+                  width: KalloIcons.size,
+                  child: Center(
+                    child:
+                        widget.leading ??
+                        Icon(
+                          widget.icon,
+                          size: KalloIcons.size,
+                          color: inkColor,
+                        ),
+                  ),
+                ),
+                const SizedBox(width: KalloSpacing.sp3),
+              ],
+              Expanded(
+                // Only bites when the subline wraps: a two-line block keeps
+                // the same 12pt from the row's edges the one-line rows get
+                // from the minimum height.
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: KalloSpacing.sp2,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.label,
+                        style: dashBody(color: inkColor).copyWith(
+                          fontWeight:
+                              widget.selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                        ),
+                      ),
+                      if (widget.subline != null) ...[
+                        // One step more air than the 2pt it had: two stacked lines
+                        // read as one block at 2, as a label and its value at 4.
+                        const SizedBox(height: KalloSpacing.sp1),
+                        Text(
+                          widget.subline!,
+                          // A summary may take two lines ("Dầu vừa · Cơm vừa · …");
+                          // a one-line ellipsis cut exactly the part that differed.
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: dashMeta(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              ListRowTrailing(
+                busy: widget.busy,
+                value: widget.value,
+                trailing: widget.trailing,
+                showChevron: widget.showChevron,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
 
     // Dimmed whenever the row is not taking taps, so look and behavior agree.
@@ -160,38 +187,6 @@ class _ListRowState extends State<ListRow> {
       // touch target was already inert.
       onTap: _interactive ? widget.onTap : null,
       child: Opacity(opacity: opacity, child: content),
-    );
-  }
-
-  Widget _trailing() {
-    // A row waiting on its own action shows the spinner INSTEAD of its
-    // value/chevron — the affordance it replaces is exactly what is pending.
-    if (widget.busy) {
-      return CupertinoActivityIndicator(radius: 7, color: kInkMuted);
-    }
-    final List<Widget> parts = [
-      if (widget.value != null)
-        Text(widget.value!, style: dashMeta(tabular: true)),
-      if (widget.trailing != null) widget.trailing!,
-      if (widget.showChevron)
-        // Disclosure chevrons join the tertiary tier (18) rather than keeping
-        // a private 16 (Threads icon tiers, 2026-09-01): beside a 16pt row
-        // label a 16pt chevron read as a speck.
-        Icon(
-          LucideIcons.chevronRight300,
-          size: KalloIcons.tertiary,
-          color: kInkMuted,
-        ),
-    ];
-    if (parts.isEmpty) return const SizedBox.shrink();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < parts.length; i++) ...[
-          if (i > 0) const SizedBox(width: KalloSpacing.sp2),
-          parts[i],
-        ],
-      ],
     );
   }
 }
