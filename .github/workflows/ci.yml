@@ -354,6 +354,7 @@ jobs:
         run: >
           docker build
           --build-arg SKIP_NEXT_TYPECHECK=1
+          --build-arg NEXT_DEPLOYMENT_ID=${{ env.IMAGE_TAG }}
           --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           --build-arg NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
