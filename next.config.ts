@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
   // No `X-Powered-By: Next.js` on responses: it names the framework for no
   // reader's benefit.
   poweredByHeader: false,
+  // postgres.js loads with Node's own `require` instead of being bundled, so
+  // Sentry's postgresJsIntegration (on by default) can patch it and server
+  // traces show each query's time. Bundled, the patch never applied and
+  // traced API requests showed one opaque "executing api route" span.
+  serverExternalPackages: ['postgres'],
   // Instant Navigations (Next 16.3). Cache Components prerenders a static shell
   // for every route — request-time data (cookies, the Supabase session, search
   // params) streams in behind <Suspense> — and keeps visited routes alive with
