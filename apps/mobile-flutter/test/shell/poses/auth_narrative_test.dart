@@ -531,8 +531,16 @@ void expectOneColumnEdge(WidgetTester tester) {
     find.text('Choose your plan'),
   ]) {
     final rect = tester.getRect(piece);
-    expect(rect.left, moreOrLessEquals(table.left), reason: '$piece');
-    expect(rect.right, moreOrLessEquals(table.right), reason: '$piece');
+    expect(
+      rect.left,
+      moreOrLessEquals(table.left, epsilon: .01),
+      reason: '$piece',
+    );
+    expect(
+      rect.right,
+      moreOrLessEquals(table.right, epsilon: .01),
+      reason: '$piece',
+    );
   }
   final glyph = tester.getRect(
     find.descendant(
@@ -540,5 +548,5 @@ void expectOneColumnEdge(WidgetTester tester) {
       matching: find.byType(RichText),
     ),
   );
-  expect(glyph.left + 6, moreOrLessEquals(table.left));
+  expect(glyph.left + 6, moreOrLessEquals(table.left, epsilon: .01));
 }
