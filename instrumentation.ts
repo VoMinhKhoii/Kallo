@@ -51,6 +51,13 @@ export async function register() {
   }
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
+  // One log line per garbage-collection pause of 50 ms or more, to tell a
+  // stop-the-world pause apart from a slow database in stalled bursts.
+  const { watchGcPauses } = await import(
+    '@/lib/infra/telemetry/monitoring/gc-pauses'
+  );
+  watchGcPauses();
+
   const [
     { db, warmDbPool },
     { getCardCatalog },

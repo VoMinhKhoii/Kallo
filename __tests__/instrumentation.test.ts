@@ -23,6 +23,9 @@ vi.mock('@sentry/nextjs', () => ({
   captureRequestError: vi.fn(),
 }));
 vi.mock('@/lib/infra/db/client', () => ({ db, warmDbPool }));
+vi.mock('@/lib/infra/telemetry/monitoring/gc-pauses', () => ({
+  watchGcPauses: vi.fn(),
+}));
 vi.mock('@/lib/infra/auth/signing-keys/signing-keys', () => ({
   preloadSigningKeys,
 }));
