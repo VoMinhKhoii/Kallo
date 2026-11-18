@@ -65,6 +65,16 @@ if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_ANON_KEY:-}" ]]; then
 fi
 [[ -n "$SUPABASE_URL" && -n "$SUPABASE_ANON_KEY" ]] || { echo "Empty Supabase creds — check your .env.local."; exit 1; }
 API_BASE_URL="${API_BASE_URL:-http://localhost:3000}"
+# The prod API only accepts tokens signed by the prod Supabase project. A build
+# signed into dev but pointed at prod gets a 401 on every call, and each one
+# costs prod Supabase a rejected /auth/v1/user (it dragged the dashboard's
+# success rate to 38.7% on 2026-11-17).
+PROD_SUPABASE_REF="oudpzhfzirgjbhrzcett"
+if [[ "$API_BASE_URL" =~ kallo\.fit|kallo-prod.*\.run\.app ]] && [[ "$SUPABASE_URL" != *"$PROD_SUPABASE_REF"* ]]; then
+  echo "API_BASE_URL is prod ($API_BASE_URL) but SUPABASE_URL is not the prod project."
+  echo "Point both at prod (SUPABASE_URL + SUPABASE_ANON_KEY) or both at dev."
+  exit 1
+fi
 # Public web origin for shared links (invite links, macro cards). Defaults to
 # prod so link previews match; override to point at a local invite page.
 WEB_BASE_URL="${WEB_BASE_URL:-https://kallo.fit}"

@@ -9,6 +9,9 @@ vi.mock('@/lib/infra/supabase/server', () => ({
 vi.mock('@/lib/infra/db/client', () => ({
   db: {},
 }));
+vi.mock('@/lib/infra/auth/signing-keys/signing-keys', () => ({
+  signingKeys: vi.fn().mockResolvedValue(undefined),
+}));
 
 // Import after mocks are set up
 const { requireAuthAndProfile } = await import('@/lib/infra/auth/session');

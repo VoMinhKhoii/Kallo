@@ -175,7 +175,7 @@ another domain module is a smell worth a second look.
 | Folder | Concern |
 |---|---|
 | `apple-auth/` | Sign in with Apple REST: the per-call ES256 client secret, the authorization-code exchange and refresh-token revocation (`apple-auth.ts`), each returning a typed verdict instead of throwing; `null` config when the `APPLE_*` vars are unset |
-| `auth/` | session/profile guard, redirect and next-param safety, and the email-code request + its error copy (`email-code.ts`) |
+| `auth/` | session/profile guard, redirect and next-param safety, and the email-code request + its error copy (`email-code.ts`); `signing-keys/` holds the project's token-signing keys in memory so a session check never fetches them per request |
 | `crypto/` | dependency-free primitives on `node:crypto`: the ES256 JWT signer Apple's APNs and Sign in with Apple both need (`es256-jwt.ts`), and `secret-box.ts` — versioned AES-256-GCM for credentials held at rest |
 | `db/` | Drizzle schema and client |
 | `email/` | transactional send + templates |

@@ -78,12 +78,21 @@ async function loadMealsByDateForUser(
 
   if (mealRows.length === 0) return [];
 
-  // Fetch all meal items for these meals in one query
+  // The items and each meal's share row (at most one per meal, so the card can
+  // seed its share toggle from real state) both need only the meal ids, so
+  // they run side by side: one round trip instead of two.
   const mealIds = mealRows.map((m) => m.id);
-  const itemRows = await db
-    .select()
-    .from(mealItems)
-    .where(inArray(mealItems.mealId, mealIds));
+  const [itemRows, shareRows] = await Promise.all([
+    db.select().from(mealItems).where(inArray(mealItems.mealId, mealIds)),
+    db
+      .select({
+        mealId: mealShares.mealId,
+        id: mealShares.id,
+        visibility: mealShares.visibility,
+      })
+      .from(mealShares)
+      .where(inArray(mealShares.mealId, mealIds)),
+  ]);
 
   // Group items by mealId
   const itemsByMealId = new Map<string, typeof itemRows>();
@@ -93,16 +102,6 @@ async function loadMealsByDateForUser(
     itemsByMealId.set(item.mealId, existing);
   }
 
-  // Fetch each meal's share row (at most one per meal) so the card can seed its
-  // share toggle from real state instead of defaulting to "not shared".
-  const shareRows = await db
-    .select({
-      mealId: mealShares.mealId,
-      id: mealShares.id,
-      visibility: mealShares.visibility,
-    })
-    .from(mealShares)
-    .where(inArray(mealShares.mealId, mealIds));
   const shareByMealId = new Map(shareRows.map((s) => [s.mealId, s]));
 
   return mealRows.map((meal) => {
