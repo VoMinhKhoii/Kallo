@@ -138,7 +138,8 @@ class MacroDialRow extends StatelessWidget {
       // rather than overflow — the arc holds its proportions at any size.
       final count = kCompositionKeys.length;
       final lead = leading;
-      final column = (constraints.maxWidth - kMacroDialGutter * (count - 1)) / count;
+      final column =
+          (constraints.maxWidth - kMacroDialGutter * (count - 1)) / count;
       final leadFit = leadRowFit(
         constraints.maxWidth,
         leadingWidth: leadingWidth,
