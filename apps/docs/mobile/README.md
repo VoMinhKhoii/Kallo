@@ -4,7 +4,7 @@ Documentation for the Kallo mobile client:
 
 | App | Path | Stack | Status |
 |-----|------|-------|--------|
-| **Flutter** | [`apps/mobile-flutter`](../../mobile-flutter) | Flutter 3.44, Riverpod, go_router, Supabase | 1:1 port of the web mobile view; on TestFlight as `com.khoivo.nham` |
+| **Flutter** | [`apps/mobile-flutter`](../../mobile-flutter) | Flutter 3.47, Riverpod, go_router, Supabase | 1:1 port of the web mobile view; on TestFlight as `com.khoivo.nham` |
 
 The app talks to the **same** backend (`/api/v1` REST + SSE) and the same Supabase project as the web app.
 

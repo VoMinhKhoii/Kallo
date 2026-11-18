@@ -7,7 +7,7 @@ the web app's mobile-responsive view, sharing the same backend and Supabase proj
 
 | Concern | Choice |
 |---|---|
-| UI | Flutter 3.44 (Material), `google_fonts`, `flutter_svg`, `fl_chart` |
+| UI | Flutter 3.47 (Material), `google_fonts`, `flutter_svg`, `fl_chart` |
 | State | `flutter_riverpod` ^2.6 |
 | Navigation | `go_router` ^15 |
 | Auth + data | `supabase_flutter` ^2.10, `http` ^1.3 |

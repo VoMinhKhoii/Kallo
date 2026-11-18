@@ -193,39 +193,35 @@ void main() {
     expect(server.refreshes, 0);
   });
 
-  test(
-    'a refresh lost to the network keeps the session',
-    () async {
-      // gotrue retries a network failure for ~6 s of real time, then throws
-      // AuthRetryableFetchException and keeps the session. Slow, but it is the
-      // real path, not a fake of it.
-      final server = _AuthServer(
-        () async => throw http.ClientException('Connection refused'),
-      );
-      final api = _Api();
-      final gotrue = await _signedIn(server);
-      final events = <AuthChangeEvent>[];
-      final errors = <Object>[];
-      final sub = gotrue.onAuthStateChange.listen(
-        (s) => events.add(s.event),
-        onError: errors.add,
-      );
+  test('a refresh lost to the network keeps the session', () async {
+    // gotrue retries a network failure for ~6 s of real time, then throws
+    // AuthRetryableFetchException and keeps the session. Slow, but it is the
+    // real path, not a fake of it.
+    final server = _AuthServer(
+      () async => throw http.ClientException('Connection refused'),
+    );
+    final api = _Api();
+    final gotrue = await _signedIn(server);
+    final events = <AuthChangeEvent>[];
+    final errors = <Object>[];
+    final sub = gotrue.onAuthStateChange.listen(
+      (s) => events.add(s.event),
+      onError: errors.add,
+    );
 
-      await expectLater(
-        _client(api, gotrue).get<Object?>('/x'),
-        throwsA(isA<ApiError>().having((e) => e.status, 'status', 401)),
-      );
-      await pumpEventQueue();
+    await expectLater(
+      _client(api, gotrue).get<Object?>('/x'),
+      throwsA(isA<ApiError>().having((e) => e.status, 'status', 401)),
+    );
+    await pumpEventQueue();
 
-      expect(gotrue.currentSession?.accessToken, _oldToken);
-      expect(events, isNot(contains(AuthChangeEvent.signedOut)));
-      // gotrue reports it as a stream ERROR, which `buildSessionStream` rides
-      // out by re-emitting the session it still holds.
-      expect(errors.single, isA<AuthRetryableFetchException>());
-      await sub.cancel();
-    },
-    timeout: const Timeout(Duration(seconds: 30)),
-  );
+    expect(gotrue.currentSession?.accessToken, _oldToken);
+    expect(events, isNot(contains(AuthChangeEvent.signedOut)));
+    // gotrue reports it as a stream ERROR, which `buildSessionStream` rides
+    // out by re-emitting the session it still holds.
+    expect(errors.single, isA<AuthRetryableFetchException>());
+    await sub.cancel();
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   test('concurrent 401s share one refresh', () async {
     final server = _AuthServer(_refreshed);

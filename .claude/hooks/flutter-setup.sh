@@ -14,7 +14,7 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
-FLUTTER_VERSION="3.44.1"
+FLUTTER_VERSION="3.47.9"
 FLUTTER_DIR="$HOME/flutter"
 
 # Idempotent: only clone if the SDK isn't already present (container state is

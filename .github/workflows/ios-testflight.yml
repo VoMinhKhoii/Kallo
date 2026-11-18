@@ -15,7 +15,10 @@ concurrency:
 
 jobs:
   beta:
-    runs-on: macos-15
+    # Xcode 27.1 builds against the iOS 27.1 SDK, the first one iPhone Duo
+    # shows full screen on its inner display. GitHub's xcode-27 image (macOS 27,
+    # arm64) carries it; ios-release-build-check.yml proves the unsigned build.
+    runs-on: xcode-27
     timeout-minutes: 60
     defaults:
       run:
@@ -74,15 +77,17 @@ jobs:
               ;;
           esac
 
+      # Pinned, not latest-stable: the image also carries Xcode 27.2, and the
+      # SDK a build ships with should change only in a reviewed commit.
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: '27.1'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.44.1
+          flutter-version: 3.47.9
           channel: stable
           cache: true
 

@@ -4,8 +4,9 @@ How to run and iterate on the **Flutter** app (`apps/mobile-flutter`) locally.
 
 ## Prerequisites
 
-- **Flutter** 3.44+ (`flutter --version`) and the iOS toolchain (`flutter doctor`)
-- **Xcode** 26+ with an iOS Simulator runtime installed
+- **Flutter** 3.47.9 (`flutter --version`), the version CI pins, and the iOS toolchain (`flutter doctor`)
+- **Xcode** 26+ with an iOS Simulator runtime installed. Release builds use Xcode 27.1 in CI
+  (see [releasing.md](./releasing.md#ci-github-actions)). Xcode 27.1 needs macOS 26.6 or newer
 - **CocoaPods** (installed; see [the CocoaPods gotcha](#gotcha-cocoapods-breaks-after-a-ruby-bump))
 - The **`/api/v1` backend** running locally if you want real data (see [Backend](#backend))
 

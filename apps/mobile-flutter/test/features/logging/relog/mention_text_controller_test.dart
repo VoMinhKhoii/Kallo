@@ -215,11 +215,10 @@ void main() {
       _pick(c, _dish('Phở bò'), 'stage-1');
       c.insertPick('Sữa tươi TH (180g)', milk, 'stage-2');
 
-      expect(
-        c.entries.map((e) => e.ref),
-        [const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 0), milk],
-        reason: 'staged order is composer order, which the submit sends',
-      );
+      expect(c.entries.map((e) => e.ref), [
+        const RelogDishRef(sourceMealId: 'meal-1', mealItemOrder: 0),
+        milk,
+      ], reason: 'staged order is composer order, which the submit sends');
     });
   });
 
@@ -283,11 +282,10 @@ void main() {
       c.syncMentions();
       c.addMention(_dish('Cà phê', order: 1), c.activeToken!, 'b');
 
-      expect(
-        c.entries.map((e) => e.stageId),
-        ['b', 'a'],
-        reason: 'the earlier pick must survive AND read in composer order',
-      );
+      expect(c.entries.map((e) => e.stageId), [
+        'b',
+        'a',
+      ], reason: 'the earlier pick must survive AND read in composer order');
       expect(
         c.freeText,
         isEmpty,

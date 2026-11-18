@@ -64,15 +64,31 @@ class _Api extends ApiClient {
   }
 }
 
+/// Keeps the last save the provider started without awaiting it, so a test
+/// can wait for the write itself instead of a guessed number of event-loop
+/// turns (real file IO finishes on its own schedule).
+class _SaveTrackingCache extends DashboardCache {
+  _SaveTrackingCache({super.directory});
+  Future<void>? lastSave;
+
+  @override
+  Future<void> save(
+    String userId,
+    String date,
+    int tz,
+    Map<String, dynamic> bundle,
+  ) => lastSave = super.save(userId, date, tz, bundle);
+}
+
 void main() {
   late Directory dir;
-  late DashboardCache cache;
+  late _SaveTrackingCache cache;
   final tz = localTimezoneOffsetMinutes();
 
   setUp(() async {
     DashboardCache.resetSession();
     dir = await Directory.systemTemp.createTemp('dashboard-cache-test');
-    cache = DashboardCache(directory: () async => dir);
+    cache = _SaveTrackingCache(directory: () async => dir);
   });
   tearDown(() => dir.delete(recursive: true));
 
@@ -140,7 +156,7 @@ void main() {
     final sub = container.listen(dashboardBundleProvider(_args), (_, __) {});
     addTearDown(sub.close);
     await container.read(dashboardBundleProvider(_args).future);
-    await pumpEventQueue();
+    await cache.lastSave;
 
     DashboardCache.resetSession();
     final saved = await cache.takeOnce(_userId, _date, tz);

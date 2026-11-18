@@ -1,0 +1,77 @@
+name: iOS release build check
+
+# Manual only. Compiles the iOS release build on the same toolchain as
+# ios-testflight.yml (xcode-27 image, Xcode 27.1, the pinned Flutter) without
+# signing or uploading, so a toolchain bump can be checked before anyone runs
+# a TestFlight build. It needs no secrets and publishes nothing.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-release-build-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: xcode-27
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/mobile-flutter
+    env:
+      BUNDLE_FROZEN: 'true'
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '27.1'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.9
+          channel: stable
+          cache: true
+
+      - name: Toolchain versions
+        run: |
+          xcodebuild -version
+          echo "iphoneos SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
+          flutter --version
+          ruby --version
+          pod --version
+          bundle --version
+
+      # The TestFlight job installs fastlane from the frozen Gemfile.lock on
+      # this image's Ruby; check that resolves before a signed run needs it.
+      - name: Install fastlane (locked)
+        working-directory: apps/mobile-flutter/ios
+        run: |
+          bundle install
+          bundle exec fastlane --version
+
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Build iOS release (no codesign)
+        run: flutter build ios --release --no-codesign --build-name=0.0.0 --build-number=1
+
+      # The SDK the app was linked against, as App Store Connect will read it.
+      - name: Check the SDK in the built app
+        run: |
+          plist=build/ios/iphoneos/Runner.app/Info.plist
+          sdk=$(/usr/libexec/PlistBuddy -c 'Print :DTSDKName' "$plist")
+          echo "DTSDKName=$sdk"
+          echo "DTXcode=$(/usr/libexec/PlistBuddy -c 'Print :DTXcode' "$plist")"
+          echo "DTPlatformVersion=$(/usr/libexec/PlistBuddy -c 'Print :DTPlatformVersion' "$plist")"
+          case "$sdk" in
+            iphoneos27.1*) ;;
+            *) echo "::error::Built with $sdk, expected the iOS 27.1 SDK"; exit 1 ;;
+          esac

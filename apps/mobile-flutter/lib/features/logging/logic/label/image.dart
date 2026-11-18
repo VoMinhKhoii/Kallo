@@ -118,7 +118,7 @@ Future<LabelImageResult> captureLabelImage(
     if (picked == null) {
       return const LabelImageResult.failure(LabelImageFailure.cancelled);
     }
-    return labelImageFromFile(picked.path);
+    return await labelImageFromFile(picked.path);
   } on PlatformException {
     // Distinguish a denied camera/photo permission from a plain cancellation,
     // as `feedback_screen.dart` does.
