@@ -591,6 +591,30 @@ jobs:
             curl -s -o /dev/null --max-time 20 -w "%{http_code} %{time_total}s $path\n" \
               -H "X-Origin-Verify: $ORIGIN_SHARED_SECRET" "$SMOKE_URL$path" || true
           done
+      - name: Warm the candidate's landing images
+        # Best-effort, like the step above.
+        continue-on-error: true
+        # The landing page's comparison paintings go through /_next/image,
+        # which Cloudflare does not cache, and a new instance resizes each one
+        # on its first request: 230-860 ms on 2026-11-18, holding the single
+        # vCPU while the visitor's page prefetches waited behind it (~370 ms
+        # each). This resizes every painting at Next's default device widths
+        # now, so visitors get the cached copy. The optimizer's cache key is
+        # url + width + quality + format (not `dpl`), and a browser that takes
+        # WebP gets WebP, hence the Accept header.
+        env:
+          SMOKE_URL: ${{ env.SMOKE_URL }}
+        run: |
+          ORIGIN_SHARED_SECRET="$(gcloud secrets versions access latest --secret=kallo-prod-origin-shared-secret)"
+          echo "::add-mask::$ORIGIN_SHARED_SECRET"
+          for file in public/landing/meals/compare-*.webp; do
+            src="${file#public}"
+            for width in 640 750 828 1080 1200 1920 2048 3840; do
+              curl -s -o /dev/null --max-time 20 -w "%{http_code} %{time_total}s $src $width\n" \
+                -H "X-Origin-Verify: $ORIGIN_SHARED_SECRET" -H 'Accept: image/avif,image/webp,*/*' \
+                "$SMOKE_URL/_next/image?url=${src//\//%2F}&w=$width&q=75" || true
+            done
+          done
       - name: Promote candidate after smoke pass
         # Only for an existing service: shift 100% traffic to the validated
         # (latest) revision, then drop the candidate tag. On a first deploy the

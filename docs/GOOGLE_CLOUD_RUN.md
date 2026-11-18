@@ -19,12 +19,19 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
 4. The prod job acquires its GCS lease, tags the image `prod-<sha>`
    (exempting it from cleanup), applies pending migrations, deploys a
    no-traffic candidate, smoke-tests it, crawl-checks it (below), warms its
-   API routes, and only then promotes traffic.
+   API routes and landing images, and only then promotes traffic.
    - The warm-up step requests the reads the phone app and the web shell open
      with. It sends no session, so each answers 401 without touching the
      database. Next loads a route's code on its first request, so without this
      the first app launch on a new instance took 550–1000 ms per call (40–200 ms
      once warm). It is best-effort and never fails the deploy.
+   - A second best-effort step resizes the landing page's comparison paintings
+     (`public/landing/meals/compare-*.webp`) at Next's default device widths.
+     Cloudflare does not cache `/_next/image`, and a new instance resizes each
+     image on first request (120–860 ms on one vCPU, delaying the visitor's
+     other requests). Warm, a resized copy is served in about 5 ms. Because
+     Next keeps these copies on the instance's own disk, an instance Cloud Run
+     starts later begins cold again.
    - The instance itself opens its database pool and loads the token-signing
      keys at boot (`instrumentation.ts`).
    - The revision runs with `NODE_OPTIONS=--max-semi-space-size=64`: a 64 MiB V8
