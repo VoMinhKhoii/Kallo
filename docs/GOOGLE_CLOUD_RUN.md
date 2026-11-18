@@ -10,7 +10,11 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
 
 1. A pull request runs CI, including a `docker build` (not pushed).
 2. After review and verification, merge to `main`; its CI run pushes
-   `kallo:<sha>`.
+   `kallo:<sha>`, built with `NEXT_DEPLOYMENT_ID=<sha>` so every static asset
+   URL carries `?dpl=<sha>` (`deploymentId` in `next.config.ts`). Two builds
+   never share an asset URL, so a 404 Cloudflare cached for one build (Next
+   marks a missing `/_next/static` file `s-maxage=31536000`) cannot reach
+   another.
 3. Dispatch `cloud-run-prod.yml` from `main` (optionally with a `sha`).
 4. The prod job acquires its GCS lease, tags the image `prod-<sha>`
    (exempting it from cleanup), applies pending migrations, deploys a

@@ -37,6 +37,10 @@ ARG SENTRY_ORG
 ARG SENTRY_PROJECT
 # CI passes 1: its Build job already type-checks this same `next build`.
 ARG SKIP_NEXT_TYPECHECK
+# The commit SHA (the image tag), which next.config.ts uses as `deploymentId`
+# so every static asset URL is unique to this build.
+ARG NEXT_DEPLOYMENT_ID
+ENV NEXT_DEPLOYMENT_ID=$NEXT_DEPLOYMENT_ID
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN \
