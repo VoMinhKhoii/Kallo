@@ -67,8 +67,7 @@ void main() {
     expect(args['apiBase'], isA<String>());
     final titles = Map<String, Object?>.from(args['titles']! as Map);
     expect(titles, containsPair('logMeal', 'Log a meal'));
-    expect(titles, containsPair('thatWasAll', 'That was all'));
-    expect(titles, containsPair('doneForToday', "I'm done for today"));
+    expect(titles, containsPair('closeDay', 'That was everything'));
     for (final value in titles.values) {
       expect(value.toString(), isNot(startsWith('notifications.')));
     }

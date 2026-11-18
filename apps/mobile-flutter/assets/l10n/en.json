@@ -2086,10 +2086,9 @@
   "notifications": {
     "reminderActions": {
       "addToYesterday": "Add to yesterday",
-      "thatWasAll": "That was all",
       "logMeal": "Log a meal",
       "logMore": "Log more",
-      "doneForToday": "I'm done for today"
+      "closeDay": "That was everything"
     }
   }
 }

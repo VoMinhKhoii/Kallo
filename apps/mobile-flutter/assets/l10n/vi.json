@@ -2083,10 +2083,9 @@
   "notifications": {
     "reminderActions": {
       "addToYesterday": "Ghi thêm cho hôm qua",
-      "thatWasAll": "Vậy là đủ",
       "logMeal": "Ghi món",
       "logMore": "Ghi thêm",
-      "doneForToday": "Hôm nay đủ rồi"
+      "closeDay": "Vậy là hết rồi"
     }
   }
 }

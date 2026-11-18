@@ -41,10 +41,9 @@ class _ReminderCategoriesState extends ConsumerState<ReminderCategories> {
     final titles = {
       for (final key in const [
         'addToYesterday',
-        'thatWasAll',
         'logMeal',
         'logMore',
-        'doneForToday',
+        'closeDay',
       ])
         key: '$_t.$key'.tr(),
     };

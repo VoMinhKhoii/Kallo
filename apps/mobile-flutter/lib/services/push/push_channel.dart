@@ -76,8 +76,8 @@ class PushChannel {
   }
 
   /// Register the meal-reminder notification categories with their button
-  /// [titles] in the app's language (keys `addToYesterday`, `thatWasAll`,
-  /// `logMeal`, `logMore`, `doneForToday`), and the [apiBase] the background
+  /// [titles] in the app's language (keys `addToYesterday`, `logMeal`,
+  /// `logMore`, `closeDay`), and the [apiBase] the background
   /// "close the day" button posts to.
   Future<void> setReminderCategories({
     required Map<String, String> titles,

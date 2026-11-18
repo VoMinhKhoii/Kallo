@@ -143,29 +143,34 @@ private let kReminderClosedDaysKey = "kallo.reminders.closedDays"
     }
     let titles = args["titles"] as? [String: Any] ?? [:]
     func title(_ key: String) -> String { titles[key] as? String ?? key }
+    // Icons tell the two buttons apart at a glance: "plus" opens the app to
+    // log, "checkmark" closes the day without opening it.
     func open(_ key: String) -> UNNotificationAction {
       UNNotificationAction(
-        identifier: kReminderOpenAction, title: title(key), options: [.foreground])
+        identifier: kReminderOpenAction, title: title(key), options: [.foreground],
+        icon: UNNotificationActionIcon(systemImageName: "plus"))
     }
     func close(_ key: String) -> UNNotificationAction {
-      UNNotificationAction(identifier: kReminderCloseAction, title: title(key), options: [])
+      UNNotificationAction(
+        identifier: kReminderCloseAction, title: title(key), options: [],
+        icon: UNNotificationActionIcon(systemImageName: "checkmark"))
     }
     let categories: Set<UNNotificationCategory> = [
       UNNotificationCategory(
         identifier: "REMINDER_YESTERDAY",
-        actions: [open("addToYesterday"), close("thatWasAll")],
+        actions: [open("addToYesterday"), close("closeDay")],
         intentIdentifiers: []),
       UNNotificationCategory(
         identifier: "REMINDER_LOG", actions: [open("logMeal")], intentIdentifiers: []),
       UNNotificationCategory(
         identifier: "REMINDER_EVENING",
-        actions: [open("logMore"), close("doneForToday")],
+        actions: [open("logMore"), close("closeDay")],
         intentIdentifiers: []),
     ]
     UNUserNotificationCenter.current().setNotificationCategories(categories)
   }
 
-  /// "That was all" / "I'm done for today": post the signed token the push
+  /// "That was everything": post the signed token the push
   /// carried. No session — refreshing the user's Supabase session from native
   /// code would rotate its refresh token out from under the app. Kept alive
   /// with a background task, and the system's completion handler is called
