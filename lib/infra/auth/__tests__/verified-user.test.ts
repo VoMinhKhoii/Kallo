@@ -73,6 +73,25 @@ describe('verifyUser', () => {
     expect(fake.execute).toHaveBeenCalledTimes(1);
   });
 
+  it('shares across separately bundled db objects over the same client', async () => {
+    // Each bundled copy of db/client.ts exports its own `db` proxy; they share
+    // one postgres client, which is what the lookups are keyed by.
+    token({ sub: 'u1', session_id: 's1' });
+    const fake = createFakeDb();
+    fake.queueExecute([liveRow]);
+    const client = {};
+    const copyA = Object.assign(Object.create(fake.db), { $client: client });
+    const copyB = Object.assign(Object.create(fake.db), { $client: client });
+
+    const [a, b] = await Promise.all([
+      verifyUser(supabase, copyA),
+      verifyUser(supabase, copyB),
+    ]);
+
+    expect([a?.id, b?.id]).toEqual(['u1', 'u1']);
+    expect(fake.execute).toHaveBeenCalledTimes(1);
+  });
+
   it('asks again on the next request, so a revoked session ends at once', async () => {
     token({ sub: 'u1', session_id: 's1' });
     const fake = createFakeDb();

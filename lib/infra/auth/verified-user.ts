@@ -107,7 +107,7 @@ export async function verifyUser(
  * to different routes may run in different bundled copies of this module.
  */
 type SessionLookups = WeakMap<
-  Database,
+  object,
   Map<string, Promise<SessionUserRow | undefined>>
 >;
 const LOOKUPS_KEY = Symbol.for('kallo.auth.sessionLookups');
@@ -124,11 +124,16 @@ function liveSessionUser(
   sessionId: string,
   userId: string
 ): Promise<SessionUserRow | undefined> {
+  // Keyed by the process-wide postgres client, not the `db` object: each
+  // bundled copy of db/client.ts exports its own `db` proxy over the one
+  // shared client. Test doubles have no `$client` and key by themselves.
+  const identity =
+    (database as unknown as { $client?: object }).$client ?? database;
   const byDatabase = sessionLookups();
-  let pending = byDatabase.get(database);
+  let pending = byDatabase.get(identity);
   if (!pending) {
     pending = new Map();
-    byDatabase.set(database, pending);
+    byDatabase.set(identity, pending);
   }
   const key = `${sessionId}:${userId}`;
   const running = pending.get(key);
