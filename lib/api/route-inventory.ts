@@ -80,6 +80,8 @@ export const routeInventory = {
     'accountExport',
     'lib/actions/identity/account.ts',
   ],
+  // The sign-in dialog's two public runtime values; no input, no database.
+  'api/v1/auth/client-config/route.ts': ['none', false, 'none-cheap'],
   'api/v1/auth/apple/token/route.ts': ['session', true, 'appleTokenLink'],
   'api/v1/barcode/image/[code]/route.ts': ['none', false, 'barcodeImageIp'],
   'api/v1/barcode/log/route.ts': ['session', true, 'none-cheap'],
