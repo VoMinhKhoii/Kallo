@@ -11,12 +11,14 @@ import type { JWK } from '@supabase/supabase-js';
  * the fetch in 36 of 48 slow API requests, where it took 73% of the request
  * (p50 145 ms, p95 1.1 s) — the single largest cause of slow reads.
  *
- * Here the keys load once (at boot, see `instrumentation.ts`), every caller
- * shares the one load in flight, and after `REFRESH_AFTER_MS` the next request
- * starts a refresh in the background while still using the keys it has. A
- * token signed by a key missing from this set (a rotation newer than the last
- * refresh) is not rejected here: auth-js does not find its `kid` in the keys we
- * pass and fetches the set itself, exactly as it did before.
+ * Nothing here is ever awaited by a request. The keys load at boot (see
+ * `instrumentation.ts`) and refresh in the background once they are older than
+ * `REFRESH_AFTER_MS`; a request takes whatever is held right now. With nothing
+ * held yet (the first moments after a start, or the Auth server down), auth-js
+ * fetches the keys itself, exactly as it always did — so a signed-out visitor
+ * on a public page never waits on a key load. A token signed by a key missing
+ * from the held set (a rotation newer than the last refresh) is not rejected
+ * either: auth-js does not find its `kid` in the keys we pass and fetches.
  */
 
 interface SigningKeys {
@@ -25,11 +27,14 @@ interface SigningKeys {
 
 /** Background refresh after this long, so a rotation is picked up quickly. */
 export const REFRESH_AFTER_MS = 10 * 60 * 1000;
-/** A key fetch slower than this is abandoned; auth-js then fetches itself. */
+/** After a failed load, wait this long before trying again. */
+export const RETRY_AFTER_FAILURE_MS = 30 * 1000;
+/** A key fetch slower than this is abandoned. */
 export const FETCH_TIMEOUT_MS = 3000;
 
-let cached: { value: SigningKeys; loadedAt: number } | undefined;
-let loading: Promise<SigningKeys | undefined> | undefined;
+let held: { value: SigningKeys; loadedAt: number } | undefined;
+let loading: Promise<void> | undefined;
+let failedAt: number | undefined;
 
 async function fetchKeys(): Promise<SigningKeys | undefined> {
   const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/.well-known/jwks.json`;
@@ -39,19 +44,27 @@ async function fetchKeys(): Promise<SigningKeys | undefined> {
   });
   if (!response.ok) throw new Error(`JWKS fetch failed: ${response.status}`);
   const body = (await response.json()) as Partial<SigningKeys>;
-  if (!Array.isArray(body.keys) || body.keys.length === 0) return undefined;
+  if (!Array.isArray(body.keys) || body.keys.length === 0) {
+    throw new Error('JWKS fetch returned no keys');
+  }
   return { keys: body.keys };
 }
 
-function load(now: number): Promise<SigningKeys | undefined> {
-  loading ??= fetchKeys()
+/** Starts one background load, unless one is running or just failed. */
+function startLoad(now: number): Promise<void> {
+  if (loading) return loading;
+  if (failedAt !== undefined && now - failedAt < RETRY_AFTER_FAILURE_MS) {
+    return Promise.resolve();
+  }
+  loading = fetchKeys()
     .then((value) => {
-      if (value) cached = { value, loadedAt: now };
-      return value ?? cached?.value;
+      if (value) held = { value, loadedAt: now };
+      failedAt = undefined;
     })
     .catch((error: unknown) => {
+      // Keep whatever is held: a failed refresh never drops good keys.
+      failedAt = now;
       console.warn('[auth] signing key fetch failed', error);
-      return cached?.value;
     })
     .finally(() => {
       loading = undefined;
@@ -60,24 +73,23 @@ function load(now: number): Promise<SigningKeys | undefined> {
 }
 
 /**
- * The signing keys to hand `getClaims`, or undefined when none could be loaded
- * (auth-js then fetches them itself, as it always did).
+ * The signing keys held right now, to hand `getClaims`, or undefined when none
+ * are (auth-js then fetches them itself). Never waits: a missing or stale set
+ * is loaded in the background for the requests after this one.
  */
-export async function signingKeys(
-  now: number = Date.now()
-): Promise<SigningKeys | undefined> {
-  if (!cached) return load(now);
-  if (now - cached.loadedAt > REFRESH_AFTER_MS) void load(now);
-  return cached.value;
+export function signingKeys(now: number = Date.now()): SigningKeys | undefined {
+  if (!held || now - held.loadedAt > REFRESH_AFTER_MS) void startLoad(now);
+  return held?.value;
 }
 
-/** Starts the first load without waiting on it (server boot). */
-export function preloadSigningKeys(): void {
-  void signingKeys();
+/** Loads the keys at server boot, without holding up the start. */
+export function preloadSigningKeys(now: number = Date.now()): Promise<void> {
+  return startLoad(now);
 }
 
 /** Test seam: forget everything. */
 export function resetSigningKeysForTests(): void {
-  cached = undefined;
+  held = undefined;
   loading = undefined;
+  failedAt = undefined;
 }

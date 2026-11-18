@@ -60,7 +60,7 @@ export async function register() {
 
   // The token-signing keys, so the first signed-in request after a start does
   // not wait on the Auth server for them (see signing-keys.ts). Not awaited.
-  preloadSigningKeys();
+  void preloadSigningKeys();
 
   // Starts the artifact load when one is pinned; failures are caught and
   // logged inside both loaders.

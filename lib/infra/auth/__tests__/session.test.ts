@@ -10,7 +10,7 @@ vi.mock('@/lib/infra/db/client', () => ({
   db: {},
 }));
 vi.mock('@/lib/infra/auth/signing-keys/signing-keys', () => ({
-  signingKeys: vi.fn().mockResolvedValue(undefined),
+  signingKeys: vi.fn(() => undefined),
 }));
 
 // Import after mocks are set up

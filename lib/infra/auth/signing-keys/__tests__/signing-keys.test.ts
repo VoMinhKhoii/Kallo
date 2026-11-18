@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  preloadSigningKeys,
   REFRESH_AFTER_MS,
+  RETRY_AFTER_FAILURE_MS,
   resetSigningKeysForTests,
   signingKeys,
 } from '@/lib/infra/auth/signing-keys/signing-keys';
@@ -22,26 +24,29 @@ beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://ref.supabase.co');
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
+  vi.restoreAllMocks();
 });
 
 describe('signingKeys', () => {
-  it('loads the project keys once and reuses them', async () => {
+  it('hands out the keys loaded at boot, without fetching again', async () => {
     fetchMock.mockResolvedValue(jwksResponse([KEY_A]));
+    await preloadSigningKeys(0);
 
-    expect(await signingKeys(0)).toEqual({ keys: [KEY_A] });
-    expect(await signingKeys(1000)).toEqual({ keys: [KEY_A] });
+    expect(signingKeys(1000)).toEqual({ keys: [KEY_A] });
+    expect(signingKeys(2000)).toEqual({ keys: [KEY_A] });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][0]).toBe(
       'https://ref.supabase.co/auth/v1/.well-known/jwks.json'
     );
   });
 
-  it('shares one fetch between callers that arrive before it answers', async () => {
+  it('never makes a request wait: with nothing held it answers at once and loads behind', async () => {
     let answer!: (response: Response) => void;
     fetchMock.mockReturnValue(
       new Promise<Response>((resolve) => {
@@ -49,54 +54,62 @@ describe('signingKeys', () => {
       })
     );
 
-    const calls = [signingKeys(0), signingKeys(0), signingKeys(0)];
-    answer(jwksResponse([KEY_A]));
-
-    expect(await Promise.all(calls)).toEqual([
-      { keys: [KEY_A] },
-      { keys: [KEY_A] },
-      { keys: [KEY_A] },
-    ]);
+    // Signed-out page views go through here too, so nothing may block them.
+    expect(signingKeys(0)).toBeUndefined();
+    expect(signingKeys(0)).toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    answer(jwksResponse([KEY_A]));
+    await vi.waitFor(() => expect(signingKeys(1)).toEqual({ keys: [KEY_A] }));
   });
 
   it('refreshes stale keys in the background while serving the old ones', async () => {
     fetchMock.mockResolvedValueOnce(jwksResponse([KEY_A]));
-    await signingKeys(0);
+    await preloadSigningKeys(0);
 
     fetchMock.mockResolvedValueOnce(jwksResponse([KEY_A, KEY_B]));
-    // Past the refresh age: answers at once with what it has...
-    expect(await signingKeys(REFRESH_AFTER_MS + 1)).toEqual({ keys: [KEY_A] });
-    // ...and the refresh it started lands for the next caller.
-    await vi.waitFor(async () => {
-      expect(await signingKeys(REFRESH_AFTER_MS + 2)).toEqual({
+    expect(signingKeys(REFRESH_AFTER_MS + 1)).toEqual({ keys: [KEY_A] });
+    await vi.waitFor(() =>
+      expect(signingKeys(REFRESH_AFTER_MS + 2)).toEqual({
         keys: [KEY_A, KEY_B],
-      });
-    });
+      })
+    );
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('keeps the keys it has when a refresh fails', async () => {
     fetchMock.mockResolvedValueOnce(jwksResponse([KEY_A]));
-    await signingKeys(0);
-    const quiet = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await preloadSigningKeys(0);
 
     fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'));
-    await signingKeys(REFRESH_AFTER_MS + 1);
-    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await preloadSigningKeys(REFRESH_AFTER_MS + 1);
 
-    expect(await signingKeys(REFRESH_AFTER_MS + 2)).toEqual({ keys: [KEY_A] });
-    quiet.mockRestore();
+    expect(signingKeys(REFRESH_AFTER_MS + 2)).toEqual({ keys: [KEY_A] });
   });
 
-  it('returns nothing when the first load fails, so auth-js fetches itself', async () => {
-    const quiet = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    fetchMock.mockResolvedValueOnce(new Response('down', { status: 503 }));
+  it('waits before trying again after a failed load, so an outage is not hit per request', async () => {
+    fetchMock.mockResolvedValue(new Response('down', { status: 503 }));
+    await preloadSigningKeys(0);
 
-    expect(await signingKeys(0)).toBeUndefined();
+    expect(signingKeys(1)).toBeUndefined();
+    expect(signingKeys(RETRY_AFTER_FAILURE_MS - 1)).toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     fetchMock.mockResolvedValueOnce(jwksResponse([KEY_A]));
-    expect(await signingKeys(1)).toEqual({ keys: [KEY_A] });
-    quiet.mockRestore();
+    signingKeys(RETRY_AFTER_FAILURE_MS + 1);
+    await vi.waitFor(() =>
+      expect(signingKeys(RETRY_AFTER_FAILURE_MS + 2)).toEqual({
+        keys: [KEY_A],
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('treats an empty key set as a failed load', async () => {
+    fetchMock.mockResolvedValueOnce(jwksResponse([]));
+    await preloadSigningKeys(0);
+
+    expect(signingKeys(1)).toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

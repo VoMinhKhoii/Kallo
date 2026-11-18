@@ -69,7 +69,7 @@ describe('verifyUser', () => {
 
   it('checks the token against the held signing keys, not a fetch per request', async () => {
     const jwks = { keys: [{ kty: 'EC', kid: 'k1', key_ops: ['verify'] }] };
-    mockSigningKeys.mockResolvedValueOnce(jwks);
+    mockSigningKeys.mockReturnValueOnce(jwks);
     token({ sub: 'u1', session_id: 's1' });
     const fake = createFakeDb();
     fake.queueExecute([liveRow]);

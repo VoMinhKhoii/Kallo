@@ -53,9 +53,9 @@ export async function verifyUser(
 ): Promise<VerifiedUser | null> {
   let result: Awaited<ReturnType<typeof supabase.auth.getClaims>>;
   try {
-    // Our long-lived copy of the signing keys, so the check stays local (see
-    // signing-keys.ts). Without them auth-js fetches the keys itself.
-    const jwks = await signingKeys();
+    // The signing keys held in memory, so the check stays local (see
+    // signing-keys.ts). Never awaited; with none held auth-js fetches them.
+    const jwks = signingKeys();
     result = await supabase.auth.getClaims(
       accessToken,
       jwks ? { jwks } : undefined
