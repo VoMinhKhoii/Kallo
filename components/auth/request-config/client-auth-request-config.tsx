@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { preload } from 'react-dom';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 
 interface ClientAuthConfig {
@@ -11,8 +12,10 @@ interface ClientAuthConfig {
 
 export const clientAuthConfigKey = ['auth', 'client-config'] as const;
 
+const CLIENT_AUTH_CONFIG_URL = '/api/v1/auth/client-config';
+
 export async function fetchClientAuthConfig(): Promise<ClientAuthConfig> {
-  const res = await fetch('/api/v1/auth/client-config', {
+  const res = await fetch(CLIENT_AUTH_CONFIG_URL, {
     headers: { accept: 'application/json' },
   });
   if (!res.ok) throw new Error(`Auth config unavailable (${res.status})`);
@@ -32,8 +35,11 @@ export async function fetchClientAuthConfig(): Promise<ClientAuthConfig> {
  * does while the server version streams in.
  */
 export function ClientAuthRequestConfig() {
-  const { applyRequestConfig } = useAuthDialog();
-  const { data } = useQuery({
+  // Start the request while the browser is still parsing the HTML, so the
+  // values land about when the server-streamed version used to.
+  preload(CLIENT_AUTH_CONFIG_URL, { as: 'fetch', crossOrigin: 'anonymous' });
+  const { applyRequestConfig, setRequestConfigPending } = useAuthDialog();
+  const { data, isError } = useQuery({
     queryKey: clientAuthConfigKey,
     queryFn: fetchClientAuthConfig,
     // Changes only with a deploy.
@@ -41,8 +47,14 @@ export function ClientAuthRequestConfig() {
   });
 
   useEffect(() => {
-    if (data) applyRequestConfig(data);
-  }, [applyRequestConfig, data]);
+    if (data) {
+      applyRequestConfig(data);
+      return;
+    }
+    // Pending until the values arrive. If they cannot be loaded at all, stop
+    // holding the form: the provider then behaves as it did with nothing set.
+    setRequestConfigPending(!isError);
+  }, [applyRequestConfig, setRequestConfigPending, data, isError]);
 
   return null;
 }

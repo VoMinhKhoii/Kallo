@@ -113,8 +113,14 @@ together give Instant Navigations. The rules the build enforces, and the choices
   supported yet, fall back to next-intl's header or pass `{ locale }` explicitly. `proxy.ts` imports
   `i18n/routing.ts`, never `i18n/navigation.ts` (which drags in the request config).
 - **Runtime env in prerendered pages.** A `process.env` read during prerender is baked into the
-  HTML. Values meant to be per-environment at runtime (e.g. `GOOGLE_WEB_CLIENT_ID`) must be read
-  after `connection()` inside `<Suspense>` — see `components/auth/request-config/`.
+  HTML. Values meant to be per-environment at runtime (e.g. `GOOGLE_WEB_CLIENT_ID`) are read one
+  of two ways (both in `components/auth/request-config/`):
+  - after `connection()` inside `<Suspense>`, which renders that page per request; or
+  - from the client after load, so the page stays fully static. The calorie, tool, data and
+    comparison pages fetch the sign-in values from `/api/v1/auth/client-config`
+    (`ClientAuthRequestConfig`).
+  A Route Handler that reads only env is prerendered at build time too, so such a handler calls
+  `connection()` first (`app/api/v1/auth/client-config`, `app/api/startupz`).
 - **Kept-alive routes.** Visited routes are hidden with React `<Activity>` instead of unmounted
   (up to 3), so `useState`, form inputs and scroll survive a round trip. Keep drafts; clear
   transient results (a "sent" confirmation, a "Saved" note, an error) with

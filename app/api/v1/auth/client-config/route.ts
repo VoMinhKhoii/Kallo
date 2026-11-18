@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { googleWebClientId } from '@/lib/infra/auth/google-client-id';
 import { turnstileSiteKey } from '@/lib/infra/security/turnstile';
 
@@ -13,7 +14,11 @@ import { turnstileSiteKey } from '@/lib/infra/security/turnstile';
  * render per request: 69-169 ms on the server against 19-33 ms for a page with
  * no per-request part (prod, 2026-11-18).
  */
-export function GET(): Response {
+export async function GET(): Promise<Response> {
+  // With Cache Components a GET handler that reads no request data is
+  // prerendered at build time, and the Docker build has neither env var: it
+  // would answer null for both, forever. Read them per request instead.
+  await connection();
   return Response.json(
     {
       googleClientId: googleWebClientId(),
