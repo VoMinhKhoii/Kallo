@@ -24,8 +24,19 @@ const { mockReleaseInvite } = vi.hoisted(() => ({
   mockReleaseInvite: vi.fn().mockResolvedValue(true),
 }));
 
+// The cheap pre-check: `select().from().where().limit()` resolving to the
+// abandoned rows it found. One by default, so the sweep runs.
+const { mockAbandonedProbe } = vi.hoisted(() => ({
+  mockAbandonedProbe: vi.fn(),
+}));
+const probeChain = {
+  from: () => probeChain,
+  where: () => probeChain,
+  limit: () => mockAbandonedProbe(),
+};
+
 vi.mock('@/lib/infra/db/client', () => ({
-  db: { transaction: mockTransaction },
+  db: { transaction: mockTransaction, select: () => probeChain },
 }));
 vi.mock(
   '@/lib/infra/db/schema',
@@ -61,6 +72,29 @@ describe('reapAbandonedPendingAnalyses', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockReleaseInvite.mockResolvedValue(true);
+    mockAbandonedProbe.mockResolvedValue([{ id: CARD_A }]);
+  });
+
+  it('opens no transaction when nothing is abandoned', async () => {
+    mockAbandonedProbe.mockResolvedValue([]);
+
+    expect(await reapAbandonedPendingAnalyses(MOCK_USER.id)).toEqual({
+      reapedIds: [],
+      releasedInvites: false,
+    });
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it('reports nothing reaped when the pre-check itself fails', async () => {
+    mockAbandonedProbe.mockRejectedValue(new Error('pooler hiccup'));
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(await reapAbandonedPendingAnalyses(MOCK_USER.id)).toEqual({
+      reapedIds: [],
+      releasedInvites: false,
+    });
+    expect(mockTransaction).not.toHaveBeenCalled();
+    quiet.mockRestore();
   });
 
   it('hands back every offer whose card it reaped', async () => {

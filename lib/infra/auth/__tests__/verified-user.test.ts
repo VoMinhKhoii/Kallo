@@ -5,6 +5,14 @@ import {
   createClient,
 } from '@supabase/supabase-js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockSigningKeys } = vi.hoisted(() => ({
+  mockSigningKeys: vi.fn(),
+}));
+vi.mock('@/lib/infra/auth/signing-keys/signing-keys', () => ({
+  signingKeys: mockSigningKeys,
+}));
+
 import { verifyUser } from '@/lib/infra/auth/verified-user';
 import { createFakeDb } from '@/lib/infra/db/__fixtures__/fake-db';
 
@@ -56,7 +64,18 @@ describe('verifyUser', () => {
     fake.queueExecute([liveRow]);
 
     await verifyUser(supabase, fake.db, 'jwt-from-header');
-    expect(getClaims).toHaveBeenCalledWith('jwt-from-header');
+    expect(getClaims).toHaveBeenCalledWith('jwt-from-header', undefined);
+  });
+
+  it('checks the token against the held signing keys, not a fetch per request', async () => {
+    const jwks = { keys: [{ kty: 'EC', kid: 'k1', key_ops: ['verify'] }] };
+    mockSigningKeys.mockReturnValueOnce(jwks);
+    token({ sub: 'u1', session_id: 's1' });
+    const fake = createFakeDb();
+    fake.queueExecute([liveRow]);
+
+    await verifyUser(supabase, fake.db, 'jwt-from-header');
+    expect(getClaims).toHaveBeenCalledWith('jwt-from-header', { jwks });
   });
 
   it('signs out a token whose session was revoked', async () => {

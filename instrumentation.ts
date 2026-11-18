@@ -46,12 +46,21 @@ export async function register() {
   }
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
-  const [{ db }, { getCardCatalog }, { cardIndexConfigured }] =
-    await Promise.all([
-      import('@/lib/infra/db/client'),
-      import('@/lib/ai/matching/cards/catalog'),
-      import('@/lib/ai/matching/cards/search-index/search-index'),
-    ]);
+  const [
+    { db },
+    { getCardCatalog },
+    { cardIndexConfigured },
+    { preloadSigningKeys },
+  ] = await Promise.all([
+    import('@/lib/infra/db/client'),
+    import('@/lib/ai/matching/cards/catalog'),
+    import('@/lib/ai/matching/cards/search-index/search-index'),
+    import('@/lib/infra/auth/signing-keys/signing-keys'),
+  ]);
+
+  // The token-signing keys, so the first signed-in request after a start does
+  // not wait on the Auth server for them (see signing-keys.ts). Not awaited.
+  void preloadSigningKeys();
 
   // Starts the artifact load when one is pinned; failures are caught and
   // logged inside both loaders.

@@ -4,6 +4,7 @@ import {
   isAuthSessionMissingError,
 } from '@supabase/supabase-js';
 import { sql } from 'drizzle-orm';
+import { signingKeys } from '@/lib/infra/auth/signing-keys/signing-keys';
 import type { createClient } from '@/lib/infra/supabase/server';
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
@@ -52,7 +53,13 @@ export async function verifyUser(
 ): Promise<VerifiedUser | null> {
   let result: Awaited<ReturnType<typeof supabase.auth.getClaims>>;
   try {
-    result = await supabase.auth.getClaims(accessToken);
+    // The signing keys held in memory, so the check stays local (see
+    // signing-keys.ts). Never awaited; with none held auth-js fetches them.
+    const jwks = signingKeys();
+    result = await supabase.auth.getClaims(
+      accessToken,
+      jwks ? { jwks } : undefined
+    );
   } catch {
     // auth-js throws a plain error (SyntaxError, TypeError) on token content it
     // cannot decode, e.g. `eA.eA.eA` or a header whose `alg` is not a string,

@@ -54,6 +54,17 @@ export async function reapAbandonedPendingAnalyses(
   userId: string
 ): Promise<ReapOutcome> {
   try {
+    // Almost every day load has nothing to reap. One plain read answers that in
+    // a single round trip; the transaction costs three (BEGIN, DELETE, COMMIT)
+    // and runs on every logging and dashboard load. A row that turns abandoned
+    // between this read and the next load is simply reaped next time.
+    const abandoned = await db
+      .select({ id: pendingAnalyses.id })
+      .from(pendingAnalyses)
+      .where(and(eq(pendingAnalyses.userId, userId), isAbandoned()))
+      .limit(1);
+    if (abandoned.length === 0) return NOTHING_REAPED;
+
     return await db.transaction(async (tx) => {
       const reaped = await tx
         .delete(pendingAnalyses)
