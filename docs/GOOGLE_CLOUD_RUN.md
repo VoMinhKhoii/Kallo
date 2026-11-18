@@ -23,6 +23,12 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
      once warm). It is best-effort and never fails the deploy.
    - The instance itself opens its database pool and loads the token-signing
      keys at boot (`instrumentation.ts`).
+   - The revision runs with `NODE_OPTIONS=--max-semi-space-size=64`, a 64 MB V8
+     young generation. With the default 16 MB, a full garbage collection ran
+     every 30–60 s and paused every request in flight for 80–460 ms. The
+     server logs any pause of 50 ms or more as `gc-pause`
+     (`lib/infra/telemetry/monitoring/gc-pauses.ts`); the workflow comment has
+     the measurements.
 
 ### SEO crawl check
 
