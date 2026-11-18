@@ -15,8 +15,10 @@ export const clientAuthConfigKey = ['auth', 'client-config'] as const;
 const CLIENT_AUTH_CONFIG_URL = '/api/v1/auth/client-config';
 
 export async function fetchClientAuthConfig(): Promise<ClientAuthConfig> {
+  // No custom headers, so the browser can reuse the response the page
+  // preloaded; bounded, so a hung origin cannot hold the email form for long.
   const res = await fetch(CLIENT_AUTH_CONFIG_URL, {
-    headers: { accept: 'application/json' },
+    signal: AbortSignal.timeout(5000),
   });
   if (!res.ok) throw new Error(`Auth config unavailable (${res.status})`);
   return (await res.json()) as ClientAuthConfig;
