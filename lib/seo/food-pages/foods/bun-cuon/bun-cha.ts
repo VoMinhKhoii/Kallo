@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một suất. Bốn suất bún chả: thêm nem cua bể và một lượt bún, chỉ ăn nửa phần bún, một suất thường và bún chả làm ở nhà.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một suất. Bún nhẹ hơn người ta nghĩ; thịt nướng, chả và nem gọi thêm mới quyết định con số. Dưới đây là bốn suất thật, mỗi suất gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một suất. Bún nhẹ hơn người ta nghĩ; thịt nướng, chả và nem gọi thêm mới quyết định con số. Dưới đây là bốn suất thường gặp, mỗi suất gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'suat-thuong',
     breakdownLead:
       'Trong một suất bún chả thường, thịt ba chỉ nướng là 296 calo và chả viên 158, còn 150 g bún chỉ 168. Gọi thêm hai cái nem và một lượt bún là suất ăn vượt 1.000.',

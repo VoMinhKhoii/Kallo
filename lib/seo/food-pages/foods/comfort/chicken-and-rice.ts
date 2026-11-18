@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four plates of chicken and rice, a meal prep box, halal cart chicken over rice, pan-fried thighs and a big bulking bowl.`,
     lead: (span) =>
-      `About ${span} kcal. The simplest meal there is still swings: thigh or breast, how much rice and how much oil. Four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The simplest meal there is still swings: thigh or breast, how much rice and how much oil. Four typical plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'meal-prep',
     breakdownLead:
       'In the meal prep box, the rice and the chicken are nearly equal at 190 and 171 kcal. The broccoli is 42.',

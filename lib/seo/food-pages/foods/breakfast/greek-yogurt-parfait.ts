@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four Greek yogurt bowls, full-fat, nonfat and from a coffee shop, broken down by yogurt, granola and toppings.`,
     lead: (span) =>
-      `About ${span} kcal. Which yogurt you pick matters, and so does the granola on top. Four real yogurt bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Which yogurt you pick matters, and so does the granola on top. Four typical yogurt bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'coffee-shop',
     breakdownLead:
       'In the coffee shop parfait, 30 g of granola carries as many calories as the whole cup of yogurt under it.',

@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four plates of French toast, from diner brioche with syrup to a light homemade one, broken down by bread, butter and toppings.`,
     lead: (span) =>
-      `About ${span} kcal. The bread decides most of it, and brioche is not sandwich bread. Four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The bread decides most of it, and brioche is not sandwich bread. Four typical plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'diner',
     breakdownLead:
       'At the diner, three thick slices of brioche are more than half of the plate before any butter or syrup goes on.',

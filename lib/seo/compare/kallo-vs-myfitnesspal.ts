@@ -16,7 +16,7 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
   publishedOn: '2026-11-11',
   checkedOn: '2026-11-11',
   answer:
-    'With MyFitnessPal you search a database of more than 20 million entries and pick one for each food. With Kallo you type the meal in a sentence and it works out the parts and portions. MyFitnessPal’s barcode scanner needs Premium; Kallo’s is on the free plan, and typing a meal is Kallo’s Premium feature once beta ends. MyFitnessPal runs on iOS, Android and the web, Kallo on iOS and the web.',
+    'With MyFitnessPal you search a database of more than 20 million entries and pick one for each food. With Kallo you type the meal in a sentence and it works out the parts and portions. MyFitnessPal’s barcode scanner needs Premium; Kallo’s is on the free plan, and typing a meal is Kallo’s Premium feature once beta ends. MyFitnessPal runs on iOS, Android and the web. Kallo runs on the web, and an iPhone app is coming.',
   disclosure:
     'We make Kallo, so this is a vendor’s comparison. MyFitnessPal’s facts come from its own site, help centre and US App Store listing, checked on 11 November 2026. The sources are listed at the end.',
   rows: [
@@ -34,11 +34,14 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
     },
     {
       label: 'Paid (US)',
-      kallo:
-        '$29.99 a year on the web or $34.99 on the App Store, once beta ends',
+      kallo: '$29.99 a year on the web, once beta ends',
       them: 'Premium, $19.99 a month or $79.99 a year',
     },
-    { label: 'Platforms', kallo: 'iOS, web', them: 'iOS, Android, web' },
+    {
+      label: 'Platforms',
+      kallo: 'Web; iPhone app coming',
+      them: 'iOS, Android, web',
+    },
     {
       label: 'Food data',
       kallo: 'USDA, FAO and the Vietnam food composition table',
@@ -50,7 +53,7 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
       heading: 'How each one logs a meal',
       body: [
         'In MyFitnessPal you search for each food and pick an entry from the results. Premium adds barcode scanning, a photo meal scan and voice logging.',
-        'Kallo reads the whole meal from one sentence, like “leftover spaghetti bolognese and a side salad”. It splits it into ingredients, counts calories and macros, and shows a range. When the words can’t settle a portion, it asks. Barcode scanning is on the free plan; typing a meal and nutrition labels are Premium. It can’t log a meal from a photo of the plate.',
+        'Kallo reads the whole meal from one sentence, like “leftover spaghetti bolognese and a side salad”. It splits it into ingredients, counts calories and macros, and shows the portion it assumed for each part. When the words can’t settle a portion, it asks. Barcode scanning is on the free plan; typing a meal and nutrition labels are Premium. It can’t log a meal from a photo of the plate.',
       ],
     },
     {
@@ -71,7 +74,7 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
   ],
   dataHeading: 'Why the description matters',
   data: (f) =>
-    `We logged ${f.dishes} everyday meals in Kallo ${f.perDish} common ways each, ${f.meals} meals in all. For the typical dish, the heaviest version had ${f.ratio}× the calories of the lightest. Kallo counted cooking oil in ${f.withOil} of them, and in ${f.unnamed} nobody had mentioned oil, butter or frying. A database entry has one number for the dish. The sentence can say how much oil went in.`,
+    `We logged ${f.dishes} everyday meals in Kallo ${f.perDish} common ways each, ${f.meals} meals in all. For the typical dish, the highest-calorie version had ${f.ratio}× the calories of the lowest. Kallo counted cooking oil in ${f.withOil} of them, and in ${f.unnamed} the description never mentioned oil, butter or frying. A database entry has one number for the dish. The sentence can say how much oil went in.`,
   sources: [
     {
       label: 'MyFitnessPal Premium',
@@ -98,10 +101,6 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
       url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC11314244/',
     },
     { label: 'Kallo pricing', url: 'https://kallo.fit/en/pricing' },
-    {
-      label: 'Kallo on the App Store',
-      url: 'https://apps.apple.com/us/app/id6775761392',
-    },
     {
       label: 'Kallo accuracy and limits',
       url: 'https://kallo.fit/en/docs/estimates/accuracy-and-limits',

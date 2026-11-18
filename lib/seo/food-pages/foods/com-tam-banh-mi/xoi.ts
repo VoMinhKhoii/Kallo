@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một gói. Bốn gói xôi: xôi xéo không lấy mỡ, xôi xéo thêm giò lụa và trứng đúc, xôi lạc gói nhỏ và xôi đậu xanh dừa nạo.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một gói. Xôi nặng hơn cơm cùng lượng, nên cỡ gói quyết định nhiều nhất; mỡ gà, hành phi, trứng và giò cộng thêm sau. Dưới đây là bốn gói thật, mỗi gói gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một gói. Xôi nặng hơn cơm cùng lượng, nên cỡ gói quyết định nhiều nhất; mỡ gà, hành phi, trứng và giò cộng thêm sau. Dưới đây là bốn gói thường gặp, mỗi gói gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'xeo-day-du',
     breakdownLead:
       'Trong gói xôi xéo đầy đủ, 200 g xôi là 508 calo; trứng đúc thêm 138, giò lụa 81, mỡ gà 72 và hành phi 43. Gói xôi lạc nhỏ (120 g xôi) là 380.',

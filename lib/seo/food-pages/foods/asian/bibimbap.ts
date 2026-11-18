@@ -31,7 +31,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four bowls of bibimbap, with bulgogi at a Korean restaurant, in a hot stone bowl, with tofu and homemade with half the rice.`,
     lead: (span) =>
-      `About ${span} kcal. The vegetables take up most of the bowl but add the fewest calories. The rice, meat and oil decide the number. Four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The vegetables take up most of the bowl but add the fewest calories. The rice, meat and oil decide the number. Four typical bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'In the restaurant bowl, the rice and the bulgogi are almost two thirds of it. All the vegetables together are about 40 kcal.',

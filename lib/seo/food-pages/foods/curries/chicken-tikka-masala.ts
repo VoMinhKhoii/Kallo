@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four plates of chicken tikka masala, at an Indian restaurant with rice and naan, with rice only, with naan only and homemade.`,
     lead: (span) =>
-      `About ${span} kcal. The curry is only part of it; rice, naan or both on the side is the bigger choice. Four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The curry is only part of it; rice, naan or both on the side is the bigger choice. Four typical plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'At the Indian restaurant, the garlic naan is the biggest line at 262 kcal, more than the chicken. With the rice, the sides are more than half of the meal.',

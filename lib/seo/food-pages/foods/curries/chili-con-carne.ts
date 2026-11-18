@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four bowls of chili con carne, with cheese and sour cream, with rice, a whole can and a homemade turkey chili.`,
     lead: (span) =>
-      `About ${span} kcal. The meat sets the base; the toppings and the rice under it decide the rest. Four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The meat sets the base; the toppings and the rice under it decide the rest. Four typical bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'toppings',
     breakdownLead:
       'In the topped bowl, the beef is about 40% of it. The cheese and sour cream on top add 182 kcal.',

@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four margherita pizzas, a whole Neapolitan one, half a shared pizza, two slices and a homemade tortilla pizza.`,
     lead: (span) =>
-      `About ${span} kcal. With only tomato, mozzarella and basil on top, a margherita is mostly dough, and how much of it you eat decides the number. Four real ones, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. With only tomato, mozzarella and basil on top, a margherita is mostly dough, and how much of it you eat decides the number. Four typical ones, each typed into Kallo the way people describe them.`,
     breakdownOf: 'neapolitan',
     breakdownLead:
       'A whole Neapolitan pizza is mostly crust: 576 kcal of dough, then 371 of fresh mozzarella. The sauce and basil barely register.',

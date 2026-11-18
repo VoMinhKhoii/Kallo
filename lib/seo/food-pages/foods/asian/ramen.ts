@@ -31,7 +31,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four bowls of ramen, tonkotsu with most of the broth, shoyu chicken, instant ramen with an egg and spicy miso with extra noodles.`,
     lead: (span) =>
-      `About ${span} kcal. The noodles are one half of a bowl. A rich broth can be the other, so how much you drink matters. Four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The noodles are one half of a bowl. A rich broth can be the other, so how much you drink matters. Four typical bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'tonkotsu',
     breakdownLead:
       'In the tonkotsu bowl, the pork bone broth is 374 kcal, almost as much as the noodles. Leaving most of it is the biggest single cut you can make.',

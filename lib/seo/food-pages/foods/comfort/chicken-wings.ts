@@ -28,7 +28,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four orders of chicken wings, ten buffalo wings with blue cheese dip, six BBQ wings, ten boneless wings and eight air-fried ones.`,
     lead: (span) =>
-      `About ${span} kcal. The count is the obvious part; frying, breading and the dip are what make wings add up. Four real orders, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The count is the obvious part; frying, breading and the dip are what make wings add up. Four typical orders, each typed into Kallo the way people describe them.`,
     breakdownOf: 'boneless',
     breakdownLead:
       'Boneless wings are breaded chicken. In the order of ten, the honey garlic sauce adds 186 kcal, about a quarter of it.',

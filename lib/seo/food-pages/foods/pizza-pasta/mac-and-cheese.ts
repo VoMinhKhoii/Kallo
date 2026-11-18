@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four servings of mac and cheese, a restaurant bowl, half a box, one with broccoli and a homemade one with skim milk.`,
     lead: (span) =>
-      `About ${span} kcal. The pasta is the steady part; how much cheese and butter go into the sauce is what changes. Four real servings, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The pasta is the steady part; how much cheese and butter go into the sauce is what changes. Four typical servings, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'In the restaurant bowl, the pasta is nearly half of it. The cheddar sauce adds 261 kcal and the breadcrumb topping only 39.',

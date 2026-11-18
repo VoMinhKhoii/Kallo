@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một suất. Bốn suất bún đậu mắm tôm: có thịt luộc, đủ chả cốm lòng dồi nem chua rán, suất nhỏ chỉ bún và đậu, thêm chả cốm không thịt.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một suất. Đậu rán là phần nặng nhất; thịt luộc, chả cốm và nem chua rán cộng thêm từng món. Dưới đây là bốn suất thật, mỗi suất gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một suất. Đậu rán là phần nặng nhất; thịt luộc, chả cốm và nem chua rán cộng thêm từng món. Dưới đây là bốn suất thường gặp, mỗi suất gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'mot-suat',
     breakdownLead:
       'Trong một suất bún đậu có thịt luộc, bốn miếng đậu rán là 468 calo, gấp ba phần bún lá (158); thịt luộc thêm 229. Mắm tôm chấm cả suất chỉ khoảng 20 calo.',

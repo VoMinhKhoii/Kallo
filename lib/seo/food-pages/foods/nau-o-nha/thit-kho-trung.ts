@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa có thịt kho trứng thật: hai miếng ba rọi với một chén cơm, thịt kho hột vịt chan nước kho, cơm văn phòng thêm cơm, và thịt nạc vai kho trứng.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một bữa. Miếng ba rọi là phần nặng nhất; trứng, cơm và nước kho cộng thêm sau. Dưới đây là bốn bữa thật, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một bữa. Miếng ba rọi là phần nặng nhất; trứng, cơm và nước kho cộng thêm sau. Dưới đây là bốn bữa thường gặp, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'hot-vit',
     breakdownLead:
       'Ở bữa thịt kho hột vịt, ba miếng ba rọi đã 641 calo, hơn cả hai hột vịt và chén cơm cộng lại; chan nước kho thêm 108. Đổi sang thịt nạc vai, bốn miếng chỉ 275.',
