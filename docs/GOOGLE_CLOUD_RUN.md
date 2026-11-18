@@ -14,8 +14,15 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
 3. Dispatch `cloud-run-prod.yml` from `main` (optionally with a `sha`).
 4. The prod job acquires its GCS lease, tags the image `prod-<sha>`
    (exempting it from cleanup), applies pending migrations, deploys a
-   no-traffic candidate, smoke-tests it, crawl-checks it (below), and only
-   then promotes traffic.
+   no-traffic candidate, smoke-tests it, crawl-checks it (below), warms its
+   API routes, and only then promotes traffic.
+   - The warm-up step requests the reads the phone app and the web shell open
+     with. It sends no session, so each answers 401 without touching the
+     database. Next loads a route's code on its first request, so without this
+     the first app launch on a new instance took 550–1000 ms per call (40–200 ms
+     once warm). It is best-effort and never fails the deploy.
+   - The instance itself opens its database pool and loads the token-signing
+     keys at boot (`instrumentation.ts`).
 
 ### SEO crawl check
 

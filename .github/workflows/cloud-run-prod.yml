@@ -555,6 +555,28 @@ jobs:
           echo "::add-mask::$ORIGIN_SHARED_SECRET"
           export ORIGIN_SHARED_SECRET
           bun scripts/seo/crawl-check.ts "$SMOKE_URL" --live https://kallo.fit
+      - name: Warm the candidate's API routes
+        # Next loads each route's code on its first request, so on a new
+        # instance the app's first launch burst paid for loading seven route
+        # modules at once (550-1000 ms per call on 2026-11-18, against 40-200 ms
+        # once warm). The crawl check above already loads the pages; this loads
+        # the reads the app and the web shell open with. Signed out, each
+        # answers 401 without touching the database. Best-effort: a failed warm
+        # request never blocks the deploy.
+        env:
+          SMOKE_URL: ${{ env.SMOKE_URL }}
+        run: |
+          ORIGIN_SHARED_SECRET="$(gcloud secrets versions access latest --secret=kallo-prod-origin-shared-secret)"
+          echo "::add-mask::$ORIGIN_SHARED_SECRET"
+          for path in \
+            /api/v1/account/entitlements /api/v1/dashboard /api/v1/groups/invites \
+            /api/v1/onboarding/profile /api/v1/logging/day /api/v1/groups/profile \
+            /api/v1/notifications/badge /api/v1/meals /api/v1/meals/dates/summaries \
+            /api/v1/chat-groups /api/v1/groups/friends/feed /api/v1/weight/summary \
+            /api/v1/dashboard/heatmap /api/v1/nutrition/overview; do
+            curl -s -o /dev/null --max-time 20 -w "%{http_code} %{time_total}s $path\n" \
+              -H "X-Origin-Verify: $ORIGIN_SHARED_SECRET" "$SMOKE_URL$path" || true
+          done
       - name: Promote candidate after smoke pass
         # Only for an existing service: shift 100% traffic to the validated
         # (latest) revision, then drop the candidate tag. On a first deploy the
