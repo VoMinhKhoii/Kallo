@@ -1,3 +1,8 @@
+import {
+  MEAL_DATA_CSV_PATH,
+  MEAL_DATA_JSON_PATH,
+  MEAL_DATA_LICENSE,
+} from '@/lib/seo/meal-data/path';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**
@@ -142,7 +147,7 @@ export function toolStructuredData({
   };
 }
 
-/** The data page, for Google Dataset Search. No licence is claimed: none is granted. */
+/** The data page and its reusable observations, for Google Dataset Search. */
 export function mealDataStructuredData({
   locale,
   url,
@@ -165,6 +170,19 @@ export function mealDataStructuredData({
       breadcrumb(locale, [{ name }]),
       {
         '@type': 'Dataset',
+        license: MEAL_DATA_LICENSE,
+        distribution: [
+          {
+            '@type': 'DataDownload',
+            encodingFormat: 'text/csv',
+            contentUrl: `${SITE_URL}${MEAL_DATA_CSV_PATH}`,
+          },
+          {
+            '@type': 'DataDownload',
+            encodingFormat: 'application/json',
+            contentUrl: `${SITE_URL}${MEAL_DATA_JSON_PATH}`,
+          },
+        ],
         name,
         description,
         url,

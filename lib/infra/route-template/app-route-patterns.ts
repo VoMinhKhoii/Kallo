@@ -131,6 +131,8 @@ export const APP_ROUTE_PATTERNS = [
   '/auth/callback',
   '/auth/turnstile',
   '/auth/verify',
+  '/data/meal-calorie-variation.csv',
+  '/data/meal-calorie-variation.json',
   '/feed.xml',
   '/llms.txt',
   '/md/[locale]/[...slug]',

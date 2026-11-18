@@ -254,6 +254,8 @@ export const routeInventory = {
   // Static HTML with the public Turnstile site key: no DB, no upstream call.
   'auth/turnstile/route.ts': ['none', false, 'none-cheap'],
   'auth/verify/route.ts': ['none', false, 'authLinkIp'],
+  'data/meal-calorie-variation.csv/route.ts': ['none', false, 'none-cheap'],
+  'data/meal-calorie-variation.json/route.ts': ['none', false, 'none-cheap'],
   'feed.xml/route.ts': ['none', false, 'none-cheap'],
   'llms.txt/route.ts': ['none', false, 'none-cheap'],
   'md/[locale]/[...slug]/route.ts': ['none', false, 'none-cheap'],

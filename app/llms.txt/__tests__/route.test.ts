@@ -80,4 +80,12 @@ describe('/llms.txt', () => {
   it('links the Vietnamese tree', () => {
     expect(body).toContain('https://kallo.fit/vi');
   });
+
+  it('lists both reusable meal observation files', () => {
+    expect(body).toContain('https://kallo.fit/data/meal-calorie-variation.csv');
+    expect(body).toContain(
+      'https://kallo.fit/data/meal-calorie-variation.json'
+    );
+    expect(body).toContain('CC BY 4.0');
+  });
 });
