@@ -556,6 +556,10 @@ jobs:
           export ORIGIN_SHARED_SECRET
           bun scripts/seo/crawl-check.ts "$SMOKE_URL" --live https://kallo.fit
       - name: Warm the candidate's API routes
+        # Best-effort as a whole: nothing in this step (the secret lookup
+        # included) may stop a candidate that passed smoke and crawl checks
+        # from being promoted.
+        continue-on-error: true
         # Next loads each route's code on its first request, so on a new
         # instance the app's first launch burst paid for loading seven route
         # modules at once (550-1000 ms per call on 2026-11-18, against 40-200 ms
