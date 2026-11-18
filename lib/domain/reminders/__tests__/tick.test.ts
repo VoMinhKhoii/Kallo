@@ -39,7 +39,8 @@ function candidate(userId: string, timeZone: string, extra = {}) {
     timeZone,
     calorieTarget: 1932,
     preferredLocale: 'en',
-    lastOpenedAt: null,
+    // Opened Kallo this morning: here today, so the day runs as usual.
+    lastOpenedAt: new Date('2026-11-04T02:00:00Z'),
     lastPushedAt: null,
     ...extra,
   };

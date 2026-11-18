@@ -91,10 +91,24 @@ export function undecided(
   return { pending, sentToday };
 }
 
-function newest(dates: Date[]): Date | null {
+function newest(dates: (Date | null)[]): Date | null {
   return dates.reduce<Date | null>(
-    (latest, at) => (!latest || at > latest ? at : latest),
+    (latest, at) => (at && (!latest || at > latest) ? at : latest),
     null
+  );
+}
+
+const DAY_MS = 86_400_000;
+
+/** Whole local days from the last sign of the person to today: 0 when they
+ *  were here today, null when there is no sign at all. */
+function daysAway(d: DueReminder, lastActiveAt: Date | null): number | null {
+  if (!lastActiveAt) return null;
+  const activeDate = zonedClock(lastActiveAt, d.candidate.timeZone).date;
+  return Math.round(
+    (Date.parse(`${d.today}T00:00:00Z`) -
+      Date.parse(`${activeDate}T00:00:00Z`)) /
+      DAY_MS
   );
 }
 
@@ -111,6 +125,8 @@ export function reminderFacts(
   const ofDay = input.meals.filter(
     (m) => m.loggedAt >= d.dayStart && m.loggedAt < d.dayEnd
   );
+  const lastMealAt = newest(input.meals.map((m) => m.createdAt));
+  const lastClosedAt = newest(input.marks.map((m) => m.createdAt));
   return {
     checkpoint: d.checkpoint,
     calorieTarget: d.candidate.calorieTarget,
@@ -119,11 +135,17 @@ export function reminderFacts(
     // A meal with no calorie figure makes the total a floor, never a sum.
     dayCaloriesKnown: ofDay.every((m) => m.calories !== null),
     dayClosed: input.marks.some((m) => m.localDate === d.aboutDate),
-    lastMealAt: newest(input.meals.map((m) => m.createdAt)),
+    lastMealAt,
     // Today's or yesterday's mark made after a reminder answered it: the
     // lock-screen buttons close a day without opening the app.
-    lastClosedAt: newest(input.marks.map((m) => m.createdAt)),
+    lastClosedAt,
     lastOpenedAt: d.candidate.lastOpenedAt,
+    // Meals and marks are only loaded for the last two days; past that the
+    // app's last check-in is the only sign left, and it is always loaded.
+    daysAway: daysAway(
+      d,
+      newest([d.candidate.lastOpenedAt, lastMealAt, lastClosedAt])
+    ),
     lastPushedAt: d.candidate.lastPushedAt,
     sentToday: input.sentToday,
     now: input.now,

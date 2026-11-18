@@ -418,10 +418,29 @@ In order; each failing gate skips the checkpoint for the day, except the last, w
 3. Behind the checkpoint's line (table above) → else `on_pace`; an empty yesterday → `empty_day`; a day holding a meal with no calorie figure → `unknown_total` (its total is a floor: it can neither say the day is behind nor be quoted — the same guard as the in-app "may be under-logged" notice).
 4. Today checkpoints only: no meal created in the last 3 h → else `recent_meal`. (The 08:00 question is about yesterday; a breakfast just logged does not answer it.)
 5. Kallo not opened in the last 45 min → else `recently_opened`.
-6. Not two reminders ignored in a row today → else `ignored`. Ignored = no app open, no meal logged and no day closed (today or yesterday — the lock-screen buttons close a day without opening the app) between the push and now; with only the newest of each stored, "the last two both ignored" is exactly "nothing since the earlier of them went out".
-7. No other push to this user in the last 30 min → else **wait**: no row is written, the next 15-minute tick rechecks, and the checkpoint gives up when its 90-minute window closes.
+6. Here today, or away for exactly 1, 3, 5 or 7 days with nothing sent yet today → else `away`. "Away" counts whole days on the user's clock since their last sign: the app opened, a meal logged or a day closed. Meals and marks are only loaded for two days, so past that the app's last check-in decides. See "Over several days" below.
+7. Not two reminders ignored in a row today → else `ignored`. Ignored = no app open, no meal logged and no day closed (today or yesterday — the lock-screen buttons close a day without opening the app) between the push and now; with only the newest of each stored, "the last two both ignored" is exactly "nothing since the earlier of them went out".
+8. No other push to this user in the last 30 min → else **wait**: no row is written, the next 15-minute tick rechecks, and the checkpoint gives up when its 90-minute window closes.
 
 "Opened Kallo" is the newest `push_tokens.last_seen_at`: the iOS app re-posts its registration on launch and on every return to the foreground. Web visits are not counted (web has no push). "Another push" is the newest `push_tokens.last_pushed_at`, stamped by `recordPushResults` (`lib/domain/notifications/push-devices.ts`, the one owner of `push_tokens` rows) on every device APNs accepted — activity, chat and reminders alike.
+
+### Over several days
+
+The gates above run one day at a time. Across days, how often someone hears from Kallo depends on how long ago they were last here (gate 6):
+
+| Days since the last open, meal or closed day | Reminders that day |
+|---|---|
+| 0 (here today) | the normal day: up to four, and the day stops after two ignored in a row |
+| 1 | one |
+| 2 | none |
+| 3 | one |
+| 4 | none |
+| 5 | one |
+| 6 | none |
+| 7 | one |
+| 8 and on | none, until they come back |
+
+Someone who walks away gets four reminders over a week, then silence. Opening the app, logging a meal (web included) or tapping "That was everything" makes it day 0 again, and the normal day resumes with the next checkpoint. Day 1 also covers a regular user who has not opened Kallo yet this morning: they get the first reminder that is due, and the rest of the day comes back once they open the app.
 
 ### Tick (`lib/domain/reminders/tick.ts`)
 
@@ -429,7 +448,7 @@ In order; each failing gate skips the checkpoint for the day, except the last, w
 
 1. `loadCandidates` — `push_tokens` (ios) ⋈ `user_profiles` by primary key, grouped per user: switch on, target > 0, time zone set, newest `last_seen_at` / `last_pushed_at`. Driven from the small token table, never a scan of every account.
 2. In JS, per user: the wall clock in their IANA zone (`lib/core/date/zoned.ts`, DST-safe), the checkpoint whose 90-minute window it is inside, today's local date, the date the reminder is about and that day's UTC bounds.
-3. `loadDecided` — today's `meal_reminders` rows; a decided checkpoint is dropped, and the `sent` ones feed gate 6.
+3. `loadDecided` — today's `meal_reminders` rows; a decided checkpoint is dropped, and the `sent` ones feed gates 6 and 7.
 4. `loadRecentMeals` (rides `meals_user_logged_at_idx`, ~2 days per user) and `loadClosedDays` (`day_completion_marks` unique index), in parallel.
 5. Decide, then `claimReminders`: one multi-row `INSERT … ON CONFLICT DO NOTHING RETURNING`. The primary key `(user_id, local_date, checkpoint_hour)` is the lock — only claims this tick won are sent, so overlapping ticks never double-push. Claimed before sending: a crash in between loses one reminder rather than sending two.
 6. `sendReminders` — every iOS token of the winners, 100 messages per APNs batch, then `recordPushResults`. Not charged to the push fan-out budgets: reminders are server-initiated and bounded at four per user per day by the claim.
@@ -475,6 +494,7 @@ iOS asks for notification permission the first time a person logs a meal, not at
 
 - A web visit is not an "open": a person logging on the web at 09:50 can still get the 10:00 push if nothing was saved in the last 3 h.
 - A meal backdated to an older day counts for gate 4 only when its meal time is within the last two days.
+- Gate 6 sees meals and closed days from the last two days only. Someone who logs only on the web, with an iPhone app they no longer open, counts as away from the third day without a meal.
 - The spacing gate reads the stamp of pushes APNs *accepted*; an attempt that failed does not hold a reminder back.
 
 ---

@@ -146,6 +146,41 @@ describe('reminderFacts', () => {
   });
 });
 
+describe('reminderFacts — days away', () => {
+  const away = (lastOpenedAt: Date | null, meals: { createdAt: Date }[] = []) =>
+    reminderFacts(
+      dueFor({ ...candidate(A), lastOpenedAt }, NOW) as DueReminder,
+      {
+        meals: meals.map((m) => ({
+          userId: A,
+          loggedAt: m.createdAt,
+          createdAt: m.createdAt,
+          calories: 300,
+        })),
+        marks: [],
+        sentToday: [],
+        now: NOW,
+      }
+    ).daysAway;
+
+  it('counts whole days on the user’s clock, not 24-hour spans', () => {
+    // 16:59Z on the 3rd is 23:59 there: yesterday, one day away.
+    expect(away(new Date('2026-11-03T16:59:00Z'))).toBe(1);
+    // 17:00Z on the 3rd is midnight there: today.
+    expect(away(new Date('2026-11-03T17:00:00Z'))).toBe(0);
+    expect(away(new Date('2026-10-28T03:00:00Z'))).toBe(7);
+  });
+
+  it('takes the newest sign: an open, or a meal logged anywhere', () => {
+    expect(
+      away(new Date('2026-10-20T03:00:00Z'), [
+        { createdAt: new Date('2026-11-03T03:00:00Z') },
+      ])
+    ).toBe(1);
+    expect(away(null)).toBeNull();
+  });
+});
+
 describe('byUser', () => {
   it('groups rows by owner, keeping order', () => {
     const grouped = byUser([

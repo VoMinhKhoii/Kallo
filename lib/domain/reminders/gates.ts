@@ -13,8 +13,14 @@ const MINUTE = 60 * 1000;
 export const RECENT_MEAL_MS = 3 * 60 * MINUTE;
 /** Gate 5: someone who opened Kallo within this window is already here. */
 export const RECENT_OPEN_MS = 45 * MINUTE;
-/** Gate 7: never land within this long of any other push. */
+/** Gate 8: never land within this long of any other push. */
 export const PUSH_SPACING_MS = 30 * MINUTE;
+/**
+ * Gate 6: the days away (no app open, meal or closed day since) that still
+ * get a reminder, one each. Between them none, and after the last none at all
+ * until the person comes back, which restarts the count.
+ */
+export const AWAY_REMINDER_DAYS: readonly number[] = [1, 3, 5, 7];
 
 export type SkipReason =
   | 'closed'
@@ -23,6 +29,7 @@ export type SkipReason =
   | 'on_pace'
   | 'recent_meal'
   | 'recently_opened'
+  | 'away'
   | 'ignored';
 
 export type ReminderDecision =
@@ -53,6 +60,9 @@ export interface ReminderFacts {
   lastOpenedAt: Date | null;
   /** When any push last reached any of the user's devices. */
   lastPushedAt: Date | null;
+  /** Whole local days since the person's last open, meal or closed day:
+   *  0 when it was today, null when there is none at all. */
+  daysAway: number | null;
   /** When each reminder already SENT today went out, oldest first. */
   sentToday: Date[];
   now: Date;
@@ -92,6 +102,15 @@ function twoIgnored(facts: ReminderFacts): boolean {
   return !answered;
 }
 
+/** Someone who has not been here today gets at most one reminder a day, and
+ *  only on the days in `AWAY_REMINDER_DAYS`. */
+function tooAway(facts: ReminderFacts): boolean {
+  const { daysAway } = facts;
+  if (daysAway === 0) return false;
+  if (daysAway === null || !AWAY_REMINDER_DAYS.includes(daysAway)) return true;
+  return facts.sentToday.length > 0;
+}
+
 export function decideReminder(facts: ReminderFacts): ReminderDecision {
   const { now } = facts;
   if (facts.dayClosed) return { action: 'skip', reason: 'closed' };
@@ -111,6 +130,7 @@ export function decideReminder(facts: ReminderFacts): ReminderDecision {
   if (within(facts.lastOpenedAt, RECENT_OPEN_MS, now)) {
     return { action: 'skip', reason: 'recently_opened' };
   }
+  if (tooAway(facts)) return { action: 'skip', reason: 'away' };
   if (twoIgnored(facts)) return { action: 'skip', reason: 'ignored' };
   if (within(facts.lastPushedAt, PUSH_SPACING_MS, now)) {
     return { action: 'wait' };

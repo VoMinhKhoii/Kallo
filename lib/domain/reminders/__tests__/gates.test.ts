@@ -26,6 +26,7 @@ function facts(overrides: Partial<ReminderFacts> = {}): ReminderFacts {
     lastClosedAt: null,
     lastOpenedAt: null,
     lastPushedAt: null,
+    daysAway: 0,
     sentToday: [],
     now: NOW,
     ...overrides,
@@ -162,6 +163,34 @@ describe('decideReminder — the other gates, in order', () => {
     expect(decideReminder(facts({ sentToday: [minutesAgo(60)] })).action).toBe(
       'send'
     );
+  });
+
+  it('reminds someone who stays away on days 1, 3, 5 and 7, once each, then never', () => {
+    const sent = (daysAway: number | null, sentToday: Date[] = []) =>
+      decideReminder(facts({ daysAway, sentToday })).action;
+    expect(Array.from({ length: 10 }, (_, day) => [day, sent(day)])).toEqual([
+      [0, 'send'],
+      [1, 'send'],
+      [2, 'skip'],
+      [3, 'send'],
+      [4, 'skip'],
+      [5, 'send'],
+      [6, 'skip'],
+      [7, 'send'],
+      [8, 'skip'],
+      [9, 'skip'],
+    ]);
+    // One a day while away, wherever it landed.
+    expect(
+      decideReminder(facts({ daysAway: 3, sentToday: [minutesAgo(300)] }))
+    ).toEqual({
+      action: 'skip',
+      reason: 'away',
+    });
+    // Here today: the day runs as usual.
+    expect(sent(0, [minutesAgo(300)])).toBe('send');
+    // No sign of the person at all.
+    expect(sent(null)).toBe('skip');
   });
 
   it('waits, rather than skips, while another push landed in the last 30 minutes', () => {
