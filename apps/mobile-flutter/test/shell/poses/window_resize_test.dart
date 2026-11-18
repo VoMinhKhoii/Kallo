@@ -89,9 +89,18 @@ void main() {
       final table = tester.widget<PlanComparison>(find.byType(PlanComparison));
       expect(table.availableWidth, lessThanOrEqualTo(420));
       final band = tester.getRect(find.byType(PaywallBuyBand));
-      if (pose == outerPortrait || pose == outerLandscape) {
+      if (pose == outerPortrait) {
         expect(band.left, 0);
         expect(band.right, pose.size.width);
+      }
+      // Wide and short, the band is the decision beside the table, clear of
+      // the control column.
+      if (pose == outerLandscape) {
+        expect(band.right, lessThanOrEqualTo(pose.size.width - 84));
+        expect(
+          tester.getRect(find.byType(PlanComparison)).right,
+          lessThanOrEqualTo(band.left),
+        );
       }
       if (pose == innerLandscape || pose == pipPinned) {
         expect(

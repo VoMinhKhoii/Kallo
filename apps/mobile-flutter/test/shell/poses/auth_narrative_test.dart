@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/auth/widgets/auth_page.dart';
 import 'package:kallo_mobile/features/auth/widgets/email_auth_form.dart';
+import 'package:kallo_mobile/features/auth/widgets/welcome/auth_brand_hero.dart';
+import 'package:kallo_mobile/features/auth/widgets/welcome/auth_legal_links.dart';
 import 'package:kallo_mobile/features/auth/widgets/welcome/auth_options.dart';
+import 'package:kallo_mobile/features/auth/widgets/welcome/google_button.dart';
+import 'package:kallo_mobile/features/auth/widgets/auth_submit_button.dart';
+import 'package:kallo_mobile/features/auth/widgets/auth_text_field.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/step_backdrop.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/start/start_hero.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/start/start_preview_box.dart';
@@ -12,9 +17,10 @@ import 'package:kallo_mobile/features/onboarding/widgets/onboarding_step_scaffol
 import 'package:kallo_mobile/features/onboarding/screens/start_screen.dart';
 import 'package:kallo_mobile/features/onboarding/screens/step_about_you.dart';
 import 'package:kallo_mobile/features/paywall/screens/paywall_purchase_face.dart';
-import 'package:kallo_mobile/features/paywall/widgets/pitch/paywall_guide.dart';
 import 'package:kallo_mobile/features/paywall/widgets/pitch/plan_comparison.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/paywall_buy_band.dart';
+import 'package:kallo_mobile/features/paywall/widgets/paywall_header.dart';
+import 'package:kallo_mobile/features/paywall/widgets/plans/plan_cta.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/plan_toggle.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 import 'harness/pose_harness.dart';
@@ -177,15 +183,14 @@ void main() {
     toggle.onChanged?.call(!toggle.yearly);
     await settlePose(tester);
     final yearly = tester.widget<PlanToggle>(find.byType(PlanToggle)).yearly;
-    expect(
-      tester.getRect(find.byType(PlanComparison)).right,
-      lessThanOrEqualTo(455.5),
-    );
-    expect(
-      tester.getRect(find.byType(PlanToggle)).left,
-      greaterThanOrEqualTo(495.5),
-    );
-    for (final pose in [outerPortrait, innerLandscape]) {
+    // Beside the fold the whole phone column is the near pane.
+    for (final piece in [PlanComparison, PlanToggle, PaywallBuyBand]) {
+      expect(
+        tester.getRect(find.byType(piece)).left,
+        greaterThanOrEqualTo(495.5),
+      );
+    }
+    for (final pose in [outerPortrait, outerLandscape, innerLandscape]) {
       resize(tester, pose);
       await settlePose(tester);
       expect(tester.state(find.byType(PaywallPurchaseFace)), same(state));
@@ -200,14 +205,12 @@ void main() {
   // its first screen to its last: the start preview. Only the near pane
   // changes, so nothing is left hanging in a corner beside an empty half.
   group('beside the fold', () {
-    double middle(WidgetTester tester, Finder finder) =>
-        tester.getRect(finder).center.dy;
-
     for (final route in [
       '/start',
       '/sign-in',
       '/sign-in/email',
       '/onboarding',
+      '/save-plan',
     ]) {
       testWidgets('$route keeps the start preview on the far side', (
         tester,
@@ -221,9 +224,20 @@ void main() {
         final hero = tester.getRect(find.byType(StartHero));
         expect(hero.left, 0);
         expect(hero.right, lessThanOrEqualTo(455.5));
-        // The preview carries the wordmark, so the near pane does not say it
-        // again.
+        // The preview is the device alone, the same on every screen, so the
+        // name is said once, in the screen's own column.
+        expect(
+          find.descendant(
+            of: find.byType(StartHero),
+            matching: find.byType(KalloWordmark),
+          ),
+          findsNothing,
+        );
         expect(find.byType(KalloWordmark), findsOneWidget);
+        expect(
+          tester.getRect(find.byType(KalloWordmark)).left,
+          greaterThanOrEqualTo(495.5),
+        );
         resize(tester, outerPortrait);
         await settlePose(tester);
         expect(find.byType(StartHero), findsNothing);
@@ -310,27 +324,37 @@ void main() {
       });
     }
 
-    testWidgets('sign-in: the options sit at mid height', (tester) async {
+    testWidgets('sign-in: the brand block stands over the options at mid '
+        'height', (tester) async {
       final dispose = await bootPose(
         tester,
         innerLandscape,
         '/sign-in',
         signedIn: false,
       );
+      final brand = tester.getRect(find.byType(AuthBrandHero));
       final options = tester.getRect(find.byType(AuthOptions));
-      expect(options.left, greaterThanOrEqualTo(495.5));
-      expect(options.center.dy, closeTo(innerLandscape.size.height / 2, 40));
+      expect(brand.left, greaterThanOrEqualTo(495.5));
+      expect(options.top - brand.bottom, 32);
+      final group = brand.expandToInclude(options);
+      expect(group.center.dy, closeTo(innerLandscape.size.height / 2, 40));
       await dispose();
     });
 
-    testWidgets('start: the decision sits at mid height', (tester) async {
+    testWidgets('start: the wordmark heads the decision at mid height', (
+      tester,
+    ) async {
       final dispose = await bootPose(
         tester,
         innerLandscape,
         '/start',
         signedIn: false,
       );
+      final mark = tester.getRect(find.byType(KalloWordmark));
+      final title = tester.getRect(find.text('Log meals the way you say them'));
       final button = tester.getRect(find.text('Get started'));
+      expect(mark.left, greaterThanOrEqualTo(495.5));
+      expect(title.top - mark.bottom, 16);
       expect(button.center.dy, closeTo(innerLandscape.size.height / 2, 60));
       await dispose();
     });
@@ -351,25 +375,170 @@ void main() {
       await dispose();
     });
 
-    testWidgets('paywall: the table and the decision, title included', (
+    testWidgets('paywall: the start preview beside the phone column', (
       tester,
     ) async {
       final dispose = await bootPose(tester, innerLandscape, '/paywall');
-      final band = find.byType(PaywallBuyBand);
-      final guideInBand = find.descendant(
-        of: band,
-        matching: find.byType(PaywallGuide),
-      );
-      expect(guideInBand, findsOneWidget);
+      final hero = tester.getRect(find.byType(StartHero));
+      expect(hero.left, 0);
+      expect(hero.right, lessThanOrEqualTo(455.5));
       expect(
-        middle(tester, find.byType(PlanComparison)),
-        closeTo(middle(tester, band), 32),
+        tester.getRect(find.byType(KalloWordmark)).left,
+        greaterThanOrEqualTo(495.5),
       );
-      resize(tester, outerPortrait);
-      await settlePose(tester);
-      expect(guideInBand, findsNothing);
-      expect(find.byType(PaywallGuide), findsOneWidget);
+      final table = tester.getRect(find.byType(PlanComparison));
+      expect(table.left, greaterThanOrEqualTo(495.5));
+      expect(
+        table.bottom,
+        lessThanOrEqualTo(tester.getRect(find.byType(PaywallBuyBand)).top),
+      );
+      expectOneColumnEdge(tester);
       await dispose();
     });
   });
+
+  // Turned sideways the closed display is too short for the whole form, and
+  // the last way in used to start below the edge.
+  testWidgets('email sign-in shows Google on a short window without '
+      'scrolling', (tester) async {
+    final dispose = await bootPose(
+      tester,
+      outerLandscape,
+      '/sign-in/email',
+      signedIn: false,
+    );
+    final safe = outerLandscape.padding.deflateRect(
+      Offset.zero & outerLandscape.size,
+    );
+    final google = tester.getRect(find.byType(GoogleButton));
+    expect(safe.contains(google.topLeft), isTrue, reason: '$google');
+    expect(safe.contains(google.bottomRight), isTrue, reason: '$google');
+    expect(find.text('Sign in to continue tracking your meals.'), findsNothing);
+    await dispose();
+  });
+
+  // Held tall, the form is centred, and the fold line at half the window's
+  // height falls in the gap between the email field and its button.
+  testWidgets('email sign-in held tall keeps the fold off the controls', (
+    tester,
+  ) async {
+    final dispose = await bootPose(
+      tester,
+      innerPortrait,
+      '/sign-in/email',
+      signedIn: false,
+    );
+    final fold = innerPortrait.size.height / 2;
+    final field = tester.getRect(find.byType(AuthTextField));
+    final send = tester.getRect(find.byType(AuthSubmitButton));
+    expect(field.bottom, lessThan(fold));
+    expect(send.top, greaterThan(fold));
+    final title = tester.getRect(find.text('Welcome back'));
+    final legal = tester.getRect(find.byType(AuthLegalLinks));
+    final safeMiddle =
+        (innerPortrait.padding.top +
+            44 +
+            innerPortrait.size.height -
+            innerPortrait.padding.bottom) /
+        2;
+    expect((title.top + legal.bottom) / 2, closeTo(safeMiddle, 24 + 1));
+    await dispose();
+  });
+
+  // Wide and short (the closed display on its side): stacked, the band
+  // covered the whole table. Side by side, both are in view at once.
+  for (final pose in [outerLandscape, phoneLandscape]) {
+    testWidgets('paywall at ${pose.name}: the table beside the decision', (
+      tester,
+    ) async {
+      final dispose = await bootPose(tester, pose, '/paywall');
+      final safe = pose.padding.deflateRect(Offset.zero & pose.size);
+      final table = tester.getRect(find.byType(PlanComparison));
+      final cta = tester.getRect(find.byType(PlanCta));
+      for (final rect in [table, cta]) {
+        expect(safe.contains(rect.topLeft), isTrue, reason: '$rect');
+        expect(safe.contains(rect.bottomRight), isTrue, reason: '$rect');
+      }
+      expect(table.overlaps(cta), isFalse);
+      for (final scroll in find.byType(Scrollable).evaluate()) {
+        final state = (scroll as StatefulElement).state as ScrollableState;
+        expect(state.position.maxScrollExtent, 0);
+      }
+      final title = find.descendant(
+        of: find.byType(PaywallBuyBand),
+        matching: find.text('Choose your plan'),
+      );
+      // One line of the 28pt title, not two.
+      expect(tester.getRect(title).height, lessThan(40));
+      // Each half of the toggle leaves its label 10pt of air on both sides.
+      final toggle = tester.getRect(find.byType(PlanToggle));
+      final half = (toggle.width - 8) / 2;
+      final monthly = tester.getRect(find.text('Monthly plan'));
+      expect(monthly.left - (toggle.left + 4), greaterThanOrEqualTo(10));
+      expect(toggle.left + 4 + half - monthly.right, greaterThanOrEqualTo(10));
+      // The Free and Premium columns take what they hold, and the rest goes
+      // to the labels: most of them stay on one line.
+      for (final label in [
+        'Macros tracking',
+        'Scan nutrition labels',
+        'Visual edit',
+        'Micros (7 / 30 / 90d)',
+        'Groups & friends',
+      ]) {
+        // One line is 18pt at 14pt type and 23 at 16; two are 36 or more.
+        expect(tester.getRect(find.text(label)).height, lessThan(30));
+      }
+      // The close glyph heads the decision, clear of the table.
+      expect(
+        tester.getRect(find.byType(PaywallHeader)).left,
+        greaterThanOrEqualTo(table.right),
+      );
+      await dispose();
+    });
+  }
+
+  // Held upright the closed display is short: the table closes up so every
+  // row is in view over the pinned band without a scroll.
+  testWidgets('paywall on the closed display shows every row', (tester) async {
+    final dispose = await bootPose(tester, outerPortrait, '/paywall');
+    final safe = outerPortrait.padding.deflateRect(
+      Offset.zero & outerPortrait.size,
+    );
+    final last = tester.getRect(find.text('Groups & friends'));
+    final cta = tester.getRect(find.byType(PlanCta));
+    for (final rect in [last, cta]) {
+      expect(safe.contains(rect.topLeft), isTrue, reason: '$rect');
+      expect(safe.contains(rect.bottomRight), isTrue, reason: '$rect');
+    }
+    expect(last.overlaps(cta), isFalse);
+    expect(
+      tester.getRect(find.byType(PlanComparison)).bottom,
+      lessThanOrEqualTo(tester.getRect(find.byType(PaywallBuyBand)).top),
+    );
+    expectOneColumnEdge(tester);
+    await dispose();
+  });
+}
+
+/// The title, the toggle, the table and the buy button share one left edge
+/// and one right edge, and the close glyph's strokes, 6pt into its box, start
+/// on that left edge as they do on a phone.
+void expectOneColumnEdge(WidgetTester tester) {
+  final table = tester.getRect(find.byType(PlanComparison));
+  for (final piece in [
+    find.byType(PlanToggle),
+    find.byType(PlanCta),
+    find.text('Choose your plan'),
+  ]) {
+    final rect = tester.getRect(piece);
+    expect(rect.left, moreOrLessEquals(table.left), reason: '$piece');
+    expect(rect.right, moreOrLessEquals(table.right), reason: '$piece');
+  }
+  final glyph = tester.getRect(
+    find.descendant(
+      of: find.byType(PaywallHeader),
+      matching: find.byType(RichText),
+    ),
+  );
+  expect(glyph.left + 6, moreOrLessEquals(table.left));
 }

@@ -44,9 +44,8 @@ class StartScreen extends StatelessWidget {
   /// at 68 instead of 132. Everything those two moves gave back goes into the
   /// block's fill scale: the art got bigger, the promise-to-CTA gap did not
   /// move.
-  static const double _headerTop = StartHero.headerTop;
-  static const double _headerGap = StartHero.headerGap;
-  static const double _wordmarkHeight = StartHero.wordmarkHeight;
+  static const double _headerTop = 8;
+  static const double _headerGap = 16;
 
   /// The device card, so a layout test can measure what it actually got.
   static const Key previewKey = StartDevicePreview.previewKey;
@@ -82,7 +81,9 @@ class StartScreen extends StatelessWidget {
                         const SizedBox(
                           height: WordmarkBar.rowHeight,
                           child: Center(
-                            child: KalloWordmark(height: _wordmarkHeight),
+                            child: KalloWordmark(
+                              height: StartTask.wordmarkHeight,
+                            ),
                           ),
                         ),
                         const SizedBox(height: _headerGap),

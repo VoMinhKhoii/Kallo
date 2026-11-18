@@ -10,6 +10,7 @@ import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../providers/auth_form_controller.dart';
 import 'auth_controls.dart';
+import 'welcome/auth_brand_hero.dart';
 import 'welcome/auth_options.dart';
 import 'welcome/welcome_view.dart';
 
@@ -141,9 +142,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         widget.compact
             ? single
             // Beside the fold the start preview keeps the far pane, as it
-            // does through the whole signed-out flow, and the options centre
-            // beside it: the preview carries the wordmark, so they stand
-            // alone.
+            // does through the whole signed-out flow. The preview is the
+            // device alone, so the brand block stands directly over the
+            // options and the two centre as one group.
             : NarrativePanes(
               far: const StartHero(),
               near: SafeArea(
@@ -153,7 +154,14 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                     padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 420),
-                      child: options,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const AuthBrandHero(),
+                          const SizedBox(height: KalloSpacing.sp8),
+                          options,
+                        ],
+                      ),
                     ),
                   ),
                 ),

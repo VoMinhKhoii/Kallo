@@ -52,6 +52,12 @@ class EmailAuthScreen extends ConsumerStatefulWidget {
 }
 
 class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
+  /// Held tall, the fold crosses the window at half its height, and with the
+  /// form centred that line ran through "Send code". This much lower it falls
+  /// in the gap between the email field and the button instead. The extra
+  /// top padding is twice this because the form is centred in what is left.
+  static const double _foldNudge = 24;
+
   final _taskKey = GlobalKey();
   static final _provider = signInControllerProvider;
 
@@ -74,15 +80,14 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         SliverFillRemaining(
           hasScrollBody: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: kAuthInset,
-              vertical: KalloSpacing.sp5,
+            padding: EdgeInsets.fromLTRB(
+              kAuthInset,
+              KalloSpacing.sp5 +
+                  (WindowLayout.of(context).foldAcross ? 2 * _foldNudge : 0),
+              kAuthInset,
+              KalloSpacing.sp5,
             ),
             child: Align(
-              alignment:
-                  WindowLayout.of(context).foldAcross
-                      ? Alignment.bottomCenter
-                      : Alignment.center,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child:
@@ -115,8 +120,6 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                       horizontal: WordmarkBar.rowInset,
                     ),
                     child: WordmarkBar(
-                      // The preview beside it already carries the mark.
-                      showMark: !WindowLayout.of(context).twoPane,
                       leading: AuthBackButton(
                         onBack: state.busy ? null : _back,
                       ),
@@ -141,6 +144,11 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       NarrativePanes(far: const StartHero(), near: column, single: column);
 
   Widget _form(AuthFormState state) {
+    // A window this short (a phone or the closed Duo on its side) cannot show
+    // the form down to Google. The subtitle is the one line it can lose, and
+    // the seams around the form close up the last few points.
+    final short = WindowLayout.of(context).compactHeight;
+    final seam = SizedBox(height: short ? KalloSpacing.sp3 : KalloSpacing.sp5);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -153,18 +161,20 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
               : tr('auth.dialog.signInTitle'),
           style: kPageTitle(),
         ),
-        const SizedBox(height: KalloSpacing.sp2),
-        Text(
-          widget.createAccount
-              ? tr('auth.dialog.signUpSubtitle')
-              : tr('auth.dialog.signInSubtitle'),
-          style: dashBody(color: kInkMuted),
-        ),
-        const SizedBox(height: KalloSpacing.sp5),
+        if (!short) ...[
+          const SizedBox(height: KalloSpacing.sp2),
+          Text(
+            widget.createAccount
+                ? tr('auth.dialog.signUpSubtitle')
+                : tr('auth.dialog.signInSubtitle'),
+            style: dashBody(color: kInkMuted),
+          ),
+        ],
+        seam,
         EmailAuthForm(provider: _provider),
-        const SizedBox(height: KalloSpacing.sp5),
+        seam,
         const _OrDivider(),
-        const SizedBox(height: KalloSpacing.sp5),
+        seam,
         // The same two social options the welcome face offers, on the same
         // controller — so nobody has to go back to reach them.
         AppleButton(busy: state.busy, onPressed: _controller.signInWithApple),

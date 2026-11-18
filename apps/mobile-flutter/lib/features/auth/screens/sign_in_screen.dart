@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/brand/wordmark_bar.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
 import '../../../shell/header/app_header_back_button.dart';
 import '../../../shell/nav/nav_actions.dart';
 import '../../../theme/kallo_colors.dart';
@@ -36,25 +37,32 @@ class SignInScreen extends StatelessWidget {
         children: [
           const AuthPage(),
           if (canGoBack)
-            SafeArea(
-              minimum: EdgeInsets.only(
-                top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
-              ),
-              child: Padding(
-                // The gutter every other back chevron in the flow stands on,
-                // so the glyph does not move between `/start` and here.
-                padding: const EdgeInsets.only(left: WordmarkBar.rowInset),
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: AppHeaderBackButton(
-                    onBack:
-                        () => popOr(context, (router) => router.go('/start')),
-                  ),
-                ),
-              ),
+            // Beside the fold the chevron belongs to the column it pops, as
+            // the email screen's does, and the preview opposite stays bare.
+            NarrativePanes(
+              far: const SizedBox.shrink(),
+              near: _back(context),
+              single: _back(context),
             ),
         ],
       ),
     );
   }
+
+  Widget _back(BuildContext context) => SafeArea(
+    minimum: EdgeInsets.only(
+      top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+    ),
+    child: Padding(
+      // The gutter every other back chevron in the flow stands on, so the
+      // glyph does not move between `/start` and here.
+      padding: const EdgeInsets.only(left: WordmarkBar.rowInset),
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: AppHeaderBackButton(
+          onBack: () => popOr(context, (router) => router.go('/start')),
+        ),
+      ),
+    ),
+  );
 }

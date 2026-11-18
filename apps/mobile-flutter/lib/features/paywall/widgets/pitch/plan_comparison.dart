@@ -16,34 +16,48 @@ import 'plan_comparison_row.dart';
 /// verticals however long a label runs, and the label column takes whatever
 /// is left rather than the columns flexing under it.
 class PlanComparison extends StatelessWidget {
-  const PlanComparison({this.availableWidth, super.key});
+  const PlanComparison({this.availableWidth, this.dense = false, super.key});
 
   /// The pitch host supplies its constrained table width because its sliver
   /// queries intrinsic height, which LayoutBuilder cannot answer.
   final double? availableWidth;
 
+  /// Set when the host is too short for all eight rows at their regular
+  /// height: the rows and the card's own padding close up, the type does not
+  /// change.
+  final bool dense;
+
   @override
   Widget build(BuildContext context) =>
       availableWidth != null
-          ? _table(availableWidth!)
+          ? _table(context, availableWidth!)
           : LayoutBuilder(
-            builder: (context, constraints) => _table(constraints.maxWidth),
+            builder:
+                (context, constraints) => _table(context, constraints.maxWidth),
           );
 
-  Widget _table(double width) {
+  Widget _table(BuildContext context, double width) {
     final rows = compareRows();
     final roomy = width >= ComparisonColumns.roomyWidth;
+    // Too narrow for every label on one line: the label column gets what
+    // the two narrow columns do not need, and the card's sides close up.
+    final narrow = width < ComparisonColumns.unwrappedWidth;
+    final columns =
+        narrow
+            ? ComparisonColumns.fitted(context, rows, roomy: roomy)
+            : ComparisonColumns.fixed;
+    final side = narrow ? KalloSpacing.sp3 : KalloSpacing.sp4;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: kCardSurface,
         borderRadius: BorderRadius.circular(kCardRadius),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          KalloSpacing.sp4,
-          KalloSpacing.sp1_5,
-          KalloSpacing.sp4,
-          KalloSpacing.sp4,
+        padding: EdgeInsets.fromLTRB(
+          side,
+          dense ? KalloSpacing.sp0_5 : KalloSpacing.sp1_5,
+          side,
+          dense ? KalloSpacing.sp2 : KalloSpacing.sp4,
         ),
         // Given more height than it needs (the paywall hands it the rest of
         // the screen), the table spreads its rows rather than leaving a void
@@ -52,10 +66,15 @@ class PlanComparison extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _header(roomy),
+            _header(roomy, columns),
             for (var i = 0; i < rows.length; i++) ...[
               if (i > 0) _rule,
-              PlanComparisonRow(row: rows[i], roomy: roomy),
+              PlanComparisonRow(
+                row: rows[i],
+                roomy: roomy,
+                dense: dense,
+                columns: columns,
+              ),
             ],
           ],
         ),
@@ -73,22 +92,22 @@ class PlanComparison extends StatelessWidget {
 
   /// The two column names. Pro is ink and semibold, Free is muted — the
   /// column heads carry the ranking so the rows below them do not have to.
-  Widget _header(bool roomy) => Container(
+  Widget _header(bool roomy, ColumnWidths columns) => Container(
     // A MINIMUM, never a fixed height: at 26 exactly, a heading that wrapped
     // had its second line clipped instead of pushing the row open.
-    constraints: const BoxConstraints(minHeight: 26),
+    constraints: BoxConstraints(minHeight: dense ? 20 : 26),
     alignment: Alignment.bottomCenter,
     child: Row(
       children: [
         const Spacer(),
         _head(
           tr('paywall.columnFree'),
-          ComparisonColumns.freeColumn,
+          columns.free,
           ComparisonColumns.small(roomy),
         ),
         _head(
           tr('paywall.columnPro'),
-          ComparisonColumns.proColumn,
+          columns.pro,
           ComparisonColumns.small(roomy, color: kInk, weight: FontWeight.w600),
         ),
       ],

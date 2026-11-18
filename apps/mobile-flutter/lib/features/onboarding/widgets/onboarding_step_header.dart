@@ -24,7 +24,6 @@ class OnboardingStepHeader extends StatelessWidget {
     this.onSkip,
     this.skipLabel,
     this.gutter = KalloSpacing.sp6,
-    this.showMark = true,
   });
 
   /// 1-based; the bar fills `step / total`.
@@ -47,9 +46,6 @@ class OnboardingStepHeader extends StatelessWidget {
   /// the title below it starts on.
   final double gutter;
 
-  /// [WordmarkBar.showMark].
-  final bool showMark;
-
   static const double barHeight = 4;
   static const double wordmarkHeight = WordmarkBar.wordmarkHeight;
 
@@ -59,7 +55,6 @@ class OnboardingStepHeader extends StatelessWidget {
     children: [
       WordmarkBar(
         gutterInset: WordmarkBar.rowInset,
-        showMark: showMark,
         leading: onBack == null ? null : _back(context),
         trailing:
             onSkip == null || skipLabel == null

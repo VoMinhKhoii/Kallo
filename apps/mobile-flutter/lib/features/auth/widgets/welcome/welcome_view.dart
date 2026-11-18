@@ -1,7 +1,5 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import 'auth_brand_hero.dart';
 
@@ -33,20 +31,11 @@ class WelcomeView extends StatelessWidget {
       key: const ValueKey('welcome'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
+        const Expanded(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const AuthBrandHero(),
-              const SizedBox(height: KalloSpacing.sp2),
-              // One quiet muted line: the wordmark is the headline here.
-              Text(
-                tr('auth.welcome.tagline'),
-                textAlign: TextAlign.center,
-                style: dashBody(color: kInkMuted),
-              ),
-            ],
+            children: [AuthBrandHero()],
           ),
         ),
         // The least the brand block keeps from the buttons on a short phone,

@@ -4,7 +4,6 @@ import 'narrative/onboarding_answer.dart';
 
 import '../../../shared/widgets/mascot/bun_mascot.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
-import '../../../shell/window/window_layout.dart';
 import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/constants.dart';
@@ -125,8 +124,6 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                             onSkip: onSkip,
                             skipLabel:
                                 onSkip == null ? null : tr('common.skip'),
-                            // The preview beside it already carries the mark.
-                            showMark: !WindowLayout.of(context).twoPane,
                           ),
                           const SizedBox(height: KalloSpacing.sp3),
                           Expanded(

@@ -205,13 +205,24 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
     and the task beside the column. Circle and Settings show list and detail
     (`detail_pane_route.dart`): the route is the same in every window, so a thread that
     sits beside the feed when open is pushed over it once the phone is closed. The signed-out
-    flow (`/start`, sign-in, email sign-in, every onboarding step, `/save-plan`) keeps
-    one thing on the far side from its first screen to its last: the start preview, the
-    wordmark over the device and its dishes (`features/onboarding/widgets/start/start_hero.dart`).
-    The near pane is the screen's own column, as on a phone, without a second wordmark.
-    The preview is a `Hero`, so it stands still while a route is pushed beside it. The
-    paywall is the exception: its table is one half and the title, the plan toggle and
-    the buttons the other, centred on one height (`narrative_panes.dart`).
+    flow (`/start`, sign-in, email sign-in, every onboarding step, `/save-plan`) and the
+    paywall at its end keep one thing on the far side from the first screen to the last:
+    the start preview, the device and its dishes with no wordmark
+    (`features/onboarding/widgets/start/start_hero.dart`). The near pane is the screen's
+    own column, as on a phone, and wears the wordmark: the bar at the top of the email,
+    onboarding and `/save-plan` columns and the paywall, the brand block over the options
+    on sign-in, the mark over the title on `/start`. The preview is a `Hero`, so it
+    stands still while a route is pushed beside it.
+  - *Wide and short.* A window under 500pt tall with at least 560pt of safe width (the
+    closed display or a phone on its side, the inner display under a pinned video) puts
+    the paywall's table on one side and the header, the title, the plan toggle and the
+    buttons on the other, because stacked the pinned buttons covered the whole table
+    (`features/paywall/widgets/paywall_split.dart`). Each paywall column shares one
+    gutter, close glyph and buttons included (`paywall_gutter.dart`). In the same kind of
+    window, with room for all four at full size, Today draws the calorie dial and the
+    three macro dials in one row (`features/dashboard/widgets/today/today_dials.dart`).
+    The Log header uses the same row (`MacroDialRow` with `leading`), where every dial
+    gets the same inset so the gaps between the four arcs are equal.
   - *One bounded column.* A wide window with no control column (the inner display held
     tall, or any phone on its side) keeps each page in a centred 560pt column
     (`page_column.dart`). Held tall, the fold crosses the middle of the window

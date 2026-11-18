@@ -10,18 +10,33 @@ import 'comparison_columns.dart';
 /// One row of the table. Its own widget so the row's height is set by its own
 /// content — a label that wraps in Vietnamese grows only its own line.
 class PlanComparisonRow extends StatelessWidget {
-  const PlanComparisonRow({super.key, required this.row, required this.roomy});
+  const PlanComparisonRow({
+    super.key,
+    required this.row,
+    required this.roomy,
+    required this.dense,
+    required this.columns,
+  });
 
   final CompareRow row;
 
   /// See [ComparisonColumns.roomyWidth].
   final bool roomy;
 
+  /// The table is short of height: a 24pt floor instead of 30, which still
+  /// clears a 14pt line with air above and below.
+  final bool dense;
+
+  /// The Free and Premium widths the table chose, shared by every row.
+  final ColumnWidths columns;
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 30),
-      padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp1),
+      constraints: BoxConstraints(minHeight: dense ? 24 : 30),
+      padding: EdgeInsets.symmetric(
+        vertical: dense ? KalloSpacing.sp0_5 : KalloSpacing.sp1,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -41,8 +56,8 @@ class PlanComparisonRow extends StatelessWidget {
               ),
             ),
           ),
-          _cell(row.free, pro: false, width: ComparisonColumns.freeColumn),
-          _cell(row.pro, pro: true, width: ComparisonColumns.proColumn),
+          _cell(row.free, pro: false, width: columns.free),
+          _cell(row.pro, pro: true, width: columns.pro),
         ],
       ),
     );

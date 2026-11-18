@@ -5,6 +5,7 @@ import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/plan_offer.dart';
+import '../paywall_gutter.dart';
 import 'gold_surface.dart';
 import 'paywall_consent.dart';
 import 'plan_cta.dart';
@@ -21,8 +22,9 @@ import 'plan_cta.dart';
 /// instead of running under it, so nothing but the canvas ever sits behind
 /// the savings chip hanging off the button.
 ///
-/// Beside the fold it is one half of the screen instead: it carries the title
-/// and the toggle as its [head] and centres on the table's height.
+/// In a short, wide window it is one side of the screen instead (see
+/// `PaywallSplit`): it carries the title and the toggle as its [head] and
+/// centres on the window's height beside the table.
 ///
 /// It takes the [offer] whole rather than the five strings inside it: those
 /// five must agree with each other, and `plan_offer.dart` is where they are
@@ -53,8 +55,8 @@ class PaywallBuyBand extends StatelessWidget {
   /// secondary button. Null on every other face.
   final PaywallWelcome? welcome;
 
-  /// Beside the fold, what stands over the button: the guide, the title and
-  /// the period toggle, which a single column keeps above the table instead.
+  /// Beside the table, what stands over the button: the title and the period
+  /// toggle, which a single column keeps above the table instead.
   final Widget? head;
   final bool opaque;
 
@@ -74,11 +76,10 @@ class PaywallBuyBand extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
-          (opaque ? KalloSpacing.sp5 : KalloSpacing.sp6) +
-              MediaQuery.viewPaddingOf(context).left,
+          // The column's own gutter, so the buttons share the table's edges.
+          PaywallGutter.of(context) + MediaQuery.viewPaddingOf(context).left,
           topInset,
-          (opaque ? KalloSpacing.sp5 : KalloSpacing.sp6) +
-              MediaQuery.viewPaddingOf(context).right,
+          PaywallGutter.of(context) + MediaQuery.viewPaddingOf(context).right,
           // The band owns the bottom edge, so the home indicator is its inset.
           KalloSpacing.sp6 + MediaQuery.viewPaddingOf(context).bottom,
         ),
