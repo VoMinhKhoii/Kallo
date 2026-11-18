@@ -76,18 +76,7 @@ export async function verifyUser(
   const claims = data?.claims;
   if (!claims?.sub || typeof claims.session_id !== 'string') return null;
 
-  const rows = await database.execute<SessionUserRow>(sql`
-    SELECT u.id, u.email, u.raw_user_meta_data, u.created_at, u.last_sign_in_at
-    FROM auth.sessions s
-    JOIN auth.users u ON u.id = s.user_id
-    WHERE s.id = ${claims.session_id}::uuid
-      AND s.user_id = ${claims.sub}::uuid
-      AND (s.not_after IS NULL OR s.not_after > now())
-      AND (u.banned_until IS NULL OR u.banned_until <= now())
-      AND u.deleted_at IS NULL
-    LIMIT 1
-  `);
-  const row = rows[0];
+  const row = await liveSessionUser(database, claims.session_id, claims.sub);
   if (!row) {
     // The session was revoked or its user removed. Drop the stored session
     // (the cookies, on web), as `getUser()` did when the Auth server answered
@@ -105,6 +94,64 @@ export async function verifyUser(
       ? new Date(row.last_sign_in_at).toISOString()
       : null,
   };
+}
+
+/**
+ * In-flight session lookups, shared by every request checking the same session
+ * at the same moment. The phone app opens with about seven calls at once; each
+ * used to send this same query, and under that burst the small database box
+ * answered it in 50-90 ms instead of 6 (Sentry, 2026-11-18). Now one query
+ * answers all of them. Nothing outlives the answer: the entry is dropped when
+ * the query settles, so the next request asks again and a revoked session
+ * still stops working at once. Kept on globalThis because concurrent requests
+ * to different routes may run in different bundled copies of this module.
+ */
+type SessionLookups = WeakMap<
+  Database,
+  Map<string, Promise<SessionUserRow | undefined>>
+>;
+const LOOKUPS_KEY = Symbol.for('kallo.auth.sessionLookups');
+function sessionLookups(): SessionLookups {
+  const store = globalThis as typeof globalThis & {
+    [LOOKUPS_KEY]?: SessionLookups;
+  };
+  store[LOOKUPS_KEY] ??= new WeakMap();
+  return store[LOOKUPS_KEY];
+}
+
+function liveSessionUser(
+  database: Database,
+  sessionId: string,
+  userId: string
+): Promise<SessionUserRow | undefined> {
+  const byDatabase = sessionLookups();
+  let pending = byDatabase.get(database);
+  if (!pending) {
+    pending = new Map();
+    byDatabase.set(database, pending);
+  }
+  const key = `${sessionId}:${userId}`;
+  const running = pending.get(key);
+  if (running) return running;
+
+  const lookup = database
+    .execute<SessionUserRow>(sql`
+      SELECT u.id, u.email, u.raw_user_meta_data, u.created_at, u.last_sign_in_at
+      FROM auth.sessions s
+      JOIN auth.users u ON u.id = s.user_id
+      WHERE s.id = ${sessionId}::uuid
+        AND s.user_id = ${userId}::uuid
+        AND (s.not_after IS NULL OR s.not_after > now())
+        AND (u.banned_until IS NULL OR u.banned_until <= now())
+        AND u.deleted_at IS NULL
+      LIMIT 1
+    `)
+    .then((rows) => rows[0])
+    .finally(() => {
+      pending.delete(key);
+    });
+  pending.set(key, lookup);
+  return lookup;
 }
 
 /** The old path, kept for tokens auth-js cannot decode locally (rare). */
