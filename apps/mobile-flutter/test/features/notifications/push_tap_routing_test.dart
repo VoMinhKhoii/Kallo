@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/features/circle/data/feed_providers.dart';
+import 'package:kallo_mobile/features/logging/data/handoff_slots.dart';
 import 'package:kallo_mobile/features/notifications/logic/push_tap_routing.dart';
 import 'package:kallo_mobile/router.dart';
+import 'package:kallo_mobile/shared/logic/display_format.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -118,6 +120,31 @@ void main() {
       );
     });
 
+    test('a reminder opens logging on the day it is about', () {
+      expect(
+        pushDestinationFor({
+          'type': 'reminder.yesterday',
+          'date': '2026-11-03',
+          'checkpoint': '8',
+        }),
+        const PushDestination(path: '/logging', loggingDay: '2026-11-03'),
+      );
+      expect(
+        pushDestinationFor({
+          'type': 'reminder.checkpoint',
+          'date': '2026-11-04',
+        }),
+        const PushDestination(path: '/logging', loggingDay: '2026-11-04'),
+      );
+    });
+
+    test('a reminder with a malformed day opens logging on today', () {
+      expect(
+        pushDestinationFor({'type': 'reminder.checkpoint', 'date': 'soon'}),
+        PushDestination(path: '/logging', loggingDay: todayDateString()),
+      );
+    });
+
     test('unknown, reserved and missing types route nowhere', () {
       expect(pushDestinationFor(const {}), isNull);
       expect(pushDestinationFor({'type': 'coach.nudge'}), isNull);
@@ -146,6 +173,7 @@ void main() {
           builder: (_, __) => const SizedBox.shrink(),
         ),
         GoRoute(path: '/circle', builder: (_, __) => const SizedBox.shrink()),
+        GoRoute(path: '/logging', builder: (_, __) => const SizedBox.shrink()),
         GoRoute(
           path: '/circle/:shareId',
           builder: (_, __) => const SizedBox.shrink(),
@@ -181,6 +209,29 @@ void main() {
       expect(locationOf(router), '/circle');
       // A shell branch is a branch SWITCH, so there is nothing stacked over it.
       expect(router.canPop(), isFalse);
+    });
+
+    testWidgets('a reminder tap parks its day and opens logging over Today', (
+      tester,
+    ) async {
+      final router = testRouter();
+      addTearDown(router.dispose);
+      final container = containerWith(router);
+      container.read(circleSelectedViewProvider.notifier).state = 'g-1';
+      await pump(tester, router);
+
+      routePushTap(container, {
+        'type': 'reminder.yesterday',
+        'date': '2026-11-03',
+      });
+      await tester.pumpAndSettle();
+
+      expect(container.read(pendingLoggingDayProvider), '2026-11-03');
+      expect(locationOf(router), '/logging');
+      // Back returns to the dashboard underneath.
+      expect(router.canPop(), isTrue);
+      // Circle's own selection is not a reminder's business.
+      expect(container.read(circleSelectedViewProvider), 'g-1');
     });
 
     testWidgets('a share tap clears nothing and lands on circle', (

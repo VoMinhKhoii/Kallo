@@ -1976,6 +1976,10 @@
       "friendsLabel": "{count} friends in your circle",
       "editProfile": "Edit profile",
       "editCircle": "Edit circle"
+    },
+    "reminders": {
+      "label": "Meal reminders",
+      "error": "Couldn't update meal reminders"
     }
   },
   "errors": {
@@ -2078,5 +2082,13 @@
     "consentPrivacy": "Privacy Policy",
     "premiumChip": "Premium",
     "premiumFeature": "Premium feature"
+  },
+  "notifications": {
+    "reminderActions": {
+      "addToYesterday": "Add to yesterday",
+      "logMeal": "Log a meal",
+      "logMore": "Log more",
+      "closeDay": "That was everything"
+    }
   }
 }

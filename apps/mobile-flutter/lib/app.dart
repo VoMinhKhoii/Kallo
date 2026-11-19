@@ -20,6 +20,7 @@ import 'shell/kallo_app_theme.dart';
 import 'shell/launch/launch_curtain.dart';
 import 'shell/launch/route_settled.dart';
 import 'theme/theme_controller.dart';
+import 'features/notifications/logic/reminder_categories.dart';
 
 /// Root app widget — the mobile counterpart of web `app/[locale]/layout.tsx`.
 ///
@@ -127,7 +128,11 @@ class _NhamAppState extends ConsumerState<KalloApp>
                 // words rather than keys; writes the day for the home-screen
                 // widget and routes its tap.
                 child: TodayWidgetSync(
-                  child: LaunchCurtain(ready: launchReady, child: child!),
+                  // Below the localizations, so the reminder buttons are
+                  // registered with real titles (see [ReminderCategories]).
+                  child: ReminderCategories(
+                    child: LaunchCurtain(ready: launchReady, child: child!),
+                  ),
                 ),
               ),
           // easy_localization wiring (locale source of truth lives on the

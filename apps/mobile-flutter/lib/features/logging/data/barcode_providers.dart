@@ -11,6 +11,7 @@ import '../../../models/nutrition/barcode_product.dart';
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 import '../../../models/http/api_error.dart';
+import '../../../services/push/ask_after_save.dart';
 
 /// Where the sheet is in the scan → search → quantity → save flow.
 enum BarcodeFlowPhase { scanning, searching, product, saving }
@@ -173,6 +174,7 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
     // The meal COMMITTED the moment the POST returned, so nothing below may
     // turn a saved meal into a failed save — [settleAfterMealWrite] sits
     // outside the try that owns the return value and never throws.
+    askForNotificationsAfterSave(ref.read);
     await settleAfterMealWrite(
       ref.read,
       ref.invalidate,
