@@ -7,13 +7,19 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockRequireUserId, mockReadJsonBody, mockInsert, mockDelete } =
-  vi.hoisted(() => ({
-    mockRequireUserId: vi.fn(),
-    mockReadJsonBody: vi.fn(),
-    mockInsert: vi.fn(),
-    mockDelete: vi.fn(),
-  }));
+const {
+  mockRequireUserId,
+  mockReadJsonBody,
+  mockInsert,
+  mockDelete,
+  mockUpdateSet,
+} = vi.hoisted(() => ({
+  mockRequireUserId: vi.fn(),
+  mockReadJsonBody: vi.fn(),
+  mockInsert: vi.fn(),
+  mockDelete: vi.fn(),
+  mockUpdateSet: vi.fn(),
+}));
 
 vi.mock('@/lib/api/auth', () => ({
   requireUserId: mockRequireUserId,
@@ -28,6 +34,12 @@ vi.mock('@/lib/infra/db/client', () => ({
         execute: vi.fn(),
         insert: mockInsert,
         delete: () => ({ where: vi.fn().mockResolvedValue(undefined) }),
+        update: () => ({
+          set: (values: unknown) => {
+            mockUpdateSet(values);
+            return { where: vi.fn().mockResolvedValue(undefined) };
+          },
+        }),
         select: () => {
           const query = {
             from: () => query,
@@ -102,6 +114,37 @@ describe('POST /api/v1/notifications/push-tokens', () => {
     expect(conflict.set.userId).toBe(USER);
     expect(conflict.set.platform).toBe('ios');
     expect(conflict.set.lastSeenAt).toBeInstanceOf(Date);
+  });
+
+  it('stores the reported time zone for the reminder clock', async () => {
+    mockReadJsonBody.mockResolvedValue({
+      token: TOKEN,
+      platform: 'ios',
+      timeZone: 'Asia/Ho_Chi_Minh',
+    });
+    capturingInsert();
+
+    const response = await POST({} as never);
+
+    expect(response.status).toBe(200);
+    expect(mockUpdateSet).toHaveBeenCalledWith({
+      timeZone: 'Asia/Ho_Chi_Minh',
+    });
+  });
+
+  it('still registers when the time zone is unknown, and leaves the stored one alone', async () => {
+    mockReadJsonBody.mockResolvedValue({
+      token: TOKEN,
+      platform: 'ios',
+      timeZone: 'Mars/Olympus',
+    });
+    const captured = capturingInsert();
+
+    const response = await POST({} as never);
+
+    expect(response.status).toBe(200);
+    expect(captured.values).toMatchObject({ token: TOKEN });
+    expect(mockUpdateSet).not.toHaveBeenCalled();
   });
 
   it('rejects an unsupported platform before touching the database', async () => {

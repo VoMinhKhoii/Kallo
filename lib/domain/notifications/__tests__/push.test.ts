@@ -13,13 +13,16 @@ vi.mock('server-only', () => ({}));
 // key-echoing double would make every asserted body a key.
 vi.unmock('next-intl');
 
-const { mockSelect, mockDelete, mockAssertRateLimit } = vi.hoisted(() => ({
-  mockSelect: vi.fn(),
-  mockDelete: vi.fn(),
-  mockAssertRateLimit: vi.fn(),
-}));
+const { mockSelect, mockDelete, mockUpdate, mockAssertRateLimit } = vi.hoisted(
+  () => ({
+    mockSelect: vi.fn(),
+    mockDelete: vi.fn(),
+    mockUpdate: vi.fn(),
+    mockAssertRateLimit: vi.fn(),
+  })
+);
 vi.mock('@/lib/infra/db/client', () => ({
-  db: { select: mockSelect, delete: mockDelete },
+  db: { select: mockSelect, delete: mockDelete, update: mockUpdate },
 }));
 // The global fan-out budget (`pushGlobalHourly`) admits by default here; one
 // case rejects it to prove the fan-out is SKIPPED (not blocked, never thrown).
@@ -127,6 +130,9 @@ describe('sendNotificationPush', () => {
     mockAssertRateLimit.mockReset();
     mockDelete.mockImplementation(() => ({
       where: vi.fn().mockResolvedValue(undefined),
+    }));
+    mockUpdate.mockImplementation(() => ({
+      set: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) })),
     }));
   });
 
@@ -480,6 +486,39 @@ describe('sendNotificationPush', () => {
     );
 
     expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it('stamps last_pushed_at on the devices APNs accepted, for the reminder spacing gate', async () => {
+    queueSelects(
+      [
+        { userId: OWNER, token: 'live' },
+        { userId: OWNER, token: 'failed' },
+      ],
+      [{ userId: OWNER, preferredLocale: 'en' }]
+    );
+    const sets: unknown[] = [];
+    mockUpdate.mockImplementation(() => ({
+      set: vi.fn((values: unknown) => {
+        sets.push(values);
+        return { where: vi.fn().mockResolvedValue(undefined) };
+      }),
+    }));
+    const { sender } = fakeSender((messages) =>
+      messages.map((message) => ({
+        token: message.token,
+        ok: message.token === 'live',
+        shouldPrune: false,
+      }))
+    );
+
+    await sendNotificationPush(
+      [OWNER],
+      { type: 'share.reply', actor: { id: FRIEND } },
+      sender
+    );
+
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    expect(sets).toEqual([{ lastPushedAt: expect.any(Date) }]);
   });
 
   it('swallows a sender failure — push must never fail the request', async () => {

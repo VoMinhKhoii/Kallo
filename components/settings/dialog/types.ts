@@ -3,7 +3,10 @@ import type { SettingsPageId } from '@/lib/domain/settings/pages';
 import type { ProfileInput } from '@/lib/domain/settings/profile-form';
 
 /** The profile row as the dialog reads it, or null before onboarding. */
-export type SettingsProfile = ProfileInput & { autoShareToCircle: boolean };
+export type SettingsProfile = ProfileInput & {
+  autoShareToCircle: boolean;
+  mealRemindersEnabled: boolean;
+};
 
 export interface SettingsAccount {
   userId: string;

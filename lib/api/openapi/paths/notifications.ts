@@ -141,7 +141,7 @@ export const NOTIFICATION_PATHS: Record<string, PathItem> = {
       operationId: 'registerPushToken',
       summary: 'Register a device for push',
       description:
-        'Registers (or refreshes) an APNs device token for the caller. iOS only — APNs is the sole push transport, so `platform` must be `ios`. Idempotent — post it on every launch and on every token refresh. A token already registered to another account is reassigned to the caller, because the OS hands the same string to whoever signs in on that device next.',
+        'Registers (or refreshes) an APNs device token for the caller. iOS only — APNs is the sole push transport, so `platform` must be `ios`. Idempotent — post it on every launch, on every token refresh and on every return to the foreground: the refresh is the "opened the app" signal meal reminders read. `timeZone` (IANA, e.g. `Asia/Ho_Chi_Minh`) sets the clock reminders run on; an unknown zone is ignored rather than rejected. A token already registered to another account is reassigned to the caller, because the OS hands the same string to whoever signs in on that device next.',
       tags: TAGS,
       body: fromZod(pushTokenBodySchema),
       ok: {

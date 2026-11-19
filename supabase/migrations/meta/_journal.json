@@ -687,6 +687,13 @@
       "when": 1793647095239,
       "tag": "20261102191800_add_friend_removals_and_released_handles",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1793767736023,
+      "tag": "20261104044856_add_meal_reminders",
+      "breakpoints": true
     }
   ]
 }
