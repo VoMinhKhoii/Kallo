@@ -155,4 +155,24 @@ describe('normalizeMacroCardOcr', () => {
     expect(parsed.perServing.carbsGrams).toBe(44);
     expect(parsed.perServing.fatGrams).toBe(5);
   });
+
+  it('accepts energy-only restaurant/smoothie cards with all macros null', () => {
+    const energyOnlyRaw: RawMacroCardOcr = {
+      cardDetected: true,
+      itemName: 'loaded chicken miso soup',
+      evidence: 'loaded chicken miso soup 137 kcal',
+      calories: { value: '137', unit: 'kcal' },
+      proteinGrams: null,
+      carbsGrams: null,
+      fatGrams: null,
+      confidence: 'high',
+    };
+    const parsed = normalizeMacroCardOcr(energyOnlyRaw);
+    expect(parsed.basis).toBe('per_serving');
+    if (parsed.basis !== 'per_serving') return;
+    expect(parsed.perServing.calories).toBe(137);
+    expect(parsed.perServing.proteinGrams).toBeNull();
+    expect(parsed.perServing.carbsGrams).toBeNull();
+    expect(parsed.perServing.fatGrams).toBeNull();
+  });
 });

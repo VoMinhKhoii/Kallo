@@ -14,8 +14,8 @@ import {
   parsePrintedNumber,
 } from '@/lib/domain/nutrition/ocr/printed-units';
 import {
+  macroCardScanSchema,
   type NutritionValues,
-  nutritionLabelScanSchema,
   type OcrConfidence,
   type ParsedNutritionLabel,
 } from '@/lib/domain/nutrition/ocr/schema';
@@ -163,7 +163,7 @@ export function normalizeMacroCardOcr(
     perServing,
   };
 
-  const parsed = nutritionLabelScanSchema.safeParse(candidate);
+  const parsed = macroCardScanSchema.safeParse(candidate);
   if (!parsed.success) {
     throw new NutritionLabelOcrError('no_label_detected');
   }
