@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { Button } from '@/components/ui/button';
+import { NUTRITION_CAST } from '@/lib/brand/illustrations/casts/nutrition';
 
 /**
  * What stands in for the nutrient grid when micronutrients are Premium-locked:
@@ -19,7 +20,7 @@ export function MicronutrientsLockedCard({
 
   return (
     <SurfaceState
-      area="nutrition"
+      cast={NUTRITION_CAST}
       kind="locked"
       title={t('title')}
       subtitle={t('subtitle')}

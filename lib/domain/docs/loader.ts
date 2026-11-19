@@ -37,18 +37,23 @@ const VI_DOCS: DocRegistry = {
   quickstart: () => import('@/content/docs/vi/quickstart.mdx'),
   'profile-and-targets': () =>
     import('@/content/docs/vi/profile-and-targets.mdx'),
+  switching: () => import('@/content/docs/vi/switching.mdx'),
   'logging/describe-a-meal': () =>
     import('@/content/docs/vi/logging/describe-a-meal.mdx'),
   'logging/cheat-mode': () =>
     import('@/content/docs/vi/logging/cheat-mode.mdx'),
   'logging/manual': () => import('@/content/docs/vi/logging/manual.mdx'),
   'logging/barcode': () => import('@/content/docs/vi/logging/barcode.mdx'),
+  'logging/nutrition-label': () =>
+    import('@/content/docs/vi/logging/nutrition-label.mdx'),
   'logging/relog': () => import('@/content/docs/vi/logging/relog.mdx'),
   'tracking/dashboard': () =>
     import('@/content/docs/vi/tracking/dashboard.mdx'),
   'tracking/weight': () => import('@/content/docs/vi/tracking/weight.mdx'),
   'tracking/nutrition': () =>
     import('@/content/docs/vi/tracking/nutrition.mdx'),
+  'tracking/nutrient-targets': () =>
+    import('@/content/docs/vi/tracking/nutrient-targets.mdx'),
   'circle/friends-and-feed': () =>
     import('@/content/docs/vi/circle/friends-and-feed.mdx'),
   'circle/groups-and-chats': () =>
@@ -75,18 +80,23 @@ const EN_DOCS: DocRegistry = {
   quickstart: () => import('@/content/docs/en/quickstart.mdx'),
   'profile-and-targets': () =>
     import('@/content/docs/en/profile-and-targets.mdx'),
+  switching: () => import('@/content/docs/en/switching.mdx'),
   'logging/describe-a-meal': () =>
     import('@/content/docs/en/logging/describe-a-meal.mdx'),
   'logging/cheat-mode': () =>
     import('@/content/docs/en/logging/cheat-mode.mdx'),
   'logging/manual': () => import('@/content/docs/en/logging/manual.mdx'),
   'logging/barcode': () => import('@/content/docs/en/logging/barcode.mdx'),
+  'logging/nutrition-label': () =>
+    import('@/content/docs/en/logging/nutrition-label.mdx'),
   'logging/relog': () => import('@/content/docs/en/logging/relog.mdx'),
   'tracking/dashboard': () =>
     import('@/content/docs/en/tracking/dashboard.mdx'),
   'tracking/weight': () => import('@/content/docs/en/tracking/weight.mdx'),
   'tracking/nutrition': () =>
     import('@/content/docs/en/tracking/nutrition.mdx'),
+  'tracking/nutrient-targets': () =>
+    import('@/content/docs/en/tracking/nutrient-targets.mdx'),
   'circle/friends-and-feed': () =>
     import('@/content/docs/en/circle/friends-and-feed.mdx'),
   'circle/groups-and-chats': () =>

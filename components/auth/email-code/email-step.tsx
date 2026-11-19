@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
+import * as z from 'zod/mini';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { TurnstileField } from '@/components/auth/email-code/turnstile-field';
 import { FormInput } from '@/components/auth/form-input';
@@ -25,7 +25,8 @@ import { createClient } from '@/lib/infra/supabase/client';
 export function EmailStep() {
   const t = useTranslations('auth.emailCode');
   const locale = useLocale();
-  const { next, showCode, turnstileSiteKey } = useAuthDialog();
+  const { next, showCode, turnstileSiteKey, requestConfigPending } =
+    useAuthDialog();
   const turnstile = useTurnstile(turnstileSiteKey, locale);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -36,10 +37,13 @@ export function EmailStep() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { email: '' },
+    // The button stays held until the address is complete, which also blocks
+    // Enter, so leaving the field is what says why.
+    mode: 'onTouched',
   });
 
   const onSubmit = async ({ email }: Values) => {
@@ -64,8 +68,11 @@ export function EmailStep() {
   // Until the check hands over a token there is nothing the send could carry.
   // A check that could not run at all (script blocked) does not hold the form:
   // the server decides, and while it only monitors it accepts the request.
+  // On a static page the site key arrives after load; until it does, a null
+  // key is not "Turnstile off", so the send waits for it too.
   const waitingForCheck =
-    turnstile.required && !turnstile.token && !turnstile.failed;
+    requestConfigPending ||
+    (turnstile.required && !turnstile.token && !turnstile.failed);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -87,7 +94,7 @@ export function EmailStep() {
         )}
         <button
           type="submit"
-          disabled={loading || waitingForCheck}
+          disabled={loading || waitingForCheck || !isValid}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-kallo-ink px-4 py-3 font-medium font-sans-display text-kallo-surface text-sm tracking-tight transition-all duration-200 hover:bg-kallo-ink-hover disabled:opacity-60"
         >
           {loading && <Loader2 className="size-icon-inline animate-spin" />}

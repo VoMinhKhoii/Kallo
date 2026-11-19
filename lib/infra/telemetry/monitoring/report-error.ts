@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/nextjs';
 import { safeError, stackFrames } from '@/lib/core/errors/safe-error';
 
 /**
@@ -41,9 +40,13 @@ export function reportError(
     redactMessage && error instanceof Error
       ? withoutMessage(error)
       : safeError(error);
-  Sentry.captureException(reported, {
-    tags: { scope },
-    ...(fingerprint ? { fingerprint } : {}),
+  // Imported here, not at the top: this module is in the first browser bundle,
+  // and Sentry is too large to hold up hydration for.
+  void import('@sentry/nextjs').then((Sentry) => {
+    Sentry.captureException(reported, {
+      tags: { scope },
+      ...(fingerprint ? { fingerprint } : {}),
+    });
   });
 }
 

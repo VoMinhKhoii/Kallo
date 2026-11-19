@@ -1,8 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider, useAuthDialog } from '@/components/auth/auth-provider';
+import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
 
 /**
  * Signed-out invite CTA that keeps auth ON the invite page. Instead of
@@ -44,7 +44,7 @@ export function InviteAuthCta({
       initialTab="sign-up"
     >
       <InviteAuthButton />
-      <AuthDialog />
+      <LazyAuthDialog />
     </AuthProvider>
   );
 }

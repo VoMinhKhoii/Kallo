@@ -28,6 +28,6 @@ export default function robots(): MetadataRoute.Robots {
       ],
     },
     // No `host`: it is a Yandex-only directive that Google and Bing ignore.
-    sitemap: `${SITE_URL}/sitemap.xml`,
+    sitemap: [`${SITE_URL}/sitemap.xml`, `${SITE_URL}/feed.xml`],
   };
 }

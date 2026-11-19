@@ -9,6 +9,7 @@ export const WAITLIST_LOCALES = ['en', 'vi'] as const;
 
 /** Where on the page the signup came from. Kept short and closed-ish. */
 export const WAITLIST_SOURCES = ['hero', 'cta'] as const;
+export type WaitlistSource = (typeof WAITLIST_SOURCES)[number];
 
 export const waitlistSignupSchema = z.object({
   // 254 is the RFC 5321 maximum for a full address; anything longer is junk.
@@ -27,13 +28,3 @@ export type WaitlistSignupInput = z.infer<typeof waitlistSignupSchema>;
 export interface WaitlistSignupResponse {
   ok: true;
 }
-
-/** Outcomes the confirm link can produce, surfaced as `?waitlist=<status>`. */
-export const WAITLIST_STATUSES = [
-  'confirmed',
-  'already',
-  'expired',
-  'invalid',
-] as const;
-
-export type WaitlistStatus = (typeof WAITLIST_STATUSES)[number];

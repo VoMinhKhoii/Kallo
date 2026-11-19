@@ -27,6 +27,7 @@ import '../../../services/auth/session_provider.dart';
 import '../../../services/http/api_client.dart';
 import '../../circle/data/circle_providers.dart'
     show refreshInvitesAfterRelease;
+import '../../nutrition/providers/nutrition_overview_provider.dart';
 import '../../../services/http/query.dart';
 import '../../../models/profile/dashboard.dart';
 import '../../../models/profile/weight.dart';
@@ -229,4 +230,7 @@ Future<void> logWeight(
   });
   DashboardCache.forget(args.userId);
   ref.invalidate(dashboardBundleProvider(args));
+  // The iron target follows the latest weigh-in, so every cached nutrition
+  // overview is stale too.
+  ref.invalidate(nutritionOverviewProvider);
 }

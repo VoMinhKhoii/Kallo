@@ -76,16 +76,12 @@ export function handleError(error: unknown): PipelineResponse {
   if (isParseError(error)) {
     return makeErrorResponse(
       'parse_error',
-      'We had trouble understanding the AI response. Please try again.',
+      'Couldn’t read the AI response',
       true
     );
   }
 
-  return makeErrorResponse(
-    'api_error',
-    'Something went wrong analyzing your meal. Please try again.',
-    true
-  );
+  return makeErrorResponse('api_error', 'Couldn’t analyze your meal', true);
 }
 
 export function nonFoodResponse(): PipelineResponse {

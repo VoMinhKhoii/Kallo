@@ -46,9 +46,7 @@ export async function renderLandingMarkdown(locale: Locale): Promise<string> {
     ''
   );
   for (const key of DETAIL_KEYS) {
-    lines.push(
-      `- **${t(`understanding.categories.${key}.title`)}** — ${t(`understanding.categories.${key}.note`)}`
-    );
+    lines.push(`- **${t(`understanding.categories.${key}.title`)}**`);
   }
 
   lines.push('', `## ${t('pricing.title')}`, '');

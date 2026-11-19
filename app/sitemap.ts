@@ -4,7 +4,23 @@ import { routing } from '@/i18n/routing';
 import { loadFrontmatter } from '@/lib/domain/docs/loader';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { alternateLanguages } from '@/lib/seo/alternates';
-import { captureDateRange, pagesOf } from '@/lib/seo/food-pages/pages';
+import { ALTERNATIVE_PAGES } from '@/lib/seo/alternatives/pages';
+import {
+  ALTERNATIVE_SLUGS,
+  ALTERNATIVES_LOCALE,
+  alternativePath,
+} from '@/lib/seo/alternatives/slugs';
+import { COMPARE_PAGES } from '@/lib/seo/compare/pages';
+import {
+  COMPARE_LOCALE,
+  COMPARE_SLUGS,
+  comparePath,
+} from '@/lib/seo/compare/slugs';
+import {
+  captureDateRange,
+  FOOD_PAGE_LAYOUT_REVISED,
+  pagesOf,
+} from '@/lib/seo/food-pages/pages';
 import {
   FOOD_PAGE_LOCALES,
   FOOD_PAGE_PREFIX,
@@ -13,7 +29,12 @@ import {
 } from '@/lib/seo/food-pages/slugs';
 import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { SITE_URL } from '@/lib/seo/site';
-import { TOOL_SLUGS, TOOLS_PREFIX, toolPath } from '@/lib/seo/tools/slugs';
+import {
+  TOOL_PAGES_REVISED,
+  TOOL_SLUGS,
+  TOOLS_PREFIX,
+  toolPath,
+} from '@/lib/seo/tools/slugs';
 
 // Only the publicly crawlable, unauthenticated surfaces belong here. Everything
 // behind auth (dashboard, settings, groups, …) is disallowed in robots.ts.
@@ -39,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       alternates: { languages: alternateLanguages('') },
     });
 
-    // The plans also render as a band on the landing page, but /pricing is
+    // The landing page only links here now: /pricing is
     // their own crawlable URL — it needs its own entry or it is only ever
     // reachable as an in-page anchor.
     entries.push({
@@ -71,14 +92,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
     }
 
-    // The calculators exist in every locale under the same slugs. Their copy
-    // has no revision date to read, so like the landing page they carry no
-    // `lastModified`.
-    for (const path of [TOOLS_PREFIX, ...TOOL_SLUGS.map(toolPath)]) {
+    // The calculators exist in every locale under the same slugs. The hub has
+    // no revision date to read, so like the landing page it carries no
+    // `lastModified`; a tool page is dated by `TOOL_PAGES_REVISED`, bumped by
+    // hand when its copy or links change.
+    entries.push({
+      url: `${SITE_URL}/${locale}${TOOLS_PREFIX}`,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+      alternates: { languages: alternateLanguages(TOOLS_PREFIX) },
+    });
+    for (const path of TOOL_SLUGS.map(toolPath)) {
       entries.push({
         url: `${SITE_URL}/${locale}${path}`,
+        lastModified: new Date(`${TOOL_PAGES_REVISED}T00:00:00Z`),
         changeFrequency: 'monthly',
-        priority: path === TOOLS_PREFIX ? 0.6 : 0.7,
+        priority: 0.7,
         alternates: { languages: alternateLanguages(path) },
       });
     }
@@ -86,7 +115,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Each locale's food pages are its own dishes, so a page carries no
   // language alternates; only the hubs pair. A page's date is the day its
-  // meals were captured; a hub's is its newest page's.
+  // meals were captured or the shared layout last changed, whichever is
+  // later; a hub's is its newest capture.
   for (const locale of FOOD_PAGE_LOCALES) {
     const pages = pagesOf(locale);
     entries.push({
@@ -108,11 +138,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const page of pages) {
       entries.push({
         url: `${SITE_URL}${foodPagePath(page.locale, page.slug)}`,
-        lastModified: new Date(page.capture.capturedAt),
+        lastModified: new Date(
+          Math.max(
+            Date.parse(page.capture.capturedAt),
+            Date.parse(`${FOOD_PAGE_LAYOUT_REVISED}T00:00:00Z`)
+          )
+        ),
         changeFrequency: 'monthly',
         priority: 0.6,
       });
     }
+  }
+
+  // English only, so no language alternates. Dated by the day its prices and
+  // facts were last checked against the vendors' own pages.
+  for (const slug of ALTERNATIVE_SLUGS) {
+    entries.push({
+      url: `${SITE_URL}/${ALTERNATIVES_LOCALE}${alternativePath(slug)}`,
+      lastModified: new Date(`${ALTERNATIVE_PAGES[slug].checkedOn}T00:00:00Z`),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    });
+  }
+
+  for (const slug of COMPARE_SLUGS) {
+    entries.push({
+      url: `${SITE_URL}/${COMPARE_LOCALE}${comparePath(slug)}`,
+      lastModified: new Date(`${COMPARE_PAGES[slug].checkedOn}T00:00:00Z`),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    });
   }
 
   return entries;

@@ -1,0 +1,3 @@
+/* The widget gallery entry. Follows the phone language (the system draws it). */
+"widget.name" = "Today";
+"widget.description" = "What you ate today against your targets.";

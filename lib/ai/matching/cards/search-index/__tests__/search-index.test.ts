@@ -2,7 +2,7 @@ import { rmSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppDb } from '@/lib/infra/db/client';
 
-const dbCatalog = { rows: new Map(), lexical: {}, bm25En: {}, from: 'db' };
+const dbCatalog = { rows: new Map(), lexical: {}, from: 'db' };
 const getCardCatalog = vi.fn(async () => dbCatalog);
 vi.mock('../../catalog', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../catalog')>()),

@@ -1,3 +1,7 @@
+import {
+  MEAL_DATA_CSV_PATH,
+  MEAL_DATA_JSON_PATH,
+} from '@/lib/seo/meal-data/path';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**
@@ -49,6 +53,11 @@ export const WHEN_TO_USE = [
 
 export const FOR_AGENTS = [
   '## For agents',
+  '',
+  `- [Meal calorie observations (CSV)](${SITE_URL}${MEAL_DATA_CSV_PATH})`,
+  `- [Meal calorie observations and method (JSON)](${SITE_URL}${MEAL_DATA_JSON_PATH})`,
+  '  Kallo estimates for descriptions we wrote, not measured food or user logs.',
+  '  Both page sets (EN and VI), reusable with credit to Kallo under CC BY 4.0.',
   '',
   'How to call Kallo, in the order worth doing it:',
   '',

@@ -8,10 +8,10 @@ import '../../logic/split_parts.dart';
 /// rules between them are worth reading on their own — a seat added or removed
 /// has to rebalance the parts, and a mode switch must not disturb either.
 class ShareMealDraft {
-  ShareMealDraft();
+  ShareMealDraft({required this.mode});
 
   /// 'whole' — everyone logs a full serving. 'split' — one dish, divided.
-  String mode = 'whole';
+  String mode;
 
   /// Friends in the order they were added: the seat COLOUR is positional, so
   /// it has to stay stable while the table stands and close up when someone

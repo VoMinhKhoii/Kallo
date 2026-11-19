@@ -26,6 +26,11 @@ export const onRequestError: typeof Sentry.captureRequestError = (
  * plus vector index, `lib/ai/matching/cards/search-index/`); without one,
  * the card catalog from the database (`getCardCatalog`, ~3 s on prod).
  *
+ * Two small things load the same way, never awaited, so the first signed-in
+ * requests on a new instance find them ready: the token-signing keys and the
+ * database pool's connections. Both live on `globalThis`, because this file is
+ * bundled apart from the routes and module variables would not be shared.
+ *
  * Nothing else is warmed. Card matching fetches nutrition for a meal's own
  * candidates by id (`attachCandidateNutrition`, ~3 ms of database time on
  * prod), so an awaited nutrition preload would only delay every container
@@ -46,12 +51,32 @@ export async function register() {
   }
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
-  const [{ db }, { getCardCatalog }, { cardIndexConfigured }] =
-    await Promise.all([
-      import('@/lib/infra/db/client'),
-      import('@/lib/ai/matching/cards/catalog'),
-      import('@/lib/ai/matching/cards/search-index/search-index'),
-    ]);
+  // One log line per garbage-collection pause of 50 ms or more, to tell a
+  // stop-the-world pause apart from a slow database in stalled bursts.
+  const { watchGcPauses } = await import(
+    '@/lib/infra/telemetry/monitoring/gc-pauses'
+  );
+  watchGcPauses();
+
+  const [
+    { db, warmDbPool },
+    { getCardCatalog },
+    { cardIndexConfigured },
+    { preloadSigningKeys },
+  ] = await Promise.all([
+    import('@/lib/infra/db/client'),
+    import('@/lib/ai/matching/cards/catalog'),
+    import('@/lib/ai/matching/cards/search-index/search-index'),
+    import('@/lib/infra/auth/signing-keys/signing-keys'),
+  ]);
+
+  // The token-signing keys, so the first signed-in request after a start does
+  // not wait on the Auth server for them (see signing-keys.ts). Not awaited.
+  void preloadSigningKeys();
+
+  // Opens the database pool's connections now, so the first requests on a new
+  // instance do not each wait on connection setup (see warmDbPool). Not awaited.
+  if (process.env.DATABASE_URL) void warmDbPool();
 
   // Starts the artifact load when one is pinned; failures are caught and
   // logged inside both loaders.

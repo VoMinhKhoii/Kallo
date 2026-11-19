@@ -16,8 +16,6 @@ export const CARD_QUERY_RULES = {
     'Plain English description of the exact food as eaten, keeping every specific the text states (brand, variety, cut or part, skin, fat level, processing such as canned/dried/smoked/pickled/powder/juice, sweetened or not, cooked state and method) and adding only what the dish clearly implies (e.g. the beef in "phở tái" is thin-sliced lean raw beef). Do not invent other details. 3–15 words.',
   nameVi:
     'The natural Vietnamese name of that food with diacritics (restore them if the user typed without).',
-  tableName:
-    'The USDA SR Legacy description you would expect for this exact food as eaten in this dish, in USDA\'s own comma style and vocabulary (food, part, preparation, state), e.g. "Chicken, broilers or fryers, breast, meat only, cooked, roasted". Keep every stated specific (cut, fat level, skin, sweetened, canned) and what the dish clearly implies.',
 } as const;
 
 /**
@@ -49,11 +47,6 @@ export const decomposedIngredientV2Schema = z
     // them); `mealDecompositionV2CallSchema` makes Call 1 always emit them.
     queryEn: z.string().min(1).optional().describe(CARD_QUERY_RULES.queryEn),
     nameVi: z.string().min(1).optional().describe(CARD_QUERY_RULES.nameVi),
-    tableName: z
-      .string()
-      .min(1)
-      .optional()
-      .describe(CARD_QUERY_RULES.tableName),
     cookingMethod: z
       .string()
       .min(1)
@@ -66,13 +59,9 @@ export const decomposedIngredientV2Schema = z
       .describe(
         'Hint extracted from the user\'s text. "raw_weight" when the user explicitly said the weight was measured before cooking ("cân sống", "raw weight", "before cooking"); "cooked_weight" when they pinned to as-eaten ("đã nấu xong cân", "after cooking"); "unspecified" or omit when neither — Call 2 infers from cooking method.'
       ),
-    stateNote: z
-      .string()
-      .max(80)
-      .optional()
-      .describe(
-        'Free-form short verbatim user phrase that informed `stateHint`. Helps Call 2 disambiguate unusual phrasings. Optional.'
-      ),
+    // Legacy: kept so stored decompositions still parse. Call 1 no longer
+    // writes it (see `mealDecompositionV2CallSchema`).
+    stateNote: z.string().max(80).optional(),
     // ---- Structured quantity evidence (Phase 3, NLP-shaped) --------------
     // Extraction ONLY. The LLM never computes grams here — the server-side
     // portion resolver turns (count × unitToken × sizeModifier) into a grams
@@ -104,6 +93,14 @@ export const decomposedIngredientV2Schema = z
       .describe(
         'Set ONLY when the user typed an explicit weight for this one food — never a weight typed for a whole dish split into several ingredients. `basis` is the physical mass basis: gross_as_served for a named bone-in/shell-on object, edible for a boneless/peeled/fillet form, otherwise unknown. Cooking state belongs in stateHint. Never invent a mass.'
       ),
+    statedKcal: z
+      .number()
+      .positive()
+      .finite()
+      .optional()
+      .describe(
+        'Calories the user typed for this one food of a dish with several. Set by the server from the meal text (`grounded/text-checks`), never by Call 1.'
+      ),
     prepNotes: z
       .array(z.string().min(1).max(60))
       .max(6)
@@ -134,10 +131,9 @@ function dishSchemaOf<I extends z.ZodType>(ingredient: I) {
         .describe(
           "Free-form default cooking method for the dish in the user's language. It applies only to ingredients without their own cookingMethod override."
         ),
-      cuisineNote: z
-        .string()
-        .optional()
-        .describe('Optional regional/style note for disambiguation.'),
+      // Legacy: kept so stored decompositions still parse. Call 1 no longer
+      // writes it (see `mealDecompositionV2CallSchema`).
+      cuisineNote: z.string().optional(),
       vesselToken: z
         .string()
         .min(1)
@@ -159,6 +155,14 @@ function dishSchemaOf<I extends z.ZodType>(ingredient: I) {
         .describe(
           'Grams of this WHOLE dish as served that THIS user ate, when the user typed a weight for the whole dish (their share of it when they shared it: "a third of a 900g tray" → 300). Omit when no weight was typed for the whole dish.'
         ),
+      statedKcal: z
+        .number()
+        .positive()
+        .finite()
+        .optional()
+        .describe(
+          'Calories the user typed for this whole dish, from a label or a menu ("160kcal sữa chua" → 160; their share when they ate part of it). Omit when the user typed no calories for it. Never estimate calories.'
+        ),
       ingredients: z
         .array(ingredient)
         .min(1)
@@ -167,7 +171,7 @@ function dishSchemaOf<I extends z.ZodType>(ingredient: I) {
     .strict();
 }
 
-function mealSchemaOf<I extends z.ZodType>(ingredient: I) {
+function mealSchemaOf<D extends z.ZodType>(dish: D) {
   return z.object({
     isFood: z
       .boolean()
@@ -175,7 +179,7 @@ function mealSchemaOf<I extends z.ZodType>(ingredient: I) {
         'Whether the input describes recognizable food or meal items. false for gibberish, non-food, or unrelated text.'
       ),
     mealItems: z
-      .array(dishSchemaOf(ingredient))
+      .array(dish)
       .describe(
         'Meal decomposed into user-facing items with ingredient breakdown. Empty array when isFood is false.'
       ),
@@ -191,9 +195,7 @@ function mealSchemaOf<I extends z.ZodType>(ingredient: I) {
 export const decomposedDishV2Schema = dishSchemaOf(
   decomposedIngredientV2Schema
 );
-export const mealDecompositionV2Schema = mealSchemaOf(
-  decomposedIngredientV2Schema
-);
+export const mealDecompositionV2Schema = mealSchemaOf(decomposedDishV2Schema);
 
 export type StateHint = z.infer<typeof stateHintSchema>;
 export type SizeModifier = z.infer<typeof sizeModifierSchema>;
@@ -208,13 +210,18 @@ export type MealDecompositionV2 = z.infer<typeof mealDecompositionV2Schema>;
  * The schema Call 1 is asked to fill: the stored shape with the card-retrieval
  * query strings required, so the model always writes them. Its output is a
  * valid `MealDecompositionV2`.
+ *
+ * It leaves out the two free-text notes. Each optional field slows Claude's
+ * first compile of a new schema: with both notes it took 125 s cold, without
+ * them 25 s. `stateNote` only echoed the user's words, which Call 2 reads in
+ * the meal text itself; `cuisineNote` was read by nothing downstream.
  */
 export const mealDecompositionV2CallSchema = mealSchemaOf(
-  decomposedIngredientV2Schema.required({
-    queryEn: true,
-    nameVi: true,
-    tableName: true,
-  })
+  dishSchemaOf(
+    decomposedIngredientV2Schema
+      .omit({ statedKcal: true, stateNote: true })
+      .required({ queryEn: true, nameVi: true })
+  ).omit({ cuisineNote: true })
 );
 
 /**

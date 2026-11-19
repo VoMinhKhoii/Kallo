@@ -157,6 +157,19 @@ jobs:
           restore-keys: next-build-${{ runner.os }}-
       - if: steps.affected.outputs.run == 'true'
         run: bun run build
+      # Read the build the way a crawler without JavaScript does: every sitemap
+      # page answers 200, self-canonical, indexable, article before the footer;
+      # robots.txt open; and no page the live site lists now answers 404.
+      - name: Crawl check (SEO)
+        if: steps.affected.outputs.run == 'true'
+        run: |
+          PORT=3000 HOSTNAME=127.0.0.1 node .next/standalone/server.js > "$RUNNER_TEMP/server.log" 2>&1 &
+          for _ in $(seq 60); do
+            curl -sf -o /dev/null http://127.0.0.1:3000/robots.txt && break
+            sleep 1
+          done
+          bun scripts/seo/crawl-check.ts http://127.0.0.1:3000 --live https://kallo.fit \
+            || { tail -50 "$RUNNER_TEMP/server.log"; exit 1; }
       - if: steps.affected.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/cache/save@v4
         with:
@@ -303,7 +316,7 @@ jobs:
       # docs/GOOGLE_CLOUD_RUN.md → "Image retention").
       PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       IMAGE_TAG: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-      IMAGE_URI: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      IMAGE_URI: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/kallo:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps: &container-steps
       - uses: actions/checkout@v4
         with:
@@ -341,6 +354,7 @@ jobs:
         run: >
           docker build
           --build-arg SKIP_NEXT_TYPECHECK=1
+          --build-arg NEXT_DEPLOYMENT_ID=${{ env.IMAGE_TAG }}
           --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           --build-arg NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}

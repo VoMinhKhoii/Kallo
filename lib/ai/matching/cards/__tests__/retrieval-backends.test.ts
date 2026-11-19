@@ -38,7 +38,6 @@ const ing: DecomposedIngredientV2 = {
   canonicalName: 'Beef brisket',
   queryEn: 'beef brisket raw',
   nameVi: 'ức bò',
-  tableName: 'Beef, brisket, raw',
 };
 const gemini = {
   generateEmbeddingBatch: vi.fn(async (texts: string[]) =>

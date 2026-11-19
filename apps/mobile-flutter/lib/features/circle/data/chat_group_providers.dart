@@ -3,18 +3,24 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../services/auth/session_provider.dart';
 import '../../../services/http/api_client.dart';
 import '../../../services/http/query.dart';
+import '../../../services/http/query_cache.dart';
 import '../../../models/social/chat_group.dart';
 import '../../dashboard/data/dashboard_providers.dart'
     show localTimezoneOffsetMinutes;
 import 'local_blocks.dart';
+import 'feed_providers.dart' show sharedMealFeedProvider;
+import 'read_state/group_read_state.dart';
 
 const Duration _groupRequestTimeout = Duration(seconds: 15);
 
 final chatGroupsProvider = FutureProvider.autoDispose<List<ChatGroupIdentity>>((
   ref,
 ) async {
+  var disposed = false;
+  ref.onDispose(() => disposed = true);
   final api = ref.watch(apiClientProvider);
   final timezoneOffset = localTimezoneOffsetMinutes();
   final since = ref.read(localBlocksProvider.notifier).generation;
@@ -33,19 +39,36 @@ final chatGroupsProvider = FutureProvider.autoDispose<List<ChatGroupIdentity>>((
   // Its unread flags cannot say whose message they count, so a list fetched
   // before a block is not trusted for them (`local_blocks.dart`).
   stampFetched(groups, since);
+  if (!disposed) recordGroupListFetch(ref);
   return groups;
 });
 
 final chatGroupDetailProvider = FutureProvider.autoDispose
     .family<ChatGroupDetail, String>((ref, groupId) async {
+      requireSignedIn(ref);
+      var disposed = false;
+      ref.onDispose(() => disposed = true);
       final api = ref.watch(apiClientProvider);
       final id = Uri.encodeComponent(groupId);
-      return runWithRetry(() async {
+      final pending = ref.keepAlive();
+      final group = await runWithRetry(() async {
         final json = await api
             .get<Map<String, dynamic>>('/api/v1/chat-groups/$id')
             .timeout(_groupRequestTimeout);
         return ChatGroupDetail.fromJson(json['group'] as Map<String, dynamic>);
+      }).whenComplete(pending.close);
+      if (disposed) return group;
+      retainQuery(ref, const Duration(minutes: 5));
+      final loadedAt = ref.read(queryNowProvider)();
+      ref.onResume(() {
+        // Invalidation is deferred by Riverpod; the previous value remains
+        // available while fresh member details are requested.
+        if (ref.read(queryNowProvider)().difference(loadedAt) >=
+            kQueryStaleTime) {
+          ref.invalidateSelf();
+        }
       });
+      return group;
     });
 
 Future<String> createChatGroup(
@@ -92,6 +115,7 @@ Future<void> addGroupMembers(
       })
       .timeout(_groupRequestTimeout);
   container.invalidate(chatGroupDetailProvider(groupId));
+  container.invalidate(sharedMealFeedProvider(groupId));
   container.invalidate(chatGroupsProvider);
 }
 
@@ -107,6 +131,7 @@ Future<void> removeGroupMember(
       .delete<Map<String, dynamic>>('/api/v1/chat-groups/$id/members/$memberId')
       .timeout(_groupRequestTimeout);
   container.invalidate(chatGroupDetailProvider(groupId));
+  container.invalidate(sharedMealFeedProvider(groupId));
   container.invalidate(chatGroupsProvider);
 }
 
@@ -118,4 +143,5 @@ Future<void> leaveChatGroup(ProviderContainer container, String groupId) async {
       .timeout(_groupRequestTimeout);
   container.invalidate(chatGroupsProvider);
   container.invalidate(chatGroupDetailProvider(groupId));
+  container.invalidate(sharedMealFeedProvider(groupId));
 }

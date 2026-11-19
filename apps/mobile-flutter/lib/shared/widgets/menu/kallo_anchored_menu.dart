@@ -44,9 +44,13 @@ class KalloMenuAction<T> {
     this.badge,
     this.detail,
     this.checked,
+    this.destructive = false,
   });
 
   final String label;
+
+  /// Label and glyph in [KalloColors.danger] — a meal card's Remove.
+  final bool destructive;
 
   /// The trailing glyph; a pull-down's rows ([KalloPullDown]) carry none.
   final IconData? icon;
@@ -67,9 +71,11 @@ class KalloMenuAction<T> {
 /// coordinates). Resolves with the chosen value, or null on dismiss.
 ///
 /// [header] prints one muted line above the rows — the message's time, for the
-/// sent-message menu. [pinned] is drawn at EXACTLY [anchor], unscaled and
-/// unshadowed, so a caller can float a crisp copy of the thing it anchored to
-/// above the blur without moving it by a pixel. [edge] picks which vertical
+/// sent-message menu. [pinned] is drawn at EXACTLY [anchor], unshadowed, so a
+/// caller can float a crisp copy of the thing it anchored to above the blur
+/// without moving it; it lifts to [lift] as the menu opens, moved or shrunk
+/// only as far as showing it whole takes (`anchored_menu_geometry.dart`), and
+/// the card hangs off the lifted rect. [edge] picks which vertical
 /// edge the card shares with the anchor: [KalloMenuEdge.trailing] hangs it off
 /// the trailing edge (the default), [KalloMenuEdge.leading] off the leading
 /// one. [backdrop] false drops the blur and scrim behind the card: a
@@ -81,6 +87,7 @@ Future<T?> showKalloAnchoredMenu<T>(
   required List<KalloMenuAction<T>> actions,
   String? header,
   Widget? pinned,
+  double lift = 1,
   KalloMenuEdge edge = KalloMenuEdge.trailing,
   bool backdrop = true,
 }) {
@@ -107,6 +114,7 @@ Future<T?> showKalloAnchoredMenu<T>(
           edge: edge,
           header: header,
           pinned: pinned,
+          lift: lift,
           backdrop: backdrop,
           rows: [
             for (final action in actions)
@@ -116,6 +124,7 @@ Future<T?> showKalloAnchoredMenu<T>(
                 badge: action.badge,
                 detail: action.detail,
                 checked: action.checked,
+                destructive: action.destructive,
                 onTap: () => Navigator.of(dialogContext).pop(action.value),
               ),
           ],

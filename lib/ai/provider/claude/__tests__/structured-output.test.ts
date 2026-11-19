@@ -89,7 +89,7 @@ describe('systemBlocks', () => {
       {
         type: 'text',
         text: 'rules\nmore rules\n',
-        cache_control: { type: 'ephemeral' },
+        cache_control: { type: 'ephemeral', ttl: '1h' },
       },
       { type: 'text', text: '<language>\nvi\n' },
     ]);
@@ -100,7 +100,7 @@ describe('systemBlocks', () => {
       {
         type: 'text',
         text: 'rules only',
-        cache_control: { type: 'ephemeral' },
+        cache_control: { type: 'ephemeral', ttl: '1h' },
       },
     ]);
   });

@@ -5,6 +5,8 @@ import { appendVaryAccept } from '@/lib/infra/http/accept';
 import {
   markdownAlternatePath,
   negotiate,
+  unknownAlternativePageTarget,
+  unknownComparePageTarget,
   unknownDocsTarget,
   unknownFoodPageTarget,
   unknownToolPageTarget,
@@ -29,6 +31,8 @@ const SKIP_INTL_PREFIXES = [
   // exist. They stay inside the matcher (unlike robots.txt / sitemap.xml, which
   // are excluded from it) so the origin-lock still covers them.
   '/openapi.json',
+  '/data/meal-calorie-variation.csv',
+  '/data/meal-calorie-variation.json',
   '/.well-known',
   // The markdown variants the proxy rewrites TO. A direct request must not be
   // locale-rewritten into a path that does not exist.
@@ -136,14 +140,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  // An unknown docs, food or calculator page URL gets a real 404 from here, not from the
+  // An unknown docs, food, calculator, alternatives or comparison page URL gets a real 404 from here, not from the
   // page: by the time the page can call `notFound()` the status is already 200.
   // After the negotiation above, so a markdown request for the same URL keeps
   // its own 404.
   const unknownPage =
     unknownDocsTarget(request.nextUrl.pathname) ??
     unknownFoodPageTarget(request.nextUrl.pathname) ??
-    unknownToolPageTarget(request.nextUrl.pathname);
+    unknownToolPageTarget(request.nextUrl.pathname) ??
+    unknownAlternativePageTarget(request.nextUrl.pathname) ??
+    unknownComparePageTarget(request.nextUrl.pathname);
   if (unknownPage) {
     const url = request.nextUrl.clone();
     url.pathname = unknownPage;
@@ -206,12 +212,12 @@ export const config = {
     // The origin-lock must run on everything that reaches Next — including /api
     // and the auth routes (see SKIP_INTL_PREFIXES) — so the matcher only omits
     // truly static public assets that need neither protection nor locale
-    // rewriting. `robots.txt`, `sitemap.xml` and `llms.txt` are omitted so
+    // rewriting. `robots.txt`, `sitemap.xml`, `feed.xml` and `llms.txt` are omitted so
     // next-intl does not rewrite the generated SEO routes to /{locale}/… —
     // each is a single fixed path that crawlers request at the origin root and
     // that has no locale-prefixed counterpart to redirect to. `.txt` covers the
     // IndexNow key file in `public/` (scripts/seo/indexnow.ts): the engines
     // reject a key file that answers with a redirect to /{locale}/….
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|geojson|txt)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|feed.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|mp4|geojson|txt)$).*)',
   ],
 };

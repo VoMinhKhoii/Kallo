@@ -30,6 +30,7 @@ class AuthTextField extends StatefulWidget {
     this.onChanged,
     this.enabled = true,
     this.errorText,
+    this.obscureText = false,
   });
 
   final TextEditingController controller;
@@ -47,6 +48,9 @@ class AuthTextField extends StatefulWidget {
 
   /// Per-field validation message. Null = valid/untouched.
   final String? errorText;
+
+  /// Hide the typed characters (the App Review password).
+  final bool obscureText;
 
   @override
   State<AuthTextField> createState() => _AuthTextFieldState();
@@ -120,6 +124,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
             onSubmitted: widget.onSubmitted,
             onChanged: widget.onChanged,
             autocorrect: false,
+            obscureText: widget.obscureText,
             cursorColor: KalloColors.text,
             style: inputStyle,
             decoration: InputDecoration(

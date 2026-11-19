@@ -208,13 +208,14 @@ export async function getFriendsFeedReadMarker(
     .values({ userId: actorId })
     .onConflictDoNothing();
 
-  const [row] = await db
-    .select({ lastReadAt: friendsFeedReadMarkers.lastReadAt })
-    .from(friendsFeedReadMarkers)
-    .where(eq(friendsFeedReadMarkers.userId, actorId))
-    .limit(1);
-
-  const latest = await newestFriendSharedAt(actorId, db);
+  const [[row], latest] = await Promise.all([
+    db
+      .select({ lastReadAt: friendsFeedReadMarkers.lastReadAt })
+      .from(friendsFeedReadMarkers)
+      .where(eq(friendsFeedReadMarkers.userId, actorId))
+      .limit(1),
+    newestFriendSharedAt(actorId, db),
+  ]);
 
   return {
     lastReadAt: row.lastReadAt.toISOString(),

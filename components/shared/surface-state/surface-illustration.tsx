@@ -2,14 +2,14 @@
 
 import { useIsLateNight } from '@/hooks/ui/use-is-late-night';
 import {
+  type AreaCast,
   pickIllustration,
-  type SurfaceArea,
   type SurfaceKind,
 } from '@/lib/brand/illustrations/cast';
 import { cn } from '@/lib/core/ui/cn';
 
 interface SurfaceIllustrationProps {
-  area: SurfaceArea;
+  cast: AreaCast;
   kind: SurfaceKind;
   compact: boolean;
 }
@@ -20,12 +20,12 @@ interface SurfaceIllustrationProps {
  * from assistive tech entirely.
  */
 export function SurfaceIllustration({
-  area,
+  cast,
   kind,
   compact,
 }: SurfaceIllustrationProps) {
   const lateNight = useIsLateNight();
-  const art = pickIllustration(area, kind, lateNight);
+  const art = pickIllustration(cast, kind, lateNight);
 
   return (
     <svg

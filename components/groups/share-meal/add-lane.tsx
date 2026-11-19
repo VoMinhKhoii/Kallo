@@ -39,7 +39,8 @@ export function ShareMealAddLane({
     );
   }
   return (
-    <div className="-mx-2 max-h-[150px] overflow-y-auto">
+    // Six 48px rows fit before it scrolls.
+    <div className="-mx-2 max-h-[288px] overflow-y-auto">
       {unseated.map((member) => (
         <button
           className="flex w-full items-center gap-3 rounded-xl p-2 transition-colors hover:bg-kallo-hover/40 disabled:opacity-45"

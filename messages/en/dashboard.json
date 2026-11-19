@@ -20,7 +20,7 @@
   "todayLoading": "Loading today's meals…",
   "todayLoadError": "Today's meals did not load, please try again.",
   "progressLoadError": "The weight trend did not load, please try again.",
-  "heatmapLoadError": "The consistency section did not load, please try again.",
+  "heatmapLoadError": "The consistency section did not load",
   "loadingWeightTrend": "Loading weight trend…",
   "now": "Now",
   "start": "Start",

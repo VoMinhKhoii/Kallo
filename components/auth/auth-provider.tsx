@@ -47,6 +47,14 @@ interface AuthDialogContextValue {
   showCode: (email: string) => void;
   /** Applies the request-time values; see `AuthRequestConfig`. */
   applyRequestConfig: (config: AuthRequestValues) => void;
+  /**
+   * True while a fully static page is still fetching those values after load
+   * (`ClientAuthRequestConfig`). A null Turnstile key then means "not here
+   * yet", not "not configured", so the email step holds its send: prod refuses
+   * a code request without a token.
+   */
+  requestConfigPending: boolean;
+  setRequestConfigPending: (pending: boolean) => void;
 }
 
 /**
@@ -96,6 +104,7 @@ export function AuthProvider({
   const [nextPath, setNextPath] = useState(next);
   const [clientId, setClientId] = useState(googleClientId);
   const [siteKey, setSiteKey] = useState(turnstileSiteKey);
+  const [requestConfigPending, setRequestConfigPending] = useState(false);
   const [panel, setPanel] = useState<AuthPanel>('auth');
   const [codeEmail, setCodeEmail] = useState<string | null>(null);
 
@@ -141,6 +150,7 @@ export function AuthProvider({
     }: AuthRequestValues) => {
       setClientId(id);
       setSiteKey(key);
+      setRequestConfigPending(false);
       if (path !== undefined) setNextPath(path);
       if (openTab) {
         openedByRequest.current = true;
@@ -171,6 +181,8 @@ export function AuthProvider({
         showAuth,
         showCode,
         applyRequestConfig,
+        requestConfigPending,
+        setRequestConfigPending,
       }}
     >
       {children}

@@ -17,6 +17,7 @@ import {
   groundedEstimationSchema,
 } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { buildGroundedEstimationPrompt } from '@/lib/ai/prompts/build/grounded-estimation';
+import { repairPipelineOutput } from '@/lib/ai/provider/claude/schema';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type {
   GroundedEstimator,
@@ -54,6 +55,8 @@ export function createGeminiEstimator(
         await gemini.generateStructuredOutputStream(
           {
             schema: groundedEstimationSchema,
+            // A 0 g ingredient would fail the whole meal; Call 2 asks again.
+            repair: repairPipelineOutput,
             systemPrompt,
             userMessage: getGroundedEstimationUserMessage(),
             model,

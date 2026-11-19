@@ -5,6 +5,7 @@ import {
   sessionCookieOptions,
   sessionCookieWriteOptions,
 } from '@/lib/infra/supabase/cookie-options';
+import { sharedRefreshFetch } from '@/lib/infra/supabase/shared-refresh';
 
 export async function createClient() {
   // The auth client reads the clock as soon as it is built: it checks the
@@ -49,6 +50,9 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookieOptions: sessionCookieOptions(),
+      // One refresh per expired session, however many requests carry it (see
+      // shared-refresh.ts).
+      global: { fetch: sharedRefreshFetch },
       cookies: {
         getAll() {
           return cookieStore.getAll();

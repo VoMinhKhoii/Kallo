@@ -68,7 +68,6 @@ void main() {
             revealing: false,
             animateIn: true,
             onOpen: () {},
-            onOpenSize: () {},
           ),
         ),
       );
@@ -86,7 +85,6 @@ void main() {
             revealing: false,
             animateIn: true,
             onOpen: () {},
-            onOpenSize: () {},
           ),
         ),
       );
@@ -104,7 +102,6 @@ void main() {
             revealing: false,
             animateIn: true,
             onOpen: () {},
-            onOpenSize: () {},
           ),
         ),
       );

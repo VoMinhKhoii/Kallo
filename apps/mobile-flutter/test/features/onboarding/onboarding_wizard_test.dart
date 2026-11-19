@@ -277,10 +277,7 @@ void main() {
     await _tap(tester, 'Continue');
 
     expect(find.text('Where do you cook?'), findsOneWidget);
-    expect(
-      find.text("Couldn't save this step. Please try again."),
-      findsOneWidget,
-    );
+    expect(find.text("Couldn't save this step"), findsOneWidget);
     expect(_ctaDisabled(tester), isFalse);
   });
 
@@ -399,10 +396,7 @@ void main() {
     // Still nothing — and the wizard says so, with the one move that helps.
     expect(find.text('Choose your language'), findsNothing);
     expect(find.text('About you'), findsNothing);
-    expect(
-      find.text("Couldn't save this step. Please try again."),
-      findsOneWidget,
-    );
+    expect(find.text("Couldn't save this step"), findsOneWidget);
     await _tap(tester, 'Try again');
 
     // Server step 1 answered ⇒ the first screen of step 2.

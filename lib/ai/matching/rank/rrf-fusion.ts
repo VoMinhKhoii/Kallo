@@ -89,7 +89,7 @@ export function rrfFuseCandidates(
 
 /**
  * Plain RRF order of any number of ranked id lists (no per-arm tie rules):
- * the card matcher's fusion of its vector, lexical and dialect arms.
+ * the card matcher's fusion of its vector and lexical arms.
  */
 export function rrfOrder(lists: readonly string[][]): string[] {
   const score = new Map<string, number>();

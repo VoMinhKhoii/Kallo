@@ -25,6 +25,7 @@ import {
   isShortOfPlan,
   repairPipelineOutput,
   toClaudeSchema,
+  withCallOneDefaults,
   withoutEmptyStrings,
 } from './schema';
 
@@ -32,6 +33,25 @@ import {
 const MAX_ATTEMPTS = 2;
 /** Chunk cadence for `onChunk`: Claude streams many tiny deltas, the parsers re-scan the whole text. */
 const CHUNK_INTERVAL_MS = 150;
+
+/**
+ * Thinking off, per model. Sonnet 5.5 rejects `disabled` with a 400; its
+ * thinking-off setting is `between_tools` (accepted at effort high or below).
+ */
+function thinkingOff(
+  model: string
+): Anthropic.ThinkingConfigDisabled | Anthropic.ThinkingConfigBetweenTools {
+  return model.startsWith('claude-sonnet-5-5')
+    ? { type: 'between_tools' }
+    : { type: 'disabled' };
+}
+
+/**
+ * An hour, not the default 5 minutes: nearly half of meals arrive more than
+ * 5 minutes after the one before, so a shorter entry has expired by then and
+ * the meal starts cold. Writes bill `CACHE_WRITE_INPUT_MULTIPLIER`.
+ */
+const SHARED_PREFIX_CACHE = { type: 'ephemeral', ttl: '1h' } as const;
 
 /**
  * The system prompt as cache blocks. Everything before the first per-user
@@ -46,7 +66,7 @@ export function systemBlocks(systemPrompt: string): Anthropic.TextBlockParam[] {
       {
         type: 'text',
         text: systemPrompt,
-        cache_control: { type: 'ephemeral' },
+        cache_control: SHARED_PREFIX_CACHE,
       },
     ];
   }
@@ -54,7 +74,7 @@ export function systemBlocks(systemPrompt: string): Anthropic.TextBlockParam[] {
     {
       type: 'text',
       text: systemPrompt.slice(0, at),
-      cache_control: { type: 'ephemeral' },
+      cache_control: SHARED_PREFIX_CACHE,
     },
     { type: 'text', text: systemPrompt.slice(at) },
   ];
@@ -79,7 +99,28 @@ function schemaSlip(message: string): Error {
   return err;
 }
 
-export function createClaudeStructuredOutput(anthropic: Anthropic) {
+/**
+ * Which fields a schema slip broke and how ("mealItems.0.servedMassG
+ * too_small"), for the log: field paths and rule names only, never the
+ * model's values.
+ */
+export function slipReason(err: unknown): string {
+  const issues = (err as { issues?: unknown }).issues;
+  if (!Array.isArray(issues))
+    return err instanceof Error ? err.message.slice(0, 80) : 'unknown';
+  return issues
+    .slice(0, 3)
+    .map((i: { path?: PropertyKey[]; code?: string }) =>
+      `${(i.path ?? []).map(String).join('.')} ${i.code ?? ''}`.trim()
+    )
+    .join('; ');
+}
+
+export function createClaudeStructuredOutput(
+  anthropic: { messages: Pick<Anthropic['messages'], 'stream'> },
+  /** `rateSuffix` is added to the model name budget rows and costs read. */
+  options: { rateSuffix?: string } = {}
+) {
   async function run<T>(
     params: StructuredOutputParams<T>,
     opts: StreamOptions | undefined,
@@ -89,7 +130,7 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
     const schema = toClaudeSchema(jsonSchema) as Record<string, unknown>;
     const state = createAttemptState();
     const onAttempt = createAttemptObserver({
-      model: params.model,
+      model: `${params.model}${options.rateSuffix ?? ''}`,
       maxRetries: MAX_ATTEMPTS,
       promptBudget,
       state,
@@ -112,7 +153,7 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
           {
             model: params.model,
             max_tokens: 16_000,
-            thinking: { type: 'disabled' },
+            thinking: thinkingOff(params.model),
             system: systemBlocks(params.systemPrompt),
             messages: [{ role: 'user', content: params.userMessage }],
             output_config: {
@@ -156,6 +197,10 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
           answer = withoutEmptyStrings(raw);
           parsed = params.schema.safeParse(answer);
         }
+        if (!parsed.success) {
+          answer = withCallOneDefaults(answer);
+          parsed = params.schema.safeParse(answer);
+        }
         if (!parsed.success) throw parsed.error;
         // Trace the answer the pipeline used, so a dry-run replay of it
         // (which skips repair and validation) matches the live run.
@@ -171,7 +216,9 @@ export function createClaudeStructuredOutput(anthropic: Anthropic) {
         const slip = err instanceof Error && err.name === 'ZodError';
         if (!slip || attempt >= MAX_ATTEMPTS || params.abortSignal?.aborted)
           throw err;
-        console.error(`[claude] ${params.model} re-asking after a schema slip`);
+        console.error(
+          `[claude] ${params.model} re-asking after a schema slip (${slipReason(err)})`
+        );
       }
     }
   }

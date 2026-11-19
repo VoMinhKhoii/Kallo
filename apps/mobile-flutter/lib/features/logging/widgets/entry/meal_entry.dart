@@ -89,7 +89,7 @@ class _MealEntryState extends State<MealEntry> {
 
   /// Opens the edit sheet on the card's draft. Done hands the re-scaled
   /// dishes back to this card; nothing is sent until Log meal.
-  void _openEditor({String? sizeOpen}) {
+  void _openEditor({String? dish}) {
     // The sheet edits a SNAPSHOT of these items, and a re-stage can land while
     // it is open — committing then would put the superseded analysis's dishes
     // back onto a card that has already moved on.
@@ -99,7 +99,7 @@ class _MealEntryState extends State<MealEntry> {
       context,
       draft: draftFromStaged(_draft.items, _draft.original),
       commitLabel: 'logging.mealEdit.done'.tr(),
-      sizeOpen: sizeOpen,
+      openOnDish: dish,
       onCommit: (draft) async {
         if (!mounted || !QuantityDraft.sameDishes(staged, widget.parsedMeal)) {
           return;
@@ -160,9 +160,7 @@ class _MealEntryState extends State<MealEntry> {
               // re-arriving.
               animateIn: widget.loggedAt == null,
               countUp: _countUp,
-              onOpen:
-                  (item, {bool size = false}) =>
-                      _openEditor(sizeOpen: size ? item.id : null),
+              onOpen: (item) => _openEditor(dish: item.id),
             ),
           ),
         ),

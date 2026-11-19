@@ -34,6 +34,10 @@ export interface MealDataCopy {
   steadyLead: string;
   methodHeading: string;
   method: (f: MealDataFacts) => string[];
+  downloadHeading: string;
+  downloadNote: string;
+  downloadDates: (f: MealDataFacts) => string;
+  downloadLicense: string;
   citeHeading: string;
   cite: (f: MealDataFacts, url: string) => string;
   tryLine: string;
@@ -41,20 +45,26 @@ export interface MealDataCopy {
 
 export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
   en: {
+    downloadHeading: 'Download the data',
+    downloadNote:
+      "Kallo's estimates for meal descriptions we wrote, not measured food or user logs. Both files contain the English and Vietnamese page sets.",
+    downloadDates: (f) =>
+      `Captured: ${f.dates.from === f.dates.to ? f.dates.from : `${f.dates.from} to ${f.dates.to}`}.`,
+    downloadLicense: 'Free to reuse with credit to Kallo (CC BY 4.0).',
     metaTitle: (f) =>
       `Same Meal, ${f.ratio}× the Calories: ${f.meals} Logged Meals`,
     description: (f) =>
       `We logged ${f.dishes} everyday meals ${f.perDish} ways each. The heaviest version of a typical meal had ${f.ratio}× the calories of the lightest, and cooking oil hid in ${f.unnamed} meals.`,
     title: 'How much the same meal varies',
     lead: (f) =>
-      `A calorie table gives one number per dish. We logged ${f.dishes} everyday meals in Kallo ${f.perDish} common ways each, ${f.meals} meals in all, from a small homemade plate to a full restaurant one. For the typical dish, the heaviest version had ${f.ratio}× the calories of the lightest. That spread, not the table's single number, is what decides whether a day of eating lands on target.`,
+      `A calorie table gives one number per dish. We logged ${f.dishes} everyday meals in Kallo ${f.perDish} common ways each, ${f.meals} meals in all, from a small homemade plate to a full restaurant one, each typed the way people describe it. For the typical dish, the heaviest version had ${f.ratio}× the calories of the lightest. That spread, not the table's single number, is what decides whether a day of eating lands on target.`,
     swingsHeading: 'The biggest swings',
     swingsLead:
-      'Dishes whose lightest and heaviest versions are furthest apart, with what each version was.',
+      'The widest gaps between lightest and heaviest versions, with the portions that explain them.',
     swingLine: (low, high) => `lightest: ${low} · heaviest: ${high}`,
     kindsHeading: 'What moves the number',
     kindsLead:
-      'Across every meal, the ingredients that carry the most calories per serving, and how many meals had them.',
+      'Ingredients with the most calories per serving, and how many meals included them.',
     kinds: {
       noodles: 'Pasta and noodles',
       rice: 'Rice',
@@ -73,7 +83,7 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
       `Kallo counted cooking oil in ${f.withOil} of the ${f.meals} meals. In ${f.unnamed} of them the person never mentioned oil, butter or frying: the dish is simply cooked that way, and the oil came to a median of ${f.oilKcal} kcal a meal. It is the part people most easily leave out when counting by hand.`,
     steadyHeading: 'The steadiest dishes',
     steadyLead:
-      'Dishes whose versions stay close together, where one number is a fair guess.',
+      'Dishes with little variation between versions, where one number is a fair estimate.',
     methodHeading: 'How this was measured',
     method: (f) => [
       `Each dish has ${f.perDish} meals written to span how people commonly eat it: smaller and larger portions, with and without the usual extras, homemade and from a restaurant. They are not a random sample of what Kallo's users log, and no user's data is in them.`,
@@ -87,20 +97,26 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
       'Kallo counts your meals the same way, from a sentence like "half a burrito bowl, no rice, extra salsa".',
   },
   vi: {
+    downloadHeading: 'Tải dữ liệu',
+    downloadNote:
+      'Đây là ước tính của Kallo cho các bữa ăn do chúng tôi viết mô tả, không phải kết quả đo thực phẩm hay nhật ký người dùng. Cả hai tệp đều có dữ liệu từ bộ trang tiếng Anh và tiếng Việt.',
+    downloadDates: (f) =>
+      `Thời gian ghi nhận: ${f.dates.from === f.dates.to ? f.dates.from : `${f.dates.from} đến ${f.dates.to}`}.`,
+    downloadLicense: 'Được tự do sử dụng lại khi ghi nguồn Kallo (CC BY 4.0).',
     metaTitle: (f) =>
       `Cùng một món, chênh nhau ${f.ratio} lần calo: ${f.meals} bữa ăn thật`,
     description: (f) =>
       `Chúng tôi ghi ${f.dishes} món ăn Việt, mỗi món ${f.perDish} cách ăn phổ biến. Bản nhiều calo nhất của một món thường gấp ${f.ratio} lần bản ít nhất, và dầu mỡ ẩn trong ${f.unnamed} bữa.`,
     title: 'Cùng một món, calo chênh nhau bao nhiêu?',
     lead: (f) =>
-      `Bảng calo thường chỉ cho một con số cho mỗi món. Chúng tôi ghi ${f.dishes} món ăn Việt vào Kallo, mỗi món ${f.perDish} cách ăn phổ biến, tổng cộng ${f.meals} bữa, từ tô nhỏ ở nhà đến tô đặc biệt ngoài quán. Với một món bình thường, bản nhiều calo nhất gấp ${f.ratio} lần bản ít nhất. Chính khoảng chênh đó, chứ không phải con số trong bảng, quyết định một ngày ăn của bạn có đúng mục tiêu hay không.`,
+      `Bảng calo thường chỉ cho một con số mỗi món. Chúng tôi ghi ${f.dishes} món ăn Việt vào Kallo, mỗi món ${f.perDish} cách ăn phổ biến, tổng cộng ${f.meals} bữa, từ tô nhỏ ở nhà đến tô đặc biệt ngoài quán, gõ đúng như người ta vẫn kể. Với một món điển hình, bản nhiều calo nhất gấp ${f.ratio} lần bản ít nhất. Chính khoảng chênh đó, chứ không phải con số trong bảng, quyết định một ngày ăn của bạn có đúng mục tiêu hay không.`,
     swingsHeading: 'Những món chênh nhiều nhất',
     swingsLead:
-      'Các món có bản nhẹ nhất và nặng nhất cách xa nhau nhất, kèm theo từng bản là gì.',
+      'Những món có mức chênh lớn nhất giữa phần nhẹ nhất và nặng nhất, kèm khẩu phần cụ thể.',
     swingLine: (low, high) => `nhẹ nhất: ${low} · nặng nhất: ${high}`,
     kindsHeading: 'Thứ làm con số thay đổi',
     kindsLead:
-      'Trong tất cả các bữa, những thành phần mang nhiều calo nhất mỗi phần, và bao nhiêu bữa có chúng.',
+      'Những thành phần có nhiều calo nhất mỗi phần và số bữa có các thành phần đó.',
     kinds: {
       rice: 'Cơm',
       bread: 'Bánh mì',
@@ -119,11 +135,11 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
       `Kallo tính dầu hoặc mỡ trong ${f.withOil} trên ${f.meals} bữa. Trong ${f.unnamed} bữa, người ăn không hề nhắc đến dầu, mỡ hay chiên xào: món đó vốn được nấu như vậy, và phần dầu này trung bình ${f.oilKcal} kcal mỗi bữa. Đây là phần rất dễ bị bỏ sót khi tự đếm calo.`,
     steadyHeading: 'Những món ổn định nhất',
     steadyLead:
-      'Các món mà các bản gần nhau, nơi một con số là ước lượng khá đúng.',
+      'Những món ít chênh lệch giữa các cách ăn, có thể ước lượng bằng một con số.',
     methodHeading: 'Cách đo',
     method: (f) => [
-      `Mỗi món có ${f.perDish} bữa được viết để phủ các cách ăn phổ biến: phần nhỏ và lớn, có và không có đồ thêm, ở nhà và ngoài quán. Đây không phải mẫu ngẫu nhiên từ người dùng Kallo, và không có dữ liệu của người dùng nào trong đó.`,
-      `Mỗi bữa được gõ vào Kallo một lần, ${f.dates.from === f.dates.to ? `ngày ${f.dates.from}` : `từ ngày ${f.dates.from} đến ngày ${f.dates.to}`}, và chạy qua đúng quy trình app dùng: tách món thành nguyên liệu, ước lượng gram, lấy calo từ bảng thành phần thực phẩm (Viện Dinh dưỡng Quốc gia, USDA và các nguồn khác). Trang của từng món cho thấy ${f.perDish} bữa và từng nguyên liệu.`,
+      `Mỗi món có ${f.perDish} bữa mô tả các cách ăn phổ biến: phần nhỏ và lớn, có và không có đồ thêm, ở nhà và ngoài quán. Các bữa này không phải mẫu ngẫu nhiên từ người dùng Kallo và không chứa dữ liệu của người dùng.`,
+      `Mỗi bữa được gõ vào Kallo một lần, ${f.dates.from === f.dates.to ? `ngày ${f.dates.from}` : `từ ngày ${f.dates.from} đến ngày ${f.dates.to}`}, qua cùng quy trình ứng dụng dùng: tách món thành nguyên liệu, ước lượng gram, lấy calo từ bảng thành phần thực phẩm (Viện Dinh dưỡng Quốc gia, USDA và các nguồn khác). Trang của từng món có ${f.perDish} bữa và từng nguyên liệu.`,
       'Tỷ lệ so sánh bữa nặng nhất và nhẹ nhất của cùng một món; "trung bình" ở đây là giá trị giữa (trung vị) qua các món hoặc các phần nguyên liệu.',
     ],
     citeHeading: 'Dùng lại số liệu',

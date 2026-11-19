@@ -12,6 +12,21 @@ const nextConfig: NextConfig = {
   // No `X-Powered-By: Next.js` on responses: it names the framework for no
   // reader's benefit.
   poweredByHeader: false,
+  // Every static asset URL carries `?dpl=<commit sha>` (the image tag), so no
+  // two builds share an asset URL. Next answers a missing `/_next/static` file
+  // with a 404 marked `s-maxage=31536000`, and Cloudflare keeps that 404 for
+  // a year: on 2026-11-18 a request for a chunk the live build lacked pinned a
+  // 404 that a later build, reusing the chunk's content-hashed name, then
+  // served to every English page. It also turns on Next's version-skew
+  // protection: a tab from an older deploy does a full load instead of
+  // fetching assets that no longer exist. Unset (local, CI's Build job): no
+  // query, no change.
+  deploymentId: process.env.NEXT_DEPLOYMENT_ID || undefined,
+  // postgres.js loads with Node's own `require` instead of being bundled, so
+  // Sentry's postgresJsIntegration (on by default) can patch it and server
+  // traces show each query's time. Bundled, the patch never applied and
+  // traced API requests showed one opaque "executing api route" span.
+  serverExternalPackages: ['postgres'],
   // Instant Navigations (Next 16.3). Cache Components prerenders a static shell
   // for every route — request-time data (cookies, the Supabase session, search
   // params) streams in behind <Suspense> — and keeps visited routes alive with

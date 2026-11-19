@@ -1,12 +1,12 @@
-'use client';
+import { Suspense } from 'react';
+import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
+import { CircleFeedPanel } from '@/components/groups/navigation/circle-feed-panel';
 
-import { useParams } from 'next/navigation';
-import { GroupFeed } from '@/components/groups/group-feed';
-
-/** A group's feed. A Client Component page for the same reason as the share
- * thread: the feed is client state, and `useParams` makes switching groups
- * from the pill row instant rather than a server round trip for the id. */
+/** Keep a real route leaf for initial loading, focus and scroll handling. */
 export default function GroupFeedPage() {
-  const { groupId } = useParams<{ groupId: string }>();
-  return <GroupFeed groupId={groupId} />;
+  return (
+    <Suspense fallback={<CircleWallSkeleton />}>
+      <CircleFeedPanel />
+    </Suspense>
+  );
 }

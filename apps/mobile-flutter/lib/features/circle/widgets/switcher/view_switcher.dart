@@ -7,6 +7,7 @@ import '../../data/chat_group_providers.dart';
 import '../../data/circle_providers.dart';
 import '../../data/feed_providers.dart';
 import '../../data/local_blocks.dart';
+import '../../data/read_state/group_read_state.dart';
 import '../../logic/group_flows.dart';
 import 'circle_tab.dart';
 import 'tab_faces.dart';
@@ -95,7 +96,12 @@ class _ViewSwitcherState extends ConsumerState<ViewSwitcher>
               selected: selected == group.id,
               // A group's flag cannot say whose message it counts, so one
               // from a list fetched before a block waits for a fresh list.
-              unread: group.unread && !blocks.predatesAnyBlock(group),
+              unread:
+                  groupHasUnread(
+                    group,
+                    ref.watch(groupReadReceiptProvider(group.id)),
+                  ) &&
+                  !blocks.predatesAnyBlock(group),
               people: selected == group.id ? people : null,
               openHint: tr('groups.switcher.openGroupHint'),
               onTap:

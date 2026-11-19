@@ -27,15 +27,16 @@ export const food: FoodContent = {
   copy: {
     name: 'Đậu phụ sốt cà chua',
     title: 'Đậu phụ sốt cà chua bao nhiêu calo?',
-    metaTitle: 'Đậu phụ sốt cà chua bao nhiêu calo? 4 bữa thật',
+    metaTitle: (span) =>
+      `Đậu phụ sốt cà chua bao nhiêu calo? ${span} kcal, 4 bữa thật`,
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa có đậu sốt cà chua thật: một bìa đậu rán với hai bát cơm, cơm bụi thêm vá cơm, đậu nhồi thịt và đậu hũ non không chiên.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một bữa. Đậu rán hay không rán thay đổi nhiều hơn phần sốt; thịt nhồi và cơm làm nên phần còn lại. Dưới đây là bốn bữa thật, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một bữa. Đậu rán hay không rán thay đổi nhiều hơn phần sốt; thịt nhồi và cơm làm nên phần còn lại. Dưới đây là bốn bữa thường gặp, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'mot-bia',
     breakdownLead:
       'Một bìa đậu phụ rán (120 g) là 351 calo, gần bằng hai bát cơm (303). Đậu hũ non không chiên, 150 g chỉ 101; phần sốt cà chua chỉ vài chục calo.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “đậu sốt cà chua 3 miếng, 1 bát cơm, canh rau”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “đậu sốt cà chua 3 miếng, 1 bát cơm, canh rau”, Kallo lo phần còn lại.',
   },
 };

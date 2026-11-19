@@ -11,6 +11,7 @@ import { ShareReplies } from '@/components/groups/share-thread/share-replies';
 import { SurfaceState } from '@/components/shared/surface-state/surface-state';
 import { useShareThread } from '@/hooks/social/circle/use-share-thread';
 import { Link } from '@/i18n/navigation';
+import { CIRCLE_CAST } from '@/lib/brand/illustrations/casts/circle';
 
 /**
  * One post's own page: the post exactly as the feed draws it, then the reply
@@ -69,7 +70,7 @@ export function ShareThread({ shareId }: { shareId: string }) {
           </div>
         ) : (
           <SurfaceState
-            area="circle"
+            cast={CIRCLE_CAST}
             kind="empty"
             subtitle={t('goneBody')}
             title={t('gone')}

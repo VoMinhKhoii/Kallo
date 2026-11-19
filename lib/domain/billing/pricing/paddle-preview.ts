@@ -4,8 +4,11 @@
 // rather than read a price from the locale's message file.
 //
 // Pure: the Paddle.js call lives in `hooks/billing/use-web-prices.ts`.
+//
+// `zod/mini`, not classic Zod: this parses in the browser on /pricing and the
+// landing page, where classic Zod costs ~95 KB gzipped and mini a few KB.
 
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import {
   PADDLE_PRICE_IDS,
   type PaddleEnvironment,
@@ -40,21 +43,26 @@ export function paddleEnvironment(token: string): PaddleEnvironment | null {
 }
 
 const unitPrice = z.object({ amount: z.string(), currencyCode: z.string() });
-const snakeUnitPrice = z
-  .object({ amount: z.string(), currency_code: z.string() })
-  .transform(({ amount, currency_code }) => ({
+const snakeUnitPrice = z.pipe(
+  z.object({ amount: z.string(), currency_code: z.string() }),
+  z.transform(({ amount, currency_code }) => ({
     amount,
     currencyCode: currency_code,
-  }));
+  }))
+);
 
 const override = z.union([
   z.object({ countryCodes: z.array(z.string()), unitPrice }),
-  z
-    .object({ country_codes: z.array(z.string()), unit_price: snakeUnitPrice })
-    .transform((entry) => ({
+  z.pipe(
+    z.object({
+      country_codes: z.array(z.string()),
+      unit_price: snakeUnitPrice,
+    }),
+    z.transform((entry) => ({
       countryCodes: entry.country_codes,
       unitPrice: entry.unit_price,
-    })),
+    }))
+  ),
 ]);
 
 type UnitPrice = z.infer<typeof unitPrice>;
@@ -66,35 +74,36 @@ type Override = z.infer<typeof override>;
  * snake_case (`unit_price`, `unit_price_overrides`) while the price around
  * them is camelCase. Both spellings parse into the camelCase shape.
  */
-const trialPeriod = z
-  .object({
+const trialPeriod = z.pipe(
+  z.object({
     interval: z.enum(['day', 'week', 'month', 'year']),
     frequency: z.number(),
-    unitPrice: unitPrice.nullish(),
-    unitPriceOverrides: z.array(override).optional(),
-    unit_price: snakeUnitPrice.nullish(),
-    unit_price_overrides: z.array(override).optional(),
-  })
-  .transform((trial) => ({
+    unitPrice: z.nullish(unitPrice),
+    unitPriceOverrides: z.optional(z.array(override)),
+    unit_price: z.nullish(snakeUnitPrice),
+    unit_price_overrides: z.optional(z.array(override)),
+  }),
+  z.transform((trial) => ({
     days: trial.frequency * PERIOD_DAYS[trial.interval],
     unitPrice: trial.unitPrice ?? trial.unit_price ?? null,
     unitPriceOverrides:
       trial.unitPriceOverrides ?? trial.unit_price_overrides ?? [],
-  }));
+  }))
+);
 
 /** The slice of a Paddle.js `PricePreview` response this module reads. */
 const previewSchema = z.object({
   data: z.object({
     currencyCode: z.string(),
-    address: z.object({ countryCode: z.string() }).nullish(),
+    address: z.nullish(z.object({ countryCode: z.string() })),
     details: z.object({
       lineItems: z.array(
         z.object({
           price: z.object({
             id: z.string(),
             unitPrice,
-            unitPriceOverrides: z.array(override).optional(),
-            trialPeriod: trialPeriod.nullish(),
+            unitPriceOverrides: z.optional(z.array(override)),
+            trialPeriod: z.nullish(trialPeriod),
           }),
         })
       ),

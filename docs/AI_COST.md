@@ -15,7 +15,7 @@ when `PIPELINE_TRACE_ENABLED=true`.
 | `request_count` | `1` on the one reservation row per analysis (no tokens), `0` on every attempt row |
 | `input_tokens` | prompt tokens, cached ones included |
 | `cached_tokens` | the part of `input_tokens` served from the provider cache (billed ~10%) |
-| `cache_write_tokens` | the part of `input_tokens` written to Claude's cache (billed 1.25x input); 0 for Gemini, and 0 on rows before 2026-10-15 |
+| `cache_write_tokens` | the part of `input_tokens` written to Claude's 1-hour cache (billed 2x input; `cost_usd` on rows from before the 1-hour cache used 1.25x); 0 for Gemini, and 0 on rows before 2026-10-15 |
 | `output_tokens` | visible response tokens |
 | `thought_tokens` | thinking tokens — billed as output, **not** included in `output_tokens` |
 | `cost_usd` | what the attempt cost, priced from `lib/ai/cost/pricing.ts` when the row is written. `NULL` (unknown, never zero) on the reservation row, an attempt that reported no usage, or a model not on the rate card. Rows before 2026-10-15 were backfilled from their tokens at that day's rates |

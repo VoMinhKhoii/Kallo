@@ -126,7 +126,13 @@ class _TurnstileViewState extends State<TurnstileView> {
                 widget.controller.interactive
                     ? TurnstileView.interactiveHeight
                     : 1,
-            child: WebViewWidget(controller: web),
+            // Drawn only while Cloudflare asks for a click. After it, the
+            // widget stays on the page with its border, and at 1pt its top
+            // row showed as a line under the email field.
+            child: Opacity(
+              opacity: widget.controller.interactive ? 1 : 0,
+              child: WebViewWidget(controller: web),
+            ),
           ),
         );
       },

@@ -80,6 +80,8 @@ export const routeInventory = {
     'accountExport',
     'lib/actions/identity/account.ts',
   ],
+  // The sign-in dialog's two public runtime values; no input, no database.
+  'api/v1/auth/client-config/route.ts': ['none', false, 'none-cheap'],
   'api/v1/auth/apple/token/route.ts': ['session', true, 'appleTokenLink'],
   'api/v1/barcode/image/[code]/route.ts': ['none', false, 'barcodeImageIp'],
   'api/v1/barcode/log/route.ts': ['session', true, 'none-cheap'],
@@ -260,6 +262,9 @@ export const routeInventory = {
   // Static HTML with the public Turnstile site key: no DB, no upstream call.
   'auth/turnstile/route.ts': ['none', false, 'none-cheap'],
   'auth/verify/route.ts': ['none', false, 'authLinkIp'],
+  'data/meal-calorie-variation.csv/route.ts': ['none', false, 'none-cheap'],
+  'data/meal-calorie-variation.json/route.ts': ['none', false, 'none-cheap'],
+  'feed.xml/route.ts': ['none', false, 'none-cheap'],
   'llms.txt/route.ts': ['none', false, 'none-cheap'],
   'md/[locale]/[...slug]/route.ts': ['none', false, 'none-cheap'],
   'openapi.json/route.ts': ['none', false, 'none-cheap'],

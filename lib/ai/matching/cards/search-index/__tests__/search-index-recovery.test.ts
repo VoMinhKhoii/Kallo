@@ -1,4 +1,4 @@
-import { rmSync } from 'node:fs';
+import { renameSync, rmSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppDb } from '@/lib/infra/db/client';
 
@@ -54,6 +54,9 @@ const {
   searchCardIndex,
 } = await import('../search-index');
 const { writeFixture } = await import('./artifact-fixture');
+const { reportError } = await import(
+  '@/lib/infra/telemetry/monitoring/report-error'
+);
 
 const db = {} as AppDb;
 let dir = '';
@@ -65,9 +68,20 @@ async function until(status: string) {
   return cardIndexStatus();
 }
 
+/**
+ * Moves the clock (`Date` faked) past a retry's backoff, then makes the call a
+ * request would: retries start on calls, never on a timer.
+ */
+async function afterBackoff(ms = 20_000) {
+  vi.setSystemTime(Date.now() + ms);
+  cardIndexStatus();
+  await new Promise((r) => setTimeout(r, 0));
+}
+
 beforeEach(() => {
   __resetCardIndexForTests();
   spawned.length = 0;
+  vi.mocked(reportError).mockClear();
   vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   const fx = writeFixture();
@@ -93,17 +107,27 @@ describe('card search index recovery', () => {
     );
     expect(cardIndexStatus()).toBe('ready');
 
-    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    vi.useFakeTimers({ toFake: ['Date'] });
     spawned[0].onFailure(new Error('worker missed 3 searches'));
     expect(cardIndexStatus()).toBe('failed');
     expect(await resolveCardBackend(db, Date.now() + 60_000)).toEqual({
       kind: 'db',
       catalog: dbCatalog,
     });
+    // A failure a retry can repair is logged, not sent to Sentry.
+    expect(reportError).not.toHaveBeenCalled();
 
-    // The retry respawns the worker after its backoff, and serving resumes.
-    await vi.advanceTimersByTimeAsync(2_000);
-    vi.useRealTimers();
+    // Nothing retries on its own once the backoff passes: an idle container
+    // has no CPU, and the reads would only time out.
+    vi.setSystemTime(Date.now() + 2_000);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(spawned).toHaveLength(1);
+
+    // The next request starts the retry, and takes the database path itself.
+    expect(await resolveCardBackend(db, Date.now() + 60_000)).toEqual({
+      kind: 'db',
+      catalog: dbCatalog,
+    });
     expect(spawned).toHaveLength(2);
     expect(await until('ready')).toBe('ready');
     expect(await resolveCardBackend(db, Date.now() + 60_000)).toMatchObject({
@@ -111,15 +135,39 @@ describe('card search index recovery', () => {
     });
   });
 
+  it('retries a failed artifact load on the next request, without making it wait', async () => {
+    __resetCardIndexForTests();
+    renameSync(dir, `${dir}-away`);
+    try {
+      expect(await until('failed')).toBe('failed');
+    } finally {
+      renameSync(`${dir}-away`, dir);
+    }
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now() + 2_000);
+
+    const t0 = performance.now();
+    expect(await resolveCardBackend(db, Date.now() + 60_000)).toEqual({
+      kind: 'db',
+      catalog: dbCatalog,
+    });
+    expect(performance.now() - t0).toBeLessThan(1_000);
+    expect(await until('ready')).toBe('ready');
+    expect(reportError).not.toHaveBeenCalled();
+  });
+
   it('gives up after three failed retries and stays on the database path', async () => {
     expect(await until('ready')).toBe('ready');
-    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    vi.useFakeTimers({ toFake: ['Date'] });
     for (let attempt = 0; attempt < 4; attempt++) {
       spawned.at(-1)?.onFailure(new Error('crash'));
-      await vi.advanceTimersByTimeAsync(20_000);
+      await afterBackoff();
     }
     expect(spawned).toHaveLength(4); // the first + three retries
     expect(cardIndexStatus()).toBe('failed');
+    // Only giving up reaches Sentry: from here on every meal on this
+    // container searches the database.
+    expect(reportError).toHaveBeenCalledTimes(1);
   });
 
   it('treats a worker that cannot start as a failure to retry, not a crash', async () => {
@@ -130,10 +178,9 @@ describe('card search index recovery', () => {
     expect(await until('failed')).toBe('failed');
     expect(spawned).toHaveLength(0);
 
-    // The retry after its backoff starts the worker.
-    vi.useFakeTimers({ toFake: ['setTimeout'] });
-    await vi.advanceTimersByTimeAsync(2_000);
-    vi.useRealTimers();
+    // The first call after its backoff starts the worker.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    await afterBackoff(2_000);
     expect(await until('ready')).toBe('ready');
     expect(spawned).toHaveLength(1);
   });
@@ -173,16 +220,17 @@ describe('card search index recovery', () => {
     it('lets go once a build that cannot be read has used up its retries', async () => {
       __resetCardIndexForTests();
       vi.stubEnv('CARD_INDEX_URI', 'file:///no/such/card-build');
-      vi.useFakeTimers({ toFake: ['setTimeout'] });
+      vi.useFakeTimers({ toFake: ['Date'] });
       expect(cardIndexSettled(0)).toBe(false); // the first read is under way
-      // Retry backoffs on the fake clock; the failing reads themselves are
-      // real file I/O, so the wait is bounded by real time (Date is not
-      // faked), not event-loop turns: on a busy CI runner the reads queue
-      // behind other work in libuv's thread pool.
-      const deadline = Date.now() + 10_000;
-      while (!cardIndexSettled(0) && Date.now() < deadline) {
-        await new Promise((r) => setImmediate(r));
-        await vi.advanceTimersByTimeAsync(2_000);
+      // Retry backoffs on the fake clock, each started by the probe's next
+      // call; the failing reads themselves are real file I/O, so the wait is
+      // bounded by real time (performance.now is not faked), not event-loop
+      // turns: on a busy CI runner the reads queue behind other work in
+      // libuv's thread pool.
+      const deadline = performance.now() + 10_000;
+      while (!cardIndexSettled(0) && performance.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 5));
+        vi.setSystemTime(Date.now() + 8_000);
       }
       // Four reads (the first + three retries 2, 4 and 8 s apart) fail, all
       // inside the hold: the container may take traffic on the database path.
@@ -193,14 +241,14 @@ describe('card search index recovery', () => {
 
     it('holds while a retry is pending, and lets go once the retries ran out', async () => {
       expect(await until('ready')).toBe('ready');
-      vi.useFakeTimers({ toFake: ['setTimeout'] });
+      vi.useFakeTimers({ toFake: ['Date'] });
       // Three failures schedule the three retries: each time a retry is
       // still to come, so the container keeps waiting for it.
       for (let attempt = 0; attempt < 3; attempt++) {
         spawned.at(-1)?.onFailure(new Error('crash'));
         expect(cardIndexStatus()).toBe('failed');
         expect(cardIndexSettled(0)).toBe(false);
-        await vi.advanceTimersByTimeAsync(20_000);
+        await afterBackoff();
       }
       // The last retry fails too: nothing more will come.
       spawned.at(-1)?.onFailure(new Error('crash'));
@@ -217,22 +265,19 @@ describe('card search index recovery', () => {
 
   it('starts the retry allowance over after a long healthy run', async () => {
     expect(await until('ready')).toBe('ready');
-    vi.useFakeTimers({ toFake: ['setTimeout', 'Date'] });
+    vi.useFakeTimers({ toFake: ['Date'] });
     // Use up the three retries in one incident.
     for (let attempt = 0; attempt < 3; attempt++) {
       spawned.at(-1)?.onFailure(new Error('crash'));
-      await vi.advanceTimersByTimeAsync(20_000);
+      await afterBackoff();
     }
     expect(spawned).toHaveLength(4);
-    vi.useRealTimers();
     expect(await until('ready')).toBe('ready');
 
     // Hours of healthy serving later, a new incident gets retries again.
-    vi.useFakeTimers({ toFake: ['setTimeout', 'Date'] });
     vi.setSystemTime(Date.now() + 11 * 60_000);
     spawned.at(-1)?.onFailure(new Error('crash'));
-    await vi.advanceTimersByTimeAsync(2_000);
-    vi.useRealTimers();
+    await afterBackoff(2_000);
     expect(spawned).toHaveLength(5);
     expect(await until('ready')).toBe('ready');
   });

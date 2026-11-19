@@ -34,6 +34,10 @@ type Part = {
   /** The review turned the pick into a rejection (no row selected). */
   rejected?: boolean;
   portion?: PortionResolution;
+  /** The user typed an amount for this part ("2 tortillas"). */
+  count?: number;
+  /** The unit of that count ("tortilla", "bánh xèo"). */
+  unit?: string;
 };
 
 /** One dish; every part matched one row (c1) and Call 2 gave it `g` grams and g/4 g carbohydrate. */
@@ -52,6 +56,8 @@ function stateOf(
         ingredients: parts.map((p) => ({
           rawName: p.name,
           canonicalName: p.name,
+          ...(p.count ? { count: p.count } : {}),
+          ...(p.unit ? { unitToken: p.unit } : {}),
         })),
       },
     ],
@@ -339,6 +345,56 @@ describe('scaleToServedMass', () => {
       ])
     );
     expect(grams(out.state)).toEqual([150, 150]);
+  });
+
+  it('keeps a part the user gave an amount for, while other parts can move', () => {
+    const out = scaleToServedMass(
+      stateOf({ name: 'Burrito', servedMassG: 400 }, [
+        { name: 'tortilla', g: 60, count: 1 },
+        { name: 'rice', g: 200 },
+        { name: 'beans', g: 100 },
+      ])
+    );
+    // 400 − 60 for the tortilla = 340 for the free parts, from 300.
+    expect(grams(out.state)).toEqual([60, 227, 113]);
+  });
+
+  it("moves parts that only carry the dish's count with the rest", () => {
+    // "2 bánh xèo 400g": Call 1 puts the dish's count on every food it
+    // splits into; none of them is a typed amount, so all of them move.
+    const out = scaleToServedMass(
+      stateOf({ name: 'Bánh xèo', servedMassG: 400 }, [
+        { name: 'bột gạo', g: 200, count: 2, unit: 'bánh xèo' },
+        { name: 'tôm', g: 100, count: 2, unit: 'bánh xèo' },
+        { name: 'dầu ăn', g: 20 },
+      ])
+    );
+    expect(grams(out.state)).toEqual([250, 125, 25]);
+  });
+
+  it('scales the parts with an amount too when they leave no room', () => {
+    const out = scaleToServedMass(
+      stateOf({ name: 'Phở cuốn', servedMassG: 200 }, [
+        { name: 'bánh phở', g: 240, count: 4 },
+        { name: 'thịt nướng', g: 100 },
+      ])
+    );
+    expect(grams(out.state)).toEqual([141, 59]);
+  });
+
+  it('leaves a dish alone when its typed part weights already reach its weight', () => {
+    // #580: Call 1 wrote the chicken's 150 g on the dish too, and the
+    // unweighed parts were crushed to a third to make room.
+    const out = scaleToServedMass(
+      stateOf({ name: 'Chicken korma', servedMassG: 150 }, [
+        { name: 'chicken breast', g: 150, portion: typed(150) },
+        { name: 'cream', g: 50, count: 50 },
+        { name: 'butter', g: 14, count: 1 },
+        { name: 'onion', g: 60 },
+      ])
+    );
+    expect(out.scaled).toBe(0);
+    expect(grams(out.state)).toEqual([150, 50, 14, 60]);
   });
 
   it('skips a part the resolver withheld', () => {

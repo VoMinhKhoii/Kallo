@@ -276,3 +276,18 @@ describe('spliceRescue with a cooking-oil row', () => {
     expect(grams).toEqual([58, 17, 12]);
   });
 });
+
+describe('spliceRescue, calories typed for the replaced food', () => {
+  it('shares them over the parts by their energy', () => {
+    const typed = structuredClone(state);
+    typed.decomposition.mealItems[0].ingredients[0].statedKcal = 160;
+    const { state: out } = spliceRescue(typed, new Map([[0, flanParts]]));
+    const shares = out.decomposition.mealItems[0].ingredients.map(
+      (i) => i.statedKcal ?? 0
+    );
+    // The parts' energy runs with their grams (50 : 50 : 20) in this fixture.
+    expect(shares.reduce((sum, s) => sum + s, 0)).toBeCloseTo(160);
+    expect(shares[0]).toBeCloseTo((160 * 50) / 120);
+    expect(shares[2]).toBeCloseTo((160 * 20) / 120);
+  });
+});

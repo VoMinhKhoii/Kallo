@@ -24,7 +24,6 @@ const matchKey = (ing: Ingredient) =>
     capitalizeFirst(ing.canonicalName ?? ''),
     ing.queryEn ?? null,
     ing.nameVi ?? null,
-    ing.tableName ?? null,
     ing.stateHint ?? null,
   ]);
 

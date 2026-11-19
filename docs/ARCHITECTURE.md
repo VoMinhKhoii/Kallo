@@ -33,9 +33,30 @@ to `hooks/` without `hooks/` exporting a non-hook value.
 
 ## Rendering and caching
 
+`lib/seo/meal-data/download/` exports the committed food-page meal observations
+as CSV and JSON at `/data/meal-calorie-variation.csv` and
+`/data/meal-calorie-variation.json`. Both files contain both locale page sets;
+filter by `locale` to reproduce one analysis page. They share the page's oil
+checks and capture sources. The JSON includes the method and caveats. Reuse is
+licensed under CC BY 4.0 with credit to Kallo. These locale-free routes bypass
+locale rewriting and session refresh, retain the origin lock, and are listed
+in `/llms.txt`, not the sitemap.
+
+The locale root loads only Be Vietnam Pro and Lora, including Vietnamese
+subsets. The composer and its mention overlay use the same Be Vietnam Pro
+sans token to keep their text aligned. Code and numeric monospace use the
+device's built-in monospace stack, with no additional font download.
+
 Next.js 16.3 with **Cache Components** and **Partial Prefetching** on (`next.config.ts`), which
 together give Instant Navigations. The rules the build enforces, and the choices made here:
 
+- **First paint on a slow connection.** No `next/font` face is preloaded (`app/[locale]/layout.tsx`),
+  so nothing queues ahead of the stylesheet; the cost is a brief font swap on first load. The
+  stylesheet stays a separate, cached file: `experimental.inlineCss` was tried and dropped, because
+  Next repeats our ~200 KB stylesheet up to four times in every page's HTML (the landing page was
+  205 KB gzipped with it, 82 KB plus a 33 KB stylesheet without). The landing page's phone
+  controls work before hydration (real links, plus an early theme listener in `ThemeScript`), and
+  Sentry loads after the window's `load` event, so an error thrown before then is not reported.
 - **Request pipeline.** `proxy.ts` (the Next 16 name for `middleware.ts`; Node.js runtime) runs
   first on every matched request: origin lock, markdown negotiation, next-intl, and the Supabase
   session refresh. The session step (`lib/infra/supabase/middleware.ts`) also routes: a signed-in
@@ -62,6 +83,13 @@ together give Instant Navigations. The rules the build enforces, and the choices
   read down to the smallest component; the rest of the page stays static. The `(app)` layout reads
   the session behind one boundary whose fallback is `components/app/shell/app-shell-skeleton.tsx`;
   each app page's `loading.tsx` is what shows during a client navigation into it.
+- **Public pages keep their article outside `<Suspense>`.** React outlines a boundary over 12.8 KB:
+  the content ships in a `<div hidden>` after the footer and a script moves it into place, even when
+  it resolved at build time. Crawlers that run no JavaScript (OAI-SearchBot, PerplexityBot,
+  ClaudeBot) read that as an empty page. So the docs, food, calculator and data routes render at the
+  top level, and those with a dynamic param set `instant = false`, since a `params` read outside
+  `<Suspense>` otherwise fails instant validation. `app/__tests__/crawlable-pages.test.ts` holds
+  this.
 - **Clock and random reads wait for `io()`.** Partial Prefetching makes `cookies()` and
   `headers()` readable in the runtime prefetch, so a `Date.now()`, `new Date()` or
   `Math.random()` reached right after them, before any network call, still lands in a prerender:
@@ -85,8 +113,14 @@ together give Instant Navigations. The rules the build enforces, and the choices
   supported yet, fall back to next-intl's header or pass `{ locale }` explicitly. `proxy.ts` imports
   `i18n/routing.ts`, never `i18n/navigation.ts` (which drags in the request config).
 - **Runtime env in prerendered pages.** A `process.env` read during prerender is baked into the
-  HTML. Values meant to be per-environment at runtime (e.g. `GOOGLE_WEB_CLIENT_ID`) must be read
-  after `connection()` inside `<Suspense>` — see `components/auth/request-config/`.
+  HTML. Values meant to be per-environment at runtime (e.g. `GOOGLE_WEB_CLIENT_ID`) are read one
+  of two ways (both in `components/auth/request-config/`):
+  - after `connection()` inside `<Suspense>`, which renders that page per request; or
+  - from the client after load, so the page stays fully static. The calorie, tool, data and
+    comparison pages fetch the sign-in values from `/api/v1/auth/client-config`
+    (`ClientAuthRequestConfig`).
+  A Route Handler that reads only env is prerendered at build time too, so such a handler calls
+  `connection()` first (`app/api/v1/auth/client-config`, `app/api/startupz`).
 - **Kept-alive routes.** Visited routes are hidden with React `<Activity>` instead of unmounted
   (up to 3), so `useState`, form inputs and scroll survive a round trip. Keep drafts; clear
   transient results (a "sent" confirmation, a "Saved" note, an error) with
@@ -147,7 +181,7 @@ another domain module is a smell worth a second look.
 | Folder | Concern |
 |---|---|
 | `apple-auth/` | Sign in with Apple REST: the per-call ES256 client secret, the authorization-code exchange and refresh-token revocation (`apple-auth.ts`), each returning a typed verdict instead of throwing; `null` config when the `APPLE_*` vars are unset |
-| `auth/` | session/profile guard, redirect and next-param safety, and the email-code request + its error copy (`email-code.ts`) |
+| `auth/` | session/profile guard, redirect and next-param safety, and the email-code request + its error copy (`email-code.ts`); `signing-keys/` holds the project's token-signing keys in memory so a session check never fetches them per request |
 | `crypto/` | dependency-free primitives on `node:crypto`: the ES256 JWT signer Apple's APNs and Sign in with Apple both need (`es256-jwt.ts`), and `secret-box.ts` — versioned AES-256-GCM for credentials held at rest |
 | `db/` | Drizzle schema and client |
 | `email/` | transactional send + templates |
@@ -158,7 +192,7 @@ another domain module is a smell worth a second look.
 | `security/` | webhook signatures, the enforced CSP + violation-report parsing, request IP, and Cloudflare Turnstile (`turnstile.ts`: the server-side siteverify + rollout mode; `turnstile-script.ts`: the browser widget loader) |
 | `storage/` | object storage on Cloudflare R2 (`object-storage.ts`: put / list / delete / prefix purge / presigned read over the S3 API; `r2-client.ts` holds the credentials and bucket naming; `usage-cap.ts` is the hard cap at 95% of the R2 free tier) — `docs/STORAGE.md` |
 | `telemetry/` | what leaves the app about how it behaves (`docs/MONITORING.md`): `telemetry-url.ts` (every outgoing URL → origin + route template), `analytics/` (PostHog: EU init, the typed event list, `track`/identify/reset) and `monitoring/` (Sentry: options shared by browser, Node and Edge, the payload scrubbers, `reportError`) |
-| `supabase/` | client factories (browser, server, admin, middleware) and `cookie-options.ts`, the one definition of the session cookie's name, `Secure`, `SameSite` and `Max-Age` that all three session clients share |
+| `supabase/` | client factories (browser, server, admin, middleware), `cookie-options.ts`, the one definition of the session cookie's name, `Secure`, `SameSite` and `Max-Age` that all three session clients share, and `shared-refresh.ts`, the server clients' `fetch` that sends one session refresh per refresh token however many requests carry it |
 | `uploads/` | image and avatar file handling |
 
 ### `lib/domain/` — the product's nouns
@@ -214,9 +248,16 @@ another domain module is a smell worth a second look.
 | `pipeline/estimator/` | provider-agnostic Call-2 seam | **reference shape** |
 | `pipeline/grounded/call-two/selector/` | per-ingredient candidate selector beside Call 2: re-ranks Call 2's candidates against the user's words, overrides only mass-equivalent rows | ok |
 | `pipeline/grounded/review.ts` | reviews Call 2's row picks around the rescue (`reviewPicks`, the one entry): a row contradicting Call 2's own estimate becomes a rejection; a fried dish's separate oil is dropped when its foods matched rows that are already fried; last, weighed dishes are scaled (`resolve/served-mass.ts`) | ok |
-| `pipeline/grounded/rescue/` | dish rescue: an ingredient Call 2 rejects is re-run as a mini-meal and replaced by its single foods, scaled to the main run's shipped mass | ok |
+| `pipeline/grounded/rescue/` | dish rescue: an ingredient Call 2 rejects, or a mixed dish logged as one ingredient, is re-run as a mini-meal and replaced by its single foods, scaled to the main run's shipped mass | ok |
 | `pipeline/resolve/estimate-scale.ts` | scales one Call 2 ingredient estimate (mass, plate mass, every macro bound) by one factor; shared by the served-mass step and the dish rescue | ok |
-| `pipeline/resolve/served-mass.ts` | a dish the user weighed (Call 1 `servedMassG`) has its unpinned parts scaled so their plate grams (Call 2's `servedG` for a part on a raw or dry row) add up to the typed weight; a soup or braise with no listed liquid only shrinks | ok |
+| `pipeline/resolve/served-mass.ts` | a dish the user weighed (Call 1 `servedMassG`) has its unpinned parts scaled so their plate grams (Call 2's `servedG` for a part on a raw or dry row) add up to the typed weight; a part with a typed count or measure keeps Call 2's size while others can move, and a dish whose typed part weights already reach its weight is left alone; a soup or braise with no listed liquid only shrinks | ok |
+| `pipeline/grounded/text-checks/typed-amounts.ts` | reads the weights and calorie figures a meal text states, the shares and multiples the text allows, and the food named beside one | ok |
+| `pipeline/grounded/text-checks/weights.ts` | holds Call 1's weights to the text: untyped weights removed, a dish weight that repeats its parts removed, a food's weight put back on that food | ok |
+| `pipeline/grounded/text-checks/calories.ts` | holds Call 1's calories to the text: untyped figures removed, a typed figure put on the dish or the one food named beside it, a per-unit figure multiplied by its count, figures about the day ignored | ok |
+| `pipeline/grounded/text-checks/described.ts` | what Call 1 wrote about a food beside its amounts: a weight on a food it describes as dry or raw is a raw weight; a Vietnamese name the user did not type shows in English in an English answer | ok |
+| `pipeline/grounded/text-checks/dish-count.ts` | whether a part's count is the dish's (Call 1 puts a counted dish's count on every part it splits into) or an amount typed for that part; asked by the fried-oil drop and the weighed-dish fit before treating a counted part as typed | ok |
+| `pipeline/grounded/text-checks/typed-facts.ts` | on the finished meal: sets a dish to the calories the user typed for it and marks the parts whose amount the user typed, so the plain-read hold leaves them | ok |
+| `pipeline/assemble/result-scale.ts` | arithmetic on a finished meal: scale a part's nutrients and carry the change into its dish and the meal totals (typed calories, the plain-read hold) | ok |
 | `pipeline/stream/` | the analyze-meal SSE state machine: cheat vs precise outcome, gates, staging | ok |
 | `pipeline/telemetry/cloud-trace/` | bounded structured stdout trace capture, privacy filtering and final result summaries; request counters/model names are held for at most 1,024 concurrent traces, swept after two minutes on the next start. `ingest-sink.ts` copies each line, fire-and-forget, to the kallo-trace-ingest Worker (Cloudflare D1) | ok |
 
@@ -244,11 +285,14 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `design-system/` | style-guide showcase — a dev tool, not product UI | split |
 | `docs/` | MDX docs chrome | ok |
 | `groups/` | circle shell, feeds, sharing, friends | split |
+| `groups/navigation/` | URL-driven Circle feed selection and locale-aware shallow feed links; only the active feed mounts, using the existing five-minute TanStack cache. The All and group route pages render the same client panel under Suspense, preserving Next's route validation, focus and scroll handling. Feed-to-feed selections use native history (Next's `usePathname` integration), avoiding an RSC round trip; post threads and friends management keep normal routing. The switcher uses the read-marker poll alone for All unread, without fetching the ambient wall. | ok |
 | `landing-page/` | marketing page | split |
+| `landing-page/media/` | the landing page's clip and still paths, and the product video player | |
+| `landing-page/section-text/` | the landing page's section title and card caption | |
 | `landing-page/pricing/checkout/` | /pricing as the purchase page — the signed-in checkout state, its request-time inputs (session, `?from=`) and the back link | ok |
 | `logging/` | meal logging surface | split |
-| `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows on md+; `sheet/` the phone's stacked manual-log sheets — meal, search, food page with the vessel `tape/` — mirroring the Flutter `sheets/manual/`), `barcode/` (the scanner dialog: camera, lookup; `product/` the found-product step: amount in the product's unit, photo, nutrition preview with the Premium nutrients), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |
-| `logging/feed/meal-edit/` | editing a logged or staged meal: the edit dialog (whole meal, then each dish's Servings / Amount / Size), and the card menus that open it — the ⋯ button and the right-click / press-and-hold menu, which also carry Remove or Discard | ok |
+| `logging/input/` | every way to start a meal — `composer/` (the text composer, its mode switcher and send button), `manual/` (DB-backed ingredient rows on md+; `sheet/` the phone's stacked manual-log sheets — meal, search, food page with the vessel tape — mirroring the Flutter `sheets/manual/`), `barcode/` (the scanner dialog: camera, lookup; `product/` the found-product step: amount in the product's unit, photo, nutrition preview with the Premium nutrients), `ocr/` (`scan/` the label, `review/` what was read), `relog/` | ok |
+| `logging/feed/meal-edit/` | editing a logged or staged meal: the edit dialog (whole meal, then each dish's Servings / Amount / Size, whose vessel tape from `meal-entry/portion/tape/` is always open), and the card menus that open it — the ⋯ button and the right-click / press-and-hold menu, which also carry Remove or Discard | ok |
 | `logging/sidebar/calendar/` | the sidebar's month-picker dialog: DayPicker config (`timeline-calendar-panel.tsx`, loaded on demand), the per-day calorie ring and its day button, the legend | ok |
 | `nutrition/` | nutrition page — primitives/rows/sections/states | **reference shape** |
 | `onboarding/` | onboarding wizard and screens | split |
@@ -278,10 +322,6 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `theme/` | the Settings → Appearance choice and the resolved theme, read straight from storage (`lib/core/theme/theme-store.ts`) | ok |
 | `ui/` | device and browser-surface hooks, plus the nav chrome's cross-surface state (sidebar open/collapse, badge counts); `use-is-late-night.ts` is the hydration-safe read of the viewer's clock the surface states pose from | ok |
 
-`hooks/auth/` also owns the landing page's waitlist signup — the pre-account end
-of the same "getting into the product" concern, folded in when `hooks/landing/`
-proved to be one hook.
-
 ## `app/` — routes
 
 | Folder | Concern | Status |
@@ -306,10 +346,12 @@ proved to be one hook.
 | `shared/data/` | static tables more than one feature reads — `countries.dart` | ok |
 | `shell/` | app scaffold and navigation: `header/` `nav/`, `launch/` (the launch intro curtain over the whole app, which plays once per process and lifts when the router has settled), plus the routed surfaces the shell itself owns (`tab_scaffold.dart`, `placeholder_screen.dart`, `route_error_screen.dart`) | ok |
 | `features/circle/widgets/` | `invite/` `groups/` `feed/` `share/` `states/` | ok |
+| `features/circle/data/feed_refresh/` | rebase in-flight local reaction/reply changes onto the fresh feed head and reset pagination to revalidate older history | ok |
+| `features/circle/data/read_state/` | apply server read receipts conservatively and coalesce group-list reconciliation | ok |
 | `features/dashboard/widgets/` | `today/` `weight/` `heatmap/` `chrome/` `states/` | ok |
 | `features/nutrition/widgets/` | `summary/` `charts/` `nutrients/` `scope/` `states/` | ok |
 | `features/settings/widgets/` | `profile/` `list/` `account/` `chrome/` | ok |
-| `features/<f>/` | one product surface each — auth, circle, dashboard, feedback, logging, nutrition, onboarding, paywall, privacy (the one-time AI-processing consent sheet, its gate and record), settings | split |
+| `features/<f>/` | one product surface each — auth, circle, dashboard, feedback, logging, nutrition, onboarding, paywall, privacy (the one-time AI-processing consent sheet, its gate and record), settings, today_widget (the day the iOS home-screen widget draws, written to its App Group — the extension itself is `ios/TodayWidget/`, see `apps/docs/mobile/today-widget.md`) | split |
 
 There is no `lib/data/`. Everything that folder held was infrastructure, so it merged into
 `services/`; no genuinely static table was left to justify keeping it.

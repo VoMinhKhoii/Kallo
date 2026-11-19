@@ -21,16 +21,12 @@ class MealEditDishSection extends StatelessWidget {
     super.key,
     required this.draft,
     required this.dish,
-    required this.sizeOpen,
     required this.onDraft,
-    required this.onToggleSize,
   });
 
   final MealEditDraft draft;
   final EditDish dish;
-  final bool sizeOpen;
   final ValueChanged<MealEditDraft> onDraft;
-  final VoidCallback onToggleSize;
 
   @override
   Widget build(BuildContext context) {
@@ -100,8 +96,6 @@ class MealEditDishSection extends StatelessWidget {
               MealEditSizeRow(
                 vessel: vessel,
                 grams: dish.grams,
-                open: sizeOpen,
-                onToggle: onToggleSize,
                 onGrams: (g) => onDraft(draft.setGrams(dish.key, g.toDouble())),
               ),
           ],

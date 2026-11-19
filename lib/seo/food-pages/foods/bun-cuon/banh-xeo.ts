@@ -27,15 +27,16 @@ export const food: FoodContent = {
   copy: {
     name: 'Bánh xèo',
     title: 'Bánh xèo bao nhiêu calo?',
-    metaTitle: 'Bánh xèo bao nhiêu calo? 4 lần ăn bánh xèo thật',
+    metaTitle: (span) =>
+      `Bánh xèo bao nhiêu calo? ${span} kcal, 4 lần ăn bánh xèo thật`,
     description: (span) =>
       `Khoảng ${span} calo. Bốn lần ăn bánh xèo thật: một cái bánh xèo chay, một cái tôm thịt cỡ lớn, sáu cái nhỏ miền Trung và bánh tự đổ ở nhà bằng chảo chống dính.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo. Bột gạo là nền; nước cốt dừa, dầu đổ bánh và đường trong nước chấm làm nên phần còn lại. Dưới đây là bốn lần ăn thật, mỗi lần gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo. Bột gạo là nền; nước cốt dừa, dầu đổ bánh và đường trong nước chấm làm nên phần còn lại. Dưới đây là bốn lần ăn thường gặp, mỗi lần gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'mot-cai',
     breakdownLead:
       'Trong một cái bánh xèo tôm thịt cỡ lớn, bột gạo là 216 calo, nước cốt dừa 98 và dầu đổ bánh 90. Nước mắm chua ngọt thêm khoảng 50, phần lớn từ đường; rau sống cuốn kèm gần như không đáng kể.',
     tryLine:
-      'Gõ bữa của bạn như khi kể lại, kiểu “2 cái bánh xèo nhỏ, ít dầu, cuốn nhiều rau”, Kallo lo phần còn lại.',
+      'Gõ vào Kallo như khi kể lại bữa ăn: “2 cái bánh xèo nhỏ, ít dầu, cuốn nhiều rau”, Kallo lo phần còn lại.',
   },
 };

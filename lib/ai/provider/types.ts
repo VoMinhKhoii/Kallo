@@ -13,6 +13,8 @@ export interface StructuredOutputParams<T> {
   topK?: number;
   thinkingConfig?: { thinkingLevel?: ThinkingLevel };
   abortSignal?: AbortSignal;
+  /** Fixes known value slips in a streamed answer before the schema parse. */
+  repair?: (raw: unknown) => unknown;
 }
 
 export interface GeminiCallTrace {
@@ -30,7 +32,7 @@ export interface AttemptTokens {
   outputTokens: number | null;
   /** Subset of `inputTokens` served from the provider cache (cached rate). */
   cachedTokens: number | null;
-  /** Subset of `inputTokens` written to the cache (Claude only; 1.25x input). */
+  /** Subset of `inputTokens` written to the cache (Claude only; 2x input). */
   cacheWriteTokens: number | null;
   /** Thinking tokens (`thoughtsTokenCount`), billed at the output rate. */
   thoughtTokens: number | null;

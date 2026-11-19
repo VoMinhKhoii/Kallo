@@ -4,6 +4,7 @@ import {
   isAuthSessionMissingError,
 } from '@supabase/supabase-js';
 import { sql } from 'drizzle-orm';
+import { signingKeys } from '@/lib/infra/auth/signing-keys/signing-keys';
 import type { createClient } from '@/lib/infra/supabase/server';
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
@@ -52,7 +53,13 @@ export async function verifyUser(
 ): Promise<VerifiedUser | null> {
   let result: Awaited<ReturnType<typeof supabase.auth.getClaims>>;
   try {
-    result = await supabase.auth.getClaims(accessToken);
+    // The signing keys held in memory, so the check stays local (see
+    // signing-keys.ts). Never awaited; with none held auth-js fetches them.
+    const jwks = signingKeys();
+    result = await supabase.auth.getClaims(
+      accessToken,
+      jwks ? { jwks } : undefined
+    );
   } catch {
     // auth-js throws a plain error (SyntaxError, TypeError) on token content it
     // cannot decode, e.g. `eA.eA.eA` or a header whose `alg` is not a string,
@@ -69,18 +76,7 @@ export async function verifyUser(
   const claims = data?.claims;
   if (!claims?.sub || typeof claims.session_id !== 'string') return null;
 
-  const rows = await database.execute<SessionUserRow>(sql`
-    SELECT u.id, u.email, u.raw_user_meta_data, u.created_at, u.last_sign_in_at
-    FROM auth.sessions s
-    JOIN auth.users u ON u.id = s.user_id
-    WHERE s.id = ${claims.session_id}::uuid
-      AND s.user_id = ${claims.sub}::uuid
-      AND (s.not_after IS NULL OR s.not_after > now())
-      AND (u.banned_until IS NULL OR u.banned_until <= now())
-      AND u.deleted_at IS NULL
-    LIMIT 1
-  `);
-  const row = rows[0];
+  const row = await liveSessionUser(database, claims.session_id, claims.sub);
   if (!row) {
     // The session was revoked or its user removed. Drop the stored session
     // (the cookies, on web), as `getUser()` did when the Auth server answered
@@ -98,6 +94,69 @@ export async function verifyUser(
       ? new Date(row.last_sign_in_at).toISOString()
       : null,
   };
+}
+
+/**
+ * In-flight session lookups, shared by every request checking the same session
+ * at the same moment. The phone app opens with about seven calls at once; each
+ * used to send this same query, and under that burst the small database box
+ * answered it in 50-90 ms instead of 6 (Sentry, 2026-11-18). Now one query
+ * answers all of them. Nothing outlives the answer: the entry is dropped when
+ * the query settles, so the next request asks again and a revoked session
+ * still stops working at once. Kept on globalThis because concurrent requests
+ * to different routes may run in different bundled copies of this module.
+ */
+type SessionLookups = WeakMap<
+  object,
+  Map<string, Promise<SessionUserRow | undefined>>
+>;
+const LOOKUPS_KEY = Symbol.for('kallo.auth.sessionLookups');
+function sessionLookups(): SessionLookups {
+  const store = globalThis as typeof globalThis & {
+    [LOOKUPS_KEY]?: SessionLookups;
+  };
+  store[LOOKUPS_KEY] ??= new WeakMap();
+  return store[LOOKUPS_KEY];
+}
+
+function liveSessionUser(
+  database: Database,
+  sessionId: string,
+  userId: string
+): Promise<SessionUserRow | undefined> {
+  // Keyed by the process-wide postgres client, not the `db` object: each
+  // bundled copy of db/client.ts exports its own `db` proxy over the one
+  // shared client. Test doubles have no `$client` and key by themselves.
+  const identity =
+    (database as unknown as { $client?: object }).$client ?? database;
+  const byDatabase = sessionLookups();
+  let pending = byDatabase.get(identity);
+  if (!pending) {
+    pending = new Map();
+    byDatabase.set(identity, pending);
+  }
+  const key = `${sessionId}:${userId}`;
+  const running = pending.get(key);
+  if (running) return running;
+
+  const lookup = database
+    .execute<SessionUserRow>(sql`
+      SELECT u.id, u.email, u.raw_user_meta_data, u.created_at, u.last_sign_in_at
+      FROM auth.sessions s
+      JOIN auth.users u ON u.id = s.user_id
+      WHERE s.id = ${sessionId}::uuid
+        AND s.user_id = ${userId}::uuid
+        AND (s.not_after IS NULL OR s.not_after > now())
+        AND (u.banned_until IS NULL OR u.banned_until <= now())
+        AND u.deleted_at IS NULL
+      LIMIT 1
+    `)
+    .then((rows) => rows[0])
+    .finally(() => {
+      pending.delete(key);
+    });
+  pending.set(key, lookup);
+  return lookup;
 }
 
 /** The old path, kept for tokens auth-js cannot decode locally (rare). */

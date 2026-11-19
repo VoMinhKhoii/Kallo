@@ -1,5 +1,6 @@
 import { type FoodPage, mealKcal, pagesOf } from '@/lib/seo/food-pages/pages';
 import type { FoodLocale } from '@/lib/seo/food-pages/slugs';
+import type { FoodPageVariant } from '@/lib/seo/food-pages/types';
 
 /**
  * What the food pages' real logged meals show when read together: how far
@@ -191,6 +192,18 @@ export interface HiddenOil {
   medianKcal: number;
 }
 
+/** Shared observation flags for the analysis and downloadable rows. */
+export function mealOil(locale: FoodLocale, variant: FoodPageVariant) {
+  const kcal = variant.ingredients
+    .filter((i) => kindOf(locale, i.name) === 'oil')
+    .reduce((sum, i) => sum + i.kcal, 0);
+  return {
+    kcal,
+    added: kcal !== 0,
+    mentioned: MENTIONS_FAT[locale].test(variant.text.toLowerCase()),
+  };
+}
+
 export function hiddenOil(locale: FoodLocale): HiddenOil {
   let total = 0;
   let withOil = 0;
@@ -198,13 +211,10 @@ export function hiddenOil(locale: FoodLocale): HiddenOil {
   for (const page of pagesOf(locale)) {
     for (const variant of page.capture.variants) {
       total += 1;
-      const kcal = variant.ingredients
-        .filter((i) => kindOf(locale, i.name) === 'oil')
-        .reduce((sum, i) => sum + i.kcal, 0);
-      if (kcal === 0) continue;
+      const oil = mealOil(locale, variant);
+      if (!oil.added) continue;
       withOil += 1;
-      if (!MENTIONS_FAT[locale].test(variant.text.toLowerCase()))
-        unnamed.push(kcal);
+      if (!oil.mentioned) unnamed.push(oil.kcal);
     }
   }
   return {

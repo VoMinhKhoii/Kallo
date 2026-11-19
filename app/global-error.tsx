@@ -8,6 +8,7 @@ import { reportError } from '@/lib/infra/telemetry/monitoring/report-error';
 import en from '@/messages/en/errors.json';
 import vi from '@/messages/vi/errors.json';
 import './globals.css';
+import { SYSTEM_CAST } from '@/lib/brand/illustrations/casts/system';
 
 /**
  * Last-resort boundary: catches an error thrown by the root layout itself
@@ -41,7 +42,7 @@ export default function GlobalError({
                 {copy.retry}
               </Button>
             }
-            area="system"
+            cast={SYSTEM_CAST}
             kind="error"
             subtitle={copy.body}
             title={copy.title}

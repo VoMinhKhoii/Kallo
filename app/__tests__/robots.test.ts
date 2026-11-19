@@ -30,8 +30,11 @@ describe('robots.txt', () => {
     expect(rules.disallow).toContain('/auth/');
   });
 
-  it('points at the sitemap', () => {
-    expect(robots().sitemap).toBe('https://kallo.fit/sitemap.xml');
+  it('points at the sitemap and the feed', () => {
+    expect(robots().sitemap).toEqual([
+      'https://kallo.fit/sitemap.xml',
+      'https://kallo.fit/feed.xml',
+    ]);
   });
 
   it('carries no Yandex-only Host directive', () => {

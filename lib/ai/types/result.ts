@@ -13,6 +13,9 @@ import type {
 export type MealConfidence = 'high' | 'medium' | 'low';
 
 /** Final processed ingredient in the pipeline result */
+/** Which of a part's amounts the user typed. */
+export type TypedAmount = 'grams' | 'kcal';
+
 export interface ProcessedIngredient {
   ingredientName: string;
   foodCompositionId: string | null;
@@ -40,6 +43,13 @@ export interface ProcessedIngredient {
    * `caloriesKcal`; this only feeds `meals.alcohol_g`. Absent otherwise.
    */
   alcoholG?: number;
+  /**
+   * The user typed this part's amount: a weight or package size of its own, a
+   * weight or calories for its dish; the value says which of the two is the
+   * user's. Later scaling (the plain-read hold) leaves the part as it is.
+   * Absent otherwise.
+   */
+  typedAmount?: TypedAmount;
 }
 
 /** Final processed meal item in the pipeline result */
@@ -49,6 +59,12 @@ export interface PipelineMealItem {
   boundedNutrition: BoundedNutrition;
   displayedNutrition: NutritionValues;
   vessel?: PipelineVessel;
+  /**
+   * The user typed an amount for this dish as a whole (its weight or its
+   * calories), so its parts' own grams are estimates. Absent when amounts
+   * were typed part by part, or not at all.
+   */
+  typedWhole?: TypedAmount;
 }
 
 /** Full pipeline result for a successful analysis */

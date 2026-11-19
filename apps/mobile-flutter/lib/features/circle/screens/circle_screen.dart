@@ -90,16 +90,28 @@ class CircleScreen extends ConsumerWidget {
   }
 
   Future<void> _refresh(WidgetRef ref, String? selected) async {
-    ref.invalidate(sharedMealFeedProvider(selected));
     ref.invalidate(mealShareInvitesProvider);
     ref.invalidate(circleFeedProvider);
     if (selected != null) {
-      ref.invalidate(chatGroupsProvider);
       ref.invalidate(chatGroupDetailProvider(selected));
     }
     try {
-      await ref.read(sharedMealFeedProvider(selected).future);
-    } catch (_) {}
+      final provider = sharedMealFeedProvider(selected);
+      if (ref.read(provider).hasValue) {
+        await ref.read(provider.notifier).refresh();
+      } else {
+        ref.invalidate(provider);
+        await ref.read(provider.future);
+      }
+    } catch (_) {
+      // The feed owns the cached-content/error policy.
+    } finally {
+      // Explicit refresh also reconciles membership/unread state, after the
+      // feed's read-marker write so the list cannot race ahead of it.
+      if (selected != null && ref.context.mounted) {
+        ref.invalidate(chatGroupsProvider);
+      }
+    }
   }
 }
 

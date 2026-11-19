@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   markdownAlternatePath,
   negotiate,
+  unknownAlternativePageTarget,
+  unknownComparePageTarget,
   unknownDocsTarget,
   unknownFoodPageTarget,
   unknownToolPageTarget,
@@ -285,5 +287,66 @@ describe('unknownToolPageTarget', () => {
     ]) {
       expect(unknownToolPageTarget(pathname), pathname).toBeNull();
     }
+  });
+});
+
+describe('unknownAlternativePageTarget', () => {
+  it('leaves the real English page', () => {
+    for (const pathname of [
+      '/en/alternatives/cal-ai',
+      '/en/alternatives/cal-ai/',
+      '/en/alternatives/cal%2Dai',
+      '/en/alternatives/myfitnesspal',
+    ]) {
+      expect(unknownAlternativePageTarget(pathname), pathname).toBeNull();
+    }
+  });
+
+  it('gives the bare folder, other slugs and Vietnamese URLs the real 404', () => {
+    for (const [pathname, target] of [
+      ['/en/alternatives', '/en/not-found'],
+      ['/en/alternatives/', '/en/not-found'],
+      ['/en/alternatives/lose-it', '/en/not-found'],
+      ['/en/alternatives/cal-ai/extra', '/en/not-found'],
+      ['/vi/alternatives/cal-ai', '/vi/not-found'],
+    ]) {
+      expect(unknownAlternativePageTarget(pathname), pathname).toBe(target);
+    }
+  });
+
+  it('is null outside /{locale}/alternatives and for a malformed escape', () => {
+    expect(unknownAlternativePageTarget('/en/alternativesx')).toBeNull();
+    expect(
+      unknownAlternativePageTarget('/en/tools/tdee-calculator')
+    ).toBeNull();
+    expect(
+      unknownAlternativePageTarget('/en/alternatives/%E0%A4%A')
+    ).toBeNull();
+  });
+});
+
+describe('unknownComparePageTarget', () => {
+  it('leaves the real English pages', () => {
+    for (const pathname of [
+      '/en/compare/kallo-vs-cal-ai',
+      '/en/compare/kallo-vs-myfitnesspal/',
+    ]) {
+      expect(unknownComparePageTarget(pathname), pathname).toBeNull();
+    }
+  });
+
+  it('gives the bare folder, other slugs and Vietnamese URLs the real 404', () => {
+    for (const [pathname, target] of [
+      ['/en/compare', '/en/not-found'],
+      ['/en/compare/kallo-vs-lose-it', '/en/not-found'],
+      ['/vi/compare/kallo-vs-cal-ai', '/vi/not-found'],
+    ]) {
+      expect(unknownComparePageTarget(pathname), pathname).toBe(target);
+    }
+  });
+
+  it('is null outside /{locale}/compare', () => {
+    expect(unknownComparePageTarget('/en/comparex')).toBeNull();
+    expect(unknownComparePageTarget('/en/alternatives/cal-ai')).toBeNull();
   });
 });

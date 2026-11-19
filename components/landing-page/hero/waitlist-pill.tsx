@@ -4,25 +4,33 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, MailCheck } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import { useWaitlistSignup } from '@/hooks/auth/use-waitlist-signup';
-import type { WaitlistSignupInput } from '@/lib/api/contracts/waitlist';
+import { useResetOnReveal } from '@/hooks/ui/use-reset-on-reveal';
+import type {
+  WaitlistSignupInput,
+  WaitlistSource,
+} from '@/lib/api/contracts/waitlist';
 import { ApiError } from '@/lib/core/errors/client';
 import { cn } from '@/lib/core/ui/cn';
 
 /**
- * The waitlist, wearing the meal-input pill.
+ * The waitlist, wearing the meal-input pill: shaped like the app's composer,
+ * so the hero reads as the product rather than as a signup page. Double
+ * opt-in, so success means "check your inbox", never "you're on the list".
  *
- * Same hook, same contract, same double opt-in and the same copy as the
- * shipping `WaitlistForm` in `../waitlist/` — but shaped like the app's
- * composer, because that shape is what makes the hero read as the product
- * rather than as a signup page. The plain form stays for any surface that
- * wants a form rather than a hero.
+ * `source` says which of the page's two pills it is (hero or the closing
+ * section), and keeps their field ids apart.
  */
-export function WaitlistPill() {
+export function WaitlistPill({ source }: { source: WaitlistSource }) {
   const t = useTranslations('landing.hero.waitlist');
   const locale = useLocale();
   const signup = useWaitlistSignup();
+  // The page stays mounted, hidden, across navigation: coming back shows the
+  // form again rather than the last visit's result.
+  useResetOnReveal(signup.reset);
+  const fieldId = `${source}-waitlist-email`;
+  const errorId = `${source}-waitlist-error`;
 
   const schema = z.object({ email: z.email(t('invalidEmail')) });
   const {
@@ -61,7 +69,7 @@ export function WaitlistPill() {
         signup.mutate({
           email: values.email,
           locale: locale === 'vi' ? 'vi' : 'en',
-          source: 'hero',
+          source,
         } satisfies WaitlistSignupInput)
       )}
       noValidate
@@ -79,16 +87,16 @@ export function WaitlistPill() {
           errors.email && 'border-kallo-danger/60'
         )}
       >
-        <label htmlFor="hero-waitlist-email" className="sr-only">
+        <label htmlFor={fieldId} className="sr-only">
           {t('label')}
         </label>
         <input
-          id="hero-waitlist-email"
+          id={fieldId}
           type="email"
           autoComplete="email"
           placeholder={t('placeholder')}
           aria-invalid={errors.email ? true : undefined}
-          aria-describedby={errors.email ? 'hero-waitlist-error' : undefined}
+          aria-describedby={errors.email ? errorId : undefined}
           disabled={signup.isPending}
           className="min-w-0 flex-1 bg-transparent px-2 py-2 text-base text-kallo-text outline-none placeholder:text-[#B0A695] disabled:cursor-default sm:px-0 sm:py-0 sm:text-lg dark:placeholder:text-kallo-text-muted"
           {...register('email')}
@@ -108,7 +116,7 @@ export function WaitlistPill() {
 
       {errors.email && (
         <p
-          id="hero-waitlist-error"
+          id={errorId}
           className="mt-2 font-sans-display text-kallo-danger text-xs"
         >
           {errors.email.message}
@@ -122,7 +130,7 @@ export function WaitlistPill() {
           {failureMessage}
         </p>
       )}
-      <p className="mt-3 font-sans-display text-kallo-text-soft text-xs">
+      <p className="mt-3 font-sans-display text-kallo-text text-xs">
         {t('privacy')}
       </p>
     </form>

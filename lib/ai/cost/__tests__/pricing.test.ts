@@ -32,7 +32,7 @@ describe('attemptCostUsd', () => {
     expect(usd).toBeCloseTo(0.00385, 10);
   });
 
-  it('bills Claude cache writes at 1.25x input', () => {
+  it('bills Claude cache writes at 2x input', () => {
     // claude-haiku-5-5: 0.10 in, 0.01 cached, 0.50 out per 1M tokens.
     const usd = attemptCostUsd('claude-haiku-5-5', {
       ...none,
@@ -41,8 +41,8 @@ describe('attemptCostUsd', () => {
       cacheWriteTokens: 3_000,
       outputTokens: 400,
     });
-    // 1000*0.10 + 1000*0.01 + 3000*0.125 + 400*0.50 = 100 + 10 + 375 + 200.
-    expect(usd).toBeCloseTo(0.000685, 10);
+    // 1000*0.10 + 1000*0.01 + 3000*0.20 + 400*0.50 = 100 + 10 + 600 + 200.
+    expect(usd).toBeCloseTo(0.00091, 10);
   });
 
   it('prices a model missing from the card as null, never zero', () => {

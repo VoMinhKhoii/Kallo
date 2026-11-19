@@ -23,6 +23,7 @@ import {
 } from '@/lib/ai/prompts/build/decomposition-v2';
 import { promptTraceName, resolvePromptLocale } from '@/lib/ai/prompts/locale';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
+import { repairPipelineOutput } from '@/lib/ai/provider/claude/schema';
 import type { GeminiClient } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { MealDecomposition } from '@/lib/ai/types/decomposition';
@@ -32,6 +33,12 @@ import { capitalizeFirst } from '@/lib/core/text/capitalize';
 import type { AppDb } from '@/lib/infra/db/client';
 import { createDecompositionStreamController } from './decomposition-stream';
 import { withStageLogV2 } from './stage-log';
+import { holdCaloriesToText } from './text-checks/calories';
+import {
+  holdNamesToEnglish,
+  holdWeighStateToDescription,
+} from './text-checks/described';
+import { holdWeightsToText } from './text-checks/weights';
 
 type StreamedMealItemIds = ReturnType<
   ReturnType<
@@ -151,10 +158,11 @@ export async function runGroundedDecomposition(args: {
         return gemini.generateStructuredOutputStream(
           {
             schema: decompositionCallSchema,
+            repair: repairPipelineOutput,
             systemPrompt: decompSystemPrompt,
             userMessage,
             model: profile.decompositionModel,
-            temperature: 0.3,
+            temperature: 0,
             topP: 1,
             topK: 1,
             abortSignal: signal,
@@ -261,6 +269,13 @@ export async function runGroundedDecomposition(args: {
 
   // Language guard passed — release buffered item_name events to the client.
   flushBufferedItemNames();
+
+  // Hold what Call 1 extracted to the text before anything reads it.
+  holdWeightsToText(decomposition, rawInput);
+  holdCaloriesToText(decomposition, rawInput);
+  holdWeighStateToDescription(decomposition);
+  if (userContext.outputLanguage === 'en')
+    holdNamesToEnglish(decomposition, rawInput);
 
   // Capitalize meal-item and ingredient display names in place — same
   // pattern v1 uses (decomposition-stage.ts emitUnstreamed flush) so the UI always shows

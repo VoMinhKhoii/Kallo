@@ -43,7 +43,10 @@ export function ShareMealDialog({
 }: ShareMealDialogProps) {
   const t = useTranslations('groups.shareMeal');
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<Mode>('whole');
+  // Opens on split, except a cheat meal: it can only be shared whole, and has
+  // no tabs to switch away from a split it could not send.
+  const openingMode: Mode = copyOnly ? 'whole' : 'split';
+  const [mode, setMode] = useState<Mode>(openingMode);
   // Not deferred behind `open`: every observer shares `profileKeys.mine`, so
   // the meal cards that each mount this trigger produce ONE fetch, and it is
   // usually already warm — deferring it only made seat 0's pin pop from
@@ -82,7 +85,7 @@ export function ShareMealDialog({
     setOpen(next);
     if (!next) {
       draft.reset();
-      setMode('whole');
+      setMode(openingMode);
     }
   };
 
@@ -131,7 +134,6 @@ export function ShareMealDialog({
         {!(isPending || isError) && friends.length > 0 && (
           <>
             <ShareMealMeter
-              emptyLabel={t('pickSomeone')}
               evenlyLabel={t('splitEvenly')}
               split={mode === 'split'}
               onChange={draft.setParts}
@@ -143,7 +145,7 @@ export function ShareMealDialog({
             />
 
             <p className="mt-4 font-sans-display text-[12px] text-kallo-text-muted">
-              {t('addSectionTitle')}
+              {t(seated.length === 0 ? 'pickSomeone' : 'addSectionTitle')}
             </p>
             <ShareMealAddLane
               atCapacity={draft.atCapacity}

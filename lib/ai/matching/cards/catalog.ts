@@ -17,7 +17,6 @@ import { sourceBucket } from '@/lib/ai/matching/match-constants';
 import type { MatchSource } from '@/lib/ai/types/matching';
 import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
-import { type Bm25Index, buildBm25Index } from './bm25-index';
 import { CATALOG_ROWS_SQL, type CatalogQueryRow } from './catalog-sql';
 import { conceptKey } from './concept-key';
 import { buildLexicalIndex, type LexicalIndex } from './lexical-index';
@@ -35,7 +34,6 @@ export interface CatalogRow {
 export interface CardCatalog {
   rows: Map<string, CatalogRow>;
   lexical: LexicalIndex;
-  bm25En: Bm25Index;
 }
 
 const NOT_READY_RETRY_MS = 60_000;
@@ -187,9 +185,6 @@ export function buildCardCatalog(
   return {
     rows,
     lexical: buildLexicalIndex(names),
-    bm25En: buildBm25Index(
-      [...rows.values()].map((r) => ({ id: r.id, text: r.nameEn }))
-    ),
   };
 }
 
