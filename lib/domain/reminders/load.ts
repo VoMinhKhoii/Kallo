@@ -5,6 +5,7 @@ import {
   dayCompletionMarks,
   mealReminders,
   meals,
+  publicProfiles,
   pushTokens,
   userProfiles,
 } from '@/lib/infra/db/schema';
@@ -21,6 +22,8 @@ export interface ReminderCandidate {
   timeZone: string;
   calorieTarget: number;
   preferredLocale: string | null;
+  /** What they asked to be called ("What should we call you?"), if set. */
+  displayName: string | null;
   /** Newest `push_tokens.last_seen_at`: the app's last check-in. */
   lastOpenedAt: Date | null;
   /** Newest `push_tokens.last_pushed_at` across the user's devices. */
@@ -40,11 +43,13 @@ export async function loadCandidates(): Promise<ReminderCandidate[]> {
       timeZone: userProfiles.timeZone,
       calorieTarget: userProfiles.calorieTarget,
       preferredLocale: userProfiles.preferredLocale,
+      displayName: publicProfiles.displayName,
       lastOpenedAt: max(pushTokens.lastSeenAt),
       lastPushedAt: max(pushTokens.lastPushedAt),
     })
     .from(pushTokens)
     .innerJoin(userProfiles, eq(userProfiles.userId, pushTokens.userId))
+    .leftJoin(publicProfiles, eq(publicProfiles.userId, pushTokens.userId))
     .where(
       and(
         eq(pushTokens.platform, 'ios'),
@@ -53,7 +58,7 @@ export async function loadCandidates(): Promise<ReminderCandidate[]> {
         sql`${userProfiles.timeZone} IS NOT NULL`
       )
     )
-    .groupBy(userProfiles.userId);
+    .groupBy(userProfiles.userId, publicProfiles.displayName);
   return rows.flatMap((row) =>
     row.timeZone && row.calorieTarget
       ? [
@@ -62,6 +67,7 @@ export async function loadCandidates(): Promise<ReminderCandidate[]> {
             timeZone: row.timeZone,
             calorieTarget: row.calorieTarget,
             preferredLocale: row.preferredLocale,
+            displayName: row.displayName,
             lastOpenedAt: row.lastOpenedAt,
             lastPushedAt: row.lastPushedAt,
           },

@@ -28,7 +28,8 @@ function messagesFor(
   const body = reminderCopy(
     checkpoint,
     toPushLocale(candidate.preferredLocale),
-    due.today
+    due.today,
+    candidate.displayName
   );
   const data: Record<string, string> = {
     type: checkpoint.type,
