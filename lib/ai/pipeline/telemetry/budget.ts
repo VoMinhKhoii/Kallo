@@ -15,11 +15,13 @@ export const ANALYSIS_MODEL_BUDGET_ROUTE = '/api/analyze-meal';
 /** Cheat mode shares the analyze-meal endpoint; split it out for cost. */
 export const CHEAT_BUDGET_ROUTE = '/api/analyze-meal#cheat';
 export const LABEL_OCR_BUDGET_ROUTE = 'nutrition-label-ocr';
+export const MACRO_CARD_OCR_BUDGET_ROUTE = 'macro-card-ocr';
 /** The `route` values spend rows carry — `docs/AI_COST.md` reads them. */
 export type BudgetRoute =
   | typeof ANALYSIS_MODEL_BUDGET_ROUTE
   | typeof CHEAT_BUDGET_ROUTE
-  | typeof LABEL_OCR_BUDGET_ROUTE;
+  | typeof LABEL_OCR_BUDGET_ROUTE
+  | typeof MACRO_CARD_OCR_BUDGET_ROUTE;
 export const ANALYSIS_MODEL_PROVIDER = 'gemini';
 
 /** The provider a budget row is filed under: the one that ran `model`. */

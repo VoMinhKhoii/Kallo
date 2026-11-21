@@ -1,0 +1,2270 @@
+[
+  {
+    "id": "01-soumaki-v1-brown-rice",
+    "filename": "01-soumaki-v1-brown-rice.jpg",
+    "code": "V1",
+    "category": "vegetarian",
+    "dishName": "SOU-MADE BOWL (V1)",
+    "ingredients": "Brown rice, cauliflower, mixed veggies, edamame, mushroom",
+    "expected": {
+      "calories": 377,
+      "proteinGrams": 18,
+      "carbsGrams": 55,
+      "fatGrams": 10
+    }
+  },
+  {
+    "id": "02-soumaki-v2-cold-soba",
+    "filename": "02-soumaki-v2-cold-soba.jpg",
+    "code": "V2",
+    "category": "vegetarian",
+    "dishName": "SOU-MADE BOWL (V2)",
+    "ingredients": "Japanese cold soba, cabbage, chickpeas, beetroot, avocado",
+    "expected": {
+      "calories": 536,
+      "proteinGrams": 19,
+      "carbsGrams": 74,
+      "fatGrams": 18
+    }
+  },
+  {
+    "id": "03-soumaki-v5-tofu-pasta",
+    "filename": "03-soumaki-v5-tofu-pasta.jpg",
+    "code": "V5",
+    "category": "vegetarian",
+    "dishName": "SOU-MADE BOWL (V5)",
+    "ingredients": "Tofu, pasta, broccoli, edamame, purple cabbage, beetroot",
+    "expected": {
+      "calories": 530,
+      "proteinGrams": 33,
+      "carbsGrams": 85,
+      "fatGrams": 7
+    }
+  },
+  {
+    "id": "04-soumaki-h10-chicken-salmon",
+    "filename": "04-soumaki-h10-chicken-salmon.jpg",
+    "code": "H10",
+    "category": "high_protein",
+    "dishName": "SOU-MADE BOWL (H10)",
+    "ingredients": "Half cajun chicken breast, salmon, donburi white rice, tomato",
+    "expected": {
+      "calories": 617,
+      "proteinGrams": 60,
+      "carbsGrams": 50,
+      "fatGrams": 20
+    }
+  },
+  {
+    "id": "05-soumaki-h9-beef-steak-rice",
+    "filename": "05-soumaki-h9-beef-steak-rice.jpg",
+    "code": "H9",
+    "category": "high_protein",
+    "dishName": "SOU-MADE BOWL (H9)",
+    "ingredients": "Full beef steak, donburi white rice, sweet corn",
+    "expected": {
+      "calories": 611,
+      "proteinGrams": 54,
+      "carbsGrams": 56,
+      "fatGrams": 19
+    }
+  },
+  {
+    "id": "06-soumaki-l1-beef-sweet-potato",
+    "filename": "06-soumaki-l1-beef-sweet-potato.jpg",
+    "code": "L1",
+    "category": "low_calorie",
+    "dishName": "SOU-MADE BOWL (L1)",
+    "ingredients": "Half beef steak, sweet potato, cauliflower, pickles",
+    "expected": {
+      "calories": 274,
+      "proteinGrams": 25,
+      "carbsGrams": 27,
+      "fatGrams": 7
+    }
+  },
+  {
+    "id": "07-soumaki-l6-tuna-potato",
+    "filename": "07-soumaki-l6-tuna-potato.jpg",
+    "code": "L6",
+    "category": "low_calorie",
+    "dishName": "SOU-MADE BOWL (L6)",
+    "ingredients": "Tuna, baby potato, sweet corn, mixed veggies",
+    "expected": {
+      "calories": 311,
+      "proteinGrams": 34,
+      "carbsGrams": 32,
+      "fatGrams": 5
+    }
+  },
+  {
+    "id": "08-soumaki-l3-prawns-cold-soba",
+    "filename": "08-soumaki-l3-prawns-cold-soba.jpg",
+    "code": "L3",
+    "category": "low_calorie",
+    "dishName": "SOU-MADE BOWL (L3)",
+    "ingredients": "Prawns, Japanese cold soba, onsen egg, pickles",
+    "expected": {
+      "calories": 341,
+      "proteinGrams": 32,
+      "carbsGrams": 35,
+      "fatGrams": 8
+    }
+  },
+  {
+    "id": "09-soumaki-l4-chicken-pak-choi",
+    "filename": "09-soumaki-l4-chicken-pak-choi.jpg",
+    "code": "L4",
+    "category": "low_calorie",
+    "dishName": "SOU-MADE BOWL (L4)",
+    "ingredients": "Half chicken breast, baby potato, mixed veggies, pak choi",
+    "expected": {
+      "calories": 285,
+      "proteinGrams": 33,
+      "carbsGrams": 23,
+      "fatGrams": 7
+    }
+  },
+  {
+    "id": "10-soumaki-l5-chicken-cold-soba",
+    "filename": "10-soumaki-l5-chicken-cold-soba.jpg",
+    "code": "L5",
+    "category": "low_calorie",
+    "dishName": "SOU-MADE BOWL (L5)",
+    "ingredients": "Half cajun chicken, Japanese cold soba, pickles, cauliflower",
+    "expected": {
+      "calories": 351,
+      "proteinGrams": 39,
+      "carbsGrams": 40,
+      "fatGrams": 4
+    }
+  },
+  {
+    "id": "11-soumaki-h8-beef-brown-rice",
+    "filename": "11-soumaki-h8-beef-brown-rice.jpg",
+    "code": "H8",
+    "category": "high_protein",
+    "dishName": "SOU-MADE BOWL (H8)",
+    "ingredients": "Full beef steak, donburi brown rice, baby potato, broccoli",
+    "expected": {
+      "calories": 649,
+      "proteinGrams": 56,
+      "carbsGrams": 60,
+      "fatGrams": 21
+    }
+  },
+  {
+    "id": "12-bean-smoothie-menu-camera",
+    "filename": "12-bean-smoothie-menu-camera.jpg",
+    "code": "BEAN-BERRIES",
+    "category": "smoothie_menu",
+    "dishName": "Berries Blast",
+    "ingredients": "Berries smoothie (unitless carbs & price badge)",
+    "expected": {
+      "calories": 333,
+      "proteinGrams": 20.1,
+      "carbsGrams": 47.5,
+      "fatGrams": 11.1
+    }
+  },
+  {
+    "id": "13-boost-wondermelon-smoothie",
+    "filename": "13-boost-wondermelon-smoothie.png",
+    "code": "BOOST-WONDERMELON",
+    "category": "smoothie_menu",
+    "dishName": "Wondermelon",
+    "ingredients": "Strawberries, freshly juiced watermelon, strawberry yoghurt, whey protein, superfruit booster & ice",
+    "expected": {
+      "calories": 193,
+      "proteinGrams": 13.3,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "14-boost-protein-supreme-smoothie",
+    "filename": "14-boost-protein-supreme-smoothie.png",
+    "code": "BOOST-PROTEIN-SUPREME",
+    "category": "smoothie_menu",
+    "dishName": "Protein Supreme",
+    "ingredients": "Banana, muesli, dates, honey, coconut water, coconut milk, whey protein, chia seeds, cinnamon & ice",
+    "expected": {
+      "calories": 488,
+      "proteinGrams": 29.3,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "15-boost-strawberry-squeeze-smoothie",
+    "filename": "15-boost-strawberry-squeeze-smoothie.png",
+    "code": "BOOST-STRAWBERRY-SQUEEZE",
+    "category": "smoothie_menu",
+    "dishName": "Strawberry Squeeze",
+    "ingredients": "Strawberries, banana, apple juice, strawberry yoghurt & ice",
+    "expected": {
+      "calories": 394,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "16-prep-grilled-chicken-quinoa",
+    "filename": "16-prep-grilled-chicken-quinoa.jpg",
+    "code": "PREP-CHICKEN-QUINOA",
+    "category": "meal_prep",
+    "dishName": "Grilled Chicken Quinoa Bowl",
+    "ingredients": "Grilled chicken, quinoa, broccoli, sweet potato",
+    "expected": {
+      "calories": 450,
+      "proteinGrams": 45,
+      "carbsGrams": 45,
+      "fatGrams": 12
+    }
+  },
+  {
+    "id": "17-prep-turkey-avocado-wrap",
+    "filename": "17-prep-turkey-avocado-wrap.jpg",
+    "code": "PREP-TURKEY-WRAP",
+    "category": "meal_prep",
+    "dishName": "Turkey & Avocado Wrap",
+    "ingredients": "Turkey, avocado, mixed peppers, wrap",
+    "expected": {
+      "calories": 400,
+      "proteinGrams": 38,
+      "carbsGrams": 36,
+      "fatGrams": 14
+    }
+  },
+  {
+    "id": "18-prep-eggs-apple",
+    "filename": "18-prep-eggs-apple.jpg",
+    "code": "PREP-EGGS-APPLE",
+    "category": "meal_prep",
+    "dishName": "Hard-Boiled Eggs (2 eggs) + Apple",
+    "ingredients": "Hard-boiled eggs, apple",
+    "expected": {
+      "calories": 210,
+      "proteinGrams": 14,
+      "carbsGrams": 25,
+      "fatGrams": 8
+    }
+  },
+  {
+    "id": "19-prep-chicken-fajita-bowl",
+    "filename": "19-prep-chicken-fajita-bowl.jpg",
+    "code": "PREP-FAJITA-BOWL",
+    "category": "meal_prep",
+    "dishName": "Chicken Fajita Bowl with Brown Rice",
+    "ingredients": "Chicken fajita, peppers, brown rice",
+    "expected": {
+      "calories": 420,
+      "proteinGrams": 42,
+      "carbsGrams": 45,
+      "fatGrams": 10
+    }
+  },
+  {
+    "id": "20-prep-baked-cod-quinoa",
+    "filename": "20-prep-baked-cod-quinoa.jpg",
+    "code": "PREP-BAKED-COD",
+    "category": "meal_prep",
+    "dishName": "Baked Cod with Quinoa & Asparagus",
+    "ingredients": "Baked cod, quinoa, asparagus",
+    "expected": {
+      "calories": 420,
+      "proteinGrams": 44,
+      "carbsGrams": 40,
+      "fatGrams": 10
+    }
+  },
+  {
+    "id": "21-card-chicken-al-pastor-bowl",
+    "filename": "21-card-chicken-al-pastor-bowl.jpg",
+    "code": "CARD-AL-PASTOR",
+    "category": "meal_prep",
+    "dishName": "Grilled Chicken Al Pastor Bowls",
+    "ingredients": "Grilled chicken al pastor, guacamole, pineapple, red onion, rice",
+    "expected": {
+      "calories": 397,
+      "proteinGrams": 44,
+      "carbsGrams": 44,
+      "fatGrams": 5
+    }
+  },
+  {
+    "id": "22-fitfood-15-hamburger-bowl",
+    "filename": "22-fitfood-15-hamburger-bowl.png",
+    "code": "FITFOOD-15",
+    "category": "fitfood",
+    "dishName": "Hamburger Bowl",
+    "ingredients": "1 bowl (300g)",
+    "expected": {
+      "calories": 360,
+      "proteinGrams": 42,
+      "carbsGrams": 24,
+      "fatGrams": 16
+    }
+  },
+  {
+    "id": "23-fitfood-34-tempeh-stir-fry",
+    "filename": "23-fitfood-34-tempeh-stir-fry.jpg",
+    "code": "FITFOOD-34",
+    "category": "fitfood",
+    "dishName": "Tempeh Stir-Fry",
+    "ingredients": "1 bowl (300g)",
+    "expected": {
+      "calories": 340,
+      "proteinGrams": 30,
+      "carbsGrams": 32,
+      "fatGrams": 16
+    }
+  },
+  {
+    "id": "24-fitfood-26-shrimp-stir-fry",
+    "filename": "24-fitfood-26-shrimp-stir-fry.jpg",
+    "code": "FITFOOD-26",
+    "category": "fitfood",
+    "dishName": "Shrimp Stir-Fry",
+    "ingredients": "1 bowl (300g)",
+    "expected": {
+      "calories": 300,
+      "proteinGrams": 40,
+      "carbsGrams": 24,
+      "fatGrams": 10
+    }
+  },
+  {
+    "id": "25-sweetgreen-jammy-sunday-chicken",
+    "filename": "25-sweetgreen-jammy-sunday-chicken.jpg",
+    "code": "SG-JAMMY-CHICKEN",
+    "category": "restaurant_bowl",
+    "dishName": "Jammy Sunday Chicken",
+    "ingredients": "Rotisserie-seasoned chicken, sweet onion jammy, spicy broccoli, roasted sweet potatoes, umami rice, green goddess dressing",
+    "expected": {
+      "calories": 960,
+      "proteinGrams": 40,
+      "carbsGrams": 99,
+      "fatGrams": 47
+    }
+  },
+  {
+    "id": "26-sweetgreen-wild-chicken-bello",
+    "filename": "26-sweetgreen-wild-chicken-bello.jpg",
+    "code": "SG-WILD-BELLO",
+    "category": "restaurant_bowl",
+    "dishName": "Wild Chicken Bello",
+    "ingredients": "Rotisserie-seasoned chicken, roasted sweet potatoes, portobello mix, napa cabbage slaw, sweet onion jammy, wild rice",
+    "expected": {
+      "calories": 965,
+      "proteinGrams": 39,
+      "carbsGrams": 105,
+      "fatGrams": 43
+    }
+  },
+  {
+    "id": "27-sweetgreen-umami-chicken-rice",
+    "filename": "27-sweetgreen-umami-chicken-rice.jpg",
+    "code": "SG-UMAMI-RICE",
+    "category": "restaurant_bowl",
+    "dishName": "Umami Chicken Rice",
+    "ingredients": "Rotisserie-seasoned chicken, umami rice, shredded cabbage, white cheddar, crumbled bacon, tortilla",
+    "expected": {
+      "calories": 1070,
+      "proteinGrams": 55,
+      "carbsGrams": 96,
+      "fatGrams": 48
+    }
+  },
+  {
+    "id": "28-sweetgreen-sourdough-cookie",
+    "filename": "28-sweetgreen-sourdough-cookie.jpg",
+    "code": "SG-COOKIE",
+    "category": "restaurant_bowl",
+    "dishName": "Sourdough Chocolate Chip Cookie",
+    "ingredients": "Artisan chocolate chips sourdough cookie",
+    "expected": {
+      "calories": 240,
+      "proteinGrams": 3,
+      "carbsGrams": 32,
+      "fatGrams": 11
+    }
+  },
+  {
+    "id": "29-megafit-korean-beef-bowl",
+    "filename": "29-megafit-korean-beef-bowl.jpg",
+    "code": "MEGAFIT-KOREAN-BEEF",
+    "category": "meal_prep",
+    "dishName": "Korean Beef Bowl",
+    "ingredients": "Korean beef, white rice, broccoli, kimchi (dual price badges)",
+    "expected": {
+      "calories": 540,
+      "proteinGrams": 40,
+      "carbsGrams": 61,
+      "fatGrams": 14
+    }
+  },
+  {
+    "id": "30-megafit-bum-bowl",
+    "filename": "30-megafit-bum-bowl.jpg",
+    "code": "MEGAFIT-BUM-BOWL",
+    "category": "meal_prep",
+    "dishName": "Bum Bowl",
+    "ingredients": "Ground beef pasta bowl (price badge distractor)",
+    "expected": {
+      "calories": 570,
+      "proteinGrams": 46,
+      "carbsGrams": 60,
+      "fatGrams": 14
+    }
+  },
+  {
+    "id": "31-megafit-go-to-meal",
+    "filename": "31-megafit-go-to-meal.jpg",
+    "code": "MEGAFIT-GO-TO",
+    "category": "meal_prep",
+    "dishName": "The Go-To Meal",
+    "ingredients": "Chicken, rice, greens, lime (dual price badges)",
+    "expected": {
+      "calories": 400,
+      "proteinGrams": 41,
+      "carbsGrams": 47,
+      "fatGrams": 4
+    }
+  },
+  {
+    "id": "32-megafit-beef-street-corn-bowl",
+    "filename": "32-megafit-beef-street-corn-bowl.jpg",
+    "code": "MEGAFIT-STREET-CORN",
+    "category": "meal_prep",
+    "dishName": "Beef Street Corn Bowl",
+    "ingredients": "Seasoned beef, street corn, sweet potato, greens",
+    "expected": {
+      "calories": 480,
+      "proteinGrams": 38,
+      "carbsGrams": 34,
+      "fatGrams": 22
+    }
+  },
+  {
+    "id": "33-soumaki-b1-tuna-brown-rice",
+    "filename": "33-soumaki-b1-tuna-brown-rice.jpg",
+    "code": "B1",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B1)",
+    "ingredients": "Tuna, donburi brown rice, beetroot, broccoli",
+    "expected": {
+      "calories": 434,
+      "proteinGrams": 43,
+      "carbsGrams": 48,
+      "fatGrams": 8
+    }
+  },
+  {
+    "id": "34-soumaki-b2-beef-steak-pasta",
+    "filename": "34-soumaki-b2-beef-steak-pasta.jpg",
+    "code": "B2",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B2)",
+    "ingredients": "Half beef steak, pasta, mushroom, pak choi, pickles, onsen egg",
+    "expected": {
+      "calories": 438,
+      "proteinGrams": 35,
+      "carbsGrams": 38,
+      "fatGrams": 16
+    }
+  },
+  {
+    "id": "35-soumaki-b3-prawns-cold-soba",
+    "filename": "35-soumaki-b3-prawns-cold-soba.jpg",
+    "code": "B3",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B3)",
+    "ingredients": "Prawns, Japanese cold soba, French bean, tofu",
+    "expected": {
+      "calories": 435,
+      "proteinGrams": 41,
+      "carbsGrams": 54,
+      "fatGrams": 6
+    }
+  },
+  {
+    "id": "36-itsu-chicken-miso-soup",
+    "filename": "36-itsu-chicken-miso-soup.jpg",
+    "code": "ITSU-MISO",
+    "category": "energy_only",
+    "dishName": "loaded chicken miso soup",
+    "ingredients": "Chicken, tofu, wakame, miso broth (kcal only)",
+    "expected": {
+      "calories": 137,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "37-itsu-coconut-chicken-soup",
+    "filename": "37-itsu-coconut-chicken-soup.jpg",
+    "code": "ITSU-COCONUT-SOUP",
+    "category": "energy_only",
+    "dishName": "famous coconut chicken soup",
+    "ingredients": "Coconut broth, chicken, rice noodles, vegetables (kcal only)",
+    "expected": {
+      "calories": 469,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "38-itsu-korean-bbq-chicken",
+    "filename": "38-itsu-korean-bbq-chicken.jpg",
+    "code": "ITSU-KOREAN-BBQ",
+    "category": "energy_only",
+    "dishName": "little Korean BBQ chicken",
+    "ingredients": "Korean BBQ chicken, edamame, rice, greens (kcal only)",
+    "expected": {
+      "calories": 415,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "39-fittaste-de-rind-linsentopf",
+    "filename": "39-fittaste-de-rind-linsentopf.jpg",
+    "code": "FITTASTE-DE-LINSEN",
+    "category": "european_card",
+    "dishName": "Linseneintopf mit Rindfleisch",
+    "ingredients": "380 g Portion: Rindfleisch, Linsen, Kartoffeln, Gemüse",
+    "expected": {
+      "calories": 298,
+      "proteinGrams": 33,
+      "carbsGrams": 29,
+      "fatGrams": 3.4
+    }
+  },
+  {
+    "id": "40-cleaneatz-pub-chicken",
+    "filename": "40-cleaneatz-pub-chicken.jpg",
+    "code": "CE-PUB-CHICKEN",
+    "category": "meal_prep",
+    "dishName": "Pub Chicken",
+    "ingredients": "Grilled chicken breast, pub cheese sauce, bacon bites, red potatoes, green beans",
+    "expected": {
+      "calories": 372,
+      "proteinGrams": 35,
+      "carbsGrams": 31,
+      "fatGrams": 12
+    }
+  },
+  {
+    "id": "41-cleaneatz-shredded-beef-bbq",
+    "filename": "41-cleaneatz-shredded-beef-bbq.jpg",
+    "code": "CE-BEEF-BBQ",
+    "category": "meal_prep",
+    "dishName": "Shredded Beef BBQ Plate",
+    "ingredients": "Slow-braised shredded beef, red mashed potatoes, green beans, BBQ sauce",
+    "expected": {
+      "calories": 312,
+      "proteinGrams": 27,
+      "carbsGrams": 24,
+      "fatGrams": 12
+    }
+  },
+  {
+    "id": "42-cleaneatz-skinny-burrito-bowl",
+    "filename": "42-cleaneatz-skinny-burrito-bowl.jpg",
+    "code": "CE-BURRITO-BOWL",
+    "category": "meal_prep",
+    "dishName": "Skinny Burrito Bowl",
+    "ingredients": "Brown rice, seasoned ground beef, tomatoes, guacamole, cheddar cheese",
+    "expected": {
+      "calories": 397,
+      "proteinGrams": 28,
+      "carbsGrams": 33,
+      "fatGrams": 17
+    }
+  },
+  {
+    "id": "43-cleaneatz-sweet-chili-mac",
+    "filename": "43-cleaneatz-sweet-chili-mac.jpg",
+    "code": "CE-SWEET-CHILI-MAC",
+    "category": "meal_prep",
+    "dishName": "Sweet Chili Chicken Mac & Cheese",
+    "ingredients": "Whole grain pasta, creamy queso sauce, breaded chicken, sweet chili sauce",
+    "expected": {
+      "calories": 477,
+      "proteinGrams": 33,
+      "carbsGrams": 66,
+      "fatGrams": 9
+    }
+  },
+  {
+    "id": "44-cleaneatz-bacon-chicken-ranch-fries",
+    "filename": "44-cleaneatz-bacon-chicken-ranch-fries.jpg",
+    "code": "CE-BACON-RANCH-FRIES",
+    "category": "meal_prep",
+    "dishName": "Bacon Chicken Ranch Fries",
+    "ingredients": "Roasted chicken thighs, rosemary fries, turkey bacon, Monterey Jack cheese, ranch",
+    "expected": {
+      "calories": 481,
+      "proteinGrams": 34,
+      "carbsGrams": 30,
+      "fatGrams": 25
+    }
+  },
+  {
+    "id": "45-sweetgreen-classic-chicken-caesar",
+    "filename": "45-sweetgreen-classic-chicken-caesar.jpg",
+    "code": "SG-CLASSIC-CHICKEN-CAES",
+    "category": "restaurant_bowl",
+    "dishName": "Classic Chicken Caesar",
+    "ingredients": "Antibiotic-free roasted chicken, chopped romaine, garlic breadcrumbs, parmesan crisps, shaved parmesan, caesar dressing and lemon squeeze, wrapped in our new olive oil tortilla",
+    "expected": {
+      "calories": 830,
+      "proteinGrams": 47,
+      "carbsGrams": 64,
+      "fatGrams": 60
+    }
+  },
+  {
+    "id": "46-sweetgreen-cali-chicken-club",
+    "filename": "46-sweetgreen-cali-chicken-club.jpg",
+    "code": "SG-CALI-CHICKEN-CLUB",
+    "category": "restaurant_bowl",
+    "dishName": "Cali Chicken Club",
+    "ingredients": "Antibiotic-free roasted chicken, chopped romaine, crumbled bacon, garlic breadcrumbs, tomatoes, avocado and garlic aioli, wrapped in our new olive oil tortilla",
+    "expected": {
+      "calories": 1205,
+      "proteinGrams": 47,
+      "carbsGrams": 73,
+      "fatGrams": 84
+    }
+  },
+  {
+    "id": "47-sweetgreen-chicken-jalape-o-ranch",
+    "filename": "47-sweetgreen-chicken-jalape-o-ranch.jpg",
+    "code": "SG-CHICKEN-JALAPE-O-RAN",
+    "category": "restaurant_bowl",
+    "dishName": "Chicken Jalapeño Ranch",
+    "ingredients": "Antibiotic-free blackened chicken, umami rice, white cheddar, corn salsa, pickled onions, shredded cabbage and charred jalapeño ranch, wrapped in an olive oil tortilla",
+    "expected": {
+      "calories": 1190,
+      "proteinGrams": 42,
+      "carbsGrams": 114,
+      "fatGrams": 80
+    }
+  },
+  {
+    "id": "48-sweetgreen-harvest-bowl",
+    "filename": "48-sweetgreen-harvest-bowl.jpg",
+    "code": "SG-HARVEST-BOWL",
+    "category": "restaurant_bowl",
+    "dishName": "Harvest Bowl",
+    "ingredients": "Antibiotic-free roasted chicken, roasted sweet potatoes, apples, goat cheese, roasted almonds, wild rice, organic shredded kale and balsamic vinaigrette",
+    "expected": {
+      "calories": 740,
+      "proteinGrams": 32,
+      "carbsGrams": 60,
+      "fatGrams": 41
+    }
+  },
+  {
+    "id": "49-sweetgreen-crispy-rice-bowl",
+    "filename": "49-sweetgreen-crispy-rice-bowl.jpg",
+    "code": "SG-CRISPY-RICE-BOWL",
+    "category": "restaurant_bowl",
+    "dishName": "Crispy Rice Bowl",
+    "ingredients": "Antibiotic-free blackened chicken, shredded carrots, shredded cabbage, cucumbers, cilantro, roasted almonds, crispy rice, wild rice, organic arugula, lime squeeze and spicy cashew",
+    "expected": {
+      "calories": 640,
+      "proteinGrams": 28,
+      "carbsGrams": 61,
+      "fatGrams": 30
+    }
+  },
+  {
+    "id": "50-sweetgreen-chicken-pesto-parm",
+    "filename": "50-sweetgreen-chicken-pesto-parm.jpg",
+    "code": "SG-CHICKEN-PESTO-PARM",
+    "category": "restaurant_bowl",
+    "dishName": "Chicken Pesto Parm",
+    "ingredients": "Antibiotic-free roasted chicken, spicy broccoli, tomatoes, shaved parmesan, garlic breadcrumbs, golden quinoa, organic baby spinach, Sweetgreen hot sauce and pesto vinaigrette",
+    "expected": {
+      "calories": 525,
+      "proteinGrams": 35,
+      "carbsGrams": 38,
+      "fatGrams": 23
+    }
+  },
+  {
+    "id": "51-sweetgreen-chicken-avocado-ranch",
+    "filename": "51-sweetgreen-chicken-avocado-ranch.jpg",
+    "code": "SG-CHICKEN-AVOCADO-RANC",
+    "category": "restaurant_bowl",
+    "dishName": "Chicken Avocado Ranch",
+    "ingredients": "Antibiotic-free blackened chicken, avocado mash, pickled onions, apples, garlic breadcrumbs, umami rice, chopped romaine, and green goddess ranch",
+    "expected": {
+      "calories": 715,
+      "proteinGrams": 27,
+      "carbsGrams": 56,
+      "fatGrams": 42
+    }
+  },
+  {
+    "id": "52-sweetgreen-shroomami",
+    "filename": "52-sweetgreen-shroomami.jpg",
+    "code": "SG-SHROOMAMI",
+    "category": "restaurant_bowl",
+    "dishName": "Shroomami",
+    "ingredients": "Roasted tofu, warm portobello mix, cucumbers, basil, shredded cabbage, roasted almonds, wild rice, organic shredded kale, miso sesame ginger",
+    "expected": {
+      "calories": 635,
+      "proteinGrams": 18,
+      "carbsGrams": 50,
+      "fatGrams": 42
+    }
+  },
+  {
+    "id": "53-sweetgreen-omega-glow",
+    "filename": "53-sweetgreen-omega-glow.jpg",
+    "code": "SG-OMEGA-GLOW",
+    "category": "restaurant_bowl",
+    "dishName": "Omega Glow",
+    "ingredients": "Antibiotic-free miso glazed salmon, chopped romaine, umami rice, corn salsa, raw carrots, shredded cabbage, cilantro, roasted almonds, and miso sesame ginger dressing",
+    "expected": {
+      "calories": 750,
+      "proteinGrams": 32,
+      "carbsGrams": 52,
+      "fatGrams": 45
+    }
+  },
+  {
+    "id": "54-sweetgreen-steak-honey-crunch",
+    "filename": "54-sweetgreen-steak-honey-crunch.jpg",
+    "code": "SG-STEAK-HONEY-CRUNCH",
+    "category": "restaurant_bowl",
+    "dishName": "Steak Honey Crunch",
+    "ingredients": "Caramelized garlic steak, chopped romaine, golden quinoa, pickled onions, tomatoes, garlic breadcrumbs, hot honey mustard sauce",
+    "expected": {
+      "calories": 625,
+      "proteinGrams": 33,
+      "carbsGrams": 48,
+      "fatGrams": 33
+    }
+  },
+  {
+    "id": "55-sweetgreen-kale-caesar",
+    "filename": "55-sweetgreen-kale-caesar.jpg",
+    "code": "SG-KALE-CAESAR",
+    "category": "restaurant_bowl",
+    "dishName": "Kale Caesar",
+    "ingredients": "Kale, romaine, roasted chicken, bread crumbs, parm crisps, lemon squeeze, Caesar dressing",
+    "expected": {
+      "calories": 545,
+      "proteinGrams": 41,
+      "carbsGrams": 18,
+      "fatGrams": 35
+    }
+  },
+  {
+    "id": "56-sweetgreen-guacamole-greens",
+    "filename": "56-sweetgreen-guacamole-greens.jpg",
+    "code": "SG-GUACAMOLE-GREENS",
+    "category": "restaurant_bowl",
+    "dishName": "Guacamole Greens",
+    "ingredients": "Roasted chicken, avocado mash, pickled onions, shredded cabbage, corn salsa (x2), spring mix, chopped romaine, lime squeeze, lime cilantro jalapeño sauce",
+    "expected": {
+      "calories": 505,
+      "proteinGrams": 27,
+      "carbsGrams": 32,
+      "fatGrams": 30
+    }
+  },
+  {
+    "id": "57-sweetgreen-hummus-crunch",
+    "filename": "57-sweetgreen-hummus-crunch.jpg",
+    "code": "SG-HUMMUS-CRUNCH",
+    "category": "restaurant_bowl",
+    "dishName": "Hummus Crunch",
+    "ingredients": "Hummus, feta crumble, chickpeas, tomatoes, cucumbers, shredded cabbage, napa cabbage slaw, basil, garlic breadcrumbs, romaine, kale, pesto vinaigrette",
+    "expected": {
+      "calories": 390,
+      "proteinGrams": 12,
+      "carbsGrams": 39,
+      "fatGrams": 18
+    }
+  },
+  {
+    "id": "58-sweetgreen-caramelized-garlic-steak",
+    "filename": "58-sweetgreen-caramelized-garlic-steak.jpg",
+    "code": "SG-CARAMELIZED-GARLIC-S",
+    "category": "restaurant_bowl",
+    "dishName": "Caramelized Garlic Steak",
+    "ingredients": "Antibiotic-free grass-fed caramelized garlic steak, warm roasted sweet potatoes, sweet onion jammy, spicy broccoli, wild rice, and pesto vinaigrette",
+    "expected": {
+      "calories": 900,
+      "proteinGrams": 36,
+      "carbsGrams": 95,
+      "fatGrams": 41
+    }
+  },
+  {
+    "id": "59-sweetgreen-miso-glazed-salmon",
+    "filename": "59-sweetgreen-miso-glazed-salmon.jpg",
+    "code": "SG-MISO-GLAZED-SALMON",
+    "category": "restaurant_bowl",
+    "dishName": "Miso Glazed Salmon",
+    "ingredients": "Antibiotic-free miso glazed salmon, avocado mash, napa cabbage slaw, cucumbers, crispy onions, umami rice, nori sesame seasoning, spicy cashew and lemon squeeze",
+    "expected": {
+      "calories": 915,
+      "proteinGrams": 34,
+      "carbsGrams": 84,
+      "fatGrams": 50
+    }
+  },
+  {
+    "id": "60-sweetgreen-hot-honey-chicken",
+    "filename": "60-sweetgreen-hot-honey-chicken.jpg",
+    "code": "SG-HOT-HONEY-CHICKEN",
+    "category": "restaurant_bowl",
+    "dishName": "Hot Honey Chicken",
+    "ingredients": "Antibiotic-free blackened chicken, warm roasted sweet potatoes, napa cabbage slaw, crispy onions, golden quinoa, and hot honey mustard sauce",
+    "expected": {
+      "calories": 875,
+      "proteinGrams": 50,
+      "carbsGrams": 72,
+      "fatGrams": 38
+    }
+  },
+  {
+    "id": "61-sweetgreen-ranchy-chicken-rice",
+    "filename": "61-sweetgreen-ranchy-chicken-rice.jpg",
+    "code": "SG-RANCHY-CHICKEN-RICE",
+    "category": "restaurant_bowl",
+    "dishName": "Ranchy Chicken + Rice",
+    "ingredients": "Roasted chicken, cucumbers, parmesan crisps, wild rice, green goddess ranch",
+    "expected": {
+      "calories": 530,
+      "proteinGrams": 27,
+      "carbsGrams": 34,
+      "fatGrams": 31
+    }
+  },
+  {
+    "id": "62-sweetgreen-little-harvest",
+    "filename": "62-sweetgreen-little-harvest.jpg",
+    "code": "SG-LITTLE-HARVEST",
+    "category": "restaurant_bowl",
+    "dishName": "Little Harvest",
+    "ingredients": "Roasted chicken, warm roasted sweet potatoes, apples, balsamic vinaigrette",
+    "expected": {
+      "calories": 410,
+      "proteinGrams": 18,
+      "carbsGrams": 23,
+      "fatGrams": 27
+    }
+  },
+  {
+    "id": "63-sweetgreen-mini-mezze",
+    "filename": "63-sweetgreen-mini-mezze.jpg",
+    "code": "SG-MINI-MEZZE",
+    "category": "restaurant_bowl",
+    "dishName": "Mini Mezze",
+    "ingredients": "Roasted chicken, cucumbers, hummus, focaccia breadstick",
+    "expected": {
+      "calories": 295,
+      "proteinGrams": 30,
+      "carbsGrams": 26,
+      "fatGrams": 8
+    }
+  },
+  {
+    "id": "64-sweetgreen-rosemary-focaccia",
+    "filename": "64-sweetgreen-rosemary-focaccia.jpg",
+    "code": "SG-ROSEMARY-FOCACCIA",
+    "category": "restaurant_bowl",
+    "dishName": "Rosemary Focaccia",
+    "ingredients": "Locally-made rosemary focaccia. Check out our regional bakery partners here!",
+    "expected": {
+      "calories": 230,
+      "proteinGrams": 8,
+      "carbsGrams": 34,
+      "fatGrams": 7
+    }
+  },
+  {
+    "id": "65-sweetgreen-roasted-sweet-potatoes-dip",
+    "filename": "65-sweetgreen-roasted-sweet-potatoes-dip.jpg",
+    "code": "SG-ROASTED-SWEET-POTATO",
+    "category": "restaurant_bowl",
+    "dishName": "Roasted Sweet Potatoes + Dip",
+    "ingredients": "Warm roasted sweet potatoes served with a choice of Hot Honey Mustard or Green Goddess Ranch",
+    "expected": {
+      "calories": 340,
+      "proteinGrams": 5,
+      "carbsGrams": 31,
+      "fatGrams": 22
+    }
+  },
+  {
+    "id": "66-sweetgreen-sg-x-siete-green-goddess-ranch-potat",
+    "filename": "66-sweetgreen-sg-x-siete-green-goddess-ranch-potat.jpg",
+    "code": "SG-SG-X-SIETE-GREEN-GOD",
+    "category": "restaurant_bowl",
+    "dishName": "Sg X Siete: Green Goddess Ranch Potato Chips",
+    "ingredients": "Meet the match that marries Sweetgreen flavor with a Siete potato chip.",
+    "expected": {
+      "calories": 210,
+      "proteinGrams": 3,
+      "carbsGrams": 27,
+      "fatGrams": 10
+    }
+  },
+  {
+    "id": "67-sweetgreen-siete-sea-salt-potato-chips",
+    "filename": "67-sweetgreen-siete-sea-salt-potato-chips.jpg",
+    "code": "SG-SIETE-SEA-SALT-POTAT",
+    "category": "restaurant_bowl",
+    "dishName": "Siete Sea Salt Potato Chips",
+    "ingredients": "Crafted with the best kind of basics: potatoes, avocado oil and sea salt.",
+    "expected": {
+      "calories": 220,
+      "proteinGrams": 3,
+      "carbsGrams": 23,
+      "fatGrams": 13
+    }
+  },
+  {
+    "id": "68-soumaki-l2-salmon-sweet-potato",
+    "filename": "68-soumaki-l2-salmon-sweet-potato.jpg",
+    "code": "L2",
+    "category": "low_calorie",
+    "dishName": "SOU-MADE BOWL (L2)",
+    "ingredients": "Salmon, sweet potato, mixed veggies, pak choi",
+    "expected": {
+      "calories": 331,
+      "proteinGrams": 24,
+      "carbsGrams": 26,
+      "fatGrams": 15
+    }
+  },
+  {
+    "id": "69-soumaki-l7-half-cajun-chicken-b",
+    "filename": "69-soumaki-l7-half-cajun-chicken-b.jpg",
+    "code": "L7",
+    "category": "low_calorie",
+    "dishName": "SOU-MADE BOWL (L7)",
+    "ingredients": "Half cajun chicken breast, brown rice, beetroot, tomato",
+    "expected": {
+      "calories": 373,
+      "proteinGrams": 35,
+      "carbsGrams": 45,
+      "fatGrams": 6
+    }
+  },
+  {
+    "id": "70-soumaki-l8-basa-fish-japanese-c",
+    "filename": "70-soumaki-l8-basa-fish-japanese-c.jpg",
+    "code": "L8",
+    "category": "low_calorie",
+    "dishName": "SOU-MADE BOWL (L8)",
+    "ingredients": "Basa fish, Japanese cold soba, avocado",
+    "expected": {
+      "calories": 439,
+      "proteinGrams": 33,
+      "carbsGrams": 40,
+      "fatGrams": 16
+    }
+  },
+  {
+    "id": "71-soumaki-l9-half-beef-steak-swee",
+    "filename": "71-soumaki-l9-half-beef-steak-swee.jpg",
+    "code": "L9",
+    "category": "low_calorie",
+    "dishName": "SOU-MADE BOWL (L9)",
+    "ingredients": "Half beef steak, sweet potato, pak choi, broccoli, mix veggies",
+    "expected": {
+      "calories": 341,
+      "proteinGrams": 27,
+      "carbsGrams": 33,
+      "fatGrams": 11
+    }
+  },
+  {
+    "id": "72-soumaki-l10-duck-breast-pumpkin",
+    "filename": "72-soumaki-l10-duck-breast-pumpkin.jpg",
+    "code": "L10",
+    "category": "low_calorie",
+    "dishName": "SOU-MADE BOWL (L10)",
+    "ingredients": "Duck breast, pumpkin, broccoli, spinach",
+    "expected": {
+      "calories": 351,
+      "proteinGrams": 35,
+      "carbsGrams": 16,
+      "fatGrams": 16
+    }
+  },
+  {
+    "id": "73-soumaki-b4-salmon-pasta-spinach",
+    "filename": "73-soumaki-b4-salmon-pasta-spinach.jpg",
+    "code": "B4",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B4)",
+    "ingredients": "Salmon, pasta, spinach, salad and mix nuts",
+    "expected": {
+      "calories": 508,
+      "proteinGrams": 31,
+      "carbsGrams": 42,
+      "fatGrams": 24
+    }
+  },
+  {
+    "id": "74-soumaki-b5-duck-breast-donburi",
+    "filename": "74-soumaki-b5-duck-breast-donburi.jpg",
+    "code": "B5",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B5)",
+    "ingredients": "Duck breast, donburi brown rice, pickles",
+    "expected": {
+      "calories": 485,
+      "proteinGrams": 40,
+      "carbsGrams": 36,
+      "fatGrams": 20
+    }
+  },
+  {
+    "id": "75-soumaki-b6-salmon-donburi-brown",
+    "filename": "75-soumaki-b6-salmon-donburi-brown.jpg",
+    "code": "B6",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B6)",
+    "ingredients": "Salmon, donburi brown rice, spinach",
+    "expected": {
+      "calories": 455,
+      "proteinGrams": 32,
+      "carbsGrams": 38,
+      "fatGrams": 20
+    }
+  },
+  {
+    "id": "76-soumaki-b7-duck-breast-donburi",
+    "filename": "76-soumaki-b7-duck-breast-donburi.jpg",
+    "code": "B7",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B7)",
+    "ingredients": "Duck breast, donburi white rice, mix veggies, spinach",
+    "expected": {
+      "calories": 586,
+      "proteinGrams": 42,
+      "carbsGrams": 49,
+      "fatGrams": 25
+    }
+  },
+  {
+    "id": "77-soumaki-b8-basa-fish-donburi-br",
+    "filename": "77-soumaki-b8-basa-fish-donburi-br.jpg",
+    "code": "B8",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B8)",
+    "ingredients": "Basa fish, donburi brown rice, spinach, cabbage",
+    "expected": {
+      "calories": 442,
+      "proteinGrams": 37,
+      "carbsGrams": 43,
+      "fatGrams": 14
+    }
+  },
+  {
+    "id": "78-soumaki-b9-half-original-chicke",
+    "filename": "78-soumaki-b9-half-original-chicke.jpg",
+    "code": "B9",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B9)",
+    "ingredients": "Half original chicken, prawns, donburi brown rice, French bean",
+    "expected": {
+      "calories": 488,
+      "proteinGrams": 58,
+      "carbsGrams": 39,
+      "fatGrams": 11
+    }
+  },
+  {
+    "id": "79-soumaki-b10-full-beef-steak-donb",
+    "filename": "79-soumaki-b10-full-beef-steak-donb.jpg",
+    "code": "B10",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B10)",
+    "ingredients": "Full beef steak, donburi brown rice, cauliflower",
+    "expected": {
+      "calories": 557,
+      "proteinGrams": 54,
+      "carbsGrams": 41,
+      "fatGrams": 20
+    }
+  },
+  {
+    "id": "80-soumaki-b11-tuna-donburi-white-r",
+    "filename": "80-soumaki-b11-tuna-donburi-white-r.jpg",
+    "code": "B11",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B11)",
+    "ingredients": "Tuna, donburi white rice, broccoli, pickles",
+    "expected": {
+      "calories": 437,
+      "proteinGrams": 42,
+      "carbsGrams": 52,
+      "fatGrams": 7
+    }
+  },
+  {
+    "id": "81-soumaki-b12-full-cajun-chicken-b",
+    "filename": "81-soumaki-b12-full-cajun-chicken-b.jpg",
+    "code": "B12",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B12)",
+    "ingredients": "Full cajun chicken, brown rice, sweet corn, tomato",
+    "expected": {
+      "calories": 542,
+      "proteinGrams": 65,
+      "carbsGrams": 52,
+      "fatGrams": 8
+    }
+  },
+  {
+    "id": "82-soumaki-b13-full-cajun-chicken-b",
+    "filename": "82-soumaki-b13-full-cajun-chicken-b.jpg",
+    "code": "B13",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B13)",
+    "ingredients": "Full cajun chicken, baby potato, spinach, broccoli",
+    "expected": {
+      "calories": 440,
+      "proteinGrams": 64,
+      "carbsGrams": 27,
+      "fatGrams": 9
+    }
+  },
+  {
+    "id": "83-soumaki-b14-basa-fish-donburi-br",
+    "filename": "83-soumaki-b14-basa-fish-donburi-br.jpg",
+    "code": "B14",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B14)",
+    "ingredients": "Basa fish, donburi brown rice, cabbage, tomato",
+    "expected": {
+      "calories": 441,
+      "proteinGrams": 36,
+      "carbsGrams": 46,
+      "fatGrams": 12
+    }
+  },
+  {
+    "id": "84-soumaki-b15-half-beef-steak-praw",
+    "filename": "84-soumaki-b15-half-beef-steak-praw.jpg",
+    "code": "B15",
+    "category": "balanced",
+    "dishName": "SOU-MADE BOWL (B15)",
+    "ingredients": "Half beef steak, prawns, soba, cauliflower, pickles, onsen egg",
+    "expected": {
+      "calories": 515,
+      "proteinGrams": 55,
+      "carbsGrams": 41,
+      "fatGrams": 15
+    }
+  },
+  {
+    "id": "85-soumaki-h1-half-original-chicke",
+    "filename": "85-soumaki-h1-half-original-chicke.jpg",
+    "code": "H1",
+    "category": "high_protein",
+    "dishName": "SOU-MADE BOWL (H1)",
+    "ingredients": "Half original chicken, half beef steak, donburi brown rice, spinach",
+    "expected": {
+      "calories": 562,
+      "proteinGrams": 62,
+      "carbsGrams": 38,
+      "fatGrams": 18
+    }
+  },
+  {
+    "id": "86-soumaki-h2-half-beef-steak-praw",
+    "filename": "86-soumaki-h2-half-beef-steak-praw.jpg",
+    "code": "H2",
+    "category": "high_protein",
+    "dishName": "SOU-MADE BOWL (H2)",
+    "ingredients": "Half beef steak, prawns, donburi white rice, baby potato, broccoli",
+    "expected": {
+      "calories": 615,
+      "proteinGrams": 53,
+      "carbsGrams": 69,
+      "fatGrams": 14
+    }
+  },
+  {
+    "id": "87-soumaki-h3-basa-fish-japanese-c",
+    "filename": "87-soumaki-h3-basa-fish-japanese-c.jpg",
+    "code": "H3",
+    "category": "high_protein",
+    "dishName": "SOU-MADE BOWL (H3)",
+    "ingredients": "Basa fish, Japanese cold soba, avocado, mixed veggies, onsen egg",
+    "expected": {
+      "calories": 560,
+      "proteinGrams": 39,
+      "carbsGrams": 44,
+      "fatGrams": 25
+    }
+  },
+  {
+    "id": "88-soumaki-h4-duck-breast-prawns-s",
+    "filename": "88-soumaki-h4-duck-breast-prawns-s.jpg",
+    "code": "H4",
+    "category": "high_protein",
+    "dishName": "SOU-MADE BOWL (H4)",
+    "ingredients": "Duck breast, prawns, sweet potato, edamame, onsen egg",
+    "expected": {
+      "calories": 584,
+      "proteinGrams": 66,
+      "carbsGrams": 33,
+      "fatGrams": 21
+    }
+  },
+  {
+    "id": "89-soumaki-h5-half-beef-steak-full",
+    "filename": "89-soumaki-h5-half-beef-steak-full.jpg",
+    "code": "H5",
+    "category": "high_protein",
+    "dishName": "SOU-MADE BOWL (H5)",
+    "ingredients": "Half beef steak, full chicken breast, donburi brown rice, pumpkin, french bean",
+    "expected": {
+      "calories": 720,
+      "proteinGrams": 91,
+      "carbsGrams": 46,
+      "fatGrams": 19
+    }
+  },
+  {
+    "id": "90-soumaki-h6-full-original-chicke",
+    "filename": "90-soumaki-h6-full-original-chicke.jpg",
+    "code": "H6",
+    "category": "high_protein",
+    "dishName": "SOU-MADE BOWL (H6)",
+    "ingredients": "Full original chicken, fusilli pasta, avocado, beetroot",
+    "expected": {
+      "calories": 611,
+      "proteinGrams": 65,
+      "carbsGrams": 45,
+      "fatGrams": 19
+    }
+  },
+  {
+    "id": "91-soumaki-h7-half-beef-steak-half",
+    "filename": "91-soumaki-h7-half-beef-steak-half.jpg",
+    "code": "H7",
+    "category": "high_protein",
+    "dishName": "SOU-MADE BOWL (H7)",
+    "ingredients": "Half beef steak, half cajun chicken breast, donburi brown, sweet corn",
+    "expected": {
+      "calories": 583,
+      "proteinGrams": 62,
+      "carbsGrams": 47,
+      "fatGrams": 16
+    }
+  },
+  {
+    "id": "92-soumaki-v3-white-rice-sweet-pot",
+    "filename": "92-soumaki-v3-white-rice-sweet-pot.jpg",
+    "code": "V3",
+    "category": "vegetarian",
+    "dishName": "SOU-MADE BOWL (V3)",
+    "ingredients": "White rice , sweet potato, avocado, sweet corn, spinach",
+    "expected": {
+      "calories": 520,
+      "proteinGrams": 11,
+      "carbsGrams": 84,
+      "fatGrams": 16
+    }
+  },
+  {
+    "id": "93-soumaki-v4-brown-rice-chickpeas",
+    "filename": "93-soumaki-v4-brown-rice-chickpeas.jpg",
+    "code": "V4",
+    "category": "vegetarian",
+    "dishName": "SOU-MADE BOWL (V4)",
+    "ingredients": "Brown rice, chickpeas, tomato, avocado, french bean",
+    "expected": {
+      "calories": 520,
+      "proteinGrams": 16,
+      "carbsGrams": 75,
+      "fatGrams": 18
+    }
+  },
+  {
+    "id": "94-itsu-miso-with-benefits",
+    "filename": "94-itsu-miso-with-benefits.jpg",
+    "code": "ITSU-MISO-WITH-BENEFITS",
+    "category": "energy_only",
+    "dishName": "miso with benefits",
+    "ingredients": "miso with benefits (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 83,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "95-itsu-detox-miso-noodle-soup",
+    "filename": "95-itsu-detox-miso-noodle-soup.jpg",
+    "code": "ITSU-DETOX-MISO-NOODLE",
+    "category": "energy_only",
+    "dishName": "detox miso noodle soup",
+    "ingredients": "detox miso noodle soup (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 190,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "96-itsu-chicken-spring-onion-gyoza",
+    "filename": "96-itsu-chicken-spring-onion-gyoza.jpg",
+    "code": "ITSU-CHICKEN-SPRING-ONI",
+    "category": "energy_only",
+    "dishName": "chicken & spring onion gyoza",
+    "ingredients": "chicken & spring onion gyoza (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 251,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "97-itsu-spicy-chicken-teriyaki",
+    "filename": "97-itsu-spicy-chicken-teriyaki.jpg",
+    "code": "ITSU-SPICY-CHICKEN-TERI",
+    "category": "energy_only",
+    "dishName": "spicy chicken teriyaki",
+    "ingredients": "spicy chicken teriyaki (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 609,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "98-itsu-thai-chicken-curry",
+    "filename": "98-itsu-thai-chicken-curry.jpg",
+    "code": "ITSU-THAI-CHICKEN-CURRY",
+    "category": "energy_only",
+    "dishName": "Thai chicken curry",
+    "ingredients": "Thai chicken curry (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 710,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "99-itsu-thai-veggie-balls-curry",
+    "filename": "99-itsu-thai-veggie-balls-curry.jpg",
+    "code": "ITSU-THAI-VEGGIE-BALLS",
+    "category": "energy_only",
+    "dishName": "Thai veggie'balls curry",
+    "ingredients": "Thai veggie'balls curry (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 790,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "100-itsu-little-rice-greens",
+    "filename": "100-itsu-little-rice-greens.jpg",
+    "code": "ITSU-LITTLE-RICE-GREENS",
+    "category": "energy_only",
+    "dishName": "little rice & greens",
+    "ingredients": "little rice & greens (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 225,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "101-itsu-vitality-glass-noodle-bowl",
+    "filename": "101-itsu-vitality-glass-noodle-bowl.jpg",
+    "code": "ITSU-VITALITY-GLASS-NOO",
+    "category": "energy_only",
+    "dishName": "Vitality glass noodle'bowl",
+    "ingredients": "Vitality glass noodle'bowl (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 481,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "102-itsu-the-spicy-tuna-dragon",
+    "filename": "102-itsu-the-spicy-tuna-dragon.jpg",
+    "code": "ITSU-THE-SPICY-TUNA-DRA",
+    "category": "energy_only",
+    "dishName": "the spicy tuna dragon",
+    "ingredients": "the spicy tuna dragon (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 401,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "103-itsu-the-avo-baby-rolls",
+    "filename": "103-itsu-the-avo-baby-rolls.jpg",
+    "code": "ITSU-THE-AVO-BABY-ROLLS",
+    "category": "energy_only",
+    "dishName": "the avo baby rolls",
+    "ingredients": "the avo baby rolls (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 335,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "104-itsu-the-tuna-salmon-sashimi",
+    "filename": "104-itsu-the-tuna-salmon-sashimi.jpg",
+    "code": "ITSU-THE-TUNA-SALMON-SA",
+    "category": "energy_only",
+    "dishName": "the tuna & salmon sashimi",
+    "ingredients": "the tuna & salmon sashimi (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 212,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "105-itsu-the-best-of-itsu",
+    "filename": "105-itsu-the-best-of-itsu.jpg",
+    "code": "ITSU-THE-BEST-OF-ITSU",
+    "category": "energy_only",
+    "dishName": "the best of itsu",
+    "ingredients": "the best of itsu (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 575,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "106-itsu-the-salmon-bento-salad",
+    "filename": "106-itsu-the-salmon-bento-salad.jpg",
+    "code": "ITSU-THE-SALMON-BENTO-S",
+    "category": "energy_only",
+    "dishName": "the salmon bento salad",
+    "ingredients": "the salmon bento salad (Itsu UK card with 24g protein badge)",
+    "expected": {
+      "calories": 649,
+      "proteinGrams": 24,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "107-itsu-chinese-prawn-crackers",
+    "filename": "107-itsu-chinese-prawn-crackers.jpg",
+    "code": "ITSU-CHINESE-PRAWN-CRAC",
+    "category": "energy_only",
+    "dishName": "Chinese prawn crackers",
+    "ingredients": "Chinese prawn crackers (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 97,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "108-itsu-about-half-a-mango",
+    "filename": "108-itsu-about-half-a-mango.jpg",
+    "code": "ITSU-ABOUT-HALF-A-MANGO",
+    "category": "energy_only",
+    "dishName": "about half a mango",
+    "ingredients": "about half a mango (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 140,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "109-itsu-angelic-almonds",
+    "filename": "109-itsu-angelic-almonds.jpg",
+    "code": "ITSU-ANGELIC-ALMONDS",
+    "category": "energy_only",
+    "dishName": "angelic almonds",
+    "ingredients": "angelic almonds (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 261,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "110-itsu-crispy-seaweed-thins-sea-salt",
+    "filename": "110-itsu-crispy-seaweed-thins-sea-salt.jpg",
+    "code": "ITSU-CRISPY-SEAWEED-THI",
+    "category": "energy_only",
+    "dishName": "crispy seaweed thins sea salt",
+    "ingredients": "crispy seaweed thins sea salt (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 23,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "111-itsu-milk-chocolate-corn-cakes",
+    "filename": "111-itsu-milk-chocolate-corn-cakes.jpg",
+    "code": "ITSU-MILK-CHOCOLATE-COR",
+    "category": "energy_only",
+    "dishName": "milk chocolate corn cakes",
+    "ingredients": "milk chocolate corn cakes (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 166,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "112-itsu-mango-cheesecake-mochi",
+    "filename": "112-itsu-mango-cheesecake-mochi.jpg",
+    "code": "ITSU-MANGO-CHEESECAKE-M",
+    "category": "energy_only",
+    "dishName": "mango cheesecake mochi",
+    "ingredients": "mango cheesecake mochi (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 208,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "113-itsu-pineapple-coconut-twist",
+    "filename": "113-itsu-pineapple-coconut-twist.jpg",
+    "code": "ITSU-PINEAPPLE-COCONUT",
+    "category": "energy_only",
+    "dishName": "pineapple & coconut twist",
+    "ingredients": "pineapple & coconut twist (Itsu UK energy-only menu card)",
+    "expected": {
+      "calories": 314,
+      "proteinGrams": null,
+      "carbsGrams": null,
+      "fatGrams": null
+    }
+  },
+  {
+    "id": "114-cleaneatz-mongolian-steak",
+    "filename": "114-cleaneatz-mongolian-steak.jpg",
+    "code": "CE-MONGOLIAN-STEAK",
+    "category": "meal_prep",
+    "dishName": "Mongolian Steak",
+    "ingredients": "Fierce flavor that's almost as bold as you. Hearty steak strips tossed in a tangy Korean BBQ sauce served with sauteed veggies over a bed of white rice. Green onions and sesame see",
+    "expected": {
+      "calories": 325,
+      "proteinGrams": 25.0,
+      "carbsGrams": 45.0,
+      "fatGrams": 5.0
+    }
+  },
+  {
+    "id": "115-cleaneatz-chicken-egg-bowl",
+    "filename": "115-cleaneatz-chicken-egg-bowl.jpg",
+    "code": "CE-CHICKEN-EGG-BOWL",
+    "category": "meal_prep",
+    "dishName": "Chicken & Egg Bowl",
+    "ingredients": "Kickstart your morning with shredded hashbrowns, baked to perfection and piled high with fluffy scrambled eggs and breaded chicken. Covered in rich gravy and loaded with melty ched",
+    "expected": {
+      "calories": 387,
+      "proteinGrams": 21.0,
+      "carbsGrams": 42.0,
+      "fatGrams": 15.0
+    }
+  },
+  {
+    "id": "116-fittaste-de-h-hnchen-mit-s-kartoffel-i",
+    "filename": "116-fittaste-de-h-hnchen-mit-s-kartoffel-i.jpg",
+    "code": "FTDE-H-HNCHEN-MIT-S-K",
+    "category": "european_card",
+    "dishName": "Hähnchen mit Süßkartoffel in cremiger Soße.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 267,
+      "proteinGrams": 24.3,
+      "carbsGrams": 14.4,
+      "fatGrams": 9.9
+    }
+  },
+  {
+    "id": "117-fittaste-de-h-hnchen-in-cremig-w-rzige",
+    "filename": "117-fittaste-de-h-hnchen-in-cremig-w-rzige.jpg",
+    "code": "FTDE-H-HNCHEN-IN-CREM",
+    "category": "european_card",
+    "dishName": "Hähnchen in cremig würziger Tikka-Masala-Soße.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 325,
+      "proteinGrams": 28.9,
+      "carbsGrams": 17.1,
+      "fatGrams": 13.7
+    }
+  },
+  {
+    "id": "118-fittaste-de-rindfleisch-mit-kartoffeln",
+    "filename": "118-fittaste-de-rindfleisch-mit-kartoffeln.jpg",
+    "code": "FTDE-RINDFLEISCH-MIT",
+    "category": "european_card",
+    "dishName": "Rindfleisch mit Kartoffeln in kräftiger Soße.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 291,
+      "proteinGrams": 46.0,
+      "carbsGrams": 13.0,
+      "fatGrams": 5.3
+    }
+  },
+  {
+    "id": "119-fittaste-de-fruchtig-tomatige-rinderbo",
+    "filename": "119-fittaste-de-fruchtig-tomatige-rinderbo.jpg",
+    "code": "FTDE-FRUCHTIG-TOMATIG",
+    "category": "european_card",
+    "dishName": "Fruchtig-tomatige Rinderbolognese.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 376,
+      "proteinGrams": 30.0,
+      "carbsGrams": 19.4,
+      "fatGrams": 20.1
+    }
+  },
+  {
+    "id": "120-fittaste-de-h-hnchen-in-roter-kokos-cu",
+    "filename": "120-fittaste-de-h-hnchen-in-roter-kokos-cu.jpg",
+    "code": "FTDE-H-HNCHEN-IN-ROTE",
+    "category": "european_card",
+    "dishName": "Hähnchen in roter Kokos-Curry-Soße.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 418,
+      "proteinGrams": 37.6,
+      "carbsGrams": 16.7,
+      "fatGrams": 20.9
+    }
+  },
+  {
+    "id": "121-fittaste-de-h-hnchen-in-gr-ner-curryso",
+    "filename": "121-fittaste-de-h-hnchen-in-gr-ner-curryso.jpg",
+    "code": "FTDE-H-HNCHEN-IN-GR-N",
+    "category": "european_card",
+    "dishName": "Hähnchen in grüner Currysoße mit Ingwer und Zitronengras.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 361,
+      "proteinGrams": 27.0,
+      "carbsGrams": 12.9,
+      "fatGrams": 21.7
+    }
+  },
+  {
+    "id": "122-megafit-buffalo-mac-cheese",
+    "filename": "122-megafit-buffalo-mac-cheese.jpg",
+    "code": "MF-BUFFALO-MAC-CHEESE",
+    "category": "meal_prep",
+    "dishName": "Buffalo Mac & Cheese",
+    "ingredients": "Buffalo Mac & Cheese (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 640,
+      "proteinGrams": 52.0,
+      "carbsGrams": 54.0,
+      "fatGrams": 21.0
+    }
+  },
+  {
+    "id": "123-megafit-jay-cutler-bowl",
+    "filename": "123-megafit-jay-cutler-bowl.jpg",
+    "code": "MF-JAY-CUTLER-BOWL",
+    "category": "meal_prep",
+    "dishName": "Jay Cutler Bowl",
+    "ingredients": "Jay Cutler Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 430,
+      "proteinGrams": 40.0,
+      "carbsGrams": 52.0,
+      "fatGrams": 5.0
+    }
+  },
+  {
+    "id": "124-megafit-thavage-bowl",
+    "filename": "124-megafit-thavage-bowl.jpg",
+    "code": "MF-THAVAGE-BOWL",
+    "category": "meal_prep",
+    "dishName": "Thavage Bowl",
+    "ingredients": "Thavage Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 450,
+      "proteinGrams": 40.0,
+      "carbsGrams": 38.0,
+      "fatGrams": 17.0
+    }
+  },
+  {
+    "id": "125-megafit-mongolian-beef",
+    "filename": "125-megafit-mongolian-beef.jpg",
+    "code": "MF-MONGOLIAN-BEEF",
+    "category": "meal_prep",
+    "dishName": "Mongolian Beef",
+    "ingredients": "Mongolian Beef (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 490,
+      "proteinGrams": 40.0,
+      "carbsGrams": 50.0,
+      "fatGrams": 13.0
+    }
+  },
+  {
+    "id": "126-megafit-orange-chicken",
+    "filename": "126-megafit-orange-chicken.jpg",
+    "code": "MF-ORANGE-CHICKEN",
+    "category": "meal_prep",
+    "dishName": "Orange Chicken",
+    "ingredients": "Orange Chicken (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 490,
+      "proteinGrams": 45.0,
+      "carbsGrams": 63.0,
+      "fatGrams": 5.0
+    }
+  },
+  {
+    "id": "127-megafit-birria-bowl",
+    "filename": "127-megafit-birria-bowl.jpg",
+    "code": "MF-BIRRIA-BOWL",
+    "category": "meal_prep",
+    "dishName": "Birria Bowl",
+    "ingredients": "Birria Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 500,
+      "proteinGrams": 43.0,
+      "carbsGrams": 46.0,
+      "fatGrams": 16.0
+    }
+  },
+  {
+    "id": "128-megafit-mr-o-bowl",
+    "filename": "128-megafit-mr-o-bowl.jpg",
+    "code": "MF-MR-O-BOWL",
+    "category": "meal_prep",
+    "dishName": "Mr. O Bowl",
+    "ingredients": "Mr. O Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 530,
+      "proteinGrams": 49.0,
+      "carbsGrams": 46.0,
+      "fatGrams": 17.0
+    }
+  },
+  {
+    "id": "129-megafit-bum-s-stir-fry",
+    "filename": "129-megafit-bum-s-stir-fry.jpg",
+    "code": "MF-BUM-S-STIR-FRY",
+    "category": "meal_prep",
+    "dishName": "BUM’s Stir Fry",
+    "ingredients": "BUM’s Stir Fry (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 480,
+      "proteinGrams": 41.0,
+      "carbsGrams": 60.0,
+      "fatGrams": 8.0
+    }
+  },
+  {
+    "id": "130-megafit-cheeseburger-bowl",
+    "filename": "130-megafit-cheeseburger-bowl.jpg",
+    "code": "MF-CHEESEBURGER-BOWL",
+    "category": "meal_prep",
+    "dishName": "Cheeseburger Bowl",
+    "ingredients": "Cheeseburger Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 510,
+      "proteinGrams": 44.0,
+      "carbsGrams": 46.0,
+      "fatGrams": 17.0
+    }
+  },
+  {
+    "id": "131-megafit-chicken-sweet-fries",
+    "filename": "131-megafit-chicken-sweet-fries.jpg",
+    "code": "MF-CHICKEN-SWEET-FRIES",
+    "category": "meal_prep",
+    "dishName": "Chicken & Sweet Fries",
+    "ingredients": "Chicken & Sweet Fries (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 390,
+      "proteinGrams": 43.0,
+      "carbsGrams": 36.0,
+      "fatGrams": 8.0
+    }
+  },
+  {
+    "id": "132-megafit-bbq-chicken-fries",
+    "filename": "132-megafit-bbq-chicken-fries.jpg",
+    "code": "MF-BBQ-CHICKEN-FRIES",
+    "category": "meal_prep",
+    "dishName": "BBQ Chicken & Fries",
+    "ingredients": "BBQ Chicken & Fries (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 360,
+      "proteinGrams": 43.0,
+      "carbsGrams": 32.0,
+      "fatGrams": 6.0
+    }
+  },
+  {
+    "id": "133-megafit-chicken-burrito-bowl",
+    "filename": "133-megafit-chicken-burrito-bowl.jpg",
+    "code": "MF-CHICKEN-BURRITO-BOWL",
+    "category": "meal_prep",
+    "dishName": "Chicken Burrito Bowl",
+    "ingredients": "Chicken Burrito Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 450,
+      "proteinGrams": 47.0,
+      "carbsGrams": 42.0,
+      "fatGrams": 9.0
+    }
+  },
+  {
+    "id": "134-megafit-beef-burrito-bowl",
+    "filename": "134-megafit-beef-burrito-bowl.jpg",
+    "code": "MF-BEEF-BURRITO-BOWL",
+    "category": "meal_prep",
+    "dishName": "Beef Burrito Bowl",
+    "ingredients": "Beef Burrito Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 480,
+      "proteinGrams": 39.0,
+      "carbsGrams": 44.0,
+      "fatGrams": 16.0
+    }
+  },
+  {
+    "id": "135-megafit-carne-asada-bowl",
+    "filename": "135-megafit-carne-asada-bowl.jpg",
+    "code": "MF-CARNE-ASADA-BOWL",
+    "category": "meal_prep",
+    "dishName": "Carne Asada Bowl",
+    "ingredients": "Carne Asada Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 490,
+      "proteinGrams": 42.0,
+      "carbsGrams": 43.0,
+      "fatGrams": 16.0
+    }
+  },
+  {
+    "id": "136-megafit-mf-burger",
+    "filename": "136-megafit-mf-burger.jpg",
+    "code": "MF-MF-BURGER",
+    "category": "meal_prep",
+    "dishName": "MF Burger",
+    "ingredients": "MF Burger (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 650,
+      "proteinGrams": 46.0,
+      "carbsGrams": 54.0,
+      "fatGrams": 27.0
+    }
+  },
+  {
+    "id": "137-megafit-chicken-sandow",
+    "filename": "137-megafit-chicken-sandow.jpg",
+    "code": "MF-CHICKEN-SANDOW",
+    "category": "meal_prep",
+    "dishName": "Chicken Sandow",
+    "ingredients": "Chicken Sandow (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 580,
+      "proteinGrams": 47.0,
+      "carbsGrams": 52.0,
+      "fatGrams": 19.0
+    }
+  },
+  {
+    "id": "138-megafit-bison-sliders",
+    "filename": "138-megafit-bison-sliders.jpg",
+    "code": "MF-BISON-SLIDERS",
+    "category": "meal_prep",
+    "dishName": "Bison Sliders",
+    "ingredients": "Bison Sliders (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 510,
+      "proteinGrams": 41.0,
+      "carbsGrams": 33.0,
+      "fatGrams": 25.0
+    }
+  },
+  {
+    "id": "139-megafit-birria-tacos",
+    "filename": "139-megafit-birria-tacos.jpg",
+    "code": "MF-BIRRIA-TACOS",
+    "category": "meal_prep",
+    "dishName": "Birria Tacos",
+    "ingredients": "Birria Tacos (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 650,
+      "proteinGrams": 54.0,
+      "carbsGrams": 56.0,
+      "fatGrams": 25.0
+    }
+  },
+  {
+    "id": "140-megafit-shredded-buffalo",
+    "filename": "140-megafit-shredded-buffalo.jpg",
+    "code": "MF-SHREDDED-BUFFALO",
+    "category": "meal_prep",
+    "dishName": "Shredded Buffalo",
+    "ingredients": "Shredded Buffalo (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 340,
+      "proteinGrams": 37.0,
+      "carbsGrams": 32.0,
+      "fatGrams": 7.0
+    }
+  },
+  {
+    "id": "141-megafit-charred-turkey-bowl",
+    "filename": "141-megafit-charred-turkey-bowl.jpg",
+    "code": "MF-CHARRED-TURKEY-BOWL",
+    "category": "meal_prep",
+    "dishName": "Charred Turkey Bowl",
+    "ingredients": "Charred Turkey Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 440,
+      "proteinGrams": 40.0,
+      "carbsGrams": 36.0,
+      "fatGrams": 16.0
+    }
+  },
+  {
+    "id": "142-megafit-sweet-spicy-chicken",
+    "filename": "142-megafit-sweet-spicy-chicken.jpg",
+    "code": "MF-SWEET-SPICY-CHICKEN",
+    "category": "meal_prep",
+    "dishName": "Sweet & Spicy Chicken",
+    "ingredients": "Sweet & Spicy Chicken (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 430,
+      "proteinGrams": 40.0,
+      "carbsGrams": 56.0,
+      "fatGrams": 4.5
+    }
+  },
+  {
+    "id": "143-megafit-hibachi-steak-bowl",
+    "filename": "143-megafit-hibachi-steak-bowl.jpg",
+    "code": "MF-HIBACHI-STEAK-BOWL",
+    "category": "meal_prep",
+    "dishName": "Hibachi Steak Bowl",
+    "ingredients": "Hibachi Steak Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 480,
+      "proteinGrams": 39.0,
+      "carbsGrams": 55.0,
+      "fatGrams": 10.0
+    }
+  },
+  {
+    "id": "144-megafit-chicken-fried-rice",
+    "filename": "144-megafit-chicken-fried-rice.jpg",
+    "code": "MF-CHICKEN-FRIED-RICE",
+    "category": "meal_prep",
+    "dishName": "Chicken Fried Rice",
+    "ingredients": "Chicken Fried Rice (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 460,
+      "proteinGrams": 39.0,
+      "carbsGrams": 50.0,
+      "fatGrams": 10.0
+    }
+  },
+  {
+    "id": "145-megafit-chipotle-honey-salmon-bowl",
+    "filename": "145-megafit-chipotle-honey-salmon-bowl.jpg",
+    "code": "MF-CHIPOTLE-HONEY-SALMO",
+    "category": "meal_prep",
+    "dishName": "Chipotle Honey Salmon Bowl",
+    "ingredients": "Chipotle Honey Salmon Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 620,
+      "proteinGrams": 36.0,
+      "carbsGrams": 51.0,
+      "fatGrams": 30.0
+    }
+  },
+  {
+    "id": "146-megafit-flex-lewis-signature",
+    "filename": "146-megafit-flex-lewis-signature.jpg",
+    "code": "MF-FLEX-LEWIS-SIGNATURE",
+    "category": "meal_prep",
+    "dishName": "Flex Lewis Signature",
+    "ingredients": "Flex Lewis Signature (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 550,
+      "proteinGrams": 38.0,
+      "carbsGrams": 57.0,
+      "fatGrams": 18.0
+    }
+  },
+  {
+    "id": "147-megafit-steak-sweets",
+    "filename": "147-megafit-steak-sweets.jpg",
+    "code": "MF-STEAK-SWEETS",
+    "category": "meal_prep",
+    "dishName": "Steak & Sweets",
+    "ingredients": "Steak & Sweets (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 450,
+      "proteinGrams": 41.0,
+      "carbsGrams": 35.0,
+      "fatGrams": 15.0
+    }
+  },
+  {
+    "id": "148-megafit-steak-potatoes",
+    "filename": "148-megafit-steak-potatoes.jpg",
+    "code": "MF-STEAK-POTATOES",
+    "category": "meal_prep",
+    "dishName": "Steak & Potatoes",
+    "ingredients": "Steak & Potatoes (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 410,
+      "proteinGrams": 42.0,
+      "carbsGrams": 32.0,
+      "fatGrams": 13.0
+    }
+  },
+  {
+    "id": "149-megafit-chicken-sweet-potatoes",
+    "filename": "149-megafit-chicken-sweet-potatoes.jpg",
+    "code": "MF-CHICKEN-SWEET-POTATO",
+    "category": "meal_prep",
+    "dishName": "Chicken & Sweet Potatoes",
+    "ingredients": "Chicken & Sweet Potatoes (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 430,
+      "proteinGrams": 44.0,
+      "carbsGrams": 40.0,
+      "fatGrams": 10.0
+    }
+  },
+  {
+    "id": "150-megafit-taco-bowl",
+    "filename": "150-megafit-taco-bowl.jpg",
+    "code": "MF-TACO-BOWL",
+    "category": "meal_prep",
+    "dishName": "Taco Bowl",
+    "ingredients": "Taco Bowl (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 430,
+      "proteinGrams": 35.0,
+      "carbsGrams": 47.0,
+      "fatGrams": 11.0
+    }
+  },
+  {
+    "id": "151-megafit-fiesta-turkey",
+    "filename": "151-megafit-fiesta-turkey.jpg",
+    "code": "MF-FIESTA-TURKEY",
+    "category": "meal_prep",
+    "dishName": "Fiesta Turkey",
+    "ingredients": "Fiesta Turkey (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 440,
+      "proteinGrams": 39.0,
+      "carbsGrams": 39.0,
+      "fatGrams": 15.0
+    }
+  },
+  {
+    "id": "152-megafit-spicy-ground-chicken",
+    "filename": "152-megafit-spicy-ground-chicken.jpg",
+    "code": "MF-SPICY-GROUND-CHICKEN",
+    "category": "meal_prep",
+    "dishName": "Spicy Ground Chicken",
+    "ingredients": "Spicy Ground Chicken (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 390,
+      "proteinGrams": 38.0,
+      "carbsGrams": 46.0,
+      "fatGrams": 4.0
+    }
+  },
+  {
+    "id": "153-megafit-bbq-beef-wrap",
+    "filename": "153-megafit-bbq-beef-wrap.jpg",
+    "code": "MF-BBQ-BEEF-WRAP",
+    "category": "meal_prep",
+    "dishName": "BBQ Beef Wrap",
+    "ingredients": "BBQ Beef Wrap (MegaFit macro card with price distractor)",
+    "expected": {
+      "calories": 540,
+      "proteinGrams": 57.0,
+      "carbsGrams": 55.0,
+      "fatGrams": 20.0
+    }
+  },
+  {
+    "id": "154-fittaste-de-07-h-hnchen-in-spinat-cur",
+    "filename": "154-fittaste-de-07-h-hnchen-in-spinat-cur.jpg",
+    "code": "FTDE-07-H-HNCHEN-IN",
+    "category": "european_card",
+    "dishName": "Hähnchen in Spinat-Curry-Soße.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 369,
+      "proteinGrams": 31.2,
+      "carbsGrams": 14.8,
+      "fatGrams": 19.4
+    }
+  },
+  {
+    "id": "155-fittaste-de-08-h-hnchen-in-fruchtiger",
+    "filename": "155-fittaste-de-08-h-hnchen-in-fruchtiger.jpg",
+    "code": "FTDE-08-H-HNCHEN-IN",
+    "category": "european_card",
+    "dishName": "Hähnchen in fruchtiger Tomatensoße.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 293,
+      "proteinGrams": 30.0,
+      "carbsGrams": 11.4,
+      "fatGrams": 13.3
+    }
+  },
+  {
+    "id": "156-fittaste-de-09-chili-mit-rindfleisch",
+    "filename": "156-fittaste-de-09-chili-mit-rindfleisch.jpg",
+    "code": "FTDE-09-CHILI-MIT-RI",
+    "category": "european_card",
+    "dishName": "Chili mit Rindfleisch, Bohnen und Mais.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 372,
+      "proteinGrams": 22.4,
+      "carbsGrams": 38.0,
+      "fatGrams": 12.9
+    }
+  },
+  {
+    "id": "157-fittaste-de-10-h-hnchen-mit-k-rbis-in",
+    "filename": "157-fittaste-de-10-h-hnchen-mit-k-rbis-in.jpg",
+    "code": "FTDE-10-H-HNCHEN-MIT",
+    "category": "european_card",
+    "dishName": "Hähnchen mit Kürbis in cremiger Soße mit Erdnuss.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 342,
+      "proteinGrams": 28.1,
+      "carbsGrams": 11.4,
+      "fatGrams": 19.8
+    }
+  },
+  {
+    "id": "158-fittaste-de-11-h-hnerfrikassee-in-hel",
+    "filename": "158-fittaste-de-11-h-hnerfrikassee-in-hel.jpg",
+    "code": "FTDE-11-H-HNERFRIKAS",
+    "category": "european_card",
+    "dishName": "Hühnerfrikassee in heller Soße.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 308,
+      "proteinGrams": 23.2,
+      "carbsGrams": 22.4,
+      "fatGrams": 13.3
+    }
+  },
+  {
+    "id": "159-fittaste-de-12-h-hnchen-in-fruchtig-c",
+    "filename": "159-fittaste-de-12-h-hnchen-in-fruchtig-c.jpg",
+    "code": "FTDE-12-H-HNCHEN-IN",
+    "category": "european_card",
+    "dishName": "Hähnchen in fruchtig-cremiger Kokos-Mango-Soße.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 353,
+      "proteinGrams": 23.2,
+      "carbsGrams": 21.3,
+      "fatGrams": 18.2
+    }
+  },
+  {
+    "id": "160-fittaste-de-13-rindfleisch-in-s-w-rzi",
+    "filename": "160-fittaste-de-13-rindfleisch-in-s-w-rzi.jpg",
+    "code": "FTDE-13-RINDFLEISCH",
+    "category": "european_card",
+    "dishName": "Rindfleisch in süß-würziger Teriyaki-Soße.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 508,
+      "proteinGrams": 38.0,
+      "carbsGrams": 22.0,
+      "fatGrams": 29.0
+    }
+  },
+  {
+    "id": "161-fittaste-de-14-rindfleisch-mit-oliven",
+    "filename": "161-fittaste-de-14-rindfleisch-mit-oliven.jpg",
+    "code": "FTDE-14-RINDFLEISCH",
+    "category": "european_card",
+    "dishName": "Rindfleisch mit Oliven und Feta.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 346,
+      "proteinGrams": 29.6,
+      "carbsGrams": 9.5,
+      "fatGrams": 19.4
+    }
+  },
+  {
+    "id": "162-fittaste-de-15-h-hnchen-mit-fruchtige",
+    "filename": "162-fittaste-de-15-h-hnchen-mit-fruchtige.jpg",
+    "code": "FTDE-15-H-HNCHEN-MIT",
+    "category": "european_card",
+    "dishName": "Hähnchen mit fruchtiger Tomate und Oliven.",
+    "ingredients": "380 g Portion (German Fittaste card with comma decimals)",
+    "expected": {
+      "calories": 342,
+      "proteinGrams": 28.9,
+      "carbsGrams": 8.4,
+      "fatGrams": 20.1
+    }
+  }
+]

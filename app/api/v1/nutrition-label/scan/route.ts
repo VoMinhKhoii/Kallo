@@ -1,10 +1,17 @@
 import type { NextRequest } from 'next/server';
 import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
+import {
+  MACRO_CARD_OCR_MODEL,
+  scanMacroCardWithGemini,
+} from '@/lib/ai/pipeline/estimator/macro-card-ocr/macro-card-ocr';
 import { scanNutritionLabelSchema } from '@/lib/api/contracts/nutrition-label';
 import { handleRouteError } from '@/lib/api/respond';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { scanWithStoredLabelImage } from '@/lib/domain/nutrition/label-images/label-images';
-import { validateNutritionLabelImage } from '@/lib/domain/nutrition/ocr/image';
+import {
+  prepareOcrImageForModel,
+  validateNutritionLabelImage,
+} from '@/lib/domain/nutrition/ocr/image';
 import { OCR_MAX_BODY_BYTES } from '@/lib/domain/nutrition/ocr/image-constants';
 import { assertAiConsent } from '@/lib/domain/privacy/ai-consent';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
@@ -60,13 +67,29 @@ export async function POST(req: NextRequest) {
         await readBoundedJson(req, OCR_MAX_BODY_BYTES)
       );
       await validateNutritionLabelImage(body);
+      const isMacroCard = body.kind === 'macro_card';
+      const prepared = isMacroCard ? await prepareOcrImageForModel(body) : body;
       await chargeGlobal();
+      const scanRunner = isMacroCard
+        ? () =>
+            scanMacroCardWithGemini({
+              imageBase64: prepared.imageBase64,
+              mimeType: prepared.mimeType,
+            })
+        : () =>
+            scanNutritionLabelWithGemini({
+              imageBase64: body.imageBase64,
+              mimeType: body.mimeType,
+            });
       // The photo is kept best-effort, in parallel with the model call.
-      return scanWithStoredLabelImage({ userId: user.id, ...body }, () =>
-        scanNutritionLabelWithGemini({
-          imageBase64: body.imageBase64,
-          mimeType: body.mimeType,
-        })
+      return scanWithStoredLabelImage(
+        {
+          userId: user.id,
+          imageBase64: prepared.imageBase64,
+          mimeType: prepared.mimeType,
+          ...(isMacroCard && { model: MACRO_CARD_OCR_MODEL }),
+        },
+        scanRunner
       );
     });
     // `labelImageId` is omitted when the photo could not be kept.

@@ -25,13 +25,17 @@ export function ScanModeSwitch({
   onChange: (mode: ScanMode) => void;
 }) {
   const t = useTranslations('logging.scan');
-  const modes: ScanMode[] = ['barcode', 'label'];
-  const labels = { barcode: t('modeBarcode'), label: t('modeLabel') };
+  const modes: ScanMode[] = ['barcode', 'label', 'card'];
+  const labels = {
+    barcode: t('modeBarcode'),
+    label: t('modeLabel'),
+    card: t('modeCard'),
+  };
   return (
     <div className="flex items-center gap-2">
       <div
         role="radiogroup"
-        className={cn('grid grid-cols-2 rounded-full p-[3px]', SCAN_GLASS)}
+        className={cn('grid grid-cols-3 rounded-full p-[3px]', SCAN_GLASS)}
       >
         {modes.map((m) => (
           <button

@@ -77,3 +77,36 @@ export async function validateNutritionLabelImage(input: {
     );
   }
 }
+
+export const OCR_MODEL_MAX_LONG_EDGE = 1280;
+
+/**
+ * Lightweight server-side preprocessing before sending a validated photo to a
+ * vision LLM: auto-rotates EXIF orientation into pixels, strips EXIF/GPS
+ * metadata, and caps the longest edge at 1280px (without enlarging small cards)
+ * as JPEG q85. Avoids grayscale/binarization that hurts multimodal LLM accuracy.
+ */
+export async function prepareOcrImageForModel(input: {
+  imageBase64: string;
+  mimeType: OcrImageMimeType;
+}): Promise<{ imageBase64: string; mimeType: OcrImageMimeType }> {
+  const bytes = Buffer.from(input.imageBase64, 'base64');
+  const normalized = await sharp(bytes, {
+    failOn: 'error',
+    limitInputPixels: OCR_MAX_IMAGE_PIXELS,
+  })
+    .rotate()
+    .resize({
+      width: OCR_MODEL_MAX_LONG_EDGE,
+      height: OCR_MODEL_MAX_LONG_EDGE,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+
+  return {
+    imageBase64: normalized.toString('base64'),
+    mimeType: 'image/jpeg',
+  };
+}

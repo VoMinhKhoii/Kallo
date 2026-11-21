@@ -2,7 +2,6 @@
 
 import { AnimatePresence } from 'motion/react';
 import { ResponsiveSheet } from '@/components/shared/responsive-sheet';
-import { ScanBusyOverlay } from './camera/busy-overlay';
 import { ScanCameraControls } from './camera/controls';
 import { ScanCameraStage } from './camera/stage';
 import { renderScanPanel } from './panels';
@@ -47,31 +46,28 @@ export function ScanDialog(props: ScanDialogProps) {
           held={mode === 'barcode' ? lookup.frame : label.photo}
           labelVideoRef={labelCamera.videoRef}
           problem={view.kind === 'camera' ? cameraProblem : null}
-          dimmed={view.kind === 'busy'}
-        />
-        {view.kind === 'busy' && (
-          <ScanBusyOverlay
-            text={
-              view.text === 'lookingUp'
+          busyText={
+            view.kind === 'busy'
+              ? view.text === 'lookingUp'
                 ? t('scan.lookingUp')
                 : t('scan.reading')
-            }
-          />
-        )}
+              : null
+          }
+        />
         {view.kind === 'camera' && (
           <ScanCameraControls
             mode={mode}
             labelLocked={s.labelLocked}
             lightOn={labelCamera.torchEnabled}
             onLight={
-              mode === 'label' && labelCamera.capabilities.torch
+              mode !== 'barcode' && labelCamera.capabilities.torch
                 ? () => labelCamera.setTorch(!labelCamera.torchEnabled)
                 : undefined
             }
             onMode={s.switchMode}
             onClose={s.close}
             onTypeBarcode={() => s.result.setTyping(true)}
-            onPickFile={label.read}
+            onPickFile={s.pickFile}
             onShutter={s.shoot}
             onEnterManually={s.enterManually}
           />

@@ -89,7 +89,7 @@ export async function scanWithStoredLabelImage(
   const recordLater = (outcome: ScanOutcome) =>
     keepAlive(
       upload.then((stored) =>
-        stored ? insertScanRow(stored, outcome) : undefined
+        stored ? insertScanRow(stored, outcome, input.model) : undefined
       )
     );
 
@@ -121,7 +121,7 @@ export async function scanWithStoredLabelImage(
     return { result, labelImageId: null };
   }
   if (!settled) return { result, labelImageId: null };
-  const recorded = await insertScanRow(settled, outcome);
+  const recorded = await insertScanRow(settled, outcome, input.model);
   return { result, labelImageId: recorded ? settled.imageId : null };
 }
 

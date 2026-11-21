@@ -72,6 +72,20 @@ const nutritionColumnSchema = nutritionValuesSchema.refine(
   'At least two absolute calorie or macronutrient values are required'
 );
 
+/**
+ * Single-dish macro / menu cards legitimately print energy-only callouts
+ * (e.g. café smoothies or restaurant tiles showing `137 kcal` / `1650 kJ`
+ * with no P/C/F breakdown), or all 3 macros without calories.
+ */
+const macroCardColumnSchema = nutritionValuesSchema.refine(
+  (values) =>
+    values.calories !== null ||
+    (values.proteinGrams !== null &&
+      values.carbsGrams !== null &&
+      values.fatGrams !== null),
+  'Macro cards require printed calories or all three macronutrients'
+);
+
 const per100NutritionColumnSchema = nutritionColumnSchema.superRefine(
   (values, context) => {
     const densityMaximums: Partial<Record<keyof NutritionValues, number>> = {
@@ -174,6 +188,14 @@ export const nutritionLabelScanSchema = z.discriminatedUnion('basis', [
   per100gAndServingLabelSchema,
   per100mlAndServingLabelSchema,
 ]);
+
+export const macroCardScanSchema = z
+  .object({
+    ...labelMetadataShape,
+    basis: z.literal('per_serving'),
+    perServing: macroCardColumnSchema,
+  })
+  .strict();
 
 export type ParsedNutritionLabel = z.infer<typeof nutritionLabelScanSchema>;
 export type OcrConfidence = z.infer<typeof ocrConfidenceSchema>;

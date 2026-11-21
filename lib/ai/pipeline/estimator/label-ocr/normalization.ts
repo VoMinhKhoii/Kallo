@@ -9,11 +9,16 @@
  * never returned.
  */
 
+import { NutritionLabelOcrError } from '@/lib/domain/nutrition/ocr/error';
+import {
+  normalizeAmount,
+  normalizeMeasure,
+  parsePositiveNumber,
+} from '@/lib/domain/nutrition/ocr/printed-units';
 import {
   type NutritionValues,
   nutritionLabelScanSchema,
   type OcrConfidence,
-  type OcrErrorCode,
   type ParsedNutritionLabel,
 } from '@/lib/domain/nutrition/ocr/schema';
 import {
@@ -21,18 +26,8 @@ import {
   type RawNutritionLabelOcr,
   type RawNutritionValues,
 } from './raw-schema';
-import {
-  normalizeAmount,
-  normalizeMeasure,
-  parsePositiveNumber,
-} from './units';
 
-export class NutritionLabelOcrError extends Error {
-  constructor(public readonly code: OcrErrorCode) {
-    super(code);
-    this.name = 'NutritionLabelOcrError';
-  }
-}
+export { NutritionLabelOcrError } from '@/lib/domain/nutrition/ocr/error';
 
 function normalizeNutritionColumn(raw: RawNutritionValues): NutritionValues {
   return Object.fromEntries(
