@@ -39,6 +39,7 @@ function candidate(userId: string, timeZone: string, extra = {}) {
     timeZone,
     calorieTarget: 1932,
     preferredLocale: 'en',
+    displayName: null,
     // Opened Kallo this morning: here today, so the day runs as usual.
     lastOpenedAt: new Date('2026-11-04T02:00:00Z'),
     lastPushedAt: null,
@@ -138,7 +139,7 @@ describe('runReminderTick', () => {
       token: 'aa',
       title: '',
       // The evening line for 4 November (`copy.ts` picks one per date).
-      body: reminderCopy(CHECKPOINTS[3], 'en', '2026-11-04'),
+      body: reminderCopy(CHECKPOINTS[3], 'en', '2026-11-04', null),
       category: 'REMINDER_EVENING',
       collapseKey: 'reminder:2026-11-04',
     });
@@ -155,6 +156,31 @@ describe('runReminderTick', () => {
       dayEnd: new Date('2026-11-04T17:00:00Z'),
     });
     expect(devices.recordPushResults).toHaveBeenCalledTimes(1);
+  });
+
+  it('says the reminder in the user’s language, with the name they gave', async () => {
+    load.loadCandidates.mockResolvedValue([
+      candidate(HANOI, 'Asia/Ho_Chi_Minh', {
+        preferredLocale: 'vi',
+        displayName: 'Mai',
+      }),
+    ]);
+    load.loadRecentMeals.mockResolvedValue([
+      {
+        userId: HANOI,
+        loggedAt: new Date('2026-11-04T05:30:00Z'),
+        createdAt: new Date('2026-11-04T05:31:00Z'),
+        calories: 1243,
+      },
+    ]);
+    const { push, sent } = sender();
+
+    await runReminderTick({ sender: push, actionSecret: SECRET, now: NOW });
+
+    // 4 November's evening slot is one of the lines that names the person.
+    expect(sent.map((m) => m.body)).toEqual([
+      'Tối nay ăn gì rồi Mai ơi? Ghi nốt rồi đi ngủ nè 😴',
+    ]);
   });
 
   it('never decides a checkpoint twice', async () => {

@@ -406,12 +406,12 @@ Everything above starts with a person doing something. Reminders start with a cl
 
 | Local time | Fires when | Type | Main line (EN) | iOS category → buttons |
 |---|---|---|---|---|
-| 08:00 | yesterday has ≥1 meal, is not closed, ended under `PARTIAL_DAY_FRACTION` (85%) of target | `reminder.yesterday` | "Hey! Anything from yesterday you forgot to log?" | `REMINDER_YESTERDAY` → Add to yesterday (opens logging on yesterday) · That was everything (closes yesterday, no UI) |
-| 10:00 | today under 1/4 | `reminder.checkpoint` | "Morning ☀️ What did you have for breakfast?" | `REMINDER_LOG` → Log a meal |
-| 15:00 | today under 2/4 | `reminder.checkpoint` | "How was lunch? Take a moment to log what you had." | `REMINDER_LOG` → Log a meal |
-| 21:00 | today under 3/4 | `reminder.checkpoint` | "Let’s wrap up today! Add anything you haven’t logged yet." | `REMINDER_EVENING` → Log more · That was everything (closes today, no UI) |
+| 08:00 | yesterday has ≥1 meal, is not closed, ended under `PARTIAL_DAY_FRACTION` (85%) of target | `reminder.yesterday` | "Morning! Any meals from yesterday you'd like to add? 🤔" | `REMINDER_YESTERDAY` → Add to yesterday (opens logging on yesterday) · That was everything (closes yesterday, no UI) |
+| 10:00 | today under 1/4 | `reminder.checkpoint` | "Morning, sunshine ☀️ What was for breakfast today?" | `REMINDER_LOG` → Log a meal |
+| 15:00 | today under 2/4 | `reminder.checkpoint` | "Hey, how was lunch? Tell Kallo what was on the menu 🍊" | `REMINDER_LOG` → Log a meal |
+| 21:00 | today under 3/4 | `reminder.checkpoint` | "Shall we wrap up today together? Add any little bites we missed 🌙" | `REMINDER_EVENING` → Log more · That was everything (closes today, no UI) |
 
-Copy lives in `messages/{en,vi}/activity.json` → `reminder.*`, chosen server-side in `preferred_locale` (`lib/domain/reminders/copy.ts`). Each checkpoint has 20 lines (the first is the main line above) and takes one per day by the local date it is sent, so the same reminder never repeats on back-to-back days; line *n* in English and Vietnamese is the same slot. The lines carry no numbers, since the lock screen is public. No title line: the notice is headed by the app. Button titles are NOT on the wire — iOS draws them from the category the app registers on the device in its own language.
+Copy lives in `messages/{en,vi}/activity.json` → `reminder.*`, chosen server-side in `preferred_locale` (`lib/domain/reminders/copy.ts`). Each checkpoint has 8–10 lines (the first is the main line above) and takes one per day by the local date it is sent, so the same reminder never repeats on back-to-back days; line *n* in English and Vietnamese is the same slot. A line with `{name}` uses the name the person gave at "What should we call you?" (`public_profiles.display_name`). Someone with no name skips that slot in both languages. The lines carry no numbers, since the lock screen is public. No title line: the notice is headed by the app. Button titles are NOT on the wire — iOS draws them from the category the app registers on the device in its own language.
 
 ### Gates (`lib/domain/reminders/gates.ts`, pure)
 

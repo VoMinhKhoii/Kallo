@@ -19,6 +19,7 @@ function candidate(userId: string): ReminderCandidate {
     timeZone: 'Asia/Ho_Chi_Minh',
     calorieTarget: 1932,
     preferredLocale: 'en',
+    displayName: null,
     lastOpenedAt: null,
     lastPushedAt: null,
   };

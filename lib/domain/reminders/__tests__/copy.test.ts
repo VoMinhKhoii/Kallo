@@ -18,60 +18,117 @@ function days(from: string, count: number): string[] {
   );
 }
 
+const KEYS = ['yesterday', 'morning', 'afternoon', 'evening'] as const;
+const CATALOGUE = { en: enActivity, vi: viActivity } as const;
+const NAME = '{name}';
+
+/** The catalogue line a sent text came from, with `{name}` filled back in. */
+function slotOf(
+  key: (typeof KEYS)[number],
+  locale: 'en' | 'vi',
+  text: string,
+  name: string | null
+): number {
+  return CATALOGUE[locale].reminder[key].findIndex(
+    (line) => (name ? line.replaceAll(NAME, name) : line) === text
+  );
+}
+
 describe('reminderCopy', () => {
   it('takes one of the checkpoint’s lines, in the user’s language', () => {
-    expect(enActivity.reminder.morning).toContain(
-      reminderCopy(at(10), 'en', '2026-11-17')
-    );
-    expect(viActivity.reminder.evening).toContain(
-      reminderCopy(at(21), 'vi', '2026-11-17')
-    );
+    expect(
+      slotOf(
+        'morning',
+        'en',
+        reminderCopy(at(10), 'en', '2026-11-17', null),
+        null
+      )
+    ).toBeGreaterThanOrEqual(0);
+    expect(
+      slotOf(
+        'evening',
+        'vi',
+        reminderCopy(at(21), 'vi', '2026-11-17', 'Mai'),
+        'Mai'
+      )
+    ).toBeGreaterThanOrEqual(0);
   });
 
-  it('gives the same line all day, and a different one the next day', () => {
-    for (const checkpoint of CHECKPOINTS) {
-      for (const locale of ['en', 'vi'] as const) {
-        const seq = days('2026-12-20', 40).map((d) =>
-          reminderCopy(checkpoint, locale, d)
-        );
-        for (let i = 1; i < seq.length; i++) {
-          expect(seq[i], `${checkpoint.copyKey} ${locale} day ${i}`).not.toBe(
-            seq[i - 1]
+  for (const name of [null, 'Mai']) {
+    it(`gives the same line all day and a different one the next day (name: ${name})`, () => {
+      for (const checkpoint of CHECKPOINTS) {
+        for (const locale of ['en', 'vi'] as const) {
+          const seq = days('2026-12-20', 40).map((d) =>
+            reminderCopy(checkpoint, locale, d, name)
           );
+          for (let i = 1; i < seq.length; i++) {
+            expect(seq[i], `${checkpoint.copyKey} ${locale} day ${i}`).not.toBe(
+              seq[i - 1]
+            );
+          }
+          // Every line it may use comes round within one cycle.
+          const usable = CATALOGUE[locale].reminder[checkpoint.copyKey].filter(
+            (_line, slot) =>
+              name !== null ||
+              !(
+                enActivity.reminder[checkpoint.copyKey][slot].includes(NAME) ||
+                viActivity.reminder[checkpoint.copyKey][slot].includes(NAME)
+              )
+          );
+          expect(new Set(seq).size).toBe(usable.length);
+          expect(usable.length).toBeGreaterThan(1);
         }
-        // Every line comes round within one cycle.
-        expect(new Set(seq).size).toBe(
-          (locale === 'en' ? enActivity : viActivity).reminder[
-            checkpoint.copyKey
-          ].length
-        );
+      }
+    });
+  }
+
+  it('says the name where a line has one, and never leaves the placeholder', () => {
+    const seq = days('2026-12-20', 40).flatMap((d) =>
+      CHECKPOINTS.flatMap((c) =>
+        (['en', 'vi'] as const).map((l) =>
+          reminderCopy(c, l, d, '  Minh  Anh ')
+        )
+      )
+    );
+    expect(seq.some((text) => text.includes('Minh Anh'))).toBe(true);
+    expect(seq.every((text) => !text.includes(NAME))).toBe(true);
+  });
+
+  it('skips the named lines for someone with no name, in both languages', () => {
+    for (const blank of [null, '', '   ']) {
+      for (const d of days('2026-12-20', 40)) {
+        for (const c of CHECKPOINTS) {
+          for (const l of ['en', 'vi'] as const) {
+            expect(reminderCopy(c, l, d, blank)).not.toContain(NAME);
+          }
+        }
       }
     }
   });
 
   it('pairs each English line with the Vietnamese line at the same place', () => {
-    for (const key of [
-      'yesterday',
-      'morning',
-      'afternoon',
-      'evening',
-    ] as const) {
+    for (const key of KEYS) {
       expect(viActivity.reminder[key]).toHaveLength(
         enActivity.reminder[key].length
       );
     }
-    const index = (d: string) =>
-      enActivity.reminder.yesterday.indexOf(reminderCopy(at(8), 'en', d));
-    const day = '2027-03-04';
-    expect(reminderCopy(at(8), 'vi', day)).toBe(
-      viActivity.reminder.yesterday[index(day)]
-    );
+    for (const name of [null, 'Mai']) {
+      for (const d of days('2027-03-01', 12)) {
+        for (const c of CHECKPOINTS) {
+          expect(
+            slotOf(c.copyKey, 'vi', reminderCopy(c, 'vi', d, name), name)
+          ).toBe(slotOf(c.copyKey, 'en', reminderCopy(c, 'en', d, name), name));
+        }
+      }
+    }
   });
 
   it('never quotes a number placeholder: the lock screen is public', () => {
     for (const locale of [enActivity, viActivity]) {
       for (const lines of Object.values(locale.reminder)) {
-        for (const line of lines) expect(line).not.toMatch(/[{}]|kcal/);
+        for (const line of lines) {
+          expect(line.replaceAll(NAME, '')).not.toMatch(/[{}[\]]|kcal/);
+        }
       }
     }
   });
