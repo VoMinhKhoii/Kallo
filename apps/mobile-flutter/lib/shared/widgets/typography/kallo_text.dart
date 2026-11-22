@@ -9,7 +9,7 @@ import '../../../theme/kallo_typography.dart';
 ///
 /// Lora (serif) for display/headings/numbers > 18px and meal quotes — never
 /// bold; DM Sans (sans) for everything else. The signature [italicAccent] is
-/// Lora italic in tan. Numbers use tabular figures.
+/// Lora italic in muted ink. Numbers use tabular figures.
 enum KalloTextVariant {
   display,
   h1,
@@ -149,7 +149,7 @@ class KalloText extends StatelessWidget {
         return KalloTextStyles.serifItalic(
           fontSize: KalloFontSize.lg,
           height: KalloLeading.relaxed,
-        ).copyWith(color: KalloColors.accent);
+        ).copyWith(color: KalloColors.textMuted);
       case KalloTextVariant.chipText:
         return KalloTextStyles.sansMedium(
           fontSize: KalloFontSize.xs,

@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../../theme/calm_tokens.dart';
-import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_typography.dart';
 import '../../logic/feed/stream_ticker.dart';
 
@@ -29,8 +28,8 @@ class TickerText extends StatelessWidget {
   TextSpan _span() {
     final verbText = verb;
     if (verbText != null) {
-      // Umber, so "working" reads as the app's own voice rather than as data.
-      return TextSpan(style: dashBody(color: KalloColors.btn), text: verbText);
+      // Muted ink: text is ink or muted ink only, and "working" is not data.
+      return TextSpan(style: dashBody(color: kInkMuted), text: verbText);
     }
 
     // The meal's own words, as on web: serif italic in primary ink, set to
