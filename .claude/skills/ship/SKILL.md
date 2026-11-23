@@ -152,26 +152,37 @@ pass found 8 defects the GitHub Codex loop had missed.
 (`gemini-4-neon-high`, through the Antigravity CLI `agy`). A pass falls back to
 **Codex Sol** (`gpt-6.1-sol`) only when Neon cannot run it: `agy` is missing, Neon
 is out of quota or rate-limited, the CLI errors or times out, the output is not a
-review, or the pass changed a file (`git status` after it ends; discard the
-change). Rerun that same pass on Sol with the same brief and pass file. Out of
-quota means Sol for the rest of this `/ship`; any other failure falls back for that
-pass only. The Astra pass stays on Codex.
+review (a refused command ends a plan-mode run early), or the pass changed a file.
+Rerun that same pass on Sol with the same brief and pass file. A missing `agy` or
+an exhausted quota means Sol for the rest of this `/ship`; any other failure falls
+back for that pass only. The Astra pass stays on Codex.
 
 **How each pass runs.** Every pass runs from the branch's checkout, in the
 background (3-15 minutes; wait for the task notification, never a foreground
-`sleep`); round 1 has no pass file. Neon:
+`sleep`). Round 1 has no pass file: leave `<scratchpad>/pass-<name>.md` out of
+either command. Neon:
 
 ```bash
-# Headless agy denies every tool not on this allow list, so the pass is
-# read-only. -p must come last and be joined with "=", or agy reads the next
-# flag as the prompt.
-NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git rev-parse)","command(rg)","command(grep)","read_file(<checkout>)"]}}'
-agy --model gemini-4-neon-high --settings "$NEON_READ_ONLY" --print-timeout 20m \
+# Read-only only in plan mode: there, headless agy refuses any command not on
+# the allow list (and ends the run), and the deny rule refuses file writes. The
+# default mode writes files and runs unlisted commands; never drop --mode plan.
+# An allowed command can still write through its own flags (git diff --output
+# did in a probe), so the status check after the pass is the backstop.
+# Plan mode also runs git outside the sandbox, which a worktree checkout needs.
+# -p must come last and be joined with "=", or agy reads the next flag as the
+# prompt.
+NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git rev-parse)","command(git ls-files)","command(git blame)","command(git grep)","command(rg)","command(grep)","command(ls)","command(cat)","command(head)","command(wc)","read_file(<checkout>)"],"deny":["write_file(*)"]}}'
+git status --porcelain > <scratchpad>/status-before-<name>.txt
+agy --model gemini-4-neon-high --mode plan --settings "$NEON_READ_ONLY" \
+  --print-timeout 20m \
   -p="$(cat .claude/skills/ship/local-review.md <scratchpad>/codex-brief.md \
         <scratchpad>/pass-<name>.md)" \
   > <scratchpad>/local-review-<name>.md 2>&1
+git status --porcelain | diff <scratchpad>/status-before-<name>.txt -
 ```
-`<checkout>` is the checkout's absolute path.
+`<checkout>` is the checkout's absolute path. A path the last line prints is one
+the pass changed: restore only that path (the checkout may hold the user's own
+uncommitted files) and rerun the pass on Sol.
 
 Sol fallback and the Astra pass:
 
