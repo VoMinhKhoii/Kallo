@@ -603,6 +603,28 @@ describe('container word on the ingredient instead of the dish', () => {
     expect(half?.guardG.high).toBeLessThan(whole?.midG ?? 0);
   });
 
+  it('reads half a vessel on one part, beside parts weighed in grams, as that part only', () => {
+    // "150 g noodles, 100 g beef, half a bowl of broth": the half is the broth's.
+    const envelope = (count?: number) =>
+      resolveVesselEnvelope({
+        name: 'Beef noodle soup',
+        vesselToken: 'bowl',
+        ingredients: [
+          {
+            rawName: 'rice noodles',
+            explicitMass: { grams: 150 },
+          },
+          { rawName: 'beef', explicitMass: { grams: 100 } },
+          {
+            rawName: 'broth',
+            count,
+            unitToken: count ? 'bowl' : undefined,
+          },
+        ],
+      });
+    expect(envelope(0.5)?.guardG).toEqual(envelope()?.guardG);
+  });
+
   it('reads a one-food dish counted in its vessel as that many vessels', () => {
     const envelope = (count?: number) =>
       resolveVesselEnvelope({
@@ -786,6 +808,12 @@ describe('dish class and tier from the dish name', () => {
     for (const name of ['Hủ tiếu bò kho', 'Curry laksa', 'Canh khoai mỡ']) {
       expect(resolveVesselEnvelope(dish(name, 'tô'))?.dishClass).toBe('soup');
     }
+  });
+
+  it('reads bánh mì as bread, not noodles', () => {
+    const envelope = resolveVesselEnvelope(dish('Bánh mì bò kho', 'bát'));
+    expect(envelope?.dishClass).toBe('solid');
+    expect(envelope?.tier).toBe(1);
   });
 
   it('reads a bát of noodle soup as a noodle bowl and a bát of canh as a small bowl', () => {

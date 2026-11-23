@@ -28,6 +28,7 @@ export interface DishLike {
     queryEn?: string;
     count?: number;
     unitToken?: string;
+    explicitMass?: { grams: number };
   }>;
 }
 
@@ -70,9 +71,9 @@ const BRAISE_DISH = wordsPattern(
   'kho|cà ri|cari|curry|stew|rendang|ragu|ragout|braised?|goulash'
 );
 // In the North a "bát" holds noodle soup as well as rice: "1 bát phở" is a
-// noodle bowl, not a rice bowl.
+// noodle bowl, not a rice bowl. "bánh mì" is bread, not noodles.
 const NOODLE_SOUP = wordsPattern(
-  'phở|pho|bún|miến|hủ tiếu|bánh canh|mì|noodles?|ramen|udon|soba'
+  'phở|pho|bún|miến|hủ tiếu|bánh canh|(?<!bánh\\s)mì|noodles?|ramen|udon|soba'
 );
 const NAMED_SOUP = wordsPattern('soup|súp|laksa|canh|lẩu|hotpot');
 // A milk tea or bubble tea is sold in a 500 ml cup at its smallest size.
@@ -175,8 +176,9 @@ function riceBowls(dish: DishLike, vesselToken: string): number | null {
  * kho" → 0.5). The band and mid grams describe one vessel, so "2 bowls of
  * ramen" must not be fit into one bowl, nor half a chén into a whole one. The
  * count is the dish's when it spread to at least two foods, or no other food
- * carries an amount of its own: a lone "half a bowl of broth" beside noodles
- * and pork counted in their own words is the broth's amount, while half a chén
+ * carries an amount of its own (a count or a typed weight): a lone "half a
+ * bowl of broth" beside noodles and pork counted or weighed in their own words
+ * is the broth's amount, while half a chén
  * written only on the beef of a bò kho, beside unmeasured oil and lemongrass,
  * is the dish's. Parts that disagree, or no such count, read as one.
  */
@@ -192,7 +194,7 @@ function vesselCount(dish: DishLike, vesselToken: string): number {
   const ownAmounts = dish.ingredients.some(
     (i) =>
       !carrying.includes(i) &&
-      i.count !== undefined &&
+      (i.count !== undefined || i.explicitMass !== undefined) &&
       !isDiscreteOilIngredient(i.rawName ?? '')
   );
   if (carrying.length < 2 && ownAmounts) return 1;
