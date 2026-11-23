@@ -22,6 +22,12 @@ real input. For each finding give file:line, the concrete input or sequence that
 triggers it, what happens, and what should happen. When the same mistake appears in
 several places, report it once as a class and list every location.
 
+Report only: do not edit any file or run anything that changes the checkout. Use
+the file-reading tool and read-only commands (`git diff`, `git log`, `git show`,
+`git grep`, `grep`, `cat`, `head`, `ls`); any other command may be refused.
+Run one command per call, with no pipes, `&&`, `;` or redirections: a refused
+command ends the review with no output.
+
 Start with the number of findings. If there are none, say "No findings." and stop.
 
 --- Author's brief ---

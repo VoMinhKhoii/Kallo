@@ -4,8 +4,9 @@ description: |
   MANUAL TRIGGER ONLY: invoke only when user types /ship.
   Full Git shipping workflow — from unstaged changes to a clean, merged-ready PR.
   Handles: git add, branch creation (with meaningful name), conventional commit,
-  a local review before the first push (Codex Sol rounds, an Astra pass when
-  needed, a Fable thermo-nuclear structure review, a Sol regression check), push (behind a
+  a local review before the first push (Gemini 4 Neon rounds, falling back to Codex
+  Sol only when Neon cannot run, an Astra pass when needed, a Fable thermo-nuclear
+  structure review, a regression check), push (behind a
   pre-push gate hook), draft PR creation, CI monitoring and fixing, an always-on Codex review
   loop (`@codex review` with a change brief, iterated until Codex approves the
   current head, every finding judged on its merits, not blindly applied),
@@ -138,18 +139,67 @@ git commit -m "<message>"
 ## Phase 3b: Local Review (default, before the first push)
 
 Before GitHub ever sees the branch, it is reviewed locally in this order:
-**up to three Sol rounds** (bugs), **one Astra pass** only if round 3 still finds
+**up to three bug rounds**, **one Astra pass** only if round 3 still finds
 real bugs, **one Fable structure review** (`thermo-nuclear-code-quality-review`),
-then **one Sol regression check** on the structure fixes. If that check is clean, we
+then **one regression check** on the structure fixes. If that check is clean, we
 push and open the PR. The shape follows Anthropic's write-up of its own review loop:
 full review first, diff-only re-review after it, findings reported as classes, no
 repeats, and a step back after three rounds
 (<https://claude.dev/blog/solving-code-review-at-anthropic/>). On record, one local
 pass found 8 defects the GitHub Codex loop had missed.
 
-**How each pass runs.** Every Codex pass runs from the branch's checkout, in the
-background (3-15 minutes; wait for the task notification, never a foreground
-`sleep`), with this command; round 1 has no pass file:
+**Which model.** The bug rounds and the regression check run on **Gemini 4 Neon**
+(`gemini-4-neon-high`, through the Antigravity CLI `agy`). A pass falls back to
+**Codex Sol** (`gpt-6.1-sol`) only when Neon cannot run it: `agy` is missing, Neon
+is out of quota or rate-limited, the CLI errors or times out, or the output is not
+a review (a refused command ends a plan-mode run early, with exit 0). Rerun that
+same pass on Sol with the same brief and pass file. A missing `agy` or an
+exhausted quota means Sol for the rest of this `/ship`; any other failure falls
+back for that pass only. The Astra pass stays on Codex.
+
+**How each pass runs.** Every pass runs in the background (3-15 minutes; wait for
+the task notification, never a foreground `sleep`). Round 1 has no pass file:
+leave `<scratchpad>/pass-<name>.md` out of either command. Neon reviews a
+throwaway worktree of the pinned commit, and macOS `sandbox-exec` refuses its
+writes to the repo:
+
+```bash
+CK=<checkout>
+# A fresh throwaway worktree per run, removed however the run ends.
+REVIEW_DIR=$(mktemp -d <scratchpad>/review-<name>.XXXXXX) && rmdir "$REVIEW_DIR"
+git -C "$CK" worktree add --detach "$REVIEW_DIR" <pinned-sha> || exit 1
+trap 'git -C "$CK" worktree remove --force "$REVIEW_DIR" 2>/dev/null' EXIT
+trap 'exit 130' INT; trap 'exit 143' TERM   # a kill still runs the EXIT trap
+# The OS refuses writes to every worktree of this repo and to the shared .git
+# (allowed flags such as `git diff --output=<path>` write anywhere otherwise),
+# except the throwaway worktree's own git metadata.
+DENY=$(git -C "$CK" worktree list --porcelain | sed -n 's/^worktree //p' \
+  | grep -vxF "$REVIEW_DIR" | sed 's/.*/(subpath "&")/' | tr '\n' ' ')
+COMMON=$(git -C "$CK" rev-parse --path-format=absolute --git-common-dir)
+ADMIN=$(git -C "$REVIEW_DIR" rev-parse --path-format=absolute --git-dir)
+PROFILE="(version 1)(allow default)(deny file-write* $DENY(subpath \"$COMMON\"))(allow file-write* (subpath \"$ADMIN\"))"
+# Plan mode refuses any command not on the allow list, or chained with pipes,
+# && or ; (and ends the run); the deny rule refuses agy's own file writes.
+# The default mode writes files and runs unlisted commands: never drop
+# --mode plan. -p must come last and be joined with "=", or agy reads the next
+# flag as the prompt.
+NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git rev-parse)","command(git ls-files)","command(git blame)","command(git grep)","command(grep)","command(ls)","command(cat)","command(head)","command(wc)","read_file('"$REVIEW_DIR"')"],"deny":["write_file(*)"]}}'
+OUT=<scratchpad>/local-review-<name>.md
+(cd "$REVIEW_DIR" && sandbox-exec -p "$PROFILE" agy --model gemini-4-neon-high \
+  --mode plan --settings "$NEON_READ_ONLY" --print-timeout 20m \
+  -p="$(cat "$CK"/.claude/skills/ship/local-review.md \
+        <scratchpad>/codex-brief.md <scratchpad>/pass-<name>.md)") > "$OUT" 2>&1
+rc=$?
+# A refused run exits 0 with this one line, or with nothing at all.
+[ -s "$OUT" ] || rc=1
+grep -q '^jetski: no output produced' "$OUT" && rc=1
+echo "agy exit $rc"; [ "$rc" -eq 0 ]
+```
+`<checkout>` is the branch checkout's absolute path and `<pinned-sha>` the commit
+recorded for this pass. A non-zero exit is a failed pass, even when the output
+file has text in it: rerun the pass on Sol.
+
+Sol fallback and the Astra pass, run from `<checkout>`:
 
 ```bash
 # The prompt names the diff range: `codex review` rejects --base together
@@ -159,8 +209,9 @@ cat .claude/skills/ship/local-review.md <scratchpad>/codex-brief.md \
   | codex review -c 'model="<model>"' -c 'sandbox_mode="read-only"' - \
   > <scratchpad>/local-review-<name>.md 2>&1
 ```
-`<model>` is `gpt-6.1-sol`, except on the Astra pass (`gpt-6-astra`). Check the
-output file is a review, not a CLI error, before reading silence as a clean pass.
+`<model>` is `gpt-6.1-sol`, except on the Astra pass (`gpt-6-astra`). For either
+CLI, check the output file is a review, not a CLI error, before reading silence as
+a clean pass.
 
 - **Pin the commit.** Just before launching any pass (Fable's too), record
   `git rev-parse HEAD`: the commit that pass reviews. Fixes committed after the
@@ -170,7 +221,7 @@ output file is a review, not a CLI error, before reading silence as a clean pass
   must still mean the whole branch when Phase 6c reuses it. A pass file holds
   `Scope: git diff <previous-pass-sha>..HEAD` (the prompt adds the callers), an
   "Already answered" list of every earlier pass's findings (finding, `Fixed in
-  <sha>` or `Not changing: <reason>`) so Codex does not raise them again, and what
+  <sha>` or `Not changing: <reason>`) so the reviewer does not raise them again, and what
   that pass's step below adds.
 - **Judge every finding** as in 6c ("Judge every finding ourselves"), with one
   difference: a finding that needs a product or design call is listed in the PR
@@ -180,10 +231,10 @@ output file is a review, not a CLI error, before reading silence as a clean pass
 1. **Write the brief now**, the three parts listed under Phase 5 (what changed and
    why, where it could break, out of scope), to `<scratchpad>/codex-brief.md`. If
    writing "where it could break" surfaces a bug, fix it first.
-2. **Round 1** (Sol, pass `1`) reviews the whole branch.
-3. **Rounds 2 and 3** (Sol, passes `2` and `3`). Each runs only when the round
+2. **Round 1** (Neon, pass `1`) reviews the whole branch.
+3. **Rounds 2 and 3** (Neon, passes `2` and `3`). Each runs only when the round
    before found a real bug (a finding we fixed, not one we rejected); a round with
-   none ends the Sol rounds.
+   none ends the bug rounds.
 4. **After round 3, step back; do not run a round 4.** If round 3 still found a
    real bug, first ask whether the findings across all three rounds share one cause
    (the same class reappearing at new sites, or an approach that keeps leaking).
@@ -203,7 +254,7 @@ output file is a review, not a CLI error, before reading silence as a clean pass
    `<scratchpad>/local-thermo.md`. Apply a finding when the restructuring keeps
    behavior the same and the gates stay green; reject it with the reason otherwise.
    Commit the structure fixes separately (`refactor: ...`).
-6. **One Sol regression check** on the structure fixes only (pass `regression`,
+6. **One regression check** (Neon) on the structure fixes only (pass `regression`,
    Scope from Fable's commit), skipped when step 5 changed nothing. Its pass file
    adds the line "These commits are meant to change structure only; report any
    behavior they change."
@@ -212,14 +263,15 @@ output file is a review, not a CLI error, before reading silence as a clean pass
      is a few lines, then run this check once more on that fix (pass
      `regression-2`). Push after that; the GitHub loop (6c) covers what remains.
 
-Record each pass's finding count (Sol rounds, Astra if it ran, Fable structure
-review, regression check) under Evidence in the PR body.
+Record each pass's finding count (bug rounds, Astra if it ran, Fable structure
+review, regression check) under Evidence in the PR body, and which model ran each
+one (Neon, or Sol with the reason Neon could not).
 
-A local Codex round that already ran on this exact commit with the same brief
+A local round (Neon or Sol) that already ran on this exact commit with the same brief
 (for example during `grill-your-own-work`), with its findings handled, counts as
 round 1; do not repeat it.
 
-If a pass cannot run (`codex` not installed, out of quota, or a CLI error), write
+If a pass cannot run on Neon or Sol (neither CLI works, both out of quota), write
 "Local review did not run: <which pass>: <reason>" under Evidence in the PR body
 and continue. A pass that did not run is never a clean pass.
 
@@ -586,8 +638,8 @@ what evidence the PR carries, never when review stops.
 every later `@codex review`:
 1. List every finding so far by class. Sweep each class across the whole diff and
    its callers (step 3 above), so this round fixes classes, not sites.
-2. Run one local adversarial Codex round (the Phase 3b Sol command; never Astra
-   here) and handle its findings before asking GitHub again. At round 3 it reviews
+2. Run one local adversarial round (the Phase 3b round: Neon, Sol only as its
+   fallback; never Astra here) and handle its findings before asking GitHub again. At round 3 it reviews
    the whole branch. In later rounds a pass file (Phase 3b)
    scopes it to `git diff <last-reviewed-sha>..HEAD` and the callers of what that
    changed, and a whole-branch pass runs again only when the approach changed. On
