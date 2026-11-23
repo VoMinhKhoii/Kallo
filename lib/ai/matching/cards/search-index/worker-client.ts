@@ -62,7 +62,10 @@ export function spawnSearchWorker(
   uri: string,
   manifest: Manifest,
   onFailure: (err: Error) => void,
-  workerPath = path.join(process.cwd(), WORKER_PATH),
+  workerPath = path.join(
+    /* turbopackIgnore: true */ process.cwd(),
+    WORKER_PATH
+  ),
   hangRule: HangRule = DEFAULT_HANG_RULE
 ): SearchWorker {
   const worker = new Worker(/* turbopackIgnore: true */ workerPath, {
