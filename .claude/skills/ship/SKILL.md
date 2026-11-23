@@ -172,17 +172,25 @@ either command. Neon:
 # -p must come last and be joined with "=", or agy reads the next flag as the
 # prompt.
 NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git rev-parse)","command(git ls-files)","command(git blame)","command(git grep)","command(rg)","command(grep)","command(ls)","command(cat)","command(head)","command(wc)","read_file(<checkout>)"],"deny":["write_file(*)"]}}'
-git status --porcelain > <scratchpad>/status-before-<name>.txt
+# The snapshot lists every untracked file (-uall) and the diff of tracked
+# ones, so a write to an already-modified file shows too.
+snapshot() { git status --porcelain -uall; git diff HEAD --binary; }
+snapshot > <scratchpad>/checkout-before-<name>.txt
 agy --model gemini-4-neon-high --mode plan --settings "$NEON_READ_ONLY" \
   --print-timeout 20m \
   -p="$(cat .claude/skills/ship/local-review.md <scratchpad>/codex-brief.md \
         <scratchpad>/pass-<name>.md)" \
   > <scratchpad>/local-review-<name>.md 2>&1
-git status --porcelain | diff <scratchpad>/status-before-<name>.txt -
+rc=$?
+snapshot | diff <scratchpad>/checkout-before-<name>.txt - ; changed=$?
+echo "agy exit $rc, checkout changed: $changed"; [ "$rc" -eq 0 ] && [ "$changed" -eq 0 ]
 ```
-`<checkout>` is the checkout's absolute path. A path the last line prints is one
-the pass changed: restore only that path (the checkout may hold the user's own
-uncommitted files) and rerun the pass on Sol.
+`<checkout>` is the checkout's absolute path. A non-zero `agy` exit is a failed
+pass, even when the output file has text in it. When the checkout changed, undo
+only what the pass did (the checkout may hold the user's own uncommitted files):
+delete a file it created; `git restore` a file that was clean before; for a file
+that was already modified before the pass, stop and tell the user, and point them
+at its earlier diff in `checkout-before-<name>.txt`. Then rerun the pass on Sol.
 
 Sol fallback and the Astra pass:
 
