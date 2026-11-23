@@ -250,6 +250,18 @@ describe('holdDishCountsToText', () => {
     // A measure stays the food's.
     const milk = held('1 cup of milk', dish({}, ['milk', 1, 'cup']));
     expect(milk.dishCount).toBeUndefined();
+    // Half a bowl with no vessel word on the dish is still the dish's.
+    const ramen = held('1/2 bowl of ramen', dish({}, ['ramen', 0.5, 'bowl']));
+    expect(ramen.dishCount).toEqual(count(0.5, 'bowl'));
+  });
+
+  it('strips the oil copy even when the count is not in the text', () => {
+    const d = held(
+      'omelette',
+      dish({}, ['egg', 2, 'omelette'], ['oil', 2, 'omelette'])
+    );
+    expect(d.dishCount).toBeUndefined();
+    expect(counts(d)[1]).toEqual([null, null]);
   });
 
   it('matches an English plural to its singular', () => {
@@ -302,6 +314,7 @@ describe('holdDishCountsToText', () => {
       ['a quarter plate of fried rice', 0.25],
       ['three quarters of a bowl of pho', 0.75],
       ['two thirds of a pizza', 2 / 3],
+      ['three-quarters of a bowl of pho', 0.75],
     ] as const) {
       const d = held(text, dish({ dishCount: count(n, 'x') }, ['a'], ['b']));
       expect(d.dishCount?.count, text).toBe(n);

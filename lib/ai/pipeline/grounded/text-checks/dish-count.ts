@@ -13,6 +13,7 @@ import type {
 import { resolveUnitType } from '@/lib/ai/portion/lexicon/unit-lexicon';
 import {
   normalizeVesselToken,
+  resolveVesselFromToken,
   singularWord,
 } from '@/lib/ai/portion/vessel/geometry';
 import { nameKey } from '@/lib/core/text/name-key';
@@ -125,7 +126,13 @@ function loneFoodCount(dish: DecomposedDishV2): DishCount | null {
   const foods = dish.ingredients.filter((i) => !isOil(i));
   const [food] = foods;
   if (foods.length !== 1 || !food.count || !food.unitToken) return null;
-  return inVessel(dish, food.unitToken) || !isMeasure(food.unitToken)
+  // Part of a bowl or plate with no vessel word on the dish ("1/2 bowl of
+  // ramen" written only on the food) is the dish's vessel all the same.
+  const partVessel =
+    food.count < 1 && resolveVesselFromToken(food.unitToken) !== null;
+  return inVessel(dish, food.unitToken) ||
+    partVessel ||
+    !isMeasure(food.unitToken)
     ? { count: food.count, unitToken: food.unitToken }
     : null;
 }
@@ -190,7 +197,7 @@ const NUMBER_WORDS: Record<string, number> = {
 };
 /** "three quarters", "two thirds", "3 quarters". */
 const PARTS_OF = new RegExp(
-  `(?<![\\p{L}\\p{M}\\d])(\\d+|${Object.keys(NUMBER_WORDS).join('|')})\\s+(quarters|thirds)(?![\\p{L}\\p{M}])`,
+  `(?<![\\p{L}\\p{M}\\d])(\\d+|${Object.keys(NUMBER_WORDS).join('|')})[\\s-]+(quarters|thirds)(?![\\p{L}\\p{M}])`,
   'giu'
 );
 const VULGAR: Record<string, number> = {
@@ -267,6 +274,7 @@ export function holdDishCountsToText(
         `[call1-check] count ${count.count} on dish "${dish.name}" is not in the text`
       );
       if (dish.dishCount) dish.dishCount = null;
+      stripOilCopies(dish);
       continue;
     }
     if (!dish.dishCount)
