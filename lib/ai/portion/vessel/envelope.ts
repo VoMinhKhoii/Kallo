@@ -152,6 +152,9 @@ function dishVesselToken(dish: DishLike): string | undefined {
   return token && resolveVesselFromToken(token) ? token : undefined;
 }
 
+/** A vessel word to compare: normalized, plural made singular. */
+const vesselWord = (token: string) => singularWord(normalizeVesselToken(token));
+
 /** Bowl words that, holding plain rice, mean one everyday rice bowl. "tô"
  *  stays out: it names a big noodle bowl. */
 const RICE_BOWL_TOKENS = new Set(['chen', 'bat', 'bowl']);
@@ -164,7 +167,7 @@ const RICE_BOWL_TOKENS = new Set(['chen', 'bat', 'bowl']);
  * the 700 ml medium bowl (250–600 g) — both far above a real bowl of rice.
  */
 function riceBowls(dish: DishLike, vesselToken: string): number | null {
-  if (!RICE_BOWL_TOKENS.has(normalizeVesselToken(vesselToken))) return null;
+  if (!RICE_BOWL_TOKENS.has(vesselWord(vesselToken))) return null;
   if (dish.ingredients.length !== 1) return null;
   const [rice] = dish.ingredients;
   if (
@@ -186,10 +189,9 @@ function dishVesselCount(
 ): number | null {
   const count = dish.dishCount;
   if (!count || !(count.count > 0)) return null;
-  const unit =
-    resolveVesselFromToken(count.unitToken) ??
-    resolveVesselFromToken(singularWord(normalizeVesselToken(count.unitToken)));
-  return unit?.family === resolved.family ? count.count : null;
+  return resolveVesselFromToken(count.unitToken)?.family === resolved.family
+    ? count.count
+    : null;
 }
 
 /**
@@ -207,12 +209,12 @@ function dishVesselCount(
  * is the dish's. Parts that disagree, or no such count, read as one.
  */
 function vesselCount(dish: DishLike, vesselToken: string): number {
-  const token = normalizeVesselToken(vesselToken);
+  const token = vesselWord(vesselToken);
   const carrying = dish.ingredients.filter(
     (i) =>
       i.count !== undefined &&
       i.count > 0 &&
-      normalizeVesselToken(i.unitToken ?? '') === token
+      vesselWord(i.unitToken ?? '') === token
   );
   if (carrying.length === 0) return 1;
   const ownAmounts = dish.ingredients.some(

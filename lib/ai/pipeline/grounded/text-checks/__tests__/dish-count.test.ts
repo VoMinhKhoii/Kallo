@@ -170,12 +170,13 @@ describe('holdDishCountsToText', () => {
   });
 
   it("strips an oil that only copies a one-food dish's count", () => {
-    // "2 omelettes": the egg's count is typed, the oil only copies it.
+    // "2 omelettes": the egg's count is typed (and mirrored on the dish), the
+    // oil only copies it.
     const d = held(
       '2 omelettes',
       dish({}, ['egg', 2, 'omelette'], ['oil', 2, 'omelette'])
     );
-    expect(d.dishCount).toBeUndefined();
+    expect(d.dishCount).toEqual(count(2, 'omelette'));
     expect(counts(d)).toEqual([
       [2, 'omelette'],
       [null, null],
@@ -216,6 +217,39 @@ describe('holdDishCountsToText', () => {
       )
     );
     expect(counts(d).every(([c]) => c === null)).toBe(true);
+  });
+
+  it("keeps one part's own 1 beside a counted dish in the same unit", () => {
+    // "2 slices of toast with 1 slice of cheese"
+    const d = held(
+      '2 slices of toast with 1 slice of cheese',
+      dish({ dishCount: count(2, 'slice') }, ['toast'], ['cheese', 1, 'slice'])
+    );
+    expect(counts(d)).toEqual([
+      [null, null],
+      [1, 'slice'],
+    ]);
+  });
+
+  it('keeps plural measures as each part’s own amount', () => {
+    const d = held(
+      'smoothie: 2 glasses of milk and 2 glasses of yogurt',
+      dish({}, ['milk', 2, 'glasses'], ['yogurt', 2, 'glasses'])
+    );
+    expect(d.dishCount).toBeUndefined();
+    expect(d.ingredients[0].count).toBe(2);
+  });
+
+  it("mirrors a one-food dish's own count to the dish, for a rescue", () => {
+    const d = held(
+      '1/2 chén bò kho',
+      dish({ name: 'bò kho', vesselToken: 'chén' }, ['bò kho', 0.5, 'chén'])
+    );
+    expect(d.dishCount).toEqual(count(0.5, 'chén'));
+    expect(counts(d)).toEqual([[0.5, 'chén']]);
+    // A measure stays the food's.
+    const milk = held('1 cup of milk', dish({}, ['milk', 1, 'cup']));
+    expect(milk.dishCount).toBeUndefined();
   });
 
   it('matches an English plural to its singular', () => {
@@ -266,6 +300,8 @@ describe('holdDishCountsToText', () => {
       ['1 1/2 bowls of ramen', 1.5],
       ['2 ½ slices of pizza', 2.5],
       ['a quarter plate of fried rice', 0.25],
+      ['three quarters of a bowl of pho', 0.75],
+      ['two thirds of a pizza', 2 / 3],
     ] as const) {
       const d = held(text, dish({ dishCount: count(n, 'x') }, ['a'], ['b']));
       expect(d.dishCount?.count, text).toBe(n);

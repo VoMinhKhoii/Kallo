@@ -90,7 +90,10 @@ export function resolveVesselFromToken(
   token: string,
   size?: 'small' | 'medium' | 'large'
 ): { family: ContainerFamily; tier: VesselTier } | null {
-  const match = TOKEN_LOOKUP.get(normalizeVesselToken(token));
+  const normalized = normalizeVesselToken(token);
+  // "bowls", "glasses": the singular names the same vessel.
+  const match =
+    TOKEN_LOOKUP.get(normalized) ?? TOKEN_LOOKUP.get(singularWord(normalized));
   if (!match) return null;
 
   const shift = size === 'small' ? -1 : size === 'large' ? 1 : 0;

@@ -31,9 +31,10 @@ const isOil = (part: DecomposedIngredientV2) =>
 
 /** A unit that measures a part (a spoon, a cup, a gram), never a dish. */
 function isMeasure(unitToken: string | undefined): boolean {
-  const unit = resolveUnitType(unitToken);
+  const word = singularWord(nameKey(unitToken ?? ''));
+  const unit = resolveUnitType(unitToken) ?? resolveUnitType(word);
   if (unit === 'volume' || unit === 'mass' || unit === 'container') return true;
-  return MEASURE.test(nameKey(unitToken ?? '').split(/\s+/)[0] ?? '');
+  return MEASURE.test(word.split(/\s+/)[0] ?? '');
 }
 
 /** Whether a part's unit is the dish's vessel word ("tô" for "2 tô phở";
@@ -88,18 +89,45 @@ function copiedDishCount(dish: DecomposedDishV2): DishCount | null {
     : null;
 }
 
-/**
- * A part that only repeats the dish's count in the dish's unit, or says "one"
- * of it ("2 tô phở" → `count: 1, unitToken: "tô"` on each part: one bowl's
- * worth, which the dish's count already says).
- */
-function copiesCount(dish: DecomposedDishV2, part: DecomposedIngredientV2) {
+/** Whether a part's unit is the dish count's unit, or both are its vessel. */
+function inDishUnit(dish: DecomposedDishV2, part: DecomposedIngredientV2) {
   const count = dish.dishCount;
-  if (!count || (part.count !== count.count && part.count !== 1)) return false;
+  if (!count) return false;
   return (
     sameUnit(part.unitToken, count.unitToken) ||
     (inVessel(dish, part.unitToken) && inVessel(dish, count.unitToken))
   );
+}
+
+/**
+ * A part that only repeats the dish's count in the dish's unit, or says "one"
+ * of it when the dish's lone food or two or more of its foods do ("2 tô phở"
+ * → `count: 1, unitToken: "tô"` on each part: one bowl's worth, which the
+ * dish's count already says). One "1 slice of cheese" beside "2 slices of
+ * toast" is the cheese's own amount.
+ */
+function copiesCount(dish: DecomposedDishV2, part: DecomposedIngredientV2) {
+  const count = dish.dishCount;
+  if (!count || !inDishUnit(dish, part)) return false;
+  if (part.count === count.count) return true;
+  if (part.count !== 1) return false;
+  const foods = dish.ingredients.filter((i) => !isOil(i));
+  const ones = foods.filter((f) => f.count === 1 && inDishUnit(dish, f));
+  return foods.length === 1 || ones.length >= 2;
+}
+
+/**
+ * A one-food dish's count, from its food ("1/2 chén bò kho" logged as one
+ * food): kept on the dish too, so a dish rescue that splits the food into its
+ * parts still knows how many. Measures ("1 cup of milk") stay the food's.
+ */
+function loneFoodCount(dish: DecomposedDishV2): DishCount | null {
+  const foods = dish.ingredients.filter((i) => !isOil(i));
+  const [food] = foods;
+  if (foods.length !== 1 || !food.count || !food.unitToken) return null;
+  return inVessel(dish, food.unitToken) || !isMeasure(food.unitToken)
+    ? { count: food.count, unitToken: food.unitToken }
+    : null;
 }
 
 /**
@@ -160,6 +188,11 @@ const NUMBER_WORDS: Record<string, number> = {
   quarter: 0.25,
   third: 1 / 3,
 };
+/** "three quarters", "two thirds", "3 quarters". */
+const PARTS_OF = new RegExp(
+  `(?<![\\p{L}\\p{M}\\d])(\\d+|${Object.keys(NUMBER_WORDS).join('|')})\\s+(quarters|thirds)(?![\\p{L}\\p{M}])`,
+  'giu'
+);
 const VULGAR: Record<string, number> = {
   '½': 0.5,
   '¼': 0.25,
@@ -193,6 +226,10 @@ function countsIn(text: string): number[] {
     );
   for (const m of text.matchAll(WORD))
     counts.push(NUMBER_WORDS[m[0].toLowerCase()]);
+  for (const m of text.matchAll(PARTS_OF)) {
+    const n = Number(m[1]) || NUMBER_WORDS[m[1].toLowerCase()];
+    counts.push(n / (m[2].toLowerCase() === 'quarters' ? 4 : 3));
+  }
   for (const [sign, n] of Object.entries(VULGAR))
     if (text.includes(sign)) counts.push(n);
   if (AND_A_HALF.test(text)) counts.push(1.5, ...counts.map((n) => n + 0.5));
@@ -219,7 +256,8 @@ export function holdDishCountsToText(
 ): void {
   const text = mealText.normalize('NFC');
   for (const dish of decomposition.mealItems) {
-    const count = dish.dishCount ?? copiedDishCount(dish);
+    const count =
+      dish.dishCount ?? copiedDishCount(dish) ?? loneFoodCount(dish);
     if (!count) {
       stripOilCopies(dish);
       continue;
@@ -236,8 +274,9 @@ export function holdDishCountsToText(
         `[call1-check] count ${count.count} ${count.unitToken} lifted to dish "${dish.name}"`
       );
     dish.dishCount = count;
-    for (const part of dish.ingredients) {
-      if (!copiesCount(dish, part)) continue;
+    // Judge every part before stripping any: whether a 1 is a copy depends
+    // on how many parts carry it.
+    for (const part of dish.ingredients.filter((p) => copiesCount(dish, p))) {
       delete part.count;
       delete part.unitToken;
     }

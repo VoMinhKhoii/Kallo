@@ -10,6 +10,7 @@ import type {
 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { VesselEnvelope } from '@/lib/ai/portion/vessel/envelope';
 import { nameKey } from '@/lib/core/text/name-key';
+import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
 
 export const escapeXmlAttribute = (value: string): string =>
   value
@@ -79,10 +80,15 @@ export function dishPieceCount(mi: MealItemWithCandidates): {
   count: number;
   unit: string;
 } | null {
-  const typed = mi.mealItem.dishCount;
-  if (typed && typed.count > 0)
-    return { ingredient: null, count: typed.count, unit: typed.unitToken };
   if (mi.ingredients.length < 2) return null;
+  // A dish of one food (its frying oil aside) has its count on the food
+  // already (`user_count`).
+  const foods = mi.ingredients.filter(
+    (i) => !isDiscreteOilIngredient(i.ingredient.rawName)
+  );
+  const typed = mi.mealItem.dishCount;
+  if (typed && typed.count > 0 && foods.length > 1)
+    return { ingredient: null, count: typed.count, unit: typed.unitToken };
   const counted = mi.ingredients.filter(
     (i) => i.ingredient.count != null && i.ingredient.unitToken
   );
