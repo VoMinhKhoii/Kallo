@@ -28,7 +28,7 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
   | `thermo-nuclear-code-quality-review` | **Pre-PR structural/maintainability review**, and whenever a change grows a file near the 400/200 LOC limits or adds files to a crowded folder. |
 
 - **Gates before signing off**: `bunx @biomejs/biome check .` (auto-fix with `--write`), `bun check:structure`, tests for new features/fixes (Vitest).
-- **Opening a PR**: follow `/ship` (`.claude/skills/ship/SKILL.md`): a local review before the first push (Codex Sol rounds, an Astra pass when needed, a Fable `thermo-nuclear-code-quality-review`, a Sol regression check), the pre-push gate on the pushed commit (`.githooks/pre-push`; never `--no-verify`; agents other than Claude Code push with `KALLO_AGENT=1`), then the GitHub Codex loop.
+- **Opening a PR**: follow `/ship` (`.claude/skills/ship/SKILL.md`): a local review before the first push (Gemini 4 Neon rounds through `agy`, falling back to Codex Sol only when Neon cannot run, an Astra pass when needed, a Fable `thermo-nuclear-code-quality-review`, a regression check), the pre-push gate on the pushed commit (`.githooks/pre-push`; never `--no-verify`; agents other than Claude Code push with `KALLO_AGENT=1`), then the GitHub Codex loop.
 - **Zod validation** for all external inputs (API params, form data, URL params); React Hook Form + `@hookform/resolvers` for forms.
 - **Pre-read docs**: `docs/DATABASE.md` before DB/migration work; `docs/DATA.md` before food-data work; `docs/EMAIL.md` before touching anything that sends email (auth emails run through our own Supabase hook, not Supabase's mailer); `docs/superpowers/specs/2026-05-08-pipeline-latency-budget.md` before touching `analyzeMeal`, the matching cascade, or the Gemini wrapper.
 - **Context7 MCP** for up-to-date library docs — required research before locking designs around third-party behavior (state ownership, routing, persistence).
@@ -114,7 +114,7 @@ The full module map — one line per folder stating its single concern — is `d
 
 ## Code Review Rules
 
-Read by the Codex GitHub reviewer and by `/ship`'s local Codex pass (the heading is the one Codex looks for). Drawn from 130 Codex threads on PRs #414–#463 and the 38 fix PRs that repaired an earlier PR between 2026-07-15 and 2026-10-19. Humans judge every finding.
+Read by the Codex GitHub reviewer and by `/ship`'s local review passes (the heading is the one Codex looks for). Drawn from 130 Codex threads on PRs #414–#463 and the 38 fix PRs that repaired an earlier PR between 2026-07-15 and 2026-10-19. Humans judge every finding.
 
 **Report shape.** Start with a count ("3 findings, 1 P1") or say plainly that there is nothing to fix. Every finding names `file:line`, the input or caller that reaches it, and what the user sees. When a bug is a pattern (a missing deadline check, a substring match, an unhandled null), list every site in the diff in that one finding: we fix the class in one round, never one site per round (#430 took five rounds for one deadline class).
 
