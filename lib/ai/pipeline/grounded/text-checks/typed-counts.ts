@@ -92,7 +92,7 @@ function countsIn(text: string): number[] {
   return counts;
 }
 
-/** How many times the text states `count` ("2 quả trứng, 2 quả cà chua" → 2). */
-export function typedCountTimes(count: number, text: string): number {
-  return countsIn(text).filter((n) => Math.abs(n - count) < 0.01).length;
+/** Whether the text states `count` anywhere. */
+export function isTypedCount(count: number, text: string): boolean {
+  return countsIn(text).some((n) => Math.abs(n - count) < 0.01);
 }

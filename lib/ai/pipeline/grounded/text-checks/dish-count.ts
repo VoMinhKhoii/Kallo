@@ -18,7 +18,7 @@ import {
 } from '@/lib/ai/portion/vessel/geometry';
 import { nameKey } from '@/lib/core/text/name-key';
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
-import { typedCountTimes } from './typed-counts';
+import { isTypedCount } from './typed-counts';
 
 /**
  * Spoon, cup, weight and volume words the unit lexicon does not list
@@ -167,24 +167,16 @@ function stripOilCopies(dish: DecomposedDishV2): void {
 }
 
 /**
- * Whether the server may take a count from the parts to the dish: the text
- * states it once. One stated twice ("2 quả trứng, 2 quả cà chua", "2 slices
- * of toast with 2 slices of cheese") is each food's own.
- */
-const liftable = (count: DishCount, text: string) =>
-  typedCountTimes(count.count, text) === 1 ||
-  (count.count === 1 && typedCountTimes(1, text) <= 1);
-
-/**
  * Hold each dish's count to the text, in place: lift a count Call 1 copied
- * onto the parts (`copiedDishCount`) to `dishCount` when the text states it
- * once, and strip the copies a part still carries; when unsure, the parts
- * stay as Call 1 wrote them. Call 1's own `dishCount` is kept even when the
- * text reader cannot find its number (counts are written in more ways than
- * it reads), and logged. A dish of one food also carries its count on the
- * food, so its single-food priors read it there; the dish keeps it too, so a
- * dish rescue that splits the food still knows how many. A typed zero goes
- * on every part instead, where the zero check asks about it.
+ * onto every part (`copiedDishCount`, the reading main's code gave such
+ * counts) or wrote only on a one-food dish's food (`loneFoodCount`) to
+ * `dishCount`, and strip the copies a part still carries, so a part's count
+ * is its own afterwards. Call 1's own `dishCount` is kept even when the text
+ * reader cannot find its number (counts are written in more ways than it
+ * reads), and logged; only a zero must be in the text, since a typed zero
+ * goes on every part, where the zero check asks about it. A dish of one food
+ * carries its count on both the dish and the food: its single-food priors
+ * read the food, and a dish rescue that splits the food still knows how many.
  */
 export function holdDishCountsToText(
   decomposition: MealDecompositionV2,
@@ -196,7 +188,9 @@ export function holdDishCountsToText(
       ? null
       : (copiedDishCount(dish) ?? loneFoodCount(dish));
     const count = dish.dishCount ?? lifted;
-    if (!count || (lifted && !liftable(lifted, text))) {
+    const untypedZero = count?.count === 0 && !lifted && !isTypedCount(0, text);
+    if (!count || untypedZero) {
+      if (untypedZero) dish.dishCount = null;
       stripOilCopies(dish);
       continue;
     }
@@ -204,11 +198,7 @@ export function holdDishCountsToText(
       console.warn(
         `[call1-check] count ${count.count} ${count.unitToken} lifted to dish "${dish.name}"`
       );
-    if (
-      !lifted &&
-      count.count !== 1 &&
-      typedCountTimes(count.count, text) === 0
-    )
+    if (!lifted && count.count !== 1 && !isTypedCount(count.count, text))
       console.warn(
         `[call1-check] count ${count.count} on dish "${dish.name}" is not read in the text; kept`
       );
@@ -220,7 +210,10 @@ export function holdDishCountsToText(
       delete part.unitToken;
     }
     if (count.count === 0) spreadZero(dish, count);
-    else mirrorOntoLoneFood(dish, count);
+    else {
+      mirrorOntoLoneFood(dish, count);
+      stripOilCopies(dish);
+    }
   }
 }
 
