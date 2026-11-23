@@ -59,6 +59,50 @@ describe('startPlainRead', () => {
     expect(params.abortSignal.aborted).toBe(true);
   });
 
+  it("tells the read the person's bowl of rice, by country", async () => {
+    const call = vi.fn().mockResolvedValue(read(640));
+    const ask = async (
+      profile?: Parameters<typeof startPlainRead>[0]['profile']
+    ) => {
+      await startPlainRead({
+        gemini: client(call),
+        signal: live(),
+        mealText: '2 chén cơm, cá kho',
+        profile,
+      }).settle();
+      return call.mock.calls.at(-1)?.[0].userMessage as string;
+    };
+
+    expect(
+      await ask({ countryOfOrigin: 'Vietnam', countryOfResidence: null })
+    ).toContain('bowl of plain cooked rice is about 120 g');
+    expect(
+      await ask({ countryOfOrigin: null, countryOfResidence: 'South Korea' })
+    ).toContain('about 210 g');
+    expect(await ask()).toContain('about 150 g');
+  });
+
+  it('leaves the bowl of rice out when the meal names no rice', async () => {
+    const call = vi.fn().mockResolvedValue(read(300));
+    await startPlainRead({
+      gemini: client(call),
+      signal: live(),
+      mealText: 'a slice of pepperoni pizza and a cola',
+      profile: { countryOfOrigin: 'United States', countryOfResidence: null },
+    }).settle();
+    expect(call.mock.calls[0][0].userMessage).not.toContain('bowl of plain');
+  });
+
+  it('asks for the person’s share of shared food', async () => {
+    const call = vi.fn().mockResolvedValue(read(640));
+    await startPlainRead({
+      gemini: client(call),
+      signal: live(),
+      mealText: 'ăn chung lẩu với 3 người',
+    }).settle();
+    expect(call.mock.calls[0][0].systemPrompt).toMatch(/their share/);
+  });
+
   it('returns null and aborts when the read misses the grace window', async () => {
     vi.useFakeTimers();
     let signal: AbortSignal | undefined;
