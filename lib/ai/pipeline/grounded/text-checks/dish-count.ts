@@ -18,6 +18,7 @@ import {
 } from '@/lib/ai/portion/vessel/geometry';
 import { nameKey } from '@/lib/core/text/name-key';
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
+import { isTypedCount } from './typed-counts';
 
 /**
  * Spoon, cup, weight and volume words the unit lexicon does not list
@@ -29,6 +30,10 @@ const MEASURE =
 
 const isOil = (part: DecomposedIngredientV2) =>
   isDiscreteOilIngredient(part.rawName);
+
+/** A dish's foods, its cooking oil aside. */
+const foodsOf = (dish: DecomposedDishV2) =>
+  dish.ingredients.filter((i) => !isOil(i));
 
 /** A unit that measures a part (a spoon, a cup, a gram), never a dish. */
 function isMeasure(unitToken: string | undefined): boolean {
@@ -61,7 +66,7 @@ const sameUnit = (a: string | undefined, b: string | undefined) =>
  * cà chua và rau") or a shared spoon measure keeps those amounts as typed.
  */
 function copiedDishCount(dish: DecomposedDishV2): DishCount | null {
-  const foods = dish.ingredients.filter((i) => !isOil(i));
+  const foods = foodsOf(dish);
   if (foods.length < 2) return null;
   const [first] = foods;
   if (
@@ -112,7 +117,7 @@ function copiesCount(dish: DecomposedDishV2, part: DecomposedIngredientV2) {
   if (!count || !inDishUnit(dish, part)) return false;
   if (part.count === count.count) return true;
   if (part.count !== 1) return false;
-  const foods = dish.ingredients.filter((i) => !isOil(i));
+  const foods = foodsOf(dish);
   const ones = foods.filter((f) => f.count === 1 && inDishUnit(dish, f));
   return foods.length === 1 || ones.length >= 2;
 }
@@ -123,7 +128,7 @@ function copiesCount(dish: DecomposedDishV2, part: DecomposedIngredientV2) {
  * parts still knows how many. Measures ("1 cup of milk") stay the food's.
  */
 function loneFoodCount(dish: DecomposedDishV2): DishCount | null {
-  const foods = dish.ingredients.filter((i) => !isOil(i));
+  const foods = foodsOf(dish);
   const [food] = foods;
   if (foods.length !== 1 || !food.count || !food.unitToken) return null;
   // Part of a bowl or plate with no vessel word on the dish ("1/2 bowl of
@@ -143,7 +148,7 @@ function loneFoodCount(dish: DecomposedDishV2): DishCount | null {
  * typed, the oil's is not.
  */
 function stripOilCopies(dish: DecomposedDishV2): void {
-  const foods = dish.ingredients.filter((i) => !isOil(i));
+  const foods = foodsOf(dish);
   const [food] = foods;
   if (foods.length !== 1 || food.count == null || isMeasure(food.unitToken))
     return;
@@ -157,95 +162,6 @@ function stripOilCopies(dish: DecomposedDishV2): void {
       delete oil.unitToken;
     }
   }
-}
-
-const NUMBER_WORDS: Record<string, number> = {
-  a: 1,
-  an: 1,
-  one: 1,
-  một: 1,
-  two: 2,
-  couple: 2,
-  pair: 2,
-  double: 2,
-  hai: 2,
-  đôi: 2,
-  three: 3,
-  ba: 3,
-  four: 4,
-  bốn: 4,
-  tư: 4,
-  five: 5,
-  năm: 5,
-  six: 6,
-  sáu: 6,
-  seven: 7,
-  bảy: 7,
-  eight: 8,
-  tám: 8,
-  nine: 9,
-  chín: 9,
-  ten: 10,
-  mười: 10,
-  dozen: 12,
-  zero: 0,
-  half: 0.5,
-  nửa: 0.5,
-  nua: 0.5,
-  quarter: 0.25,
-  third: 1 / 3,
-};
-/** "three quarters", "two thirds", "3 quarters". */
-const PARTS_OF = new RegExp(
-  `(?<![\\p{L}\\p{M}\\d])(\\d+|${Object.keys(NUMBER_WORDS).join('|')})[\\s-]+(quarters|thirds)(?![\\p{L}\\p{M}])`,
-  'giu'
-);
-const VULGAR: Record<string, number> = {
-  '½': 0.5,
-  '¼': 0.25,
-  '¾': 0.75,
-  '⅓': 1 / 3,
-  '⅔': 2 / 3,
-};
-const WORD = new RegExp(
-  `(?<![\\p{L}\\p{M}])(?:${Object.keys(NUMBER_WORDS).join('|')})(?![\\p{L}\\p{M}])`,
-  'giu'
-);
-const DIGITS = /(\d+(?:[.,]\d+)?)(?:\s*\/\s*(\d+))?/g;
-/** "1 1/2", "2 ½": a whole number and a fraction. */
-const MIXED = /(\d+)\s+(\d+)\s*\/\s*(\d+)|(\d+)\s*([½¼¾⅓⅔])/gu;
-/** "tô rưỡi" (one and a half bowls), "2 tô rưỡi", "two and a half". */
-const AND_A_HALF =
-  /(?<![\p{L}\p{M}])(?:rưỡi|ruoi|and a half)(?![\p{L}\p{M}])/iu;
-
-/** Every count the text can mean: its digits, fractions and number words. */
-function countsIn(text: string): number[] {
-  const counts: number[] = [];
-  for (const m of text.matchAll(DIGITS)) {
-    const n = Number(m[1].replace(',', '.'));
-    counts.push(m[2] ? n / Number(m[2]) : n);
-  }
-  for (const m of text.matchAll(MIXED))
-    counts.push(
-      m[1]
-        ? Number(m[1]) + Number(m[2]) / Number(m[3])
-        : Number(m[4]) + VULGAR[m[5]]
-    );
-  for (const m of text.matchAll(WORD))
-    counts.push(NUMBER_WORDS[m[0].toLowerCase()]);
-  for (const m of text.matchAll(PARTS_OF)) {
-    const n = Number(m[1]) || NUMBER_WORDS[m[1].toLowerCase()];
-    counts.push(n / (m[2].toLowerCase() === 'quarters' ? 4 : 3));
-  }
-  for (const [sign, n] of Object.entries(VULGAR))
-    if (text.includes(sign)) counts.push(n);
-  if (AND_A_HALF.test(text)) counts.push(1.5, ...counts.map((n) => n + 0.5));
-  return counts;
-}
-
-/** One is any dish's count; anything else must be typed. */
-function isTypedCount(count: number, text: string): boolean {
-  return count === 1 || countsIn(text).some((n) => Math.abs(n - count) < 0.01);
 }
 
 /**
@@ -288,13 +204,24 @@ export function holdDishCountsToText(
       delete part.count;
       delete part.unitToken;
     }
-    const foods = dish.ingredients.filter((i) => !isOil(i));
-    const zero = count.count === 0;
-    if (!zero && (foods.length !== 1 || foods[0].count != null)) continue;
-    for (const part of zero ? dish.ingredients : foods) {
-      part.count = count.count;
-      part.unitToken = count.unitToken;
-    }
-    if (zero) dish.dishCount = null;
+    if (count.count === 0) spreadZero(dish, count);
+    else mirrorOntoLoneFood(dish, count);
   }
+}
+
+/** A typed zero ("0 burgers") on every part, where the zero check asks. */
+function spreadZero(dish: DecomposedDishV2, count: DishCount): void {
+  for (const part of dish.ingredients) {
+    part.count = 0;
+    part.unitToken = count.unitToken;
+  }
+  dish.dishCount = null;
+}
+
+/** A dish of one food carries its count on the food too, for its priors. */
+function mirrorOntoLoneFood(dish: DecomposedDishV2, count: DishCount): void {
+  const foods = foodsOf(dish);
+  if (foods.length !== 1 || foods[0].count != null) return;
+  foods[0].count = count.count;
+  foods[0].unitToken = count.unitToken;
 }

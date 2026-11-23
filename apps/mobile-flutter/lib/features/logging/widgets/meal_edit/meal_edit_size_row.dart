@@ -61,7 +61,7 @@ class MealEditSizeRow extends StatelessWidget {
 
   Widget _ruler(String locale) {
     final anchors = buildAnchors(vessel, locale);
-    final envelope = vesselEnvelope(vessel, anchors);
+    final envelope = vesselTapeRange(vessel, anchors);
     final at = grams.round().clamp(envelope.min, envelope.max);
     final title = 'logging.portionPicker.title'.tr();
     return switch (vessel) {

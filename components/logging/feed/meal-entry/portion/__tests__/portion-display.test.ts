@@ -4,7 +4,7 @@ import {
   countPrefix,
   repointVesselTo,
   vesselAnchors,
-  vesselEnvelope,
+  vesselTapeRange,
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { portionDisplay } from '@/components/logging/feed/meal-entry/portion/portion-display';
 import { tapeScale } from '@/components/logging/feed/meal-entry/portion/tape/vessel-tape-geometry';
@@ -66,7 +66,7 @@ describe('a counted container', () => {
 
   it('opens a half-bowl meal at its own grams, inside the tape', () => {
     const v = rice(0.5);
-    const { min, max } = vesselEnvelope(v, vesselAnchors(v, 'vi'));
+    const { min, max } = vesselTapeRange(v, vesselAnchors(v, 'vi'));
     expect(min).toBeLessThanOrEqual(75);
     expect(max).toBeGreaterThan(75);
   });
@@ -75,7 +75,7 @@ describe('a counted container', () => {
 describe('dragging a container down to half', () => {
   const v = rice();
   const anchors = vesselAnchors(v, 'vi');
-  const { min, max } = vesselEnvelope(v, anchors);
+  const { min, max } = vesselTapeRange(v, anchors);
 
   it('starts the tape at half the first vessel, not 60% of it', () => {
     expect(min).toBe(75);
@@ -98,7 +98,7 @@ describe('dragging a container down to half', () => {
   it('halves a counted vessel to a whole one', () => {
     const two = rice(2);
     const twoAnchors = vesselAnchors(two, 'vi');
-    expect(vesselEnvelope(two, twoAnchors).min).toBe(150);
+    expect(vesselTapeRange(two, twoAnchors).min).toBe(150);
     expect(label(two, 150)).toBe('chén nhỏ');
   });
 
@@ -123,7 +123,7 @@ describe('the piece tape is unchanged', () => {
       kind: 'meat',
     };
     const anchors = vesselAnchors(piece, 'en');
-    expect(vesselEnvelope(piece, anchors).min).toBe(
+    expect(vesselTapeRange(piece, anchors).min).toBe(
       Math.round(anchors[0].value * 0.6)
     );
   });

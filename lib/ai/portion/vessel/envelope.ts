@@ -195,9 +195,9 @@ function dishVesselCount(
 }
 
 /**
- * Legacy reading, for a dish without `dishCount` (a stored meal, or Call 1's
- * answer before the dish-count check): how many of the dish's vessel the user
- * ate, from the count its parts carry in the
+ * For a dish without `dishCount` (the dish-count check found none it could
+ * hold to the text, and left the parts as Call 1 wrote them): how many of the
+ * dish's vessel the user ate, from the count its parts carry in the
  * vessel's own word ("2 tô phở" → 2 on bánh phở, beef and broth; "1/2 chén bò
  * kho" → 0.5). The band and mid grams describe one vessel, so "2 bowls of
  * ramen" must not be fit into one bowl, nor half a chén into a whole one. The

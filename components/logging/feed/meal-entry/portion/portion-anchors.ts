@@ -45,7 +45,10 @@ export function gramEnvelope(
 
 /** The range a vessel's tape spans: a container's reaches half its first
  *  vessel, a piece's 60% of its smallest cut. */
-export function vesselEnvelope(vessel: ClientVessel, anchors: PortionAnchor[]) {
+export function vesselTapeRange(
+  vessel: ClientVessel,
+  anchors: PortionAnchor[]
+) {
   return gramEnvelope(
     anchors,
     vessel.family === 'piece' ? ENVELOPE_MIN_FACTOR : HALF_VESSEL

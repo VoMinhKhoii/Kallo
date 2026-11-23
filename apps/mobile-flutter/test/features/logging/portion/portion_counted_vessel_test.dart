@@ -70,7 +70,7 @@ void main() {
 
     test('opens a half-bowl meal at its own grams, inside the tape', () {
       final v = _rice(0.5);
-      final envelope = vesselEnvelope(v, buildAnchors(v, 'vi'));
+      final envelope = vesselTapeRange(v, buildAnchors(v, 'vi'));
       expect(envelope.min, lessThanOrEqualTo(75));
       expect(envelope.max, greaterThan(75));
     });
@@ -79,7 +79,7 @@ void main() {
   group('dragging a container down to half', () {
     final v = _rice();
     final anchors = buildAnchors(v, 'vi');
-    final envelope = vesselEnvelope(v, anchors);
+    final envelope = vesselTapeRange(v, anchors);
 
     test('starts the tape at half the first vessel, not 60% of it', () {
       expect(envelope.min, 75);
@@ -106,7 +106,7 @@ void main() {
 
     test('halves a counted vessel to a whole one', () {
       final two = _rice(2);
-      expect(vesselEnvelope(two, buildAnchors(two, 'vi')).min, 150);
+      expect(vesselTapeRange(two, buildAnchors(two, 'vi')).min, 150);
       expect(_label(two, 150), 'chén nhỏ');
     });
 
@@ -126,7 +126,7 @@ void main() {
       const piece = PieceVessel(tier: 3, count: 1, kind: PieceKind.meat);
       final anchors = buildAnchors(piece, 'en');
       expect(
-        vesselEnvelope(piece, anchors).min,
+        vesselTapeRange(piece, anchors).min,
         (anchors.first.value * 0.6).round(),
       );
     });

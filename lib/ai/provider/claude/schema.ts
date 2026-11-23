@@ -62,7 +62,7 @@ type Loose = Record<string, unknown>;
 const present = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
 
 /** A dish count the schema takes: a finite count of 0 or more, and a unit. */
-function isDishCount(v: unknown): boolean {
+function isUsableDishCount(v: unknown): boolean {
   const count = (v as Loose | null)?.count;
   const unit = (v as Loose | null)?.unitToken;
   return (
@@ -163,7 +163,11 @@ export function repairPipelineOutput(raw: unknown): unknown {
       delete m.servedMassG;
     if ('statedKcal' in m && !(Number(m.statedKcal) > 0)) delete m.statedKcal;
     // A dish count without a usable number or unit is no count.
-    if ('dishCount' in m && m.dishCount !== null && !isDishCount(m.dishCount))
+    if (
+      'dishCount' in m &&
+      m.dishCount !== null &&
+      !isUsableDishCount(m.dishCount)
+    )
       m.dishCount = null;
     for (const g of (m.ingredients as Loose[] | undefined) ?? []) {
       if ('servedG' in g && !(Number(g.servedG) > 0)) delete g.servedG;

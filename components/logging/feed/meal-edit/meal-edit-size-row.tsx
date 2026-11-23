@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import {
   repointVesselTo,
   vesselAnchors,
-  vesselEnvelope,
+  vesselTapeRange,
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import { portionDisplay } from '@/components/logging/feed/meal-entry/portion/portion-display';
 import { VesselTape } from '@/components/logging/feed/meal-entry/portion/tape/vessel-tape';
@@ -35,7 +35,7 @@ export function MealEditSizeRow({
   const shown = repointVesselTo(vessel, rounded, locale);
   const { label } = portionDisplay(shown, rounded, loc);
   const anchors = vesselAnchors(shown, loc);
-  const { min, max } = vesselEnvelope(shown, anchors);
+  const { min, max } = vesselTapeRange(shown, anchors);
 
   return (
     <div>

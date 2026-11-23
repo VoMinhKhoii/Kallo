@@ -69,12 +69,14 @@ GramEnvelope gramEnvelope(
 );
 
 /// The range a vessel's tape spans: a container's reaches half its first
-/// vessel, a piece's 60% of its smallest cut (web `vesselEnvelope`).
-GramEnvelope vesselEnvelope(ClientVessel vessel, List<PortionAnchor> anchors) =>
-    gramEnvelope(
-      anchors,
-      vessel is PieceVessel ? envelopeMinFactor : halfVessel,
-    );
+/// vessel, a piece's 60% of its smallest cut (web `vesselTapeRange`).
+GramEnvelope vesselTapeRange(
+  ClientVessel vessel,
+  List<PortionAnchor> anchors,
+) => gramEnvelope(
+  anchors,
+  vessel is PieceVessel ? envelopeMinFactor : halfVessel,
+);
 
 final Map<double, String> _vulgar = {0.25: '¼', 0.5: '½', 0.75: '¾'};
 
