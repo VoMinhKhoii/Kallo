@@ -77,6 +77,15 @@ for (const [family, data] of Object.entries(VESSEL_FAMILIES) as Array<
   }
 }
 
+/** An English plural's singular ("bowls" → "bowl", "glasses" → "glass");
+ *  any other word as it is. */
+export function singularWord(word: string): string {
+  if (/(?:ss|sh|ch|x)es$/.test(word)) return word.slice(0, -2);
+  return /[a-z]s$/.test(word) && !word.endsWith('ss')
+    ? word.slice(0, -1)
+    : word;
+}
+
 export function resolveVesselFromToken(
   token: string,
   size?: 'small' | 'medium' | 'large'

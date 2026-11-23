@@ -182,7 +182,7 @@ describe('holdDishCountsToText', () => {
     ]);
   });
 
-  it('moves a one-food dish count onto the food, so single-food priors read it', () => {
+  it('puts a one-food dish count on the food too, and keeps it on the dish for a rescue', () => {
     const d = held(
       '1/2 chén cơm',
       dish(
@@ -190,8 +190,57 @@ describe('holdDishCountsToText', () => {
         ['cơm']
       )
     );
-    expect(d.dishCount).toBeNull();
+    expect(d.dishCount).toEqual(count(0.5, 'chén'));
     expect(counts(d)).toEqual([[0.5, 'chén']]);
+  });
+
+  it("replaces a one-food dish's per-vessel 1 with the dish's count", () => {
+    const d = held(
+      '2 chén cơm',
+      dish({ name: 'cơm', vesselToken: 'chén', dishCount: count(2, 'chén') }, [
+        'cơm',
+        1,
+        'chén',
+      ])
+    );
+    expect(counts(d)).toEqual([[2, 'chén']]);
+  });
+
+  it("strips parts' per-vessel 1 beside a dish count", () => {
+    const d = held(
+      '2 tô phở',
+      dish(
+        { vesselToken: 'tô', dishCount: count(2, 'tô') },
+        ['bánh phở', 1, 'tô'],
+        ['thịt bò', 1, 'tô']
+      )
+    );
+    expect(counts(d).every(([c]) => c === null)).toBe(true);
+  });
+
+  it('matches an English plural to its singular', () => {
+    const d = held(
+      '2 bowls of ramen',
+      dish(
+        { vesselToken: 'bowl' },
+        ['noodles', 2, 'bowls'],
+        ['broth', 2, 'bowl']
+      )
+    );
+    expect(d.dishCount).toEqual(count(2, 'bowls'));
+    expect(counts(d).every(([c]) => c === null)).toBe(true);
+  });
+
+  it("leaves the parts' counts alone when a lifted count is not in the text", () => {
+    const d = held(
+      'burgers',
+      dish({}, ['bun', 2, 'burger'], ['patty', 2, 'burger'])
+    );
+    expect(d.dishCount).toBeUndefined();
+    expect(counts(d)).toEqual([
+      [2, 'burger'],
+      [2, 'burger'],
+    ]);
   });
 
   it('drops a dish count the text does not hold', () => {
@@ -212,6 +261,11 @@ describe('holdDishCountsToText', () => {
       ['1 tô rưỡi bún bò', 1.5],
       ['a dozen dumplings', 12],
       ['a burger', 1],
+      ['tô rưỡi phở', 1.5],
+      ['1 to ruoi bun bo', 1.5],
+      ['1 1/2 bowls of ramen', 1.5],
+      ['2 ½ slices of pizza', 2.5],
+      ['a quarter plate of fried rice', 0.25],
     ] as const) {
       const d = held(text, dish({ dishCount: count(n, 'x') }, ['a'], ['b']));
       expect(d.dishCount?.count, text).toBe(n);
@@ -220,7 +274,7 @@ describe('holdDishCountsToText', () => {
 
   it('puts a typed zero on every part, where the zero check asks about it', () => {
     const d = held(
-      '0 burgers',
+      'zero burgers',
       dish({ dishCount: count(0, 'burger') }, ['bun'], ['patty'])
     );
     expect(d.dishCount).toBeNull();

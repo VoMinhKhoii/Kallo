@@ -98,6 +98,17 @@ describe('repairPipelineOutput', () => {
           ingredients: [{}],
         },
         { name: 'D', dishCount: null, ingredients: [{}] },
+        {
+          name: 'E',
+          dishCount: { count: '2', unitToken: 'tô' },
+          ingredients: [{}],
+        },
+        {
+          name: 'F',
+          dishCount: { count: null, unitToken: 'tô' },
+          ingredients: [{}],
+        },
+        { name: 'G', dishCount: 0, ingredients: [{}] },
       ],
     }) as { mealItems: { dishCount?: unknown }[] };
     expect(out.mealItems.map((m) => m.dishCount)).toEqual([
@@ -105,7 +116,23 @@ describe('repairPipelineOutput', () => {
       null,
       { count: 2, unitToken: 'tô' },
       null,
+      null,
+      null,
+      null,
     ]);
+  });
+
+  it('withCallOneDefaults writes null for a dish count Call 1 left out', () => {
+    const out = withCallOneDefaults({
+      mealItems: [
+        {
+          name: 'Phở',
+          cookingMethod: 'nấu',
+          ingredients: [{ rawName: 'phở', canonicalName: 'Pho' }],
+        },
+      ],
+    }) as { mealItems: { dishCount?: unknown }[] };
+    expect(out.mealItems[0].dishCount).toBeNull();
   });
 
   it('withCallOneDefaults fills a missing search string and cooking method, on a copy', () => {

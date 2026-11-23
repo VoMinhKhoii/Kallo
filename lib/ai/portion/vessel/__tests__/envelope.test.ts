@@ -454,6 +454,9 @@ describe("the dish's own count", () => {
     expect(pho({ dishCount: { count: 2, unitToken: 'bowl' } })?.servings).toBe(
       2
     );
+    expect(pho({ dishCount: { count: 2, unitToken: 'bowls' } })?.servings).toBe(
+      2
+    );
   });
 
   it('ignores a dish count in another word, and falls back to the parts', () => {

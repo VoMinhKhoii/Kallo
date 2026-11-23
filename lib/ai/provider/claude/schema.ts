@@ -61,6 +61,19 @@ export function withoutEmptyStrings(node: unknown): unknown {
 type Loose = Record<string, unknown>;
 const present = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
 
+/** A dish count the schema takes: a finite count of 0 or more, and a unit. */
+function isDishCount(v: unknown): boolean {
+  const count = (v as Loose | null)?.count;
+  const unit = (v as Loose | null)?.unitToken;
+  return (
+    typeof count === 'number' &&
+    Number.isFinite(count) &&
+    count >= 0 &&
+    present(unit) &&
+    (unit as string).length <= 24
+  );
+}
+
 /**
  * What Call 1 left out that the pipeline has a neutral value for: a food
  * without one of its search strings (`queryEn`, `nameVi`) takes the string
@@ -92,6 +105,7 @@ export function withCallOneDefaults(node: unknown): unknown {
     out.ingredients.some((g) => typeof (g as Loose)?.rawName === 'string');
   if (isCallOneDish && !present(out.cookingMethod))
     out.cookingMethod = 'as served';
+  if (isCallOneDish && out.dishCount === undefined) out.dishCount = null;
   return out;
 }
 
@@ -149,13 +163,7 @@ export function repairPipelineOutput(raw: unknown): unknown {
       delete m.servedMassG;
     if ('statedKcal' in m && !(Number(m.statedKcal) > 0)) delete m.statedKcal;
     // A dish count without a usable number or unit is no count.
-    const dishCount = m.dishCount as Loose | null | undefined;
-    if (
-      dishCount &&
-      (!(Number(dishCount.count) >= 0) ||
-        !present(dishCount.unitToken) ||
-        String(dishCount.unitToken).length > 24)
-    )
+    if ('dishCount' in m && m.dishCount !== null && !isDishCount(m.dishCount))
       m.dishCount = null;
     for (const g of (m.ingredients as Loose[] | undefined) ?? []) {
       if ('servedG' in g && !(Number(g.servedG) > 0)) delete g.servedG;

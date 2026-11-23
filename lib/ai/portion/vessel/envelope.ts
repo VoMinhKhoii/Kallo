@@ -12,6 +12,7 @@ import {
   midG,
   normalizeVesselToken,
   resolveVesselFromToken,
+  singularWord,
 } from '@/lib/ai/portion/vessel/geometry';
 import { resolvePieceVessel } from '@/lib/ai/portion/vessel/piece';
 import type { PipelineMealItem } from '@/lib/ai/types/result';
@@ -185,9 +186,10 @@ function dishVesselCount(
 ): number | null {
   const count = dish.dishCount;
   if (!count || !(count.count > 0)) return null;
-  return resolveVesselFromToken(count.unitToken)?.family === resolved.family
-    ? count.count
-    : null;
+  const unit =
+    resolveVesselFromToken(count.unitToken) ??
+    resolveVesselFromToken(singularWord(normalizeVesselToken(count.unitToken)));
+  return unit?.family === resolved.family ? count.count : null;
 }
 
 /**
