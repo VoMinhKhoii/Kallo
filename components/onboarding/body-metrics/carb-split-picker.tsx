@@ -63,7 +63,7 @@ export function CarbSplitPicker({
                       <div
                         className={`mt-0.5 text-[10px] ${
                           field.value === opt.id
-                            ? 'text-[#6F6556] dark:text-kallo-text-soft'
+                            ? 'text-kallo-text'
                             : 'text-[#8B8682]'
                         }`}
                       >
@@ -90,7 +90,7 @@ export function CarbSplitPicker({
                             key={macro.label}
                             className="flex items-center justify-between gap-3"
                           >
-                            <span className="text-[#6F6556] text-[10px] uppercase tracking-wide dark:text-kallo-text-soft">
+                            <span className="text-[10px] text-kallo-text-muted uppercase tracking-wide">
                               {macro.label}
                             </span>
                             <span className="font-semibold text-[12px] text-kallo-text">

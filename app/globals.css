@@ -206,7 +206,6 @@
   --color-kallo-stone: var(--kallo-stone);
   --color-kallo-btn: var(--kallo-btn);
   --color-kallo-btn-ink: var(--kallo-btn-ink);
-  --color-kallo-umber-text: var(--kallo-umber-text);
   --color-kallo-bubble: var(--kallo-bubble);
   --color-kallo-bubble-ink: var(--kallo-bubble-ink);
   --color-kallo-mention: var(--kallo-mention);
@@ -283,8 +282,8 @@
      hairline #e8e6dc) promoted from components/groups/* to the global
      tokens; the canvas is a near-neutral gray-white so white cards and the
      sidebar visibly separate from it. Hover/selected washes and tracks stay
-     warm beige — text is neutral, interaction states are not. Tan stays for
-     italic-accent, focus rings, and chart/ring strokes — never running text. */
+     warm beige — text is neutral, interaction states are not. Text is only
+     ink or muted ink; tan stays for focus rings and chart/ring strokes. */
   --kallo-surface: #fcfcfc;
   --kallo-text: #141413;
   --kallo-text-muted: #6e6d66;
@@ -330,10 +329,6 @@
   /* The label on a `bg-kallo-btn` fill. White on umber here; ink on Graphite's
      cream fill and on Aurora's light gradient, where white would vanish. */
   --kallo-btn-ink: #ffffff;
-  /* The umber as running text or a glyph (the analysis ticker, a link, an
-     outline button). The dark themes swap it for a tone that reads on the
-     page: Graphite's text cream, Aurora's light apricot. */
-  --kallo-umber-text: #695e4e;
   /* The user's sent meal in the logging thread. */
   --kallo-bubble: #695e4e;
   --kallo-bubble-ink: #fcfcfc;
@@ -467,7 +462,6 @@
   --kallo-btn: var(--kallo-ink);
   --kallo-btn-hover: var(--kallo-ink-hover);
   --kallo-btn-ink: #141413;
-  --kallo-umber-text: var(--kallo-text);
   --kallo-bubble: #31312e;
   --kallo-bubble-ink: #f2f1ec;
   --kallo-mention: #6fa8f0;
@@ -520,7 +514,6 @@
   --kallo-btn: #ecc9c3;
   --kallo-btn-hover: #f2d6cf;
   --kallo-btn-ink: #141413;
-  --kallo-umber-text: #e7c4b2;
   --kallo-bubble: #2c272d;
   --kallo-bubble-ink: #f4f0ec;
   --kallo-chart-muted: #3b353c;
@@ -725,12 +718,12 @@
 }
 
 /* Italic accent — the signature headline treatment: the second clause of
-   a Lora headline in italic, light (300), tan. Inherits size from the
+   a Lora headline in italic, light (300), muted ink. Inherits size from the
    parent heading. */
 @utility italic-accent {
   font-style: italic;
   font-weight: 300;
-  color: var(--kallo-accent);
+  color: var(--kallo-text-muted);
 }
 
 /* Minimum touch target (Anthropic spec: 40×40px). On coarse pointers,

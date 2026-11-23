@@ -18,7 +18,7 @@ export function ToolLinkList({
         return (
           <li key={slug}>
             <Link
-              className="block py-3 font-sans-display text-base text-kallo-text transition-colors hover:text-kallo-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+              className="block py-3 font-sans-display text-base text-kallo-text transition-colors hover:text-kallo-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
               href={toolPath(slug)}
             >
               <span>{copy.name}</span>

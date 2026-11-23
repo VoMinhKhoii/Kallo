@@ -12,7 +12,6 @@ import '../../../../theme/kallo_theme.dart';
 /// reads dirty over a warm fill and drops under 3:1 against the lightest stop.
 const Color kGoldMuted = Color(0xFF8B7A3A);
 const Color kGoldBorder = Color(0xFFE2A81C);
-const Color kGoldChipText = Color(0xFFF9D447);
 
 /// The gold row: the gradient surface, the sparkle clipped to it, and the ink
 /// chip hanging over its top-right edge.
@@ -95,7 +94,8 @@ class GoldPlanSurface extends StatelessWidget {
               color: KalloColors.onBrand,
               borderRadius: BorderRadius.circular(KalloRadii.pill),
             ),
-            child: Text(chipLabel!, style: dashCaption(color: kGoldChipText)),
+            // White, not gold: text is ink or muted ink only (web parity).
+            child: Text(chipLabel!, style: dashCaption(color: Colors.white)),
           ),
         ),
       ],

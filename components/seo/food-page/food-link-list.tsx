@@ -13,7 +13,7 @@ export function FoodLinkList({ pages }: { pages: FoodPage[] }) {
       {pages.map((page) => (
         <li key={page.slug}>
           <Link
-            className="flex items-baseline justify-between gap-4 py-3 font-sans-display text-base text-kallo-text transition-colors hover:text-kallo-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
+            className="flex items-baseline justify-between gap-4 py-3 font-sans-display text-base text-kallo-text transition-colors hover:text-kallo-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kallo-accent"
             href={`${FOOD_PAGE_PREFIX}/${page.slug}`}
             locale={page.locale}
           >
