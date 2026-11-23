@@ -64,7 +64,7 @@ export function formatGrams(grams: number): string {
 /**
  * The search's vessel hint at its everyday tier: one medium cut; a regular cup
  * or a medium plate; a small bowl (a chén) of rice or beans, a medium bowl of
- * soup — a medium bowl of rice is ~390 g, twice what a chén holds.
+ * soup — a medium bowl of rice is ~410 g, over twice what a chén holds.
  */
 export function vesselFromHint(
   hint: IngredientVesselHint | null | undefined

@@ -32,11 +32,13 @@ export const VESSEL_FAMILIES: Record<
     tokens: ['tô', 'bát', 'chén', 'bowl'],
     tiers: {
       1: {
-        ml: 400,
+        // A Vietnamese chén: 11.5 cm across, 5.5–6 cm deep, ~300 ml to the
+        // brim. 400 ml left a half chén with no size below it.
+        ml: 300,
         asset: 'bowl-1-chen.webp',
         aspect: 1.36,
         label: { vi: 'chén nhỏ', en: 'small bowl' },
-        sizeLabel: '400 ml',
+        sizeLabel: '300 ml',
       },
       2: {
         ml: 700,
@@ -53,40 +55,42 @@ export const VESSEL_FAMILIES: Record<
         sizeLabel: '1000 ml',
       },
       4: {
-        ml: 1300,
+        ml: 1500,
         asset: 'bowl-4-pho.webp',
         aspect: 2.32,
         label: { vi: 'tô rất lớn', en: 'extra-large bowl' },
-        sizeLabel: '1300 ml',
+        sizeLabel: '1500 ml',
       },
     },
   },
+  // A plate's ml is the food it holds, not its size: the well inside a
+  // ~2.25 cm rim, about 2.5 cm deep (16 cm plate → 11.5 cm well → ~250 ml).
   plate: {
     tokens: ['dĩa', 'đĩa', 'plate', 'dish'],
     tiers: {
       1: {
-        ml: 420,
+        ml: 250,
         asset: 'plate-1-side.webp',
         aspect: 2.31,
         label: { vi: 'dĩa nhỏ', en: 'side plate' },
         sizeLabel: '16 cm',
       },
       2: {
-        ml: 660,
+        ml: 550,
         asset: 'plate-2-coupe.webp',
         aspect: 2.34,
         label: { vi: 'dĩa vừa', en: 'medium plate' },
         sizeLabel: '20 cm',
       },
       3: {
-        ml: 1030,
+        ml: 850,
         asset: 'plate-3-dinner.webp',
         aspect: 2.1,
         label: { vi: 'dĩa lớn', en: 'dinner plate' },
         sizeLabel: '25 cm',
       },
       4: {
-        ml: 1480,
+        ml: 1200,
         asset: 'plate-4-oval-platter.webp',
         aspect: 3.22,
         label: { vi: 'dĩa đại', en: 'serving platter' },
@@ -105,11 +109,11 @@ export const VESSEL_FAMILIES: Record<
         sizeLabel: '150 ml',
       },
       2: {
-        ml: 250,
+        ml: 300,
         asset: 'cup-2-250ml.webp',
         aspect: 0.69,
         label: { vi: 'ly vừa', en: 'regular cup' },
-        sizeLabel: '250 ml',
+        sizeLabel: '300 ml',
       },
       3: {
         ml: 500,
@@ -154,11 +158,13 @@ function densityFill(
   };
 }
 
+// Soups are 0.99–1.09 g/ml (FAO/INFOODS density v2.0) and served 60–85%
+// full; a drink's low fill leaves room for ice (40–50% of an iced cup).
 export const DENSITY_FILL: Record<DishClass, DensityFill> = {
-  soup: densityFill(0.9, 1.1, 0.75, 0.95),
-  solid: densityFill(0.6, 0.9, 0.6, 0.9),
-  airy: densityFill(0.3, 0.6, 0.7, 1),
-  drink: densityFill(0.95, 1.05, 0.85, 1),
+  soup: densityFill(0.95, 1.08, 0.6, 0.85),
+  solid: densityFill(0.6, 0.95, 0.6, 0.9),
+  airy: densityFill(0.2, 0.65, 0.7, 1),
+  drink: densityFill(0.95, 1.08, 0.6, 0.95),
 };
 
 export type ContainerFamily = Extract<VesselFamily, 'bowl' | 'plate' | 'cup'>;

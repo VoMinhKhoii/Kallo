@@ -162,8 +162,8 @@ void main() {
         tier: 2,
         dishClass: DishClass.drink,
       );
-      // A regular 250 ml cup, poured to its fill, as the meal card resolves it.
-      expect(initialManualGrams(food(vessel: cup)), 231);
+      // A regular 300 ml cup, poured to its fill, as the meal card resolves it.
+      expect(initialManualGrams(food(vessel: cup)), 236);
     });
 
     test('− / + land on the next multiple of 10 and stop at the range', () {

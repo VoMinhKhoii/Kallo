@@ -182,222 +182,222 @@ describe('vessel gram envelopes', () => {
         "bowl": {
           "1": {
             "airy": {
-              "high": 240,
-              "low": 80,
+              "high": 200,
+              "low": 40,
             },
             "drink": {
-              "high": 420,
-              "low": 320,
+              "high": 310,
+              "low": 170,
             },
             "solid": {
-              "high": 320,
-              "low": 140,
+              "high": 260,
+              "low": 110,
             },
             "soup": {
-              "high": 420,
-              "low": 270,
+              "high": 280,
+              "low": 170,
             },
           },
           "2": {
             "airy": {
-              "high": 420,
-              "low": 150,
+              "high": 460,
+              "low": 100,
             },
             "drink": {
-              "high": 740,
-              "low": 570,
+              "high": 720,
+              "low": 400,
             },
             "solid": {
-              "high": 570,
+              "high": 600,
               "low": 250,
             },
             "soup": {
-              "high": 730,
-              "low": 470,
+              "high": 640,
+              "low": 400,
             },
           },
           "3": {
             "airy": {
-              "high": 600,
-              "low": 210,
+              "high": 650,
+              "low": 140,
             },
             "drink": {
-              "high": 1050,
-              "low": 810,
+              "high": 1030,
+              "low": 570,
             },
             "solid": {
-              "high": 810,
+              "high": 860,
               "low": 360,
             },
             "soup": {
-              "high": 1050,
-              "low": 680,
+              "high": 920,
+              "low": 570,
             },
           },
           "4": {
             "airy": {
-              "high": 780,
-              "low": 270,
+              "high": 980,
+              "low": 210,
             },
             "drink": {
-              "high": 1370,
-              "low": 1050,
+              "high": 1540,
+              "low": 860,
             },
             "solid": {
-              "high": 1050,
-              "low": 470,
+              "high": 1280,
+              "low": 540,
             },
             "soup": {
-              "high": 1360,
-              "low": 880,
+              "high": 1380,
+              "low": 860,
             },
           },
         },
         "cup": {
           "1": {
             "airy": {
-              "high": 90,
-              "low": 30,
+              "high": 100,
+              "low": 20,
             },
             "drink": {
-              "high": 160,
-              "low": 120,
+              "high": 150,
+              "low": 90,
             },
             "solid": {
-              "high": 120,
+              "high": 130,
               "low": 50,
             },
             "soup": {
-              "high": 160,
-              "low": 100,
+              "high": 140,
+              "low": 90,
             },
           },
           "2": {
             "airy": {
-              "high": 150,
-              "low": 50,
+              "high": 200,
+              "low": 40,
             },
             "drink": {
-              "high": 260,
-              "low": 200,
+              "high": 310,
+              "low": 170,
             },
             "solid": {
-              "high": 200,
-              "low": 90,
+              "high": 260,
+              "low": 110,
             },
             "soup": {
-              "high": 260,
+              "high": 280,
               "low": 170,
             },
           },
           "3": {
             "airy": {
-              "high": 300,
-              "low": 110,
+              "high": 330,
+              "low": 70,
             },
             "drink": {
-              "high": 530,
-              "low": 400,
+              "high": 510,
+              "low": 290,
             },
             "solid": {
-              "high": 410,
+              "high": 430,
               "low": 180,
             },
             "soup": {
-              "high": 520,
-              "low": 340,
+              "high": 460,
+              "low": 290,
             },
           },
           "4": {
             "airy": {
-              "high": 420,
-              "low": 150,
+              "high": 460,
+              "low": 100,
             },
             "drink": {
-              "high": 740,
-              "low": 570,
+              "high": 720,
+              "low": 400,
             },
             "solid": {
-              "high": 570,
+              "high": 600,
               "low": 250,
             },
             "soup": {
-              "high": 730,
-              "low": 470,
+              "high": 640,
+              "low": 400,
             },
           },
         },
         "plate": {
           "1": {
             "airy": {
-              "high": 250,
-              "low": 90,
+              "high": 160,
+              "low": 40,
             },
             "drink": {
-              "high": 440,
-              "low": 340,
+              "high": 260,
+              "low": 140,
             },
             "solid": {
-              "high": 340,
-              "low": 150,
+              "high": 210,
+              "low": 90,
             },
             "soup": {
-              "high": 440,
-              "low": 280,
+              "high": 230,
+              "low": 140,
             },
           },
           "2": {
             "airy": {
-              "high": 400,
-              "low": 140,
+              "high": 360,
+              "low": 80,
             },
             "drink": {
-              "high": 690,
-              "low": 530,
+              "high": 560,
+              "low": 310,
             },
             "solid": {
-              "high": 530,
-              "low": 240,
+              "high": 470,
+              "low": 200,
             },
             "soup": {
-              "high": 690,
-              "low": 450,
+              "high": 500,
+              "low": 310,
             },
           },
           "3": {
             "airy": {
-              "high": 620,
-              "low": 220,
+              "high": 550,
+              "low": 120,
             },
             "drink": {
-              "high": 1080,
-              "low": 830,
+              "high": 870,
+              "low": 480,
             },
             "solid": {
-              "high": 830,
-              "low": 370,
+              "high": 730,
+              "low": 310,
             },
             "soup": {
-              "high": 1080,
-              "low": 700,
+              "high": 780,
+              "low": 480,
             },
           },
           "4": {
             "airy": {
-              "high": 890,
-              "low": 310,
+              "high": 780,
+              "low": 170,
             },
             "drink": {
-              "high": 1550,
-              "low": 1200,
+              "high": 1230,
+              "low": 680,
             },
             "solid": {
-              "high": 1200,
-              "low": 530,
+              "high": 1030,
+              "low": 430,
             },
             "soup": {
-              "high": 1550,
-              "low": 1000,
+              "high": 1100,
+              "low": 680,
             },
           },
         },
@@ -580,6 +580,51 @@ describe('container word on the ingredient instead of the dish', () => {
     expect(envelope(0.5)?.guardG).toEqual(envelope()?.guardG);
   });
 
+  it('reads half a vessel on the main food, beside unmeasured parts, as half the dish', () => {
+    // Call 1 wrote "1/2 chén cà ri gà" as 0.5 chén on the chicken only.
+    const envelope = (count?: number) =>
+      resolveVesselEnvelope({
+        name: 'Cà ri gà',
+        vesselToken: 'chén',
+        ingredients: [
+          {
+            rawName: 'thịt gà',
+            count,
+            unitToken: count ? 'chén' : undefined,
+          },
+          { rawName: 'dầu ăn' },
+          { rawName: 'sả' },
+          { rawName: 'nước dùng gà' },
+        ],
+      });
+    const whole = envelope();
+    const half = envelope(0.5);
+    expect(half?.midG).toBe(Math.round((whole?.midG ?? 0) * 0.5));
+    expect(half?.guardG.high).toBeLessThan(whole?.midG ?? 0);
+  });
+
+  it('reads half a vessel on one part, beside parts weighed in grams, as that part only', () => {
+    // "150 g noodles, 100 g beef, half a bowl of broth": the half is the broth's.
+    const envelope = (count?: number) =>
+      resolveVesselEnvelope({
+        name: 'Beef noodle soup',
+        vesselToken: 'bowl',
+        ingredients: [
+          {
+            rawName: 'rice noodles',
+            explicitMass: { grams: 150 },
+          },
+          { rawName: 'beef', explicitMass: { grams: 100 } },
+          {
+            rawName: 'broth',
+            count,
+            unitToken: count ? 'bowl' : undefined,
+          },
+        ],
+      });
+    expect(envelope(0.5)?.guardG).toEqual(envelope()?.guardG);
+  });
+
   it('reads a one-food dish counted in its vessel as that many vessels', () => {
     const envelope = (count?: number) =>
       resolveVesselEnvelope({
@@ -734,5 +779,75 @@ describe('a bowl of plain rice', () => {
       [resolveVesselEnvelope(dish, vietnam)]
     );
     expect(items[0].vessel).toMatchObject({ tier: 1, smallBowlG: 120 });
+  });
+});
+
+describe('dish class and tier from the dish name', () => {
+  const dish = (name: string, vesselToken: string, extra = {}) => ({
+    name,
+    vesselToken,
+    ...extra,
+    ingredients: [{ rawName: 'thịt' }, { rawName: 'nước dùng' }],
+  });
+
+  it('sizes a braise as solid food even when Call 1 lists a stock', () => {
+    expect(resolveVesselEnvelope(dish('Bò kho xả', 'chén'))?.dishClass).toBe(
+      'solid'
+    );
+    expect(
+      resolveVesselEnvelope(dish('Chicken curry', 'bowl'))?.dishClass
+    ).toBe('solid');
+    // NFD input, as some keyboards send it.
+    expect(
+      resolveVesselEnvelope(dish('Cà ri gà'.normalize('NFD'), 'chén'))
+        ?.dishClass
+    ).toBe('solid');
+  });
+
+  it('keeps a braise in noodle soup, and words that only start with kho, as soup', () => {
+    for (const name of ['Hủ tiếu bò kho', 'Curry laksa', 'Canh khoai mỡ']) {
+      expect(resolveVesselEnvelope(dish(name, 'tô'))?.dishClass).toBe('soup');
+    }
+  });
+
+  it('reads bánh mì as bread, not noodles', () => {
+    const envelope = resolveVesselEnvelope(dish('Bánh mì bò kho', 'bát'));
+    expect(envelope?.dishClass).toBe('solid');
+    expect(envelope?.tier).toBe(1);
+  });
+
+  it('reads a bát of noodle soup as a noodle bowl and a bát of canh as a small bowl', () => {
+    expect(resolveVesselEnvelope(dish('Phở bò', 'bát'))?.tier).toBe(2);
+    expect(resolveVesselEnvelope(dish('Canh cải', 'bát'))?.tier).toBe(1);
+    expect(resolveVesselEnvelope(dish('Phở bò', 'chén'))?.tier).toBe(1);
+    // A ramen bowl with no size typed stays the large bowl, in a bát too.
+    expect(resolveVesselEnvelope(dish('Shoyu ramen', 'bát'))?.tier).toBe(3);
+    // Plain noodles on the side of bún chả are a small bowl.
+    expect(
+      resolveVesselEnvelope({
+        name: 'Bún',
+        vesselToken: 'bát',
+        ingredients: [{ rawName: 'bún tươi' }],
+      })?.tier
+    ).toBe(1);
+  });
+
+  it('puts a cup of milk tea in the 500 ml cup, one up when typed large', () => {
+    const tea = (vesselSize?: 'large') =>
+      resolveVesselEnvelope({
+        name: 'Trà sữa trân châu',
+        vesselToken: 'ly',
+        vesselSize,
+        ingredients: [{ rawName: 'trà' }, { rawName: 'sữa' }],
+      });
+    expect(tea()?.vesselMl).toBe(500);
+    expect(tea('large')?.vesselMl).toBe(700);
+    expect(
+      resolveVesselEnvelope({
+        name: 'Trà đá',
+        vesselToken: 'ly',
+        ingredients: [{ rawName: 'trà' }],
+      })?.vesselMl
+    ).toBe(300);
   });
 });

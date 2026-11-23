@@ -149,7 +149,7 @@ void main() {
       final plainAnchors = buildContainerAnchors(plain, 'en');
       expect(riceAnchors.first.value, 210);
       // Bigger bowls, and any bowl without the rice size, keep the geometry.
-      expect(plainAnchors.first.value, 225);
+      expect(plainAnchors.first.value, 174);
       expect(
         riceAnchors.skip(1).map((a) => a.value),
         plainAnchors.skip(1).map((a) => a.value),

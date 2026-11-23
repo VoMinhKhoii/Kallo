@@ -127,7 +127,7 @@ String? _stringOrNull(Object? value) =>
 /// The search's vessel hint (`{family: 'piece', kind}` or `{family, dishClass}`)
 /// as a vessel at its everyday tier: one medium cut; a regular cup or a medium
 /// plate; a small bowl (a chén) of rice or beans, a medium bowl of soup. A
-/// medium bowl of rice is ~390 g, twice what a chén holds. NEVER throws: a hint
+/// medium bowl of rice is ~410 g, over twice what a chén holds. NEVER throws: a hint
 /// is decoration, and an unknown family from a newer server degrades to grams.
 ClientVessel? vesselFromHint(Object? hint) {
   if (hint is! Map) return null;

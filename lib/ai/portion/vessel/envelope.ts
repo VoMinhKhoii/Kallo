@@ -28,6 +28,7 @@ export interface DishLike {
     queryEn?: string;
     count?: number;
     unitToken?: string;
+    explicitMass?: { grams: number };
   }>;
 }
 
@@ -53,9 +54,32 @@ const SOUP_METHOD = /ninh|nấu canh/i;
 // gói" classified `solid` and got a dense-food gram band for what is mostly
 // broth — the same tier a bowl of phở correctly avoids.
 const SOUP_DISH =
-  /phở|pho\b|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|mì gói|mì tôm|mì ăn liền|mi goi|mi tom|mi an lien|instant noodle|ramen|udon|soba|noodle soup|soup|stew|congee|laksa|malatang/i;
+  /phở|pho\b|bún bò|bún riêu|hủ tiếu|miến|bánh canh|cháo|mì gói|mì tôm|mì ăn liền|mi goi|mi tom|mi an lien|instant noodle|ramen|udon|soba|noodle soup|soup|congee|laksa|malatang/i;
 const AIRY_DISH = /gỏi|nộm|salad|rau trộn/i;
 const LARGE_BOWL_DISH = /ramen|donburi|malatang|lẩu mini/i;
+
+/** `words` as whole words: "kho" never matches "khoai". Test NFC text. */
+function wordsPattern(words: string): RegExp {
+  return new RegExp(`(?<![\\p{L}\\p{M}])(?:${words})(?![\\p{L}\\p{M}])`, 'iu');
+}
+
+const nfc = (text: string | undefined) => (text ?? '').normalize('NFC');
+
+// A braise or curry is meat or fish in a little sauce eaten over rice, not a
+// broth left in the bowl, even when Call 1 lists a stock among its parts.
+const BRAISE_DISH = wordsPattern(
+  'kho|cà ri|cari|curry|stew|rendang|ragu|ragout|braised?|goulash'
+);
+// In the North a "bát" holds noodle soup as well as rice: "1 bát phở" is a
+// noodle bowl, not a rice bowl. "bánh mì" is bread, not noodles.
+const NOODLE_SOUP = wordsPattern(
+  'phở|pho|bún|miến|hủ tiếu|bánh canh|(?<!bánh\\s)mì|noodles?|ramen|udon|soba'
+);
+const NAMED_SOUP = wordsPattern('soup|súp|laksa|canh|lẩu|hotpot');
+// A milk tea or bubble tea is sold in a 500 ml cup at its smallest size.
+const LARGE_CUP_DRINK = wordsPattern(
+  'trà sữa|tra sua|milk ?tea|bubble tea|boba|trân châu'
+);
 const FOOD_IN_CUP =
   /mì|noodle|ramen|soup|súp|cháo|rice|cơm|cake|yogurt|granola|oatmeal/i;
 const SOUP_IN_CUP = /mì|noodle|ramen|soup|súp|cháo/i;
@@ -65,6 +89,15 @@ export function classifyDishClass(
   vesselFamily: VesselFamily
 ): DishClass {
   if (vesselFamily === 'cup' && !FOOD_IN_CUP.test(dish.name)) return 'drink';
+  // A braise in noodle soup ("hủ tiếu bò kho", "curry laksa") stays soup.
+  const name = nfc(dish.name);
+  if (
+    (BRAISE_DISH.test(name) || BRAISE_DISH.test(nfc(dish.cookingMethod))) &&
+    !NOODLE_SOUP.test(name) &&
+    !NAMED_SOUP.test(name)
+  ) {
+    return 'solid';
+  }
 
   const hasSoupIngredient = dish.ingredients.some((ingredient) =>
     SOUP_INGREDIENT.test(
@@ -121,9 +154,9 @@ const RICE_BOWL_TOKENS = new Set(['chen', 'bat', 'bowl']);
 /**
  * A plain bowl of rice: the dish's only ingredient is plain cooked rice, in a
  * rice-bowl word. Returns how many bowls, or null. A rice bowl is sized by
- * the user's country (`riceBowlFor`), not by the bowl's volume: a 400 ml chén
- * at solid-food density allows 140–320 g, and an English "bowl" defaults to
- * the 700 ml medium bowl (250–570 g) — both far above a real bowl of rice.
+ * the user's country (`riceBowlFor`), not by the bowl's volume: a 300 ml chén
+ * at solid-food density allows 110–260 g, and an English "bowl" defaults to
+ * the 700 ml medium bowl (250–600 g) — both far above a real bowl of rice.
  */
 function riceBowls(dish: DishLike, vesselToken: string): number | null {
   if (!RICE_BOWL_TOKENS.has(normalizeVesselToken(vesselToken))) return null;
@@ -139,12 +172,15 @@ function riceBowls(dish: DishLike, vesselToken: string): number | null {
 
 /**
  * How many of the dish's vessel the user ate: the count its parts carry in the
- * vessel's own word ("2 tô phở" → 2 on bánh phở, beef and broth). The band
- * and mid grams describe one vessel, so "2 bowls of ramen" must not be fit
- * into one bowl. The count is the dish's only when it spread to at least two
- * foods, or the dish has one food: a lone "half a bowl of broth" beside
- * noodles and pork counted in their own words is the broth's amount. Parts
- * that disagree, or no such count, read as one.
+ * vessel's own word ("2 tô phở" → 2 on bánh phở, beef and broth; "1/2 chén bò
+ * kho" → 0.5). The band and mid grams describe one vessel, so "2 bowls of
+ * ramen" must not be fit into one bowl, nor half a chén into a whole one. The
+ * count is the dish's when it spread to at least two foods, or no other food
+ * carries an amount of its own (a count or a typed weight): a lone "half a
+ * bowl of broth" beside noodles and pork counted or weighed in their own words
+ * is the broth's amount, while half a chén
+ * written only on the beef of a bò kho, beside unmeasured oil and lemongrass,
+ * is the dish's. Parts that disagree, or no such count, read as one.
  */
 function vesselCount(dish: DishLike, vesselToken: string): number {
   const token = normalizeVesselToken(vesselToken);
@@ -154,13 +190,45 @@ function vesselCount(dish: DishLike, vesselToken: string): number {
       i.count > 0 &&
       normalizeVesselToken(i.unitToken ?? '') === token
   );
-  const foods = dish.ingredients.filter(
-    (i) => !isDiscreteOilIngredient(i.rawName ?? '')
-  ).length;
-  if (carrying.length < Math.min(2, Math.max(1, foods))) return 1;
+  if (carrying.length === 0) return 1;
+  const ownAmounts = dish.ingredients.some(
+    (i) =>
+      !carrying.includes(i) &&
+      (i.count !== undefined || i.explicitMass !== undefined) &&
+      !isDiscreteOilIngredient(i.rawName ?? '')
+  );
+  if (carrying.length < 2 && ownAmounts) return 1;
   const counts = new Set(carrying.map((i) => i.count as number));
   const [count] = counts;
   return counts.size === 1 ? count : 1;
+}
+
+/**
+ * The tier for this dish's vessel word and size. A bát of noodle soup and a
+ * cup of milk tea sit one tier above the word's own (a typed size still moves
+ * them); a ramen bowl with no size typed is a large bowl.
+ */
+function dishTier(
+  dish: DishLike,
+  vesselToken: string,
+  resolved: { family: VesselFamily; tier: VesselTier },
+  dishClass: DishClass
+): VesselTier {
+  if (
+    resolved.family === 'bowl' &&
+    dish.vesselSize === undefined &&
+    LARGE_BOWL_DISH.test(dish.name)
+  ) {
+    return 3;
+  }
+  const name = nfc(dish.name);
+  const upOne =
+    (resolved.family === 'bowl' &&
+      dishClass === 'soup' &&
+      normalizeVesselToken(vesselToken) === 'bat' &&
+      NOODLE_SOUP.test(name)) ||
+    (resolved.family === 'cup' && LARGE_CUP_DRINK.test(name));
+  return upOne ? (Math.min(4, resolved.tier + 1) as VesselTier) : resolved.tier;
 }
 
 export function resolveVesselEnvelope(
@@ -182,14 +250,10 @@ export function resolveVesselEnvelope(
     resolved.family === 'bowl' ? riceBowls(dish, vesselToken) : null;
   // A bowl of rice is a small bowl whatever the word: "a bowl of rice" is a
   // rice bowl, not the medium noodle bowl a bare "bowl" defaults to.
+  const dishClass = classifyDishClass(dish, resolved.family);
   const tier: VesselTier = bowls
     ? 1
-    : resolved.family === 'bowl' &&
-        dish.vesselSize === undefined &&
-        LARGE_BOWL_DISH.test(dish.name)
-      ? 3
-      : resolved.tier;
-  const dishClass = classifyDishClass(dish, resolved.family);
+    : dishTier(dish, vesselToken, resolved, dishClass);
   // Every band describes one vessel; the dish is that many of them.
   const servings = bowls ?? vesselCount(dish, vesselToken);
   const oneVessel: GramsBand = bowls

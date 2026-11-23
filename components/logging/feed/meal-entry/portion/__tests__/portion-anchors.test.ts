@@ -156,7 +156,7 @@ describe('buildContainerAnchors', () => {
       { family: 'bowl', tier: 1, dishClass: 'solid' },
       'en'
     );
-    expect(plain[0].value).toBe(225);
+    expect(plain[0].value).toBe(174);
     expect(rice.slice(1)).toEqual(plain.slice(1));
   });
 });
