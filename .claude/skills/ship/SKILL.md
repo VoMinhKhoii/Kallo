@@ -160,36 +160,45 @@ back for that pass only. The Astra pass stays on Codex.
 **How each pass runs.** Every pass runs in the background (3-15 minutes; wait for
 the task notification, never a foreground `sleep`). Round 1 has no pass file:
 leave `<scratchpad>/pass-<name>.md` out of either command. Neon reviews a
-throwaway worktree of the pinned commit, never the branch's checkout:
+throwaway worktree of the pinned commit, and macOS `sandbox-exec` refuses its
+writes to the repo:
 
 ```bash
-# A throwaway worktree: whatever the pass does lands there, never in the
-# branch's checkout or the user's uncommitted files.
-REVIEW_DIR=<scratchpad>/review-<name>
-git worktree add --detach "$REVIEW_DIR" <pinned-sha>
+CK=<checkout>
+# A fresh throwaway worktree per run, removed however the run ends.
+REVIEW_DIR=$(mktemp -d <scratchpad>/review-<name>.XXXXXX) && rmdir "$REVIEW_DIR"
+git -C "$CK" worktree add --detach "$REVIEW_DIR" <pinned-sha> || exit 1
+trap 'git -C "$CK" worktree remove --force "$REVIEW_DIR" 2>/dev/null' EXIT
+# The OS refuses writes to every worktree of this repo and to the shared .git
+# (allowed flags such as `git diff --output=<path>` write anywhere otherwise),
+# except the throwaway worktree's own git metadata.
+DENY=$(git -C "$CK" worktree list --porcelain | sed -n 's/^worktree //p' \
+  | grep -vxF "$REVIEW_DIR" | sed 's/.*/(subpath "&")/' | tr '\n' ' ')
+COMMON=$(git -C "$CK" rev-parse --path-format=absolute --git-common-dir)
+ADMIN=$(git -C "$REVIEW_DIR" rev-parse --path-format=absolute --git-dir)
+PROFILE="(version 1)(allow default)(deny file-write* $DENY(subpath \"$COMMON\"))(allow file-write* (subpath \"$ADMIN\"))"
 # Plan mode refuses any command not on the allow list, or chained with pipes,
-# && or ; (and ends the run); the deny rule refuses file writes. The default
-# mode writes files and runs unlisted commands, so never drop --mode plan.
-# -p must come last and be joined with "=", or agy reads the next flag as the
-# prompt.
-NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git rev-parse)","command(git ls-files)","command(git blame)","command(git grep)","command(rg)","command(grep)","command(ls)","command(cat)","command(head)","command(wc)","read_file('"$REVIEW_DIR"')"],"deny":["write_file(*)"]}}'
+# && or ; (and ends the run); the deny rule refuses agy's own file writes.
+# The default mode writes files and runs unlisted commands: never drop
+# --mode plan. -p must come last and be joined with "=", or agy reads the next
+# flag as the prompt.
+NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git rev-parse)","command(git ls-files)","command(git blame)","command(git grep)","command(grep)","command(ls)","command(cat)","command(head)","command(wc)","read_file('"$REVIEW_DIR"')"],"deny":["write_file(*)"]}}'
 OUT=<scratchpad>/local-review-<name>.md
-(cd "$REVIEW_DIR" && agy --model gemini-4-neon-high --mode plan \
-  --settings "$NEON_READ_ONLY" --print-timeout 20m \
-  -p="$(cat <checkout>/.claude/skills/ship/local-review.md \
+(cd "$REVIEW_DIR" && sandbox-exec -p "$PROFILE" agy --model gemini-4-neon-high \
+  --mode plan --settings "$NEON_READ_ONLY" --print-timeout 20m \
+  -p="$(cat "$CK"/.claude/skills/ship/local-review.md \
         <scratchpad>/codex-brief.md <scratchpad>/pass-<name>.md)") > "$OUT" 2>&1
 rc=$?
 # A refused run exits 0 with this one line, or with nothing at all.
 [ -s "$OUT" ] || rc=1
 grep -q '^jetski: no output produced' "$OUT" && rc=1
-git worktree remove --force "$REVIEW_DIR"
 echo "agy exit $rc"; [ "$rc" -eq 0 ]
 ```
 `<checkout>` is the branch checkout's absolute path and `<pinned-sha>` the commit
 recorded for this pass. A non-zero exit is a failed pass, even when the output
 file has text in it: rerun the pass on Sol.
 
-Sol fallback and the Astra pass:
+Sol fallback and the Astra pass, run from `<checkout>`:
 
 ```bash
 # The prompt names the diff range: `codex review` rejects --base together
