@@ -38,6 +38,7 @@ import {
   holdNamesToEnglish,
   holdWeighStateToDescription,
 } from './text-checks/described';
+import { holdDishCountsToText } from './text-checks/dish-count';
 import { holdWeightsToText } from './text-checks/weights';
 
 type StreamedMealItemIds = ReturnType<
@@ -271,6 +272,7 @@ export async function runGroundedDecomposition(args: {
   flushBufferedItemNames();
 
   // Hold what Call 1 extracted to the text before anything reads it.
+  holdDishCountsToText(decomposition, rawInput);
   holdWeightsToText(decomposition, rawInput);
   holdCaloriesToText(decomposition, rawInput);
   holdWeighStateToDescription(decomposition);

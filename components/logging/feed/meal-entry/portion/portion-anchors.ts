@@ -23,19 +23,48 @@ export interface PortionAnchor<T extends AnchorTier = AnchorTier> {
 /** Gram envelope around the anchors the picker lets the user roam in. */
 export const ENVELOPE_MIN_FACTOR = 0.6;
 export const ENVELOPE_MAX_FACTOR = 1.2;
+/** A container tape starts at half its first vessel: "½ small bowl". */
+export const HALF_VESSEL = 0.5;
 /** A piece portion may claim a tier's label only within ±10% of its grams. */
 export const CLAIM_BAND = 0.1;
 /** The ruler's slider runs in integer position space, not grams. */
 export const POSITION_MAX = 1000;
 
-export function gramEnvelope(anchors: PortionAnchor[]): {
+export function gramEnvelope(
+  anchors: PortionAnchor[],
+  minFactor = ENVELOPE_MIN_FACTOR
+): {
   min: number;
   max: number;
 } {
   return {
-    min: Math.round(anchors[0].value * ENVELOPE_MIN_FACTOR),
+    min: Math.round(anchors[0].value * minFactor),
     max: Math.round(anchors[anchors.length - 1].value * ENVELOPE_MAX_FACTOR),
   };
+}
+
+/** The range a vessel's tape spans: a container's reaches half its first
+ *  vessel, a piece's 60% of its smallest cut. */
+export function vesselTapeRange(
+  vessel: ClientVessel,
+  anchors: PortionAnchor[]
+) {
+  return gramEnvelope(
+    anchors,
+    vessel.family === 'piece' ? ENVELOPE_MIN_FACTOR : HALF_VESSEL
+  );
+}
+
+const VULGAR: Record<number, string> = { 0.25: '¼', 0.5: '½', 0.75: '¾' };
+
+/**
+ * How a count of vessels or pieces leads its label: nothing for one, "½ " for
+ * a half, "2 × " for two. Printed the way JS prints a number ("1.5 × "), the
+ * same on Flutter (`countPrefix`).
+ */
+export function countPrefix(count: number): string {
+  if (count === 1) return '';
+  return VULGAR[count] ? `${VULGAR[count]} ` : `${count} × `;
 }
 
 export function buildContainerAnchors(
@@ -43,11 +72,35 @@ export function buildContainerAnchors(
   loc: 'en' | 'vi'
 ): PortionAnchor<VesselTier>[] {
   const tiers: VesselTier[] = [1, 2, 3, 4];
+  const prefix = countPrefix(vessel.count ?? 1);
   return tiers.map((tier) => ({
     tier,
     value: containerAnchorG(vessel, tier),
-    label: VESSEL_FAMILIES[vessel.family].tiers[tier].label[loc],
+    label: `${prefix}${VESSEL_FAMILIES[vessel.family].tiers[tier].label[loc]}`,
   }));
+}
+
+/**
+ * What a container at `grams` names: the nearest of its vessels, or half the
+ * first one ("½ chén nhỏ") when the grams sit nearer that, the tape's left
+ * end. Shared by the card's line, the edit row and the tape's spoken value.
+ */
+export function containerReading(
+  vessel: ContainerVessel,
+  grams: number,
+  loc: 'en' | 'vi'
+): { tier: VesselTier; label: string } {
+  const anchors = buildContainerAnchors(vessel, loc);
+  const half = anchors[0].value * HALF_VESSEL;
+  const nearest = nearestAnchor(anchors, grams);
+  if (Math.abs(grams - half) < Math.abs(grams - nearest.value)) {
+    const count = (vessel.count ?? 1) * HALF_VESSEL;
+    return {
+      tier: 1,
+      label: `${countPrefix(count)}${VESSEL_FAMILIES[vessel.family].tiers[1].label[loc]}`,
+    };
+  }
+  return { tier: nearest.tier, label: nearest.label };
 }
 
 export function buildPieceAnchors(

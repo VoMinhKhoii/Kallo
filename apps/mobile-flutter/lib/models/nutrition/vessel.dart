@@ -56,6 +56,21 @@ double? _countOrNull(Object? raw) {
   return (value < 1 || value > maxPieceCount) ? null : value;
 }
 
+/// Fewest and most vessels a container count may say. Mirrors the server's
+/// `isVesselCount` (`lib/ai/portion/vessel/geometry.ts`).
+const double minVesselCount = 0.25;
+const double maxVesselCount = 20;
+
+/// A container's count of vessels: 1 when absent, null when present but not
+/// a believable number (the whole vessel is then dropped, as the server's
+/// `isRenderableVessel` drops it). Never throws — see [_tierOrNull].
+double? _containerCountOrNull(Object? raw) {
+  if (raw == null) return 1;
+  if (raw is! num || !raw.isFinite) return null;
+  final value = raw.toDouble();
+  return (value < minVesselCount || value > maxVesselCount) ? null : value;
+}
+
 /// A plain-rice bowl's grams, or null unless believable (20–1000 g). Mirrors
 /// the server's `isSmallBowlG`. A bad value drops only the override — the bowl
 /// falls back to its geometry — never the vessel.
@@ -99,11 +114,15 @@ sealed class ClientVessel {
     final tier = _tierOrNull(json['tier'], max: 4);
     final family = _byNameOrNull(ContainerFamily.values, json['family']);
     final dishClass = _byNameOrNull(DishClass.values, json['dishClass']);
-    if (tier == null || family == null || dishClass == null) return null;
+    final count = _containerCountOrNull(json['count']);
+    if (tier == null || family == null || dishClass == null || count == null) {
+      return null;
+    }
     return ContainerVessel(
       family: family,
       tier: tier,
       dishClass: dishClass,
+      count: count,
       smallBowlG: _smallBowlGOrNull(json['smallBowlG']),
     );
   }
@@ -119,6 +138,10 @@ class ContainerVessel extends ClientVessel {
   final int tier;
   final DishClass dishClass;
 
+  /// How many of the vessel the dish is ("2 tô phở" → 2, "nửa chén" → 0.5);
+  /// every tier's grams are this many vessels. Sent only when it is not 1.
+  final double count;
+
   /// Plain rice only: grams in one small bowl — the user's country's bowl of
   /// rice — shown for tier 1 instead of the bowl's geometry.
   final double? smallBowlG;
@@ -127,6 +150,7 @@ class ContainerVessel extends ClientVessel {
     required this.family,
     required this.tier,
     required this.dishClass,
+    this.count = 1,
     this.smallBowlG,
   });
 
@@ -135,6 +159,7 @@ class ContainerVessel extends ClientVessel {
     'family': family.name,
     'tier': tier,
     'dishClass': dishClass.name,
+    if (count != 1) 'count': count,
     if (smallBowlG != null) 'smallBowlG': smallBowlG,
   };
 
@@ -142,6 +167,7 @@ class ContainerVessel extends ClientVessel {
     family: family,
     tier: tier ?? this.tier,
     dishClass: dishClass,
+    count: count,
     smallBowlG: smallBowlG,
   );
 
@@ -151,10 +177,11 @@ class ContainerVessel extends ClientVessel {
       other.family == family &&
       other.tier == tier &&
       other.dishClass == dishClass &&
+      other.count == count &&
       other.smallBowlG == smallBowlG;
 
   @override
-  int get hashCode => Object.hash(family, tier, dishClass, smallBowlG);
+  int get hashCode => Object.hash(family, tier, dishClass, count, smallBowlG);
 }
 
 /// A countable cut of fish / meat / poultry — five tiers, `count` of them.

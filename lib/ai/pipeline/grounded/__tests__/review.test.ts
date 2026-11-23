@@ -340,8 +340,9 @@ describe('dropOilInFriedRows', () => {
     expect(dropOilInFriedRows(state).dropped).toBe(0);
   });
 
-  it("drops the oil that only carries the dish's count", () => {
-    // "2 omelettes": Call 1 puts count 2 on the egg and on the frying oil.
+  it("drops the oil of a counted dish (the count is the dish's)", () => {
+    // "2 omelettes": the dish-count check leaves the count on the egg and
+    // takes the oil's copy away.
     const state = stateOf([
       {
         name: 'Omelettes',
@@ -359,7 +360,6 @@ describe('dropOilInFriedRows', () => {
     ]);
     const parts = state.decomposition.mealItems[0].ingredients;
     parts[0] = { ...parts[0], count: 2, unitToken: 'omelette' };
-    parts[1] = { ...parts[1], count: 2, unitToken: 'omelette' };
     expect(dropOilInFriedRows(state).dropped).toBe(1);
   });
 

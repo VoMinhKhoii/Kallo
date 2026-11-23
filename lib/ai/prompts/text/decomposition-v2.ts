@@ -86,8 +86,8 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
     Route every user-typed qualifier to EXACTLY ONE field. No cross-contamination.
 
     1. **Quantity cues** — route to structured fields. You NEVER emit grams and NEVER invent numbers; extract only what the user wrote:
-       - **Counted units** ("2 bánh bao", "3 lát bánh mì", "2 slices", "1 tô phở", "nửa cái") → count (the number; "nửa"→0.5) + unitToken (the verbatim counter/unit word: "bánh bao", "lát", "slice", "tô", "cái"). Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("bánh bao lớn"→"large", "tô nhỏ"→"small"). A typed ZERO ("0 fried chicken", "0 ổ bánh mì") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
-       - **Dish vessels** — a vessel word quantifying the WHOLE dish ("1 tô phở", "dĩa cơm tấm", "ly trà sữa lớn", "a big bowl of ramen") → vesselToken (verbatim) + vesselSize on the MEAL ITEM. On the ingredients the vessel word appears only as the unit of a typed count: "2 tô phở" → count 2 + unitToken "tô" on every part without an amount of its own (a part the user counted itself, "thêm 1 trứng", keeps its own count), so the dish is sized for two bowls. IMPORTANT interplay: when the vessel word also quantifies a single-ingredient dish ("1 chén cơm"), STILL emit ingredient-level count:1 + unitToken:"chén" on that ingredient (the server's ingredient prior depends on it) IN ADDITION to the meal-item vesselToken.
+       - **Counted units** ("2 bánh bao", "3 lát bánh mì", "2 slices", "1 tô phở", "nửa cái") → count (the number; "nửa"→0.5) + unitToken (the verbatim counter/unit word: "bánh bao", "lát", "slice", "tô", "cái"). Put these on the ingredient the count applies to. A count of a WHOLE dish that splits into several foods ("2 bánh bao", "3 bánh xèo", "2 tô phở", "nửa dĩa cơm chiên") goes on the MEAL ITEM as dishCount instead (nửa→0.5), and each of its ingredients describes ONE unit of the dish. A food logged on its own keeps its count on the food ("2 quả trứng luộc", "1/2 chén cơm"). Add sizeModifier when the user sized the unit ("bánh bao lớn"→"large", "tô nhỏ"→"small"). A typed ZERO ("0 fried chicken", "0 ổ bánh mì") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
+       - **Dish vessels** — a vessel word quantifying the WHOLE dish ("1 tô phở", "dĩa cơm tấm", "ly trà sữa lớn", "a big bowl of ramen") → vesselToken (verbatim) + vesselSize on the MEAL ITEM. A count of the vessel goes in the meal item's dishCount: "2 tô phở" → dishCount { count: 2, unitToken: "tô" }; "1/2 chén bò kho" → dishCount { count: 0.5, unitToken: "chén" }. The parts carry no copy of it: each describes ONE vessel, and a part keeps a count only when the user typed an amount for that part itself ("thêm 1 trứng" → count 1, unitToken "quả" on the egg; "tô phở ăn nửa bánh" → count 0.5 on the noodles, no dishCount). IMPORTANT interplay: when the vessel word also quantifies a single-ingredient dish ("1 chén cơm"), STILL emit ingredient-level count:1 + unitToken:"chén" on that ingredient (the server's ingredient prior depends on it) IN ADDITION to the meal-item vesselToken.
        - **Explicit weights** ("250gr ức gà", "100g cơm") → explicitMass: grams + physical basis. Set basis="gross_as_served" when the weight is stated against a named bone-in/shell-on object ("1 miếng sườn 200g", "500g tôm nguyên vỏ"); set basis="edible" for a boneless/peeled/shelled/fillet form; otherwise set basis="unknown". Raw-vs-cooked measurement belongs only in stateHint (for example "cân sống" → stateHint="raw_weight"), never in explicitMass.basis.
        - **Shared weights** — explicitMass.grams is what THIS user ate. When they ate only part of a weighed food, compute their part — the one number you compute: multiply the typed weight by the fraction they ate (half → × 0.5), or divide it by how many people shared it equally: "ăn nửa miếng bít tết 400g" → 200; "ăn chung 1kg tôm luộc với 3 đứa bạn" (4 người) → 250; "chia đôi bịch snack 300g với bạn" → 150. When they typed their own part ("tôi ăn 200g trong 600g gà nướng") → 200 as typed. A weight unit is not a share: "nửa ký thịt bò" → 500.
        - **Dish weights** — explicitMass belongs on an ingredient only when the weight is for that one food. When the weight is for a dish you split into several ingredients ("tô phở bò 600g", "300g mì xào bò"), set explicitMass on NONE of them; put the dish weight (their share of it when shared) in the meal item's servedMassG, and the next step splits it across the parts. A weight written AFTER a dish and its side, for the plate as a whole ("gà kho gừng với cơm, cân cả đĩa 450g"), weighs both: put them in ONE meal item with that servedMassG. A weight written on one food ("ức gà 200g với rau xào") is that food's alone; its side stays a separate item. A weight on one food beside a dish stays on that food ("ức gà 200g với một dĩa mì xào" → ức gà 200).
@@ -124,8 +124,8 @@ const MODIFIER_ROUTING: Record<DecompositionPromptLocale, string> = {
     Route every user-typed qualifier to EXACTLY ONE field. No cross-contamination.
 
     1. **Quantity cues** — route to structured fields. You NEVER emit grams and NEVER invent numbers; extract only what the user wrote:
-       - **Counted units** ("2 slices of pizza", "3 tacos", "half a bagel", "a dozen wings") → count (the number; "half"→0.5, "a dozen"→12) + unitToken (the verbatim counter/unit word: "slice", "taco", "bagel", "wing"). Household measures are counted units too: "1 cup of rice" → count: 1 + unitToken: "cup"; "2 tbsp peanut butter" → count: 2 + unitToken: "tbsp" — downstream steps size them from the count and unit; you still NEVER emit grams. Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("large slice"→"large", "small bowl"→"small"). A typed ZERO ("0 fried chicken", "0 slices") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
-       - **Dish vessels** — a vessel word quantifying the WHOLE dish ("a big bowl of ramen", "a plate of spaghetti", "a large glass of milk") → vesselToken (verbatim) + vesselSize on the MEAL ITEM. On the ingredients the vessel word appears only as the unit of a typed count: "2 bowls of ramen" → count 2 + unitToken "bowl" on every part without an amount of its own (a part the user counted itself, "an extra egg", keeps its own count), so the dish is sized for two bowls. IMPORTANT interplay: when the vessel word also quantifies a single-ingredient dish ("1 bowl of rice"), STILL emit ingredient-level count:1 + unitToken:"bowl" on that ingredient (the server's ingredient prior depends on it) IN ADDITION to the meal-item vesselToken.
+       - **Counted units** ("2 slices of pizza", "3 tacos", "half a bagel", "a dozen wings") → count (the number; "half"→0.5, "a dozen"→12) + unitToken (the verbatim counter/unit word: "slice", "taco", "bagel", "wing"). Household measures are counted units too: "1 cup of rice" → count: 1 + unitToken: "cup"; "2 tbsp peanut butter" → count: 2 + unitToken: "tbsp" — downstream steps size them from the count and unit; you still NEVER emit grams. Put these on the ingredient the count applies to. A count of a WHOLE dish that splits into several foods ("2 burgers", "3 tacos", "2 slices of pizza", "half a plate of fried rice") goes on the MEAL ITEM as dishCount instead (half→0.5), and each of its ingredients describes ONE unit of the dish. A food logged on its own keeps its count on the food ("2 boiled eggs", "half a cup of rice"). Add sizeModifier when the user sized the unit ("large slice"→"large", "small bowl"→"small"). A typed ZERO ("0 fried chicken", "0 slices") is extracted verbatim as count: 0, never dropped — the server treats it as a contradiction and asks.
+       - **Dish vessels** — a vessel word quantifying the WHOLE dish ("a big bowl of ramen", "a plate of spaghetti", "a large glass of milk") → vesselToken (verbatim) + vesselSize on the MEAL ITEM. A count of the vessel goes in the meal item's dishCount: "2 bowls of ramen" → dishCount { count: 2, unitToken: "bowl" }; "half a bowl of chili" → dishCount { count: 0.5, unitToken: "bowl" }. The parts carry no copy of it: each describes ONE vessel, and a part keeps a count only when the user typed an amount for that part itself ("plus an extra egg" → count 1, unitToken "egg" on the egg). IMPORTANT interplay: when the vessel word also quantifies a single-ingredient dish ("1 bowl of rice"), STILL emit ingredient-level count:1 + unitToken:"bowl" on that ingredient (the server's ingredient prior depends on it) IN ADDITION to the meal-item vesselToken.
        - **Explicit weights** ("250g chicken breast", "6 oz sirloin", "half a pound of ground beef") → explicitMass: grams + physical basis. Convert imperial weights to grams (1 oz ≈ 28 g so "6 oz" ≈ 170; 1 lb ≈ 454 g). Set basis="gross_as_served" when the weight is stated against a named bone-in/shell-on object ("a 300g T-bone", "500g shell-on shrimp"); set basis="edible" for a boneless/peeled/shelled/fillet form; otherwise set basis="unknown". Raw-vs-cooked measurement belongs only in stateHint (for example "weighed raw" → stateHint="raw_weight"), never in explicitMass.basis.
        - **Shared weights** — explicitMass.grams is what THIS user ate. When they ate only part of a weighed food, compute their part — the one number you compute: multiply the typed weight by the fraction they ate (half → × 0.5), or divide it by how many people shared it equally: "half of a 400g steak" → 200; "split 600g of ribs between the 3 of us" → 200; "shared a 300g bag of chips with a friend" → 150. When they typed their own part ("I had 150g of the 500g salmon fillet") → 150 as typed. A weight unit is not a share: "half a pound of ground beef" → 227.
        - **Dish weights** — explicitMass belongs on an ingredient only when the weight is for that one food. When the weight is for a dish you split into several ingredients ("300g of pad thai", "a 400g burrito"), set explicitMass on NONE of them; put the dish weight (their share of it when shared) in the meal item's servedMassG, and the next step splits it across the parts. A weight written AFTER a dish and its side, for the plate as a whole ("teriyaki salmon and rice, 450g total"), weighs both: put them in ONE meal item with that servedMassG. A weight written on one food ("200g grilled chicken with a side of coleslaw") is that food's alone; its side stays a separate item. A weight on one food beside a dish stays on that food ("200g grilled chicken with a side of coleslaw" → chicken 200).
@@ -365,16 +365,17 @@ ${RAMEN_EXAMPLE}
         {
           "name": "bánh bao trứng cút",
           "cookingMethod": "hấp",
+          "dishCount": { "count": 2, "unitToken": "bánh bao" },
           "ingredients": [
-            { "rawName": "vỏ bánh bao", "canonicalName": "Steamed wheat bun dough", "count": 2, "unitToken": "bánh bao" },
-            { "rawName": "thịt heo xay", "canonicalName": "Pork, ground, cooked", "count": 2, "unitToken": "bánh bao" },
-            { "rawName": "trứng cút", "canonicalName": "Trứng chim cút", "count": 2, "unitToken": "quả" }
+            { "rawName": "vỏ bánh bao", "canonicalName": "Steamed wheat bun dough" },
+            { "rawName": "thịt heo xay", "canonicalName": "Pork, ground, cooked" },
+            { "rawName": "trứng cút", "canonicalName": "Trứng chim cút" }
           ]
         }
       ]
     }
     </output>
-    <!-- A counted filled bun still splits into its wrapper and its filling. "2 bánh bao" → count=2, unitToken="bánh bao" on every part, so each is sized for two buns. NO grams. The quail eggs inside inherit count=2. -->
+    <!-- A counted filled bun still splits into its wrapper and its filling. "2 bánh bao" → dishCount { count: 2, unitToken: "bánh bao" } on the MEAL ITEM; each part describes ONE bun, quail eggs included, and carries no count. NO grams. -->
   </example>
 
   <example>
@@ -529,11 +530,12 @@ ${INJECTION_EXAMPLE}`,
         {
           "name": "pepperoni pizza",
           "cookingMethod": "baked",
+          "dishCount": { "count": 2, "unitToken": "slice" },
           "ingredients": [
-            { "rawName": "pizza crust", "canonicalName": "Pizza crust, baked", "count": 2, "unitToken": "slice" },
-            { "rawName": "mozzarella", "canonicalName": "Mozzarella cheese, part skim", "count": 2, "unitToken": "slice" },
-            { "rawName": "pepperoni", "canonicalName": "Pepperoni, pork and beef", "count": 2, "unitToken": "slice" },
-            { "rawName": "tomato sauce", "canonicalName": "Pizza sauce, tomato", "count": 2, "unitToken": "slice" }
+            { "rawName": "pizza crust", "canonicalName": "Pizza crust, baked" },
+            { "rawName": "mozzarella", "canonicalName": "Mozzarella cheese, part skim" },
+            { "rawName": "pepperoni", "canonicalName": "Pepperoni, pork and beef" },
+            { "rawName": "tomato sauce", "canonicalName": "Pizza sauce, tomato" }
           ]
         },
         {
@@ -546,7 +548,7 @@ ${INJECTION_EXAMPLE}`,
       ]
     }
     </output>
-    <!-- A counted dish still splits into the foods it is made of. "2 slices" → count=2, unitToken="slice" on EVERY part, so each part is sized for two slices. NO grams. The drink is its own meal item; "a coke" carries no verbatim counter word, so no count is invented. -->
+    <!-- A counted dish still splits into the foods it is made of. "2 slices" → dishCount { count: 2, unitToken: "slice" } on the MEAL ITEM; each part describes ONE slice and carries no count. NO grams. The drink is its own meal item; "a coke" carries no verbatim counter word, so no count is invented. -->
   </example>
 
 ${RAMEN_EXAMPLE}
@@ -689,7 +691,7 @@ export function decompositionV2PromptText(
     2. Identify each user-facing meal item, then list its ingredients. Decompose composed dishes into SINGLE-FOOD ingredients the composition database can match — a dish or component name ("chả trứng", "coleslaw") is not an ingredient when it is itself made of simpler foods.
     3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
     4. Emit the dish-wrapped schema exactly:
-       mealItems[]: { name, cookingMethod, vesselToken?, vesselSize?, servedMassG?, statedKcal?, ingredients[] }
+       mealItems[]: { name, cookingMethod, vesselToken?, vesselSize?, dishCount (null unless the whole dish was counted), servedMassG?, statedKcal?, ingredients[] }
        ingredients[]: { rawName, canonicalName, cookingMethod?, stateHint?, count?, unitToken?, sizeModifier?, explicitMass?, prepNotes? }
   </task>
 
@@ -733,7 +735,7 @@ const DECOMPOSITION_RULES = `<decomposition_check>
   - A dish is never an ingredient. Fried rice, biryani, curries, stews, soups and noodle soups, porridges, salads, sandwiches, burgers, wraps, rolls, dumplings and buns, fritters and pancakes, desserts made from several foods, milk tea, milk coffee, smoothies, and a dipping sauce mixed at the table must each be replaced by their parts: the starch, the protein, the vegetables, the cooking fat, the sauce or broth, the sugar, the milk. Name each part as the single food it is.
   - If an ingredient's rawName repeats or paraphrases its dish's name, or names something made of several foods, split it into those foods.
   - Keep an item whole only when it is genuinely one product or one food (a bread roll, a cheese, a sausage, a sealed packaged product such as a candy bar or a bottled drink, plain cooked rice, a single fruit or vegetable). A restaurant or chain menu item (a Whopper, a Big Mac, a Subway sub) is a dish: split it like any other.
-  - A count never keeps a dish whole: "2 burgers" or "3 slices of pizza" split into their parts, and every part without an amount of its own carries the count and unit. A vessel word that sizes the whole dish ("2 tô phở", "2 bowls of ramen") goes on the meal item as vesselToken, and every part without an amount of its own carries the count in that word (count 2, unitToken "tô").
+  - A count never keeps a dish whole: "2 burgers" or "3 slices of pizza" split into their parts. The dish's count goes on the MEAL ITEM as dishCount { count: 2, unitToken: "burger" }, and every part describes ONE burger: a part carries a count only when the user typed an amount for that part ("2 burgers + an extra slice of cheese" → "cheese", count 1, unitToken "slice"; "2 bát cơm nguội + 2 quả trứng" for fried rice → the rice and eggs keep their own counts and the dish has no dishCount). A food logged on its own keeps its count on the food ("2 bananas", "2 quả trứng luộc"). A vessel word that sizes the whole dish ("2 tô phở", "2 bowls of ramen") goes on the meal item as vesselToken, with its count in dishCount, never on the parts.
 </decomposition_check>
 
 <implied_components>

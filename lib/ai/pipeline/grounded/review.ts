@@ -12,7 +12,6 @@
 
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
-import { isDishCount } from '@/lib/ai/pipeline/grounded/text-checks/dish-count';
 import {
   selectedCandidate,
   shippedEdibleGrams,
@@ -161,11 +160,11 @@ export function dropOilInFriedRows(state: RunState): {
       foods.every((f) => isFriedRow(state, pairs[f].ground, f))
     )
       for (const f of oils) {
-        // An amount the user stated ("1 muỗng dầu ô liu") is what they ate;
-        // the dish's count Call 1 put on every part ("2 omelettes") is not.
+        // An amount the user stated ("1 muỗng dầu ô liu") is what they ate.
+        // A dish's count ("2 omelettes") is on the dish, not on its oil
+        // (`text-checks/dish-count.ts`).
         const oil = pairs[f].ingredient;
-        const stated =
-          (oil.count != null && !isDishCount(mi, oil)) || oil.explicitMass;
+        const stated = oil.count != null || oil.explicitMass;
         if (!stated) drop.add(f);
       }
   }

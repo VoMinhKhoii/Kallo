@@ -12,6 +12,7 @@ import {
   midG,
   normalizeVesselToken,
   resolveVesselFromToken,
+  singularWord,
 } from '@/lib/ai/portion/vessel/geometry';
 import { resolvePieceVessel } from '@/lib/ai/portion/vessel/piece';
 import type { PipelineMealItem } from '@/lib/ai/types/result';
@@ -22,6 +23,8 @@ export interface DishLike {
   cookingMethod?: string;
   vesselToken?: string;
   vesselSize?: 'small' | 'medium' | 'large';
+  /** How many of the whole dish ("2 tô phở" → 2 tô), when Call 1 counted it. */
+  dishCount?: { count: number; unitToken: string } | null;
   ingredients: Array<{
     rawName?: string;
     canonicalName?: string;
@@ -40,6 +43,8 @@ export interface VesselEnvelope {
   vesselMl: number;
   guardG: { low: number; high: number };
   midG: number;
+  /** How many of the vessel the dish is (`guardG` and `midG` cover them all). */
+  servings: number;
   /** Grams in ONE bowl of this food, when it is plain rice: the user's
    *  country's rice bowl, which the picker shows instead of the bowl's
    *  geometry. */
@@ -147,6 +152,9 @@ function dishVesselToken(dish: DishLike): string | undefined {
   return token && resolveVesselFromToken(token) ? token : undefined;
 }
 
+/** A vessel word to compare: normalized, plural made singular. */
+const vesselWord = (token: string) => singularWord(normalizeVesselToken(token));
+
 /** Bowl words that, holding plain rice, mean one everyday rice bowl. "tô"
  *  stays out: it names a big noodle bowl. */
 const RICE_BOWL_TOKENS = new Set(['chen', 'bat', 'bowl']);
@@ -159,7 +167,7 @@ const RICE_BOWL_TOKENS = new Set(['chen', 'bat', 'bowl']);
  * the 700 ml medium bowl (250–600 g) — both far above a real bowl of rice.
  */
 function riceBowls(dish: DishLike, vesselToken: string): number | null {
-  if (!RICE_BOWL_TOKENS.has(normalizeVesselToken(vesselToken))) return null;
+  if (!RICE_BOWL_TOKENS.has(vesselWord(vesselToken))) return null;
   if (dish.ingredients.length !== 1) return null;
   const [rice] = dish.ingredients;
   if (
@@ -171,7 +179,25 @@ function riceBowls(dish: DishLike, vesselToken: string): number | null {
 }
 
 /**
- * How many of the dish's vessel the user ate: the count its parts carry in the
+ * The dish's own count when it is a count of its vessel ("2 tô phở" → 2;
+ * "nửa dĩa cơm chiên" → 0.5): Call 1's `dishCount`, in a word of the vessel's
+ * family. A count in another word ("2 phần") says nothing about the vessel.
+ */
+function dishVesselCount(
+  dish: DishLike,
+  resolved: { family: VesselFamily }
+): number | null {
+  const count = dish.dishCount;
+  if (!count || !(count.count > 0)) return null;
+  return resolveVesselFromToken(count.unitToken)?.family === resolved.family
+    ? count.count
+    : null;
+}
+
+/**
+ * For a dish without `dishCount` (the dish-count check found none it could
+ * hold to the text, and left the parts as Call 1 wrote them): how many of the
+ * dish's vessel the user ate, from the count its parts carry in the
  * vessel's own word ("2 tô phở" → 2 on bánh phở, beef and broth; "1/2 chén bò
  * kho" → 0.5). The band and mid grams describe one vessel, so "2 bowls of
  * ramen" must not be fit into one bowl, nor half a chén into a whole one. The
@@ -183,12 +209,12 @@ function riceBowls(dish: DishLike, vesselToken: string): number | null {
  * is the dish's. Parts that disagree, or no such count, read as one.
  */
 function vesselCount(dish: DishLike, vesselToken: string): number {
-  const token = normalizeVesselToken(vesselToken);
+  const token = vesselWord(vesselToken);
   const carrying = dish.ingredients.filter(
     (i) =>
       i.count !== undefined &&
       i.count > 0 &&
-      normalizeVesselToken(i.unitToken ?? '') === token
+      vesselWord(i.unitToken ?? '') === token
   );
   if (carrying.length === 0) return 1;
   const ownAmounts = dish.ingredients.some(
@@ -255,7 +281,8 @@ export function resolveVesselEnvelope(
     ? 1
     : dishTier(dish, vesselToken, resolved, dishClass);
   // Every band describes one vessel; the dish is that many of them.
-  const servings = bowls ?? vesselCount(dish, vesselToken);
+  const servings =
+    bowls ?? dishVesselCount(dish, resolved) ?? vesselCount(dish, vesselToken);
   const oneVessel: GramsBand = bowls
     ? riceBowl
     : {
@@ -272,11 +299,11 @@ export function resolveVesselEnvelope(
     vesselMl: VESSEL_FAMILIES[resolved.family].tiers[tier].ml,
     guardG: { low: scale(oneVessel.low), high: scale(oneVessel.high) },
     midG: scale(oneVessel.mid),
-    // The picker opens no lower than 60% of its small bowl, so a part bowl
-    // brings its own size; several bowls keep the plain bowl sizes rather
-    // than call two bowls "small".
-    ...(bowls && bowls <= 1 && isSmallBowlG(scale(riceBowl.mid))
-      ? { smallBowlG: scale(riceBowl.mid) }
+    servings,
+    // One bowl's grams: the picker multiplies it by the vessel's count, so
+    // half a bowl and two bowls both read in whole rice bowls.
+    ...(bowls && isSmallBowlG(riceBowl.mid)
+      ? { smallBowlG: riceBowl.mid }
       : {}),
   };
 }
@@ -297,6 +324,7 @@ export function attachVesselToMealItems(
         family: envelope.family,
         tier: envelope.tier,
         dishClass: envelope.dishClass,
+        ...(envelope.servings !== 1 ? { count: envelope.servings } : {}),
         ...(envelope.smallBowlG ? { smallBowlG: envelope.smallBowlG } : {}),
         provenance: 'vessel_prior',
       };

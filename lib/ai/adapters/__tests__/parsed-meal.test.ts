@@ -142,6 +142,43 @@ describe('toParsedMeal vessel mapping', () => {
       expect(parsed.items[0]?.vessel).toBeUndefined();
     });
 
+    for (const count of [0, 0.1, -2, 21, Number.NaN]) {
+      it(`drops a container vessel counting ${count} vessels`, () => {
+        const parsed = toParsedMeal(
+          pipelineResult({
+            family: 'bowl',
+            tier: 1,
+            dishClass: 'solid',
+            count,
+            provenance: 'vessel_prior',
+          })
+        );
+        expect(parsed.items[0]?.vessel).toBeUndefined();
+      });
+    }
+
+    it('keeps half and two bowls, with the one-bowl rice size', () => {
+      for (const count of [0.5, 2]) {
+        const parsed = toParsedMeal(
+          pipelineResult({
+            family: 'bowl',
+            tier: 1,
+            dishClass: 'solid',
+            count,
+            smallBowlG: 150,
+            provenance: 'vessel_prior',
+          })
+        );
+        expect(parsed.items[0]?.vessel).toEqual({
+          family: 'bowl',
+          tier: 1,
+          dishClass: 'solid',
+          count,
+          smallBowlG: 150,
+        });
+      }
+    });
+
     it('keeps the fractional counts the prompt legitimately emits', () => {
       // "một lát rưỡi" → 1.5. Valid, and both clients must render it.
       const parsed = toParsedMeal(
