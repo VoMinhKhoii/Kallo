@@ -95,10 +95,7 @@ class GoldPlanSurface extends StatelessWidget {
               borderRadius: BorderRadius.circular(KalloRadii.pill),
             ),
             // White, not gold: text is ink or muted ink only (web parity).
-            child: Text(
-              chipLabel!,
-              style: dashCaption(color: const Color(0xFFFFFFFF)),
-            ),
+            child: Text(chipLabel!, style: dashCaption(color: Colors.white)),
           ),
         ),
       ],
