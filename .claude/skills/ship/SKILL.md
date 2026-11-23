@@ -169,6 +169,7 @@ CK=<checkout>
 REVIEW_DIR=$(mktemp -d <scratchpad>/review-<name>.XXXXXX) && rmdir "$REVIEW_DIR"
 git -C "$CK" worktree add --detach "$REVIEW_DIR" <pinned-sha> || exit 1
 trap 'git -C "$CK" worktree remove --force "$REVIEW_DIR" 2>/dev/null' EXIT
+trap 'exit 130' INT; trap 'exit 143' TERM   # a kill still runs the EXIT trap
 # The OS refuses writes to every worktree of this repo and to the shared .git
 # (allowed flags such as `git diff --output=<path>` write anywhere otherwise),
 # except the throwaway worktree's own git metadata.
