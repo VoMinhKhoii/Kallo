@@ -101,7 +101,7 @@ export function withCallOneDefaults(node: unknown): unknown {
  * mass or a dish `servedMassG` of 0 g means no weight was typed, and a dish
  * `statedKcal` of 0 means no calories were typed (Haiku writes
  * `servedMassG: 0` for "no weight", and the schema's > 0 rule then failed the
- * whole Call 1); a missing dish `cookingMethod` is ""; over-long `rejectReason` /
+ * whole Call 1); a `dishCount` without a usable count or unit is null; a missing dish `cookingMethod` is ""; over-long `rejectReason` /
  * `prepNotes` are cut to the schema's lengths; `refusePct` is clamped to
  * 0-80; a Call 2 ingredient at 0 g is dropped, and a `servedG` of 0 means no
  * plate weight; a `vesselToken` over the schema's 16 characters is dropped; a
@@ -148,6 +148,15 @@ export function repairPipelineOutput(raw: unknown): unknown {
     if ('servedMassG' in m && !(Number(m.servedMassG) > 0))
       delete m.servedMassG;
     if ('statedKcal' in m && !(Number(m.statedKcal) > 0)) delete m.statedKcal;
+    // A dish count without a usable number or unit is no count.
+    const dishCount = m.dishCount as Loose | null | undefined;
+    if (
+      dishCount &&
+      (!(Number(dishCount.count) >= 0) ||
+        !present(dishCount.unitToken) ||
+        String(dishCount.unitToken).length > 24)
+    )
+      m.dishCount = null;
     for (const g of (m.ingredients as Loose[] | undefined) ?? []) {
       if ('servedG' in g && !(Number(g.servedG) > 0)) delete g.servedG;
       const mass = g.explicitMass as Loose | undefined;

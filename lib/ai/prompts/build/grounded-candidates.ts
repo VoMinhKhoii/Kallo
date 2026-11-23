@@ -67,16 +67,21 @@ const PIECE_UNIT =
   /^(mi[eế]ng|c[aá]i|chi[eế]c|l[aá]t|piece|pieces|pc|pcs|slice|slices)$/i;
 
 /**
- * "1 miếng tôm tonkatsu": Call 1 puts the count on the shrimp, the part the
- * dish is named after, and Call 2 then sizes one shrimp (13–40 g) instead of
- * one shrimp cutlet. When a split dish's only count is a piece count on the
- * part its name starts from, the count belongs to the whole dish.
+ * The count of the whole dish Call 2 is shown: Call 1's `dishCount` ("2 tô
+ * phở", "2 burgers"). Without one, "1 miếng tôm tonkatsu" may still carry its
+ * count on the shrimp, the part the dish is named after, and Call 2 would then
+ * size one shrimp (13–40 g) instead of one shrimp cutlet: when a split dish's
+ * only count is a piece count on the part its name starts from, the count
+ * belongs to the whole dish, and `ingredient` is that part.
  */
 export function dishPieceCount(mi: MealItemWithCandidates): {
-  ingredient: DecomposedIngredientV2;
+  ingredient: DecomposedIngredientV2 | null;
   count: number;
   unit: string;
 } | null {
+  const typed = mi.mealItem.dishCount;
+  if (typed && typed.count > 0)
+    return { ingredient: null, count: typed.count, unit: typed.unitToken };
   if (mi.ingredients.length < 2) return null;
   const counted = mi.ingredients.filter(
     (i) => i.ingredient.count != null && i.ingredient.unitToken

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,7 +19,7 @@ import 'ruler/portion_ruler_control.dart';
 class PortionContainerBody extends StatelessWidget {
   const PortionContainerBody({
     super.key,
-    required this.family,
+    required this.vessel,
     required this.anchors,
     required this.grams,
     required this.min,
@@ -27,7 +28,7 @@ class PortionContainerBody extends StatelessWidget {
     required this.onChanged,
   });
 
-  final ContainerFamily family;
+  final ContainerVessel vessel;
   final List<PortionAnchor> anchors;
   final int grams;
   final int min;
@@ -36,7 +37,7 @@ class PortionContainerBody extends StatelessWidget {
   final ValueChanged<int> onChanged;
 
   List<VesselTierData> get _tiers => [
-    for (final a in anchors) vesselFamilies[family]![a.tier]!,
+    for (final a in anchors) vesselFamilies[vessel.family]![a.tier]!,
   ];
 
   /// Nearest tier to the CURRENT grams — the same rule the assumption line
@@ -61,7 +62,11 @@ class PortionContainerBody extends StatelessWidget {
       // boundary announced "250 g — đĩa lớn (16 cm)" — this class exists to
       // stop the sheet naming a vessel the card wouldn't.
       valueTextFor: (g) {
-        final at = nearestAnchor(anchors, g);
+        final at = containerReading(
+          vessel,
+          g,
+          context.locale.languageCode == 'vi' ? 'vi' : 'en',
+        );
         final tier = tiers[anchors.indexWhere((a) => a.tier == at.tier)];
         return '$g g — ${at.label} (${tier.sizeLabel})';
       },

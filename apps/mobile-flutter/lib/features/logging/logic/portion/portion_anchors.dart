@@ -44,6 +44,9 @@ String formatAnchorGrams(double value) {
 const double envelopeMinFactor = 0.6;
 const double envelopeMaxFactor = 1.2;
 
+/// A container tape starts at half its first vessel: "½ chén nhỏ".
+const double halfVessel = 0.5;
+
 /// A piece portion may claim a tier's label only within ±10% of its grams.
 const double claimBand = 0.1;
 
@@ -57,28 +60,70 @@ class GramEnvelope {
   const GramEnvelope(this.min, this.max);
 }
 
-GramEnvelope gramEnvelope(List<PortionAnchor> anchors) => GramEnvelope(
-  (anchors.first.value * envelopeMinFactor).round(),
+GramEnvelope gramEnvelope(
+  List<PortionAnchor> anchors, [
+  double minFactor = envelopeMinFactor,
+]) => GramEnvelope(
+  (anchors.first.value * minFactor).round(),
   (anchors.last.value * envelopeMaxFactor).round(),
 );
+
+/// The range a vessel's tape spans: a container's reaches half its first
+/// vessel, a piece's 60% of its smallest cut (web `vesselEnvelope`).
+GramEnvelope vesselEnvelope(ClientVessel vessel, List<PortionAnchor> anchors) =>
+    gramEnvelope(
+      anchors,
+      vessel is PieceVessel ? envelopeMinFactor : halfVessel,
+    );
+
+final Map<double, String> _vulgar = {0.25: '¼', 0.5: '½', 0.75: '¾'};
+
+/// How a count of vessels or pieces leads its label: nothing for one, "½ "
+/// for a half, "2 × " for two, "1.5 × " — the same as web's `countPrefix`.
+String countPrefix(double count) {
+  if (count == 1) return '';
+  final vulgar = _vulgar[count];
+  return vulgar != null ? '$vulgar ' : '${formatAnchorGrams(count)} × ';
+}
 
 List<PortionAnchor> buildContainerAnchors(
   ContainerVessel vessel,
   String locale,
 ) {
+  final prefix = countPrefix(vessel.count);
   return [
     for (var tier = 1; tier <= 4; tier++)
       PortionAnchor(
         tier: tier,
         // A plain-rice bowl's own size for the small bowl (web
-        // `containerAnchorG`), else the tier's fill-and-density midpoint.
+        // `containerAnchorG`), else the tier's fill-and-density midpoint;
+        // either way for all `count` vessels.
         value:
-            tier == 1 && vessel.smallBowlG != null
+            (tier == 1 && vessel.smallBowlG != null
                 ? vessel.smallBowlG!
-                : midG(vessel.family, tier, vessel.dishClass).toDouble(),
-        label: vesselFamilies[vessel.family]![tier]!.label(locale),
+                : midG(vessel.family, tier, vessel.dishClass).toDouble()) *
+            vessel.count,
+        label: '$prefix${vesselFamilies[vessel.family]![tier]!.label(locale)}',
       ),
   ];
+}
+
+/// What a container at [grams] names: the nearest of its vessels, or half the
+/// first one ("½ chén nhỏ") when the grams sit nearer that, the tape's left
+/// end. Web's `containerReading`.
+({int tier, String label}) containerReading(
+  ContainerVessel vessel,
+  int grams,
+  String locale,
+) {
+  final anchors = buildContainerAnchors(vessel, locale);
+  final half = anchors.first.value * halfVessel;
+  final nearest = nearestAnchor(anchors, grams);
+  if ((grams - half).abs() < (grams - nearest.value).abs()) {
+    final first = vesselFamilies[vessel.family]![1]!.label(locale);
+    return (tier: 1, label: '${countPrefix(vessel.count * halfVessel)}$first');
+  }
+  return (tier: nearest.tier, label: nearest.label);
 }
 
 /// The four cups at their STATED volume, in ml — for a packaged drink measured

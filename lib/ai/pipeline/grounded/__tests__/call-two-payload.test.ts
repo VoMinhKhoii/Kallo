@@ -30,6 +30,7 @@ describe('grounded vessel threading', () => {
       vesselMl: 700,
       guardG: { low: 470, high: 730 },
       midG: 595,
+      servings: 1,
     };
 
     const payload = buildCallTwoPayload(

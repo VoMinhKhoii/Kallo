@@ -142,7 +142,21 @@ export function isRenderableVessel(vessel: ClientVessel): boolean {
     !!tiers &&
     vessel.tier >= 1 &&
     vessel.tier <= Object.keys(tiers).length &&
+    (vessel.count === undefined || isVesselCount(vessel.count)) &&
     (vessel.smallBowlG === undefined || isSmallBowlG(vessel.smallBowlG))
+  );
+}
+
+/** Fewest and most vessels a container count may say: a quarter bowl to 20. */
+export const MIN_VESSEL_COUNT = 0.25;
+export const MAX_VESSEL_COUNT = 20;
+
+/** A believable number of bowls, plates or cups. */
+export function isVesselCount(count: number): boolean {
+  return (
+    Number.isFinite(count) &&
+    count >= MIN_VESSEL_COUNT &&
+    count <= MAX_VESSEL_COUNT
   );
 }
 
@@ -151,15 +165,18 @@ export function isSmallBowlG(grams: number): boolean {
   return Number.isFinite(grams) && grams >= 20 && grams <= 1000;
 }
 
-/** The grams a container tier shows: a plain-rice bowl's own size for the
- *  small bowl, else the tier's fill-and-density midpoint. */
+/** The grams a container tier shows, for all `count` vessels: a plain-rice
+ *  bowl's own size for the small bowl, else the tier's fill-and-density
+ *  midpoint. */
 export function containerAnchorG(
   vessel: ContainerVessel,
   tier: VesselTier
 ): number {
-  return tier === 1 && vessel.smallBowlG !== undefined
-    ? vessel.smallBowlG
-    : midG(vessel.family, tier, vessel.dishClass);
+  const one =
+    tier === 1 && vessel.smallBowlG !== undefined
+      ? vessel.smallBowlG
+      : midG(vessel.family, tier, vessel.dishClass);
+  return one * (vessel.count ?? 1);
 }
 
 /**

@@ -303,6 +303,7 @@ describe('grounded-estimation prompt structure', () => {
       vesselMl: 700,
       guardG: { low: 470, high: 730 },
       midG: 595,
+      servings: 1,
     };
     const out = buildPrompt('một tô phở', [mealItem]);
     expect(out).toContain(
@@ -399,6 +400,7 @@ describe('grounded-estimation prompt structure', () => {
       vesselMl: 700,
       guardG: { low: 470, high: 730 },
       midG: 595,
+      servings: 1,
     };
     withRestoredEnv(['VESSEL_GUARD'], () => {
       process.env.VESSEL_GUARD = 'off';

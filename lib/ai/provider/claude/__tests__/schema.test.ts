@@ -79,6 +79,35 @@ describe('repairPipelineOutput', () => {
     expect(out.mealItems[0].statedKcal).toBeUndefined();
   });
 
+  it('nulls a dish count without a usable count or unit, and keeps a good one', () => {
+    const out = repairPipelineOutput({
+      mealItems: [
+        {
+          name: 'A',
+          dishCount: { count: -1, unitToken: 'tô' },
+          ingredients: [{}],
+        },
+        {
+          name: 'B',
+          dishCount: { count: 2, unitToken: '' },
+          ingredients: [{}],
+        },
+        {
+          name: 'C',
+          dishCount: { count: 2, unitToken: 'tô' },
+          ingredients: [{}],
+        },
+        { name: 'D', dishCount: null, ingredients: [{}] },
+      ],
+    }) as { mealItems: { dishCount?: unknown }[] };
+    expect(out.mealItems.map((m) => m.dishCount)).toEqual([
+      null,
+      null,
+      { count: 2, unitToken: 'tô' },
+      null,
+    ]);
+  });
+
   it('withCallOneDefaults fills a missing search string and cooking method, on a copy', () => {
     const raw = {
       mealItems: [

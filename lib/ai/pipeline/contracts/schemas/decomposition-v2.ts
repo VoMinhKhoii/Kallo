@@ -111,12 +111,27 @@ export const decomposedIngredientV2Schema = z
   })
   .strict();
 
+const dishCountSchema = z
+  .object({
+    count: z.number().nonnegative().finite(),
+    unitToken: z.string().min(1).max(24),
+  })
+  .strict()
+  .nullable()
+  .describe(
+    'How many of this WHOLE dish the user ate, when the dish splits into several foods: "2 burgers" → count 2, unitToken "burger"; "2 tô phở" → 2, "tô"; "nửa dĩa cơm chiên" → 0.5, "dĩa". Its ingredients then describe ONE unit of the dish. null when no count was typed for the whole dish, and for a dish of one food, whose count stays on the food.'
+  );
+
 /**
  * The dish and meal shapes are built from the ingredient shape, so the stored
  * schema and the schema Call 1 fills (`mealDecompositionV2CallSchema`) differ
- * only where their ingredient schemas do.
+ * only where their ingredient schemas do, and in `dishCount`: Call 1 must
+ * write it (null when absent), a stored meal may lack it.
  */
-function dishSchemaOf<I extends z.ZodType>(ingredient: I) {
+function dishSchemaOf<I extends z.ZodType, C extends z.ZodType>(
+  ingredient: I,
+  dishCount: C
+) {
   return z
     .object({
       name: z
@@ -147,6 +162,7 @@ function dishSchemaOf<I extends z.ZodType>(ingredient: I) {
         .describe(
           'Size cue attached to the dish vessel word ("tô nhỏ"→small). Omit when unspecified.'
         ),
+      dishCount,
       servedMassG: z
         .number()
         .positive()
@@ -193,7 +209,8 @@ function mealSchemaOf<D extends z.ZodType>(dish: D) {
 }
 
 export const decomposedDishV2Schema = dishSchemaOf(
-  decomposedIngredientV2Schema
+  decomposedIngredientV2Schema,
+  dishCountSchema.optional()
 );
 export const mealDecompositionV2Schema = mealSchemaOf(decomposedDishV2Schema);
 
@@ -204,6 +221,7 @@ export type DecomposedIngredientV2 = z.infer<
   typeof decomposedIngredientV2Schema
 >;
 export type DecomposedDishV2 = z.infer<typeof decomposedDishV2Schema>;
+export type DishCount = NonNullable<DecomposedDishV2['dishCount']>;
 export type MealDecompositionV2 = z.infer<typeof mealDecompositionV2Schema>;
 
 /**
@@ -214,13 +232,15 @@ export type MealDecompositionV2 = z.infer<typeof mealDecompositionV2Schema>;
  * It leaves out the two free-text notes. Each optional field slows Claude's
  * first compile of a new schema: with both notes it took 125 s cold, without
  * them 25 s. `stateNote` only echoed the user's words, which Call 2 reads in
- * the meal text itself; `cuisineNote` was read by nothing downstream.
+ * the meal text itself; `cuisineNote` was read by nothing downstream. For the
+ * same reason `dishCount` is required and nullable here, not optional.
  */
 export const mealDecompositionV2CallSchema = mealSchemaOf(
   dishSchemaOf(
     decomposedIngredientV2Schema
       .omit({ statedKcal: true, stateNote: true })
-      .required({ queryEn: true, nameVi: true })
+      .required({ queryEn: true, nameVi: true }),
+    dishCountSchema
   ).omit({ cuisineNote: true })
 );
 

@@ -427,6 +427,70 @@ describe('vessel gram envelopes', () => {
   });
 });
 
+describe("the dish's own count", () => {
+  const pho = (extra: Partial<DishLike>) =>
+    resolveVesselEnvelope(
+      dish({
+        name: 'phở bò',
+        vesselToken: 'tô',
+        ingredients: [{ rawName: 'bánh phở' }, { rawName: 'thịt bò' }],
+        ...extra,
+      })
+    );
+
+  it('scales the band by dishCount in the vessel word', () => {
+    const one = pho({});
+    const two = pho({ dishCount: { count: 2, unitToken: 'tô' } });
+    const half = pho({ dishCount: { count: 0.5, unitToken: 'tô' } });
+    expect(one?.servings).toBe(1);
+    expect(two?.servings).toBe(2);
+    expect(two?.midG).toBe(Math.round((one?.midG ?? 0) * 2));
+    expect(two?.guardG.high).toBe(Math.round((one?.guardG.high ?? 0) * 2));
+    expect(half?.servings).toBe(0.5);
+    expect(half?.midG).toBe(Math.round((one?.midG ?? 0) * 0.5));
+  });
+
+  it('reads a bowl word of the same family as the vessel count', () => {
+    expect(pho({ dishCount: { count: 2, unitToken: 'bowl' } })?.servings).toBe(
+      2
+    );
+  });
+
+  it('ignores a dish count in another word, and falls back to the parts', () => {
+    expect(pho({ dishCount: { count: 2, unitToken: 'phần' } })?.servings).toBe(
+      1
+    );
+    expect(
+      pho({
+        ingredients: [
+          { rawName: 'bánh phở', count: 2, unitToken: 'tô' },
+          { rawName: 'thịt bò', count: 2, unitToken: 'tô' },
+        ],
+      })?.servings
+    ).toBe(2);
+  });
+
+  it('hands the picker the count, and leaves it out for one', () => {
+    const dishes = [
+      dish({
+        name: 'phở',
+        vesselToken: 'tô',
+        dishCount: { count: 2, unitToken: 'tô' },
+        ingredients: [{ rawName: 'bánh phở' }, { rawName: 'thịt bò' }],
+      }),
+      dish({ name: 'bún', vesselToken: 'tô' }),
+    ];
+    const items = [mealItem('phở'), mealItem('bún')];
+    attachVesselToMealItems(
+      items,
+      dishes,
+      dishes.map((d) => resolveVesselEnvelope(d))
+    );
+    expect(items[0].vessel).toMatchObject({ family: 'bowl', count: 2 });
+    expect(items[1].vessel).not.toHaveProperty('count');
+  });
+});
+
 describe('attachVesselToMealItems', () => {
   it('aligns by index and skips absent or unknown vessels', () => {
     const dishes = [
@@ -727,10 +791,26 @@ describe('a bowl of plain rice', () => {
     expect(rice(0.5)?.guardG).toEqual({ low: 40, high: 80 });
   });
 
-  it('gives the picker a part bowl, but no small bowl for several', () => {
-    expect(rice(0.5)?.smallBowlG).toBe(60);
-    expect(rice(2)?.smallBowlG).toBeUndefined();
-    expect(rice(0.1)?.smallBowlG).toBeUndefined();
+  it('gives the picker one rice bowl and how many of it were eaten', () => {
+    expect(rice(0.5)).toMatchObject({ smallBowlG: 120, servings: 0.5 });
+    expect(rice(2)).toMatchObject({ smallBowlG: 120, servings: 2 });
+    expect(rice(1)).toMatchObject({ smallBowlG: 120, servings: 1 });
+  });
+
+  it('hands the picker the count of bowls beside the one bowl', () => {
+    const items = [mealItem('Cơm'), mealItem('Cơm 2')];
+    const dishes = [0.5, 2].map((count, i) => ({
+      name: i ? 'Cơm 2' : 'Cơm',
+      vesselToken: 'chén',
+      ingredients: [{ rawName: 'cơm', count, unitToken: 'chén' }],
+    }));
+    attachVesselToMealItems(
+      items,
+      dishes,
+      dishes.map((d) => resolveVesselEnvelope(d, vietnam))
+    );
+    expect(items[0].vessel).toMatchObject({ smallBowlG: 120, count: 0.5 });
+    expect(items[1].vessel).toMatchObject({ smallBowlG: 120, count: 2 });
   });
 
   it('leaves other dishes in a chén on the generic band', () => {
