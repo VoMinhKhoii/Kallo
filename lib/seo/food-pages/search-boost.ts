@@ -16,6 +16,3 @@ const STRIKING = new Set(Object.keys(boost.pages));
 export function inStrikingDistance(slug: string): boolean {
   return STRIKING.has(slug);
 }
-
-/** The slugs the file names, for its own test. */
-export const STRIKING_SLUGS: readonly string[] = [...STRIKING];

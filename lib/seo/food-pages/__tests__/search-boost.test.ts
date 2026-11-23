@@ -1,79 +1,90 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  FOOD_PAGES,
+  type FoodPage,
   medianMealKcal,
   pagesOf,
   relatedPages,
   similarCaloriePages,
 } from '../pages';
-import { inStrikingDistance, STRIKING_SLUGS } from '../search-boost';
 import { FOOD_PAGE_LOCALES } from '../slugs';
 
+// The boost list changes every week with Search Console, so these tests set
+// their own: they check what the link lists do with a list, not this week's.
+const striking = vi.hoisted(() => new Set<string>());
+vi.mock('../search-boost', () => ({
+  inStrikingDistance: (slug: string) => striking.has(slug),
+}));
+
+/** The six other-group pages nearest in median kcal, with no boost. */
+function nearestSix(page: FoodPage): string[] {
+  const target = medianMealKcal(page.capture);
+  return pagesOf(page.locale)
+    .filter((other) => other.group !== page.group)
+    .sort(
+      (a, b) =>
+        Math.abs(medianMealKcal(a.capture) - target) -
+        Math.abs(medianMealKcal(b.capture) - target)
+    )
+    .slice(0, 6)
+    .map((p) => p.slug);
+}
+
+const slugsOf = (pages: FoodPage[]) => pages.map((p) => p.slug);
+
 describe('search boost', () => {
-  it('names only food pages that exist', () => {
-    for (const slug of STRIKING_SLUGS) {
-      expect(FOOD_PAGES[slug as keyof typeof FOOD_PAGES], slug).toBeDefined();
-    }
-  });
+  beforeEach(() => striking.clear());
 
   describe.each(FOOD_PAGE_LOCALES)('%s', (locale) => {
-    it('lists striking-distance siblings before the rest of the group', () => {
+    it('lists boosted siblings first and keeps every sibling once', () => {
       for (const page of pagesOf(locale)) {
-        const flags = relatedPages(page).map((p) => inStrikingDistance(p.slug));
-        // once a non-striking page appears, no striking page follows it
-        expect(
-          flags.slice(flags.indexOf(false) + 1 || flags.length)
-        ).not.toContain(true);
+        const plain = slugsOf(relatedPages(page));
+        if (plain.length < 2) continue;
+        const boosted = plain.at(-1) as string;
+        striking.add(boosted);
+        const ordered = slugsOf(relatedPages(page));
+        striking.clear();
+        expect(ordered, page.slug).toEqual([boosted, ...plain.slice(0, -1)]);
       }
     });
 
-    it('keeps similar-calorie links to three, at most one swapped in', () => {
+    it('keeps the nearest three when no boosted page is near', () => {
       for (const page of pagesOf(locale)) {
-        const similar = similarCaloriePages(page);
-        expect(similar, page.slug).toHaveLength(3);
-        expect(new Set(similar.map((p) => p.slug)).size).toBe(3);
+        expect(slugsOf(similarCaloriePages(page)), page.slug).toEqual(
+          nearestSix(page).slice(0, 3)
+        );
       }
     });
 
-    it('swaps a striking-distance runner-up into the third similar-calorie slot', () => {
-      let swapped = 0;
+    it('swaps a boosted page from places 4 to 6 into the third slot', () => {
       for (const page of pagesOf(locale)) {
-        const target = medianMealKcal(page.capture);
-        const nearest = pagesOf(locale)
-          .filter((other) => other.group !== page.group)
-          .sort(
-            (a, b) =>
-              Math.abs(medianMealKcal(a.capture) - target) -
-              Math.abs(medianMealKcal(b.capture) - target)
-          )
-          .slice(0, 6)
-          .map((p) => p.slug);
-        const runnerUp = nearest.slice(3).find(inStrikingDistance);
-        const expected =
-          nearest.slice(0, 3).some(inStrikingDistance) || !runnerUp
-            ? nearest.slice(0, 3)
-            : [nearest[0], nearest[1], runnerUp];
-        if (expected[2] !== nearest[2]) swapped++;
-        expect(
-          similarCaloriePages(page).map((p) => p.slug),
-          page.slug
-        ).toEqual(expected);
+        const nearest = nearestSix(page);
+        if (nearest.length < 5) continue;
+        striking.add(nearest[4]);
+        const similar = slugsOf(similarCaloriePages(page));
+        striking.clear();
+        expect(similar, page.slug).toEqual([
+          nearest[0],
+          nearest[1],
+          nearest[4],
+        ]);
       }
-      // Vietnamese pages have boosted runners-up today; English has none.
-      if (locale === 'vi') expect(swapped).toBeGreaterThan(0);
+    });
+
+    it('does not swap when one of the nearest three is already boosted', () => {
+      for (const page of pagesOf(locale)) {
+        const nearest = nearestSix(page);
+        striking.add(nearest[1]).add(nearest[4]);
+        const similar = slugsOf(similarCaloriePages(page));
+        striking.clear();
+        expect(similar, page.slug).toEqual(nearest.slice(0, 3));
+      }
     });
   });
 
-  it('gives every striking-distance page more inbound links than its group alone', () => {
-    for (const slug of STRIKING_SLUGS) {
-      const target = FOOD_PAGES[slug as keyof typeof FOOD_PAGES];
-      if (!target) continue;
-      const fromOtherGroups = pagesOf(target.locale).filter(
-        (page) =>
-          page.group !== target.group &&
-          similarCaloriePages(page).some((p) => p.slug === slug)
-      );
-      expect(fromOtherGroups.length, slug).toBeGreaterThan(0);
+  it('ignores a boosted slug that has no page', () => {
+    striking.add('no-such-dish');
+    for (const page of pagesOf('vi')) {
+      expect(similarCaloriePages(page), page.slug).toHaveLength(3);
     }
   });
 });
