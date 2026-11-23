@@ -17,6 +17,14 @@ describe('mentionsRice', () => {
     '75g basmati weighed dry, 150g chicken breast',
     '80g gạo lứt nấu lên, 1 hộp cá ngừ',
     'dolsot bibimbap with beef, no egg',
+    '1 bowl of gonggibap and kimchi jjigae',
+    'kimchi bokkeumbap',
+    'Reis mit Hähnchen',
+    '1 Schüssel Basmatireis mit Hähnchen',
+    'Jasminreis mit Curry',
+    '玄米 1膳、納豆、味噌汁',
+    '糙米一碗',
+    'បាយស 1 ចាន',
     'teishoku with gohan and miso soup',
     '공깃밥 하나랑 김치찌개',
     'ご飯 一杯と味噌汁',
@@ -49,6 +57,8 @@ describe('mentionsRice', () => {
     'a risotto-free salad with prices listed',
     'grilled salmon, broccoli and a baked potato',
     'a pot of jasmine tea with a pastry',
+    'Brezel zum Preis von 2 Euro, Kreis-Pizza',
+    'eine Reise nach Rom, Pizza',
   ])('finds no rice in %j', (text) => {
     expect(mentionsRice(text)).toBe(false);
   });
