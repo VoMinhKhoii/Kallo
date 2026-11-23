@@ -11,7 +11,7 @@ import boost from './search-boost.json';
  * through a PR like any other change. A slug that no longer has a page is
  * ignored.
  */
-const STRIKING = new Set(Object.keys(boost.pages));
+const STRIKING = new Set(Object.keys(boost.pages ?? {}));
 
 export function inStrikingDistance(slug: string): boolean {
   return STRIKING.has(slug);
