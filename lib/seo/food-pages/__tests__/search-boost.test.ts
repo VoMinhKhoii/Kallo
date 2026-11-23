@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   FOOD_PAGES,
+  medianMealKcal,
   pagesOf,
   relatedPages,
   similarCaloriePages,
@@ -32,6 +33,34 @@ describe('search boost', () => {
         expect(similar, page.slug).toHaveLength(3);
         expect(new Set(similar.map((p) => p.slug)).size).toBe(3);
       }
+    });
+
+    it('swaps a striking-distance runner-up into the third similar-calorie slot', () => {
+      let swapped = 0;
+      for (const page of pagesOf(locale)) {
+        const target = medianMealKcal(page.capture);
+        const nearest = pagesOf(locale)
+          .filter((other) => other.group !== page.group)
+          .sort(
+            (a, b) =>
+              Math.abs(medianMealKcal(a.capture) - target) -
+              Math.abs(medianMealKcal(b.capture) - target)
+          )
+          .slice(0, 6)
+          .map((p) => p.slug);
+        const runnerUp = nearest.slice(3).find(inStrikingDistance);
+        const expected =
+          nearest.slice(0, 3).some(inStrikingDistance) || !runnerUp
+            ? nearest.slice(0, 3)
+            : [nearest[0], nearest[1], runnerUp];
+        if (expected[2] !== nearest[2]) swapped++;
+        expect(
+          similarCaloriePages(page).map((p) => p.slug),
+          page.slug
+        ).toEqual(expected);
+      }
+      // Vietnamese pages have boosted runners-up today; English has none.
+      if (locale === 'vi') expect(swapped).toBeGreaterThan(0);
     });
   });
 
