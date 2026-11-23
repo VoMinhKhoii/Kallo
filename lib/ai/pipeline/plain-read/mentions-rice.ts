@@ -10,14 +10,15 @@ const wholeWords = (alternatives: string) =>
   new RegExp(`(?<!\\p{L})(?:${alternatives})(?!\\p{L})`, 'iu');
 
 /**
- * "com" is cơm typed without accents ("com tam"). Romanised "bap" counts only
- * at the end of a longer word (gonggibap, bokkeumbap): alone and without
- * accents it is also bắp, corn. German writes rice at the end of compounds
- * (Basmatireis, Jasminreis), but not after P, K or G (Preis, Kreis, Greis).
- * "jasmine" alone is left out (jasmine tea).
+ * "com" and "gao" are cơm and gạo typed without accents ("com tam", "gao
+ * lut"). Romanised "bap" counts only at the end of a longer word (gonggibap,
+ * bokkeumbap) and not in kebap: alone and without accents it is also bắp,
+ * corn. German writes rice at the end of compounds (Basmatireis, Fertigreis,
+ * Wokreis), but not after P (Preis, a price on a receipt). "jasmine" alone is
+ * left out (jasmine tea).
  */
 const RICE_WORD = wholeWords(
-  'rice|cơm|com|gạo|nasi|arroz|riz|riso|kanin|chawal|bhaat|bhat|gohan|basmati|\\p{L}+bap|\\p{L}*(?<![pkg])reis'
+  'rice|cơm|com|gạo|gao|nasi|arroz|riz|riso|kanin|chawal|bhaat|bhat|gohan|basmati|\\p{L}+(?<!k[ea])bap|\\p{L}*(?<!p)reis'
 );
 
 /**

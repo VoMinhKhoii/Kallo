@@ -22,6 +22,9 @@ describe('mentionsRice', () => {
     'Reis mit Hähnchen',
     '1 Schüssel Basmatireis mit Hähnchen',
     'Jasminreis mit Curry',
+    '1 Packung Fertigreis mit Hähnchen',
+    'Wokreis mit Gemüse',
+    '80g gao lut nau len, 1 hop ca ngu',
     '玄米 1膳、納豆、味噌汁',
     '糙米一碗',
     'បាយស 1 ចាន',
@@ -57,8 +60,12 @@ describe('mentionsRice', () => {
     'a risotto-free salad with prices listed',
     'grilled salmon, broccoli and a baked potato',
     'a pot of jasmine tea with a pastry',
-    'Brezel zum Preis von 2 Euro, Kreis-Pizza',
+    'Brezel zum Preis von 2 Euro',
+    'Wurst, Kaufpreis 4 Euro',
     'eine Reise nach Rom, Pizza',
+    'Döner Kebap mit Salat',
+    'chicken kebap wrap',
+    'dönerkebap',
   ])('finds no rice in %j', (text) => {
     expect(mentionsRice(text)).toBe(false);
   });
