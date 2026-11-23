@@ -18,23 +18,15 @@ const RICE_WORD = wholeWords(
 );
 
 /**
- * Scripts written without spaces: a rice word inside a longer run still
- * counts (공깃밥, 一碗米饭, ข้าวสวย), minus the runs where the same letters are
- * something else: スライス / プライス (slice, price), 케밥 (kebab), ข้าวโพด
- * (corn) and the other grains, and the meal-time words 朝ごはん / 早饭 /
- * 아침밥 (breakfast, any food). Bare 饭 / 飯 also means "a meal" (吃饭), so
- * only the rice compounds count.
+ * Scripts written without spaces: any rice character counts, inside any run
+ * (공깃밥, 卤肉饭, カレーライス, ข้าวสวย). This leans to firing on purpose. The
+ * same letters also write "a meal" (早饭, 朝ごはん, ข้าวเช้า), kebab (케밥),
+ * slice (スライス) and corn (ข้าวโพด), and listing those out only traded
+ * missed rice dishes for missed exceptions. A needless sentence moved the
+ * read within its own run-to-run noise (2026-11-24); a missing one brings
+ * back the 160–200 g bowl.
  */
-const RICE_IN_RUN = new RegExp(
-  [
-    '(?<!케|아침|점심|저녁)밥',
-    '(?<![朝昼晩夕])(?:ご飯|ごはん)',
-    '(?<![スプ])ライス',
-    '(?:米|白|碗|炒)[饭飯]',
-    'ข้าว(?!โพด|โอ๊ต|สาลี|บาร์เลย์|ฟ่าง|ไรย์)',
-  ].join('|'),
-  'u'
-);
+const RICE_IN_RUN = /밥|飯|饭|ごはん|ライス|ข้าว/u;
 
 export function mentionsRice(mealText: string): boolean {
   const text = mealText.normalize('NFC');
