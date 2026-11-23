@@ -164,7 +164,8 @@ either command. Neon:
 
 ```bash
 # Read-only only in plan mode: there, headless agy refuses any command not on
-# the allow list (and ends the run), and the deny rule refuses file writes. The
+# the allow list or chained with pipes, && or ; (and ends the run), and the
+# deny rule refuses file writes. The
 # default mode writes files and runs unlisted commands; never drop --mode plan.
 # An allowed command can still write through its own flags (git diff --output
 # did in a probe), so the status check after the pass is the backstop.
@@ -182,6 +183,8 @@ agy --model gemini-4-neon-high --mode plan --settings "$NEON_READ_ONLY" \
         <scratchpad>/pass-<name>.md)" \
   > <scratchpad>/local-review-<name>.md 2>&1
 rc=$?
+# A refused command ends the run with exit 0 and only this line as output.
+grep -q 'no output produced' <scratchpad>/local-review-<name>.md && rc=1
 snapshot | diff <scratchpad>/checkout-before-<name>.txt - ; changed=$?
 echo "agy exit $rc, checkout changed: $changed"; [ "$rc" -eq 0 ] && [ "$changed" -eq 0 ]
 ```
