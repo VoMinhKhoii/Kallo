@@ -151,49 +151,43 @@ pass found 8 defects the GitHub Codex loop had missed.
 **Which model.** The bug rounds and the regression check run on **Gemini 4 Neon**
 (`gemini-4-neon-high`, through the Antigravity CLI `agy`). A pass falls back to
 **Codex Sol** (`gpt-6.1-sol`) only when Neon cannot run it: `agy` is missing, Neon
-is out of quota or rate-limited, the CLI errors or times out, the output is not a
-review (a refused command ends a plan-mode run early), or the pass changed a file.
-Rerun that same pass on Sol with the same brief and pass file. A missing `agy` or
-an exhausted quota means Sol for the rest of this `/ship`; any other failure falls
+is out of quota or rate-limited, the CLI errors or times out, or the output is not
+a review (a refused command ends a plan-mode run early, with exit 0). Rerun that
+same pass on Sol with the same brief and pass file. A missing `agy` or an
+exhausted quota means Sol for the rest of this `/ship`; any other failure falls
 back for that pass only. The Astra pass stays on Codex.
 
-**How each pass runs.** Every pass runs from the branch's checkout, in the
-background (3-15 minutes; wait for the task notification, never a foreground
-`sleep`). Round 1 has no pass file: leave `<scratchpad>/pass-<name>.md` out of
-either command. Neon:
+**How each pass runs.** Every pass runs in the background (3-15 minutes; wait for
+the task notification, never a foreground `sleep`). Round 1 has no pass file:
+leave `<scratchpad>/pass-<name>.md` out of either command. Neon reviews a
+throwaway worktree of the pinned commit, never the branch's checkout:
 
 ```bash
-# Read-only only in plan mode: there, headless agy refuses any command not on
-# the allow list or chained with pipes, && or ; (and ends the run), and the
-# deny rule refuses file writes. The
-# default mode writes files and runs unlisted commands; never drop --mode plan.
-# An allowed command can still write through its own flags (git diff --output
-# did in a probe), so the status check after the pass is the backstop.
-# Plan mode also runs git outside the sandbox, which a worktree checkout needs.
+# A throwaway worktree: whatever the pass does lands there, never in the
+# branch's checkout or the user's uncommitted files.
+REVIEW_DIR=<scratchpad>/review-<name>
+git worktree add --detach "$REVIEW_DIR" <pinned-sha>
+# Plan mode refuses any command not on the allow list, or chained with pipes,
+# && or ; (and ends the run); the deny rule refuses file writes. The default
+# mode writes files and runs unlisted commands, so never drop --mode plan.
 # -p must come last and be joined with "=", or agy reads the next flag as the
 # prompt.
-NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git rev-parse)","command(git ls-files)","command(git blame)","command(git grep)","command(rg)","command(grep)","command(ls)","command(cat)","command(head)","command(wc)","read_file(<checkout>)"],"deny":["write_file(*)"]}}'
-# The snapshot lists every untracked file (-uall) and the diff of tracked
-# ones, so a write to an already-modified file shows too.
-snapshot() { git status --porcelain -uall; git diff HEAD --binary; }
-snapshot > <scratchpad>/checkout-before-<name>.txt
-agy --model gemini-4-neon-high --mode plan --settings "$NEON_READ_ONLY" \
-  --print-timeout 20m \
-  -p="$(cat .claude/skills/ship/local-review.md <scratchpad>/codex-brief.md \
-        <scratchpad>/pass-<name>.md)" \
-  > <scratchpad>/local-review-<name>.md 2>&1
+NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git rev-parse)","command(git ls-files)","command(git blame)","command(git grep)","command(rg)","command(grep)","command(ls)","command(cat)","command(head)","command(wc)","read_file('"$REVIEW_DIR"')"],"deny":["write_file(*)"]}}'
+OUT=<scratchpad>/local-review-<name>.md
+(cd "$REVIEW_DIR" && agy --model gemini-4-neon-high --mode plan \
+  --settings "$NEON_READ_ONLY" --print-timeout 20m \
+  -p="$(cat <checkout>/.claude/skills/ship/local-review.md \
+        <scratchpad>/codex-brief.md <scratchpad>/pass-<name>.md)") > "$OUT" 2>&1
 rc=$?
-# A refused command ends the run with exit 0 and only this line as output.
-grep -q 'no output produced' <scratchpad>/local-review-<name>.md && rc=1
-snapshot | diff <scratchpad>/checkout-before-<name>.txt - ; changed=$?
-echo "agy exit $rc, checkout changed: $changed"; [ "$rc" -eq 0 ] && [ "$changed" -eq 0 ]
+# A refused run exits 0 with this one line, or with nothing at all.
+[ -s "$OUT" ] || rc=1
+grep -q '^jetski: no output produced' "$OUT" && rc=1
+git worktree remove --force "$REVIEW_DIR"
+echo "agy exit $rc"; [ "$rc" -eq 0 ]
 ```
-`<checkout>` is the checkout's absolute path. A non-zero `agy` exit is a failed
-pass, even when the output file has text in it. When the checkout changed, undo
-only what the pass did (the checkout may hold the user's own uncommitted files):
-delete a file it created; `git restore` a file that was clean before; for a file
-that was already modified before the pass, stop and tell the user, and point them
-at its earlier diff in `checkout-before-<name>.txt`. Then rerun the pass on Sol.
+`<checkout>` is the branch checkout's absolute path and `<pinned-sha>` the commit
+recorded for this pass. A non-zero exit is a failed pass, even when the output
+file has text in it: rerun the pass on Sol.
 
 Sol fallback and the Astra pass:
 
