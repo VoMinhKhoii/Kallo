@@ -289,24 +289,24 @@ describe('holdDishCountsToText', () => {
     ]);
   });
 
-  it('drops a dish count the text does not hold', () => {
+  it("keeps Call 1's own count even when the text reader cannot find it", () => {
+    // "bon" is an unaccented "bốn"; counts are written in more ways than the
+    // reader knows, so Call 1's own count is never wiped.
     const d = held(
-      'a burger and fries',
-      dish({ dishCount: count(3, 'burger') }, ['bun'], ['patty'])
+      'bon to pho',
+      dish({ vesselToken: 'tô', dishCount: count(4, 'tô') }, ['a'], ['b'])
     );
-    expect(d.dishCount).toBeNull();
+    expect(d.dishCount).toEqual(count(4, 'tô'));
   });
 
-  it('reads counts written as words, fractions and halves', () => {
+  it('lifts a copied count only when the text states it, in any written form', () => {
     for (const [text, n] of [
-      ['hai tô phở', 2],
+      ['hai cái bánh xèo', 2],
       ['nửa dĩa cơm chiên', 0.5],
       ['half a plate of fried rice', 0.5],
       ['½ bowl of chili', 0.5],
       ['1/2 chén bò kho', 0.5],
       ['1 tô rưỡi bún bò', 1.5],
-      ['a dozen dumplings', 12],
-      ['a burger', 1],
       ['tô rưỡi phở', 1.5],
       ['1 to ruoi bun bo', 1.5],
       ['1 1/2 bowls of ramen', 1.5],
@@ -315,10 +315,44 @@ describe('holdDishCountsToText', () => {
       ['three quarters of a bowl of pho', 0.75],
       ['two thirds of a pizza', 2 / 3],
       ['three-quarters of a bowl of pho', 0.75],
+      ['a dozen dumplings', 12],
+      ['a burger', 1],
     ] as const) {
-      const d = held(text, dish({ dishCount: count(n, 'x') }, ['a'], ['b']));
+      const d = held(text, dish({}, ['a', n, 'x'], ['b', n, 'x']));
       expect(d.dishCount?.count, text).toBe(n);
     }
+    const untyped = held('burgers', dish({}, ['a', 3, 'x'], ['b', 3, 'x']));
+    expect(untyped.dishCount).toBeUndefined();
+    expect(untyped.ingredients[0].count).toBe(3);
+  });
+
+  it("keeps two foods' equal counts when the text states each", () => {
+    const d = held(
+      '2 slices of toast with 2 slices of cheese',
+      dish({}, ['toast', 2, 'slice'], ['cheese', 2, 'slice'], ['butter'])
+    );
+    expect(d.dishCount).toBeUndefined();
+    expect(counts(d).slice(0, 2)).toEqual([
+      [2, 'slice'],
+      [2, 'slice'],
+    ]);
+  });
+
+  it("strips an oil's copy of every food's count when nothing is lifted", () => {
+    const d = held(
+      'burgers',
+      dish(
+        {},
+        ['bun', 2, 'burger'],
+        ['patty', 2, 'burger'],
+        ['oil', 2, 'burger']
+      )
+    );
+    expect(counts(d)).toEqual([
+      [2, 'burger'],
+      [2, 'burger'],
+      [null, null],
+    ]);
   });
 
   it('puts a typed zero on every part, where the zero check asks about it', () => {

@@ -84,11 +84,15 @@ function countsIn(text: string): number[] {
   }
   for (const [sign, n] of Object.entries(VULGAR))
     if (text.includes(sign)) counts.push(n);
-  if (AND_A_HALF.test(text)) counts.push(1.5, ...counts.map((n) => n + 0.5));
+  if (AND_A_HALF.test(text)) {
+    // "2 tô rưỡi" is 2.5; a bare "tô rưỡi" is one and a half.
+    const halves = counts.map((n) => n + 0.5);
+    counts.push(...(halves.includes(1.5) ? halves : [...halves, 1.5]));
+  }
   return counts;
 }
 
-/** One is any dish's count; anything else must be typed. */
-export function isTypedCount(count: number, text: string): boolean {
-  return count === 1 || countsIn(text).some((n) => Math.abs(n - count) < 0.01);
+/** How many times the text states `count` ("2 quả trứng, 2 quả cà chua" → 2). */
+export function typedCountTimes(count: number, text: string): number {
+  return countsIn(text).filter((n) => Math.abs(n - count) < 0.01).length;
 }

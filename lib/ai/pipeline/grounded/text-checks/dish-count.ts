@@ -18,7 +18,7 @@ import {
 } from '@/lib/ai/portion/vessel/geometry';
 import { nameKey } from '@/lib/core/text/name-key';
 import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
-import { isTypedCount } from './typed-counts';
+import { typedCountTimes } from './typed-counts';
 
 /**
  * Spoon, cup, weight and volume words the unit lexicon does not list
@@ -143,20 +143,22 @@ function loneFoodCount(dish: DecomposedDishV2): DishCount | null {
 }
 
 /**
- * The oil of a one-food dish that only copies the food's count ("2 omelettes"
- * → egg and oil, each `count: 2, unitToken: "omelette"`): the food's count is
- * typed, the oil's is not.
+ * The oil that only copies the count every food of its dish carries ("2
+ * omelettes" → egg and oil, each `count: 2, unitToken: "omelette"`): the
+ * foods' count is theirs or the dish's, the oil's is not. A spoon or cup of
+ * oil is its own amount.
  */
 function stripOilCopies(dish: DecomposedDishV2): void {
   const foods = foodsOf(dish);
-  const [food] = foods;
-  if (foods.length !== 1 || food.count == null || isMeasure(food.unitToken))
-    return;
   for (const oil of dish.ingredients) {
     if (
       isOil(oil) &&
-      oil.count === food.count &&
-      sameUnit(oil.unitToken, food.unitToken)
+      oil.count != null &&
+      !isMeasure(oil.unitToken) &&
+      foods.length > 0 &&
+      foods.every(
+        (f) => f.count === oil.count && sameUnit(f.unitToken, oil.unitToken)
+      )
     ) {
       delete oil.count;
       delete oil.unitToken;
@@ -165,13 +167,24 @@ function stripOilCopies(dish: DecomposedDishV2): void {
 }
 
 /**
+ * Whether the server may take a count from the parts to the dish: the text
+ * states it once. One stated twice ("2 quả trứng, 2 quả cà chua", "2 slices
+ * of toast with 2 slices of cheese") is each food's own.
+ */
+const liftable = (count: DishCount, text: string) =>
+  typedCountTimes(count.count, text) === 1 ||
+  (count.count === 1 && typedCountTimes(1, text) <= 1);
+
+/**
  * Hold each dish's count to the text, in place: lift a count Call 1 copied
- * onto the parts (`copiedDishCount`) to `dishCount`, drop a count the text
- * does not hold (leaving the parts as they were), and strip the copies a part
- * still carries. A dish of one food also carries its count on the food, so
- * its single-food priors read it there; the dish keeps it too, so a dish
- * rescue that splits the food still knows how many. A typed zero goes on
- * every part instead, where the zero check asks about it.
+ * onto the parts (`copiedDishCount`) to `dishCount` when the text states it
+ * once, and strip the copies a part still carries; when unsure, the parts
+ * stay as Call 1 wrote them. Call 1's own `dishCount` is kept even when the
+ * text reader cannot find its number (counts are written in more ways than
+ * it reads), and logged. A dish of one food also carries its count on the
+ * food, so its single-food priors read it there; the dish keeps it too, so a
+ * dish rescue that splits the food still knows how many. A typed zero goes
+ * on every part instead, where the zero check asks about it.
  */
 export function holdDishCountsToText(
   decomposition: MealDecompositionV2,
@@ -179,23 +192,25 @@ export function holdDishCountsToText(
 ): void {
   const text = mealText.normalize('NFC');
   for (const dish of decomposition.mealItems) {
-    const count =
-      dish.dishCount ?? copiedDishCount(dish) ?? loneFoodCount(dish);
-    if (!count) {
+    const lifted = dish.dishCount
+      ? null
+      : (copiedDishCount(dish) ?? loneFoodCount(dish));
+    const count = dish.dishCount ?? lifted;
+    if (!count || (lifted && !liftable(lifted, text))) {
       stripOilCopies(dish);
       continue;
     }
-    if (!isTypedCount(count.count, text)) {
-      console.warn(
-        `[call1-check] count ${count.count} on dish "${dish.name}" is not in the text`
-      );
-      if (dish.dishCount) dish.dishCount = null;
-      stripOilCopies(dish);
-      continue;
-    }
-    if (!dish.dishCount)
+    if (lifted && foodsOf(dish).length > 1)
       console.warn(
         `[call1-check] count ${count.count} ${count.unitToken} lifted to dish "${dish.name}"`
+      );
+    if (
+      !lifted &&
+      count.count !== 1 &&
+      typedCountTimes(count.count, text) === 0
+    )
+      console.warn(
+        `[call1-check] count ${count.count} on dish "${dish.name}" is not read in the text; kept`
       );
     dish.dishCount = count;
     // Judge every part before stripping any: whether a 1 is a copy depends
