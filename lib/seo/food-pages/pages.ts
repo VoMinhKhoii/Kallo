@@ -1,6 +1,7 @@
 import { CAPTURES } from './capture-registry';
 import { FOODS } from './food-registry';
 import { FOOD_PAGE_CHROME } from './page-copy';
+import { inStrikingDistance } from './search-boost';
 import {
   FOOD_PAGE_LOCALES,
   FOOD_SLUGS,
@@ -112,11 +113,18 @@ export function pagesByGroup(
   }));
 }
 
-/** The other pages in a page's group, for its "more meals" links. */
+/**
+ * The other pages in a page's group, for its "more meals" links. Pages in
+ * striking distance on Google come first, the rest in `FOOD_SLUGS` order.
+ */
 export function relatedPages(page: FoodPage): FoodPage[] {
-  return pagesOf(page.locale).filter(
+  const siblings = pagesOf(page.locale).filter(
     (other) => other.group === page.group && other.slug !== page.slug
   );
+  return [
+    ...siblings.filter((other) => inStrikingDistance(other.slug)),
+    ...siblings.filter((other) => !inStrikingDistance(other.slug)),
+  ];
 }
 
 /**
@@ -126,7 +134,7 @@ export function relatedPages(page: FoodPage): FoodPage[] {
  * deploy alone: a date that moves on every build is one Google learns to
  * ignore.
  */
-export const FOOD_PAGE_LAYOUT_REVISED = '2026-11-07';
+export const FOOD_PAGE_LAYOUT_REVISED = '2026-11-23';
 
 /**
  * The median of a capture's meal totals: the middle one, or the mean of the
@@ -143,18 +151,28 @@ export function medianMealKcal(capture: FoodPageCapture): number {
  * page's "similar calories" links. Same-group pages are already linked as
  * "more meals"; these reach across groups, so a small group (three salads)
  * is not linked only by its own two siblings.
+ *
+ * When none of the nearest three is in striking distance on Google but one
+ * of the next three is, it takes the third place: still close in calories,
+ * and it is the page an extra link helps most.
  */
 export function similarCaloriePages(page: FoodPage): FoodPage[] {
   const target = medianMealKcal(page.capture);
-  return pagesOf(page.locale)
+  const nearest = pagesOf(page.locale)
     .filter((other) => other.group !== page.group)
     .map((other) => ({
       other,
       gap: Math.abs(medianMealKcal(other.capture) - target),
     }))
     .sort((a, b) => a.gap - b.gap)
-    .slice(0, 3)
+    .slice(0, 6)
     .map(({ other }) => other);
+  const picks = nearest.slice(0, 3);
+  const striking = (other: FoodPage) => inStrikingDistance(other.slug);
+  const runnerUp = nearest.slice(3).find(striking);
+  return picks.some(striking) || !runnerUp
+    ? picks
+    : [picks[0], picks[1], runnerUp];
 }
 
 /** A group's heading on its locale's hub. */

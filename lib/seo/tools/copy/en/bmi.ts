@@ -4,7 +4,7 @@ import { SOURCES } from '../sources';
 export const bmiCopy: ToolCopy = {
   name: 'BMI calculator',
   blurb: 'BMI with both the WHO and the Asian cut-offs.',
-  metaTitle: 'BMI Calculator With WHO and Asian Cut-Offs',
+  metaTitle: 'Asian BMI Calculator (Asia-Pacific and WHO Cut-Offs)',
   description:
     'Calculate your BMI and see it against both the WHO bands and the Asia-Pacific bands (overweight from 23). Free, no sign-up.',
   title: 'BMI calculator',
