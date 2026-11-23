@@ -6,14 +6,13 @@
  * `GRACE_MS` past the pipeline, then aborts it and returns null — the meal is
  * then shown as computed. A read that fails the sanity gate is null too.
  */
-import { riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import type { GeminiClient, StreamOptions } from '@/lib/ai/provider/provider';
-import type { UserContext } from '@/lib/ai/types/user-context';
 import { safeError } from '@/lib/core/errors/safe-error';
 import {
   PLAIN_READ_MODEL,
   PLAIN_READ_SYSTEM_PROMPT,
   type PlainRead,
+  type PlainReadProfile,
   plainReadSchema,
   plainReadUserMessage,
 } from './prompt';
@@ -40,8 +39,7 @@ export function usableReadKcal(read: PlainRead): number | null {
 export function startPlainRead(args: {
   gemini: GeminiClient;
   mealText: string;
-  /** Where the person comes from, for the size of their bowl of rice. */
-  profile?: Pick<UserContext, 'countryOfOrigin' | 'countryOfResidence'>;
+  profile: PlainReadProfile;
   /** The request's signal: a client hang-up cancels the read at once. */
   signal: AbortSignal;
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
@@ -58,10 +56,7 @@ export function startPlainRead(args: {
         {
           schema: plainReadSchema,
           systemPrompt: PLAIN_READ_SYSTEM_PROMPT,
-          userMessage: plainReadUserMessage(
-            args.mealText,
-            riceBowlFor(args.profile ?? {}).mid
-          ),
+          userMessage: plainReadUserMessage(args.mealText, args.profile),
           model: PLAIN_READ_MODEL,
           abortSignal: controller.signal,
         },

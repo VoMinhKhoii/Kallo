@@ -19,6 +19,7 @@ function client(impl: GeminiClient['generateStructuredOutput']): GeminiClient {
 }
 
 const live = () => new AbortController().signal;
+const NO_COUNTRY = { countryOfOrigin: null, countryOfResidence: null };
 
 afterEach(() => {
   vi.useRealTimers();
@@ -50,6 +51,7 @@ describe('startPlainRead', () => {
       gemini: client(call),
       signal: live(),
       mealText: '1 tô phở bò',
+      profile: NO_COUNTRY,
     });
 
     await expect(r.settle()).resolves.toMatchObject({ totalKcal: 640 });
@@ -62,7 +64,7 @@ describe('startPlainRead', () => {
   it("tells the read the person's bowl of rice, by country", async () => {
     const call = vi.fn().mockResolvedValue(read(640));
     const ask = async (
-      profile?: Parameters<typeof startPlainRead>[0]['profile']
+      profile: Parameters<typeof startPlainRead>[0]['profile']
     ) => {
       await startPlainRead({
         gemini: client(call),
@@ -79,7 +81,7 @@ describe('startPlainRead', () => {
     expect(
       await ask({ countryOfOrigin: null, countryOfResidence: 'South Korea' })
     ).toContain('about 210 g');
-    expect(await ask()).toContain('about 150 g');
+    expect(await ask(NO_COUNTRY)).toContain('about 150 g');
   });
 
   it('leaves the bowl of rice out when the meal names no rice', async () => {
@@ -99,6 +101,7 @@ describe('startPlainRead', () => {
       gemini: client(call),
       signal: live(),
       mealText: 'ăn chung lẩu với 3 người',
+      profile: NO_COUNTRY,
     }).settle();
     expect(call.mock.calls[0][0].systemPrompt).toMatch(/their share/);
   });
@@ -116,6 +119,7 @@ describe('startPlainRead', () => {
       ),
       signal: live(),
       mealText: 'cơm tấm',
+      profile: NO_COUNTRY,
     });
 
     const settled = r.settle();
@@ -135,6 +139,7 @@ describe('startPlainRead', () => {
       ),
       signal: live(),
       mealText: 'xôi gà',
+      profile: NO_COUNTRY,
     });
 
     await expect(r.settle()).resolves.toBeNull();
@@ -153,6 +158,7 @@ describe('startPlainRead', () => {
       ),
       signal: request.signal,
       mealText: 'bún chả',
+      profile: NO_COUNTRY,
     });
     await Promise.resolve();
 
@@ -169,6 +175,7 @@ describe('startPlainRead', () => {
       gemini: client(call),
       signal: live(),
       mealText: 'bánh mì',
+      profile: NO_COUNTRY,
     });
 
     await expect(r.settle()).resolves.toBeNull();

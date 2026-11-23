@@ -7,11 +7,13 @@
  * (rounds 27–33): held near this read, far-off meals fell from ~14% to ~2–3%.
  */
 import { z } from 'zod';
+import { riceBowlFor } from '@/lib/ai/portion/data/rice-bowls';
 import { wrapUserMealTextAsData } from '@/lib/ai/prompts/build/decomposition-v2';
 import {
   USER_INPUT_CLOSE,
   USER_INPUT_OPEN,
 } from '@/lib/ai/prompts/text/decomposition-v2';
+import type { UserContext } from '@/lib/ai/types/user-context';
 import { mentionsRice } from './mentions-rice';
 
 export const PLAIN_READ_MODEL = 'claude-sonnet-5-5';
@@ -72,20 +74,25 @@ export const plainReadSchema = z.object({
 
 export type PlainRead = z.infer<typeof plainReadSchema>;
 
+/** Where the person comes from: it sizes their bowl of rice. */
+export type PlainReadProfile = Pick<
+  UserContext,
+  'countryOfOrigin' | 'countryOfResidence'
+>;
+
 /**
- * `riceBowlG` is the person's bowl of plain cooked rice where they come from
- * (`riceBowlFor`, the same hint the pipeline sizes rice with), said only when
- * the meal names rice. Without it the read sizes a Vietnamese chén at
- * 160–200 g against the 120 g the pipeline uses, and the hold pulls rice
- * meals up to that.
+ * When the meal names rice, the message says the person's bowl of plain
+ * cooked rice where they come from (`riceBowlFor`, the same hint the pipeline
+ * sizes rice with). Without it the read sizes a Vietnamese chén at 160–200 g
+ * against the 120 g the pipeline uses, and the hold pulls rice meals up to
+ * that.
  */
 export function plainReadUserMessage(
   mealText: string,
-  riceBowlG?: number
+  profile: PlainReadProfile
 ): string {
-  const rice =
-    riceBowlG && mentionsRice(mealText)
-      ? `\n\nMy usual bowl of plain cooked rice is about ${riceBowlG} g.`
-      : '';
+  const rice = mentionsRice(mealText)
+    ? `\n\nMy usual bowl of plain cooked rice is about ${riceBowlFor(profile).mid} g.`
+    : '';
   return `This is what I ate:\n\n${wrapUserMealTextAsData(mealText)}${rice}\n\nHow much did I eat? List each food with its grams and calories, then the total calories.`;
 }
