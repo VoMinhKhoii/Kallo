@@ -248,8 +248,8 @@ void main() {
   testWidgets('a container dish names the bowl its grams claim', (
     tester,
   ) async {
-    // A 700 ml medium bowl of soup resolves to ~665 g at the tier-2 anchor.
-    final items = _staged(_bowl, 665);
+    // A 700 ml medium bowl of soup resolves to ~515 g at the tier-2 anchor.
+    final items = _staged(_bowl, 515);
     await _open(tester, draftFromStaged(items, items));
     expect(find.text('Medium bowl'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('medium bowl')), findsWidgets);
