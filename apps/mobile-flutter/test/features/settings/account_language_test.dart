@@ -268,38 +268,40 @@ void main() {
       expect(appLanguage(), 'en');
     });
 
-    Future<void> pick(String code) =>
-        ProviderScope.containerOf(app).read(languagePickerProvider).pick(code);
+    /// A language row's pick: stored first, the app switched after.
+    Future<void> pick(String code) => ProviderScope.containerOf(app)
+        .read(languagePickerProvider)
+        .save(
+          code,
+          then: () => EasyLocalization.of(app)!.setLocale(Locale(code)),
+        );
 
-    testWidgets('a pick still saving is not undone by a refetch', (
+    testWidgets('a pick switches the app once the account holds it', (
       tester,
     ) async {
       repaired();
       server.account = 'vi';
       await mount(tester, signedIn: testSession());
 
-      // The app's order: the pick is registered, then the app switches.
       server.hold = Completer<void>();
       unawaited(pick('en'));
-      await setAppLanguage(tester, 'en');
-      await refetch(tester); // still says vi
-      expect(appLanguage(), 'en');
+      await settle(tester);
+      await refetch(tester); // the account still says vi
+      expect(appLanguage(), 'vi', reason: 'not switched before it is stored');
 
       server.hold!.complete();
-      await refetch(tester);
+      await settle(tester);
       expect(server.account, 'en');
       expect(appLanguage(), 'en');
     });
 
-    testWidgets('a pick the account refuses puts the app back', (tester) async {
+    testWidgets('a pick the account refuses changes nothing', (tester) async {
       repaired();
       server.account = 'vi';
       await mount(tester, signedIn: testSession());
 
       server.fail = true;
-      final saving = pick('en');
-      await setAppLanguage(tester, 'en');
-      await expectLater(saving, throwsStateError);
+      await expectLater(pick('en'), throwsStateError);
       await settle(tester);
 
       expect(server.account, 'vi');

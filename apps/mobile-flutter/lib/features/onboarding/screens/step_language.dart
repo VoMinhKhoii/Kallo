@@ -10,13 +10,16 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
 import '../logic/onboarding_step_spec.dart';
+import '../../../services/auth/session_provider.dart';
 import '../../settings/logic/language_picker.dart';
 
 /// Screen 1 — "Choose your language". Picking a row records `preferredLocale`
 /// for the server AND live-switches the app with `context.setLocale`, so the
 /// rest of the wizard is already in the chosen language by the next frame.
-/// Signed in, the pick is stored on the account at once ([LanguagePicker]).
-class StepLanguage extends ConsumerWidget {
+/// Signed in, the account is the source of truth: the pick is stored there
+/// first and the app switches once it lands ([LanguagePicker]); a row shows
+/// the language the app speaks.
+class StepLanguage extends ConsumerStatefulWidget {
   const StepLanguage({
     super.key,
     required this.answers,
@@ -46,48 +49,65 @@ class StepLanguage extends ConsumerWidget {
     (code: 'en', key: 'onboarding.language.english'),
   ];
 
+  @override
+  ConsumerState<StepLanguage> createState() => _StepLanguageState();
+}
+
+class _StepLanguageState extends ConsumerState<StepLanguage> {
+  /// A pick is being stored: further taps wait for it.
+  bool _saving = false;
+
   /// AWAIT the load before rebuilding: [EasyLocalization.setLocale] has to
   /// read the new locale's JSON before `tr()` answers in it, so an eager
   /// rebuild left the wizard's title and CTA (passed down as plain strings)
   /// in the old language.
-  Future<void> _pick(BuildContext context, WidgetRef ref, String code) async {
-    if (answers.preferredLocale == code) return;
-    answers.preferredLocale = code;
-    // Registered before the switch, so the account sync never sees the app
-    // in a language nobody is saving.
-    final saving = ref.read(languagePickerProvider).pick(code);
-    await context.setLocale(Locale(code));
-    onChanged();
-    unawaited(
-      saving.catchError((Object _) {
-        if (!context.mounted) return;
-        showTopToast(
-          context,
-          tr('settings.profilePanel.saveError'),
-          variant: TopToastVariant.error,
+  Future<void> _pick(String code) async {
+    if (_saving || code == context.locale.languageCode) return;
+    Future<void> show() async {
+      if (!mounted) return;
+      widget.answers.preferredLocale = code;
+      await context.setLocale(Locale(code));
+      widget.onChanged();
+    }
+
+    if (ref.read(signedInUserIdProvider) == null) return show();
+    setState(() => _saving = true);
+    try {
+      await ref.read(languagePickerProvider).save(code, then: show);
+    } catch (_) {
+      if (mounted) {
+        unawaited(
+          showTopToast(
+            context,
+            tr('settings.profilePanel.saveError'),
+            variant: TopToastVariant.error,
+          ),
         );
-      }),
-    );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final option in options) ...[
-          if (option != options.first) const SizedBox(height: KalloSpacing.sp3),
+        for (final option in StepLanguage.options) ...[
+          if (option != StepLanguage.options.first)
+            const SizedBox(height: KalloSpacing.sp3),
           OptionRow(
             label: tr(option.key),
-            selected: answers.preferredLocale == option.code,
+            selected: context.locale.languageCode == option.code,
             note:
-                localeFromDevice && option.code == deviceLanguage
+                widget.localeFromDevice && option.code == widget.deviceLanguage
                     ? tr('onboarding.fromDevice')
                     : null,
-            onTap: () => _pick(context, ref, option.code),
+            onTap: () => _pick(option.code),
           ),
         ],
-        if (showSettingsNote) ...[
+        if (widget.showSettingsNote) ...[
           const SizedBox(height: KalloSpacing.sp3),
           Text(
             tr('onboarding.language.meta'),

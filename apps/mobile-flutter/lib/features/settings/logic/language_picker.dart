@@ -1,54 +1,41 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../services/auth/session_provider.dart';
 import '../../onboarding/providers/onboarding_providers.dart';
 
-/// The one place a language the person picks reaches the account, which
-/// holds the language push text is written in and the app follows.
+/// Language saves on their way to the account. `AccountLanguageSync` stands
+/// aside while any is out and looks again once the count drops: the account
+/// is mid-change, and what it said before is about to be stale.
+final languageSavesProvider = StateProvider<int>((ref) => 0);
+
+/// The one way a language reaches the account, which holds the language push
+/// text is written in and the app follows.
 ///
-/// Every language row (onboarding screen 1, Settings → Region) switches the
-/// app first and then calls [pick]. Signed in, the pick is saved at once,
-/// whatever page it was made on, and a later pick supersedes one not yet
-/// sent. Until the account holds it, the pick is [pending], and
-/// `AccountLanguageSync` leaves the app alone instead of switching it back to
-/// the language the account still has. Signed out, the onboarding draft
-/// carries the language instead.
+/// Stored first, shown after: [save] posts the language, waits for the
+/// profile to carry it, and only then runs `then` (switching the app). A
+/// failed save changes nothing on the phone, so the app never speaks a
+/// language the account does not hold.
 class LanguagePicker {
   LanguagePicker(this._ref);
 
   final Ref _ref;
-  String? _pending;
-  Future<void> _tail = Future.value();
 
-  /// A picked language the account does not hold yet.
-  String? get pending => _pending;
-
-  /// Store [code] on the account. Registers the pick at once, so call it
-  /// before switching the app. Throws when the save fails; the pick is then
-  /// dropped, and the app goes back to the account's language.
-  Future<void> pick(String code) {
-    if (_ref.read(signedInUserIdProvider) == null) return Future.value();
-    _pending = code;
-    final run = _tail.then((_) async {
-      if (_pending != code) return;
+  /// Store [code] on the account, then run [then]. Throws when the save
+  /// fails; [then] has not run.
+  Future<void> save(String code, {Future<void> Function()? then}) async {
+    final saves = _ref.read(languageSavesProvider.notifier);
+    saves.state++;
+    try {
+      await _ref
+          .read(saveScreenControllerProvider)
+          .save(step: 1, data: {'preferredLocale': code}, advance: false);
       try {
-        await _ref
-            .read(saveScreenControllerProvider)
-            .save(step: 1, data: {'preferredLocale': code}, advance: false);
-      } catch (_) {
-        // The save's own profile refetch lands after this, finds nothing
-        // pending, and the app returns to the account's language.
-        if (_pending == code) _pending = null;
-        rethrow;
-      }
-    });
-    _tail = run.catchError((Object _) {});
-    return run;
-  }
-
-  /// The account now holds [account]; a pick it matches is done.
-  void settle(String account) {
-    if (_pending == account) _pending = null;
+        // The refetch the save started; offline, the sync waits for the next.
+        await _ref.read(profileProvider.future);
+      } catch (_) {}
+      await then?.call();
+    } finally {
+      saves.state--;
+    }
   }
 }
 

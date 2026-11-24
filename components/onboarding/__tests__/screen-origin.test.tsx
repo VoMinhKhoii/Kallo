@@ -1,11 +1,16 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ScreenOrigin } from '../screen-origin';
 
-const { switchLocaleMock, writeDraftMock } = vi.hoisted(() => ({
+const { switchLocaleMock, writeDraftMock, saveMock } = vi.hoisted(() => ({
   switchLocaleMock: vi.fn(),
   writeDraftMock: vi.fn(),
+  saveMock: vi.fn(),
+}));
+
+vi.mock('@/lib/domain/onboarding/actions', () => ({
+  saveOnboardingScreen: saveMock,
 }));
 
 vi.mock('@/hooks/profile/use-locale-switch', () => ({
@@ -20,9 +25,12 @@ describe('ScreenOrigin', () => {
   beforeEach(() => {
     switchLocaleMock.mockReset();
     writeDraftMock.mockReset();
+    saveMock.mockReset().mockResolvedValue({ success: true });
   });
 
-  it('writes the current step 1 draft before switching locale', async () => {
+  // The account holds the language push text is written in and the phone app
+  // follows: the pick is stored there before the page switches.
+  it('writes the draft, stores the language, then switches locale', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
 
@@ -44,10 +52,18 @@ describe('ScreenOrigin', () => {
       countryOfResidence: 'Australia',
       preferredLocale: 'vi',
     });
+    await waitFor(() => expect(switchLocaleMock).toHaveBeenCalledWith('vi'));
+    expect(saveMock).toHaveBeenCalledWith(
+      1,
+      { preferredLocale: 'vi' },
+      { advance: false }
+    );
     expect(writeDraftMock.mock.invocationCallOrder[0]).toBeLessThan(
+      saveMock.mock.invocationCallOrder[0]
+    );
+    expect(saveMock.mock.invocationCallOrder[0]).toBeLessThan(
       switchLocaleMock.mock.invocationCallOrder[0]
     );
-    expect(switchLocaleMock).toHaveBeenCalledWith('vi');
     expect(onChange).toHaveBeenLastCalledWith({
       countryOfOrigin: 'Vietnam',
       countryOfResidence: 'Australia',

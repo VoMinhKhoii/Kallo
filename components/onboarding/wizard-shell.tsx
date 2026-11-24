@@ -164,10 +164,14 @@ export function WizardShell({
     if (data) advance(data);
   };
 
-  // Skipping the countries keeps the language the page is in: the account
-  // holds the language push text is written in and the phone app follows.
+  // Skipping the countries keeps the language picked above them (or the
+  // page's): the account holds the language push text is written in.
   const handleSkip = () =>
-    advance(currentStep === 1 ? { preferredLocale: activeLocale } : {});
+    advance(
+      currentStep === 1
+        ? { preferredLocale: screenData[1]?.preferredLocale ?? activeLocale }
+        : {}
+    );
 
   const handleBack = () => {
     setDirection(-1);

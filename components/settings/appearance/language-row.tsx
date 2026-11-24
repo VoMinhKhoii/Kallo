@@ -1,12 +1,10 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import { CustomSelect } from '@/components/settings/chrome/custom-select';
 import { SettingsRow } from '@/components/settings/chrome/group';
-import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
+import { useAccountLocaleSwitch } from '@/hooks/profile/use-account-locale-switch';
 import type { Locale } from '@/i18n/config';
-import { saveOnboardingScreen } from '@/lib/domain/onboarding/actions';
 
 /**
  * Language — the only post-onboarding way to change app language on the web.
@@ -17,7 +15,7 @@ import { saveOnboardingScreen } from '@/lib/domain/onboarding/actions';
 export function LanguageRow() {
   const t = useTranslations('settings');
   const locale = useLocale();
-  const switchLocale = useLocaleSwitch();
+  const switchLocale = useAccountLocaleSwitch();
 
   return (
     <SettingsRow label={t('language')}>
@@ -28,22 +26,7 @@ export function LanguageRow() {
             { value: 'vi', label: 'Tiếng Việt' },
           ]}
           value={locale}
-          onChange={async (next) => {
-            if (next === locale) return;
-            // Stored first, then shown: switching navigates, and a page in a
-            // language the account does not hold would drift from the app.
-            try {
-              await saveOnboardingScreen(
-                1,
-                { preferredLocale: next },
-                { advance: false }
-              );
-            } catch {
-              toast.error(t('profilePanel.saveError'));
-              return;
-            }
-            switchLocale(next as Locale);
-          }}
+          onChange={(next) => switchLocale(next as Locale)}
         />
       </div>
     </SettingsRow>

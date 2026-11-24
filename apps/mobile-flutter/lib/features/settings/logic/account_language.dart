@@ -61,10 +61,9 @@ const Duration kAccountLanguageRefresh = Duration(minutes: 5);
 /// re-read on a return to the foreground, at most every
 /// [kAccountLanguageRefresh]).
 ///
-/// Stands aside while a pick is on its way to the account
-/// ([LanguagePicker.pending]), so a refetch still carrying the old language
-/// never undoes it, and while a signed-out onboarding draft is still to be
-/// posted: its language reaches the account first.
+/// Stands aside while a language save is on its way to the account
+/// ([languageSavesProvider]), and while a signed-out onboarding draft is
+/// still to be posted: its language reaches the account first.
 class AccountLanguageSync extends ConsumerStatefulWidget {
   const AccountLanguageSync({required this.child, super.key});
 
@@ -114,10 +113,12 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
       if (next.hasValue && next.value == null) {
         _userId = null;
         _repairAllowed = false;
+        _repairFailed = false;
       }
       unawaited(_sync());
     });
     ref.listenManual(profileProvider, (_, _) => unawaited(_sync()));
+    ref.listenManual(languageSavesProvider, (_, _) => unawaited(_sync()));
     ref.listenManual(onboardingDraftProvider, (_, _) => unawaited(_sync()));
   }
 
@@ -167,10 +168,7 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
     final account = supportedLocaleOrNull(profile.valueOrNull?.preferredLocale);
     if (app == null || setLocale == null) return;
     if (profile.isLoading || profile.hasError || account == null) return;
-    // A pick on its way to the account wins until it lands or fails (the
-    // picker then refetches the account, and this looks again).
-    final picker = ref.read(languagePickerProvider)..settle(account);
-    if (picker.pending != null || !_draftPosted() || _repairFailed) return;
+    if (!_quiet() || _repairFailed) return;
     if (account == app && _repairDone) return;
 
     _busy = true;
@@ -185,7 +183,7 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
       // answered: act only on the state this pass read.
       final now = ref.read(sessionProvider).valueOrNull?.user.id;
       if (!mounted || now != userId) return;
-      if (picker.pending != null || !_draftPosted()) return;
+      if (!_quiet()) return;
       final step = decideAccountLanguage(
         account: account,
         app: app,
@@ -195,7 +193,7 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
       switch (step) {
         case AccountLanguageStep.repair:
           _repairFailed = true; // cleared once the account holds it
-          await picker.pick(app);
+          await ref.read(languagePickerProvider).save(app);
           _repairFailed = false;
         case AccountLanguageStep.adopt:
           // The person changed the language while this ran: their pick is
@@ -219,11 +217,13 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
     }
   }
 
-  /// No signed-out onboarding draft is waiting: its language reaches the
-  /// account first.
-  bool _draftPosted() {
+  /// Nothing is about to change the account: no language save is out, and
+  /// no signed-out onboarding draft is waiting (its language lands first).
+  bool _quiet() {
     final draft = ref.read(onboardingDraftProvider);
-    return !draft.isLoading && (draft.valueOrNull?.isEmpty ?? true);
+    return ref.read(languageSavesProvider) == 0 &&
+        !draft.isLoading &&
+        (draft.valueOrNull?.isEmpty ?? true);
   }
 
   @override
