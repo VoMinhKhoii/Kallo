@@ -65,6 +65,12 @@ void main() {
 
       expect(push.pickedLanguage?.call(), 'vi');
 
+      // Switched in Settings this session: the live language, not the one
+      // saved at launch.
+      await appContext.setLocale(const Locale('en'));
+      await tester.pumpAndSettle();
+      expect(push.pickedLanguage?.call(), 'en');
+
       // Nothing saved: the app runs the English default, which is no pick.
       await appContext.deleteSaveLocale();
       expect(push.pickedLanguage?.call(), isNull);

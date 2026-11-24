@@ -240,6 +240,15 @@ class PushService {
     }
   }
 
+  /// Like the zone: a failed read sends no language, never no post.
+  String? _pickedLanguage() {
+    try {
+      return pickedLanguage?.call();
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Registration is refused when it *starts*, not when it is queued — a POST
   /// stuck behind a slow one must not land for an account that signed out
   /// while it waited.
@@ -247,7 +256,7 @@ class PushService {
     if (!_active) return;
     try {
       final timeZone = await _timeZone();
-      final language = pickedLanguage?.call();
+      final language = _pickedLanguage();
       await _api.post<dynamic>(kPushTokensPath, {
         'token': token,
         'platform': 'ios',

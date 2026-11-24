@@ -85,6 +85,9 @@ class _PushRegistrationListenerState
   /// Vietnamese account English the moment it signs in on a fresh install.
   /// A pick made since launch is saved to the account by the screen that
   /// made it, and reported from the next launch on.
+  ///
+  /// Reading it registers a dependency, so this listener rebuilds on a
+  /// language change; [_sync] ignores the repeat.
   String? _pickedLanguage() {
     if (!mounted) return null;
     final l10n = EasyLocalization.of(context);

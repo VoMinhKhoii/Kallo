@@ -113,22 +113,33 @@ describe.skipIf(!url)('push token retention in Postgres', () => {
       );
     const profile = async () =>
       (
-        await sql`SELECT time_zone, preferred_locale FROM user_profiles WHERE user_id = ${USER}`
+        await sql`SELECT time_zone, preferred_locale, xmin::text AS version
+          FROM user_profiles WHERE user_id = ${USER}`
       )[0];
 
     // Same zone, new language: the language still lands.
     expect(
       (await post({ timeZone: 'Asia/Ho_Chi_Minh', locale: 'vi' })).status
     ).toBe(200);
-    expect(await profile()).toEqual({
+    const written = await profile();
+    expect(written).toMatchObject({
       time_zone: 'Asia/Ho_Chi_Minh',
       preferred_locale: 'vi',
     });
+    // The same check-in again writes nothing: the row version stays put.
+    await post({ timeZone: 'Asia/Ho_Chi_Minh', locale: 'vi' });
+    expect((await profile()).version).toBe(written.version);
+    // A language without a zone lands on its own.
+    expect((await post({ locale: 'en' })).status).toBe(200);
+    expect(await profile()).toMatchObject({
+      time_zone: 'Asia/Ho_Chi_Minh',
+      preferred_locale: 'en',
+    });
     // No language sent (nothing picked on the phone): the stored one stays.
     expect((await post({ timeZone: 'Europe/Paris' })).status).toBe(200);
-    expect(await profile()).toEqual({
+    expect(await profile()).toMatchObject({
       time_zone: 'Europe/Paris',
-      preferred_locale: 'vi',
+      preferred_locale: 'en',
     });
   });
 
