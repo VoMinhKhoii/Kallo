@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { postJson, request } from '@/lib/api/client-fetch';
 import { ApiError } from '@/lib/core/errors/client';
+
+const ensureFreshBrowserSession = vi.fn(
+  async (_signal?: AbortSignal | null) => undefined
+);
+vi.mock('@/lib/infra/supabase/browser-session', () => ({
+  ensureFreshBrowserSession: (signal?: AbortSignal | null) =>
+    ensureFreshBrowserSession(signal),
+}));
+
+const { postJson, request } = await import('@/lib/api/client-fetch');
 
 function jsonResponse(body: unknown, ok = true) {
   return { ok, json: () => Promise.resolve(body) } as Response;
@@ -17,6 +26,7 @@ function unparseableResponse() {
 const fetchMock = vi.fn();
 
 beforeEach(() => {
+  ensureFreshBrowserSession.mockClear();
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -83,6 +93,28 @@ describe('request', () => {
       status: 500,
       retryable: false,
     });
+  });
+
+  it('awaits ensureFreshBrowserSession before /api/v1/ requests and skips non-/api/v1/ URLs', async () => {
+    const order: string[] = [];
+    ensureFreshBrowserSession.mockImplementationOnce(async () => {
+      order.push('refresh');
+    });
+    fetchMock.mockImplementationOnce(async () => {
+      order.push('fetch');
+      return jsonResponse({ ok: true });
+    });
+
+    const controller = new AbortController();
+    await request('/api/v1/logging/day', { signal: controller.signal });
+
+    expect(order).toEqual(['refresh', 'fetch']);
+    expect(ensureFreshBrowserSession).toHaveBeenCalledWith(controller.signal);
+
+    ensureFreshBrowserSession.mockClear();
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+    await request('/api/health');
+    expect(ensureFreshBrowserSession).not.toHaveBeenCalled();
   });
 });
 

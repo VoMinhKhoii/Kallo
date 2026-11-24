@@ -1,6 +1,11 @@
+import { createServerClient } from '@supabase/ssr';
 import type { NextRequest } from 'next/server';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Errors } from '@/lib/core/errors/catalog';
+import {
+  resetSharedRefreshesForTests,
+  sharedRefreshFetch,
+} from '@/lib/infra/supabase/shared-refresh';
 
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
@@ -58,6 +63,7 @@ function upstreamResponse(
 }
 
 beforeEach(() => {
+  resetSharedRefreshesForTests();
   fetchMock.mockReset();
   consoleError.mockClear();
   assertRateLimit.mockReset();
@@ -537,5 +543,85 @@ describe('supabase-proxy rate limiting', () => {
     const sentHeaders = fetchMock.mock.calls[0][1].headers as Headers;
     expect(sentHeaders.get('x-forwarded-for')).toBeNull();
     expect(sentHeaders.get('sb-forwarded-for')).toBeNull();
+  });
+
+  it('shares one upstream GoTrue refresh between the browser proxy and a concurrent server client', async () => {
+    const b64 = (v: unknown) =>
+      Buffer.from(JSON.stringify(v)).toString('base64url');
+    const expired = Math.floor(Date.now() / 1000) - 60;
+    const oldJwt = `${b64({ alg: 'ES256', kid: 'k' })}.${b64({ sub: 'u1', exp: expired, session_id: 's1' })}.c2ln`;
+    const newJwt = `${b64({ alg: 'ES256', kid: 'k' })}.${b64({ sub: 'u1', exp: expired + 7200, session_id: 's1' })}.c2ln`;
+    const cookie = `base64-${Buffer.from(
+      JSON.stringify({
+        access_token: oldJwt,
+        refresh_token: 'rt-both',
+        expires_at: expired,
+        expires_in: -60,
+        token_type: 'bearer',
+        user: { id: 'u1' },
+      })
+    ).toString('base64url')}`;
+
+    let releaseUpstream!: (res: Response) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          releaseUpstream = resolve;
+        })
+    );
+
+    const serverClient = createServerClient(
+      'https://project.supabase.co',
+      'sb_publishable_key',
+      {
+        global: { fetch: sharedRefreshFetch },
+        cookies: {
+          getAll: () => [{ name: 'sb-project-auth-token', value: cookie }],
+          setAll: () => {},
+        },
+      }
+    );
+
+    const { req, params } = makeRequest(
+      'auth/v1/token?grant_type=refresh_token',
+      {
+        method: 'POST',
+        headers: {
+          ...FROM_IP,
+          apikey: 'sb_publishable_key',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: 'rt-both' }),
+      }
+    );
+
+    const proxyPromise = POST(req, params);
+    const serverPromise = serverClient.auth.getSession();
+
+    // Yield a microtask so both callers register against the shared refresh.
+    await new Promise((r) => setTimeout(r, 10));
+    releaseUpstream(
+      upstreamResponse(
+        JSON.stringify({
+          access_token: newJwt,
+          refresh_token: 'rt-rotated',
+          expires_in: 3600,
+          expires_at: expired + 7200,
+          token_type: 'bearer',
+          user: { id: 'u1' },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    );
+
+    const [proxyRes, serverRes] = await Promise.all([
+      proxyPromise,
+      serverPromise,
+    ]);
+
+    expect(proxyRes.status).toBe(200);
+    expect((await proxyRes.json()).refresh_token).toBe('rt-rotated');
+    expect(serverRes.data.session?.refresh_token).toBe('rt-rotated');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

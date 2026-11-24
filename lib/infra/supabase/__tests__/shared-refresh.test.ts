@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   REUSE_MS,
+  resetSharedRefreshesForTests,
   sharedRefreshFetch,
 } from '@/lib/infra/supabase/shared-refresh';
 
@@ -18,9 +19,9 @@ function refresh(token: string) {
 const fetchMock = vi.fn();
 
 beforeEach(() => {
+  resetSharedRefreshesForTests();
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
-  // Each test uses its own tokens; the shared map is process-wide.
 });
 
 afterEach(() => {
@@ -148,5 +149,140 @@ describe('sharedRefreshFetch', () => {
       String(url).includes('grant_type=refresh_token')
     );
     expect(refreshes).toHaveLength(1);
+  });
+
+  it('shares one refresh between a Uint8Array proxy body and a string server body', async () => {
+    let answer!: (response: Response) => void;
+    fetchMock.mockReturnValue(
+      new Promise<Response>((resolve) => {
+        answer = resolve;
+      })
+    );
+
+    const proxyBody = new TextEncoder().encode('{ "refresh_token": "rt-u8" }');
+    const serverBody = JSON.stringify({ refresh_token: 'rt-u8' });
+
+    const [proxyRes, serverRes] = [
+      sharedRefreshFetch(new URL(TOKEN_URL), {
+        method: 'POST',
+        headers: new Headers({ apikey: 'pk-1' }),
+        body: proxyBody,
+      }),
+      sharedRefreshFetch(TOKEN_URL, {
+        method: 'POST',
+        headers: { ApiKey: 'pk-1' },
+        body: serverBody,
+      }),
+    ];
+
+    answer(Response.json({ access_token: 'shared-jwt' }, { status: 200 }));
+    const bodies = await Promise.all(
+      (await Promise.all([proxyRes, serverRes])).map((r) => r.json())
+    );
+
+    expect(bodies).toEqual([
+      { access_token: 'shared-jwt' },
+      { access_token: 'shared-jwt' },
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps requests with different apikey headers apart', async () => {
+    fetchMock.mockImplementation(async () => Response.json({ ok: true }));
+
+    await Promise.all([
+      sharedRefreshFetch(TOKEN_URL, {
+        method: 'POST',
+        headers: { apikey: 'pk-valid' },
+        body: JSON.stringify({ refresh_token: 'rt-key' }),
+      }),
+      sharedRefreshFetch(TOKEN_URL, {
+        method: 'POST',
+        headers: { apikey: 'pk-other' },
+        body: JSON.stringify({ refresh_token: 'rt-key' }),
+      }),
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not coalesce non-/auth/v1/token paths with real refreshes', async () => {
+    fetchMock
+      .mockResolvedValueOnce(Response.json({ access_token: 'real' }))
+      .mockResolvedValueOnce(
+        Response.json({ error: 'not found' }, { status: 404 })
+      );
+
+    const real = await sharedRefreshFetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { apikey: 'pk-1' },
+      body: JSON.stringify({ refresh_token: 'rt-path' }),
+    });
+    const fake = await sharedRefreshFetch(
+      'https://ref.supabase.co/auth/v1/foo/token?grant_type=refresh_token',
+      {
+        method: 'POST',
+        headers: { apikey: 'pk-1' },
+        body: JSON.stringify({ refresh_token: 'rt-path' }),
+      }
+    );
+
+    expect(real.status).toBe(200);
+    expect(fake.status).toBe(404);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('aborts only the aborted caller without cancelling sibling waiters', async () => {
+    let answer!: (response: Response) => void;
+    fetchMock.mockReturnValue(
+      new Promise<Response>((resolve) => {
+        answer = resolve;
+      })
+    );
+
+    const leaderController = new AbortController();
+    const leader = sharedRefreshFetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { apikey: 'pk-1' },
+      body: JSON.stringify({ refresh_token: 'rt-sig' }),
+      signal: leaderController.signal,
+    });
+    const sibling = sharedRefreshFetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { apikey: 'pk-1' },
+      body: JSON.stringify({ refresh_token: 'rt-sig' }),
+    });
+
+    leaderController.abort(
+      new DOMException('caller timed out', 'TimeoutError')
+    );
+    await expect(leader).rejects.toMatchObject({ name: 'TimeoutError' });
+
+    answer(Response.json({ access_token: 'still-ok' }, { status: 200 }));
+    await expect((await sibling).json()).resolves.toEqual({
+      access_token: 'still-ok',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('handles null-body statuses and strips decompressed framing headers', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const res204 = await refresh('rt-204');
+    expect(res204.status).toBe(204);
+
+    fetchMock.mockResolvedValueOnce(
+      new Response('{"access_token":"ok"}', {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+          'content-encoding': 'gzip',
+          'content-length': '999',
+        },
+      })
+    );
+    const res200 = await refresh('rt-hdrs');
+    expect(res200.headers.get('content-encoding')).toBeNull();
+    expect(res200.headers.get('content-length')).toBeNull();
+    expect(await res200.json()).toEqual({ access_token: 'ok' });
   });
 });
