@@ -1,13 +1,13 @@
-/** Words in a meal's text that link to another page. */
-export interface WordLink {
+/** Words in a text that link somewhere: `to` is whatever names the target. */
+export interface WordLink<T> {
   words: string;
-  href: string;
+  to: T;
 }
 
-/** A run of text, linked when it has an `href`. */
-export interface TextPart {
+/** A run of text, linked when it has a `to`. */
+export interface TextPart<T> {
   text: string;
-  href?: string;
+  to?: T;
 }
 
 /**
@@ -30,20 +30,20 @@ function wholeWordsAt(text: string, words: string): number {
  * its words stand as whole words. A link whose words are missing, or overlap
  * an earlier link, is left out, so the text always reads the same.
  */
-export function linkWords(
+export function linkWords<T>(
   text: string,
-  links: readonly WordLink[]
-): TextPart[] {
+  links: readonly WordLink<T>[]
+): TextPart<T>[] {
   const found = links
     .map((link) => ({ ...link, at: wholeWordsAt(text, link.words) }))
     .filter((link) => link.at >= 0)
     .sort((a, b) => a.at - b.at);
-  const parts: TextPart[] = [];
+  const parts: TextPart<T>[] = [];
   let from = 0;
-  for (const { words, href, at } of found) {
+  for (const { words, to, at } of found) {
     if (at < from) continue;
     if (at > from) parts.push({ text: text.slice(from, at) });
-    parts.push({ text: words, href });
+    parts.push({ text: words, to });
     from = at + words.length;
   }
   if (from < text.length) parts.push({ text: text.slice(from) });

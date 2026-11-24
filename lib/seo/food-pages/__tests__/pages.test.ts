@@ -6,7 +6,6 @@ import {
   FOOD_PAGES,
   kcalSpan,
   mealKcal,
-  mealLinks,
   medianMealKcal,
   pagesByGroup,
   pagesOf,
@@ -16,7 +15,6 @@ import {
 } from '../pages';
 import {
   FOOD_PAGE_LOCALES,
-  FOOD_PAGE_PREFIX,
   FOOD_SLUGS,
   foodHubPath,
   foodLocaleOf,
@@ -61,15 +59,12 @@ describe.each(ALL_SLUGS)('food page %s', (slug) => {
         expect(link.to).not.toBe(slug);
       }
       // Every link renders: its words stand whole in the text and overlap no
-      // other link. Locale-relative, as the docs link adds the locale.
-      // Order is linkWords' own test; here both sides are sorted.
-      const rendered = linkWords(meal.text, mealLinks(meal))
-        .filter((part) => part.href)
-        .map((part) => `${part.text} → ${part.href}`);
+      // other link. Order is linkWords' own test; here both sides are sorted.
+      const rendered = linkWords(meal.text, meal.links ?? [])
+        .filter((part) => part.to)
+        .map((part) => `${part.text} → ${part.to}`);
       expect(rendered.sort(), meal.key).toEqual(
-        (meal.links ?? [])
-          .map((link) => `${link.words} → ${FOOD_PAGE_PREFIX}/${link.to}`)
-          .sort()
+        (meal.links ?? []).map((link) => `${link.words} → ${link.to}`).sort()
       );
     }
   });

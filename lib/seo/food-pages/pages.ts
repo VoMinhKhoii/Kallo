@@ -1,11 +1,9 @@
 import { CAPTURES } from './capture-registry';
 import { FOODS } from './food-registry';
-import type { WordLink } from './linked-words';
 import { FOOD_PAGE_CHROME } from './page-copy';
 import { inStrikingDistance } from './search-boost';
 import {
   FOOD_PAGE_LOCALES,
-  FOOD_PAGE_PREFIX,
   FOOD_SLUGS,
   type FoodLocale,
   type FoodSlug,
@@ -175,18 +173,6 @@ export function similarCaloriePages(page: FoodPage): FoodPage[] {
   return picks.some(striking) || !runnerUp
     ? picks
     : [picks[0], picks[1], runnerUp];
-}
-
-/**
- * The links a meal's card puts on the dishes its text names. Locale-relative,
- * like the docs links they render through: a meal links only pages in its
- * own locale.
- */
-export function mealLinks(meal: FoodPageMeal): WordLink[] {
-  return (meal.links ?? []).map(({ words, to }) => ({
-    words,
-    href: `${FOOD_PAGE_PREFIX}/${to}`,
-  }));
 }
 
 /** A group's heading on its locale's hub. */

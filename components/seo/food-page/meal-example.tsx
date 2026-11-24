@@ -6,8 +6,9 @@ import {
 import type { DishRowsMeal } from '@/components/logging/feed/persisted/meal-details';
 import { PersistedMealBody } from '@/components/logging/feed/persisted/persisted-meal-body';
 import { UserMessageBubble } from '@/components/logging/feed/turn/user-message-bubble';
-import { linkWords, type WordLink } from '@/lib/seo/food-pages/linked-words';
-import type { FoodPageVariant } from '@/lib/seo/food-pages/types';
+import { linkWords } from '@/lib/seo/food-pages/linked-words';
+import { FOOD_PAGE_PREFIX } from '@/lib/seo/food-pages/slugs';
+import type { FoodPageMeal, FoodPageVariant } from '@/lib/seo/food-pages/types';
 
 /** The meal card's dish rows, from a captured meal. */
 function dishRowsOf(variant: FoodPageVariant): DishRowsMeal {
@@ -47,7 +48,7 @@ export function MealExample({
   variant,
 }: {
   label: string;
-  links?: readonly WordLink[];
+  links?: FoodPageMeal['links'];
   variant: FoodPageVariant;
 }) {
   return (
@@ -59,9 +60,11 @@ export function MealExample({
       {/* The saved meal card's shell (precise-meal-card.tsx), as in the feed. */}
       <div className="rounded-2xl border border-kallo-border/60 bg-card p-4 shadow-sm sm:p-5">
         <p className="font-sans-display text-kallo-text text-sm leading-relaxed">
+          {/* Locale-relative: DocsLink adds the locale, and a meal links
+              only pages in its own locale. */}
           {linkWords(variant.text, links).map((part, i) =>
-            part.href ? (
-              <DocsLink href={part.href} key={i}>
+            part.to ? (
+              <DocsLink href={`${FOOD_PAGE_PREFIX}/${part.to}`} key={i}>
                 {part.text}
               </DocsLink>
             ) : (
