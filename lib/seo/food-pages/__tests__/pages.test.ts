@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { switchedFoodPath } from '@/lib/seo/food-pages/slugs';
+import { linkWords } from '../linked-words';
 import { FOOD_PAGE_CHROME } from '../page-copy';
 import {
   FOOD_PAGES,
@@ -56,13 +57,22 @@ describe.each(ALL_SLUGS)('food page %s', (slug) => {
   it('links only dishes its meals name, to other pages in its locale', () => {
     for (const meal of page.meals) {
       for (const link of meal.links ?? []) {
-        expect(meal.text, `${meal.key} → ${link.to}`).toContain(link.words);
         expect(isFoodSlug(page.locale, link.to), link.to).toBe(true);
         expect(link.to).not.toBe(slug);
       }
-      // Locale-relative: the docs link the card renders adds the locale.
-      expect(mealLinks(meal).map((link) => link.href)).toEqual(
-        (meal.links ?? []).map((link) => `${FOOD_PAGE_PREFIX}/${link.to}`)
+      // Every link renders: its words stand whole in the text and overlap no
+      // other link. Locale-relative, as the docs link adds the locale.
+      const rendered = linkWords(meal.text, mealLinks(meal))
+        .filter((part) => part.href)
+        .map((part) => [part.text, part.href]);
+      expect(rendered, meal.key).toEqual(
+        (meal.links ?? [])
+          .map((link) => [link.words, `${FOOD_PAGE_PREFIX}/${link.to}`])
+          .sort(
+            (a, b) =>
+              meal.text.indexOf(a[0] as string) -
+              meal.text.indexOf(b[0] as string)
+          )
       );
     }
   });

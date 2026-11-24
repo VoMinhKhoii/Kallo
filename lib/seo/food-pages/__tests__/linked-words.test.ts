@@ -43,4 +43,36 @@ describe('linkWords', () => {
     const parts = linkWords(text, [{ words: 'fried rice', href: '/x' }]);
     expect(parts.map((part) => part.text).join('')).toBe(text);
   });
+
+  it('links whole words only, skipping a match inside a longer word', () => {
+    expect(
+      linkWords('8 air-fried chicken wings, then fried chicken', [
+        { words: 'fried chicken', href: '/a' },
+      ])
+    ).toEqual([
+      { text: '8 air-fried chicken wings, then ' },
+      { text: 'fried chicken', href: '/a' },
+    ]);
+    expect(
+      linkWords('1 miếng chả, 1 tô miến gà', [{ words: 'miến', href: '/m' }])
+    ).toEqual([
+      { text: '1 miếng chả, 1 tô ' },
+      { text: 'miến', href: '/m' },
+      { text: ' gà' },
+    ]);
+    expect(linkWords('Two gyros', [{ words: 'gyro', href: '/g' }])).toEqual([
+      { text: 'Two gyros' },
+    ]);
+  });
+
+  it('ignores empty words and treats regex characters literally', () => {
+    expect(linkWords('a (b) c', [{ words: '', href: '/x' }])).toEqual([
+      { text: 'a (b) c' },
+    ]);
+    expect(linkWords('a (b) c', [{ words: '(b)', href: '/x' }])).toEqual([
+      { text: 'a ' },
+      { text: '(b)', href: '/x' },
+      { text: ' c' },
+    ]);
+  });
 });

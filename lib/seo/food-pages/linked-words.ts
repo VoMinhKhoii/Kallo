@@ -11,8 +11,23 @@ export interface TextPart {
 }
 
 /**
+ * Where `words` first stands as whole words in `text` (case matters), or -1.
+ * A letter, digit or hyphen on either side means it is part of a longer word:
+ * "fried chicken" is not in "air-fried chicken", "miến" is not in "miếng".
+ */
+function wholeWordsAt(text: string, words: string): number {
+  if (!words) return -1;
+  const escaped = words.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = new RegExp(
+    `(?<![\\p{L}\\p{N}\\p{M}-])${escaped}(?![\\p{L}\\p{N}\\p{M}-])`,
+    'u'
+  ).exec(text);
+  return match ? match.index : -1;
+}
+
+/**
  * Splits `text` into plain and linked runs: each link takes the first place
- * its words appear (case matters). A link whose words are missing, or overlap
+ * its words stand as whole words. A link whose words are missing, or overlap
  * an earlier link, is left out, so the text always reads the same.
  */
 export function linkWords(
@@ -20,8 +35,8 @@ export function linkWords(
   links: readonly WordLink[]
 ): TextPart[] {
   const found = links
-    .map((link) => ({ ...link, at: text.indexOf(link.words) }))
-    .filter((link) => link.words && link.at >= 0)
+    .map((link) => ({ ...link, at: wholeWordsAt(text, link.words) }))
+    .filter((link) => link.at >= 0)
     .sort((a, b) => a.at - b.at);
   const parts: TextPart[] = [];
   let from = 0;
