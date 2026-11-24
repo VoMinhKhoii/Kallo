@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The review tier of a change, from the paths it touches (never from who wrote
-// it). /ship sizes its review loop by it and prints it in the PR body; the
+// it). /kship sizes its review loop by it and prints it in the PR body; the
 // rules are in docs/REVIEW_TIERS.md. CLI: prints the tier of the branch's diff
 // against origin/main as JSON.
 import { execFileSync } from 'node:child_process';

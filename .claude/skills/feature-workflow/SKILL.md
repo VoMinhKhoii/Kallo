@@ -33,7 +33,7 @@ with the Skill tool — do not `cat` it.
 | ↳ restart / compaction / resume | re-probe cwd + branch before reading a file as evidence | **probe-state-before-acting** |
 | **3. Close** — before "done" | CI-equivalent gates, behavior observed, diff composition, evidence-audited report | **verify-before-done** |
 | ↳ diff spans 2+ files or platforms | adversarial pass on the design and the diff — before the user has to ask for one | **grill-your-own-work** |
-| **4. Ship** | only when the user asks; `<type>/<slug>` branch, conventional commits | `/ship` |
+| **4. Ship** | only when the user asks; `<type>/<slug>` branch, conventional commits | `/kship` |
 
 ## Session-long invariants
 

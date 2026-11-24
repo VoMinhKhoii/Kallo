@@ -1,7 +1,7 @@
 ---
-name: ship
+name: kship
 description: |
-  MANUAL TRIGGER ONLY: invoke only when user types /ship.
+  MANUAL TRIGGER ONLY: invoke only when user types /kship. (Renamed from /ship: Claude Code 2.1.330 took that name for its own built-in.)
   Full Git shipping workflow — from unstaged changes to a clean, merged-ready PR:
   explicit staging, branch, conventional commit, a local adversarial Codex review,
   push through the pre-push gate, draft PR, CI and review loop until clean. Use
@@ -12,7 +12,7 @@ description: |
 
 # Ship
 
-The one maintained version of this workflow is `.claude/skills/ship/SKILL.md`.
+The one maintained version of this workflow is `.claude/skills/kship/SKILL.md`.
 Read it and follow it exactly; this copy exists so agents that load skills from
 `.agents/skills/` find it.
 

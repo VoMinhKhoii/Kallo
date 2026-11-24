@@ -1,7 +1,7 @@
 ---
-name: ship
+name: kship
 description: |
-  MANUAL TRIGGER ONLY: invoke only when user types /ship.
+  MANUAL TRIGGER ONLY: invoke only when user types /kship. (Renamed from /ship: Claude Code 2.1.330 took that name for its own built-in.)
   Full Git shipping workflow — from unstaged changes to a clean, merged-ready PR.
   Handles: git add, branch creation (with meaningful name), conventional commit,
   a local review before the first push (Gemini 4 Neon rounds, falling back to Codex
@@ -154,7 +154,7 @@ pass found 8 defects the GitHub Codex loop had missed.
 is out of quota or rate-limited, the CLI errors or times out, or the output is not
 a review (a refused command ends a plan-mode run early, with exit 0). Rerun that
 same pass on Sol with the same brief and pass file. A missing `agy` or an
-exhausted quota means Sol for the rest of this `/ship`; any other failure falls
+exhausted quota means Sol for the rest of this `/kship`; any other failure falls
 back for that pass only. The Astra pass stays on Codex.
 
 **How each pass runs.** Every pass runs in the background (3-15 minutes; wait for
@@ -187,7 +187,7 @@ NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)",
 OUT=<scratchpad>/local-review-<name>.md
 (cd "$REVIEW_DIR" && sandbox-exec -p "$PROFILE" agy --model gemini-4-neon-high \
   --mode plan --settings "$NEON_READ_ONLY" --print-timeout 20m \
-  -p="$(cat "$CK"/.claude/skills/ship/local-review.md \
+  -p="$(cat "$CK"/.claude/skills/kship/local-review.md \
         <scratchpad>/codex-brief.md <scratchpad>/pass-<name>.md)") > "$OUT" 2>&1
 rc=$?
 # A refused run exits 0 with this one line, or with nothing at all.
@@ -204,7 +204,7 @@ Sol fallback and the Astra pass, run from `<checkout>`:
 ```bash
 # The prompt names the diff range: `codex review` rejects --base together
 # with custom instructions.
-cat .claude/skills/ship/local-review.md <scratchpad>/codex-brief.md \
+cat .claude/skills/kship/local-review.md <scratchpad>/codex-brief.md \
   <scratchpad>/pass-<name>.md \
   | codex review -c 'model="<model>"' -c 'sandbox_mode="read-only"' - \
   > <scratchpad>/local-review-<name>.md 2>&1
@@ -243,7 +243,7 @@ a clean pass.
    "Step back" section: the classes the three rounds found, the shared cause, and
    the approach change made for it (or why none was needed), so Astra judges the
    new approach, not just the new lines. Astra is the expensive model: it runs here
-   only, once per `/ship`, never as a routine round.
+   only, once per `/kship`, never as a routine round.
 5. **One Fable structure review** of the whole branch, once the bug rounds are
    done. Dispatch one subagent with the Agent tool (`model: "fable"`,
    `run_in_background: false`) and this brief: invoke the

@@ -6,7 +6,7 @@ and the PR carries the screenshots. Between 2026-07-15 and 2026-10-19, 20 of the
 by running the app where it really runs: a feed drawn at zero width (#307), a
 grey crash screen on a handset (#353), product images that were never committed
 (#241), a paywall that did not fit (#411). Tests and review had passed each one.
-`/ship` Phase 3c runs this; the scripts live in `scripts/dev/evidence/`.
+`/kship` Phase 3c runs this; the scripts live in `scripts/dev/evidence/`.
 
 Everything here runs against the **dev** project from `.env.local`, signed in as
 the dev evidence account. Never point it at prod, and never upload a screen that
