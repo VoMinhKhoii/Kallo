@@ -183,7 +183,12 @@ PROFILE="(version 1)(allow default)(deny file-write* $DENY(subpath \"$COMMON\"))
 # The default mode writes files and runs unlisted commands: never drop
 # --mode plan. -p must come last and be joined with "=", or agy reads the next
 # flag as the prompt.
-NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git rev-parse)","command(git ls-files)","command(git blame)","command(git grep)","command(grep)","command(ls)","command(cat)","command(head)","command(wc)","read_file('"$REVIEW_DIR"')"],"deny":["write_file(*)"]}}'
+# Reads: read_file(<dir>) allows every file under <dir>; read_file(<dir>/**)
+# matches nothing. Any other read is refused, and in print mode one refused
+# read ends the run with "jetski: no output produced" (exit 0). ~/.pub-cache
+# holds the Dart package sources a Flutter review reads (every Neon pass on
+# 2026-11-24 died reading easy_localization there until this rule was added).
+NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git rev-parse)","command(git ls-files)","command(git blame)","command(git grep)","command(grep)","command(ls)","command(cat)","command(head)","command(wc)","read_file('"$REVIEW_DIR"')","read_file('"$HOME"'/.pub-cache)"],"deny":["write_file(*)"]}}'
 OUT=<scratchpad>/local-review-<name>.md
 (cd "$REVIEW_DIR" && sandbox-exec -p "$PROFILE" agy --model gemini-4-neon-high \
   --mode plan --settings "$NEON_READ_ONLY" --print-timeout 20m \
