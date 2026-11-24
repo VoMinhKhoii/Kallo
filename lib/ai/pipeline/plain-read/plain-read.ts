@@ -12,6 +12,7 @@ import {
   PLAIN_READ_MODEL,
   PLAIN_READ_SYSTEM_PROMPT,
   type PlainRead,
+  type PlainReadProfile,
   plainReadSchema,
   plainReadUserMessage,
 } from './prompt';
@@ -38,6 +39,7 @@ export function usableReadKcal(read: PlainRead): number | null {
 export function startPlainRead(args: {
   gemini: GeminiClient;
   mealText: string;
+  profile: PlainReadProfile;
   /** The request's signal: a client hang-up cancels the read at once. */
   signal: AbortSignal;
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
@@ -54,7 +56,7 @@ export function startPlainRead(args: {
         {
           schema: plainReadSchema,
           systemPrompt: PLAIN_READ_SYSTEM_PROMPT,
-          userMessage: plainReadUserMessage(args.mealText),
+          userMessage: plainReadUserMessage(args.mealText, args.profile),
           model: PLAIN_READ_MODEL,
           abortSignal: controller.signal,
         },

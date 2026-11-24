@@ -35,6 +35,7 @@ export async function runPreciseBranch({
   const plainRead = startPlainRead({
     gemini,
     mealText: ctx.message,
+    profile: ctx.userContext,
     signal: ctx.signal,
     onAttemptComplete: createBudgetAttemptRecorder({
       db,
