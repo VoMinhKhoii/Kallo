@@ -8,7 +8,6 @@
 // ten-direct-files structure limit.
 
 import { z } from 'zod';
-import { locales } from '@/i18n/config';
 import { isValidTimeZone } from '@/lib/core/date/zoned';
 import {
   beforeCursorSchema,
@@ -65,12 +64,6 @@ export const pushTokenBodySchema = z.object({
     .refine(isValidTimeZone)
     .optional()
     .catch(undefined),
-  /** The language the person picked in the app on this phone, sent only when
-   *  they picked one. It becomes `preferred_locale`, which every push is
-   *  written in, so the text matches the lock-screen buttons the app
-   *  registers in its own language. Optional and dropped when unknown, like
-   *  `timeZone`. */
-  locale: z.enum(locales).optional().catch(undefined),
 });
 
 /** DELETE only needs the token — the owner comes from the session. */

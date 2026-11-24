@@ -300,28 +300,6 @@ void main() {
     },
   );
 
-  test(
-    'a registration carries the language picked in the app, and none without a pick',
-    () async {
-      final api = FakeApiClient();
-      final service = PushService(api);
-      String? picked;
-      service.pickedLanguage = () => picked;
-      await service.registerForPush();
-
-      await fromNative('onToken', 'beef');
-      await pumpEventQueue();
-      picked = 'vi';
-      await fromNative('onToken', 'cafe');
-      await pumpEventQueue();
-
-      expect(api.requests.map((r) => r.body), [
-        {'token': 'beef', 'platform': 'ios'},
-        {'token': 'cafe', 'platform': 'ios', 'locale': 'vi'},
-      ]);
-    },
-  );
-
   test('a foreground check-in re-posts, spaced five minutes apart', () async {
     final api = FakeApiClient();
     final service = PushService(api);

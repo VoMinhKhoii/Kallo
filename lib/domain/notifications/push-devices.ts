@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/lib/infra/db/client';
 import { pushTokens, userProfiles } from '@/lib/infra/db/schema';
 import type { PushSendResult } from '@/lib/infra/push/types';
@@ -27,10 +27,8 @@ const MAX_DEVICES = 10;
  * `last_seen_at` is refreshed on every call — the app posts on launch and on
  * every return to the foreground, so it is also the reminder gates' "opened
  * Kallo". The reported time zone, when there is one, becomes the clock
- * reminders run on, and the reported language becomes `preferred_locale`, the
- * language pushes are written in: the app registers the lock-screen buttons in
- * its own language, so the text must follow the phone. The newest device to
- * check in wins; each is written on a change only.
+ * reminders run on (the newest device to check in wins; written on a change
+ * only).
  */
 export async function registerDevice(
   userId: string,
@@ -75,41 +73,18 @@ export async function registerDevice(
       .where(
         and(eq(pushTokens.userId, userId), inArray(pushTokens.id, oldest))
       );
-    await syncProfileFromDevice(tx, userId, body);
+    if (body.timeZone) {
+      await tx
+        .update(userProfiles)
+        .set({ timeZone: body.timeZone })
+        .where(
+          and(
+            eq(userProfiles.userId, userId),
+            sql`${userProfiles.timeZone} IS DISTINCT FROM ${body.timeZone}`
+          )
+        );
+    }
   });
-}
-
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-/**
- * Copy what the device reported (time zone, picked language) onto the
- * profile. Only fields it sent are set, and the row is written only when one
- * of them differs, so a routine check-in costs no write.
- */
-async function syncProfileFromDevice(
-  tx: Tx,
-  userId: string,
-  body: PushTokenBody
-): Promise<void> {
-  const profile: { timeZone?: string; preferredLocale?: string } = {};
-  const changed: SQL[] = [];
-  if (body.timeZone) {
-    profile.timeZone = body.timeZone;
-    changed.push(
-      sql`${userProfiles.timeZone} IS DISTINCT FROM ${body.timeZone}`
-    );
-  }
-  if (body.locale) {
-    profile.preferredLocale = body.locale;
-    changed.push(
-      sql`${userProfiles.preferredLocale} IS DISTINCT FROM ${body.locale}`
-    );
-  }
-  if (changed.length === 0) return;
-  await tx
-    .update(userProfiles)
-    .set(profile)
-    .where(and(eq(userProfiles.userId, userId), or(...changed)));
 }
 
 /**

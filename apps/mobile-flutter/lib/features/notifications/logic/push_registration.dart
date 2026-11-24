@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -56,7 +55,6 @@ class _PushRegistrationListenerState
       // A close that finished after the resume drain (the app was opened while
       // the request was in flight) is refreshed when it lands.
       push.onDayClosed = () => unawaited(_refreshClosedDays(push));
-      push.pickedLanguage = _pickedLanguage;
       unawaited(push.deliverInitialTap());
     });
   }
@@ -66,7 +64,6 @@ class _PushRegistrationListenerState
     WidgetsBinding.instance.removeObserver(this);
     _push?.onTap = null;
     _push?.onDayClosed = null;
-    _push?.pickedLanguage = null;
     super.dispose();
   }
 
@@ -78,26 +75,6 @@ class _PushRegistrationListenerState
       unawaited(_refreshClosedDays(push));
     }
   }
-
-  /// The app's language, but only once the person picked one on this phone.
-  /// easy_localization saves a pick and reads it back at launch; with nothing
-  /// saved the app runs the English default, and reporting that would turn a
-  /// Vietnamese account English the moment it signs in on a fresh install.
-  /// A pick made since launch is saved to the account by the screen that
-  /// made it, and reported from the next launch on.
-  ///
-  /// Read here, where an inherited lookup belongs, and refreshed on every
-  /// language change; [PushService] reads the cached value from a callback.
-  String? _language;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final l10n = EasyLocalization.of(context);
-    _language = l10n?.savedLocale == null ? null : l10n!.locale.languageCode;
-  }
-
-  String? _pickedLanguage() => _language;
 
   /// A reminder's "close the day" button runs natively while the app sits in
   /// the background, so the day it closed is refreshed here: otherwise the

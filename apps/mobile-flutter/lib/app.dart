@@ -21,6 +21,7 @@ import 'shell/launch/launch_curtain.dart';
 import 'shell/launch/route_settled.dart';
 import 'theme/theme_controller.dart';
 import 'features/notifications/logic/reminder_categories.dart';
+import 'features/settings/logic/account_language.dart';
 
 /// Root app widget — the mobile counterpart of web `app/[locale]/layout.tsx`.
 ///
@@ -108,38 +109,42 @@ class _NhamAppState extends ConsumerState<KalloApp>
     // session, routing `nham://invite/<slug>` (and https invite links) to the
     // in-app connect screen. [PushRegistrationListener] sits alongside it with
     // the same one-per-process contract, for APNs tokens and notification taps.
+    // [AccountLanguageSync] keeps the app in the account's language, which
+    // push text is written in.
     return PushRegistrationListener(
-      child: CircleDeepLinkListener(
-        child: MaterialApp.router(
-          title: 'Kallo',
-          debugShowCheckedModeBanner: false,
-          theme: kalloAppTheme(),
-          // Material colours switch in the same frame as the palette tokens;
-          // a lerping theme left scaffolds a beat behind every card.
-          themeAnimationDuration: Duration.zero,
-          routerConfig: router,
-          // Dynamic Type is respected, but capped: the feed's fixed-width
-          // columns overflow past ~1.3x. The launch intro sits over the whole
-          // app, above the router, so it plays once per process.
-          builder:
-              (context, child) => MediaQuery.withClampedTextScaling(
-                maxScaleFactor: 1.3,
-                // Below the localizations, so the widget's copy resolves to
-                // words rather than keys; writes the day for the home-screen
-                // widget and routes its tap.
-                child: TodayWidgetSync(
-                  // Below the localizations, so the reminder buttons are
-                  // registered with real titles (see [ReminderCategories]).
-                  child: ReminderCategories(
-                    child: LaunchCurtain(ready: launchReady, child: child!),
+      child: AccountLanguageSync(
+        child: CircleDeepLinkListener(
+          child: MaterialApp.router(
+            title: 'Kallo',
+            debugShowCheckedModeBanner: false,
+            theme: kalloAppTheme(),
+            // Material colours switch in the same frame as the palette tokens;
+            // a lerping theme left scaffolds a beat behind every card.
+            themeAnimationDuration: Duration.zero,
+            routerConfig: router,
+            // Dynamic Type is respected, but capped: the feed's fixed-width
+            // columns overflow past ~1.3x. The launch intro sits over the whole
+            // app, above the router, so it plays once per process.
+            builder:
+                (context, child) => MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: 1.3,
+                  // Below the localizations, so the widget's copy resolves to
+                  // words rather than keys; writes the day for the home-screen
+                  // widget and routes its tap.
+                  child: TodayWidgetSync(
+                    // Below the localizations, so the reminder buttons are
+                    // registered with real titles (see [ReminderCategories]).
+                    child: ReminderCategories(
+                      child: LaunchCurtain(ready: launchReady, child: child!),
+                    ),
                   ),
                 ),
-              ),
-          // easy_localization wiring (locale source of truth lives on the
-          // EasyLocalization wrapper in main()).
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
+            // easy_localization wiring (locale source of truth lives on the
+            // EasyLocalization wrapper in main()).
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            locale: context.locale,
+          ),
         ),
       ),
     );

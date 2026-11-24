@@ -132,39 +132,6 @@ describe('POST /api/v1/notifications/push-tokens', () => {
     });
   });
 
-  it('stores the language picked on the phone, which pushes are written in', async () => {
-    mockReadJsonBody.mockResolvedValue({
-      token: TOKEN,
-      platform: 'ios',
-      timeZone: 'Asia/Ho_Chi_Minh',
-      locale: 'vi',
-    });
-    capturingInsert();
-
-    const response = await POST({} as never);
-
-    expect(response.status).toBe(200);
-    expect(mockUpdateSet).toHaveBeenCalledWith({
-      timeZone: 'Asia/Ho_Chi_Minh',
-      preferredLocale: 'vi',
-    });
-  });
-
-  it('still registers with a language Kallo does not ship, and leaves the stored one alone', async () => {
-    mockReadJsonBody.mockResolvedValue({
-      token: TOKEN,
-      platform: 'ios',
-      locale: 'fr',
-    });
-    const captured = capturingInsert();
-
-    const response = await POST({} as never);
-
-    expect(response.status).toBe(200);
-    expect(captured.values).toMatchObject({ token: TOKEN });
-    expect(mockUpdateSet).not.toHaveBeenCalled();
-  });
-
   it('still registers when the time zone is unknown, and leaves the stored one alone', async () => {
     mockReadJsonBody.mockResolvedValue({
       token: TOKEN,
