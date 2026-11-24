@@ -176,4 +176,17 @@ describe('needsBrowserSessionRefresh / ensureFreshBrowserSession', () => {
 
     await expect(ensureFreshBrowserSession()).resolves.toBeUndefined();
   });
+
+  it('swallows synchronous throws from createClient()', async () => {
+    document.cookie = `${COOKIE_NAME}=${encodeSessionCookie({
+      access_token: 'jwt-old',
+      refresh_token: 'rt-sync-throw',
+      expires_at: Math.floor(Date.now() / 1000) - 10,
+    })}; path=/`;
+    getSessionMock.mockImplementation(() => {
+      throw new Error('missing publishable key');
+    });
+
+    await expect(ensureFreshBrowserSession()).resolves.toBeUndefined();
+  });
 });

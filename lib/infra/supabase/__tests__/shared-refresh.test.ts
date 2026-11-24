@@ -205,4 +205,84 @@ describe('sharedRefreshFetch', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it('does not coalesce non-/auth/v1/token paths with real refreshes', async () => {
+    fetchMock
+      .mockResolvedValueOnce(Response.json({ access_token: 'real' }))
+      .mockResolvedValueOnce(
+        Response.json({ error: 'not found' }, { status: 404 })
+      );
+
+    const real = await sharedRefreshFetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { apikey: 'pk-1' },
+      body: JSON.stringify({ refresh_token: 'rt-path' }),
+    });
+    const fake = await sharedRefreshFetch(
+      'https://ref.supabase.co/auth/v1/foo/token?grant_type=refresh_token',
+      {
+        method: 'POST',
+        headers: { apikey: 'pk-1' },
+        body: JSON.stringify({ refresh_token: 'rt-path' }),
+      }
+    );
+
+    expect(real.status).toBe(200);
+    expect(fake.status).toBe(404);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('aborts only the aborted caller without cancelling sibling waiters', async () => {
+    let answer!: (response: Response) => void;
+    fetchMock.mockReturnValue(
+      new Promise<Response>((resolve) => {
+        answer = resolve;
+      })
+    );
+
+    const leaderController = new AbortController();
+    const leader = sharedRefreshFetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { apikey: 'pk-1' },
+      body: JSON.stringify({ refresh_token: 'rt-sig' }),
+      signal: leaderController.signal,
+    });
+    const sibling = sharedRefreshFetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { apikey: 'pk-1' },
+      body: JSON.stringify({ refresh_token: 'rt-sig' }),
+    });
+
+    leaderController.abort(
+      new DOMException('caller timed out', 'TimeoutError')
+    );
+    await expect(leader).rejects.toMatchObject({ name: 'TimeoutError' });
+
+    answer(Response.json({ access_token: 'still-ok' }, { status: 200 }));
+    await expect((await sibling).json()).resolves.toEqual({
+      access_token: 'still-ok',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('handles null-body statuses and strips decompressed framing headers', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const res204 = await refresh('rt-204');
+    expect(res204.status).toBe(204);
+
+    fetchMock.mockResolvedValueOnce(
+      new Response('{"access_token":"ok"}', {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+          'content-encoding': 'gzip',
+          'content-length': '999',
+        },
+      })
+    );
+    const res200 = await refresh('rt-hdrs');
+    expect(res200.headers.get('content-encoding')).toBeNull();
+    expect(res200.headers.get('content-length')).toBeNull();
+    expect(await res200.json()).toEqual({ access_token: 'ok' });
+  });
 });

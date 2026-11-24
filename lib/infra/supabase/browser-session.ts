@@ -1,6 +1,4 @@
-'use client';
-
-import { parseCookieHeader } from '@supabase/ssr';
+import { parseCookieHeader, stringFromBase64URL } from '@supabase/ssr';
 import { createClient } from '@/lib/infra/supabase/client';
 import { sessionCookieName } from '@/lib/infra/supabase/cookie-options';
 
@@ -34,24 +32,13 @@ function readSessionCookieValue(name: string): string | null {
   return chunks.length > 0 ? chunks.join('') : null;
 }
 
-function decodeBase64Url(input: string): string {
-  const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return new TextDecoder().decode(bytes);
-}
-
 function parseSessionCookie(raw: string): {
   expiresAt?: number;
   hasRefreshToken: boolean;
 } | null {
   try {
     const json = raw.startsWith(BASE64_PREFIX)
-      ? decodeBase64Url(raw.slice(BASE64_PREFIX.length))
+      ? stringFromBase64URL(raw.slice(BASE64_PREFIX.length))
       : raw;
     const parsed = JSON.parse(json) as {
       expires_at?: unknown;
@@ -120,8 +107,9 @@ function raceWithAbort(
  * expired cookie and blocks server-side on GoTrue for ~1.5–2 s.
  *
  * On the normal (fresh-token) path this performs one synchronous cookie check
- * and adds zero network calls. Failures are swallowed so the caller's own
- * fetch still runs and surfaces normal 401/error handling.
+ * and adds zero network calls. Failures (including synchronous client init
+ * errors) are swallowed so the caller's own fetch still runs and surfaces
+ * normal 401/error handling.
  */
 export async function ensureFreshBrowserSession(
   signal?: AbortSignal | null
@@ -130,13 +118,16 @@ export async function ensureFreshBrowserSession(
   if (!inFlightRefresh && !needsBrowserSessionRefresh()) return;
 
   if (!inFlightRefresh) {
-    inFlightRefresh = createClient()
-      .auth.getSession()
-      .then(() => undefined)
-      .catch(() => undefined)
-      .finally(() => {
-        inFlightRefresh = null;
-      });
+    const pending = (async () => {
+      try {
+        await createClient().auth.getSession();
+      } catch {
+        // Swallowed so callers fall through to normal fetch / 401 handling.
+      }
+    })().finally(() => {
+      if (inFlightRefresh === pending) inFlightRefresh = null;
+    });
+    inFlightRefresh = pending;
   }
 
   await raceWithAbort(inFlightRefresh, signal);
