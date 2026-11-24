@@ -1,10 +1,13 @@
 // The six screens are plain views over one mutable [OnboardingAnswers], so
-// each can be pumped on its own — no Riverpod, no sink, no wizard.
+// each can be pumped on its own — no sink, no wizard, signed out (the
+// language row stores a pick on the account only when signed in).
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/onboarding/logic/onboarding_answers.dart';
 import 'package:kallo_mobile/models/profile/onboarding.dart';
+import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/features/onboarding/screens/step_about_you.dart';
 import 'package:kallo_mobile/features/onboarding/screens/step_goal.dart';
 import 'package:kallo_mobile/features/onboarding/screens/step_language.dart';
@@ -23,17 +26,20 @@ Future<void> _pump(
   Widget Function(VoidCallback rebuild) build,
 ) async {
   await tester.pumpWidget(
-    localizedHome(
-      Scaffold(
-        body: SafeArea(
-          child: StatefulBuilder(
-            builder:
-                (context, setState) => Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: SingleChildScrollView(
-                    child: build(() => setState(() {})),
+    ProviderScope(
+      overrides: [signedInUserIdProvider.overrideWithValue(null)],
+      child: localizedHome(
+        Scaffold(
+          body: SafeArea(
+            child: StatefulBuilder(
+              builder:
+                  (context, setState) => Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: SingleChildScrollView(
+                      child: build(() => setState(() {})),
+                    ),
                   ),
-                ),
+            ),
           ),
         ),
       ),

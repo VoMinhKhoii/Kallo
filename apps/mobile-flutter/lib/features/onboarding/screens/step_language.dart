@@ -1,16 +1,25 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/form/option_row.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
 import '../logic/onboarding_step_spec.dart';
+import '../../../services/auth/session_provider.dart';
+import '../../settings/logic/language_picker.dart';
 
 /// Screen 1 — "Choose your language". Picking a row records `preferredLocale`
 /// for the server AND live-switches the app with `context.setLocale`, so the
 /// rest of the wizard is already in the chosen language by the next frame.
-class StepLanguage extends StatelessWidget {
+/// Signed in, the account is the source of truth: the pick is stored there
+/// first and the app switches once it lands ([LanguagePicker]); a row shows
+/// the language the app speaks.
+class StepLanguage extends ConsumerStatefulWidget {
   const StepLanguage({
     super.key,
     required this.answers,
@@ -40,15 +49,42 @@ class StepLanguage extends StatelessWidget {
     (code: 'en', key: 'onboarding.language.english'),
   ];
 
+  @override
+  ConsumerState<StepLanguage> createState() => _StepLanguageState();
+}
+
+class _StepLanguageState extends ConsumerState<StepLanguage> {
   /// AWAIT the load before rebuilding: [EasyLocalization.setLocale] has to
   /// read the new locale's JSON before `tr()` answers in it, so an eager
   /// rebuild left the wizard's title and CTA (passed down as plain strings)
   /// in the old language.
-  Future<void> _pick(BuildContext context, String code) async {
-    if (answers.preferredLocale == code) return;
-    answers.preferredLocale = code;
-    await context.setLocale(Locale(code));
-    onChanged();
+  Future<void> _pick(String code) async {
+    // Any language save on the wire (this row's, the launch repair, another
+    // page's) holds every tap: two saves must never race.
+    if (ref.read(languageSavesProvider) > 0) return;
+    if (code == context.locale.languageCode) return;
+    final answers = widget.answers;
+    Future<void> show() async {
+      answers.preferredLocale = code;
+      if (!mounted) return;
+      await context.setLocale(Locale(code));
+      widget.onChanged();
+    }
+
+    if (ref.read(signedInUserIdProvider) == null) return show();
+    try {
+      await ref.read(languagePickerProvider).save(code, then: show);
+    } catch (_) {
+      if (mounted) {
+        unawaited(
+          showTopToast(
+            context,
+            tr('settings.profilePanel.saveError'),
+            variant: TopToastVariant.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -56,19 +92,20 @@ class StepLanguage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final option in options) ...[
-          if (option != options.first) const SizedBox(height: KalloSpacing.sp3),
+        for (final option in StepLanguage.options) ...[
+          if (option != StepLanguage.options.first)
+            const SizedBox(height: KalloSpacing.sp3),
           OptionRow(
             label: tr(option.key),
-            selected: answers.preferredLocale == option.code,
+            selected: context.locale.languageCode == option.code,
             note:
-                localeFromDevice && option.code == deviceLanguage
+                widget.localeFromDevice && option.code == widget.deviceLanguage
                     ? tr('onboarding.fromDevice')
                     : null,
-            onTap: () => _pick(context, option.code),
+            onTap: () => _pick(option.code),
           ),
         ],
-        if (showSettingsNote) ...[
+        if (widget.showSettingsNote) ...[
           const SizedBox(height: KalloSpacing.sp3),
           Text(
             tr('onboarding.language.meta'),

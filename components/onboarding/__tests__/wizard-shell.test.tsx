@@ -190,4 +190,50 @@ describe('WizardShell', () => {
       })
     );
   });
+
+  // The account holds the language push text is written in and the phone
+  // app follows: skipping the countries must not drop it.
+  it('keeps the page language when step 1 is skipped', async () => {
+    const user = userEvent.setup();
+    currentLocaleRef.value = 'vi';
+    render(<WizardShell initialStep={1} initialProfile={null} />);
+
+    await user.click(screen.getByRole('button', { name: /^skip$/i }));
+
+    await waitFor(() =>
+      expect(saveOnboardingScreenMock).toHaveBeenCalledWith(1, {
+        preferredLocale: 'vi',
+      })
+    );
+  });
+
+  it('keeps the language picked on step 1 when it is skipped mid-switch', async () => {
+    const user = userEvent.setup();
+    readStepOneLocaleDraftMock.mockReturnValue({
+      countryOfOrigin: null,
+      countryOfResidence: null,
+      preferredLocale: 'vi',
+    });
+    render(<WizardShell initialStep={1} initialProfile={null} />);
+
+    await user.click(screen.getByRole('button', { name: /^skip$/i }));
+
+    // The page is still on English: the picked Vietnamese wins.
+    await waitFor(() =>
+      expect(saveOnboardingScreenMock).toHaveBeenCalledWith(1, {
+        preferredLocale: 'vi',
+      })
+    );
+  });
+
+  it('skips a later step without posting anything', async () => {
+    const user = userEvent.setup();
+    render(<WizardShell initialStep={3} initialProfile={null} />);
+
+    await user.click(screen.getByRole('button', { name: /^skip$/i }));
+
+    await waitFor(() =>
+      expect(saveOnboardingScreenMock).toHaveBeenCalledWith(3, {})
+    );
+  });
 });

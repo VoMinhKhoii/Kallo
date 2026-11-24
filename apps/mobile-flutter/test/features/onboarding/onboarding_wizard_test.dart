@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:kallo_mobile/features/settings/logic/language_picker.dart';
 import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
 import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
@@ -52,6 +53,7 @@ Widget _app(
   VoidCallback? onComplete,
   VoidCallback? onClose,
   EdgeInsets insets = EdgeInsets.zero,
+  int languageSaves = 0,
 }) {
   // Counted across invalidations, so a test can fail the first signed-in fetch
   // and let the retry succeed.
@@ -59,6 +61,8 @@ Widget _app(
   return ProviderScope(
     overrides: [
       onboardingSinkProvider.overrideWithValue(sink),
+      if (languageSaves > 0)
+        languageSavesProvider.overrideWith((ref) => languageSaves),
       if (sessions == null)
         onboardingResumeScreenProvider.overrideWithValue(resumeScreen),
       if (sessions != null) sessionProvider.overrideWith((ref) => sessions),
@@ -254,7 +258,20 @@ void main() {
     expect(find.text('Save my plan'), findsOneWidget);
   });
 
-  testWidgets('Skip advances without posting but still records the screen', (
+  testWidgets('Continue on screen 1 waits for the language to be stored', (
+    tester,
+  ) async {
+    // Signed in, the pick goes to the account first; leaving screen 1
+    // before it lands would post the old language from screen 2.
+    final sink = FakeOnboardingSink();
+    await _boot(tester, _app(sink, profile: _profile, languageSaves: 1));
+
+    // The button shows it is working instead of offering Continue.
+    expect(find.text('Choose your language'), findsOneWidget);
+    expect(find.text('Continue'), findsNothing);
+  });
+
+  testWidgets('Skip on the countries keeps the language picked before them', (
     tester,
   ) async {
     final sink = FakeOnboardingSink();
@@ -264,8 +281,16 @@ void main() {
     await _tap(tester, 'Skip');
 
     expect(find.text('About you'), findsOneWidget);
-    expect(sink.saves, isEmpty);
-    expect(sink.reached, [2]);
+    // Screen 1's language rides on screen 2's step; the app follows the
+    // account's language, so skipping the countries must not drop it.
+    expect(sink.saves.single.step, 1);
+    expect(sink.saves.single.data, {'preferredLocale': 'en'});
+    expect(sink.reached, isEmpty);
+
+    // Any other screen's Skip still posts nothing.
+    await _tap(tester, 'Skip');
+    expect(sink.saves, hasLength(1));
+    expect(sink.reached, [3]);
   });
 
   testWidgets('a failed save keeps the user on the screen and says so', (

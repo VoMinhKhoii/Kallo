@@ -96,11 +96,9 @@ class StepSession extends ChangeNotifier {
   /// answer wins, the phone fills only what was never answered.
   ///
   /// [activeLocale] is the language the app is running in. It wins over the
-  /// stored one for what the page SHOWS — on a new device, or after local
-  /// storage is cleared, the two differ, and a picker showing the stored
-  /// language selected would make its row a dead tap (already "picked") while
-  /// the app speaks the other. The stored value stays the baseline, so the
-  /// mismatch opens the page with "Lưu" ready to store the language in use.
+  /// stored one for what the page SHOWS: while the two differ, a picker
+  /// showing the stored language selected would make its row a dead tap
+  /// (already "picked") while the app speaks the other.
   factory StepSession.fromProfile(
     SettingsStep step,
     ProfileRow? profile, {
@@ -137,7 +135,9 @@ class StepSession extends ChangeNotifier {
     SettingsStep.aboutYou => _stepTwo(),
     SettingsStep.goal => _bodyStored ? _stepTwo() : null,
     SettingsStep.cooking => answers.stepThreePayload,
-    SettingsStep.region => answers.stepOnePayload,
+    SettingsStep.region => {
+      for (final key in _keys) key: answers.stepOnePayload[key],
+    },
   };
 
   /// The fields this page posts. The body page carries the targets too when
@@ -181,11 +181,8 @@ class StepSession extends ChangeNotifier {
     'defaultProteinPortion',
     'brothConsumption',
   ];
-  static const _regionKeys = [
-    'countryOfOrigin',
-    'countryOfResidence',
-    'preferredLocale',
-  ];
+  // The language is stored by `LanguagePicker` the moment it is picked.
+  static const _regionKeys = ['countryOfOrigin', 'countryOfResidence'];
 
   Map<String, dynamic>? _stepTwo() {
     final all = answers.stepTwoValues?.toJson();

@@ -13,6 +13,7 @@ import '../logic/onboarding_seed.dart';
 import '../logic/onboarding_step_spec.dart';
 import '../logic/region_defaults.dart';
 import '../logic/resume_screen.dart';
+import '../../settings/logic/language_picker.dart';
 import '../providers/onboarding_draft_providers.dart';
 import '../providers/onboarding_providers.dart';
 import '../screens/step_about_you.dart';
@@ -78,10 +79,10 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     _screen = ref.read(onboardingResumeScreenProvider);
   }
 
-  /// The server step this screen posts on its way out, or null when it posts
-  /// nothing (a half-step screen, or a step-2 screen with no metrics yet).
-  OnboardingStepPayload? _payload(int screen) {
+  /// What leaving [screen] posts, or null (a half step, or no metrics yet).
+  OnboardingStepPayload? _payload(int screen, {required bool skip}) {
     final answers = _answers!;
+    if (skip) return onboardingSkipPayload(screen, answers.preferredLocale);
     switch (screen) {
       case 2:
         return (step: 1, data: answers.stepOnePayload);
@@ -100,10 +101,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     final sink = ref.read(onboardingSinkProvider);
     setState(() => _busy = true);
     try {
-      await sink.record(
-        screen: screen,
-        payload: skip ? null : _payload(screen),
-      );
+      await sink.record(screen: screen, payload: _payload(screen, skip: skip));
     } catch (_) {
       if (!mounted) return;
       setState(() => _busy = false);
@@ -199,13 +197,15 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
 
     final screen = _screen!;
     final spec = _spec(screen);
-    final blocked = _busy || !spec.ctaEnabled;
+    // Screen 1's pick may still be on its way to the account.
+    final saving = screen == 1 && ref.watch(languageSavesProvider) > 0;
+    final blocked = _busy || saving || !spec.ctaEnabled;
 
     return OnboardingStepScaffold(
       screen: screen,
       spec: spec,
       direction: _direction,
-      busy: _busy,
+      busy: _busy || saving,
       onContinue: blocked ? null : () => _leave(screen, skip: false),
       onBack:
           screen == 1 && widget.onClose == null

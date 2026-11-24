@@ -40,7 +40,7 @@ describe.skipIf(!url)('push token retention in Postgres', () => {
     await sql.unsafe(`CREATE TABLE ${schema}.push_tokens (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL,
       token text NOT NULL UNIQUE, platform text NOT NULL,
-      last_seen_at timestamptz NOT NULL DEFAULT now(),
+      last_seen_at timestamptz NOT NULL DEFAULT now(), last_pushed_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now())`);
     state.db = drizzle(sql);
   });

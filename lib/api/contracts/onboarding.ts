@@ -62,8 +62,8 @@ export type OnboardingScreenInput = z.infer<typeof onboardingScreenSchema>;
  * not enforce "aggression required for cutting/bulking", so adding either here
  * would reject payloads the web accepts. (Unknown keys like a stray
  * `deficitOverride` are stripped by Zod, so onboarding-shaped payloads are
- * still accepted.) `preferredLocale` is optional — the action defaults it to
- * 'en' when absent.
+ * still accepted.) `preferredLocale` is optional — when absent the stored
+ * language is kept.
  */
 export const profileSettingsSchema = z.object({
   // body metrics (lib/onboarding/schemas.ts → bodyMetricsSchema)

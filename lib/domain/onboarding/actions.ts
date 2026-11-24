@@ -84,7 +84,12 @@ export async function saveProfileSettings(data: Record<string, unknown>) {
     fatTargetG: floored.macros?.fatG ?? (data.fatTargetG as number),
     countryOfOrigin: (data.countryOfOrigin as string) ?? null,
     countryOfResidence: (data.countryOfResidence as string) ?? null,
-    preferredLocale: (data.preferredLocale as string) ?? 'en',
+    // Only an explicit language is stored. It is the language pushes are
+    // written in, so a weight or goal save that omits it keeps the stored
+    // one instead of turning the account English.
+    ...(data.preferredLocale !== undefined && {
+      preferredLocale: data.preferredLocale as string,
+    }),
     oilUsage: data.oilUsage as string,
     defaultRicePortion: data.defaultRicePortion as string,
     defaultProteinPortion: data.defaultProteinPortion as string,
