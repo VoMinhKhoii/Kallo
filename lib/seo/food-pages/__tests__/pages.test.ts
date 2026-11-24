@@ -62,17 +62,14 @@ describe.each(ALL_SLUGS)('food page %s', (slug) => {
       }
       // Every link renders: its words stand whole in the text and overlap no
       // other link. Locale-relative, as the docs link adds the locale.
+      // Order is linkWords' own test; here both sides are sorted.
       const rendered = linkWords(meal.text, mealLinks(meal))
         .filter((part) => part.href)
-        .map((part) => [part.text, part.href]);
-      expect(rendered, meal.key).toEqual(
+        .map((part) => `${part.text} → ${part.href}`);
+      expect(rendered.sort(), meal.key).toEqual(
         (meal.links ?? [])
-          .map((link) => [link.words, `${FOOD_PAGE_PREFIX}/${link.to}`])
-          .sort(
-            (a, b) =>
-              meal.text.indexOf(a[0] as string) -
-              meal.text.indexOf(b[0] as string)
-          )
+          .map((link) => `${link.words} → ${FOOD_PAGE_PREFIX}/${link.to}`)
+          .sort()
       );
     }
   });
