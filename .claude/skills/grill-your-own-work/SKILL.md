@@ -2,7 +2,7 @@
 name: grill-your-own-work
 description: |
   Adversarial closer — invoke AFTER work is "complete and verified" and BEFORE saying
-  done, /ship, or opening a PR, on any diff spanning 2+ files or platforms; also when
+  done, /kship, or opening a PR, on any diff spanning 2+ files or platforms; also when
   asked to "grill", "audit", "self grill" or "adversarially review" anyone's work.
   Fresh gates, mandate-vs-reality, the design as well as the diff, suspicion-driven
   probes, REPORT-ONLY reviewers, a graded verdict.

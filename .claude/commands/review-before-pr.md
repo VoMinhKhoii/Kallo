@@ -63,7 +63,7 @@ After all dispatched subagents return:
 2. Group findings by **severity** (blocker / important / nice-to-have), not by subagent. Each finding shows `[area]` tag, file:line, and the recommendation.
 3. List **escalations separately** at the top — these are decisions that need user approval before any auto-fix.
 4. End with a **suggested next step**:
-   - All `PASS` → "Ready to ship. Suggest `/ship` or `gh pr create`."
+   - All `PASS` → "Ready to ship. Suggest `/kship` or `gh pr create`."
    - Blockers present → "Fix N blockers, then re-run `/review-before-pr` on the affected areas."
    - Only nice-to-haves → "Safe to ship; track these as follow-ups."
 
@@ -98,6 +98,6 @@ Branch: <branch>  ·  <N commits>, <M files>  ·  base: main
 ## Constraints
 
 - Do not auto-apply structural changes (file moves, schema rewrites, public API renames). Subagents own that decision per their definitions.
-- Do not run `gh pr create` or `git push` from this command. That belongs to `/ship` (if available) or explicit user request.
+- Do not run `gh pr create` or `git push` from this command. That belongs to `/kship` (if available) or explicit user request.
 - Do not wait for one subagent's output to dispatch the next — the whole point of multi-axis review is parallelism.
 - If the diff is empty (`git diff main...HEAD` returns nothing), say so and exit without dispatching.
