@@ -18,6 +18,7 @@ import {
   FOOD_PAGES,
   type FoodPage,
   kcalSpan,
+  mealLinks,
   relatedPages,
   similarCaloriePages,
   sourcesOf,
@@ -151,6 +152,7 @@ export default async function FoodPageRoute({ params }: FoodPageProps) {
               <MealExample
                 key={meal.key}
                 label={meal.label}
+                links={mealLinks(meal)}
                 variant={variant}
               />
             ) : null;

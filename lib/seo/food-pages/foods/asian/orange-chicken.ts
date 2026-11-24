@@ -7,6 +7,7 @@ export const food: FoodContent = {
       key: 'takeout',
       label: 'Takeout with fried rice',
       text: 'Orange chicken from a Chinese takeout (battered chicken + orange sauce) with fried rice',
+      links: [{ words: 'fried rice', to: 'chicken-fried-rice' }],
     },
     {
       key: 'white-rice',

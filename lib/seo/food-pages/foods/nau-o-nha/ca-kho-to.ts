@@ -7,11 +7,13 @@ export const food: FoodContent = {
       key: 'ca-loc',
       label: 'Cá lóc kho tộ, canh chua, 2 chén cơm',
       text: 'Cơm má nấu: cá lóc kho tộ 1 khúc, canh chua cá lóc có bạc hà, thơm, giá, cà chua, 2 chén cơm, rau sống chấm nước mắm',
+      links: [{ words: 'canh chua', to: 'canh-chua' }],
     },
     {
       key: 'basa',
       label: 'Cá basa kho tộ, rau muống xào',
       text: 'Bữa tối nhà nấu: cá basa kho tộ 1 khúc, canh chua, rau muống xào tỏi, 1 chén rưỡi cơm',
+      links: [{ words: 'rau muống xào tỏi', to: 'rau-muong-xao-toi' }],
     },
     {
       key: 'ca-bong',

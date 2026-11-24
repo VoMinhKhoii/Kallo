@@ -5,6 +5,7 @@ import {
   FOOD_PAGES,
   kcalSpan,
   mealKcal,
+  mealLinks,
   medianMealKcal,
   pagesByGroup,
   pagesOf,
@@ -14,6 +15,7 @@ import {
 } from '../pages';
 import {
   FOOD_PAGE_LOCALES,
+  FOOD_PAGE_PREFIX,
   FOOD_SLUGS,
   foodHubPath,
   foodLocaleOf,
@@ -48,6 +50,20 @@ describe.each(ALL_SLUGS)('food page %s', (slug) => {
         Math.abs(sum - mealKcal(variant)),
         `${variant.key}: ingredients ${sum} vs card ${mealKcal(variant)}`
       ).toBeLessThanOrEqual(roundingSlack(variant.ingredients.length));
+    }
+  });
+
+  it('links only dishes its meals name, to other pages in its locale', () => {
+    for (const meal of page.meals) {
+      for (const link of meal.links ?? []) {
+        expect(meal.text, `${meal.key} → ${link.to}`).toContain(link.words);
+        expect(isFoodSlug(page.locale, link.to), link.to).toBe(true);
+        expect(link.to).not.toBe(slug);
+      }
+      // Locale-relative: the docs link the card renders adds the locale.
+      expect(mealLinks(meal).map((link) => link.href)).toEqual(
+        (meal.links ?? []).map((link) => `${FOOD_PAGE_PREFIX}/${link.to}`)
+      );
     }
   });
 
