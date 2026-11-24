@@ -134,7 +134,7 @@ describe('needsBrowserSessionRefresh / ensureFreshBrowserSession', () => {
     expect(getSessionMock).toHaveBeenCalledTimes(1);
   });
 
-  it('unblocks an aborted caller without cancelling the shared refresh', async () => {
+  it('rejects an aborted caller with AbortError without cancelling the shared refresh', async () => {
     document.cookie = `${COOKIE_NAME}=${encodeSessionCookie({
       access_token: 'jwt-old',
       refresh_token: 'rt-abort',
@@ -158,12 +158,28 @@ describe('needsBrowserSessionRefresh / ensureFreshBrowserSession', () => {
     });
 
     controller.abort();
-    await abortedWait;
+    await expect(abortedWait).rejects.toMatchObject({ name: 'AbortError' });
     expect(otherDone).toBe(false);
 
     resolveSession();
     await otherWait;
     expect(otherDone).toBe(true);
+  });
+
+  it('rejects immediately when given an already-aborted signal', async () => {
+    document.cookie = `${COOKIE_NAME}=${encodeSessionCookie({
+      access_token: 'jwt-old',
+      refresh_token: 'rt-preaborted',
+      expires_at: Math.floor(Date.now() / 1000) - 10,
+    })}; path=/`;
+
+    const controller = new AbortController();
+    controller.abort(new DOMException('cancelled', 'AbortError'));
+
+    await expect(
+      ensureFreshBrowserSession(controller.signal)
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(getSessionMock).not.toHaveBeenCalled();
   });
 
   it('swallows refresh errors so callers fall through to normal fetch handling', async () => {

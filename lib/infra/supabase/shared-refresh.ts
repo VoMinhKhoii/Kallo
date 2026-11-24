@@ -162,11 +162,12 @@ export const sharedRefreshFetch: typeof fetch = async (input, init) => {
     throw abortError(callerSignal);
   }
 
-  const key = createHash('sha256')
-    .update(
-      `${url.origin}${url.pathname}\0${readApiKey(init.headers)}\0${canonicalRefreshToken(bodyText)}`
-    )
+  // Hash only the refresh token so the secret itself is not kept as a Map key;
+  // origin, pathname, and the public Supabase `apikey` header partition keys directly.
+  const tokenDigest = createHash('sha256')
+    .update(canonicalRefreshToken(bodyText))
     .digest('hex');
+  const key = `${url.origin}${url.pathname}\0${readApiKey(init.headers)}\0${tokenDigest}`;
   const all = entries();
   const now = Date.now();
   const existing = all.get(key);

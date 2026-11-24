@@ -84,14 +84,21 @@ export function needsBrowserSessionRefresh(now = Date.now()): boolean {
   return session.expiresAt * 1000 - now < BROWSER_SESSION_EXPIRY_MARGIN_MS;
 }
 
+function abortError(signal: AbortSignal): unknown {
+  return (
+    signal.reason ??
+    new DOMException('The operation was aborted.', 'AbortError')
+  );
+}
+
 function raceWithAbort(
   promise: Promise<void>,
   signal: AbortSignal | null | undefined
 ): Promise<void> {
   if (!signal) return promise;
-  if (signal.aborted) return Promise.resolve();
-  return new Promise<void>((resolve) => {
-    const onAbort = () => resolve();
+  if (signal.aborted) return Promise.reject(abortError(signal));
+  return new Promise<void>((resolve, reject) => {
+    const onAbort = () => reject(abortError(signal));
     signal.addEventListener('abort', onAbort, { once: true });
     promise.finally(() => {
       signal.removeEventListener('abort', onAbort);
@@ -109,12 +116,12 @@ function raceWithAbort(
  * On the normal (fresh-token) path this performs one synchronous cookie check
  * and adds zero network calls. Failures (including synchronous client init
  * errors) are swallowed so the caller's own fetch still runs and surfaces
- * normal 401/error handling.
+ * normal 401/error handling; caller aborts still reject with `AbortError`.
  */
 export async function ensureFreshBrowserSession(
   signal?: AbortSignal | null
 ): Promise<void> {
-  if (signal?.aborted) return;
+  if (signal?.aborted) throw abortError(signal);
   if (!inFlightRefresh && !needsBrowserSessionRefresh()) return;
 
   if (!inFlightRefresh) {
