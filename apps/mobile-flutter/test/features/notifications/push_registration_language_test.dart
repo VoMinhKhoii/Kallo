@@ -71,8 +71,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(push.pickedLanguage?.call(), 'en');
 
-      // Nothing saved: the app runs the English default, which is no pick.
+      // Nothing saved at launch (deleting stands in for a fresh install): a
+      // language shown is not a pick, so nothing is reported.
       await appContext.deleteSaveLocale();
+      await appContext.setLocale(const Locale('vi'));
+      await tester.pumpAndSettle();
       expect(push.pickedLanguage?.call(), isNull);
     },
   );

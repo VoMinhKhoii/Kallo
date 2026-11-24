@@ -86,14 +86,18 @@ class _PushRegistrationListenerState
   /// A pick made since launch is saved to the account by the screen that
   /// made it, and reported from the next launch on.
   ///
-  /// Reading it registers a dependency, so this listener rebuilds on a
-  /// language change; [_sync] ignores the repeat.
-  String? _pickedLanguage() {
-    if (!mounted) return null;
+  /// Read here, where an inherited lookup belongs, and refreshed on every
+  /// language change; [PushService] reads the cached value from a callback.
+  String? _language;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     final l10n = EasyLocalization.of(context);
-    if (l10n == null || l10n.savedLocale == null) return null;
-    return l10n.locale.languageCode;
+    _language = l10n?.savedLocale == null ? null : l10n!.locale.languageCode;
   }
+
+  String? _pickedLanguage() => _language;
 
   /// A reminder's "close the day" button runs natively while the app sits in
   /// the background, so the day it closed is refreshed here: otherwise the
