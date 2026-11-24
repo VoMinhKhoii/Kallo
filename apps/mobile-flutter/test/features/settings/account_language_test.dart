@@ -11,6 +11,7 @@ import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
 import 'package:kallo_mobile/features/settings/logic/account_language.dart';
+import 'package:kallo_mobile/features/settings/logic/language_picker.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,21 +24,59 @@ import '../onboarding/onboarding_test_support.dart' show testSession;
 /// The app now follows the account, after storing a language picked on this
 /// phone once.
 
-/// The account on the server: a step-1 post stores its language.
+/// The account on the server: a step-1 post stores its language. A post can
+/// be held on the wire ([hold]) or refused ([fail]); a profile read can fail
+/// once ([failReads]).
 class _Server extends ApiClient {
   _Server(this.account);
 
   String account;
   final List<Object?> posts = [];
+  Completer<void>? hold;
+  bool fail = false;
+  int failReads = 0;
+
+  ProfileRow read() {
+    if (failReads > 0) {
+      failReads--;
+      throw StateError('offline');
+    }
+    return ProfileRow({'preferredLocale': account});
+  }
 
   @override
   Future<T> post<T>(String path, [Object? body]) async {
     posts.add(body);
+    await hold?.future;
+    if (fail) throw StateError('refused');
     final data = (body! as Map)['data'] as Map;
     if (data['preferredLocale'] case final String language) account = language;
     return <String, dynamic>{} as T;
   }
 }
+
+/// A keychain read that answers only when [answer] completes.
+class _SlowStore extends InMemoryKeyValueStore {
+  final Completer<void> answer = Completer<void>();
+
+  @override
+  Future<String?> read(String key) async {
+    await answer.future;
+    return super.read(key);
+  }
+}
+
+Session _sessionFor(String id) => Session(
+  accessToken: 'token',
+  tokenType: 'bearer',
+  user: User(
+    id: id,
+    appMetadata: const {},
+    userMetadata: const {},
+    aud: 'authenticated',
+    createdAt: '2026-07-28T00:00:00.000Z',
+  ),
+);
 
 /// A keychain read while the phone is locked.
 class _LockedStore extends InMemoryKeyValueStore {
@@ -140,9 +179,7 @@ void main() {
               // Not keyed on the session as the real one is: a rebuild on a
               // session change never settles under the widget tester. The
               // sync reads the session itself.
-              profileProvider.overrideWith(
-                (ref) async => ProfileRow({'preferredLocale': server.account}),
-              ),
+              profileProvider.overrideWith((ref) async => server.read()),
               apiClientProvider.overrideWithValue(server),
               accountLanguageStorageProvider.overrideWithValue(flags),
               onboardingDraftStoreProvider.overrideWithValue(
@@ -231,16 +268,74 @@ void main() {
       expect(appLanguage(), 'en');
     });
 
-    testWidgets('a refetch still carrying the old language keeps a new pick', (
+    Future<void> pick(String code) =>
+        ProviderScope.containerOf(app).read(languagePickerProvider).pick(code);
+
+    testWidgets('a pick still saving is not undone by a refetch', (
       tester,
     ) async {
       repaired();
       server.account = 'vi';
       await mount(tester, signedIn: testSession());
 
-      // Picked in Settings; its save has not landed yet.
+      // The app's order: the pick is registered, then the app switches.
+      server.hold = Completer<void>();
+      unawaited(pick('en'));
       await setAppLanguage(tester, 'en');
+      await refetch(tester); // still says vi
+      expect(appLanguage(), 'en');
+
+      server.hold!.complete();
       await refetch(tester);
+      expect(server.account, 'en');
+      expect(appLanguage(), 'en');
+    });
+
+    testWidgets('a pick the account refuses puts the app back', (tester) async {
+      repaired();
+      server.account = 'vi';
+      await mount(tester, signedIn: testSession());
+
+      server.fail = true;
+      final saving = pick('en');
+      await setAppLanguage(tester, 'en');
+      await expectLater(saving, throwsStateError);
+      await settle(tester);
+
+      expect(server.account, 'vi');
+      expect(appLanguage(), 'vi');
+    });
+
+    testWidgets('an account switch while the keychain answers gets no repair', (
+      tester,
+    ) async {
+      final slow = _SlowStore();
+      flags = slow;
+      await mount(tester, signedIn: testSession());
+
+      session.add(null);
+      await settle(tester);
+      session.add(_sessionFor('22222222-2222-2222-2222-222222222222'));
+      await settle(tester);
+      slow.answer.complete();
+      await settle(tester);
+
+      // The phone's pick belonged to the first account: the second is
+      // followed, not overwritten.
+      expect(server.posts, isEmpty);
+      expect(appLanguage(), 'en');
+    });
+
+    testWidgets('a return to the app retries a profile that failed to load', (
+      tester,
+    ) async {
+      repaired();
+      server.failReads = 1;
+      await mount(tester, signedIn: testSession());
+      expect(appLanguage(), 'vi', reason: 'nothing to follow yet');
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await settle(tester);
       expect(appLanguage(), 'en');
     });
 

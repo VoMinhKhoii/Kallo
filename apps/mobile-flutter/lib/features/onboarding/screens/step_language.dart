@@ -1,16 +1,22 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/form/option_row.dart';
+import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_answers.dart';
 import '../logic/onboarding_step_spec.dart';
+import '../../settings/logic/language_picker.dart';
 
 /// Screen 1 — "Choose your language". Picking a row records `preferredLocale`
 /// for the server AND live-switches the app with `context.setLocale`, so the
 /// rest of the wizard is already in the chosen language by the next frame.
-class StepLanguage extends StatelessWidget {
+/// Signed in, the pick is stored on the account at once ([LanguagePicker]).
+class StepLanguage extends ConsumerWidget {
   const StepLanguage({
     super.key,
     required this.answers,
@@ -44,15 +50,28 @@ class StepLanguage extends StatelessWidget {
   /// read the new locale's JSON before `tr()` answers in it, so an eager
   /// rebuild left the wizard's title and CTA (passed down as plain strings)
   /// in the old language.
-  Future<void> _pick(BuildContext context, String code) async {
+  Future<void> _pick(BuildContext context, WidgetRef ref, String code) async {
     if (answers.preferredLocale == code) return;
     answers.preferredLocale = code;
+    // Registered before the switch, so the account sync never sees the app
+    // in a language nobody is saving.
+    final saving = ref.read(languagePickerProvider).pick(code);
     await context.setLocale(Locale(code));
     onChanged();
+    unawaited(
+      saving.catchError((Object _) {
+        if (!context.mounted) return;
+        showTopToast(
+          context,
+          tr('settings.profilePanel.saveError'),
+          variant: TopToastVariant.error,
+        );
+      }),
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -65,7 +84,7 @@ class StepLanguage extends StatelessWidget {
                 localeFromDevice && option.code == deviceLanguage
                     ? tr('onboarding.fromDevice')
                     : null,
-            onTap: () => _pick(context, option.code),
+            onTap: () => _pick(context, ref, option.code),
           ),
         ],
         if (showSettingsNote) ...[

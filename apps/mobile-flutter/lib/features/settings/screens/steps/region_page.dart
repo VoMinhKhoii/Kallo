@@ -11,11 +11,10 @@ import '../../widgets/chrome/settings_step_page.dart';
 /// "Khu vực & ngôn ngữ" — onboarding screens 1 and 2 on one page: the app
 /// language, then where the user cooks.
 ///
-/// The language is the one answer that does not wait for the button. Picking
-/// it re-renders the whole app in that language at once (onboarding's own
-/// behaviour), so leaving it unsaved would strand the device in one language
-/// and the server in the other — it saves the moment it lands, together with
-/// whatever the countries currently hold.
+/// The language is the one answer that does not wait for the button: picking
+/// it re-renders the whole app in that language at once and stores it on the
+/// account ([StepLanguage] → `LanguagePicker`). The button saves the
+/// countries.
 class RegionPage extends StatefulWidget {
   const RegionPage({super.key});
 
@@ -24,15 +23,12 @@ class RegionPage extends StatefulWidget {
 }
 
 class _RegionPageState extends State<RegionPage> {
-  String? _savedLocale;
-
   @override
   Widget build(BuildContext context) => SettingsStepPage(
     step: SettingsStep.region,
     title: tr('settings.rows.region'),
     builder: (context, page) {
       final answers = page.session.answers;
-      _savedLocale ??= answers.preferredLocale;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -43,13 +39,7 @@ class _RegionPageState extends State<RegionPage> {
             deviceLanguage: page.session.device.deviceLanguage,
             localeFromDevice: page.session.device.localeFromDevice,
             showSettingsNote: false,
-            onChanged: () {
-              page.session.changed();
-              if (answers.preferredLocale != _savedLocale) {
-                _savedLocale = answers.preferredLocale;
-                page.save();
-              }
-            },
+            onChanged: page.session.changed,
           ),
           const SizedBox(height: KalloSpacing.sp6),
           GroupLabel(tr('onboarding.origin.stepTitle')),

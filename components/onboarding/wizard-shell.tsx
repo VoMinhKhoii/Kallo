@@ -147,11 +147,8 @@ export function WizardShell({
     }
   };
 
-  const handleNext = () => {
+  const advance = (data: Record<string, unknown>) => {
     setDirection(1);
-    const data = screenData[currentStep];
-    if (!data) return;
-
     startTransition(async () => {
       await saveOnboardingScreen(currentStep, data);
       if (currentStep >= TOTAL_STEPS) {
@@ -162,17 +159,15 @@ export function WizardShell({
     });
   };
 
-  const handleSkip = () => {
-    setDirection(1);
-    startTransition(async () => {
-      await saveOnboardingScreen(currentStep, {});
-      if (currentStep >= TOTAL_STEPS) {
-        finishWizard();
-      } else {
-        setCurrentStep((prev) => prev + 1);
-      }
-    });
+  const handleNext = () => {
+    const data = screenData[currentStep];
+    if (data) advance(data);
   };
+
+  // Skipping the countries keeps the language the page is in: the account
+  // holds the language push text is written in and the phone app follows.
+  const handleSkip = () =>
+    advance(currentStep === 1 ? { preferredLocale: activeLocale } : {});
 
   const handleBack = () => {
     setDirection(-1);

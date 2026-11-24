@@ -9,6 +9,7 @@ import '../../onboarding/data/onboarding_draft.dart';
 import '../../onboarding/logic/region_defaults.dart';
 import '../../onboarding/providers/onboarding_draft_providers.dart';
 import '../../onboarding/providers/onboarding_providers.dart';
+import 'language_picker.dart';
 
 /// Set once this phone has reconciled its own language pick with the
 /// account's (see [decideAccountLanguage]).
@@ -60,10 +61,10 @@ const Duration kAccountLanguageRefresh = Duration(minutes: 5);
 /// re-read on a return to the foreground, at most every
 /// [kAccountLanguageRefresh]).
 ///
-/// Acts only when the account's language CHANGES from the last one handled,
-/// so a refetch still carrying the old value never undoes a pick the person
-/// just made and is saving. Waits while a signed-out onboarding draft is
-/// still to be posted: its language reaches the account first.
+/// Stands aside while a pick is on its way to the account
+/// ([LanguagePicker.pending]), so a refetch still carrying the old language
+/// never undoes it, and while a signed-out onboarding draft is still to be
+/// posted: its language reaches the account first.
 class AccountLanguageSync extends ConsumerStatefulWidget {
   const AccountLanguageSync({required this.child, super.key});
 
@@ -83,10 +84,14 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
   /// else, and the next account is followed instead.
   bool _repairAllowed = true;
 
-  DateTime _refreshedAt = DateTime.now();
+  /// The keychain holds the repair flag; it is not read again.
+  bool _repairDone = false;
 
-  /// The account language last acted on, for [_userId].
-  String? _handled;
+  /// The repair failed this launch (offline): nothing changes until the
+  /// next, rather than switching the person's pick away.
+  bool _repairFailed = false;
+
+  DateTime _refreshedAt = DateTime.now();
 
   // Read from easy_localization in [didChangeDependencies], where inherited
   // lookups belong, and refreshed on every language change.
@@ -103,7 +108,15 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    ref.listenManual(sessionProvider, (_, _) => unawaited(_sync()));
+    ref.listenManual(sessionProvider, (_, next) {
+      // Recorded at once, even mid-sync: the next sign-in, even back into
+      // the same account, is handled afresh, and gets no repair.
+      if (next.hasValue && next.value == null) {
+        _userId = null;
+        _repairAllowed = false;
+      }
+      unawaited(_sync());
+    });
     ref.listenManual(profileProvider, (_, _) => unawaited(_sync()));
     ref.listenManual(onboardingDraftProvider, (_, _) => unawaited(_sync()));
   }
@@ -118,9 +131,13 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed || _userId == null) return;
     final now = DateTime.now();
-    if (now.difference(_refreshedAt) < kAccountLanguageRefresh) return;
-    _refreshedAt = now;
-    ref.invalidate(profileProvider);
+    final failed = ref.read(profileProvider).hasError;
+    if (failed || now.difference(_refreshedAt) >= kAccountLanguageRefresh) {
+      _refreshedAt = now;
+      ref.invalidate(profileProvider);
+    } else {
+      unawaited(_sync());
+    }
   }
 
   @override
@@ -144,26 +161,17 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
     final setLocale = _setLocale;
     final session = ref.read(sessionProvider);
     if (!session.hasValue) return;
-    final userId = session.value?.user.id;
-    if (userId == null) {
-      // Signed out: the next sign-in, even back into the same account, is
-      // handled afresh.
-      _userId = null;
-      _handled = null;
-      _repairAllowed = false;
-      return;
-    }
+    final userId = _userId = session.value?.user.id;
+    if (userId == null) return;
     final profile = ref.read(profileProvider);
     final account = supportedLocaleOrNull(profile.valueOrNull?.preferredLocale);
     if (app == null || setLocale == null) return;
     if (profile.isLoading || profile.hasError || account == null) return;
-    if (userId != _userId) {
-      _userId = userId;
-      _handled = null;
-    }
-    if (account == _handled) return;
-    final draft = ref.read(onboardingDraftProvider);
-    if (draft.isLoading || !(draft.valueOrNull?.isEmpty ?? true)) return;
+    // A pick on its way to the account wins until it lands or fails (the
+    // picker then refetches the account, and this looks again).
+    final picker = ref.read(languagePickerProvider)..settle(account);
+    if (picker.pending != null || !_draftPosted() || _repairFailed) return;
+    if (account == app && _repairDone) return;
 
     _busy = true;
     try {
@@ -171,22 +179,24 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
       // A read that fails (the keychain is locked while the phone is) is not
       // "never repaired": nothing happens until a read answers.
       final repairPending =
+          !_repairDone &&
           await storage.read(kAccountLanguageRepairedKey) == null;
-      if (!mounted) return;
+      // The session, a draft or a pick may have moved while the keychain
+      // answered: act only on the state this pass read.
+      final now = ref.read(sessionProvider).valueOrNull?.user.id;
+      if (!mounted || now != userId) return;
+      if (picker.pending != null || !_draftPosted()) return;
       final step = decideAccountLanguage(
         account: account,
         app: app,
         appPicked: _appPicked,
         repairPending: repairPending && _repairAllowed,
       );
-      // Marked before acting, so a failure is not retried in a loop on the
-      // profile refetch it triggers; a failed repair runs again next launch.
-      _handled = account;
       switch (step) {
         case AccountLanguageStep.repair:
-          await ref
-              .read(saveScreenControllerProvider)
-              .save(step: 1, data: {'preferredLocale': app}, advance: false);
+          _repairFailed = true; // cleared once the account holds it
+          await picker.pick(app);
+          _repairFailed = false;
         case AccountLanguageStep.adopt:
           // The person changed the language while this ran: their pick is
           // on its way to the account, and wins.
@@ -197,6 +207,7 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
       if (repairPending) {
         await storage.write(kAccountLanguageRepairedKey, '1');
       }
+      _repairDone = true;
     } catch (error) {
       debugPrint('[language] account sync failed: $error');
     } finally {
@@ -206,6 +217,13 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
         unawaited(_sync());
       }
     }
+  }
+
+  /// No signed-out onboarding draft is waiting: its language reaches the
+  /// account first.
+  bool _draftPosted() {
+    final draft = ref.read(onboardingDraftProvider);
+    return !draft.isLoading && (draft.valueOrNull?.isEmpty ?? true);
   }
 
   @override
