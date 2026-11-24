@@ -8,6 +8,7 @@ import { guardAuthRequest } from '@/app/api/supabase-proxy/_lib/guard-auth-reque
 import { rewriteUpstreamLocation } from '@/app/api/supabase-proxy/_lib/upstream-location';
 import { PayloadTooLargeError } from '@/lib/core/errors/app-error';
 import { readBoundedBody } from '@/lib/infra/http/bounded-body';
+import { sharedRefreshFetch } from '@/lib/infra/supabase/shared-refresh';
 
 /**
  * Reverse proxy for Supabase Auth (`auth/v1/*` only).
@@ -144,7 +145,10 @@ async function proxy(
 
   let upstream: Response;
   try {
-    upstream = await fetch(upstreamUrl, {
+    // Share an in-flight /token?grant_type=refresh_token call with the server
+    // and middleware clients so a waking browser tab and its API requests do
+    // not send two concurrent refreshes for the same token to GoTrue.
+    upstream = await sharedRefreshFetch(upstreamUrl, {
       method: req.method,
       headers,
       body,

@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   REUSE_MS,
+  resetSharedRefreshesForTests,
   sharedRefreshFetch,
 } from '@/lib/infra/supabase/shared-refresh';
 
@@ -18,9 +19,9 @@ function refresh(token: string) {
 const fetchMock = vi.fn();
 
 beforeEach(() => {
+  resetSharedRefreshesForTests();
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
-  // Each test uses its own tokens; the shared map is process-wide.
 });
 
 afterEach(() => {
@@ -148,5 +149,60 @@ describe('sharedRefreshFetch', () => {
       String(url).includes('grant_type=refresh_token')
     );
     expect(refreshes).toHaveLength(1);
+  });
+
+  it('shares one refresh between a Uint8Array proxy body and a string server body', async () => {
+    let answer!: (response: Response) => void;
+    fetchMock.mockReturnValue(
+      new Promise<Response>((resolve) => {
+        answer = resolve;
+      })
+    );
+
+    const proxyBody = new TextEncoder().encode('{ "refresh_token": "rt-u8" }');
+    const serverBody = JSON.stringify({ refresh_token: 'rt-u8' });
+
+    const [proxyRes, serverRes] = [
+      sharedRefreshFetch(new URL(TOKEN_URL), {
+        method: 'POST',
+        headers: new Headers({ apikey: 'pk-1' }),
+        body: proxyBody,
+      }),
+      sharedRefreshFetch(TOKEN_URL, {
+        method: 'POST',
+        headers: { ApiKey: 'pk-1' },
+        body: serverBody,
+      }),
+    ];
+
+    answer(Response.json({ access_token: 'shared-jwt' }, { status: 200 }));
+    const bodies = await Promise.all(
+      (await Promise.all([proxyRes, serverRes])).map((r) => r.json())
+    );
+
+    expect(bodies).toEqual([
+      { access_token: 'shared-jwt' },
+      { access_token: 'shared-jwt' },
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps requests with different apikey headers apart', async () => {
+    fetchMock.mockImplementation(async () => Response.json({ ok: true }));
+
+    await Promise.all([
+      sharedRefreshFetch(TOKEN_URL, {
+        method: 'POST',
+        headers: { apikey: 'pk-valid' },
+        body: JSON.stringify({ refresh_token: 'rt-key' }),
+      }),
+      sharedRefreshFetch(TOKEN_URL, {
+        method: 'POST',
+        headers: { apikey: 'pk-other' },
+        body: JSON.stringify({ refresh_token: 'rt-key' }),
+      }),
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

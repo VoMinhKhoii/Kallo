@@ -7,6 +7,7 @@
 // deliberately free of `next/server` and of the server AppError hierarchy.
 
 import { parseApiError } from '@/lib/core/errors/client';
+import { ensureFreshBrowserSession } from '@/lib/infra/supabase/browser-session';
 
 /**
  * Fetch JSON from an API route. Non-ok responses throw the parsed error
@@ -17,6 +18,9 @@ export async function request<T>(
   input: string,
   init?: RequestInit
 ): Promise<T> {
+  if (input.startsWith('/api/v1/')) {
+    await ensureFreshBrowserSession(init?.signal);
+  }
   const response = await fetch(input, init);
   if (!response.ok) {
     const body = await response.json().catch(() => null);

@@ -43,21 +43,68 @@ function entries(): Map<string, Entry> {
   return store[STATE_KEY];
 }
 
+/** Clear the process-wide refresh cache between unit tests. */
+export function resetSharedRefreshesForTests(): void {
+  entries().clear();
+}
+
 function requestUrl(input: Parameters<typeof fetch>[0]): string {
   if (typeof input === 'string') return input;
   if (input instanceof URL) return input.href;
   return input.url;
 }
 
-function isRefresh(
-  input: Parameters<typeof fetch>[0],
-  init: RequestInit | undefined
-): init is RequestInit & { body: string } {
-  return (
-    init?.method === 'POST' &&
-    typeof init.body === 'string' &&
-    requestUrl(input).includes('/token?grant_type=refresh_token')
-  );
+function parseRefreshUrl(input: Parameters<typeof fetch>[0]): URL | null {
+  try {
+    const url = input instanceof URL ? input : new URL(requestUrl(input));
+    if (
+      url.pathname.endsWith('/token') &&
+      url.searchParams.get('grant_type') === 'refresh_token'
+    ) {
+      return url;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function readBodyText(body: BodyInit | null | undefined): string | null {
+  if (typeof body === 'string') return body;
+  if (body instanceof Uint8Array) {
+    return new TextDecoder().decode(body);
+  }
+  return null;
+}
+
+function readApiKey(headers: HeadersInit | undefined): string {
+  if (!headers) return '';
+  if (headers instanceof Headers) return headers.get('apikey') ?? '';
+  if (Array.isArray(headers)) {
+    const match = headers.find(([name]) => name.toLowerCase() === 'apikey');
+    return match?.[1] ?? '';
+  }
+  for (const [name, value] of Object.entries(headers)) {
+    if (name.toLowerCase() === 'apikey') return value ?? '';
+  }
+  return '';
+}
+
+function canonicalRefreshToken(bodyText: string): string {
+  try {
+    const parsed = JSON.parse(bodyText) as { refresh_token?: unknown };
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      typeof parsed.refresh_token === 'string' &&
+      parsed.refresh_token.length > 0
+    ) {
+      return `rt:${parsed.refresh_token}`;
+    }
+  } catch {
+    // Non-JSON bodies still key on their exact bytes.
+  }
+  return `raw:${bodyText}`;
 }
 
 function toResponse(answer: SharedAnswer): Response {
@@ -69,9 +116,16 @@ function toResponse(answer: SharedAnswer): Response {
 }
 
 export const sharedRefreshFetch: typeof fetch = async (input, init) => {
-  if (!isRefresh(input, init)) return fetch(input, init);
+  if (init?.method?.toUpperCase() !== 'POST') return fetch(input, init);
+  const url = parseRefreshUrl(input);
+  const bodyText = url ? readBodyText(init.body) : null;
+  if (!url || bodyText === null) return fetch(input, init);
 
-  const key = createHash('sha256').update(init.body).digest('hex');
+  const key = createHash('sha256')
+    .update(
+      `${url.origin}\0${readApiKey(init.headers)}\0${canonicalRefreshToken(bodyText)}`
+    )
+    .digest('hex');
   const all = entries();
   const now = Date.now();
   const existing = all.get(key);
