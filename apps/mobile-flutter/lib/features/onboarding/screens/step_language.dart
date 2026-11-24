@@ -54,24 +54,24 @@ class StepLanguage extends ConsumerStatefulWidget {
 }
 
 class _StepLanguageState extends ConsumerState<StepLanguage> {
-  /// A pick is being stored: further taps wait for it.
-  bool _saving = false;
-
   /// AWAIT the load before rebuilding: [EasyLocalization.setLocale] has to
   /// read the new locale's JSON before `tr()` answers in it, so an eager
   /// rebuild left the wizard's title and CTA (passed down as plain strings)
   /// in the old language.
   Future<void> _pick(String code) async {
-    if (_saving || code == context.locale.languageCode) return;
+    // Any language save on the wire (this row's, the launch repair, another
+    // page's) holds every tap: two saves must never race.
+    if (ref.read(languageSavesProvider) > 0) return;
+    if (code == context.locale.languageCode) return;
+    final answers = widget.answers;
     Future<void> show() async {
+      answers.preferredLocale = code;
       if (!mounted) return;
-      widget.answers.preferredLocale = code;
       await context.setLocale(Locale(code));
       widget.onChanged();
     }
 
     if (ref.read(signedInUserIdProvider) == null) return show();
-    setState(() => _saving = true);
     try {
       await ref.read(languagePickerProvider).save(code, then: show);
     } catch (_) {
@@ -84,8 +84,6 @@ class _StepLanguageState extends ConsumerState<StepLanguage> {
           ),
         );
       }
-    } finally {
-      if (mounted) setState(() => _saving = false);
     }
   }
 

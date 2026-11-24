@@ -13,6 +13,7 @@ import '../logic/onboarding_seed.dart';
 import '../logic/onboarding_step_spec.dart';
 import '../logic/region_defaults.dart';
 import '../logic/resume_screen.dart';
+import '../../settings/logic/language_picker.dart';
 import '../providers/onboarding_draft_providers.dart';
 import '../providers/onboarding_providers.dart';
 import '../screens/step_about_you.dart';
@@ -196,13 +197,15 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
 
     final screen = _screen!;
     final spec = _spec(screen);
-    final blocked = _busy || !spec.ctaEnabled;
+    // Screen 1's pick may still be on its way to the account.
+    final saving = screen == 1 && ref.watch(languageSavesProvider) > 0;
+    final blocked = _busy || saving || !spec.ctaEnabled;
 
     return OnboardingStepScaffold(
       screen: screen,
       spec: spec,
       direction: _direction,
-      busy: _busy,
+      busy: _busy || saving,
       onContinue: blocked ? null : () => _leave(screen, skip: false),
       onBack:
           screen == 1 && widget.onClose == null

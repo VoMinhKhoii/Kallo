@@ -30,7 +30,7 @@ describe('ScreenOrigin', () => {
 
   // The account holds the language push text is written in and the phone app
   // follows: the pick is stored there before the page switches.
-  it('writes the draft, stores the language, then switches locale', async () => {
+  it('stores the language, then drafts and switches the page', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
 
@@ -58,10 +58,10 @@ describe('ScreenOrigin', () => {
       { preferredLocale: 'vi' },
       { advance: false }
     );
-    expect(writeDraftMock.mock.invocationCallOrder[0]).toBeLessThan(
-      saveMock.mock.invocationCallOrder[0]
-    );
     expect(saveMock.mock.invocationCallOrder[0]).toBeLessThan(
+      writeDraftMock.mock.invocationCallOrder[0]
+    );
+    expect(writeDraftMock.mock.invocationCallOrder[0]).toBeLessThan(
       switchLocaleMock.mock.invocationCallOrder[0]
     );
     expect(onChange).toHaveBeenLastCalledWith({
@@ -69,5 +69,29 @@ describe('ScreenOrigin', () => {
       countryOfResidence: 'Australia',
       preferredLocale: 'vi',
     });
+  });
+
+  it('leaves everything as it was when the account save fails', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    saveMock.mockRejectedValue(new Error('offline'));
+    render(
+      <ScreenOrigin
+        defaultValues={{
+          countryOfOrigin: 'Vietnam',
+          countryOfResidence: 'Australia',
+          preferredLocale: 'en',
+        }}
+        onChange={onChange}
+      />
+    );
+    onChange.mockClear(); // the mount report
+
+    await user.click(screen.getByRole('button', { name: /tiếng việt/i }));
+
+    await waitFor(() => expect(saveMock).toHaveBeenCalled());
+    expect(writeDraftMock).not.toHaveBeenCalled();
+    expect(switchLocaleMock).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

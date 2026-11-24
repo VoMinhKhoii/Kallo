@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
 import 'package:kallo_mobile/features/onboarding/screens/step_language.dart';
+import 'package:kallo_mobile/features/settings/logic/language_picker.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 
@@ -98,6 +99,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(server.account, 'vi');
     expect(app.locale.languageCode, 'vi');
+  });
+
+  testWidgets('any language save on the wire holds a tap', (tester) async {
+    // The launch repair, or this row on a page opened again, may be saving.
+    await mount(tester);
+    ProviderScope.containerOf(app).read(languageSavesProvider.notifier).state =
+        1;
+
+    await tester.tap(find.text('Tiếng Việt'));
+    await frames(tester);
+    expect(server.posted, isEmpty);
   });
 
   testWidgets('a refused save leaves the app as it was and says so', (

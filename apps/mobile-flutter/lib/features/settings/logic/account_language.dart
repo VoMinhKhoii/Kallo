@@ -182,7 +182,7 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
       // The session, a draft or a pick may have moved while the keychain
       // answered: act only on the state this pass read.
       final now = ref.read(sessionProvider).valueOrNull?.user.id;
-      if (!mounted || now != userId) return;
+      if (!mounted || now != userId || _appLanguage != app) return;
       if (!_quiet()) return;
       final step = decideAccountLanguage(
         account: account,
