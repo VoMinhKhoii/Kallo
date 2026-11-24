@@ -78,10 +78,10 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     _screen = ref.read(onboardingResumeScreenProvider);
   }
 
-  /// The server step this screen posts on its way out, or null when it posts
-  /// nothing (a half-step screen, or a step-2 screen with no metrics yet).
-  OnboardingStepPayload? _payload(int screen) {
+  /// What leaving [screen] posts, or null (a half step, or no metrics yet).
+  OnboardingStepPayload? _payload(int screen, {required bool skip}) {
     final answers = _answers!;
+    if (skip) return onboardingSkipPayload(screen, answers.preferredLocale);
     switch (screen) {
       case 2:
         return (step: 1, data: answers.stepOnePayload);
@@ -100,10 +100,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
     final sink = ref.read(onboardingSinkProvider);
     setState(() => _busy = true);
     try {
-      await sink.record(
-        screen: screen,
-        payload: skip ? null : _payload(screen),
-      );
+      await sink.record(screen: screen, payload: _payload(screen, skip: skip));
     } catch (_) {
       if (!mounted) return;
       setState(() => _busy = false);

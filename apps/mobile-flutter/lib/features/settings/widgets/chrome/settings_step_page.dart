@@ -66,6 +66,10 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
   StepSession? _session;
   bool _saving = false;
 
+  /// A save asked for while one was on the wire (a second language picked
+  /// quickly): it runs after, so the last pick is the one stored.
+  bool _saveAgain = false;
+
   @override
   void dispose() {
     _session?.dispose();
@@ -74,7 +78,11 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
 
   Future<void> _save() async {
     final session = _session;
-    if (session == null || _saving) return;
+    if (session == null) return;
+    if (_saving) {
+      _saveAgain = true;
+      return;
+    }
     setState(() => _saving = true);
     try {
       final saved = await ref.read(settingsStepSaverProvider).save(session);
@@ -93,6 +101,10 @@ class _SettingsStepPageState extends ConsumerState<SettingsStepPage> {
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+      if (_saveAgain && mounted) {
+        _saveAgain = false;
+        unawaited(_save());
+      }
     }
   }
 

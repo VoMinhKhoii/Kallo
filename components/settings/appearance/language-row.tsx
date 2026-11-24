@@ -28,13 +28,20 @@ export function LanguageRow() {
             { value: 'vi', label: 'Tiếng Việt' },
           ]}
           value={locale}
-          onChange={(next) => {
+          onChange={async (next) => {
             if (next === locale) return;
-            saveOnboardingScreen(
-              1,
-              { preferredLocale: next },
-              { advance: false }
-            ).catch(() => toast.error(t('profilePanel.saveError')));
+            // Stored first, then shown: switching navigates, and a page in a
+            // language the account does not hold would drift from the app.
+            try {
+              await saveOnboardingScreen(
+                1,
+                { preferredLocale: next },
+                { advance: false }
+              );
+            } catch {
+              toast.error(t('profilePanel.saveError'));
+              return;
+            }
             switchLocale(next as Locale);
           }}
         />

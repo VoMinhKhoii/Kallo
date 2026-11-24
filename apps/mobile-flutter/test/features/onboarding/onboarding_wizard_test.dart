@@ -254,7 +254,7 @@ void main() {
     expect(find.text('Save my plan'), findsOneWidget);
   });
 
-  testWidgets('Skip advances without posting but still records the screen', (
+  testWidgets('Skip on the countries keeps the language picked before them', (
     tester,
   ) async {
     final sink = FakeOnboardingSink();
@@ -264,8 +264,16 @@ void main() {
     await _tap(tester, 'Skip');
 
     expect(find.text('About you'), findsOneWidget);
-    expect(sink.saves, isEmpty);
-    expect(sink.reached, [2]);
+    // Screen 1's language rides on screen 2's step; the app follows the
+    // account's language, so skipping the countries must not drop it.
+    expect(sink.saves.single.step, 1);
+    expect(sink.saves.single.data, {'preferredLocale': 'en'});
+    expect(sink.reached, isEmpty);
+
+    // Any other screen's Skip still posts nothing.
+    await _tap(tester, 'Skip');
+    expect(sink.saves, hasLength(1));
+    expect(sink.reached, [3]);
   });
 
   testWidgets('a failed save keeps the user on the screen and says so', (

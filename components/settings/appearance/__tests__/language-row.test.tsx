@@ -1,16 +1,18 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageRow } from '../language-row';
 
-const { switchLocale, saveOnboardingScreen } = vi.hoisted(() => ({
+const { switchLocale, saveOnboardingScreen, toastError } = vi.hoisted(() => ({
   switchLocale: vi.fn(),
   saveOnboardingScreen: vi.fn(),
+  toastError: vi.fn(),
 }));
 
 vi.mock('@/hooks/profile/use-locale-switch', () => ({
   useLocaleSwitch: () => switchLocale,
 }));
 vi.mock('@/lib/domain/onboarding/actions', () => ({ saveOnboardingScreen }));
+vi.mock('sonner', () => ({ toast: { error: toastError } }));
 
 /** The select's trigger is its first button; the open list follows it. */
 function pick(label: string) {
@@ -29,10 +31,11 @@ function pick(label: string) {
 describe('LanguageRow', () => {
   beforeEach(() => {
     switchLocale.mockClear();
+    toastError.mockClear();
     saveOnboardingScreen.mockReset().mockResolvedValue({ success: true });
   });
 
-  it('stores a new language on the account and switches the page', () => {
+  it('stores a new language on the account, then switches the page', async () => {
     render(<LanguageRow />);
     pick('Tiếng Việt');
 
@@ -41,7 +44,18 @@ describe('LanguageRow', () => {
       { preferredLocale: 'vi' },
       { advance: false }
     );
-    expect(switchLocale).toHaveBeenCalledWith('vi');
+    await waitFor(() => expect(switchLocale).toHaveBeenCalledWith('vi'));
+  });
+
+  it('stays on the page and says so when the account save fails', async () => {
+    saveOnboardingScreen.mockRejectedValue(new Error('offline'));
+    render(<LanguageRow />);
+    pick('Tiếng Việt');
+
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith('profilePanel.saveError')
+    );
+    expect(switchLocale).not.toHaveBeenCalled();
   });
 
   it('does nothing for the language already shown', () => {

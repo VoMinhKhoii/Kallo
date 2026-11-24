@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -12,21 +13,37 @@ import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.
 import 'package:kallo_mobile/features/settings/logic/account_language.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../l10n_test_loader.dart';
+import '../onboarding/onboarding_test_support.dart' show testSession;
 
 /// Users saw English reminder text under Vietnamese buttons: the buttons
 /// follow the app's language, the text the account's, and the two drifted.
 /// The app now follows the account, after storing a language picked on this
 /// phone once.
-class _RecordingApi extends ApiClient {
+
+/// The account on the server: a step-1 post stores its language.
+class _Server extends ApiClient {
+  _Server(this.account);
+
+  String account;
   final List<Object?> posts = [];
 
   @override
   Future<T> post<T>(String path, [Object? body]) async {
     posts.add(body);
+    final data = (body! as Map)['data'] as Map;
+    if (data['preferredLocale'] case final String language) account = language;
     return <String, dynamic>{} as T;
   }
+}
+
+/// A keychain read while the phone is locked.
+class _LockedStore extends InMemoryKeyValueStore {
+  @override
+  Future<String?> read(String key) async =>
+      throw PlatformException(code: 'locked');
 }
 
 void main() {
@@ -63,9 +80,10 @@ void main() {
     });
   });
 
+  // Every test but the last starts on a phone where the person picked
+  // Vietnamese in an earlier launch (easy_localization reads that once).
   group('AccountLanguageSync', () {
     setUpAll(() async {
-      // A phone where the person picked Vietnamese in an earlier launch.
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
             const MethodChannel('plugins.flutter.io/shared_preferences'),
@@ -77,20 +95,35 @@ void main() {
       await EasyLocalization.ensureInitialized();
     });
 
-    late _RecordingApi api;
+    late _Server server;
     late InMemoryKeyValueStore flags;
     late InMemoryKeyValueStore draft;
-    late String account;
+    late StreamController<Session?> session;
     late BuildContext app;
 
     setUp(() {
-      api = _RecordingApi();
+      server = _Server('en');
       flags = InMemoryKeyValueStore();
       draft = InMemoryKeyValueStore();
-      account = 'en';
     });
 
-    Future<void> mount(WidgetTester tester) async {
+    void repaired() => flags.values[kAccountLanguageRepairedKey] = '1';
+
+    /// Riverpod flushes provider changes on frames, and nothing here rebuilds
+    /// on its own, so a few frames are pumped before settling.
+    Future<void> settle(WidgetTester tester) async {
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> mount(WidgetTester tester, {Session? signedIn}) async {
+      // Made inside the test body: fake async only drives what its own zone
+      // schedules.
+      session = StreamController<Session?>.broadcast();
+      addTearDown(session.close);
+      final first = signedIn;
       await tester.pumpWidget(
         EasyLocalization(
           supportedLocales: const [Locale('en'), Locale('vi')],
@@ -100,11 +133,17 @@ void main() {
           assetLoader: const FsL10nLoader(),
           child: ProviderScope(
             overrides: [
-              signedInUserIdProvider.overrideWithValue('user-1'),
+              sessionProvider.overrideWith((ref) async* {
+                yield first;
+                yield* session.stream;
+              }),
+              // Not keyed on the session as the real one is: a rebuild on a
+              // session change never settles under the widget tester. The
+              // sync reads the session itself.
               profileProvider.overrideWith(
-                (ref) async => ProfileRow({'preferredLocale': account}),
+                (ref) async => ProfileRow({'preferredLocale': server.account}),
               ),
-              apiClientProvider.overrideWithValue(api),
+              apiClientProvider.overrideWithValue(server),
               accountLanguageStorageProvider.overrideWithValue(flags),
               onboardingDraftStoreProvider.overrideWithValue(
                 OnboardingDraftStore(storage: draft),
@@ -121,23 +160,33 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settle(tester);
     }
 
     String appLanguage() => EasyLocalization.of(app)!.locale.languageCode;
+    Future<void> setAppLanguage(WidgetTester tester, String code) async {
+      await EasyLocalization.of(app)!.setLocale(Locale(code));
+      await settle(tester);
+    }
 
-    testWidgets('stores the phone\'s pick on the account once, and keeps it', (
+    Future<void> refetch(WidgetTester tester) async {
+      ProviderScope.containerOf(app).invalidate(profileProvider);
+      await settle(tester);
+    }
+
+    testWidgets('stores the phone\'s pick on the account, once', (
       tester,
     ) async {
-      await mount(tester);
+      await mount(tester, signedIn: testSession());
 
-      expect(api.posts, [
+      expect(server.posts, [
         {
           'step': 1,
           'data': {'preferredLocale': 'vi'},
           'advance': false,
         },
       ]);
+      expect(server.account, 'vi');
       expect(appLanguage(), 'vi');
       expect(flags.values[kAccountLanguageRepairedKey], isNotNull);
     });
@@ -145,38 +194,89 @@ void main() {
     testWidgets('after the repair, the app follows the account', (
       tester,
     ) async {
-      flags.values[kAccountLanguageRepairedKey] = '1';
-      await mount(tester);
+      repaired();
+      await mount(tester, signedIn: testSession());
 
-      expect(api.posts, isEmpty);
+      expect(server.posts, isEmpty);
       expect(appLanguage(), 'en');
     });
 
-    testWidgets('waits while a signed-out draft is still to be posted', (
+    testWidgets('waits for a signed-out draft to be posted, then follows', (
       tester,
     ) async {
-      flags.values[kAccountLanguageRepairedKey] = '1';
+      repaired();
       draft.values[kOnboardingDraftKey] = jsonEncode(
         const OnboardingDraft(screenReached: 2).toJson(),
       );
-      await mount(tester);
-
+      await mount(tester, signedIn: testSession());
       expect(appLanguage(), 'vi');
-      expect(api.posts, isEmpty);
+
+      await ProviderScope.containerOf(
+        app,
+      ).read(onboardingDraftProvider.notifier).clear();
+      await settle(tester);
+      expect(appLanguage(), 'en');
     });
 
-    testWidgets('follows a language changed elsewhere, mid-session', (
+    testWidgets('follows a language changed on the web, mid-session', (
       tester,
     ) async {
-      flags.values[kAccountLanguageRepairedKey] = '1';
-      account = 'vi';
-      await mount(tester);
+      repaired();
+      server.account = 'vi';
+      await mount(tester, signedIn: testSession());
       expect(appLanguage(), 'vi');
 
-      // Changed on the web; the next profile fetch carries it.
-      account = 'en';
-      ProviderScope.containerOf(app).invalidate(profileProvider);
-      await tester.pumpAndSettle();
+      server.account = 'en';
+      await refetch(tester);
+      expect(appLanguage(), 'en');
+    });
+
+    testWidgets('a refetch still carrying the old language keeps a new pick', (
+      tester,
+    ) async {
+      repaired();
+      server.account = 'vi';
+      await mount(tester, signedIn: testSession());
+
+      // Picked in Settings; its save has not landed yet.
+      await setAppLanguage(tester, 'en');
+      await refetch(tester);
+      expect(appLanguage(), 'en');
+    });
+
+    testWidgets('signing back into the same account follows it again', (
+      tester,
+    ) async {
+      repaired();
+      server.account = 'vi';
+      await mount(tester, signedIn: testSession());
+
+      session.add(null);
+      await settle(tester);
+      await setAppLanguage(tester, 'en');
+      session.add(testSession());
+      await settle(tester);
+
+      expect(appLanguage(), 'vi');
+    });
+
+    testWidgets('a locked keychain changes nothing', (tester) async {
+      flags = _LockedStore();
+      await mount(tester, signedIn: testSession());
+
+      expect(server.posts, isEmpty);
+      expect(appLanguage(), 'vi');
+    });
+
+    testWidgets('after a signed-out start, the next account is followed', (
+      tester,
+    ) async {
+      await mount(tester);
+      session.add(testSession());
+      await settle(tester);
+
+      // The phone's pick may be someone else's: no repair.
+      expect(server.posts, isEmpty);
       expect(appLanguage(), 'en');
     });
 
@@ -184,16 +284,14 @@ void main() {
     testWidgets('a new phone opens in the account\'s language', (tester) async {
       await mount(tester);
       await EasyLocalization.of(app)!.deleteSaveLocale();
-      api.posts.clear();
-      flags.values.clear();
-      account = 'vi';
+      server.account = 'vi';
 
       // A fresh mount reads "nothing picked" and starts on English.
       await tester.pumpWidget(const SizedBox());
-      await mount(tester);
+      await mount(tester, signedIn: testSession());
 
       expect(appLanguage(), 'vi');
-      expect(api.posts, isEmpty);
+      expect(server.posts, isEmpty);
     });
   });
 }
