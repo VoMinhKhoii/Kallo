@@ -75,27 +75,41 @@ export async function registerDevice(
       .where(
         and(eq(pushTokens.userId, userId), inArray(pushTokens.id, oldest))
       );
-    const profile: { timeZone?: string; preferredLocale?: string } = {};
-    const changed: SQL[] = [];
-    if (body.timeZone) {
-      profile.timeZone = body.timeZone;
-      changed.push(
-        sql`${userProfiles.timeZone} IS DISTINCT FROM ${body.timeZone}`
-      );
-    }
-    if (body.locale) {
-      profile.preferredLocale = body.locale;
-      changed.push(
-        sql`${userProfiles.preferredLocale} IS DISTINCT FROM ${body.locale}`
-      );
-    }
-    if (changed.length > 0) {
-      await tx
-        .update(userProfiles)
-        .set(profile)
-        .where(and(eq(userProfiles.userId, userId), or(...changed)));
-    }
+    await syncProfileFromDevice(tx, userId, body);
   });
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Copy what the device reported (time zone, picked language) onto the
+ * profile. Only fields it sent are set, and the row is written only when one
+ * of them differs, so a routine check-in costs no write.
+ */
+async function syncProfileFromDevice(
+  tx: Tx,
+  userId: string,
+  body: PushTokenBody
+): Promise<void> {
+  const profile: { timeZone?: string; preferredLocale?: string } = {};
+  const changed: SQL[] = [];
+  if (body.timeZone) {
+    profile.timeZone = body.timeZone;
+    changed.push(
+      sql`${userProfiles.timeZone} IS DISTINCT FROM ${body.timeZone}`
+    );
+  }
+  if (body.locale) {
+    profile.preferredLocale = body.locale;
+    changed.push(
+      sql`${userProfiles.preferredLocale} IS DISTINCT FROM ${body.locale}`
+    );
+  }
+  if (changed.length === 0) return;
+  await tx
+    .update(userProfiles)
+    .set(profile)
+    .where(and(eq(userProfiles.userId, userId), or(...changed)));
 }
 
 /**
