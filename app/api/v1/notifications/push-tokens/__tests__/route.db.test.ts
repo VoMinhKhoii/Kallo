@@ -40,12 +40,15 @@ describe.skipIf(!url)('push token retention in Postgres', () => {
     await sql.unsafe(`CREATE TABLE ${schema}.push_tokens (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL,
       token text NOT NULL UNIQUE, platform text NOT NULL,
-      last_seen_at timestamptz NOT NULL DEFAULT now(),
+      last_seen_at timestamptz NOT NULL DEFAULT now(), last_pushed_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now())`);
+    await sql.unsafe(`CREATE TABLE ${schema}.user_profiles (
+      user_id uuid PRIMARY KEY, time_zone text,
+      preferred_locale text DEFAULT 'en')`);
     state.db = drizzle(sql);
   });
   beforeEach(async () => {
-    await sql`TRUNCATE push_tokens`;
+    await sql`TRUNCATE push_tokens, user_profiles`;
   });
   afterAll(async () => {
     if (sql) {
@@ -96,6 +99,37 @@ describe.skipIf(!url)('push token retention in Postgres', () => {
     expect(
       await sql`SELECT id FROM push_tokens WHERE user_id = ${USER} AND token = ${token(1)}`
     ).toHaveLength(1);
+  });
+
+  it("writes the phone's language and zone onto the profile only when they changed", async () => {
+    await sql`INSERT INTO user_profiles (user_id, time_zone, preferred_locale)
+      VALUES (${USER}, 'Asia/Ho_Chi_Minh', 'en')`;
+    const post = (body: object) =>
+      POST(
+        new Request('http://localhost/api/v1/notifications/push-tokens', {
+          method: 'POST',
+          body: JSON.stringify({ token: token(1), platform: 'ios', ...body }),
+        }) as never
+      );
+    const profile = async () =>
+      (
+        await sql`SELECT time_zone, preferred_locale FROM user_profiles WHERE user_id = ${USER}`
+      )[0];
+
+    // Same zone, new language: the language still lands.
+    expect(
+      (await post({ timeZone: 'Asia/Ho_Chi_Minh', locale: 'vi' })).status
+    ).toBe(200);
+    expect(await profile()).toEqual({
+      time_zone: 'Asia/Ho_Chi_Minh',
+      preferred_locale: 'vi',
+    });
+    // No language sent (nothing picked on the phone): the stored one stays.
+    expect((await post({ timeZone: 'Europe/Paris' })).status).toBe(200);
+    expect(await profile()).toEqual({
+      time_zone: 'Europe/Paris',
+      preferred_locale: 'vi',
+    });
   });
 
   it('does not prune a token concurrently reassigned to another account', async () => {

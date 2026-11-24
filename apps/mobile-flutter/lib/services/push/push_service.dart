@@ -27,7 +27,8 @@ const Duration kCheckInInterval = Duration(minutes: 5);
 ///   • [askPermission] after the first meal is logged — the one place the
 ///     prompt appears (docs/NOTIFICATIONS.md → "Reminders", "Permission").
 ///   • [checkIn] on every return to the foreground: re-posts the token, which
-///     refreshes the server's "last opened" and the device's time zone.
+///     refreshes the server's "last opened", the device's time zone and the
+///     language picked in the app.
 ///   • iOS may rotate the token at any time; every `onToken` re-posts.
 ///   • [unregister] on sign-out — must run BEFORE the Supabase session is torn
 ///     down, since the DELETE rides the same Bearer token as every other call.
@@ -69,6 +70,13 @@ class PushService {
   /// A reminder's lock-screen button closed a day while the app runs; the
   /// listener then refreshes what it shows ([takeClosedDays] has the days).
   void Function()? onDayClosed;
+
+  /// The language the person picked in the app on this phone (`en` / `vi`),
+  /// or null while it still runs the English default. Posted with every
+  /// registration: the server writes pushes in it, and the lock-screen
+  /// buttons are registered in the app's language, so the two must agree.
+  /// Set by the registration listener, which can read the app's locale.
+  String? Function()? pickedLanguage;
 
   PushPayload? _bufferedTap;
   void Function(PushPayload payload)? _onTap;
@@ -239,10 +247,12 @@ class PushService {
     if (!_active) return;
     try {
       final timeZone = await _timeZone();
+      final language = pickedLanguage?.call();
       await _api.post<dynamic>(kPushTokensPath, {
         'token': token,
         'platform': 'ios',
         if (timeZone != null) 'timeZone': timeZone,
+        if (language != null) 'locale': language,
       });
       _registered = token;
       _lastPostedAt = DateTime.now();
