@@ -10,7 +10,7 @@ description: |
   pre-push gate hook), draft PR creation, CI monitoring and fixing, an always-on PR review
   loop (a Gemini 4 Neon pass on each pushed head, posted on the PR, then `@codex review`
   with a change brief, iterated until Codex approves the current head, or Neon finds
-  nothing while Codex is out of usage; every finding judged on its merits),
+  nothing to fix while Codex is out of usage; every finding judged on its merits),
   CodeRabbit comment triage (auto-fix reasonable ones, dismiss false positives
   with explanation, escalate architectural issues). Loops until all CI checks are
   green, the head is approved, and all actionable review comments are resolved. Use when the user says "ship this", "commit and PR", "push and open a PR", "send this for review", "submit my changes", or anything that implies taking local changes all the way to a reviewable pull request.
@@ -29,9 +29,10 @@ allowed-tools:
 # Ship Skill
 
 Takes your working directory from unstaged changes to a clean draft PR, then loops
-until all CI checks are green, **Codex has approved the current head**, and all
-CodeRabbit comments are resolved. The Codex review is not optional and is never
-skipped; neither is our own judgment: Codex is a second reviewer, not the authority.
+until all CI checks are green, **the current head is approved** (by Codex, or by
+Neon while Codex is out of usage), and all CodeRabbit comments are resolved. The PR
+review (Neon, then Codex) is not optional and is never skipped; neither is our own
+judgment: the reviewers are second opinions, not the authority.
 
 ---
 
@@ -151,24 +152,25 @@ repeats, and a step back after three rounds
 pass found 8 defects the GitHub Codex loop had missed.
 
 **Which model.** The bug rounds and the regression check run on **Gemini 4 Neon**
-(`gemini-4-neon-high`, through the Antigravity CLI `agy`). A pass falls back to
-**Codex Sol** (`gpt-6.1-sol`) only when Neon cannot run it: `agy` is missing, Neon
-is out of quota or rate-limited, the CLI errors or times out, or the output is not
-a review. Rerun that same pass on Sol with the same brief and pass file. A
-missing `agy` or an exhausted quota means Sol for the rest of this `/kship`; any
-other failure falls back for that pass only. The Astra pass stays on Codex.
+(`gemini-4-neon-high`, through the Antigravity CLI `agy`); the Astra pass runs on
+Codex (`gpt-6-astra`). When a pass fails, these rules apply in order:
 
-A refused tool is not a reason to leave Neon. When the run ends with "jetski: no
-output produced … required the "command" / "read_file" permission", rerun Neon
-once on the same pass; if the refused thing is a read-only command or a folder
-outside the worktree, add it to `NEON_READ_ONLY` for that rerun (never a command
-that writes, and no pipes or chains). Only a second refusal sends the pass to Sol.
-
-The ChatGPT Codex account refuses `gpt-6.1-sol` and `gpt-6-astra` ("model is not
-supported when using Codex with a ChatGPT account", since 2026-11-23). When Sol or
-Astra is refused, the pass runs on Neon (the Astra pass becomes a Neon pass with the
-same "Step back" pass file) and the Evidence line says so. A pass is reported as
-"did not run" only after Neon itself failed twice.
+1. **Neon failed once** (a refused tool: the run ends "jetski: no output produced
+   … required the "command" / "read_file" permission"; or a CLI error, a timeout,
+   output that is not a review): rerun Neon once on the same pass. After a refusal
+   the rerun may add a read-only command (never one that writes; no pipes or
+   chains) or a folder with no secrets in it, such as a package cache, to
+   `NEON_READ_ONLY`. Never add a folder that holds credentials or env files:
+   `~/.gemini` itself, `~/.ssh`, `~/.config`, `~/.aws`, or any checkout of the repo
+   (its `.env.local`).
+2. **Neon failed twice, `agy` is missing, or Neon is out of quota**: run the pass
+   on **Codex Sol** (`gpt-6.1-sol`) with the same brief and pass file. A missing
+   `agy` or an exhausted quota means Sol for the rest of this `/kship`.
+3. **Codex refuses the model** ("model is not supported when using Codex with a
+   ChatGPT account"; the current account refuses `gpt-6.1-sol` and `gpt-6-astra`):
+   an Astra pass runs on Neon instead, with the same "Step back" pass file and rule
+   1's retry. A Sol fallback that is refused or out of quota ends there: the pass
+   did not run. Never go back to a Neon that already failed twice or is missing.
 
 **How each pass runs.** Every pass runs in the background (3-15 minutes; wait for
 the task notification, never a foreground `sleep`). Round 1 has no pass file:
@@ -217,8 +219,7 @@ echo "agy exit $rc"; [ "$rc" -eq 0 ]
 ```
 `<checkout>` is the branch checkout's absolute path and `<pinned-sha>` the commit
 recorded for this pass. A non-zero exit is a failed pass, even when the output
-file has text in it: rerun it as "Which model" says (Neon once more on a refusal,
-otherwise Sol).
+file has text in it: rerun it by the "Which model" rules.
 
 Sol fallback and the Astra pass, run from `<checkout>`:
 
@@ -498,9 +499,11 @@ head, then **Codex**. When Codex is out of usage, Neon carries the loop alone
 Before every `@codex review`, run the Phase 3b Neon pass on the commit you are
 about to ask Codex about (pass `pr-<round>`, same command, same fallback rules).
 Round 1 reviews the whole branch with `codex-brief.md`; later rounds get a pass
-file scoped to `git diff <last-reviewed-sha>..HEAD` with the "Already answered"
-list. Skip it only when a Neon pass already reviewed this exact commit (Phase 3b's
-last pass on the pushed head counts).
+file scoped to `git diff <last-neon-sha>..HEAD` (`<last-neon-sha>` is the last
+commit a Neon pass reviewed) with the "Already answered" list, except that round 3
+reviews the whole branch ("From round 3 on" below). Skip running it only when a
+Neon pass already reviewed this exact commit (Phase 3b's last pass on the pushed
+head counts); then post that pass's result below instead.
 
 Post the result on the PR, so the PR itself shows Neon ran:
 
@@ -602,12 +605,18 @@ to stop reviewing: from here on **Neon is the PR reviewer** for this `/kship`.
 
 1. Do not re-request Codex every round. Each round is a Neon pass on the current
    head (as above, posted on the PR), its findings judged, fixed, pushed, CI green.
-2. Loop until a Neon pass on the **current** head reports no finding we fix. The
-   "From round 3 on" rules below apply to these rounds too.
-3. Once Neon is clean, request `@codex review` once more on that head (limits
-   reset). Findings → handle them as usual and continue the loop. Usage limit
-   again → stop asking; the Neon approval stands.
-4. Evidence and the Phase 7 summary say: "Codex: out of usage on <sha>; Neon
+2. Loop until a Neon pass on the **current** head reports no finding we fix (a
+   finding we rejected with evidence does not block). The "From round 3 on" rules
+   below apply to these rounds too.
+3. If Neon cannot run on the current head (Phase 3b's rules exhausted), post that
+   on the PR, stop the loop, and hand the PR to the user: no reviewer has seen
+   this head, and a pass that did not run is never a clean pass.
+4. Once Neon is clean, and only if at least one Neon round ran since Codex hit its
+   limit (the head moved), request `@codex review` once more on that head (limits
+   reset). Approved → done. Findings → handle them as usual and continue the loop.
+   Usage limit again, or silence after one 20-minute wait → stop asking; the Neon
+   approval stands.
+5. Evidence and the Phase 7 summary say: "Codex: out of usage on <sha>; Neon
    reviewed <n> rounds, clean on <sha>."
 
 #### Judge every finding ourselves
@@ -695,7 +704,7 @@ and never merge or cherry-pick its branch.
 Commit fixes with explicit paths (`fix: address review round <n>`), push,
 wait for CI (6a), then start the next round (Neon, then Codex). Repeat until the
 bot approves the **current** head, or, while Codex is out of usage, until Neon
-finds nothing on it.
+finds nothing we fix on it.
 
 **Every tier loops until approval.** The tier changes what the owner reads and
 what evidence the PR carries, never when review stops.
@@ -705,7 +714,7 @@ every later `@codex review`:
 1. List every finding so far by class. Sweep each class across the whole diff and
    its callers (step 3 above), so this round fixes classes, not sites.
 2. Make that round's Neon pass review the whole branch at round 3 (not just the
-   diff). In later rounds it stays scoped to `git diff <last-reviewed-sha>..HEAD`
+   diff). In later rounds it stays scoped to `git diff <last-neon-sha>..HEAD`
    and the callers of what that changed, and a whole-branch pass runs again only
    when the approach changed.
 3. Ask for a narrower review: the request names the last reviewed commit, asks
@@ -718,8 +727,9 @@ change the approach instead of adding cases: a different mechanism, not a longer
 list (on #466 the gate stopped parsing Bash commands and used git's own pre-push
 hook, and the findings ended). Say so in the next request. Do not cave to win the
 approval either. Stop and put the positions to the user only when:
-- Codex re-raises a finding we rejected with evidence (do not change the code just
-  to quiet it);
+- Codex or Neon re-raises a finding we rejected with evidence (do not change the
+  code just to quiet it);
+- Codex is out of usage and Neon cannot run on the current head (above);
 - a finding, or a change of approach, needs a product or design decision.
 
 ### 6d. Triage CodeRabbit Comments
@@ -780,8 +790,8 @@ git commit -m "fix: address CodeRabbit review comments"
 git push
 ```
 
-After pushing, CI re-runs. Return to **Phase 6a**, and request a fresh Codex round
-(6c): any push after Codex's approval invalidates it.
+After pushing, CI re-runs. Return to **Phase 6a**, then run the next 6c round
+(Neon, then Codex): any push invalidates the current approval, Codex's or Neon's.
 
 #### Resolving / Dismissing Comments
 
@@ -805,7 +815,8 @@ Exit the loop when **all** are true:
 1. `gh pr checks <pr-number>` shows all checks as `pass`
 2. Codex has approved the current `HEAD` (6c); or Codex is out of usage and the
    last Neon pass, on the current `HEAD`, found nothing we fix; or the user
-   explicitly accepted an open dispute
+   explicitly accepted an open dispute. Codex out of usage with Neon unable to
+   run on the current `HEAD` is not an exit: stop and hand the PR to the user (6c)
 3. Every Codex and CodeRabbit thread has a reply and is resolved (the 6c query
    returns nothing); an open dispute the user is deciding stays open and is named
    in the summary
