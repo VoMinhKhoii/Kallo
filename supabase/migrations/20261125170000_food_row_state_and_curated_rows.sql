@@ -891,6 +891,18 @@ UPDATE public.vietnamese_food_composition
 SET name_primary = 'Đậu phụ chiên phồng, chế biến với canxi sunfat', embedding = NULL, last_verified = '2026-11-25'
 WHERE id = 'usda_16429_cooked' AND name_primary = 'Đậu phụ chiên, chế biến với canxi sunfat';
 
+-- A. The two NIN "boiled" rows above now carry state raw because their values
+-- are dry density; their names still said boiled / luộc, and the names are
+-- card search strings and what Call 2 reads. Rename them to the dry form.
+-- (The NIN name_primary of nin_web_2026002 ends in a space, so these guard on
+-- name_en.)
+UPDATE public.vietnamese_food_composition
+SET name_primary = 'Nui khô', name_en = 'Macaroni, dry', embedding = NULL, last_verified = '2026-11-25'
+WHERE id = 'nin_web_1046002' AND name_en = 'Macaroni, boiled';
+UPDATE public.vietnamese_food_composition
+SET name_primary = 'Trân châu sắn khô', name_en = 'Tapioca pearls, dry', embedding = NULL, last_verified = '2026-11-25'
+WHERE id = 'nin_web_2026002' AND name_en = 'Tapioca, boiled';
+
 -- E/F. Curated rows from the Japanese Standard Tables of Food Composition
 -- (MEXT 2020, 8th revised edition, 2023 supplement). The catalog had only dry
 -- glass-noodle rows (332-351 kcal) and only boiled sticky rice (97 kcal, no
