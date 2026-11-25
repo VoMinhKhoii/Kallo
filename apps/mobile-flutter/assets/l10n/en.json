@@ -1866,13 +1866,6 @@
     "saved": "Changes saved",
     "language": "Language",
     "languageHint": "Change the app language",
-    "appearance": {
-      "title": "Appearance",
-      "system": "System",
-      "light": "Light",
-      "dark": "Dark",
-      "aurora": "Aurora"
-    },
     "sharing": {
       "autoShareLabel": "Auto-share to your circle",
       "error": "Couldn't update sharing"

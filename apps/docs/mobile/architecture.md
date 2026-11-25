@@ -48,7 +48,7 @@ lib/
                        route_error_screen.dart (go_router errorBuilder: unknown
                        deep link / route failure)
   theme/               kallo_colors, kallo_palette (light / Dark / Aurora values),
-                       theme_controller (Settings → Appearance), kallo_typography,
+                       theme_controller (follows the phone), kallo_typography,
                        kallo_theme, calm_tokens
 ```
 
@@ -214,10 +214,10 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
 - **Theming:** warm earthy palette on a cream surface (`theme/kallo_colors.dart`), Lora serif +
   DM Sans (`theme/kallo_typography.dart`) — see the `kallo-design` skill for the brand source.
   Every colour token is a getter onto `KalloPalette.current` (light, Dark or Aurora —
-  `theme/kallo_palette.dart`), chosen in Settings → Appearance and stored per device under
-  `kallo.theme`. `main()` applies the stored choice before the first frame;
-  `theme/theme_controller.dart` switches at runtime by rebuilding every element in place
-  (state and navigation survive) and follows the phone's brightness under System.
+  `theme/kallo_palette.dart`). There is no theme setting: the app is light on a light phone and
+  Aurora on a dark one, so it always matches the iOS launch screen. `main()` applies the
+  palette before the first frame; `theme/theme_controller.dart` follows the phone's brightness
+  at runtime by rebuilding every element in place (state and navigation survive).
 
 ## Web parity
 

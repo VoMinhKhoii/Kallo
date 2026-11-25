@@ -8,8 +8,8 @@
  * transparency, so the page colour shows through: iOS's LaunchScreen
  * storyboard and Android's `@color/launch_background` paint the app canvas
  * (#F8F7F4, `KalloColors.surface`) behind it. On a phone in dark mode the
- * iOS storyboard paints the dark canvas instead, so iOS also gets a copy in the
- * dark palette's ink (`LaunchImageDark*`).
+ * iOS storyboard paints Aurora's canvas instead, so iOS also gets a copy in
+ * Aurora's ink (`LaunchImageDark*`).
  *
  * The mark is also the FIRST FRAME of the Flutter launch intro
  * (`lib/shell/launch/`): Flutter redraws this K at the same size and centre,
@@ -38,8 +38,8 @@ const MOBILE = path.join(REPO_ROOT, 'apps/mobile-flutter');
 /** Ink — `KalloColors.text`, the colour the Flutter intro draws the K in. */
 const INK = [0x14, 0x14, 0x13];
 
-/** The dark palette's ink, for the iOS launch screen's dark appearance. */
-const DARK_INK = [0xf2, 0xf1, 0xec];
+/** Aurora's ink (the default dark look), for the iOS launch screen's dark appearance. */
+const DARK_INK = [0xf4, 0xf0, 0xec];
 
 /** The mark's viewBox, and its three polygons: stem, upper arm, leg. */
 const VIEW = { w: 656, h: 708 };
