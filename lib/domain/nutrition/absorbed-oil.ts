@@ -228,15 +228,18 @@ const REDUCED_FAT = new RegExp(
   ].join('|'),
   'iu'
 );
-/**
- * A negation that governs the fat phrase right after it: directly, or across
- * one linking verb ("không có thêm dầu", "không chiên ngập dầu"). A negation
- * further back is about something else ("không đường phết bơ").
- */
-const NEGATED_JUST_BEFORE = new RegExp(
-  `${vi('không|chẳng|ko|đừng|no|not|without|never')}(?:\\s+${vi('có|dùng|cho|chiên|rán|any')})?\\s*$`,
+/** A word that negates what comes shortly after it. */
+const NEGATION_WORD = new RegExp(
+  vi('không|chẳng|ko|đừng|no|not|without|never'),
   'iu'
 );
+/**
+ * How many words back a negation still governs a fat phrase: "không thêm
+ * dầu", "not too oily", "do not add extra oil". Free text in two languages has
+ * no clean parse, so an ambiguous note ("không đường phết bơ") reads as no
+ * request. That keeps the 1.25x cap; Call 2 still reads the note itself.
+ */
+const NEGATION_REACH_WORDS = 3;
 /** Clause breaks: a negation does not carry past them. */
 const CLAUSE_BREAK = /[,;.\n]|(?<!\p{L})(?:but|nhưng|còn)(?!\p{L})/iu;
 
@@ -249,7 +252,7 @@ const EXTRA_FAT_NOTE = new RegExp(
     ),
     vi(`(?:${VI_FAT})\\s+(?:nhiều|thêm)`),
   ].join('|'),
-  'iu'
+  'giu'
 );
 
 /**
@@ -269,11 +272,16 @@ export function prepNotesAskForExtraFat(
       .split(CLAUSE_BREAK)
       .some((clause) => {
         if (REDUCED_FAT.test(clause)) return false;
-        const ask = EXTRA_FAT_NOTE.exec(clause);
-        // "không thêm dầu", "no extra olive oil", "not cooked in butter".
-        return (
-          ask !== null && !NEGATED_JUST_BEFORE.test(clause.slice(0, ask.index))
-        );
+        // Any fat phrase in the clause that no nearby negation governs.
+        return [...clause.matchAll(EXTRA_FAT_NOTE)].some((ask) => {
+          const before = clause
+            .slice(0, ask.index)
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(-NEGATION_REACH_WORDS)
+            .join(' ');
+          return !NEGATION_WORD.test(before);
+        });
       })
   );
 }

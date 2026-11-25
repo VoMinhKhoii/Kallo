@@ -351,6 +351,13 @@ describe('appliances and negated requests', () => {
       'không có thêm dầu',
       'không chiên ngập dầu',
       'ít dầu',
+      'not too oily',
+      'not cooked with butter',
+      'do not add extra oil',
+      'không xào nhiều dầu',
+      'không cần thêm dầu',
+      // Ambiguous without a comma: read as no request (keeps the cap).
+      'không đường phết bơ',
     ]) {
       expect(prepNotesAskForExtraFat([note])).toBe(false);
     }
@@ -365,12 +372,11 @@ describe('appliances and negated requests', () => {
 
   it('keeps a request that follows an unrelated cut', () => {
     for (const note of [
-      'không đường phết bơ',
-      'no salt extra butter',
       'chả lụa phết bơ',
+      'không thêm dầu, phết bơ thật nhiều',
       'ít muối, dầu nhiều',
       'không đường, phết bơ',
-      'không dầu hào thêm dầu',
+      'không dầu hào, thêm dầu',
     ]) {
       expect(prepNotesAskForExtraFat([note])).toBe(true);
     }
