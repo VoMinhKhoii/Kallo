@@ -45,9 +45,14 @@ function meal(...items: Array<{ name: string; parts: Part[] }>) {
   return decomposition;
 }
 
-const part = (rawName: string, canonicalName = rawName): Part => ({
+const part = (
+  rawName: string,
+  canonicalName = rawName,
+  nameVi?: string
+): Part => ({
   rawName,
   canonicalName,
+  ...(nameVi ? { nameVi } : {}),
 });
 
 function results(...lists: V2MatchCandidate[][]): IngredientV2MatchResult[] {
@@ -205,6 +210,39 @@ describe('dropWholeDishRowsFromParts', () => {
     );
     for (const i of [0, 2, 4])
       expect(ids(out[i])).toEqual(['nin_cha_la_lot', 'fao_la_lot']);
+  });
+
+  it('keeps the dish row when only the Vietnamese name says it is the dish', () => {
+    const decomposition = meal(
+      {
+        name: 'Chả lá lốt',
+        parts: [
+          part('Chả', 'Fried pork rolls in lolot leaves', 'chả lá lốt'),
+          part('Bún', 'Rice vermicelli', 'bún'),
+        ],
+      },
+      {
+        name: 'Chả lá lốt',
+        parts: [
+          part('Lá lốt', 'Betel leaves', 'lá lốt'),
+          part('Thịt heo xay', 'Ground pork', 'thịt heo xay'),
+        ],
+      }
+    );
+    const bun = row('fao_bun', 'ingredient', ['Bún']);
+    const pork = row('usda_pork', 'ingredient', ['Thịt heo xay']);
+    const out = dropWholeDishRowsFromParts(
+      decomposition,
+      results(
+        [CHA_LA_LOT_ROW, LA_LOT_ROW],
+        [bun],
+        [CHA_LA_LOT_ROW, LA_LOT_ROW],
+        [pork]
+      )
+    );
+    expect(ids(out[0])).toEqual(['nin_cha_la_lot', 'fao_la_lot']);
+    // The leaf is still a part, whatever language its names are in.
+    expect(ids(out[2])).toEqual(['fao_la_lot']);
   });
 
   it('never empties a list', () => {

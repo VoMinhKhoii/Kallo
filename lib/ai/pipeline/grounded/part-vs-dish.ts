@@ -53,8 +53,11 @@ export function dropWholeDishRowsFromParts(
     mealItem.ingredients.forEach((ing, i) => {
       const result = out[start + i];
       if (!result || result.candidates.length === 0) return;
-      // The part's names that name the whole dish, as words.
-      const asDish = [ing.rawName, ing.canonicalName]
+      // The part's names that name the whole dish, as words. `nameVi` is the
+      // part's plain Vietnamese name ("bánh chưng" for "Bánh chưng chiên",
+      // "chả lá lốt" for "Chả"), so it still names the dish when the raw name
+      // carries a cooking word or the canonical name is English.
+      const asDish = [ing.rawName, ing.canonicalName, ing.nameVi]
         .filter((n) => covers(n, dish))
         .map(words);
       const kept = result.candidates.filter((c) => {
