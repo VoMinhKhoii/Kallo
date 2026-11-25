@@ -126,12 +126,13 @@ export function rejectWrongFormRows(state: RunState): {
   return { state: { ...state, grounded }, rejected };
 }
 
-/** Dish-level methods where the whole dish is cooked together in oil. */
-const WHOLE_DISH_STIR_FRY_METHOD =
-  /x[aà]o|stir[- ]?fr(?:y|ied)|saut[eé](?:ed)?/i;
+/** A pattern that starts and ends at a letter edge (`\b` is ASCII-only). */
+const atWordEdges = (body: string) =>
+  new RegExp(`(?<!\\p{L})(?:${body})(?!\\p{L})`, 'iu');
 /** Dish names whose staple/base itself is stir-fried or fried in oil. */
-const WHOLE_DISH_FRIED_NAME =
-  /x[aà]o|stir[- ]?fr(?:y|ied)|saut[eé](?:ed)?|\bfried\s+(?:rice|noodles?)\b|c[ơo]m\s*(?:chi[eê]n|rang)|(?:m[iì]|ph[ởo]|h[ủu]\s*ti[eế]u|b[uú]n|mi[eế]n|nui)\s*(?:chi[eê]n|x[aà]o)/i;
+const WHOLE_DISH_FRIED_NAME = atWordEdges(
+  String.raw`x[aà]o|stir[- ]?fr(?:y|ied)|saut[eé](?:ed)?|fried\s+(?:rice|noodles?)|c[ơo]m\s+(?:chi[eê]n|rang)|(?:m[iì]|ph[ởo]|h[ủu]\s+ti[eế]u|b[uú]n|mi[eế]n|nui)\s+(?:chi[eê]n|x[aà]o)`
+);
 /** Lighter foods are seasonings and garnish; they do not decide the dish. */
 const MIN_FOOD_G = 20;
 
@@ -206,24 +207,22 @@ export function dropOilInFriedRows(state: RunState): {
   };
 }
 
-function isWholeDishFatCooked(
-  mi: RunState['decomposition']['mealItems'][number]
-): boolean {
-  const method = mi.cookingMethod.normalize('NFC');
-  const name = mi.name.normalize('NFC');
-  return (
-    WHOLE_DISH_STIR_FRY_METHOD.test(method) || WHOLE_DISH_FRIED_NAME.test(name)
-  );
-}
-
+/**
+ * Whether a food on a plain row still takes up the dish's cooking oil. Call 1
+ * gives a part its own cooking method only when it differs from the dish's
+ * (rice beside fried chicken), so a part without one was cooked the dish's
+ * way: the potatoes in fish and chips, the pork in an egg-and-pork omelette.
+ */
 function foodNeedsCookingOil(
   mi: RunState['decomposition']['mealItems'][number],
   ing: RunState['decomposition']['mealItems'][number]['ingredients'][number]
 ): boolean {
-  if (ing.cookingMethod) {
-    return absorbedOil(ing.cookingMethod, 100) > 0;
-  }
-  return isWholeDishFatCooked(mi);
+  const method = ing.cookingMethod || mi.cookingMethod;
+  const context = [method, ...(ing.prepNotes ?? [])].filter(Boolean).join(' ');
+  if (absorbedOil(context, 100) > 0) return true;
+  return (
+    !ing.cookingMethod && WHOLE_DISH_FRIED_NAME.test(mi.name.normalize('NFC'))
+  );
 }
 
 function isFriedRow(
@@ -235,7 +234,8 @@ function isFriedRow(
   if (!row) return false;
   return isAlreadyFriedRow(
     row.prompt?.nameEn ?? row.info.matchedNameEn,
-    row.info.rowCookingMethod
+    row.info.rowCookingMethod,
+    row.nutrition?.fatG
   );
 }
 

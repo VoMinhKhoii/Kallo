@@ -692,6 +692,75 @@ describe('reconcileNutritionIds — double-counted frying oil and pure-fat guard
     fatG: 81,
   };
 
+  it('holds a row that states 0 g fat at 0 beside a sibling oil row', () => {
+    const decomposition: MealDecompositionWithIds = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          mealItemId: 'm1',
+          name: 'Miến xào',
+          cookingMethod: 'xào',
+          ingredients: [
+            {
+              ingredientId: 'i-mien',
+              name: 'miến',
+              estimatedGrams: 150,
+              cookingMethod: 'xào',
+              userFacingUnit: null,
+            },
+            {
+              ingredientId: 'i-oil',
+              name: 'dầu ăn',
+              estimatedGrams: 10,
+              cookingMethod: 'xào',
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+    };
+    const matched: MatchedIngredient[] = [
+      makeMatch('i-mien', 'miến', {
+        caloriesKcal: 78,
+        proteinG: 0,
+        carbohydrateG: 20.6,
+        fatG: 0,
+      }),
+      makeMatch('i-oil', 'dầu ăn', SOYBEAN_OIL_PER_100G),
+    ];
+    const out = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Miến xào',
+            ingredients: [
+              {
+                ingredientName: 'miến',
+                proteinG: { low: 0, mid: 0, high: 0 },
+                carbohydrateG: { low: 30, mid: 31, high: 32 },
+                fatG: { low: 6, mid: 8, high: 10 },
+              },
+              {
+                ingredientName: 'dầu ăn',
+                proteinG: { low: 0, mid: 0, high: 0 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 9, mid: 10, high: 10 },
+              },
+            ],
+          },
+        ],
+      },
+      decomposition,
+      matched
+    );
+    expect(out.mealItems[0].ingredients[0].fatG).toEqual({
+      low: 0,
+      mid: 0,
+      high: 0,
+    });
+  });
+
   it('caps fatty pork + sibling oil at <= 1.25x base fat while preserving low < mid < high bounds', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const decomposition: MealDecompositionWithIds = {

@@ -212,6 +212,10 @@ function resolveFatMacro(args: {
     (siblingOilPresent || base.matchedRowIsFried) &&
     !extraFatRequested
   ) {
+    // The guard leaves a zero base alone (it cannot tell a missing value from
+    // a real zero); a row that states 0 g fat holds 0 g here, its oil being
+    // counted elsewhere.
+    if (base.fatIsZero) return flatTriple(0);
     return guardMacro(
       rawIng.fatG,
       base.fatG,

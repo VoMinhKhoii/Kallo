@@ -50,7 +50,8 @@ const row = (
           caloriesKcal: kcalPer100,
           proteinG: 0,
           carbohydrateG: macroKcalPer100 / 4,
-          fatG: 0,
+          // A fried row carries its frying oil (isAlreadyFriedRow's fat floor).
+          fatG: /\bfried\b/i.test(nameEn) || rowCookingMethod ? 12 : 0,
         },
         inediblePct: 0,
         prompt: { name: nameEn, nameEn, score: 1 },
@@ -74,6 +75,9 @@ function stateOf(
       name: string;
       g: number;
       kcal: number;
+      /** The part's own method, when it differs from the dish's. */
+      method?: string;
+      prepNotes?: string[];
       row: [
         name: string,
         kcalPer100: number,
@@ -92,6 +96,8 @@ function stateOf(
       ingredients: d.parts.map((p) => ({
         rawName: p.name,
         canonicalName: p.name,
+        ...(p.method ? { cookingMethod: p.method } : {}),
+        ...(p.prepNotes ? { prepNotes: p.prepNotes } : {}),
       })),
     })),
   };
@@ -328,6 +334,84 @@ describe('dropOilInFriedRows', () => {
     expect(dropOilInFriedRows(state).dropped).toBe(0);
   });
 
+  it('keeps the oil for a plain part fried with the dish (fish and chips)', () => {
+    const state = stateOf([
+      {
+        name: 'Fish and chips',
+        cookingMethod: 'deep-fried',
+        parts: [
+          {
+            name: 'battered fish',
+            g: 150,
+            kcal: 350,
+            row: ['Fish, cod, battered, fried', 233],
+          },
+          {
+            name: 'potato',
+            g: 200,
+            kcal: 154,
+            row: ['Potatoes, flesh and skin, raw', 77],
+          },
+          { ...oil, name: 'oil' },
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('keeps the oil when a prep note fries the plain part', () => {
+    const state = stateOf([
+      {
+        name: 'Đậu phụ sốt cà chua',
+        cookingMethod: 'sốt',
+        parts: [
+          {
+            name: 'chả cá',
+            g: 80,
+            kcal: 180,
+            row: ['Fish cake, fried', 225],
+          },
+          {
+            name: 'đậu phụ',
+            g: 120,
+            kcal: 90,
+            method: 'sốt',
+            prepNotes: ['rán vàng trước'],
+            row: ['Tofu, firm, raw', 76],
+          },
+          oil,
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('reads dish names at word edges ("surimi chiên" is not "mì chiên")', () => {
+    const state = stateOf([
+      {
+        // Only the dish name could say the rice is fried here.
+        name: 'Cơm surimi chiên',
+        cookingMethod: 'trộn',
+        parts: [
+          {
+            name: 'cơm',
+            g: 200,
+            kcal: 260,
+            row: ['Rice, white, cooked', 130],
+          },
+          {
+            name: 'surimi',
+            g: 80,
+            kcal: 200,
+            row: ['Surimi, breaded, fried', 250],
+          },
+          oil,
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(1);
+  });
+
   it('keeps the oil when another food in the dish still needs it', () => {
     const state = stateOf([
       {
@@ -438,6 +522,7 @@ describe('dropOilInFriedRows', () => {
             name: 'bún',
             g: 180,
             kcal: 198,
+            method: 'luộc',
             row: ['Rice noodles, cooked', 110],
           },
           {
@@ -450,6 +535,7 @@ describe('dropOilInFriedRows', () => {
             name: 'rau sống',
             g: 50,
             kcal: 10,
+            method: 'sống',
             row: ['Lettuce, raw', 20],
           },
           oil,
@@ -473,6 +559,7 @@ describe('dropOilInFriedRows', () => {
             name: 'rice',
             g: 200,
             kcal: 260,
+            method: 'steamed',
             row: ['Rice, white, cooked', 130],
           },
           {
@@ -569,6 +656,7 @@ describe('dropOilInFriedRows', () => {
             name: 'rice',
             g: 200,
             kcal: 260,
+            method: 'steamed',
             row: ['Rice, white, cooked', 130],
           },
           {

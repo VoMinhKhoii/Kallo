@@ -148,6 +148,11 @@ export function renderAbsorbedOilPromptRule(): string {
 const FRIED_ROW = /\bfried\b/i;
 /** Fried without added fat, or a name where "fried" says nothing about fat. */
 const NOT_FAT_FRIED = /\b(?:pan|stir|air|dry)[- ]?fried\b|not breaded/i;
+/**
+ * Below this much fat per 100 g a row labelled fried does not carry its frying
+ * oil in its values (a shallow-fried lean fish at 0.7 g), so the oil row stays.
+ */
+const FRIED_ROW_MIN_FAT_G = 3;
 
 /**
  * True when a matched DB row already represents a fat-fried food, so its
@@ -163,8 +168,12 @@ const NOT_FAT_FRIED = /\b(?:pan|stir|air|dry)[- ]?fried\b|not breaded/i;
  */
 export function isAlreadyFriedRow(
   rowNameEn: string | null | undefined,
-  rowCookingMethod?: string | null
+  rowCookingMethod?: string | null,
+  /** The row's fat per 100 g, when known: a "fried" row this lean holds no frying oil. */
+  rowFatPer100g?: number | null
 ): boolean {
+  if (rowFatPer100g != null && rowFatPer100g < FRIED_ROW_MIN_FAT_G)
+    return false;
   const name = rowNameEn?.normalize('NFC').trim() ?? '';
   if (NOT_FAT_FRIED.test(name)) return false;
   if (FRIED_ROW.test(name)) return true;
@@ -172,11 +181,35 @@ export function isAlreadyFriedRow(
   return FRIED_ROW.test(method) && !NOT_FAT_FRIED.test(method);
 }
 
-const EXTRA_FAT_NEGATION =
-  /kh[oô]ng\s*(?:d[aầ]u|m[ơỡ]|b[ơo])|[ií]t\s*(?:d[aầ]u|m[ơỡ]|b[ơo]|b[eé]o)|b[oỏ]\s*(?:da|m[ơỡ])|\bno[- ]?(?:added\s*)?(?:oil|butter|fat)\b|\bwithout\s+(?:any\s+)?(?:oil|butter|fat)\b|\b(?:oil|fat)[- ]?free\b|\blow[- ]?fat\b|\b(?:less|light)\s+(?:oil|butter|fat)\b/i;
+/** A Vietnamese word that starts or ends at a letter edge (`\b` is ASCII-only). */
+const vi = (body: string) => `(?<!\\p{L})(?:${body})(?!\\p{L})`;
+/** Cooking fats in Vietnamese, accented only: unaccented "dau"/"bo"/"mo" are also đậu, bò, mò. */
+const VI_FAT = 'dầu|mỡ|bơ';
 
-const EXTRA_FAT_NOTE =
-  /\b(?:extra|more|heavy|added|double|lots\s+of|with|doused\s+in|soaked\s+in|drizzled\s+with|cooked\s+in|brushed\s+with|basted\s+with|topped\s+with|loaded\s+with)\s+(?:(?:olive|sesame|coconut|vegetable|bacon)\s+)?(?:oil|butter|ghee|lard|fat|grease|margarine)\b|\b(?:buttered|greasy|oily|extra\s+fatty)\b|(?:th[eê]m|nhi[eề]u|[dđ][aẫ]m|ng[aậ]p|ph[eế]t|tr[eé]t|qu[eế]t|r[uư][ơớ]i|chan|c[oó]|k[eè]m)\s+(?:d[aầ]u|m[ơỡ]|b[ơo])|(?:d[aầ]u|m[ơỡ]|b[ơo])\s+(?:nhi[eề]u|th[eê]m)/i;
+const EXTRA_FAT_NEGATION = new RegExp(
+  [
+    vi(`(?:không|ít)\\s+(?:${VI_FAT}|béo)`),
+    vi('bỏ\\s+(?:da|mỡ)'),
+    String.raw`\bno[- ]?(?:added\s*)?(?:oil|butter|fat)\b`,
+    String.raw`\bwithout\s+(?:any\s+)?(?:oil|butter|fat)\b`,
+    String.raw`\b(?:oil|fat)[- ]?free\b`,
+    String.raw`\blow[- ]?fat\b`,
+    String.raw`\b(?:less|light)\s+(?:oil|butter|fat)\b`,
+  ].join('|'),
+  'iu'
+);
+
+const EXTRA_FAT_NOTE = new RegExp(
+  [
+    String.raw`\b(?:extra|more|heavy|added|double|lots\s+of|with|doused\s+in|soaked\s+in|drizzled\s+with|cooked\s+in|brushed\s+with|basted\s+with|topped\s+with|loaded\s+with)\s+(?:(?:olive|sesame|coconut|vegetable|bacon)\s+)?(?:oil|butter|ghee|lard|fat|grease|margarine)\b`,
+    String.raw`\b(?:buttered|greasy|oily|extra\s+fatty)\b`,
+    vi(
+      `(?:thêm|nhiều|đẫm|ngập|phết|trét|quết|rưới|chan|có|kèm)\\s+(?:${VI_FAT})`
+    ),
+    vi(`(?:${VI_FAT})\\s+(?:nhiều|thêm)`),
+  ].join('|'),
+  'iu'
+);
 
 /**
  * True when any user-typed prep note explicitly asks for extra fat (e.g.
@@ -189,7 +222,11 @@ export function prepNotesAskForExtraFat(
 ): boolean {
   if (!prepNotes || prepNotes.length === 0) return false;
   return prepNotes.some((raw) => {
-    const note = raw.normalize('NFC').trim();
+    // Soy sauce, oyster sauce and vinaigrette carry "dầu" but no cooking fat.
+    const note = raw
+      .normalize('NFC')
+      .replace(new RegExp(OIL_LIKE_CONDIMENT.source, 'giu'), ' ')
+      .trim();
     if (!note) return false;
     if (EXTRA_FAT_NEGATION.test(note)) return false;
     return EXTRA_FAT_NOTE.test(note);

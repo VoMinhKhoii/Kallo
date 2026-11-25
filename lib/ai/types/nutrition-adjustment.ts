@@ -50,6 +50,11 @@ export interface MacroBase {
    * frying fat.
    */
   matchedRowIsFried?: boolean;
+  /**
+   * The row states 0 g fat per 100 g (as opposed to no fat value at all, which
+   * also scales to `fatG: 0`), so a fat cap on it is a real cap.
+   */
+  fatIsZero?: boolean;
 }
 
 /** Bounded estimates for the 4 LLM-adjusted macros of a single ingredient. */

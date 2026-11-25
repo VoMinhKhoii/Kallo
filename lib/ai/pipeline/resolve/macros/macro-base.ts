@@ -130,7 +130,11 @@ export function scalePer100g(
   rowMeta?: MacroBaseRowMeta
 ): MacroBase {
   const matchedRowIsFried = rowMeta
-    ? isAlreadyFriedRow(rowMeta.matchedNameEn, rowMeta.rowCookingMethod)
+    ? isAlreadyFriedRow(
+        rowMeta.matchedNameEn,
+        rowMeta.rowCookingMethod,
+        per100g.fatG
+      )
     : false;
   return {
     caloriesKcal: (per100g.caloriesKcal ?? 0) * (grams / 100),
@@ -139,6 +143,7 @@ export function scalePer100g(
     fatG: (per100g.fatG ?? 0) * (grams / 100),
     alcoholKcal: alcoholKcalPer100g(per100g, foodGroupEn) * (grams / 100),
     pureFatKind: classifyPureFat(per100g),
+    ...(per100g.fatG === 0 ? { fatIsZero: true } : {}),
     ...(matchedRowIsFried ? { matchedRowIsFried: true } : {}),
   };
 }

@@ -286,6 +286,39 @@ describe('isAlreadyFriedRow', () => {
   });
 });
 
+describe('isAlreadyFriedRow fat floor', () => {
+  it('does not treat a lean row labelled fried as holding its frying oil', () => {
+    expect(isAlreadyFriedRow('Fish, featherback, fried', null, 0.66)).toBe(
+      false
+    );
+    expect(isAlreadyFriedRow('Egg, whole, cooked, fried', null, 14.8)).toBe(
+      true
+    );
+  });
+});
+
+describe('prepNotesAskForExtraFat word edges and condiments', () => {
+  it('ignores sauces named with dầu and words that only contain a fat', () => {
+    for (const note of [
+      'taco bowl',
+      'banchan bowl',
+      'xì dầu nhiều',
+      'thêm dầu hào',
+      'nhiều dầu hào',
+      'rưới dầu giấm',
+      'them bo',
+      'them dau',
+    ]) {
+      expect(prepNotesAskForExtraFat([note])).toBe(false);
+    }
+  });
+
+  it('still reads a real extra-fat request next to an unrelated word', () => {
+    expect(prepNotesAskForExtraFat(['thịt bò thêm dầu'])).toBe(true);
+    expect(prepNotesAskForExtraFat(['extra oil, split bowl'])).toBe(true);
+  });
+});
+
 describe('prepNotesAskForExtraFat', () => {
   it('matches explicit extra-fat requests in English and Vietnamese', () => {
     for (const note of [
