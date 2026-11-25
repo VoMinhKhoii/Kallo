@@ -24,7 +24,7 @@ several places, report it once as a class and list every location.
 
 Report only: do not edit any file or run anything that changes the checkout. Use
 the file-reading tool and read-only commands (`git diff`, `git log`, `git show`,
-`git grep`, `grep`, `cat`, `head`, `ls`); any other command may be refused.
+`git status`, `git grep`, `grep`, `cat`, `head`, `ls`); any other command may be refused.
 Run one command per call, with no pipes, `&&`, `;` or redirections: a refused
 command ends the review with no output.
 
