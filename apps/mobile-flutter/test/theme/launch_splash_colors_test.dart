@@ -21,4 +21,23 @@ void main() {
       expect(swift, contains(line), reason: id.name);
     }
   });
+
+  test('the launch storyboard background is the light and dark canvas', () {
+    final colorset =
+        File(
+          'ios/Runner/Assets.xcassets/LaunchBackground.colorset/Contents.json',
+        ).readAsStringSync();
+    String components(int argb) {
+      String byte(int shift) =>
+          '0x${((argb >> shift) & 0xFF).toRadixString(16).padLeft(2, '0').toUpperCase()}';
+      return '"blue" : "${byte(0)}",\n'
+          '          "green" : "${byte(8)}",\n'
+          '          "red" : "${byte(16)}"';
+    }
+
+    for (final id in [KalloPaletteId.light, KalloPaletteId.dark]) {
+      final canvas = KalloPalette.byId(id).surface.toARGB32();
+      expect(colorset, contains(components(canvas)), reason: id.name);
+    }
+  });
 }
