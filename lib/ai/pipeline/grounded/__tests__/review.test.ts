@@ -397,38 +397,11 @@ describe('dropOilInFriedRows', () => {
     expect(dropOilInFriedRows(state).dropped).toBe(0);
   });
 
-  it('reads dish names at word edges ("surimi chiên" is not "mì chiên")', () => {
-    const state = stateOf([
-      {
-        // Only the dish name could say the rice is fried here.
-        name: 'Cơm surimi chiên',
-        cookingMethod: 'trộn',
-        parts: [
-          {
-            name: 'cơm',
-            g: 200,
-            kcal: 260,
-            row: ['Rice, white, cooked', 130],
-          },
-          {
-            name: 'surimi',
-            g: 80,
-            kcal: 200,
-            method: 'chiên',
-            row: ['Surimi, breaded, fried', 250],
-          },
-          oil,
-        ],
-      },
-    ]);
-    expect(dropOilInFriedRows(state).dropped).toBe(1);
-  });
-
   it('drops the oil when a plain part says no oil under a fried dish name', () => {
     const state = stateOf([
       {
         name: 'Cơm chiên trứng',
-        cookingMethod: 'trộn',
+        cookingMethod: 'chiên',
         parts: [
           {
             name: 'trứng',
@@ -455,7 +428,7 @@ describe('dropOilInFriedRows', () => {
     const state = stateOf([
       {
         name: 'Fried chicken salad',
-        cookingMethod: 'assembled',
+        cookingMethod: 'fried',
         parts: [
           {
             name: 'fried chicken',
@@ -489,6 +462,7 @@ describe('dropOilInFriedRows', () => {
             name: 'fried chicken',
             g: 150,
             kcal: 390,
+            method: 'fried',
             row: ['Chicken, thigh, batter, fried', 260],
           },
           {
@@ -502,13 +476,14 @@ describe('dropOilInFriedRows', () => {
         ],
       },
       {
-        name: 'Fried eggs with buttered toast',
-        cookingMethod: 'fried',
+        name: 'Bánh mì ốp la phết bơ',
+        cookingMethod: 'kẹp',
         parts: [
           {
             name: 'fried egg',
             g: 100,
             kcal: 196,
+            method: 'ốp la',
             row: ['Egg, whole, cooked, fried', 196],
           },
           {
@@ -591,10 +566,11 @@ describe('dropOilInFriedRows', () => {
     expect(dropOilInFriedRows(state).dropped).toBe(0);
   });
 
-  it('drops the frying oil a fried part carries on a mixed plate', () => {
+  it('drops frying oil by the dish method, never a fat on a mixed plate', () => {
     const state = stateOf([
       {
-        // Call 1 puts the frying on the egg; the dish itself is assembled.
+        // Call 1 puts the frying on the egg; the dish itself is assembled, so
+        // its fat could be the spread as well as the egg's oil: it stays.
         name: 'Bánh mì trứng',
         cookingMethod: 'kẹp',
         parts: [
@@ -628,7 +604,11 @@ describe('dropOilInFriedRows', () => {
         ],
       },
     ]);
-    expect(dropOilInFriedRows(state).dropped).toBe(2);
+    const out = dropOilInFriedRows(state);
+    expect(out.dropped).toBe(1);
+    expect(
+      out.state.decomposition.mealItems[1].ingredients.map((i) => i.rawName)
+    ).toEqual(['trứng']);
   });
 
   it('keeps the oil when another food in the dish still needs it', () => {

@@ -27,7 +27,6 @@ import {
   isAlreadyFriedRow,
   isCookingFatPart,
   prepNotesAskForExtraFat,
-  saysNoOil,
 } from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
@@ -129,13 +128,6 @@ export function rejectWrongFormRows(state: RunState): {
   return { state: { ...state, grounded }, rejected };
 }
 
-/** A pattern that starts and ends at a letter edge (`\b` is ASCII-only). */
-const atWordEdges = (body: string) =>
-  new RegExp(`(?<!\\p{L})(?:${body})(?!\\p{L})`, 'iu');
-/** Dish names whose staple/base itself is stir-fried or fried in oil. */
-const WHOLE_DISH_FRIED_NAME = atWordEdges(
-  String.raw`x[aà]o|stir[- ]?fr(?:y|ied)|saut[eé](?:ed)?|fried\s+(?:rice|noodles?)|c[ơo]m\s+(?:chi[eê]n|rang)|(?:m[iì]|ph[ởo]|h[ủu]\s+ti[eế]u|b[uú]n|mi[eế]n|nui)\s+(?:chi[eê]n|x[aà]o)`
-);
 /** Lighter foods are seasonings and garnish; they do not decide the dish. */
 const MIN_FOOD_G = 20;
 
@@ -169,19 +161,14 @@ export function dropOilInFriedRows(state: RunState): {
     const foods = own.filter(
       (f) => !fats.includes(f) && weighs(state, pairs[f], f)
     );
-    // Only the implied frying fat goes. Call 1 gives a fat row no method of
-    // its own, so it was fried in when the dish's method fries, or when a
-    // fried-row part carries the frying itself (the egg "chiên" in a bánh mì
-    // trứng). A fat the dish only dresses or spreads ("salad with olive oil")
-    // stays.
-    const partFriesHere = foods.some(
-      (f) =>
-        isFriedRow(state, pairs[f].ground, f) &&
-        absorbedOil(pairs[f].ingredient.cookingMethod, 100) > 0
-    );
-    const oils = fats.filter(
-      (f) => partFriesHere || friedInIt(mi, pairs[f].ingredient)
-    );
+    // Only the implied frying fat goes: Call 1 gives a fat row no method of
+    // its own, so the dish's method says whether it was fried in. On a mixed
+    // plate where only one part fries ("trứng chiên" in a bánh mì trứng,
+    // dish method "kẹp") the fat stays: nothing tells that plate's frying oil
+    // from the butter or mỡ hành it is served with, and deleting a fat the
+    // user ate costs more than keeping a few grams of oil twice (the fried
+    // part's own fat is still capped at 1.25x beside it).
+    const oils = fats.filter((f) => friedInIt(mi, pairs[f].ingredient));
     if (foods.length === 0 || oils.length === 0) continue;
     const hasFriedFood = foods.some((f) =>
       isFriedRow(state, pairs[f].ground, f)
@@ -241,12 +228,9 @@ function foodNeedsCookingOil(
 ): boolean {
   const method = ing.cookingMethod || mi.cookingMethod;
   const context = [method, ...(ing.prepNotes ?? [])].filter(Boolean).join(' ');
-  if (absorbedOil(context, 100) > 0) return true;
-  // "No oil" on the part beats a fried-sounding dish name ("cơm chiên").
-  if (saysNoOil(context)) return false;
-  return (
-    !ing.cookingMethod && WHOLE_DISH_FRIED_NAME.test(mi.name.normalize('NFC'))
-  );
+  // A frying method takes up oil; "không dầu" / "air-fried" on the part
+  // cancels it (absorbedOil reads the negation first).
+  return absorbedOil(context, 100) > 0;
 }
 
 /** The fat row's own method, or the dish's when it has none, is a frying one. */

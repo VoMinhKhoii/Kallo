@@ -100,6 +100,7 @@ describe('discrete oil rows suppress the sibling allowance', () => {
       'butter naan',
       'butter beans',
       'tuna in oil',
+      'bơ đậu phộng',
       'quả bơ',
       'bơ',
       'khoai tây',
