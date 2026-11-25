@@ -12,7 +12,6 @@ import type { MacroBase } from '@/lib/ai/types/nutrition-adjustment';
 import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
 import {
   absorbedOil,
-  isDiscreteOilIngredient,
   prepNotesAskForExtraFat,
 } from '@/lib/domain/nutrition/absorbed-oil';
 import type { RawNutritionAdjustment } from '../macro-resolution';
@@ -194,9 +193,8 @@ function resolveFatMacro(args: {
     );
   }
 
-  const isOwnOil =
-    base.pureFatKind === 'butter' ||
-    isDiscreteOilIngredient(rawIng.ingredientName);
+  // A matched row's composition says whether this part is the fat itself.
+  const isOwnOil = base.pureFatKind != null;
   const defaultMaxRatio = prepNotesPresent
     ? PREP_NOTES_FAT_MAX_RATIO
     : HALLUCINATION_GUARD_RATIO;

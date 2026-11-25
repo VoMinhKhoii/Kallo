@@ -12,6 +12,7 @@
 
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
+import { classifyPureFat } from '@/lib/ai/pipeline/resolve/macros/macro-base';
 import {
   selectedCandidate,
   shippedEdibleGrams,
@@ -24,7 +25,8 @@ import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts'
 import {
   absorbedOil,
   isAlreadyFriedRow,
-  isDiscreteOilIngredient,
+  isCookingFatPart,
+  prepNotesAskForExtraFat,
   saysNoOil,
 } from '@/lib/domain/nutrition/absorbed-oil';
 
@@ -157,8 +159,15 @@ export function dropOilInFriedRows(state: RunState): {
   for (const mi of state.decomposition.mealItems) {
     const own = mi.ingredients.map((_, i) => flat + i);
     flat += mi.ingredients.length;
-    const oils = own.filter((f) =>
-      isDiscreteOilIngredient(pairs[f].ingredient.rawName)
+    // Only the implied frying fat: a cooking fat (by its matched row, or its
+    // name when unmatched) cooked the dish's fry way. A fat the dish only
+    // dresses or spreads ("salad with olive oil", "buttered toast") stays.
+    const oils = own.filter(
+      (f) =>
+        isCookingFatPart(
+          pairs[f].ingredient.rawName,
+          matchedFat(state, pairs[f].ground, f)
+        ) && friedInIt(mi, pairs[f].ingredient)
     );
     const foods = own.filter(
       (f) => !oils.includes(f) && weighs(state, pairs[f], f)
@@ -169,8 +178,10 @@ export function dropOilInFriedRows(state: RunState): {
     );
     const otherFoodNeedsOil = foods.some(
       (f) =>
-        !isFriedRow(state, pairs[f].ground, f) &&
-        foodNeedsCookingOil(mi, pairs[f].ingredient)
+        (!isFriedRow(state, pairs[f].ground, f) &&
+          foodNeedsCookingOil(mi, pairs[f].ingredient)) ||
+        // "buttered toast" beside the fried eggs: the fat is the toast's.
+        prepNotesAskForExtraFat(pairs[f].ingredient.prepNotes)
     );
     if (hasFriedFood && !otherFoodNeedsOil)
       for (const f of oils) {
@@ -226,6 +237,26 @@ function foodNeedsCookingOil(
   return (
     !ing.cookingMethod && WHOLE_DISH_FRIED_NAME.test(mi.name.normalize('NFC'))
   );
+}
+
+/** The fat row's own method, or the dish's when it has none, is a frying one. */
+function friedInIt(
+  mi: RunState['decomposition']['mealItems'][number],
+  oil: RunState['decomposition']['mealItems'][number]['ingredients'][number]
+): boolean {
+  return absorbedOil(oil.cookingMethod || mi.cookingMethod, 100) > 0;
+}
+
+/** The picked row's fat class (`pureFatKind`), or undefined when unmatched. */
+function matchedFat(
+  state: RunState,
+  ground: GroundedIngredientEstimate | null,
+  f: number
+): { pureFatKind: string | null } | undefined {
+  const row = selectedCandidate(ground, state.matchResults[f]);
+  return row?.nutrition
+    ? { pureFatKind: classifyPureFat(row.nutrition) }
+    : undefined;
 }
 
 function isFriedRow(

@@ -31,6 +31,9 @@ const estimate = (
   fatG: triple(0),
 });
 
+/** Fixture rows that are a cooking fat ("Oil, soybean", "Butter, salted"). */
+const PURE_FAT_ROW = /^(?:oil|butter|lard|ghee)\b/i;
+
 /** One candidate row with this English name and energy density. */
 const row = (
   i: number,
@@ -46,13 +49,21 @@ const row = (
     candidates: [
       {
         info: { matchedName: nameEn, rowCookingMethod },
-        nutrition: {
-          caloriesKcal: kcalPer100,
-          proteinG: 0,
-          carbohydrateG: macroKcalPer100 / 4,
-          // A fried row carries its frying oil (isAlreadyFriedRow's fat floor).
-          fatG: /\bfried\b/i.test(nameEn) || rowCookingMethod ? 12 : 0,
-        },
+        nutrition: PURE_FAT_ROW.test(nameEn)
+          ? // A cooking fat is all fat (classifyPureFat reads the composition).
+            {
+              caloriesKcal: kcalPer100,
+              proteinG: 0,
+              carbohydrateG: 0,
+              fatG: macroKcalPer100 / 9,
+            }
+          : {
+              caloriesKcal: kcalPer100,
+              proteinG: 0,
+              carbohydrateG: macroKcalPer100 / 4,
+              // A fried row carries its frying oil (isAlreadyFriedRow's fat floor).
+              fatG: /\bfried\b/i.test(nameEn) || rowCookingMethod ? 12 : 0,
+            },
         inediblePct: 0,
         prompt: { name: nameEn, nameEn, score: 1 },
       },
@@ -405,7 +416,7 @@ describe('dropOilInFriedRows', () => {
             kcal: 200,
             row: ['Surimi, breaded, fried', 250],
           },
-          oil,
+          { ...oil, method: 'chiên' },
         ],
       },
     ]);
@@ -431,7 +442,7 @@ describe('dropOilInFriedRows', () => {
             prepNotes: ['không dầu'],
             row: ['Rice, white, cooked', 130],
           },
-          oil,
+          { ...oil, method: 'chiên' },
         ],
       },
     ]);
@@ -458,11 +469,89 @@ describe('dropOilInFriedRows', () => {
             prepNotes: ['with ranch'],
             row: ['Lettuce, raw', 15],
           },
-          { ...oil, name: 'oil' },
+          { ...oil, name: 'oil', method: 'fried' },
         ],
       },
     ]);
     expect(dropOilInFriedRows(state).dropped).toBe(1);
+  });
+
+  it('keeps a fat the dish dresses or spreads, not fries in', () => {
+    const state = stateOf([
+      {
+        name: 'Fried chicken salad with olive oil',
+        cookingMethod: 'assembled',
+        parts: [
+          {
+            name: 'fried chicken',
+            g: 150,
+            kcal: 390,
+            row: ['Chicken, thigh, batter, fried', 260],
+          },
+          {
+            name: 'lettuce',
+            g: 80,
+            kcal: 12,
+            method: 'raw',
+            row: ['Lettuce, raw', 15],
+          },
+          { ...oil, name: 'olive oil', row: ['Oil, olive', 884] },
+        ],
+      },
+      {
+        name: 'Fried eggs with buttered toast',
+        cookingMethod: 'fried',
+        parts: [
+          {
+            name: 'fried egg',
+            g: 100,
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'toast',
+            g: 60,
+            kcal: 160,
+            method: 'toasted',
+            prepNotes: ['buttered'],
+            row: ['Bread, white, toasted', 290],
+          },
+          { ...oil, name: 'butter', row: ['Butter, salted', 717] },
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('never reads peanut butter as the frying fat', () => {
+    const state = stateOf([
+      {
+        name: 'Fried eggs with toast and peanut butter',
+        cookingMethod: 'fried',
+        parts: [
+          {
+            name: 'fried egg',
+            g: 100,
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'toast',
+            g: 60,
+            kcal: 160,
+            method: 'toasted',
+            row: ['Bread, white, toasted', 290],
+          },
+          {
+            name: 'peanut butter',
+            g: 30,
+            kcal: 176,
+            row: ['Peanut butter, smooth style', 588],
+          },
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
   });
 
   it('keeps the oil when another food in the dish still needs it', () => {

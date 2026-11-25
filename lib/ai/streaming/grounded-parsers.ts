@@ -32,7 +32,7 @@ import type {
   MealItemNutrition,
 } from '@/lib/ai/types/nutrition-adjustment';
 import { nameKey } from '@/lib/core/text/name-key';
-import { mealItemHasDiscreteOil } from '@/lib/domain/nutrition/absorbed-oil';
+import { isCookingFatPart } from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
  * Same partial-JSON marker as v1's nutrition stream. Each `{"mealItemName":`
@@ -168,13 +168,12 @@ export function resolveStreamingV2MealItem(
     };
   });
 
-  // Same rule the reconciled path applies (`macro-resolution.ts`): one discrete
-  // cooking-fat row (by name or matched pure-fat composition) suppresses its
-  // siblings' absorbed-oil allowance and caps their fat near base.
-  const siblingOilPresent =
-    mealItemHasDiscreteOil(
-      rawItem.ingredients.map((ing) => ing.ingredientName)
-    ) || prepared.some((entry) => entry.base?.pureFatKind != null);
+  // Same rule the reconciled path applies (`macro-resolution.ts`): one
+  // cooking-fat part (by matched composition, or by name when unmatched)
+  // suppresses its siblings' absorbed-oil allowance and caps their fat.
+  const siblingOilPresent = prepared.some((entry) =>
+    isCookingFatPart(entry.rawIng.ingredientName, entry.base)
+  );
 
   for (const {
     rawIng,

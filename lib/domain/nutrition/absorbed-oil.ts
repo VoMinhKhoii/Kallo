@@ -113,6 +113,20 @@ export function isDiscreteOilIngredient(name: string | null | undefined) {
 }
 
 /**
+ * True when a meal part is a cooking fat. A matched part's row composition
+ * decides (`pureFatKind`, from fat >= 80 g and little else per 100 g), so
+ * "peanut butter", "butter beans" and "tuna in oil" are not fats; the name
+ * only decides for a part that matched no row.
+ */
+export function isCookingFatPart(
+  name: string | null | undefined,
+  matchedBase: { pureFatKind?: string | null } | undefined
+): boolean {
+  if (matchedBase) return matchedBase.pureFatKind != null;
+  return isDiscreteOilIngredient(name);
+}
+
+/**
  * True when a meal item already carries the frying fat as its own row. Its
  * sibling foods must then NOT also be granted an absorbed-oil allowance, or
  * the same oil is counted twice — observed as a plate of deep-fried potatoes
@@ -230,7 +244,7 @@ const REDUCED_FAT = new RegExp(
 );
 /** A word that negates what comes shortly after it. */
 const NEGATION_WORD = new RegExp(
-  vi('không|chẳng|ko|đừng|no|not|without|never'),
+  vi("không|chẳng|ko|đừng|no|not|non|without|never|\\p{L}+n['’]t"),
   'iu'
 );
 /**

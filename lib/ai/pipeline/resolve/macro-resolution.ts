@@ -7,7 +7,10 @@ import type {
   NutritionAdjustment,
 } from '@/lib/ai/types/nutrition-adjustment';
 import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
-import { mealItemHasDiscreteOil } from '@/lib/domain/nutrition/absorbed-oil';
+import {
+  isCookingFatPart,
+  mealItemHasDiscreteOil,
+} from '@/lib/domain/nutrition/absorbed-oil';
 import { resolveIngredientMacros } from './macros/bounded-macros';
 import { computeMacroBaseMap } from './macros/macro-base';
 
@@ -54,17 +57,17 @@ export function resolveStreamingMealItem(
   decomposedMealItem: MealDecompositionWithIds['mealItems'][number] | undefined,
   baseMap: Map<string, MacroBase>
 ): MealItemNutrition {
-  // Whether this dish carries its frying fat as its own row (by name OR by
-  // matched DB composition, e.g. Vietnamese "bơ" matched to butter). Computed
+  // Whether this dish carries its frying fat as its own row. A matched part's
+  // composition decides (Vietnamese "bơ" matched to butter is a fat, "peanut
+  // butter" is not); the name only for a part that matched nothing. Computed
   // once per meal item so sibling foods do not double-count cooking oil.
-  const siblingOilPresent =
-    mealItemHasDiscreteOil(
-      rawItem.ingredients.map((ing) => ing.ingredientName)
-    ) ||
-    (decomposedMealItem?.ingredients.some(
-      (ing) => baseMap.get(ing.ingredientId)?.pureFatKind != null
-    ) ??
-      false);
+  const siblingOilPresent = decomposedMealItem
+    ? decomposedMealItem.ingredients.some((ing) =>
+        isCookingFatPart(ing.name, baseMap.get(ing.ingredientId))
+      )
+    : mealItemHasDiscreteOil(
+        rawItem.ingredients.map((ing) => ing.ingredientName)
+      );
   const ingredients: IngredientLlmNutrition[] = rawItem.ingredients.map(
     (rawIng) => {
       const decIng = decomposedMealItem?.ingredients.find(
@@ -216,13 +219,12 @@ export function reconcileNutritionIds(
         };
       });
 
-      // See `resolveStreamingMealItem`: one discrete cooking-fat row (by name
-      // or matched pure-fat composition) suppresses its siblings' absorbed-oil
-      // allowance and caps their fat near base.
-      const siblingOilPresent =
-        mealItemHasDiscreteOil(
-          rawMi.ingredients.map((ing) => ing.ingredientName)
-        ) || matchedSlots.some((slot) => slot.base?.pureFatKind != null);
+      // See `resolveStreamingMealItem`: one cooking-fat part (by matched
+      // composition, or by name when unmatched) suppresses its siblings'
+      // absorbed-oil allowance and caps their fat near base.
+      const siblingOilPresent = matchedSlots.some((slot) =>
+        isCookingFatPart(slot.rawIng.ingredientName, slot.base)
+      );
 
       const ingredients: IngredientLlmNutrition[] = matchedSlots.map(
         ({ rawIng, decomposedIng, ingredientId, base }) => {

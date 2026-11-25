@@ -356,6 +356,10 @@ describe('appliances and negated requests', () => {
       'do not add extra oil',
       'không xào nhiều dầu',
       'không cần thêm dầu',
+      'non-greasy',
+      'non-oily',
+      "don't add extra oil",
+      "isn't oily",
       // Ambiguous without a comma: read as no request (keeps the cap).
       'không đường phết bơ',
     ]) {
