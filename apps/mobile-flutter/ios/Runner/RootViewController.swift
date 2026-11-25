@@ -7,15 +7,18 @@ import UIKit
 /// Flutter keeps its splash view up from the moment the window shows until
 /// Dart paints its first frame, which is after `main()` has initialised
 /// Supabase, analytics and the rest. By default that view is the launch
-/// storyboard, which is always cream, so a Dark or Aurora user stared at the
-/// cream canvas for that whole wait and then saw it snap dark once the intro
-/// started. This splash reads the same keychain entry `main()` reads
+/// storyboard, which only knows the phone's light or dark mode, so a Dark or
+/// Aurora user on a light phone stared at the cream canvas for that whole
+/// wait and then saw it snap dark once the intro started. This splash reads the same keychain entry `main()` reads
 /// (`kThemeStorageKey` in `theme_controller.dart`) and draws exactly what the
 /// launch curtain's first frame draws: the K, centred, in the palette's ink
 /// on the palette's canvas.
 ///
 /// The storyboard itself still shows for the moment before this view exists:
 /// iOS draws it before any app code runs, so nothing here can recolour it.
+/// It follows the phone instead (the `LaunchBackground` colour and the
+/// `LaunchImage` K both have a dark variant), which matches System, the
+/// default choice.
 ///
 /// The colours here mirror `lib/theme/palette/kallo_palette_values.dart`;
 /// change them together.

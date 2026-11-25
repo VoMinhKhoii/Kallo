@@ -7,7 +7,9 @@
  * These are the mark ALONE in ink (#141413, `KalloColors.text`) on
  * transparency, so the page colour shows through: iOS's LaunchScreen
  * storyboard and Android's `@color/launch_background` paint the app canvas
- * (#F8F7F4, `KalloColors.surface`) behind it.
+ * (#F8F7F4, `KalloColors.surface`) behind it. On a phone in dark mode the
+ * iOS storyboard paints the dark canvas instead, so iOS also gets a copy in the
+ * dark palette's ink (`LaunchImageDark*`).
  *
  * The mark is also the FIRST FRAME of the Flutter launch intro
  * (`lib/shell/launch/`): Flutter redraws this K at the same size and centre,
@@ -35,6 +37,9 @@ const MOBILE = path.join(REPO_ROOT, 'apps/mobile-flutter');
 
 /** Ink — `KalloColors.text`, the colour the Flutter intro draws the K in. */
 const INK = [0x14, 0x14, 0x13];
+
+/** The dark palette's ink, for the iOS launch screen's dark appearance. */
+const DARK_INK = [0xf2, 0xf1, 0xec];
 
 /** The mark's viewBox, and its three polygons: stem, upper arm, leg. */
 const VIEW = { w: 656, h: 708 };
@@ -107,8 +112,8 @@ function chunk(type, data) {
   return Buffer.concat([len, body, crc]);
 }
 
-/** An RGBA PNG of the mark, `height` px tall, on transparency. */
-function render(height) {
+/** An RGBA PNG of the mark, `height` px tall, in `ink` on transparency. */
+function render(height, ink) {
   const scale = height / VIEW.h;
   const width = Math.round(VIEW.w * scale);
   // One filter byte (0 = None) per row, then RGBA.
@@ -119,9 +124,9 @@ function render(height) {
     for (let x = 0; x < width; x++) {
       const a = coverage(x, y, scale);
       // Premultiplication is not used by PNG; store straight colour + alpha.
-      raw[o++] = INK[0];
-      raw[o++] = INK[1];
-      raw[o++] = INK[2];
+      raw[o++] = ink[0];
+      raw[o++] = ink[1];
+      raw[o++] = ink[2];
       raw[o++] = Math.round(a * 255);
     }
   }
@@ -148,6 +153,21 @@ const TARGETS = [
   ['ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png', 1],
   ['ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png', 2],
   ['ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png', 3],
+  [
+    'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImageDark.png',
+    1,
+    DARK_INK,
+  ],
+  [
+    'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImageDark@2x.png',
+    2,
+    DARK_INK,
+  ],
+  [
+    'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImageDark@3x.png',
+    3,
+    DARK_INK,
+  ],
   ['android/app/src/main/res/drawable-mdpi/launch_image.png', 1],
   ['android/app/src/main/res/drawable-hdpi/launch_image.png', 1.5],
   ['android/app/src/main/res/drawable-xhdpi/launch_image.png', 2],
@@ -155,10 +175,10 @@ const TARGETS = [
   ['android/app/src/main/res/drawable-xxxhdpi/launch_image.png', 4],
 ];
 
-for (const [rel, density] of TARGETS) {
+for (const [rel, density, ink = INK] of TARGETS) {
   const out = path.join(MOBILE, rel);
   mkdirSync(path.dirname(out), { recursive: true });
-  const png = render(Math.round(BASE_PT * density));
+  const png = render(Math.round(BASE_PT * density), ink);
   writeFileSync(out, png);
   console.log(`${rel} — ${Math.round(BASE_PT * density)}px tall`);
 }
