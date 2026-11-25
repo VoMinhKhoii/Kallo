@@ -289,6 +289,12 @@ export const foodCards = pgTable('food_cards', {
   cookingMethod: text('cooking_method'),
   fatLevel: text('fat_level'),
   brand: text('brand'),
+  /**
+   * How the row is eaten: 'dish' (a whole prepared dish, e.g. a filled
+   * dumpling), 'drink', 'snack' or 'ingredient'. Matching keeps a dish's own
+   * parts off a whole-dish row (`grounded/part-vs-dish.ts`).
+   */
+  eatenState: text('eaten_state').notNull().default('ingredient'),
   /** One-sentence description embedded alongside the names. */
   card: text('card').notNull(),
 });

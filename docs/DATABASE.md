@@ -182,6 +182,8 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261102191900_invite_consent_rls_and_handle_reservation.sql` | B (Manual) | RLS on both tables, every `anon`/`authenticated` grant revoked, one owner-only SELECT policy each; `public_profiles_reserve_handle` trigger (`BEFORE INSERT OR UPDATE OF handle OR DELETE` on `public_profiles`): records a handle given up by a rename, slug edit or account delete, refuses a reserved handle to anyone else as a 23505, deletes the reservation when its owner takes it back. See "Invite consent" below |
 | `20261104044856_add_meal_reminders.sql` | A + deny boundary | `meal_reminders` (per-user, per-local-day reminder log, PK is the send claim), `user_profiles.meal_reminders_enabled` + `time_zone`, `push_tokens.last_pushed_at`; RLS/REVOKE appended under the failure-boundary exception. See `docs/NOTIFICATIONS.md` → "Reminders" |
 | `20261104044900_meal_reminders_retention.sql` | B (Manual) | `reap_old_meal_reminders()` (14 days) on the guarded pg_cron schedule |
+| `20261125162920_add_food_cards_eaten_state.sql` | A (Drizzle) | `food_cards.eaten_state text NOT NULL DEFAULT 'ingredient'` (`dish`, `drink`, `snack` or `ingredient`, from `cards.jsonl`); matching uses it to keep a dish's parts off the whole dish's row |
+| `20261125163000_seed_food_cards.sql` | Data (generated) | Re-seeds the same 7,729 cards with `eaten_state` filled (220 dishes); card strings unchanged, so nothing is re-embedded |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
