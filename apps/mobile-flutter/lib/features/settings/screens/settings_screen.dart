@@ -24,7 +24,6 @@ import '../data/profile_preferences.dart';
 import '../widgets/account/profile_switch_row.dart';
 import '../widgets/account/sign_out_row.dart';
 import '../widgets/account/subscription_section.dart';
-import '../widgets/appearance/appearance_row.dart';
 import '../widgets/chrome/settings_navigator.dart';
 import '../widgets/list/settings_group.dart';
 import '../widgets/profile/settings_profile_header.dart';
@@ -88,14 +87,12 @@ class _SettingsList extends ConsumerWidget {
       _NutritionProfileGroup(profile: profile),
 
       // ── Preferences ─────────────────────────────────────────────────────
-      // Appearance is a device setting and shows at once. The switches
-      // wait for the profile (web parity) — an enabled switch with no profile
-      // row can only produce an error.
-      SettingsGroup(
-        label: tr('settings.preferences'),
-        children: [
-          const AppearanceRow(),
-          if (profile != null) ...[
+      // The switches wait for the profile (web parity) — an enabled switch
+      // with no profile row can only produce an error.
+      if (profile != null)
+        SettingsGroup(
+          label: tr('settings.preferences'),
+          children: [
             ProfileSwitchRow(
               value: profile.autoShareToCircle,
               icon: LucideIcons.users300,
@@ -112,8 +109,7 @@ class _SettingsList extends ConsumerWidget {
             ),
             const AiConsentToggle(),
           ],
-        ],
-      ),
+        ),
 
       if (showSubscription) const SubscriptionSection(),
 

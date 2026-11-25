@@ -28,7 +28,8 @@ import 'features/settings/logic/account_language.dart';
 /// Wires the Nham [ThemeData], the Riverpod-built [GoRouter], and
 /// easy_localization's delegates/locale (EasyLocalization already wraps this
 /// in `main()`, the equivalent of RN's `LocaleProvider`). The theme and the
-/// status-bar style follow the Appearance choice (`theme/theme_controller.dart`).
+/// status-bar style follow the phone's light or dark mode
+/// (`theme/theme_controller.dart`).
 class KalloApp extends ConsumerStatefulWidget {
   const KalloApp({super.key});
 
@@ -66,7 +67,7 @@ class _NhamAppState extends ConsumerState<KalloApp>
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final launchReady = ref.watch(launchReadyProvider);
-    // Builds the Appearance controller — which starts it observing the phone's
+    // Builds the theme controller — which starts it observing the phone's
     // brightness — and rebuilds `theme:` below from the palette it applied.
     ref.watch(kalloThemeProvider);
 

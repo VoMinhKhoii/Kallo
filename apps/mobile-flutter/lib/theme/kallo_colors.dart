@@ -24,8 +24,8 @@ import 'kallo_palette.dart';
 /// toward a stale canvas colour is a visible seam.
 ///
 /// Every token except the two brand hues is a GETTER onto
-/// [KalloPalette.current] — light, Dark or Aurora, switched at runtime from
-/// Settings → Appearance (`theme_controller.dart`). The hexes and contrast
+/// [KalloPalette.current] — light or Aurora, switched at runtime by the
+/// phone's brightness (`theme_controller.dart`). The hexes and contrast
 /// ratios quoted in this file are the LIGHT palette's; Dark's and Aurora's
 /// live in `kallo_palette.dart`. A getter is not a constant, so a token cannot
 /// sit inside a `const` expression — and must not be cached in a `static

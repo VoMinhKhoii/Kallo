@@ -1,8 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/shell/kallo_app_theme.dart';
 import 'package:kallo_mobile/theme/kallo_colors.dart';
@@ -12,209 +9,57 @@ import 'package:kallo_mobile/theme/theme_controller.dart';
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
   tearDown(() {
     binding.platformDispatcher.clearPlatformBrightnessTestValue();
     KalloPalette.apply(KalloPaletteId.light);
   });
 
-  group('resolvePalette', () {
-    const expected = {
-      (KalloThemeChoice.system, Brightness.light): KalloPaletteId.light,
-      (KalloThemeChoice.system, Brightness.dark): KalloPaletteId.dark,
-      (KalloThemeChoice.light, Brightness.light): KalloPaletteId.light,
-      (KalloThemeChoice.light, Brightness.dark): KalloPaletteId.light,
-      (KalloThemeChoice.dark, Brightness.light): KalloPaletteId.dark,
-      (KalloThemeChoice.dark, Brightness.dark): KalloPaletteId.dark,
-      (KalloThemeChoice.aurora, Brightness.light): KalloPaletteId.aurora,
-      (KalloThemeChoice.aurora, Brightness.dark): KalloPaletteId.aurora,
-    };
-    for (final MapEntry(key: (choice, brightness), value: id)
-        in expected.entries) {
-      test(
-        '${choice.name} on a ${brightness.name} phone paints ${id.name}',
-        () {
-          expect(resolvePalette(choice, brightness), id);
-        },
-      );
-    }
+  test('a light phone paints light; a dark one paints Aurora', () {
+    expect(resolvePalette(Brightness.light), KalloPaletteId.light);
+    expect(resolvePalette(Brightness.dark), KalloPaletteId.aurora);
   });
 
-  group('persistence', () {
-    test('reads the stored choice; anything else is System', () async {
-      const storage = FlutterSecureStorage();
-      expect((await readThemeChoice(storage)).choice, KalloThemeChoice.system);
+  test('starts in the phone\'s palette and follows it', () {
+    binding.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
 
-      FlutterSecureStorage.setMockInitialValues({kThemeStorageKey: 'aurora'});
-      expect((await readThemeChoice(storage)).choice, KalloThemeChoice.aurora);
+    expect(container.read(kalloThemeProvider), KalloPaletteId.aurora);
+    expect(KalloPalette.currentId, KalloPaletteId.aurora);
+    expect(KalloColors.surface, KalloPalette.aurora.surface);
 
-      FlutterSecureStorage.setMockInitialValues({kThemeStorageKey: 'sepia'});
-      expect((await readThemeChoice(storage)).choice, KalloThemeChoice.system);
-    });
+    binding.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+    expect(container.read(kalloThemeProvider), KalloPaletteId.light);
+    expect(KalloPalette.currentId, KalloPaletteId.light);
+  });
 
-    test('select writes the choice under kallo.theme', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      await container
-          .read(kalloThemeProvider.notifier)
-          .select(KalloThemeChoice.dark);
-
-      expect(container.read(kalloThemeProvider), KalloThemeChoice.dark);
-      const storage = FlutterSecureStorage();
-      expect(await storage.read(key: kThemeStorageKey), 'dark');
-      expect((await readThemeChoice(storage)).choice, KalloThemeChoice.dark);
-    });
-
-    test('a read past the bound paints System, then hands over the stored '
-        'choice', () async {
-      final reply = Completer<String?>();
-      final read = await readThemeChoice(
-        _SlowStorage(reply),
-        bound: Duration.zero,
-      );
-      expect(read.choice, KalloThemeChoice.system);
-
-      reply.complete('aurora');
-      expect(await read.late, KalloThemeChoice.aurora);
-    });
-
-    test('adopts a late stored choice unless the user chose first', () async {
-      final late = Completer<KalloThemeChoice>();
-      final container = ProviderContainer(
-        overrides: [lateThemeChoiceProvider.overrideWithValue(late.future)],
-      );
-      addTearDown(container.dispose);
-      expect(container.read(kalloThemeProvider), KalloThemeChoice.system);
-
-      late.complete(KalloThemeChoice.dark);
-      await pumpEventQueue();
-      expect(container.read(kalloThemeProvider), KalloThemeChoice.dark);
-      expect(KalloPalette.currentId, KalloPaletteId.dark);
-
-      final chosenFirst = Completer<KalloThemeChoice>();
-      final other = ProviderContainer(
-        overrides: [
-          lateThemeChoiceProvider.overrideWithValue(chosenFirst.future),
-        ],
-      );
-      addTearDown(other.dispose);
-      await other
-          .read(kalloThemeProvider.notifier)
-          .select(KalloThemeChoice.light);
-      chosenFirst.complete(KalloThemeChoice.aurora);
-      await pumpEventQueue();
-      expect(other.read(kalloThemeProvider), KalloThemeChoice.light);
-      expect(KalloPalette.currentId, KalloPaletteId.light);
-    });
-
-    test(
-      'picking the showing choice during a late read still stores it',
-      () async {
-        FlutterSecureStorage.setMockInitialValues({kThemeStorageKey: 'dark'});
-        final late = Completer<KalloThemeChoice>();
-        final container = ProviderContainer(
-          overrides: [lateThemeChoiceProvider.overrideWithValue(late.future)],
-        );
-        addTearDown(container.dispose);
-
-        await container
-            .read(kalloThemeProvider.notifier)
-            .select(KalloThemeChoice.system);
-        late.complete(KalloThemeChoice.dark);
-        await pumpEventQueue();
-
-        expect(container.read(kalloThemeProvider), KalloThemeChoice.system);
-        const storage = FlutterSecureStorage();
-        expect(await storage.read(key: kThemeStorageKey), 'system');
-      },
+  testWidgets('repaints in place when the phone changes brightness — new '
+      'colour, same State', (tester) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const _App()),
     );
+    final before = tester.state<_ProbeState>(find.byType(_Probe));
+    expect(before.painted, KalloPalette.light.surface);
+    before.field.text = 'half-typed';
+    final buildsBefore = before.builds;
 
-    test('starts from the choice main() read', () {
-      final container = ProviderContainer(
-        overrides: [
-          initialThemeChoiceProvider.overrideWithValue(KalloThemeChoice.aurora),
-        ],
-      );
-      addTearDown(container.dispose);
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    await tester.pumpAndSettle();
 
-      expect(container.read(kalloThemeProvider), KalloThemeChoice.aurora);
-      expect(KalloPalette.currentId, KalloPaletteId.aurora);
-    });
-  });
-
-  group('platform brightness', () {
-    test('System follows the phone; an explicit choice does not', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-      final controller = container.read(kalloThemeProvider.notifier);
-      expect(KalloPalette.currentId, KalloPaletteId.light);
-
-      binding.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
-      expect(KalloPalette.currentId, KalloPaletteId.dark);
-      expect(KalloColors.surface, KalloPalette.dark.surface);
-
-      await controller.select(KalloThemeChoice.light);
-      expect(KalloPalette.currentId, KalloPaletteId.light);
-      binding.platformDispatcher.platformBrightnessTestValue = Brightness.light;
-      binding.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
-      expect(KalloPalette.currentId, KalloPaletteId.light);
-
-      await controller.select(KalloThemeChoice.system);
-      expect(KalloPalette.currentId, KalloPaletteId.dark);
-    });
-  });
-
-  group('switching in a running app', () {
-    testWidgets('repaints a widget below in place — new colour, same State', (
-      tester,
-    ) async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-      await tester.pumpWidget(
-        UncontrolledProviderScope(container: container, child: const _App()),
-      );
-      final before = tester.state<_ProbeState>(find.byType(_Probe));
-      expect(before.painted, KalloPalette.light.surface);
-      before.field.text = 'half-typed';
-      final buildsBefore = before.builds;
-
-      await container
-          .read(kalloThemeProvider.notifier)
-          .select(KalloThemeChoice.dark);
-      await tester.pumpAndSettle();
-
-      expect(KalloColors.surface, KalloPalette.dark.surface);
-      final after = tester.state<_ProbeState>(find.byType(_Probe));
-      expect(identical(after, before), isTrue, reason: 'State was remounted');
-      expect(after.field.text, 'half-typed');
-      expect(after.builds, greaterThan(buildsBefore));
-      expect(after.painted, KalloPalette.dark.surface);
-      expect(
-        tester.widget<ColoredBox>(find.byKey(_Probe.boxKey)).color,
-        KalloPalette.dark.surface,
-      );
-      final context = tester.element(find.byType(_Probe));
-      expect(Theme.of(context).brightness, Brightness.dark);
-    });
-
-    testWidgets('System repaints when the phone changes brightness', (
-      tester,
-    ) async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-      await tester.pumpWidget(
-        UncontrolledProviderScope(container: container, child: const _App()),
-      );
-      final state = tester.state<_ProbeState>(find.byType(_Probe));
-      expect(state.painted, KalloPalette.light.surface);
-
-      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
-      await tester.pumpAndSettle();
-
-      expect(tester.state<_ProbeState>(find.byType(_Probe)), same(state));
-      expect(state.painted, KalloPalette.dark.surface);
-    });
+    expect(KalloColors.surface, KalloPalette.aurora.surface);
+    final after = tester.state<_ProbeState>(find.byType(_Probe));
+    expect(identical(after, before), isTrue, reason: 'State was remounted');
+    expect(after.field.text, 'half-typed');
+    expect(after.builds, greaterThan(buildsBefore));
+    expect(after.painted, KalloPalette.aurora.surface);
+    expect(
+      tester.widget<ColoredBox>(find.byKey(_Probe.boxKey)).color,
+      KalloPalette.aurora.surface,
+    );
+    final context = tester.element(find.byType(_Probe));
+    expect(Theme.of(context).brightness, Brightness.dark);
   });
 }
 
@@ -260,22 +105,4 @@ class _ProbeState extends State<_Probe> {
       child: const SizedBox.expand(),
     );
   }
-}
-
-/// A keychain whose read answers only when the test completes [reply].
-class _SlowStorage extends FlutterSecureStorage {
-  const _SlowStorage(this.reply);
-
-  final Completer<String?> reply;
-
-  @override
-  Future<String?> read({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) => reply.future;
 }

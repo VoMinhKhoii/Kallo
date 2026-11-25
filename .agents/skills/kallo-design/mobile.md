@@ -228,8 +228,8 @@ simply doesn't register. Warm for selected, ink for pressed-on-page.
 
 **Three palettes, one set of names (2026-10-22).** Every hex above is the
 LIGHT palette. `KalloColors` and the `k*` aliases are getters onto
-`KalloPalette.current` — light, Dark (the Graphite design) or Aurora — picked
-in Settings → Appearance; System follows the phone between light and Dark. So
+`KalloPalette.current`: light on a light phone, Aurora on a dark one (no
+setting since 2026-11-25; Dark, the Graphite design, is no longer painted). So
 a token never sits in a `const` expression and is never cached in a
 `static final` or top-level `final`: either keeps the palette that was current
 when it was first read. Make such a declaration a getter, and a colour default

@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -106,16 +105,10 @@ Future<void> _boot() async {
   precacheFilledHeart();
   precacheBrushCheck();
 
-  // The Appearance choice paints the FIRST frame: read it (bounded) and apply
-  // its palette and status-bar style before anything builds. Later switches —
-  // and the phone's own brightness, under System — are the controller's.
-  final themeRead = await readThemeChoice(const FlutterSecureStorage());
-  applyPalette(
-    resolvePalette(
-      themeRead.choice,
-      PlatformDispatcher.instance.platformBrightness,
-    ),
-  );
+  // The phone's brightness paints the FIRST frame: apply its palette and
+  // status-bar style before anything builds. Later switches are the
+  // controller's.
+  applyPalette(resolvePalette(PlatformDispatcher.instance.platformBrightness));
 
   runApp(
     EasyLocalization(
@@ -125,13 +118,7 @@ Future<void> _boot() async {
       // phone speaks. A picked language is saved and wins over this.
       startLocale: const Locale('en'),
       fallbackLocale: const Locale('en'),
-      child: ProviderScope(
-        overrides: [
-          initialThemeChoiceProvider.overrideWithValue(themeRead.choice),
-          lateThemeChoiceProvider.overrideWithValue(themeRead.late),
-        ],
-        child: const KalloApp(),
-      ),
+      child: const ProviderScope(child: KalloApp()),
     ),
   );
 }
