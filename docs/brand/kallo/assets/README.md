@@ -30,7 +30,7 @@ splash tiles):
 | `app/favicon.ico` | 16/32/48 multi-size ICO from the app-icon tile |
 | `public/apple-icon.png`, `public/icon-{192,512}.png`, `public/icon-maskable-512.png` | Web manifest + touch icons |
 | `public/og-image.png` | 1200×630 Open Graph / Twitter card |
-| `apps/mobile-flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/` | Full iOS icon set (15 sizes, no alpha) |
+| `apps/mobile-flutter/ios/Runner/AppIcon.icon/` | iOS icon as an Icon Composer document: `kallo-mark-cream.svg` as a Liquid Glass layer (scale 0.72316, centred, matching `app-icon.svg`) over a solid `#2C2416` fill. Xcode 26+ renders the glass on iOS 26 and flattens it into PNGs for older iOS; edit it in Icon Composer (Xcode → Open Developer Tool), or check a change with `ictool AppIcon.icon --export-image --platform iOS --rendition Default --width 1024 --height 1024 --scale 1 --output-file out.png` |
 | `apps/mobile-flutter/ios/Runner/Assets.xcassets/LaunchImage.imageset/` | Splash mark 1x/2x/3x |
 | `apps/mobile-flutter/android/.../mipmap-*/ic_launcher.png` | Launcher icons, 5 densities |
 | `apps/mobile-flutter/android/.../drawable-*/launch_image.png` | Splash mark, 5 densities |
