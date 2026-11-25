@@ -10,9 +10,10 @@ import {
   type AnalyzeMealTraceContext,
   analyzeMeal,
 } from '@/lib/ai/pipeline/analyze-meal';
-import type { AnalyzeMealV2Options } from '@/lib/ai/pipeline/grounded/orchestrator';
+import type { V2PipelineDiagnostics } from '@/lib/ai/pipeline/grounded/orchestrator';
 import {
   type HoldResult,
+  type HoldSummary,
   holdToPlainRead,
 } from '@/lib/ai/pipeline/plain-read/hold';
 import { startPlainRead } from '@/lib/ai/pipeline/plain-read/plain-read';
@@ -30,6 +31,17 @@ export interface PreciseAnalysis {
   hold: HoldResult | null;
 }
 
+/**
+ * Whether an offline capture may publish this meal: only a held one. The app
+ * ships a meal unheld when its read is late or broken, which is not the
+ * number a page should show; such a meal is captured again.
+ */
+export function isPublishable(
+  hold: HoldSummary | null | undefined
+): hold is HoldSummary {
+  return hold != null && hold.outcome !== 'no_read';
+}
+
 export async function runPreciseAnalysis(args: {
   rawInput: string;
   userContext: UserContext;
@@ -40,7 +52,7 @@ export async function runPreciseAnalysis(args: {
   onEvent?: (event: StreamEvent) => void;
   traceContext?: AnalyzeMealTraceContext;
   onPlainReadAttemptComplete?: StreamOptions['onAttemptComplete'];
-  onDiagnostics?: AnalyzeMealV2Options['onDiagnostics'];
+  onDiagnostics?: (diagnostics: V2PipelineDiagnostics) => void;
 }): Promise<PreciseAnalysis> {
   const plainRead = startPlainRead({
     gemini: args.gemini,

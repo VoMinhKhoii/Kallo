@@ -1,5 +1,6 @@
 import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import { logUnmatchedIngredients } from '@/lib/ai/matching/unmatched-log';
+import { summarizeHold } from '@/lib/ai/pipeline/plain-read/hold';
 import { PLAIN_READ_MODEL } from '@/lib/ai/pipeline/plain-read/prompt';
 import { runPreciseAnalysis } from '@/lib/ai/pipeline/precise-analysis';
 import { createBudgetAttemptRecorder } from '@/lib/ai/pipeline/telemetry/budget';
@@ -47,7 +48,8 @@ export async function runPreciseBranch({
     }),
   });
 
-  // Check for abort after pipeline completes
+  // The client may have hung up during the run or while the read settled:
+  // stage nothing.
   if (ctx.signal.aborted) {
     return;
   }
@@ -101,19 +103,11 @@ export async function runPreciseBranch({
   }
 
   // The meal was held near the plain read BEFORE the relog picks are folded
-  // in: the read never saw the picks, and their numbers are frozen. The
-  // client may have hung up while the read settled: stage nothing.
-  if (ctx.signal.aborted || !hold) return;
+  // in: the read never saw the picks, and their numbers are frozen.
+  if (!hold) return;
   console.info(
     '[plain-read]',
-    JSON.stringify({
-      requestId,
-      outcome: hold.outcome,
-      appKcal: hold.appKcal,
-      readKcal: hold.readKcal,
-      factor: hold.factor,
-      gramsFactor: hold.gramsFactor,
-    })
+    JSON.stringify({ requestId, ...summarizeHold(hold) })
   );
 
   // Combined relog: fold the user's picks into the AI result AFTER the pipeline

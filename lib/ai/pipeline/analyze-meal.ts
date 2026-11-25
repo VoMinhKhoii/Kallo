@@ -10,8 +10,8 @@ import {
   nonFoodResponse,
 } from '@/lib/ai/pipeline/contracts/failure';
 import {
-  type AnalyzeMealV2Options,
   analyzeMealV2,
+  type V2PipelineDiagnostics,
 } from '@/lib/ai/pipeline/grounded/orchestrator';
 import { countCanonicalNameMisses } from '@/lib/ai/pipeline/legacy/canonical-name-validator';
 import { finalizePipelineRun } from '@/lib/ai/pipeline/legacy/completion';
@@ -67,7 +67,7 @@ export interface AnalyzeMealOptions {
   shadow?: ShadowConfig;
   l4Cache?: { enabled?: boolean };
   /** Read-only pipeline internals (v2 only); offline callers use it. */
-  onDiagnostics?: AnalyzeMealV2Options['onDiagnostics'];
+  onDiagnostics?: (diagnostics: V2PipelineDiagnostics) => void;
 }
 
 interface RunPipelineOptions {

@@ -231,7 +231,7 @@ const SAMPLES: Sample[] = [
 const keyOf = (s: Sample) => `${s.category}.${s.locale}.${s.variant}`;
 
 const [
-  { runPreciseAnalysis },
+  { isPublishable, runPreciseAnalysis },
   gemini,
   { db },
   { toParsedMeal },
@@ -243,6 +243,7 @@ const [
   import('@/lib/ai/adapters/parsed-meal'),
   import('@/lib/ai/pipeline/config/model-profile'),
 ]);
+const { summarizeHold } = await import('@/lib/ai/pipeline/plain-read/hold');
 const provider = gemini.resolveGeminiProvider();
 // Routed like production: a Claude profile runs on Claude, Gemini fallback.
 const client = gemini.createPipelineLlm(provider, {
@@ -288,9 +289,8 @@ const byKey: Record<string, any> = (() => {
     // failed recapture must not leave the old number beside held ones.
     const saved = JSON.parse(readFileSync(OUT, 'utf8')).byKey ?? {};
     return Object.fromEntries(
-      Object.entries(saved).filter(
-        ([, entry]: [string, any]) =>
-          entry?.hold && entry.hold.outcome !== 'no_read'
+      Object.entries(saved).filter(([, entry]: [string, any]) =>
+        isPublishable(entry?.hold)
       )
     );
   } catch {
@@ -330,9 +330,7 @@ for (const [i, s] of todo.entries()) {
       console.log(`✗ ${keyOf(s)} — ${JSON.stringify(res).slice(0, 160)}`);
       continue;
     }
-    // The app ships a meal unheld only when its read is late or broken: not
-    // the number to show on the landing page.
-    if (!hold || hold.outcome === 'no_read') {
+    if (!isPublishable(hold)) {
       failed++;
       console.log(`✗ ${keyOf(s)} — no plain read: rerun`);
       continue;
@@ -341,11 +339,7 @@ for (const [i, s] of todo.entries()) {
     byKey[keyOf(s)] = {
       ...s,
       ms,
-      hold: {
-        outcome: hold.outcome,
-        appKcal: hold.appKcal,
-        readKcal: hold.readKcal,
-      },
+      hold: summarizeHold(hold),
       parsed,
       raw: res.data,
     };

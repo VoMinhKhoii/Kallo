@@ -24,6 +24,7 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { buildAiRequestContext } from '@/lib/ai/adapters/user-context';
+import type { HoldSummary } from '@/lib/ai/pipeline/plain-read/hold';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { FOODS } from '@/lib/seo/food-pages/food-registry';
 import {
@@ -100,7 +101,7 @@ const USER: UserContext = {
 };
 
 const [
-  { runPreciseAnalysis },
+  { isPublishable, runPreciseAnalysis },
   gemini,
   { db },
   { toParsedMeal },
@@ -112,6 +113,7 @@ const [
   import('@/lib/ai/adapters/parsed-meal'),
   import('@/lib/ai/pipeline/config/model-profile'),
 ]);
+const { summarizeHold } = await import('@/lib/ai/pipeline/plain-read/hold');
 const client = gemini.createPipelineLlm(gemini.resolveGeminiProvider(), {
   fallbackModel: CLAUDE_FALLBACK_MODEL,
 });
@@ -128,7 +130,7 @@ type Cached = Record<
   {
     text: string;
     capturedAt: string;
-    hold?: { outcome: string; appKcal: number | null; readKcal: number | null };
+    hold?: HoldSummary;
     result: PipelineResult;
   }
 >;
@@ -177,7 +179,7 @@ function toVariant(
 const variants: FoodPageVariant[] = [];
 for (const meal of meals) {
   const hit = cache[meal.key];
-  if (hit?.text === meal.text && hit.hold) {
+  if (hit?.text === meal.text && isPublishable(hit.hold)) {
     variants.push(toVariant(meal.key, meal.text, hit.result));
     continue;
   }
@@ -221,9 +223,7 @@ for (const meal of meals) {
     console.log(`✗ ${meal.key} — vector search timed out`);
     continue;
   }
-  // The app ships a meal unheld when the read is late or broken; a page must
-  // not publish that rarer path as the typical number.
-  if (!hold || hold.outcome === 'no_read') {
+  if (!isPublishable(hold)) {
     console.log(`✗ ${meal.key} — no plain read: rerun`);
     continue;
   }
@@ -236,11 +236,7 @@ for (const meal of meals) {
   cache[meal.key] = {
     text: meal.text,
     capturedAt: new Date().toISOString(),
-    hold: {
-      outcome: hold.outcome,
-      appKcal: hold.appKcal,
-      readKcal: hold.readKcal,
-    },
+    hold: summarizeHold(hold),
     result: res.data,
   };
   writeFileSync(CACHE, `${JSON.stringify(cache, null, 2)}\n`);
