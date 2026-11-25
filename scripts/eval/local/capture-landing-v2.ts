@@ -284,7 +284,15 @@ async function run(text: string, attempts = 3) {
 // biome-ignore lint/suspicious/noExplicitAny: throwaway capture record
 const byKey: Record<string, any> = (() => {
   try {
-    return JSON.parse(readFileSync(OUT, 'utf8')).byKey ?? {};
+    // Only held entries are kept: an unheld one is captured again, and a
+    // failed recapture must not leave the old number beside held ones.
+    const saved = JSON.parse(readFileSync(OUT, 'utf8')).byKey ?? {};
+    return Object.fromEntries(
+      Object.entries(saved).filter(
+        ([, entry]: [string, any]) =>
+          entry?.hold && entry.hold.outcome !== 'no_read'
+      )
+    );
   } catch {
     return {};
   }
@@ -305,8 +313,7 @@ const persist = () =>
     )}\n`
   );
 
-// An entry without a hold predates it (or missed its read): capture it again.
-const todo = SAMPLES.filter((s) => !byKey[keyOf(s)]?.hold);
+const todo = SAMPLES.filter((s) => !byKey[keyOf(s)]);
 console.log(
   `provider: ${provider.provider}  ·  ${Object.keys(byKey).length} already captured, ${todo.length} to go\n`
 );
@@ -384,4 +391,4 @@ for (const category of [...new Set(SAMPLES.map((s) => s.category))]) {
   }
 }
 console.log(`${ok} ok, ${failed} failed  ·  wrote ${OUT}`);
-process.exit(0);
+process.exit(failed > 0 ? 1 : 0);
