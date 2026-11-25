@@ -19,20 +19,48 @@ export const ABSORBED_OIL_RANGES = {
  * A statement that no fat was used. These OVERRIDE a generic fry verb, because
  * they describe the frying itself: `chiên không dầu` is air-frying.
  */
-const OIL_NEGATION =
-  /kh[oô]ng\s*(?:d[aầ]u|m[ơỡ])|no[- ]?(?:added )?oil|without (?:any )?oil|oil[- ]?free|air[- ]?fr(?:y|ied)|dry[- ]?fr(?:y|ied)/i;
+/**
+ * A method pattern that starts and ends at a letter edge (`\b` is ASCII-only),
+ * so a fry verb inside another word ("ranch", "orange", "bánh tráng") is not
+ * a fry verb.
+ */
+const wordEdged = (body: string) =>
+  new RegExp(`(?<!\\p{L})(?:${body})(?!\\p{L})`, 'iu');
+const FRY = 'fr(?:y|ying|ied)';
+/** An appliance named after the method ("air fryer", "deep-fryer"). */
+const FRY_OR_FRYER = 'fr(?:y|ying|ied|yer)';
+
+const OIL_NEGATION = wordEdged(
+  `kh[oô]ng\\s+(?:(?:c[oó]|d[uù]ng|th[eê]m|cho)\\s+)?(?:d[aầ]u|m[ơỡ])|no[- ]?(?:added )?oil|without (?:any |added )?oil|oil[- ]?free|air[- ]?${FRY_OR_FRYER}|dry[- ]?${FRY}`
+);
 
 // `luộc`, `hấp`, `steamed`, `boiled`, `poached`, `raw` and `sống` are NOT listed
 // as negations. They use no fat, but they do not negate one, so they must lose
 // to a fry verb rather than beat it: `luộc rồi chiên` is boiled AND THEN fried,
 // and the frying still puts oil in the food. They need no pattern of their own —
 // absent any fry verb they fall through to the function's default of zero.
-const DEEP_FRY_METHOD =
-  /chi[eê]n\s*ng[aậ]p|r[aá]n\s*ng[aậ]p|deep[- ]?fr(?:y|ied)|ng[aậ]p\s*(?:d[aầ]u|m[ơỡ])/i;
-const STIR_FRY_METHOD = /x[aà]o|stir[- ]?fr(?:y|ied)|saut[eé](?:ed)?/i;
-const PAN_SEAR_METHOD = /[aá]p\s*ch[aả]o|pan[- ]?sear(?:ed)?/i;
-const SHALLOW_FRY_METHOD =
-  /chi[eê]n|r[aá]n|shallow[- ]?fr(?:y|ied)|pan[- ]?fr(?:y|ied)|fried|fry/i;
+const DEEP_FRY_METHOD = wordEdged(
+  `chi[eê]n\\s*ng[aậ]p|r[aá]n\\s*ng[aậ]p|deep[- ]?${FRY_OR_FRYER}|ng[aậ]p\\s*(?:d[aầ]u|m[ơỡ])`
+);
+const STIR_FRY_METHOD = wordEdged(`x[aà]o|stir[- ]?${FRY}|saut[eé](?:ed|ing)?`);
+const PAN_SEAR_METHOD = wordEdged('[aá]p\\s*ch[aả]o|pan[- ]?sear(?:ed|ing)?');
+const SHALLOW_FRY_METHOD = wordEdged(
+  `chi[eê]n|r[aá]n|[oố]p\\s*la|sunny[- ]side[- ]up|over[- ](?:easy|medium|hard)|shallow[- ]?${FRY}|pan[- ]?${FRY}|${FRY}`
+);
+
+/** True when the text says no fat was used ("chiên không dầu", "air-fried"). */
+export function saysNoOil(text: string | null | undefined): boolean {
+  return OIL_NEGATION.test(withoutCondiments(text?.normalize('NFC') ?? ''));
+}
+
+/**
+ * Soy sauce, oyster sauce and vinaigrette carry "dầu" but no cooking fat, so a
+ * note that leaves them out ("không dùng dầu hào") says nothing about oil. A
+ * placeholder word keeps "không dầu hào thêm dầu" from reading "không thêm dầu".
+ */
+function withoutCondiments(text: string): string {
+  return text.replace(new RegExp(OIL_LIKE_CONDIMENT.source, 'giu'), ' sauce ');
+}
 
 /**
  * Cooking fats that Call 1 emits as their OWN ingredient row, so their grams,
@@ -55,9 +83,18 @@ const DISCRETE_OIL_INGREDIENT =
  * "the frying oil is already its own row" and the fish loses its absorbed-oil
  * allowance — under-reporting the fat this module exists to preserve.
  * `salad dầu giấm` appears in our own adjustment eval set, so this is not
- * hypothetical.
+ * hypothetical. `xì dầu` is soy sauce.
  */
-const OIL_LIKE_CONDIMENT = /d[aầ]u\s*(?:gi[aấ]m|h[aà]o)/i;
+const OIL_LIKE_CONDIMENT = /d[aầ]u\s*(?:gi[aấ]m|h[aà]o)|x[iì]\s*d[aầ]u/i;
+
+/**
+ * Foods whose names carry a fat word but are not a cooking fat: nut and fruit
+ * butters, dishes named for butter, foods packed in oil. A part that matched a
+ * row is judged by that row's composition instead (`isCookingFatPart`); this
+ * only keeps an unmatched one from being read, and dropped, as frying fat.
+ */
+const FOOD_NAMED_FOR_A_FAT =
+  /\b(?:peanut|almond|cashew|nut|seed|sunflower|cookie|apple|cocoa|cacao|shea)\s+butter\b|\bbutter\s+(?:naan|beans?|lettuce|chicken|cake|cookies?|croissants?|bread|squash|tarts?)\b|\bbuttermilk\b|\b(?:in|packed\s+in)\s+(?:olive\s+|sunflower\s+|vegetable\s+)?oil\b|b[ơo]\s+[dđ][aậ]u\s+ph[ộo]ng|ng[aâ]m\s+d[aầ]u/i;
 
 /**
  * The names the decomposition prompt tells Call 1 to use for a cooking-fat
@@ -81,7 +118,22 @@ export function isDiscreteOilIngredient(name: string | null | undefined) {
   const normalized = name?.normalize('NFC').trim() ?? '';
   if (normalized.length === 0) return false;
   if (OIL_LIKE_CONDIMENT.test(normalized)) return false;
+  if (FOOD_NAMED_FOR_A_FAT.test(normalized)) return false;
   return DISCRETE_OIL_INGREDIENT.test(normalized);
+}
+
+/**
+ * True when a meal part is a cooking fat. A matched part's row composition
+ * decides (`pureFatKind`, from fat >= 80 g and little else per 100 g), so
+ * "peanut butter", "butter beans" and "tuna in oil" are not fats; the name
+ * only decides for a part that matched no row.
+ */
+export function isCookingFatPart(
+  name: string | null | undefined,
+  matchedBase: { pureFatKind?: string | null } | undefined
+): boolean {
+  if (matchedBase) return matchedBase.pureFatKind != null;
+  return isDiscreteOilIngredient(name);
 }
 
 /**
@@ -102,7 +154,7 @@ export function mealItemHasDiscreteOil(
  * to replace Call 2's estimate with a server-selected midpoint.
  */
 export function absorbedOil(method: string | null | undefined, grams: number) {
-  const normalized = method?.normalize('NFC').trim() ?? '';
+  const normalized = withoutCondiments(method?.normalize('NFC') ?? '').trim();
   if (!normalized || !Number.isFinite(grams) || grams <= 0) return 0;
   // Precedence is by SPECIFICITY, not by list order, because callers
   // concatenate the cooking method with the user's verbatim prep notes and the
@@ -142,4 +194,121 @@ export function renderAbsorbedOilPromptRule(): string {
   const { panSearG, stirFryG, shallowFryG, deepFryWeightRatio } =
     ABSORBED_OIL_RANGES;
   return `pan-sear ${panSearG.low}\u2013${panSearG.high}g, stir-fry ${stirFryG.low}\u2013${stirFryG.high}g, shallow-fry ${shallowFryG.low}\u2013${shallowFryG.high}g, deep-fry ~${deepFryWeightRatio.low * 100}\u2013${deepFryWeightRatio.high * 100}% of food weight`;
+}
+
+/** An English row name or card cooking method that says the food was fried in fat. */
+const FRIED_ROW = /\bfried\b/i;
+/** Fried without added fat, or a name where "fried" says nothing about fat. */
+const NOT_FAT_FRIED = /\b(?:pan|stir|air|dry)[- ]?fried\b|not breaded/i;
+/**
+ * Below this much fat per 100 g a row labelled fried does not carry its frying
+ * oil in its values (a shallow-fried lean fish at 0.7 g), so the oil row stays.
+ */
+const FRIED_ROW_MIN_FAT_G = 3;
+
+/**
+ * True when a matched DB row already represents a fat-fried food, so its
+ * per-100g fat already includes the frying oil ("Egg, whole, cooked, fried",
+ * or a card whose `cooking_method` is "deep-fried").
+ *
+ * Reads only the source's English row name and the curated card's cooking
+ * method, never the Vietnamese display name: machine-translated names carry
+ * "rán"/"chiên" where the food is not fried (every USDA "broilers or fryers"
+ * chicken row is "gà rán", "Bột chiên giòn" is a dry batter mix). A row whose
+ * English name is empty (NIN) counts as fried only through its card's cooking
+ * method, which is curated data.
+ */
+export function isAlreadyFriedRow(
+  rowNameEn: string | null | undefined,
+  rowCookingMethod?: string | null,
+  /** The row's fat per 100 g, when known: a "fried" row this lean holds no frying oil. */
+  rowFatPer100g?: number | null
+): boolean {
+  if (rowFatPer100g != null && rowFatPer100g < FRIED_ROW_MIN_FAT_G)
+    return false;
+  const name = rowNameEn?.normalize('NFC').trim() ?? '';
+  if (NOT_FAT_FRIED.test(name)) return false;
+  if (FRIED_ROW.test(name)) return true;
+  const method = rowCookingMethod?.normalize('NFC').trim() ?? '';
+  return FRIED_ROW.test(method) && !NOT_FAT_FRIED.test(method);
+}
+
+/** A Vietnamese word that starts or ends at a letter edge (`\b` is ASCII-only). */
+const vi = (body: string) => `(?<!\\p{L})(?:${body})(?!\\p{L})`;
+/** Cooking fats in Vietnamese, accented only: unaccented "dau"/"bo"/"mo" are also đậu, bò, mò. */
+const VI_FAT = 'dầu|mỡ|bơ';
+
+/**
+ * A note that cuts the fat on the food itself ("ít dầu", "less oil", "bỏ da",
+ * "low-fat"): never a request for more.
+ */
+const REDUCED_FAT = new RegExp(
+  [
+    vi(`ít\\s+(?:${VI_FAT}|béo)`),
+    vi('bỏ\\s+(?:da|mỡ)'),
+    String.raw`\b(?:oil|fat)[- ]?free\b`,
+    String.raw`\blow[- ]?fat\b`,
+    String.raw`\b(?:less|light)\s+(?:oil|butter|fat)\b`,
+  ].join('|'),
+  'iu'
+);
+/** A word that negates what comes shortly after it. */
+const NEGATION_WORD = new RegExp(
+  vi("không|chẳng|ko|đừng|no|not|without|never|\\p{L}+n['’]t"),
+  'iu'
+);
+/**
+ * How many words back a negation still governs a fat phrase: "không thêm
+ * dầu", "not too oily", "do not add extra oil". Free text in two languages has
+ * no clean parse, so an ambiguous note ("không đường phết bơ") reads as no
+ * request. That keeps the 1.25x cap; Call 2 still reads the note itself.
+ */
+const NEGATION_REACH_WORDS = 3;
+/** Clause breaks: a negation does not carry past them. */
+const CLAUSE_BREAK = /[,;.\n]|(?<!\p{L})(?:but|nhưng|còn)(?!\p{L})/iu;
+
+const EXTRA_FAT_NOTE = new RegExp(
+  [
+    String.raw`\b(?:extra|more|heavy|added|double|lots\s+of|with|doused\s+in|soaked\s+in|drizzled\s+with|cooked\s+in|brushed\s+with|basted\s+with|topped\s+with|loaded\s+with)\s+(?:(?:olive|sesame|coconut|vegetable|bacon)\s+)?(?:oil|butter|ghee|lard|fat|grease|margarine)\b`,
+    String.raw`\b(?:buttered|greasy|oily|extra\s+fatty)\b`,
+    vi(
+      `(?:thêm|nhiều|đẫm|ngập|phết|trét|quết|rưới|chan|có|kèm)\\s+(?:${VI_FAT})`
+    ),
+    vi(`(?:${VI_FAT})\\s+(?:nhiều|thêm)`),
+  ].join('|'),
+  'giu'
+);
+
+/**
+ * True when any user-typed prep note explicitly asks for extra fat (e.g.
+ * "extra oil", "extra butter", "with butter", "nhiều mỡ", "phết bơ",
+ * "thêm dầu"). Checked per note so a reduction note ("bỏ da") alongside an
+ * addition note ("extra butter") still unlocks the wider fat band.
+ */
+export function prepNotesAskForExtraFat(
+  prepNotes: readonly string[] | undefined
+): boolean {
+  if (!prepNotes || prepNotes.length === 0) return false;
+  return prepNotes.some((raw) =>
+    raw
+      .normalize('NFC')
+      .replace(new RegExp(OIL_LIKE_CONDIMENT.source, 'giu'), ' sauce ')
+      .split(CLAUSE_BREAK)
+      .some((clause) => {
+        if (REDUCED_FAT.test(clause)) return false;
+        // Any fat phrase in the clause that no nearby negation governs.
+        return [...clause.matchAll(EXTRA_FAT_NOTE)].some((ask) => {
+          const before = clause
+            .slice(0, ask.index)
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(-NEGATION_REACH_WORDS)
+            .join(' ');
+          // "non-greasy": "non" negates only as a prefix on the fat word.
+          if (/(?<!\p{L})non-\s*$/iu.test(clause.slice(0, ask.index)))
+            return false;
+          return !NEGATION_WORD.test(before);
+        });
+      })
+  );
 }

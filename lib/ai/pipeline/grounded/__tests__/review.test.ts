@@ -31,25 +31,39 @@ const estimate = (
   fatG: triple(0),
 });
 
+/** Fixture rows that are a cooking fat ("Oil, soybean", "Butter, salted"). */
+const PURE_FAT_ROW = /^(?:oil|butter|lard|ghee)\b/i;
+
 /** One candidate row with this English name and energy density. */
 const row = (
   i: number,
   nameEn: string,
   kcalPer100: number,
   /** Energy from protein, carbohydrate and fat, when the row has more (alcohol). */
-  macroKcalPer100 = kcalPer100
+  macroKcalPer100 = kcalPer100,
+  /** The curated card's cooking method ("deep-fried"). */
+  rowCookingMethod?: string
 ): IngredientV2MatchResult =>
   ({
     ingredientIndex: i,
     candidates: [
       {
-        info: { matchedName: nameEn },
-        nutrition: {
-          caloriesKcal: kcalPer100,
-          proteinG: 0,
-          carbohydrateG: macroKcalPer100 / 4,
-          fatG: 0,
-        },
+        info: { matchedName: nameEn, rowCookingMethod },
+        nutrition: PURE_FAT_ROW.test(nameEn)
+          ? // A cooking fat is all fat (classifyPureFat reads the composition).
+            {
+              caloriesKcal: kcalPer100,
+              proteinG: 0,
+              carbohydrateG: 0,
+              fatG: macroKcalPer100 / 9,
+            }
+          : {
+              caloriesKcal: kcalPer100,
+              proteinG: 0,
+              carbohydrateG: macroKcalPer100 / 4,
+              // A fried row carries its frying oil (isAlreadyFriedRow's fat floor).
+              fatG: /\bfried\b/i.test(nameEn) || rowCookingMethod ? 12 : 0,
+            },
         inediblePct: 0,
         prompt: { name: nameEn, nameEn, score: 1 },
       },
@@ -72,7 +86,15 @@ function stateOf(
       name: string;
       g: number;
       kcal: number;
-      row: [name: string, kcalPer100: number, macroKcalPer100?: number];
+      /** The part's own method, when it differs from the dish's. */
+      method?: string;
+      prepNotes?: string[];
+      row: [
+        name: string,
+        kcalPer100: number,
+        macroKcalPer100?: number,
+        rowCookingMethod?: string,
+      ];
     }>;
   }>
 ) {
@@ -85,6 +107,8 @@ function stateOf(
       ingredients: d.parts.map((p) => ({
         rawName: p.name,
         canonicalName: p.name,
+        ...(p.method ? { cookingMethod: p.method } : {}),
+        ...(p.prepNotes ? { prepNotes: p.prepNotes } : {}),
       })),
     })),
   };
@@ -299,6 +323,294 @@ describe('dropOilInFriedRows', () => {
     expect(dropOilInFriedRows(state).dropped).toBe(0);
   });
 
+  it('keeps the oil when a translated name says fried but the row is raw', () => {
+    // USDA's raw "broilers or fryers" chicken; its Vietnamese name says "gà rán".
+    const state = stateOf([
+      {
+        name: 'Gà kho',
+        cookingMethod: 'kho',
+        parts: [
+          {
+            name: 'gà',
+            g: 150,
+            kcal: 180,
+            row: ['Chicken, broilers or fryers, thigh, meat only, raw', 120],
+          },
+          oil,
+        ],
+      },
+    ]);
+    state.matchResults[0].candidates[0].info.matchedName =
+      'Thịt gà (gà công nghiệp hoặc gà rán), đùi, chỉ lấy thịt, sống';
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('keeps the oil for a plain part fried with the dish (fish and chips)', () => {
+    const state = stateOf([
+      {
+        name: 'Fish and chips',
+        cookingMethod: 'deep-fried',
+        parts: [
+          {
+            name: 'battered fish',
+            g: 150,
+            kcal: 350,
+            row: ['Fish, cod, battered, fried', 233],
+          },
+          {
+            name: 'potato',
+            g: 200,
+            kcal: 154,
+            row: ['Potatoes, flesh and skin, raw', 77],
+          },
+          { ...oil, name: 'oil' },
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('keeps the oil when a prep note fries the plain part', () => {
+    const state = stateOf([
+      {
+        name: 'Đậu phụ sốt cà chua',
+        cookingMethod: 'sốt',
+        parts: [
+          {
+            name: 'chả cá',
+            g: 80,
+            kcal: 180,
+            row: ['Fish cake, fried', 225],
+          },
+          {
+            name: 'đậu phụ',
+            g: 120,
+            kcal: 90,
+            method: 'sốt',
+            prepNotes: ['rán vàng trước'],
+            row: ['Tofu, firm, raw', 76],
+          },
+          oil,
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('drops the oil when a plain part says no oil under a fried dish name', () => {
+    const state = stateOf([
+      {
+        name: 'Cơm chiên trứng',
+        cookingMethod: 'chiên',
+        parts: [
+          {
+            name: 'trứng',
+            g: 60,
+            kcal: 118,
+            method: 'chiên',
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'cơm',
+            g: 200,
+            kcal: 260,
+            prepNotes: ['không dầu'],
+            row: ['Rice, white, cooked', 130],
+          },
+          oil,
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(1);
+  });
+
+  it('does not read "ranch" as frying the side', () => {
+    const state = stateOf([
+      {
+        name: 'Fried chicken salad',
+        cookingMethod: 'fried',
+        parts: [
+          {
+            name: 'fried chicken',
+            g: 150,
+            kcal: 390,
+            method: 'fried',
+            row: ['Chicken, thigh, batter, fried', 260],
+          },
+          {
+            name: 'greens',
+            g: 80,
+            kcal: 15,
+            method: 'raw',
+            prepNotes: ['with ranch'],
+            row: ['Lettuce, raw', 15],
+          },
+          { ...oil, name: 'oil' },
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(1);
+  });
+
+  it('keeps a fat the dish dresses or spreads, not fries in', () => {
+    const state = stateOf([
+      {
+        name: 'Fried chicken salad with olive oil',
+        cookingMethod: 'assembled',
+        parts: [
+          {
+            name: 'fried chicken',
+            g: 150,
+            kcal: 390,
+            method: 'fried',
+            row: ['Chicken, thigh, batter, fried', 260],
+          },
+          {
+            name: 'lettuce',
+            g: 80,
+            kcal: 12,
+            method: 'raw',
+            row: ['Lettuce, raw', 15],
+          },
+          { ...oil, name: 'olive oil', row: ['Oil, olive', 884] },
+        ],
+      },
+      {
+        name: 'Bánh mì ốp la phết bơ',
+        cookingMethod: 'kẹp',
+        parts: [
+          {
+            name: 'fried egg',
+            g: 100,
+            kcal: 196,
+            method: 'ốp la',
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'toast',
+            g: 60,
+            kcal: 160,
+            method: 'toasted',
+            prepNotes: ['buttered'],
+            row: ['Bread, white, toasted', 290],
+          },
+          // USDA butter: 81.1 g fat (its energy factor is below 9 kcal/g).
+          { ...oil, name: 'butter', row: ['Butter, salted', 717, 730] },
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('never reads peanut butter as the frying fat', () => {
+    const state = stateOf([
+      {
+        name: 'Fried eggs with toast and peanut butter',
+        cookingMethod: 'fried',
+        parts: [
+          {
+            name: 'fried egg',
+            g: 100,
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'toast',
+            g: 60,
+            kcal: 160,
+            method: 'toasted',
+            row: ['Bread, white, toasted', 290],
+          },
+          {
+            name: 'peanut butter',
+            g: 30,
+            kcal: 176,
+            row: ['Peanut butter, smooth style', 588],
+          },
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('never drops an unmatched food named for a fat', () => {
+    const state = stateOf([
+      {
+        name: 'Fried eggs with toast and almond butter',
+        cookingMethod: 'fried',
+        parts: [
+          {
+            name: 'fried egg',
+            g: 100,
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'toast',
+            g: 60,
+            kcal: 160,
+            method: 'toasted',
+            row: ['Bread, white, toasted', 290],
+          },
+          {
+            name: 'almond butter',
+            g: 30,
+            kcal: 184,
+            row: ['Almond butter, plain', 614],
+          },
+        ],
+      },
+    ]);
+    // Call 2 picked no row for it.
+    state.grounded.mealItems[0].ingredients[2].selectedCandidateId = 'none';
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('drops frying oil by the dish method, never a fat on a mixed plate', () => {
+    const state = stateOf([
+      {
+        // Call 1 puts the frying on the egg; the dish itself is assembled, so
+        // its fat could be the spread as well as the egg's oil: it stays.
+        name: 'Bánh mì trứng',
+        cookingMethod: 'kẹp',
+        parts: [
+          {
+            name: 'trứng',
+            g: 100,
+            kcal: 196,
+            method: 'chiên',
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'bánh mì',
+            g: 80,
+            kcal: 220,
+            row: ['Bread, french or vienna', 272],
+          },
+          oil,
+        ],
+      },
+      {
+        name: 'Trứng ốp la',
+        cookingMethod: 'ốp la',
+        parts: [
+          {
+            name: 'trứng',
+            g: 100,
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          oil,
+        ],
+      },
+    ]);
+    const out = dropOilInFriedRows(state);
+    expect(out.dropped).toBe(1);
+    expect(
+      out.state.decomposition.mealItems[1].ingredients.map((i) => i.rawName)
+    ).toEqual(['trứng']);
+  });
+
   it('keeps the oil when another food in the dish still needs it', () => {
     const state = stateOf([
       {
@@ -397,6 +709,168 @@ describe('dropOilInFriedRows', () => {
       },
     ]);
     expect(dropOilInFriedRows(panFried).dropped).toBe(0);
+  });
+
+  it('drops unstated oil on bún + chả giò (fried row) + rau + dầu', () => {
+    const state = stateOf([
+      {
+        name: 'Bún chả giò',
+        cookingMethod: 'chiên',
+        parts: [
+          {
+            name: 'bún',
+            g: 180,
+            kcal: 198,
+            method: 'luộc',
+            row: ['Rice noodles, cooked', 110],
+          },
+          {
+            name: 'chả giò',
+            g: 100,
+            kcal: 280,
+            row: ['Chả giò chiên', 280, 280, 'deep-fried'],
+          },
+          {
+            name: 'rau sống',
+            g: 50,
+            kcal: 10,
+            method: 'sống',
+            row: ['Lettuce, raw', 20],
+          },
+          oil,
+        ],
+      },
+    ]);
+    const out = dropOilInFriedRows(state);
+    expect(out.dropped).toBe(1);
+    expect(
+      out.state.decomposition.mealItems[0].ingredients.map((i) => i.rawName)
+    ).toEqual(['bún', 'chả giò', 'rau sống']);
+  });
+
+  it('drops unstated oil on rice + fried chicken + oil', () => {
+    const state = stateOf([
+      {
+        name: 'Fried chicken and rice',
+        cookingMethod: 'fried',
+        parts: [
+          {
+            name: 'rice',
+            g: 200,
+            kcal: 260,
+            method: 'steamed',
+            row: ['Rice, white, cooked', 130],
+          },
+          {
+            name: 'fried chicken',
+            g: 150,
+            kcal: 390,
+            row: ['Chicken, thigh, batter, fried', 260],
+          },
+          {
+            name: 'oil',
+            g: 10,
+            kcal: 88,
+            row: ['Oil, vegetable', 884],
+          },
+        ],
+      },
+    ]);
+    const out = dropOilInFriedRows(state);
+    expect(out.dropped).toBe(1);
+    expect(
+      out.state.decomposition.mealItems[0].ingredients.map((i) => i.rawName)
+    ).toEqual(['rice', 'fried chicken']);
+  });
+
+  it('keeps oil on stir-fried noodles + fried egg + oil (by dish or ingredient method)', () => {
+    // Whole dish is stir-fried:
+    const dishStirFry = stateOf([
+      {
+        name: 'Stir-fried noodles with fried egg',
+        cookingMethod: 'stir-fried',
+        parts: [
+          {
+            name: 'noodles',
+            g: 200,
+            kcal: 280,
+            row: ['Egg noodles, cooked', 140],
+          },
+          {
+            name: 'fried egg',
+            g: 50,
+            kcal: 98,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'oil',
+            g: 10,
+            kcal: 88,
+            row: ['Oil, vegetable', 884],
+          },
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(dishStirFry).dropped).toBe(0);
+
+    // Generic dish method, ingredient carries its own stir-fried method:
+    const ingStirFry = stateOf([
+      {
+        name: 'Noodles and egg plate',
+        cookingMethod: 'mixed',
+        parts: [
+          {
+            name: 'noodles',
+            g: 200,
+            kcal: 280,
+            row: ['Egg noodles, cooked', 140],
+          },
+          {
+            name: 'fried egg',
+            g: 50,
+            kcal: 98,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'oil',
+            g: 10,
+            kcal: 88,
+            row: ['Oil, vegetable', 884],
+          },
+        ],
+      },
+    ]);
+    ingStirFry.decomposition.mealItems[0].ingredients[0].cookingMethod =
+      'stir-fried';
+    expect(dropOilInFriedRows(ingStirFry).dropped).toBe(0);
+  });
+
+  it('keeps user-stated oil even alongside fried chicken + plain rice', () => {
+    const state = stateOf([
+      {
+        name: 'Fried chicken and rice',
+        cookingMethod: 'fried',
+        parts: [
+          {
+            name: 'rice',
+            g: 200,
+            kcal: 260,
+            method: 'steamed',
+            row: ['Rice, white, cooked', 130],
+          },
+          {
+            name: 'fried chicken',
+            g: 150,
+            kcal: 390,
+            row: ['Chicken, thigh, batter, fried', 260],
+          },
+          oil,
+        ],
+      },
+    ]);
+    const parts = state.decomposition.mealItems[0].ingredients;
+    parts[2] = { ...parts[2], count: 1, unitToken: 'muỗng' };
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
   });
 });
 

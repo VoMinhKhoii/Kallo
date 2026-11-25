@@ -170,6 +170,9 @@ function toMatchInfo(
     foodCompositionId: row.id,
     matchedName: row.namePrimary,
     ...(row.nameEn ? { matchedNameEn: row.nameEn } : {}),
+    ...(row.card?.cookingMethod
+      ? { rowCookingMethod: row.card.cookingMethod }
+      : {}),
     similarity,
     confidence: classifyConfidence(similarity),
     state: normalizeState(row.state),

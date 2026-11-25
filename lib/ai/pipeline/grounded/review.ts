@@ -12,6 +12,7 @@
 
 import type { GroundedIngredientEstimate } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
+import { classifyPureFat } from '@/lib/ai/pipeline/resolve/macros/macro-base';
 import {
   selectedCandidate,
   shippedEdibleGrams,
@@ -21,7 +22,12 @@ import {
   scaleToServedMass,
 } from '@/lib/ai/pipeline/resolve/served-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
-import { isDiscreteOilIngredient } from '@/lib/domain/nutrition/absorbed-oil';
+import {
+  absorbedOil,
+  isAlreadyFriedRow,
+  isCookingFatPart,
+  prepNotesAskForExtraFat,
+} from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
  * Review the picks and splice in the dish rescue (`./rescue`), in that order:
@@ -122,11 +128,6 @@ export function rejectWrongFormRows(state: RunState): {
   return { state: { ...state, grounded }, rejected };
 }
 
-/** A row whose name says the food was fried in fat ("Egg, whole, cooked, fried"). */
-const FRIED_ROW = /\bfried\b|chi[eê]n|\br[aá]n\b/i;
-/** Fried without added fat, or a name where "fried" says nothing about the fat. */
-const NOT_FAT_FRIED =
-  /\b(?:pan|stir|air|dry)[- ]?fried\b|not breaded|kh[oô]ng d[aầ]u/i;
 /** Lighter foods are seasonings and garnish; they do not decide the dish. */
 const MIN_FOOD_G = 20;
 
@@ -134,8 +135,10 @@ const MIN_FOOD_G = 20;
  * Call 1 logs a fried dish's cooking oil as its own row. That is right when
  * the food matched a plain row (raw egg, raw shrimp), and double counting when
  * it matched a row that is already fried in it ("Egg, whole, cooked, fried").
- * A dish whose every food (seasonings aside) matched a fried row loses its oil
- * rows. Returns new state.
+ * A dish drops its unstated oil rows when at least one substantial food
+ * matched an already-fried row and no other substantial food in the dish is
+ * itself fat-cooked (its own cookingMethod implies absorbed oil, or the whole
+ * dish is a stir-fry / fried rice / sauté). Returns new state.
  */
 export function dropOilInFriedRows(state: RunState): {
   state: RunState;
@@ -148,17 +151,36 @@ export function dropOilInFriedRows(state: RunState): {
   for (const mi of state.decomposition.mealItems) {
     const own = mi.ingredients.map((_, i) => flat + i);
     flat += mi.ingredients.length;
-    const oils = own.filter((f) =>
-      isDiscreteOilIngredient(pairs[f].ingredient.rawName)
+    // A cooking fat by its matched row, or by its name when unmatched.
+    const fats = own.filter((f) =>
+      isCookingFatPart(
+        pairs[f].ingredient.rawName,
+        matchedFat(state, pairs[f].ground, f)
+      )
     );
     const foods = own.filter(
-      (f) => !oils.includes(f) && weighs(state, pairs[f], f)
+      (f) => !fats.includes(f) && weighs(state, pairs[f], f)
     );
-    if (foods.length === 0) continue;
-    if (
-      oils.length > 0 &&
-      foods.every((f) => isFriedRow(state, pairs[f].ground, f))
-    )
+    // Only the implied frying fat goes: Call 1 gives a fat row no method of
+    // its own, so the dish's method says whether it was fried in. On a mixed
+    // plate where only one part fries ("trứng chiên" in a bánh mì trứng,
+    // dish method "kẹp") the fat stays: nothing tells that plate's frying oil
+    // from the butter or mỡ hành it is served with, and deleting a fat the
+    // user ate costs more than keeping a few grams of oil twice (the fried
+    // part's own fat is still capped at 1.25x beside it).
+    const oils = fats.filter((f) => friedInIt(mi, pairs[f].ingredient));
+    if (foods.length === 0 || oils.length === 0) continue;
+    const hasFriedFood = foods.some((f) =>
+      isFriedRow(state, pairs[f].ground, f)
+    );
+    const otherFoodNeedsOil = foods.some(
+      (f) =>
+        (!isFriedRow(state, pairs[f].ground, f) &&
+          foodNeedsCookingOil(mi, pairs[f].ingredient)) ||
+        // "buttered toast" beside the fried eggs: the fat is the toast's.
+        prepNotesAskForExtraFat(pairs[f].ingredient.prepNotes)
+    );
+    if (hasFriedFood && !otherFoodNeedsOil)
       for (const f of oils) {
         // An amount the user stated ("1 muỗng dầu ô liu") is what they ate.
         // A dish's count ("2 omelettes") is on the dish, not on its oil
@@ -194,16 +216,55 @@ export function dropOilInFriedRows(state: RunState): {
   };
 }
 
+/**
+ * Whether a food on a plain row still takes up the dish's cooking oil. Call 1
+ * gives a part its own cooking method only when it differs from the dish's
+ * (rice beside fried chicken), so a part without one was cooked the dish's
+ * way: the potatoes in fish and chips, the pork in an egg-and-pork omelette.
+ */
+function foodNeedsCookingOil(
+  mi: RunState['decomposition']['mealItems'][number],
+  ing: RunState['decomposition']['mealItems'][number]['ingredients'][number]
+): boolean {
+  const method = ing.cookingMethod || mi.cookingMethod;
+  const context = [method, ...(ing.prepNotes ?? [])].filter(Boolean).join(' ');
+  // A frying method takes up oil; "không dầu" / "air-fried" on the part
+  // cancels it (absorbedOil reads the negation first).
+  return absorbedOil(context, 100) > 0;
+}
+
+/** The fat row's own method, or the dish's when it has none, is a frying one. */
+function friedInIt(
+  mi: RunState['decomposition']['mealItems'][number],
+  oil: RunState['decomposition']['mealItems'][number]['ingredients'][number]
+): boolean {
+  return absorbedOil(oil.cookingMethod || mi.cookingMethod, 100) > 0;
+}
+
+/** The picked row's fat class (`pureFatKind`), or undefined when unmatched. */
+function matchedFat(
+  state: RunState,
+  ground: GroundedIngredientEstimate | null,
+  f: number
+): { pureFatKind: string | null } | undefined {
+  const row = selectedCandidate(ground, state.matchResults[f]);
+  return row?.nutrition
+    ? { pureFatKind: classifyPureFat(row.nutrition) }
+    : undefined;
+}
+
 function isFriedRow(
   state: RunState,
   ground: GroundedIngredientEstimate | null,
   f: number
 ): boolean {
   const row = selectedCandidate(ground, state.matchResults[f]);
-  const names = row
-    ? `${row.prompt.nameEn ?? ''} | ${row.info.matchedName}`
-    : '';
-  return FRIED_ROW.test(names) && !NOT_FAT_FRIED.test(names);
+  if (!row) return false;
+  return isAlreadyFriedRow(
+    row.prompt?.nameEn ?? row.info.matchedNameEn,
+    row.info.rowCookingMethod,
+    row.nutrition?.fatG
+  );
 }
 
 function weighs(

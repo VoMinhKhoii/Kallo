@@ -251,6 +251,10 @@ export function resolveIngredient(args: {
     // (computeDbScalingGrams's cooked-state path returns input grams).
     const weightBasis: 'raw' | undefined =
       dbState === 'raw' || dbState === 'unknown' ? 'raw' : undefined;
+    const matchedNameEn =
+      acceptedCandidate.info.matchedNameEn ??
+      acceptedCandidate.prompt?.nameEn ??
+      undefined;
     return {
       ...base,
       v1Ingredient: v2IngredientToV1(
@@ -265,6 +269,10 @@ export function resolveIngredient(args: {
         foodCompositionId: acceptedCandidate.info.foodCompositionId,
         foodGroupEn: acceptedCandidate.info.foodGroupEn,
         matchedName: acceptedCandidate.info.matchedName,
+        ...(matchedNameEn ? { matchedNameEn } : {}),
+        ...(acceptedCandidate.info.rowCookingMethod
+          ? { rowCookingMethod: acceptedCandidate.info.rowCookingMethod }
+          : {}),
         similarity: acceptedCandidate.info.similarity,
         confidence: acceptedCandidate.info.confidence,
         dbState: dbState,

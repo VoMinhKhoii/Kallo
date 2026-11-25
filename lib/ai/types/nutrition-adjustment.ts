@@ -25,6 +25,8 @@ import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
  * ingredient) and to `resolveIngredientMacros` for server anchoring.
  * Absent entries (unmatched ingredients) mean the LLM owns all four macros.
  */
+export type PureFatKind = 'oil' | 'butter';
+
 export interface MacroBase {
   caloriesKcal: number;
   proteinG: number;
@@ -35,6 +37,24 @@ export interface MacroBase {
    * `resolve/macros/alcohol.ts`). Absent or 0 for every non-alcoholic row.
    */
   alcoholKcal?: number;
+  /**
+   * Composition-derived classification for pure cooking fats (`macro-base.ts`):
+   * `'oil'` (fat ≥ 95 g, protein ≤ 1 g, carb ≤ 1 g per 100 g) or `'butter'`
+   * (80 ≤ fat < 95 g, protein ≤ 2 g, carb ≤ 2 g per 100 g). Absent or `null`
+   * for all other foods.
+   */
+  pureFatKind?: PureFatKind | null;
+  /**
+   * True when the matched DB row itself represents an already-fried food
+   * (e.g. "Egg, whole, cooked, fried"), so its per-100g fat already includes
+   * frying fat.
+   */
+  matchedRowIsFried?: boolean;
+  /**
+   * The row states 0 g fat per 100 g (as opposed to no fat value at all, which
+   * also scales to `fatG: 0`), so a fat cap on it is a real cap.
+   */
+  fatIsZero?: boolean;
 }
 
 /** Bounded estimates for the 4 LLM-adjusted macros of a single ingredient. */

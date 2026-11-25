@@ -285,4 +285,36 @@ describe('__testing.guardMacro — tighter prep-notes ratios', () => {
     expect(out.mid).toBe(14);
     expect(warn).toHaveBeenCalled();
   });
+
+  it('supports an asymmetric floor via optional minRatio while leaving default callers unchanged', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // Floor = 20 * (1/3) = 6.67; ceiling = 20 * 1.25 = 25.
+    // A 0.5× fat reduction (10g) passes untouched even though maxRatio is 1.25.
+    const reduced = __testing.guardMacro(
+      { low: 8, mid: 10, high: 12 },
+      20,
+      'pork rib',
+      'fatG',
+      1.25,
+      0,
+      1 / 3
+    );
+    expect(reduced).toEqual({ low: 8, mid: 10, high: 12 });
+    expect(warn).not.toHaveBeenCalled();
+
+    // Overshoot above 1.25× clamps to 25 while preserving low < mid.
+    const overshot = __testing.guardMacro(
+      { low: 30, mid: 35, high: 40 },
+      20,
+      'pork rib',
+      'fatG',
+      1.25,
+      0,
+      1 / 3
+    );
+    expect(overshot.mid).toBeCloseTo(25, 5);
+    expect(overshot.high).toBeCloseTo(25, 5);
+    expect(overshot.low).toBeLessThan(overshot.mid);
+    expect(warn).toHaveBeenCalled();
+  });
 });
