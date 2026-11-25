@@ -94,7 +94,8 @@ export function deriveCaloriesFromMacros(
  *
  * `maxRatio` defaults to `HALLUCINATION_GUARD_RATIO` (3) for the legacy
  * fat-only path; callers pass tighter prep-notes ratios when applying the
- * guard to protein/carb/fat under user-typed modifiers.
+ * guard to protein/carb/fat under user-typed modifiers. Optional `minRatio`
+ * allows an asymmetric floor (defaults to `1 / maxRatio`).
  */
 export function guardMacro(
   raw: BoundedEstimate,
@@ -102,7 +103,8 @@ export function guardMacro(
   ingredientName: string,
   macroName: string,
   maxRatio: number = HALLUCINATION_GUARD_RATIO,
-  ceilingAddend: number = 0
+  ceilingAddend: number = 0,
+  minRatio?: number
 ): BoundedEstimate {
   if (isStructurallyInvalidTriple(raw)) {
     console.warn(
@@ -117,7 +119,8 @@ export function guardMacro(
     // triple rather than manufacturing a zero for a nutrient the DB lacks.
     return raw;
   }
-  const floor = base > 0 ? base / maxRatio : 0;
+  const floor =
+    base > 0 ? (minRatio !== undefined ? base * minRatio : base / maxRatio) : 0;
   const ceiling = Math.max(0, base) * maxRatio + safeAddend;
   const target = raw.mid > ceiling ? ceiling : raw.mid < floor ? floor : null;
 

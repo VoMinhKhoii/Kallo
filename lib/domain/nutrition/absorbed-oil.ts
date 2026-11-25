@@ -55,9 +55,9 @@ const DISCRETE_OIL_INGREDIENT =
  * "the frying oil is already its own row" and the fish loses its absorbed-oil
  * allowance — under-reporting the fat this module exists to preserve.
  * `salad dầu giấm` appears in our own adjustment eval set, so this is not
- * hypothetical.
+ * hypothetical. `xì dầu` is soy sauce.
  */
-const OIL_LIKE_CONDIMENT = /d[aầ]u\s*(?:gi[aấ]m|h[aà]o)/i;
+const OIL_LIKE_CONDIMENT = /d[aầ]u\s*(?:gi[aấ]m|h[aà]o)|x[iì]\s*d[aầ]u/i;
 
 /**
  * The names the decomposition prompt tells Call 1 to use for a cooking-fat
@@ -142,4 +142,56 @@ export function renderAbsorbedOilPromptRule(): string {
   const { panSearG, stirFryG, shallowFryG, deepFryWeightRatio } =
     ABSORBED_OIL_RANGES;
   return `pan-sear ${panSearG.low}\u2013${panSearG.high}g, stir-fry ${stirFryG.low}\u2013${stirFryG.high}g, shallow-fry ${shallowFryG.low}\u2013${shallowFryG.high}g, deep-fry ~${deepFryWeightRatio.low * 100}\u2013${deepFryWeightRatio.high * 100}% of food weight`;
+}
+
+/** An English row name or card cooking method that says the food was fried in fat. */
+const FRIED_ROW = /\bfried\b/i;
+/** Fried without added fat, or a name where "fried" says nothing about fat. */
+const NOT_FAT_FRIED = /\b(?:pan|stir|air|dry)[- ]?fried\b|not breaded/i;
+
+/**
+ * True when a matched DB row already represents a fat-fried food, so its
+ * per-100g fat already includes the frying oil ("Egg, whole, cooked, fried",
+ * or a card whose `cooking_method` is "deep-fried").
+ *
+ * Reads only the source's English row name and the curated card's cooking
+ * method, never the Vietnamese display name: machine-translated names carry
+ * "rán"/"chiên" where the food is not fried (every USDA "broilers or fryers"
+ * chicken row is "gà rán", "Bột chiên giòn" is a dry batter mix). A row whose
+ * English name is empty (NIN) counts as fried only through its card's cooking
+ * method, which is curated data.
+ */
+export function isAlreadyFriedRow(
+  rowNameEn: string | null | undefined,
+  rowCookingMethod?: string | null
+): boolean {
+  const name = rowNameEn?.normalize('NFC').trim() ?? '';
+  if (NOT_FAT_FRIED.test(name)) return false;
+  if (FRIED_ROW.test(name)) return true;
+  const method = rowCookingMethod?.normalize('NFC').trim() ?? '';
+  return FRIED_ROW.test(method) && !NOT_FAT_FRIED.test(method);
+}
+
+const EXTRA_FAT_NEGATION =
+  /kh[oô]ng\s*(?:d[aầ]u|m[ơỡ]|b[ơo])|[ií]t\s*(?:d[aầ]u|m[ơỡ]|b[ơo]|b[eé]o)|b[oỏ]\s*(?:da|m[ơỡ])|\bno[- ]?(?:added\s*)?(?:oil|butter|fat)\b|\bwithout\s+(?:any\s+)?(?:oil|butter|fat)\b|\b(?:oil|fat)[- ]?free\b|\blow[- ]?fat\b|\b(?:less|light)\s+(?:oil|butter|fat)\b/i;
+
+const EXTRA_FAT_NOTE =
+  /\b(?:extra|more|heavy|added|double|lots\s+of|with|doused\s+in|soaked\s+in|drizzled\s+with|cooked\s+in|brushed\s+with|basted\s+with|topped\s+with|loaded\s+with)\s+(?:(?:olive|sesame|coconut|vegetable|bacon)\s+)?(?:oil|butter|ghee|lard|fat|grease|margarine)\b|\b(?:buttered|greasy|oily|extra\s+fatty)\b|(?:th[eê]m|nhi[eề]u|[dđ][aẫ]m|ng[aậ]p|ph[eế]t|tr[eé]t|qu[eế]t|r[uư][ơớ]i|chan|c[oó]|k[eè]m)\s+(?:d[aầ]u|m[ơỡ]|b[ơo])|(?:d[aầ]u|m[ơỡ]|b[ơo])\s+(?:nhi[eề]u|th[eê]m)/i;
+
+/**
+ * True when any user-typed prep note explicitly asks for extra fat (e.g.
+ * "extra oil", "extra butter", "with butter", "nhiều mỡ", "phết bơ",
+ * "thêm dầu"). Checked per note so a reduction note ("bỏ da") alongside an
+ * addition note ("extra butter") still unlocks the wider fat band.
+ */
+export function prepNotesAskForExtraFat(
+  prepNotes: readonly string[] | undefined
+): boolean {
+  if (!prepNotes || prepNotes.length === 0) return false;
+  return prepNotes.some((raw) => {
+    const note = raw.normalize('NFC').trim();
+    if (!note) return false;
+    if (EXTRA_FAT_NEGATION.test(note)) return false;
+    return EXTRA_FAT_NOTE.test(note);
+  });
 }

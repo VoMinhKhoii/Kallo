@@ -37,6 +37,7 @@ export interface CatalogRow {
     namesVi: string[];
     facets: string[];
     eatenState: EatenState;
+    cookingMethod?: string | null;
   } | null;
   /** Every name of the row: row names, card food, EN aliases, VI names. */
   names: readonly string[];
@@ -174,6 +175,7 @@ export function buildCardCatalog(
               r.brand,
             ].filter(present),
             eatenState: normalizeEatenState(r.eaten_state),
+            cookingMethod: present(r.cooking_method) ? r.cooking_method : null,
           }
         : null,
     };

@@ -120,7 +120,7 @@ ${serverScalingRule}
 
   ACCEPTED candidate, prep_notes EMPTY — the server replaces protein and carb with the DB row: keep those two brief (flat triples at base are fine); your effort belongs in grossG, refusePct, and fat.
     - fat: reflect cooking-method effect.
-        · chiên/rán/xào (oil): +30–80% over base.
+        · chiên/rán/xào/fried/stir-fried (oil): +30–80% over base ONLY when no cooking-fat row is listed in this dish and the selected candidate is not already fried; otherwise keep fat near base.
         · luộc/hấp: near base.
         · nướng without basting: near base.
         · kho with oil: modest increase.

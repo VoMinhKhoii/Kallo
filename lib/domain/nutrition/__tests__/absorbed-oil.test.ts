@@ -5,8 +5,10 @@ import {
   ABSORBED_OIL_RANGES,
   absorbedOil,
   COOKING_FAT_ROW_NAMES,
+  isAlreadyFriedRow,
   isDiscreteOilIngredient,
   mealItemHasDiscreteOil,
+  prepNotesAskForExtraFat,
   renderAbsorbedOilPromptRule,
 } from '@/lib/domain/nutrition/absorbed-oil';
 
@@ -91,7 +93,15 @@ describe('discrete oil rows suppress the sibling allowance', () => {
     }
     // `bơ` alone is avocado as often as butter in Vietnamese; a false positive
     // would silently strip the oil allowance from every other ingredient.
-    for (const name of ['quả bơ', 'bơ', 'khoai tây', 'rau muống', '']) {
+    for (const name of [
+      'quả bơ',
+      'bơ',
+      'khoai tây',
+      'rau muống',
+      'Xì dầu',
+      'xì dầu',
+      '',
+    ]) {
       expect(isDiscreteOilIngredient(name)).toBe(false);
     }
     expect(mealItemHasDiscreteOil(['Khoai tây', 'Dầu ăn'])).toBe(true);
@@ -147,8 +157,8 @@ describe('discrete oil rows suppress the sibling allowance', () => {
     );
     expect(absorbing.fatG.mid).toBeCloseTo(21.8, 8);
 
-    // A sibling `Oil` row exists: the potato is clamped back toward base
-    // instead of double-counting the same oil.
+    // A sibling `Oil` row exists: the potato is capped at 1.25× base with zero
+    // oil allowance instead of double-counting the same oil.
     const suppressed = __testing.resolveIngredientMacros(
       friedPotato,
       base,
@@ -158,7 +168,7 @@ describe('discrete oil rows suppress the sibling allowance', () => {
       [],
       true
     );
-    expect(suppressed.fatG.mid).toBeCloseTo(base.fatG * 3, 8);
+    expect(suppressed.fatG.mid).toBeCloseTo(base.fatG * 1.25, 8);
     expect(suppressed.fatG.mid).toBeLessThan(absorbing.fatG.mid);
   });
 
@@ -238,5 +248,81 @@ describe('absorbedOil precedence with contradictory signals', () => {
     );
     expect(absorbedOil('', GRAMS)).toBe(0);
     expect(absorbedOil('chiên ngập dầu', 0)).toBe(0);
+  });
+});
+
+describe('isAlreadyFriedRow', () => {
+  it('detects fat-fried rows by English row name or card cooking method', () => {
+    expect(isAlreadyFriedRow('Egg, whole, cooked, fried')).toBe(true);
+    expect(isAlreadyFriedRow('Spring roll', 'deep-fried')).toBe(true);
+    // NIN rows have no English name; the curated cooking method decides.
+    expect(isAlreadyFriedRow('', 'deep-fried')).toBe(true);
+    expect(isAlreadyFriedRow('Egg, whole, cooked, fried', 'pan-fried')).toBe(
+      true
+    );
+  });
+
+  it('excludes plain, air-fried, dry-fried, stir-fried, and pan-fried not-breaded rows', () => {
+    expect(isAlreadyFriedRow('Chicken breast, raw')).toBe(false);
+    expect(isAlreadyFriedRow('Veal, leg, cooked, pan-fried, not breaded')).toBe(
+      false
+    );
+    expect(isAlreadyFriedRow('Chicken, air-fried')).toBe(false);
+    expect(isAlreadyFriedRow('Vegetables, mixed, cooked', 'stir-fried')).toBe(
+      false
+    );
+  });
+
+  it('never reads a fried food into a raw row or a dry mix', () => {
+    // USDA's "broilers or fryers" chicken is raw meat (translated "gà rán").
+    expect(
+      isAlreadyFriedRow(
+        'Chicken, broilers or fryers, breast, skinless, boneless, meat only, raw'
+      )
+    ).toBe(false);
+    // "Bột chiên giòn" is dry batter mix: no English name, no cooking method.
+    expect(isAlreadyFriedRow('', null)).toBe(false);
+    expect(isAlreadyFriedRow(undefined)).toBe(false);
+  });
+});
+
+describe('prepNotesAskForExtraFat', () => {
+  it('matches explicit extra-fat requests in English and Vietnamese', () => {
+    for (const note of [
+      'extra oil',
+      'extra butter',
+      'with butter',
+      'buttered',
+      'nhiều mỡ',
+      'phết bơ',
+      'thêm dầu',
+      'thêm dầu nhiều',
+      'rưới dầu',
+    ]) {
+      expect(prepNotesAskForExtraFat([note])).toBe(true);
+    }
+    // Mixed reduction + addition still unlocks extra fat.
+    expect(prepNotesAskForExtraFat(['bỏ da', 'extra butter'])).toBe(true);
+  });
+
+  it('does not match negations, fat-reduction notes, or unrelated modifiers', () => {
+    for (const note of [
+      'bỏ da',
+      'bỏ mỡ',
+      'không dầu',
+      'ít mỡ',
+      'ít dầu',
+      'no oil',
+      'without butter',
+      'low-fat',
+      'less oil',
+      'ít muối',
+      'extra spicy',
+      'quả bơ',
+    ]) {
+      expect(prepNotesAskForExtraFat([note])).toBe(false);
+    }
+    expect(prepNotesAskForExtraFat([])).toBe(false);
+    expect(prepNotesAskForExtraFat(undefined)).toBe(false);
   });
 });

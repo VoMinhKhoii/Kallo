@@ -152,6 +152,8 @@ export interface MatchInfo {
    * name obscures.
    */
   matchedNameEn?: string;
+  /** Curated card cooking method (e.g. "deep-fried"), when the row comes from cards. */
+  rowCookingMethod?: string;
   similarity: number;
   confidence: MatchConfidence;
   state: DbIngredientState;

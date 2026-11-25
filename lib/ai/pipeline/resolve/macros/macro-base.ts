@@ -14,7 +14,11 @@ import type {
   MatchedIngredient,
   NutritionPer100g,
 } from '@/lib/ai/types/matching';
-import type { MacroBase } from '@/lib/ai/types/nutrition-adjustment';
+import type {
+  MacroBase,
+  PureFatKind,
+} from '@/lib/ai/types/nutrition-adjustment';
+import { isAlreadyFriedRow } from '@/lib/domain/nutrition/absorbed-oil';
 import { alcoholKcalPer100g } from './alcohol';
 
 const ingredientCookingMethod = (
@@ -62,7 +66,15 @@ export function computeMacroBaseMap(
       });
       baseMap.set(
         id,
-        scalePer100g(match.nutritionPer100g, dbScalingGrams, match.foodGroupEn)
+        scalePer100g(
+          match.nutritionPer100g,
+          dbScalingGrams,
+          match.foodGroupEn,
+          {
+            matchedNameEn: match.matchedNameEn,
+            rowCookingMethod: match.rowCookingMethod,
+          }
+        )
       );
     }
   }
@@ -92,16 +104,41 @@ export function computeDbScalingGrams(input: {
   return convertCookedToRaw(input.grams, input.cookingMethod);
 }
 
+/**
+ * Classify a matched food row as pure cooking fat by per-100g macro
+ * composition (language-neutral, avoids name ambiguity such as Vietnamese
+ * "bơ" = butter vs avocado).
+ */
+export function classifyPureFat(per100g: NutritionPer100g): PureFatKind | null {
+  const fat = per100g.fatG ?? 0;
+  const protein = per100g.proteinG ?? 0;
+  const carb = per100g.carbohydrateG ?? 0;
+  if (fat >= 95 && protein <= 1 && carb <= 1) return 'oil';
+  if (fat >= 80 && fat < 95 && protein <= 2 && carb <= 2) return 'butter';
+  return null;
+}
+
+export interface MacroBaseRowMeta {
+  matchedNameEn?: string | null;
+  rowCookingMethod?: string | null;
+}
+
 export function scalePer100g(
   per100g: NutritionPer100g,
   grams: number,
-  foodGroupEn?: string
+  foodGroupEn?: string,
+  rowMeta?: MacroBaseRowMeta
 ): MacroBase {
+  const matchedRowIsFried = rowMeta
+    ? isAlreadyFriedRow(rowMeta.matchedNameEn, rowMeta.rowCookingMethod)
+    : false;
   return {
     caloriesKcal: (per100g.caloriesKcal ?? 0) * (grams / 100),
     proteinG: (per100g.proteinG ?? 0) * (grams / 100),
     carbohydrateG: (per100g.carbohydrateG ?? 0) * (grams / 100),
     fatG: (per100g.fatG ?? 0) * (grams / 100),
     alcoholKcal: alcoholKcalPer100g(per100g, foodGroupEn) * (grams / 100),
+    pureFatKind: classifyPureFat(per100g),
+    ...(matchedRowIsFried ? { matchedRowIsFried: true } : {}),
   };
 }

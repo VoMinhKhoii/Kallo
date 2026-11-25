@@ -54,12 +54,17 @@ export function resolveStreamingMealItem(
   decomposedMealItem: MealDecompositionWithIds['mealItems'][number] | undefined,
   baseMap: Map<string, MacroBase>
 ): MealItemNutrition {
-  // Whether this dish carries its frying fat as its own row. Computed once per
-  // meal item: if it does, its sibling foods must not also be granted an
-  // absorbed-oil allowance, or the oil lands in the total twice.
-  const siblingOilPresent = mealItemHasDiscreteOil(
-    rawItem.ingredients.map((ing) => ing.ingredientName)
-  );
+  // Whether this dish carries its frying fat as its own row (by name OR by
+  // matched DB composition, e.g. Vietnamese "bơ" matched to butter). Computed
+  // once per meal item so sibling foods do not double-count cooking oil.
+  const siblingOilPresent =
+    mealItemHasDiscreteOil(
+      rawItem.ingredients.map((ing) => ing.ingredientName)
+    ) ||
+    (decomposedMealItem?.ingredients.some(
+      (ing) => baseMap.get(ing.ingredientId)?.pureFatKind != null
+    ) ??
+      false);
   const ingredients: IngredientLlmNutrition[] = rawItem.ingredients.map(
     (rawIng) => {
       const decIng = decomposedMealItem?.ingredients.find(
@@ -178,41 +183,49 @@ export function reconcileNutritionIds(
         ingredientQueueByName.set(name, list);
       }
       const ingredientConsumed = new Map<string, number>();
-      // See `resolveStreamingMealItem`: one discrete oil row per meal item
-      // suppresses its siblings' absorbed-oil allowance.
-      const siblingOilPresent = mealItemHasDiscreteOil(
-        rawMi.ingredients.map((ing) => ing.ingredientName)
-      );
+      const matchedSlots = rawMi.ingredients.map((rawIng) => {
+        const ingQueue = ingredientQueueByName.get(rawIng.ingredientName) ?? [];
+        const ingConsumed = ingredientConsumed.get(rawIng.ingredientName) ?? 0;
+        const decomposedIng =
+          ingQueue[ingConsumed] ?? ingQueue[ingQueue.length - 1];
+        if (!decomposedIng) {
+          throw new Error(
+            `[reconcile] Call 2 returned ingredient "${rawIng.ingredientName}" not present in meal item "${rawMi.mealItemName}"`
+          );
+        }
+        ingredientConsumed.set(rawIng.ingredientName, ingConsumed + 1);
+        const totalForIngName = ingQueue.length;
+        if (totalForIngName > 1 && ingConsumed >= totalForIngName) {
+          console.warn(
+            `[reconcile] ingredient name collision: "${rawIng.ingredientName}" appears ${totalForIngName}x in "${rawMi.mealItemName}" — wrapping to last slot`,
+            {
+              ingredientId: decomposedIng.ingredientId,
+              mealItemId: decomposedMi.mealItemId,
+              matchedSimilarity: matched.find(
+                (m) => m.ingredientId === decomposedIng.ingredientId
+              )?.similarity,
+            }
+          );
+        }
+        const ingredientId = decomposedIng.ingredientId;
+        return {
+          rawIng,
+          decomposedIng,
+          ingredientId,
+          base: baseMap.get(ingredientId),
+        };
+      });
 
-      const ingredients: IngredientLlmNutrition[] = rawMi.ingredients.map(
-        (rawIng) => {
-          const ingQueue =
-            ingredientQueueByName.get(rawIng.ingredientName) ?? [];
-          const ingConsumed =
-            ingredientConsumed.get(rawIng.ingredientName) ?? 0;
-          const decomposedIng =
-            ingQueue[ingConsumed] ?? ingQueue[ingQueue.length - 1];
-          if (!decomposedIng) {
-            throw new Error(
-              `[reconcile] Call 2 returned ingredient "${rawIng.ingredientName}" not present in meal item "${rawMi.mealItemName}"`
-            );
-          }
-          ingredientConsumed.set(rawIng.ingredientName, ingConsumed + 1);
-          const totalForIngName = ingQueue.length;
-          if (totalForIngName > 1 && ingConsumed >= totalForIngName) {
-            console.warn(
-              `[reconcile] ingredient name collision: "${rawIng.ingredientName}" appears ${totalForIngName}x in "${rawMi.mealItemName}" — wrapping to last slot`,
-              {
-                ingredientId: decomposedIng.ingredientId,
-                mealItemId: decomposedMi.mealItemId,
-                matchedSimilarity: matched.find(
-                  (m) => m.ingredientId === decomposedIng.ingredientId
-                )?.similarity,
-              }
-            );
-          }
-          const ingredientId = decomposedIng.ingredientId;
-          const base = baseMap.get(ingredientId);
+      // See `resolveStreamingMealItem`: one discrete cooking-fat row (by name
+      // or matched pure-fat composition) suppresses its siblings' absorbed-oil
+      // allowance and caps their fat near base.
+      const siblingOilPresent =
+        mealItemHasDiscreteOil(
+          rawMi.ingredients.map((ing) => ing.ingredientName)
+        ) || matchedSlots.some((slot) => slot.base?.pureFatKind != null);
+
+      const ingredients: IngredientLlmNutrition[] = matchedSlots.map(
+        ({ rawIng, decomposedIng, ingredientId, base }) => {
           const grams = ingredientGrams(decomposedIng);
           const prepNotesPresent = hasPrepNotes(decomposedIng.prepNotes);
           const resolved = resolveIngredientMacros(

@@ -135,15 +135,7 @@ export function resolveStreamingV2MealItem(
     else localIdxByName.set(key, [i]);
   });
 
-  // Same rule the reconciled path applies (`nutrition.ts`): one discrete oil
-  // row suppresses its siblings' absorbed-oil allowance. Without it the
-  // streamed preview shows the oil twice and then silently corrects itself
-  // once reconciliation lands.
-  const siblingOilPresent = mealItemHasDiscreteOil(
-    rawItem.ingredients.map((ing) => ing.ingredientName)
-  );
-
-  rawItem.ingredients.forEach((rawIng, streamIdx) => {
+  const prepared = rawItem.ingredients.map((rawIng, streamIdx) => {
     const localIdx =
       localIdxByName.get(nameKey(rawIng.ingredientName))?.shift() ?? streamIdx;
     const flatIdx = flatIngredientStart + localIdx;
@@ -166,7 +158,32 @@ export function resolveStreamingV2MealItem(
     totalGrams += grams;
 
     const base = computeBaseFromVerdict(rawIng, candidates, grams);
+    return {
+      rawIng,
+      decompForName,
+      prepNotesPresent,
+      cookingMethod,
+      grams,
+      base,
+    };
+  });
 
+  // Same rule the reconciled path applies (`macro-resolution.ts`): one discrete
+  // cooking-fat row (by name or matched pure-fat composition) suppresses its
+  // siblings' absorbed-oil allowance and caps their fat near base.
+  const siblingOilPresent =
+    mealItemHasDiscreteOil(
+      rawItem.ingredients.map((ing) => ing.ingredientName)
+    ) || prepared.some((entry) => entry.base?.pureFatKind != null);
+
+  for (const {
+    rawIng,
+    decompForName,
+    prepNotesPresent,
+    cookingMethod,
+    grams,
+    base,
+  } of prepared) {
     // Every macro triple is schema-REQUIRED now, so a well-formed Call-2
     // response can never omit one. These defaults survive for exactly one
     // reason: this speculative streaming path reads partial chunks with no zod
@@ -199,7 +216,7 @@ export function resolveStreamingV2MealItem(
       ingredientName: rawIng.ingredientName,
       ...resolved,
     });
-  });
+  }
 
   return {
     nutrition: {
@@ -231,7 +248,10 @@ function computeBaseFromVerdict(
   const candidate = candidates[idx];
   const per100g = candidate.nutrition;
   if (!per100g) return undefined;
-  return scalePer100g(per100g, grams, candidate.info.foodGroupEn);
+  return scalePer100g(per100g, grams, candidate.info.foodGroupEn, {
+    matchedNameEn: candidate.prompt?.nameEn ?? candidate.info.matchedNameEn,
+    rowCookingMethod: candidate.info.rowCookingMethod,
+  });
 }
 
 function candidateFromVerdict(
