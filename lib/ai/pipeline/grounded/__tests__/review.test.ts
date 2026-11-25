@@ -414,9 +414,10 @@ describe('dropOilInFriedRows', () => {
             name: 'surimi',
             g: 80,
             kcal: 200,
+            method: 'chiên',
             row: ['Surimi, breaded, fried', 250],
           },
-          { ...oil, method: 'chiên' },
+          oil,
         ],
       },
     ]);
@@ -433,6 +434,7 @@ describe('dropOilInFriedRows', () => {
             name: 'trứng',
             g: 60,
             kcal: 118,
+            method: 'chiên',
             row: ['Egg, whole, cooked, fried', 196],
           },
           {
@@ -442,7 +444,7 @@ describe('dropOilInFriedRows', () => {
             prepNotes: ['không dầu'],
             row: ['Rice, white, cooked', 130],
           },
-          { ...oil, method: 'chiên' },
+          oil,
         ],
       },
     ]);
@@ -459,6 +461,7 @@ describe('dropOilInFriedRows', () => {
             name: 'fried chicken',
             g: 150,
             kcal: 390,
+            method: 'fried',
             row: ['Chicken, thigh, batter, fried', 260],
           },
           {
@@ -469,7 +472,7 @@ describe('dropOilInFriedRows', () => {
             prepNotes: ['with ranch'],
             row: ['Lettuce, raw', 15],
           },
-          { ...oil, name: 'oil', method: 'fried' },
+          { ...oil, name: 'oil' },
         ],
       },
     ]);
@@ -586,6 +589,46 @@ describe('dropOilInFriedRows', () => {
     // Call 2 picked no row for it.
     state.grounded.mealItems[0].ingredients[2].selectedCandidateId = 'none';
     expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('drops the frying oil a fried part carries on a mixed plate', () => {
+    const state = stateOf([
+      {
+        // Call 1 puts the frying on the egg; the dish itself is assembled.
+        name: 'Bánh mì trứng',
+        cookingMethod: 'kẹp',
+        parts: [
+          {
+            name: 'trứng',
+            g: 100,
+            kcal: 196,
+            method: 'chiên',
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'bánh mì',
+            g: 80,
+            kcal: 220,
+            row: ['Bread, french or vienna', 272],
+          },
+          oil,
+        ],
+      },
+      {
+        name: 'Trứng ốp la',
+        cookingMethod: 'ốp la',
+        parts: [
+          {
+            name: 'trứng',
+            g: 100,
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          oil,
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(2);
   });
 
   it('keeps the oil when another food in the dish still needs it', () => {

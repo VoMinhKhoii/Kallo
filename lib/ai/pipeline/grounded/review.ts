@@ -159,18 +159,28 @@ export function dropOilInFriedRows(state: RunState): {
   for (const mi of state.decomposition.mealItems) {
     const own = mi.ingredients.map((_, i) => flat + i);
     flat += mi.ingredients.length;
-    // Only the implied frying fat: a cooking fat (by its matched row, or its
-    // name when unmatched) cooked the dish's fry way. A fat the dish only
-    // dresses or spreads ("salad with olive oil", "buttered toast") stays.
-    const oils = own.filter(
-      (f) =>
-        isCookingFatPart(
-          pairs[f].ingredient.rawName,
-          matchedFat(state, pairs[f].ground, f)
-        ) && friedInIt(mi, pairs[f].ingredient)
+    // A cooking fat by its matched row, or by its name when unmatched.
+    const fats = own.filter((f) =>
+      isCookingFatPart(
+        pairs[f].ingredient.rawName,
+        matchedFat(state, pairs[f].ground, f)
+      )
     );
     const foods = own.filter(
-      (f) => !oils.includes(f) && weighs(state, pairs[f], f)
+      (f) => !fats.includes(f) && weighs(state, pairs[f], f)
+    );
+    // Only the implied frying fat goes. Call 1 gives a fat row no method of
+    // its own, so it was fried in when the dish's method fries, or when a
+    // fried-row part carries the frying itself (the egg "chiên" in a bánh mì
+    // trứng). A fat the dish only dresses or spreads ("salad with olive oil")
+    // stays.
+    const partFriesHere = foods.some(
+      (f) =>
+        isFriedRow(state, pairs[f].ground, f) &&
+        absorbedOil(pairs[f].ingredient.cookingMethod, 100) > 0
+    );
+    const oils = fats.filter(
+      (f) => partFriesHere || friedInIt(mi, pairs[f].ingredient)
     );
     if (foods.length === 0 || oils.length === 0) continue;
     const hasFriedFood = foods.some((f) =>

@@ -7,10 +7,7 @@ import type {
   NutritionAdjustment,
 } from '@/lib/ai/types/nutrition-adjustment';
 import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
-import {
-  isCookingFatPart,
-  mealItemHasDiscreteOil,
-} from '@/lib/domain/nutrition/absorbed-oil';
+import { isCookingFatPart } from '@/lib/domain/nutrition/absorbed-oil';
 import { resolveIngredientMacros } from './macros/bounded-macros';
 import { computeMacroBaseMap } from './macros/macro-base';
 
@@ -61,16 +58,17 @@ export function resolveStreamingMealItem(
   // composition decides (Vietnamese "bơ" matched to butter is a fat, "peanut
   // butter" is not); the name only for a part that matched nothing. Computed
   // once per meal item so sibling foods do not double-count cooking oil.
-  const siblingOilPresent = decomposedMealItem
-    ? decomposedMealItem.ingredients.some((ing) =>
-        isCookingFatPart(
-          ingredientDisplayName(ing),
-          baseMap.get(ing.ingredientId)
-        )
-      )
-    : mealItemHasDiscreteOil(
-        rawItem.ingredients.map((ing) => ing.ingredientName)
-      );
+  // The parts Call 2 returned, as the reconciled path reads them, so the
+  // preview and the saved result agree.
+  const siblingOilPresent = rawItem.ingredients.some((raw) => {
+    const dec = decomposedMealItem?.ingredients.find(
+      (ing) => ingredientDisplayName(ing) === raw.ingredientName
+    );
+    return isCookingFatPart(
+      raw.ingredientName,
+      dec ? baseMap.get(dec.ingredientId) : undefined
+    );
+  });
   const ingredients: IngredientLlmNutrition[] = rawItem.ingredients.map(
     (rawIng) => {
       const decIng = decomposedMealItem?.ingredients.find(

@@ -761,6 +761,79 @@ describe('reconcileNutritionIds — double-counted frying oil and pure-fat guard
     });
   });
 
+  it('reads a fat-named part by its matched row: peanut butter does not cap its siblings', () => {
+    const decomposition: MealDecompositionWithIds = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          mealItemId: 'm1',
+          name: 'Stir-fried pork with peanut sauce',
+          cookingMethod: 'stir-fried',
+          ingredients: [
+            {
+              ingredientId: 'i-pork',
+              name: 'pork ribs',
+              estimatedGrams: 100,
+              cookingMethod: 'stir-fried',
+              userFacingUnit: null,
+            },
+            {
+              ingredientId: 'i-pb',
+              name: 'peanut butter',
+              estimatedGrams: 20,
+              cookingMethod: 'stir-fried',
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+    };
+    const matched: MatchedIngredient[] = [
+      makeMatch('i-pork', 'pork ribs', {
+        caloriesKcal: 310,
+        proteinG: 20,
+        carbohydrateG: 0,
+        fatG: 25.7,
+      }),
+      // Peanut butter: 50 g fat, but 25 g protein and 20 g carbs per 100 g.
+      makeMatch('i-pb', 'peanut butter', {
+        caloriesKcal: 588,
+        proteinG: 25,
+        carbohydrateG: 20,
+        fatG: 50,
+      }),
+    ];
+    const out = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Stir-fried pork with peanut sauce',
+            ingredients: [
+              {
+                ingredientName: 'pork ribs',
+                proteinG: { low: 20, mid: 20, high: 20 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 30, mid: 34, high: 38 },
+              },
+              {
+                ingredientName: 'peanut butter',
+                proteinG: { low: 5, mid: 5, high: 5 },
+                carbohydrateG: { low: 4, mid: 4, high: 4 },
+                fatG: { low: 9, mid: 10, high: 11 },
+              },
+            ],
+          },
+        ],
+      },
+      decomposition,
+      matched
+    );
+    // No cooking-fat part, so the stir-fried pork keeps its oil allowance:
+    // 34 g stays (a sibling oil row would cap it at 1.25x = 32.1 g).
+    expect(out.mealItems[0].ingredients[0].fatG.mid).toBe(34);
+  });
+
   it('caps fatty pork + sibling oil at <= 1.25x base fat while preserving low < mid < high bounds', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const decomposition: MealDecompositionWithIds = {

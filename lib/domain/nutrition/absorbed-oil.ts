@@ -45,7 +45,7 @@ const DEEP_FRY_METHOD = wordEdged(
 const STIR_FRY_METHOD = wordEdged(`x[aà]o|stir[- ]?${FRY}|saut[eé](?:ed|ing)?`);
 const PAN_SEAR_METHOD = wordEdged('[aá]p\\s*ch[aả]o|pan[- ]?sear(?:ed|ing)?');
 const SHALLOW_FRY_METHOD = wordEdged(
-  `chi[eê]n|r[aá]n|shallow[- ]?${FRY}|pan[- ]?${FRY}|${FRY}`
+  `chi[eê]n|r[aá]n|[oố]p\\s*la|sunny[- ]side[- ]up|over[- ](?:easy|medium|hard)|shallow[- ]?${FRY}|pan[- ]?${FRY}|${FRY}`
 );
 
 /** True when the text says no fat was used ("chiên không dầu", "air-fried"). */
