@@ -9,7 +9,10 @@ import {
   isParseError,
   nonFoodResponse,
 } from '@/lib/ai/pipeline/contracts/failure';
-import { analyzeMealV2 } from '@/lib/ai/pipeline/grounded/orchestrator';
+import {
+  type AnalyzeMealV2Options,
+  analyzeMealV2,
+} from '@/lib/ai/pipeline/grounded/orchestrator';
 import { countCanonicalNameMisses } from '@/lib/ai/pipeline/legacy/canonical-name-validator';
 import { finalizePipelineRun } from '@/lib/ai/pipeline/legacy/completion';
 import { runDecompositionStage } from '@/lib/ai/pipeline/legacy/decomposition-stage';
@@ -63,6 +66,8 @@ export interface AnalyzeMealTraceContext {
 export interface AnalyzeMealOptions {
   shadow?: ShadowConfig;
   l4Cache?: { enabled?: boolean };
+  /** Read-only pipeline internals (v2 only); offline callers use it. */
+  onDiagnostics?: AnalyzeMealV2Options['onDiagnostics'];
 }
 
 interface RunPipelineOptions {
@@ -101,6 +106,7 @@ export async function analyzeMeal(
     console.info('[pipeline] dispatching to v2 (default)');
     return analyzeMealV2(rawInput, userContext, db, gemini, onEvent, {
       traceContext,
+      onDiagnostics: options?.onDiagnostics,
     });
   }
   console.info('[pipeline] running v1 (PIPELINE_V2_ENABLED=false fallback)');

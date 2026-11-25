@@ -231,13 +231,13 @@ const SAMPLES: Sample[] = [
 const keyOf = (s: Sample) => `${s.category}.${s.locale}.${s.variant}`;
 
 const [
-  { analyzeMealV2 },
+  { runPreciseAnalysis },
   gemini,
   { db },
   { toParsedMeal },
   { CLAUDE_FALLBACK_MODEL },
 ] = await Promise.all([
-  import('@/lib/ai/pipeline/grounded/orchestrator'),
+  import('@/lib/ai/pipeline/precise-analysis'),
   import('@/lib/ai/provider/provider'),
   import('@/lib/infra/db/client'),
   import('@/lib/ai/adapters/parsed-meal'),
@@ -254,7 +254,14 @@ async function run(text: string, attempts = 3) {
     let handle: ReturnType<typeof setTimeout> | undefined;
     try {
       return await Promise.race([
-        analyzeMealV2(text, NEUTRAL, db, client),
+        // What the app shows: the pipeline held near the plain read.
+        runPreciseAnalysis({
+          rawInput: text,
+          userContext: NEUTRAL,
+          db,
+          gemini: client,
+          signal: new AbortController().signal,
+        }).then((r) => r.response),
         new Promise<never>((_, reject) => {
           handle = setTimeout(
             () => reject(new Error(`timeout after ${CASE_TIMEOUT_MS}ms`)),

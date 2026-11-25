@@ -1,7 +1,9 @@
 /**
  * Food page capture: run each detailed meal on a food page through the real
- * pipeline once, and write the numbers the page shows to
- * `lib/seo/food-pages/captures/<slug>.json`. Run with the production model profile:
+ * pipeline once, the way the app's precise branch does (held near the plain
+ * read, `lib/ai/pipeline/precise-analysis.ts`), and write the numbers the page
+ * shows to `lib/seo/food-pages/captures/<slug>.json`. Run with the production
+ * model profile:
  *
  *   set -a; source .env.local; set +a
  *   ANTHROPIC_API_KEY=$CLAUDE_API_KEY PIPELINE_MODEL_PROFILE=haiku \
@@ -13,7 +15,7 @@
  * Vietnamese user in Vietnam would log it: the app answers in Vietnamese and
  * uses Vietnam's portion habits.
  *
- * Resumable: each raw pipeline result is cached in
+ * Resumable: each held pipeline result is cached in
  * `.cache/food-pages/<slug>.capture.json` as it lands, so a failed meal costs
  * one rerun, not the page. Delete the cache to capture afresh.
  *
@@ -98,13 +100,13 @@ const USER: UserContext = {
 };
 
 const [
-  { analyzeMealV2 },
+  { runPreciseAnalysis },
   gemini,
   { db },
   { toParsedMeal },
   { CLAUDE_FALLBACK_MODEL },
 ] = await Promise.all([
-  import('@/lib/ai/pipeline/grounded/orchestrator'),
+  import('@/lib/ai/pipeline/precise-analysis'),
   import('@/lib/ai/provider/provider'),
   import('@/lib/infra/db/client'),
   import('@/lib/ai/adapters/parsed-meal'),
@@ -118,11 +120,17 @@ type PipelineResult = Parameters<typeof toParsedMeal>[0];
 /**
  * Only results that converted cleanly are cached, each with the text it
  * answered: a reworded meal is captured again rather than reusing the answer
- * to its old wording.
+ * to its old wording. `hold` is how the result was held near the plain read;
+ * an entry without it predates the hold and is captured again.
  */
 type Cached = Record<
   string,
-  { text: string; capturedAt: string; result: PipelineResult }
+  {
+    text: string;
+    capturedAt: string;
+    hold?: { outcome: string; appKcal: number | null; readKcal: number | null };
+    result: PipelineResult;
+  }
 >;
 
 const cache: Cached = (() => {
@@ -169,7 +177,7 @@ function toVariant(
 const variants: FoodPageVariant[] = [];
 for (const meal of meals) {
   const hit = cache[meal.key];
-  if (hit?.text === meal.text) {
+  if (hit?.text === meal.text && hit.hold) {
     variants.push(toVariant(meal.key, meal.text, hit.result));
     continue;
   }
@@ -188,7 +196,14 @@ for (const meal of meals) {
     continue;
   }
   let vectorDown = false;
-  const res = await analyzeMealV2(meal.text, user, db, client, undefined, {
+  // The same path as the app's precise branch: the pipeline, held near the
+  // plain read, so the page shows what the app would show for this meal.
+  const { response: res, hold } = await runPreciseAnalysis({
+    rawInput: meal.text,
+    userContext: user,
+    db,
+    gemini: client,
+    signal: new AbortController().signal,
     onDiagnostics: ({ matchResults }) => {
       vectorDown = matchResults.some(
         (m) => m.retrieval?.vectorSource === 'none'
@@ -206,6 +221,12 @@ for (const meal of meals) {
     console.log(`✗ ${meal.key} — vector search timed out`);
     continue;
   }
+  // The app ships a meal unheld when the read is late or broken; a page must
+  // not publish that rarer path as the typical number.
+  if (!hold || hold.outcome === 'no_read') {
+    console.log(`✗ ${meal.key} — no plain read: rerun`);
+    continue;
+  }
   try {
     variants.push(toVariant(meal.key, meal.text, res.data));
   } catch (error) {
@@ -215,10 +236,17 @@ for (const meal of meals) {
   cache[meal.key] = {
     text: meal.text,
     capturedAt: new Date().toISOString(),
+    hold: {
+      outcome: hold.outcome,
+      appKcal: hold.appKcal,
+      readKcal: hold.readKcal,
+    },
     result: res.data,
   };
   writeFileSync(CACHE, `${JSON.stringify(cache, null, 2)}\n`);
-  console.log(`✓ ${meal.key}`);
+  console.log(
+    `✓ ${meal.key} (${hold.outcome}: app ${Math.round(hold.appKcal ?? 0)}, read ${Math.round(hold.readKcal ?? 0)} kcal)`
+  );
 }
 
 if (variants.length < meals.length) {
