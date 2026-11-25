@@ -286,6 +286,36 @@ describe('isAlreadyFriedRow', () => {
   });
 });
 
+describe('fry verbs at word edges', () => {
+  it('does not read a fry verb inside another word', () => {
+    for (const text of [
+      'raw with ranch',
+      'orange glaze',
+      'cranberry',
+      'bánh tráng',
+    ]) {
+      expect(absorbedOil(text, 100)).toBe(0);
+    }
+    expect(absorbedOil('deep-frying', 100)).toBeGreaterThan(0);
+    expect(absorbedOil('sautéing', 100)).toBeGreaterThan(0);
+    expect(absorbedOil('rán vàng', 100)).toBeGreaterThan(0);
+  });
+
+  it('reads a negation placed before the addition', () => {
+    for (const note of [
+      'không thêm dầu',
+      'không phết bơ',
+      'không có dầu',
+      'không rưới dầu',
+      'no extra oil',
+      'without added butter',
+      'not oily',
+    ]) {
+      expect(prepNotesAskForExtraFat([note])).toBe(false);
+    }
+  });
+});
+
 describe('isAlreadyFriedRow fat floor', () => {
   it('does not treat a lean row labelled fried as holding its frying oil', () => {
     expect(isAlreadyFriedRow('Fish, featherback, fried', null, 0.66)).toBe(

@@ -19,20 +19,37 @@ export const ABSORBED_OIL_RANGES = {
  * A statement that no fat was used. These OVERRIDE a generic fry verb, because
  * they describe the frying itself: `chiên không dầu` is air-frying.
  */
-const OIL_NEGATION =
-  /kh[oô]ng\s*(?:d[aầ]u|m[ơỡ])|no[- ]?(?:added )?oil|without (?:any )?oil|oil[- ]?free|air[- ]?fr(?:y|ied)|dry[- ]?fr(?:y|ied)/i;
+/**
+ * A method pattern that starts and ends at a letter edge (`\b` is ASCII-only),
+ * so a fry verb inside another word ("ranch", "orange", "bánh tráng") is not
+ * a fry verb.
+ */
+const wordEdged = (body: string) =>
+  new RegExp(`(?<!\\p{L})(?:${body})(?!\\p{L})`, 'iu');
+const FRY = 'fr(?:y|ying|ied)';
+
+const OIL_NEGATION = wordEdged(
+  `kh[oô]ng\\s*(?:d[aầ]u|m[ơỡ])|no[- ]?(?:added )?oil|without (?:any )?oil|oil[- ]?free|air[- ]?${FRY}|dry[- ]?${FRY}`
+);
 
 // `luộc`, `hấp`, `steamed`, `boiled`, `poached`, `raw` and `sống` are NOT listed
 // as negations. They use no fat, but they do not negate one, so they must lose
 // to a fry verb rather than beat it: `luộc rồi chiên` is boiled AND THEN fried,
 // and the frying still puts oil in the food. They need no pattern of their own —
 // absent any fry verb they fall through to the function's default of zero.
-const DEEP_FRY_METHOD =
-  /chi[eê]n\s*ng[aậ]p|r[aá]n\s*ng[aậ]p|deep[- ]?fr(?:y|ied)|ng[aậ]p\s*(?:d[aầ]u|m[ơỡ])/i;
-const STIR_FRY_METHOD = /x[aà]o|stir[- ]?fr(?:y|ied)|saut[eé](?:ed)?/i;
-const PAN_SEAR_METHOD = /[aá]p\s*ch[aả]o|pan[- ]?sear(?:ed)?/i;
-const SHALLOW_FRY_METHOD =
-  /chi[eê]n|r[aá]n|shallow[- ]?fr(?:y|ied)|pan[- ]?fr(?:y|ied)|fried|fry/i;
+const DEEP_FRY_METHOD = wordEdged(
+  `chi[eê]n\\s*ng[aậ]p|r[aá]n\\s*ng[aậ]p|deep[- ]?${FRY}|ng[aậ]p\\s*(?:d[aầ]u|m[ơỡ])`
+);
+const STIR_FRY_METHOD = wordEdged(`x[aà]o|stir[- ]?${FRY}|saut[eé](?:ed|ing)?`);
+const PAN_SEAR_METHOD = wordEdged('[aá]p\\s*ch[aả]o|pan[- ]?sear(?:ed|ing)?');
+const SHALLOW_FRY_METHOD = wordEdged(
+  `chi[eê]n|r[aá]n|shallow[- ]?${FRY}|pan[- ]?${FRY}|${FRY}`
+);
+
+/** True when the text says no fat was used ("chiên không dầu", "air-fried"). */
+export function saysNoOil(text: string | null | undefined): boolean {
+  return OIL_NEGATION.test(text?.normalize('NFC') ?? '');
+}
 
 /**
  * Cooking fats that Call 1 emits as their OWN ingredient row, so their grams,
@@ -188,10 +205,10 @@ const VI_FAT = 'dầu|mỡ|bơ';
 
 const EXTRA_FAT_NEGATION = new RegExp(
   [
-    vi(`(?:không|ít)\\s+(?:${VI_FAT}|béo)`),
+    // "không thêm dầu", "không phết bơ": a negation one word ahead of the fat.
+    vi(`(?:không|chẳng|ít)(?:\\s+\\p{L}+)?\\s+(?:${VI_FAT}|béo)`),
     vi('bỏ\\s+(?:da|mỡ)'),
-    String.raw`\bno[- ]?(?:added\s*)?(?:oil|butter|fat)\b`,
-    String.raw`\bwithout\s+(?:any\s+)?(?:oil|butter|fat)\b`,
+    String.raw`\b(?:no|not|without)[- ]+(?:[a-z]+\s+)?(?:oil|butter|fat|grease|ghee|lard|margarine|oily|greasy|buttered)\b`,
     String.raw`\b(?:oil|fat)[- ]?free\b`,
     String.raw`\blow[- ]?fat\b`,
     String.raw`\b(?:less|light)\s+(?:oil|butter|fat)\b`,

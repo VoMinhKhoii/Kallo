@@ -412,6 +412,59 @@ describe('dropOilInFriedRows', () => {
     expect(dropOilInFriedRows(state).dropped).toBe(1);
   });
 
+  it('drops the oil when a plain part says no oil under a fried dish name', () => {
+    const state = stateOf([
+      {
+        name: 'Cơm chiên trứng',
+        cookingMethod: 'trộn',
+        parts: [
+          {
+            name: 'trứng',
+            g: 60,
+            kcal: 118,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'cơm',
+            g: 200,
+            kcal: 260,
+            prepNotes: ['không dầu'],
+            row: ['Rice, white, cooked', 130],
+          },
+          oil,
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(1);
+  });
+
+  it('does not read "ranch" as frying the side', () => {
+    const state = stateOf([
+      {
+        name: 'Fried chicken salad',
+        cookingMethod: 'assembled',
+        parts: [
+          {
+            name: 'fried chicken',
+            g: 150,
+            kcal: 390,
+            row: ['Chicken, thigh, batter, fried', 260],
+          },
+          {
+            name: 'greens',
+            g: 80,
+            kcal: 15,
+            method: 'raw',
+            prepNotes: ['with ranch'],
+            row: ['Lettuce, raw', 15],
+          },
+          { ...oil, name: 'oil' },
+        ],
+      },
+    ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(1);
+  });
+
   it('keeps the oil when another food in the dish still needs it', () => {
     const state = stateOf([
       {

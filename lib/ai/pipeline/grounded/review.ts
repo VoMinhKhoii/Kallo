@@ -25,6 +25,7 @@ import {
   absorbedOil,
   isAlreadyFriedRow,
   isDiscreteOilIngredient,
+  saysNoOil,
 } from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
@@ -220,6 +221,8 @@ function foodNeedsCookingOil(
   const method = ing.cookingMethod || mi.cookingMethod;
   const context = [method, ...(ing.prepNotes ?? [])].filter(Boolean).join(' ');
   if (absorbedOil(context, 100) > 0) return true;
+  // "No oil" on the part beats a fried-sounding dish name ("cơm chiên").
+  if (saysNoOil(context)) return false;
   return (
     !ing.cookingMethod && WHOLE_DISH_FRIED_NAME.test(mi.name.normalize('NFC'))
   );
