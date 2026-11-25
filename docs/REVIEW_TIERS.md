@@ -2,7 +2,8 @@
 
 Every PR gets a tier from the paths it changes, never from who wrote it. The tier
 sets what the owner reads before merging and what evidence the PR carries. It never
-stops review early: every tier loops until Codex approves.
+stops review early: every tier loops until Codex approves (or, while Codex is
+out of usage, until Neon finds nothing to fix on the current head).
 `node scripts/dev/risk-tier/risk-tier.mjs` prints the tier of the current branch;
 `/kship` runs it and puts the result in the PR body and a `risk:<tier>` label.
 
