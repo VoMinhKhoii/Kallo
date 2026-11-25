@@ -516,7 +516,8 @@ describe('dropOilInFriedRows', () => {
             prepNotes: ['buttered'],
             row: ['Bread, white, toasted', 290],
           },
-          { ...oil, name: 'butter', row: ['Butter, salted', 717] },
+          // USDA butter: 81.1 g fat (its energy factor is below 9 kcal/g).
+          { ...oil, name: 'butter', row: ['Butter, salted', 717, 730] },
         ],
       },
     ]);
@@ -551,6 +552,39 @@ describe('dropOilInFriedRows', () => {
         ],
       },
     ]);
+    expect(dropOilInFriedRows(state).dropped).toBe(0);
+  });
+
+  it('never drops an unmatched food named for a fat', () => {
+    const state = stateOf([
+      {
+        name: 'Fried eggs with toast and almond butter',
+        cookingMethod: 'fried',
+        parts: [
+          {
+            name: 'fried egg',
+            g: 100,
+            kcal: 196,
+            row: ['Egg, whole, cooked, fried', 196],
+          },
+          {
+            name: 'toast',
+            g: 60,
+            kcal: 160,
+            method: 'toasted',
+            row: ['Bread, white, toasted', 290],
+          },
+          {
+            name: 'almond butter',
+            g: 30,
+            kcal: 184,
+            row: ['Almond butter, plain', 614],
+          },
+        ],
+      },
+    ]);
+    // Call 2 picked no row for it.
+    state.grounded.mealItems[0].ingredients[2].selectedCandidateId = 'none';
     expect(dropOilInFriedRows(state).dropped).toBe(0);
   });
 

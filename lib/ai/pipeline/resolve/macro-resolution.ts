@@ -63,7 +63,10 @@ export function resolveStreamingMealItem(
   // once per meal item so sibling foods do not double-count cooking oil.
   const siblingOilPresent = decomposedMealItem
     ? decomposedMealItem.ingredients.some((ing) =>
-        isCookingFatPart(ing.name, baseMap.get(ing.ingredientId))
+        isCookingFatPart(
+          ingredientDisplayName(ing),
+          baseMap.get(ing.ingredientId)
+        )
       )
     : mealItemHasDiscreteOil(
         rawItem.ingredients.map((ing) => ing.ingredientName)

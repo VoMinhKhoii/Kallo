@@ -88,6 +88,15 @@ const DISCRETE_OIL_INGREDIENT =
 const OIL_LIKE_CONDIMENT = /d[aầ]u\s*(?:gi[aấ]m|h[aà]o)|x[iì]\s*d[aầ]u/i;
 
 /**
+ * Foods whose names carry a fat word but are not a cooking fat: nut and fruit
+ * butters, dishes named for butter, foods packed in oil. A part that matched a
+ * row is judged by that row's composition instead (`isCookingFatPart`); this
+ * only keeps an unmatched one from being read, and dropped, as frying fat.
+ */
+const FOOD_NAMED_FOR_A_FAT =
+  /\b(?:peanut|almond|cashew|nut|seed|sunflower|cookie|apple|cocoa|cacao|shea)\s+butter\b|\bbutter\s+(?:naan|beans?|lettuce|chicken|cake|cookies?|croissants?|bread|squash|tarts?)\b|\bbuttermilk\b|\b(?:in|packed\s+in)\s+(?:olive\s+|sunflower\s+|vegetable\s+)?oil\b|b[ơo]\s+[dđ][aậ]u\s+ph[ộo]ng|ng[aâ]m\s+d[aầ]u/i;
+
+/**
  * The names the decomposition prompt tells Call 1 to use for a cooking-fat
  * row. The prompt renders this list rather than spelling one of its own, so it
  * cannot offer a name this module fails to recognise — which is how bare `bơ`
@@ -109,6 +118,7 @@ export function isDiscreteOilIngredient(name: string | null | undefined) {
   const normalized = name?.normalize('NFC').trim() ?? '';
   if (normalized.length === 0) return false;
   if (OIL_LIKE_CONDIMENT.test(normalized)) return false;
+  if (FOOD_NAMED_FOR_A_FAT.test(normalized)) return false;
   return DISCRETE_OIL_INGREDIENT.test(normalized);
 }
 
@@ -244,7 +254,7 @@ const REDUCED_FAT = new RegExp(
 );
 /** A word that negates what comes shortly after it. */
 const NEGATION_WORD = new RegExp(
-  vi("không|chẳng|ko|đừng|no|not|non|without|never|\\p{L}+n['’]t"),
+  vi("không|chẳng|ko|đừng|no|not|without|never|\\p{L}+n['’]t"),
   'iu'
 );
 /**
@@ -294,6 +304,9 @@ export function prepNotesAskForExtraFat(
             .filter(Boolean)
             .slice(-NEGATION_REACH_WORDS)
             .join(' ');
+          // "non-greasy": "non" negates only as a prefix on the fat word.
+          if (/(?<!\p{L})non-\s*$/iu.test(clause.slice(0, ask.index)))
+            return false;
           return !NEGATION_WORD.test(before);
         });
       })

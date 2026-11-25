@@ -95,6 +95,12 @@ describe('discrete oil rows suppress the sibling allowance', () => {
     // `bơ` alone is avocado as often as butter in Vietnamese; a false positive
     // would silently strip the oil allowance from every other ingredient.
     for (const name of [
+      'peanut butter',
+      'Almond butter',
+      'butter naan',
+      'butter beans',
+      'tuna in oil',
+      'bơ đậu phộng',
       'quả bơ',
       'bơ',
       'khoai tây',
@@ -376,6 +382,9 @@ describe('appliances and negated requests', () => {
 
   it('keeps a request that follows an unrelated cut', () => {
     for (const note of [
+      'sườn non phết bơ',
+      'đậu hũ non rưới dầu',
+      'cooked in non-stick pan with extra oil',
       'chả lụa phết bơ',
       'không thêm dầu, phết bơ thật nhiều',
       'ít muối, dầu nhiều',
