@@ -10,6 +10,7 @@ import {
   mealItemHasDiscreteOil,
   prepNotesAskForExtraFat,
   renderAbsorbedOilPromptRule,
+  saysNoOil,
 } from '@/lib/domain/nutrition/absorbed-oil';
 
 const vegetableEstimate: RawNutritionAdjustment['mealItems'][number]['ingredients'][number] =
@@ -312,6 +313,56 @@ describe('fry verbs at word edges', () => {
       'not oily',
     ]) {
       expect(prepNotesAskForExtraFat([note])).toBe(false);
+    }
+  });
+});
+
+describe('appliances and negated requests', () => {
+  it('reads an air fryer as no oil and a deep fryer as deep-frying', () => {
+    expect(absorbedOil('fried, cooked in the air fryer', 100)).toBe(0);
+    expect(absorbedOil('air-fryer', 100)).toBe(0);
+    expect(absorbedOil('cooked in deep fryer', 200)).toBe(
+      200 * ABSORBED_OIL_RANGES.deepFryWeightRatio.high
+    );
+    // A raw USDA "broilers or fryers" chicken is not fried.
+    expect(absorbedOil('fryers', 100)).toBe(0);
+  });
+
+  it('reads "no oil" one word ahead', () => {
+    for (const text of [
+      'không có dầu',
+      'không dùng dầu',
+      'không thêm dầu',
+      'without added oil',
+    ]) {
+      expect(saysNoOil(text)).toBe(true);
+    }
+    expect(saysNoOil('chiên ít dầu')).toBe(false);
+  });
+
+  it('never reads a negated or reduced request as extra fat', () => {
+    for (const note of [
+      'no extra olive oil',
+      'without added sesame oil',
+      'not cooked in butter',
+      'not drizzled with oil',
+      'without lots of oil',
+      'not extra fatty',
+      'không có thêm dầu',
+      'không chiên ngập dầu',
+      'ít dầu',
+    ]) {
+      expect(prepNotesAskForExtraFat([note])).toBe(false);
+    }
+  });
+
+  it('keeps a request that follows an unrelated cut', () => {
+    for (const note of [
+      'ít muối, dầu nhiều',
+      'không đường, phết bơ',
+      'không dầu hào thêm dầu',
+    ]) {
+      expect(prepNotesAskForExtraFat([note])).toBe(true);
     }
   });
 });

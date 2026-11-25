@@ -27,9 +27,11 @@ export const ABSORBED_OIL_RANGES = {
 const wordEdged = (body: string) =>
   new RegExp(`(?<!\\p{L})(?:${body})(?!\\p{L})`, 'iu');
 const FRY = 'fr(?:y|ying|ied)';
+/** An appliance named after the method ("air fryer", "deep-fryer"). */
+const FRY_OR_FRYER = 'fr(?:y|ying|ied|yer)';
 
 const OIL_NEGATION = wordEdged(
-  `kh[oô]ng\\s*(?:d[aầ]u|m[ơỡ])|no[- ]?(?:added )?oil|without (?:any )?oil|oil[- ]?free|air[- ]?${FRY}|dry[- ]?${FRY}`
+  `kh[oô]ng\\s+(?:(?:c[oó]|d[uù]ng|th[eê]m|cho)\\s+)?(?:d[aầ]u|m[ơỡ])|no[- ]?(?:added )?oil|without (?:any |added )?oil|oil[- ]?free|air[- ]?${FRY_OR_FRYER}|dry[- ]?${FRY}`
 );
 
 // `luộc`, `hấp`, `steamed`, `boiled`, `poached`, `raw` and `sống` are NOT listed
@@ -38,7 +40,7 @@ const OIL_NEGATION = wordEdged(
 // and the frying still puts oil in the food. They need no pattern of their own —
 // absent any fry verb they fall through to the function's default of zero.
 const DEEP_FRY_METHOD = wordEdged(
-  `chi[eê]n\\s*ng[aậ]p|r[aá]n\\s*ng[aậ]p|deep[- ]?${FRY}|ng[aậ]p\\s*(?:d[aầ]u|m[ơỡ])`
+  `chi[eê]n\\s*ng[aậ]p|r[aá]n\\s*ng[aậ]p|deep[- ]?${FRY_OR_FRYER}|ng[aậ]p\\s*(?:d[aầ]u|m[ơỡ])`
 );
 const STIR_FRY_METHOD = wordEdged(`x[aà]o|stir[- ]?${FRY}|saut[eé](?:ed|ing)?`);
 const PAN_SEAR_METHOD = wordEdged('[aá]p\\s*ch[aả]o|pan[- ]?sear(?:ed|ing)?');
@@ -203,18 +205,27 @@ const vi = (body: string) => `(?<!\\p{L})(?:${body})(?!\\p{L})`;
 /** Cooking fats in Vietnamese, accented only: unaccented "dau"/"bo"/"mo" are also đậu, bò, mò. */
 const VI_FAT = 'dầu|mỡ|bơ';
 
-const EXTRA_FAT_NEGATION = new RegExp(
+/**
+ * A note that cuts the fat on the food itself ("ít dầu", "less oil", "bỏ da",
+ * "low-fat"): never a request for more.
+ */
+const REDUCED_FAT = new RegExp(
   [
-    // "không thêm dầu", "không phết bơ": a negation one word ahead of the fat.
-    vi(`(?:không|chẳng|ít)(?:\\s+\\p{L}+)?\\s+(?:${VI_FAT}|béo)`),
+    vi(`ít\\s+(?:${VI_FAT}|béo)`),
     vi('bỏ\\s+(?:da|mỡ)'),
-    String.raw`\b(?:no|not|without)[- ]+(?:[a-z]+\s+)?(?:oil|butter|fat|grease|ghee|lard|margarine|oily|greasy|buttered)\b`,
     String.raw`\b(?:oil|fat)[- ]?free\b`,
     String.raw`\blow[- ]?fat\b`,
     String.raw`\b(?:less|light)\s+(?:oil|butter|fat)\b`,
   ].join('|'),
   'iu'
 );
+/** A word that negates what follows it in the same clause. */
+const NEGATION_WORD = new RegExp(
+  vi('không|chẳng|chả|ko|đừng|no|not|without|never'),
+  'iu'
+);
+/** Clause breaks: a negation does not carry past them. */
+const CLAUSE_BREAK = /[,;.\n]|(?<!\p{L})(?:but|nhưng|còn)(?!\p{L})/iu;
 
 const EXTRA_FAT_NOTE = new RegExp(
   [
@@ -238,14 +249,18 @@ export function prepNotesAskForExtraFat(
   prepNotes: readonly string[] | undefined
 ): boolean {
   if (!prepNotes || prepNotes.length === 0) return false;
-  return prepNotes.some((raw) => {
-    // Soy sauce, oyster sauce and vinaigrette carry "dầu" but no cooking fat.
-    const note = raw
+  return prepNotes.some((raw) =>
+    raw
       .normalize('NFC')
-      .replace(new RegExp(OIL_LIKE_CONDIMENT.source, 'giu'), ' ')
-      .trim();
-    if (!note) return false;
-    if (EXTRA_FAT_NEGATION.test(note)) return false;
-    return EXTRA_FAT_NOTE.test(note);
-  });
+      // Soy sauce, oyster sauce and vinaigrette carry "dầu" but no cooking
+      // fat; each ends its clause, so "không dầu hào, thêm dầu" stays a request.
+      .replace(new RegExp(OIL_LIKE_CONDIMENT.source, 'giu'), ',')
+      .split(CLAUSE_BREAK)
+      .some((clause) => {
+        if (REDUCED_FAT.test(clause)) return false;
+        const ask = EXTRA_FAT_NOTE.exec(clause);
+        // "không thêm dầu", "no extra olive oil", "not cooked in butter".
+        return ask !== null && !NEGATION_WORD.test(clause.slice(0, ask.index));
+      })
+  );
 }
