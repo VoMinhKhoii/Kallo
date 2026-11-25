@@ -6,6 +6,7 @@
  */
 
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
+import { dropWholeDishRowsFromParts } from '@/lib/ai/matching/rank/part-vs-dish';
 import type { StreamedMatching } from '@/lib/ai/matching/streamed-matching';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
@@ -21,7 +22,6 @@ import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-can
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { withDeadline } from '@/lib/core/async/with-deadline';
-import { dropWholeDishRowsFromParts } from './part-vs-dish';
 import { withStageLogV2 } from './stage-log';
 
 export interface GroundingPreparation {

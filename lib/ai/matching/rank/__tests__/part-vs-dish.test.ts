@@ -4,8 +4,8 @@ import type {
   V2MatchCandidate,
 } from '@/lib/ai/matching/candidate';
 import type { EatenState } from '@/lib/ai/matching/match-constants';
+import { dropWholeDishRowsFromParts } from '@/lib/ai/matching/rank/part-vs-dish';
 import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
-import { dropWholeDishRowsFromParts } from '@/lib/ai/pipeline/grounded/part-vs-dish';
 
 function row(
   id: string,
