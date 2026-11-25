@@ -50,7 +50,16 @@ const SHALLOW_FRY_METHOD = wordEdged(
 
 /** True when the text says no fat was used ("chiên không dầu", "air-fried"). */
 export function saysNoOil(text: string | null | undefined): boolean {
-  return OIL_NEGATION.test(text?.normalize('NFC') ?? '');
+  return OIL_NEGATION.test(withoutCondiments(text?.normalize('NFC') ?? ''));
+}
+
+/**
+ * Soy sauce, oyster sauce and vinaigrette carry "dầu" but no cooking fat, so a
+ * note that leaves them out ("không dùng dầu hào") says nothing about oil. A
+ * placeholder word keeps "không dầu hào thêm dầu" from reading "không thêm dầu".
+ */
+function withoutCondiments(text: string): string {
+  return text.replace(new RegExp(OIL_LIKE_CONDIMENT.source, 'giu'), ' sauce ');
 }
 
 /**
@@ -121,7 +130,7 @@ export function mealItemHasDiscreteOil(
  * to replace Call 2's estimate with a server-selected midpoint.
  */
 export function absorbedOil(method: string | null | undefined, grams: number) {
-  const normalized = method?.normalize('NFC').trim() ?? '';
+  const normalized = withoutCondiments(method?.normalize('NFC') ?? '').trim();
   if (!normalized || !Number.isFinite(grams) || grams <= 0) return 0;
   // Precedence is by SPECIFICITY, not by list order, because callers
   // concatenate the cooking method with the user's verbatim prep notes and the
@@ -219,9 +228,13 @@ const REDUCED_FAT = new RegExp(
   ].join('|'),
   'iu'
 );
-/** A word that negates what follows it in the same clause. */
-const NEGATION_WORD = new RegExp(
-  vi('không|chẳng|chả|ko|đừng|no|not|without|never'),
+/**
+ * A negation that governs the fat phrase right after it: directly, or across
+ * one linking verb ("không có thêm dầu", "không chiên ngập dầu"). A negation
+ * further back is about something else ("không đường phết bơ").
+ */
+const NEGATED_JUST_BEFORE = new RegExp(
+  `${vi('không|chẳng|ko|đừng|no|not|without|never')}(?:\\s+${vi('có|dùng|cho|chiên|rán|any')})?\\s*$`,
   'iu'
 );
 /** Clause breaks: a negation does not carry past them. */
@@ -252,15 +265,15 @@ export function prepNotesAskForExtraFat(
   return prepNotes.some((raw) =>
     raw
       .normalize('NFC')
-      // Soy sauce, oyster sauce and vinaigrette carry "dầu" but no cooking
-      // fat; each ends its clause, so "không dầu hào, thêm dầu" stays a request.
-      .replace(new RegExp(OIL_LIKE_CONDIMENT.source, 'giu'), ',')
+      .replace(new RegExp(OIL_LIKE_CONDIMENT.source, 'giu'), ' sauce ')
       .split(CLAUSE_BREAK)
       .some((clause) => {
         if (REDUCED_FAT.test(clause)) return false;
         const ask = EXTRA_FAT_NOTE.exec(clause);
         // "không thêm dầu", "no extra olive oil", "not cooked in butter".
-        return ask !== null && !NEGATION_WORD.test(clause.slice(0, ask.index));
+        return (
+          ask !== null && !NEGATED_JUST_BEFORE.test(clause.slice(0, ask.index))
+        );
       })
   );
 }

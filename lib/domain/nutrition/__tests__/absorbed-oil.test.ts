@@ -356,8 +356,18 @@ describe('appliances and negated requests', () => {
     }
   });
 
+  it('leaves oil alone when a note only drops a sauce', () => {
+    expect(saysNoOil('không dùng dầu hào')).toBe(false);
+    expect(absorbedOil('xào không thêm dầu hào', 150)).toBe(
+      ABSORBED_OIL_RANGES.stirFryG.high
+    );
+  });
+
   it('keeps a request that follows an unrelated cut', () => {
     for (const note of [
+      'không đường phết bơ',
+      'no salt extra butter',
+      'chả lụa phết bơ',
       'ít muối, dầu nhiều',
       'không đường, phết bơ',
       'không dầu hào thêm dầu',
