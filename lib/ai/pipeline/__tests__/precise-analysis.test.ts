@@ -94,6 +94,20 @@ describe('runPreciseAnalysis', () => {
     expect(settle).not.toHaveBeenCalled();
   });
 
+  it('skips the hold when the caller hangs up while the read settles', async () => {
+    const controller = new AbortController();
+    analyzeMeal.mockResolvedValue({ success: true, data: RAW });
+    settle.mockImplementation(async () => {
+      controller.abort();
+      return null;
+    });
+
+    const { hold } = await run(controller.signal);
+
+    expect(hold).toBeNull();
+    expect(holdToPlainRead).not.toHaveBeenCalled();
+  });
+
   it('ends the read when the pipeline throws', async () => {
     analyzeMeal.mockRejectedValue(new Error('boom'));
 

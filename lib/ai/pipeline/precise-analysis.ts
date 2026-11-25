@@ -63,9 +63,10 @@ export async function runPreciseAnalysis(args: {
     if (args.signal.aborted || !response.success || response.unresolved) {
       return { response, hold: null };
     }
-    const hold = holdToPlainRead(response.data, {
-      read: await plainRead.settle(),
-    });
+    const read = await plainRead.settle();
+    // A hang-up while the read settled is not a missed read.
+    if (args.signal.aborted) return { response, hold: null };
+    const hold = holdToPlainRead(response.data, { read });
     return { response: { ...response, data: hold.result }, hold };
   } finally {
     plainRead.abort();

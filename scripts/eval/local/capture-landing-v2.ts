@@ -252,6 +252,8 @@ const client = gemini.createPipelineLlm(provider, {
 async function run(text: string, attempts = 3) {
   for (let attempt = 1; attempt <= attempts; attempt++) {
     let handle: ReturnType<typeof setTimeout> | undefined;
+    // A timed-out attempt also ends its plain read.
+    const controller = new AbortController();
     try {
       return await Promise.race([
         // What the app shows: the pipeline held near the plain read.
@@ -260,13 +262,13 @@ async function run(text: string, attempts = 3) {
           userContext: NEUTRAL,
           db,
           gemini: client,
-          signal: new AbortController().signal,
-        }).then((r) => r.response),
+          signal: controller.signal,
+        }),
         new Promise<never>((_, reject) => {
-          handle = setTimeout(
-            () => reject(new Error(`timeout after ${CASE_TIMEOUT_MS}ms`)),
-            CASE_TIMEOUT_MS
-          );
+          handle = setTimeout(() => {
+            controller.abort();
+            reject(new Error(`timeout after ${CASE_TIMEOUT_MS}ms`));
+          }, CASE_TIMEOUT_MS);
         }),
       ]).finally(() => clearTimeout(handle));
     } catch (error) {
@@ -303,7 +305,8 @@ const persist = () =>
     )}\n`
   );
 
-const todo = SAMPLES.filter((s) => !byKey[keyOf(s)]);
+// An entry without a hold predates it (or missed its read): capture it again.
+const todo = SAMPLES.filter((s) => !byKey[keyOf(s)]?.hold);
 console.log(
   `provider: ${provider.provider}  ·  ${Object.keys(byKey).length} already captured, ${todo.length} to go\n`
 );
@@ -313,15 +316,32 @@ let failed = 0;
 for (const [i, s] of todo.entries()) {
   const started = Date.now();
   try {
-    const res = await run(s.text);
+    const { response: res, hold } = await run(s.text);
     const ms = Date.now() - started;
-    if (!res.success) {
+    if (!res.success || res.unresolved) {
       failed++;
       console.log(`✗ ${keyOf(s)} — ${JSON.stringify(res).slice(0, 160)}`);
       continue;
     }
+    // The app ships a meal unheld only when its read is late or broken: not
+    // the number to show on the landing page.
+    if (!hold || hold.outcome === 'no_read') {
+      failed++;
+      console.log(`✗ ${keyOf(s)} — no plain read: rerun`);
+      continue;
+    }
     const parsed = toParsedMeal(res.data);
-    byKey[keyOf(s)] = { ...s, ms, parsed, raw: res.data };
+    byKey[keyOf(s)] = {
+      ...s,
+      ms,
+      hold: {
+        outcome: hold.outcome,
+        appKcal: hold.appKcal,
+        readKcal: hold.readKcal,
+      },
+      parsed,
+      raw: res.data,
+    };
     persist();
     ok++;
     const t = parsed.totalMacros;
