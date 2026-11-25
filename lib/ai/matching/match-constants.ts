@@ -24,15 +24,17 @@ export const SOURCE_USDA = 2;
 /**
  * Which acceptance bucket each `ingredient_sources.code` matches through.
  * Curated Vietnamese sources (FAO and the additive NIN snapshot) share the
- * stricter domestic threshold. Codes left out — packaged products from Open
- * Food Facts (`OFF`) and FoodData Central Branded (`USDA_FDC`), which belong to
- * barcode scans — and any future source never reach ingredient matching until
- * they are added here.
+ * stricter domestic threshold; foreign reference tables (USDA SR and the
+ * curated MEXT 2020 rows) take the USDA one. Codes left out — packaged
+ * products from Open Food Facts (`OFF`) and FoodData Central Branded
+ * (`USDA_FDC`), which belong to barcode scans — and any future source never
+ * reach ingredient matching until they are added here.
  */
 const MATCHING_SOURCE_BUCKETS: Readonly<Record<string, 'fao' | 'usda'>> = {
   FAO_VN_2007: 'fao',
   NIN_WEB_2026: 'fao',
   USDA_SR: 'usda',
+  MEXT_2020: 'usda',
 };
 
 /** The `ingredient_sources.code`s that take part in ingredient matching. */

@@ -184,6 +184,8 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20261104044900_meal_reminders_retention.sql` | B (Manual) | `reap_old_meal_reminders()` (14 days) on the guarded pg_cron schedule |
 | `20261125162920_add_food_cards_eaten_state.sql` | A (Drizzle) | `food_cards.eaten_state text NOT NULL DEFAULT 'ingredient'` (`dish`, `drink`, `snack` or `ingredient`, from `cards.jsonl`); matching uses it to keep a dish's parts off the whole dish's row |
 | `20261125163000_seed_food_cards.sql` | Data (generated) | Re-seeds the same 7,729 cards with `eaten_state` filled (220 dishes); card strings unchanged, so nothing is re-embedded |
+| `20261126090000_food_row_state_and_curated_rows.sql` | Data (Manual) | Food-row curation: `state` fixed on 428 rows whose values describe the food as eaten (breads, canned foods, cooked sausages, fresh bánh phở, xôi, xá xíu…) or as dry (batter mix, panko, dry noodles), tofu-puff and sausage-row Vietnamese names corrected, and 5 rows from MEXT 2020 (cooked glass noodles ×2, cooked sticky rice, deep-fried tofu block, roast pork belly) under the new matchable source `MEXT_2020` |
+| `20261126090100_seed_food_cards.sql` | Data (generated) | Re-seeds all 7,734 cards after that curation (fried foods' cooking method, tofu, clear broths, xôi, the 5 new rows); new strings are embedded by the deploy backfill |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
