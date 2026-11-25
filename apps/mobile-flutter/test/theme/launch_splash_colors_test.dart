@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -22,22 +23,39 @@ void main() {
     }
   });
 
+  // iOS draws the launch storyboard before any app code runs, in the phone's
+  // light or dark mode; its background is this colour set.
   test('the launch storyboard background is the light and dark canvas', () {
     final colorset =
-        File(
-          'ios/Runner/Assets.xcassets/LaunchBackground.colorset/Contents.json',
-        ).readAsStringSync();
-    String components(int argb) {
-      String byte(int shift) =>
-          '0x${((argb >> shift) & 0xFF).toRadixString(16).padLeft(2, '0').toUpperCase()}';
-      return '"blue" : "${byte(0)}",\n'
-          '          "green" : "${byte(8)}",\n'
-          '          "red" : "${byte(16)}"';
-    }
+        jsonDecode(
+              File(
+                'ios/Runner/Assets.xcassets/LaunchBackground.colorset/Contents.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+    final entries = (colorset['colors'] as List).cast<Map<String, dynamic>>();
+    bool isDark(Map<String, dynamic> entry) =>
+        (entry['appearances'] as List? ?? const []).any(
+          (a) => a['appearance'] == 'luminosity' && a['value'] == 'dark',
+        );
+    expect(entries, hasLength(2));
 
-    for (final id in [KalloPaletteId.light, KalloPaletteId.dark]) {
+    String byte(int argb, int shift) =>
+        '0x${((argb >> shift) & 0xFF).toRadixString(16).padLeft(2, '0').toUpperCase()}';
+    for (final (id, entry) in [
+      (KalloPaletteId.light, entries.singleWhere((e) => !isDark(e))),
+      (KalloPaletteId.dark, entries.singleWhere(isDark)),
+    ]) {
       final canvas = KalloPalette.byId(id).surface.toARGB32();
-      expect(colorset, contains(components(canvas)), reason: id.name);
+      expect(entry['color'], {
+        'color-space': 'srgb',
+        'components': {
+          'alpha': '1.000',
+          'red': byte(canvas, 16),
+          'green': byte(canvas, 8),
+          'blue': byte(canvas, 0),
+        },
+      }, reason: id.name);
     }
   });
 }
