@@ -259,6 +259,7 @@ another domain module is a smell worth a second look.
 | `pipeline/grounded/text-checks/typed-counts.ts` | whether a meal text states a count: digits, fractions, halves ("nửa", "rưỡi") and number words; guards a typed zero and logs a dish count it cannot read | ok |
 | `pipeline/grounded/text-checks/typed-facts.ts` | on the finished meal: sets a dish to the calories the user typed for it and marks the parts whose amount the user typed, so the plain-read hold leaves them | ok |
 | `pipeline/assemble/result-scale.ts` | arithmetic on a finished meal: scale a part's nutrients and carry the change into its dish and the meal totals (typed calories, the plain-read hold) | ok |
+| `pipeline/precise-analysis.ts` | a typed meal as the app shows it: the pipeline with the plain read beside it, held near the read; the precise branch and the offline captures (SEO food pages, landing) all call it | ok |
 | `pipeline/stream/` | the analyze-meal SSE state machine: cheat vs precise outcome, gates, staging | ok |
 | `pipeline/telemetry/cloud-trace/` | bounded structured stdout trace capture, privacy filtering and final result summaries; request counters/model names are held for at most 1,024 concurrent traces, swept after two minutes on the next start. `ingest-sink.ts` copies each line, fire-and-forget, to the kallo-trace-ingest Worker (Cloudflare D1) | ok |
 
