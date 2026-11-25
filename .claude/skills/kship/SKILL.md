@@ -170,7 +170,9 @@ Codex (`gpt-6-astra`). When a pass fails, these rules apply in order:
    ChatGPT account"; the current account refuses `gpt-6.1-sol` and `gpt-6-astra`):
    an Astra pass runs on Neon instead, with the same "Step back" pass file and rule
    1's retry. A Sol fallback that is refused or out of quota ends there: the pass
-   did not run. Never go back to a Neon that already failed twice or is missing.
+   did not run. Never go back to a Neon that already failed twice, is missing or
+   is out of quota; a refused Astra pass then runs on Sol if Sol works, else it
+   did not run.
 
 **How each pass runs.** Every pass runs in the background (3-15 minutes; wait for
 the task notification, never a foreground `sleep`). Round 1 has no pass file:
@@ -611,9 +613,10 @@ to stop reviewing: from here on **Neon is the PR reviewer** for this `/kship`.
 3. If Neon cannot run on the current head (Phase 3b's rules exhausted), post that
    on the PR, stop the loop, and hand the PR to the user: no reviewer has seen
    this head, and a pass that did not run is never a clean pass.
-4. Once Neon is clean, and only if at least one Neon round ran since Codex hit its
-   limit (the head moved), request `@codex review` once more on that head (limits
-   reset). Approved → done. Findings → handle them as usual and continue the loop.
+4. Once Neon is clean, and only if `HEAD` has moved past the commit Codex hit its
+   limit on, request `@codex review` once more on that head (limits reset).
+   Approved → done. Findings → Codex is back: leave out-of-usage mode, handle them
+   as usual, and run the normal loop until Codex approves or hits its limit again.
    Usage limit again, or silence after one 20-minute wait → stop asking; the Neon
    approval stands.
 5. Evidence and the Phase 7 summary say: "Codex: out of usage on <sha>; Neon
