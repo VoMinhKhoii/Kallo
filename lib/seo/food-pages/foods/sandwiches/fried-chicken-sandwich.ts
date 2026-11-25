@@ -7,6 +7,7 @@ export const food: FoodContent = {
       key: 'fast-food',
       label: 'Fast food, mayo and pickles',
       text: 'Fried chicken sandwich from a fast food place (brioche bun + crispy fried chicken breast + pickles + mayo)',
+      links: [{ words: 'fried chicken', to: 'fried-chicken' }],
     },
     {
       key: 'spicy-fries',

@@ -151,6 +151,7 @@ export default async function FoodPageRoute({ params }: FoodPageProps) {
               <MealExample
                 key={meal.key}
                 label={meal.label}
+                links={meal.links}
                 variant={variant}
               />
             ) : null;
