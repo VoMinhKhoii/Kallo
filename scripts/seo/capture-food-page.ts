@@ -223,8 +223,9 @@ for (const meal of meals) {
     console.log(`✗ ${meal.key} — vector search timed out`);
     continue;
   }
+  const outcome = hold?.outcome ?? 'no hold';
   if (!isPublishable(hold)) {
-    console.log(`✗ ${meal.key} — no plain read: rerun`);
+    console.log(`✗ ${meal.key} — not held (${outcome}): rerun`);
     continue;
   }
   try {

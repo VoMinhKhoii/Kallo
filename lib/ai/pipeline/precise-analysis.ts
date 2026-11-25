@@ -12,6 +12,7 @@ import {
 } from '@/lib/ai/pipeline/analyze-meal';
 import type { V2PipelineDiagnostics } from '@/lib/ai/pipeline/grounded/orchestrator';
 import {
+  type HoldOutcome,
   type HoldResult,
   type HoldSummary,
   holdToPlainRead,
@@ -31,15 +32,24 @@ export interface PreciseAnalysis {
   hold: HoldResult | null;
 }
 
+/** The hold outcomes a page may publish: the read arrived and the meal has
+ *  calories (held, already within the band, or pinned by typed amounts). */
+const PUBLISHABLE: ReadonlySet<HoldOutcome> = new Set([
+  'held',
+  'within_band',
+  'typed_parts',
+]);
+
 /**
- * Whether an offline capture may publish this meal: only a held one. The app
- * ships a meal unheld when its read is late or broken, which is not the
- * number a page should show; such a meal is captured again.
+ * Whether an offline capture may publish this meal. The app ships a meal
+ * unheld when its read is late or broken (`no_read`), and refuses one with no
+ * calories (`no_calories`); neither is a number a page should show, so such a
+ * meal is captured again.
  */
 export function isPublishable(
   hold: HoldSummary | null | undefined
 ): hold is HoldSummary {
-  return hold != null && hold.outcome !== 'no_read';
+  return hold != null && PUBLISHABLE.has(hold.outcome);
 }
 
 export async function runPreciseAnalysis(args: {

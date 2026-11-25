@@ -14,7 +14,9 @@ vi.mock('@/lib/ai/pipeline/analyze-meal', () => ({ analyzeMeal }));
 vi.mock('@/lib/ai/pipeline/plain-read/plain-read', () => ({ startPlainRead }));
 vi.mock('@/lib/ai/pipeline/plain-read/hold', () => ({ holdToPlainRead }));
 
-const { runPreciseAnalysis } = await import('../precise-analysis');
+const { isPublishable, runPreciseAnalysis } = await import(
+  '../precise-analysis'
+);
 
 const READ = { totalKcal: 500, foods: [] };
 const RAW = { displayedNutrition: { caloriesKcal: 800 } };
@@ -113,5 +115,29 @@ describe('runPreciseAnalysis', () => {
 
     await expect(run()).rejects.toThrow('boom');
     expect(abort).toHaveBeenCalled();
+  });
+});
+
+describe('isPublishable', () => {
+  const summary = (outcome: string) =>
+    ({
+      outcome,
+      appKcal: 100,
+      readKcal: 100,
+      factor: 1,
+      gramsFactor: 1,
+    }) as never;
+
+  it.each(['held', 'within_band', 'typed_parts'])('publishes %s', (outcome) => {
+    expect(isPublishable(summary(outcome))).toBe(true);
+  });
+
+  it.each(['no_read', 'no_calories'])('refuses %s', (outcome) => {
+    expect(isPublishable(summary(outcome))).toBe(false);
+  });
+
+  it('refuses a meal with no hold', () => {
+    expect(isPublishable(null)).toBe(false);
+    expect(isPublishable(undefined)).toBe(false);
   });
 });

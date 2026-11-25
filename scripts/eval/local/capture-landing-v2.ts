@@ -330,9 +330,10 @@ for (const [i, s] of todo.entries()) {
       console.log(`✗ ${keyOf(s)} — ${JSON.stringify(res).slice(0, 160)}`);
       continue;
     }
+    const outcome = hold?.outcome ?? 'no hold';
     if (!isPublishable(hold)) {
       failed++;
-      console.log(`✗ ${keyOf(s)} — no plain read: rerun`);
+      console.log(`✗ ${keyOf(s)} — not held (${outcome}): rerun`);
       continue;
     }
     const parsed = toParsedMeal(res.data);
