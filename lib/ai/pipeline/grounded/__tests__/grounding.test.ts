@@ -132,6 +132,75 @@ describe('prepareGrounding vessel envelopes', () => {
   });
 });
 
+describe('prepareGrounding part-vs-dish guard', () => {
+  it("takes a dish's whole-dish row off its parts before Call 2 sees them", async () => {
+    const candidate = (
+      id: string,
+      eatenState: 'dish' | 'ingredient',
+      name: string
+    ) => ({
+      info: {
+        ingredientName: 'x',
+        foodCompositionId: id,
+        matchedName: name,
+        similarity: 0.8,
+        confidence: 'medium',
+        state: 'unknown',
+        eatenState,
+        ...(eatenState === 'dish' ? { rowNames: [name] } : {}),
+      },
+      nutrition: null,
+      inediblePct: null,
+      prompt: { name, nameEn: null, score: 1 },
+    });
+    mockMatchTopK.mockImplementation(async (ingredients: unknown[]) =>
+      ingredients.map((_, ingredientIndex) => ({
+        ingredientIndex,
+        candidates: [
+          candidate('dish_row', 'dish', 'Chả lá lốt, rán'),
+          candidate(`part_${ingredientIndex}`, 'ingredient', 'Lá lốt'),
+        ],
+      }))
+    );
+    const decomposition: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'Chả lá lốt',
+          cookingMethod: 'rán',
+          ingredients: [
+            { rawName: 'Lá lốt', canonicalName: 'Lolot leaves' },
+            { rawName: 'Thịt heo xay', canonicalName: 'Minced pork' },
+          ],
+        },
+      ],
+    };
+
+    const prepared = await prepareGrounding({
+      decomposition,
+      userContext,
+      streamedMatching: createStreamedMatching({} as never, {} as never),
+      traceContext: undefined,
+      emit: vi.fn(),
+      topK: 3,
+      matchConcurrency: 2,
+      vesselEnabled: false,
+    });
+
+    expect(
+      prepared.matchResults.map((r) =>
+        r.candidates.map((c) => c.info.foodCompositionId)
+      )
+    ).toEqual([['part_0'], ['part_1']]);
+    expect(
+      prepared.mealItemsWithCandidates[0].ingredients[0].candidates.map(
+        (c) => c.dbName
+      )
+    ).toEqual(['Lá lốt']);
+  });
+});
+
 describe('prepareGrounding matching deadline', () => {
   it('rejects a matching operation that never settles', async () => {
     vi.useFakeTimers();

@@ -121,6 +121,20 @@ export function normalizeState(
   return 'unknown';
 }
 
+/**
+ * How a card's row is eaten (`food_cards.eaten_state`): a whole prepared
+ * dish, a drink, a snack, or an ingredient of something else.
+ */
+export type EatenState = 'dish' | 'drink' | 'snack' | 'ingredient';
+
+/** Unknown or missing (an artifact built before the column) reads as 'ingredient'. */
+export function normalizeEatenState(
+  raw: string | null | undefined
+): EatenState {
+  if (raw === 'dish' || raw === 'drink' || raw === 'snack') return raw;
+  return 'ingredient';
+}
+
 export interface MatchInfo {
   /** Run-scoped compact ingredient ID (§0.1). Set by cascade.ts when known. */
   ingredientId?: string;
@@ -147,6 +161,13 @@ export interface MatchInfo {
   latencyMs?: number;
   /** Set by the cascade when an alias-fallback rescued the original name. */
   viaAlias?: boolean;
+  /** Card retrieval only: how the row is eaten (see `EatenState`). */
+  eatenState?: EatenState;
+  /**
+   * Card retrieval, whole-dish rows only: every name of the row (name_primary,
+   * name_en, card food, VI names, EN aliases), shared with the catalog.
+   */
+  rowNames?: readonly string[];
 }
 
 export interface PickBestSourceContext {

@@ -498,6 +498,83 @@ describe('matchCardCandidates', () => {
   });
 });
 
+describe('eaten_state from the catalog to MatchInfo', () => {
+  const DISH_ROWS = [
+    {
+      id: 'nin_cha_la_lot',
+      source_code: 'NIN_WEB_2026',
+      state: 'cooked',
+      name_en: 'Fried pork rolls in betel leaves',
+      name_primary: 'Chả lá lốt, rán',
+      food: 'fried pork rolls in lolot leaves',
+      aliases_en: ['betel leaf pork rolls'],
+      names_vi: ['chả lá lốt'],
+      part_cut: null,
+      form_processing: null,
+      cooking_method: 'fried',
+      fat_level: null,
+      brand: null,
+      eaten_state: 'dish',
+    },
+    {
+      id: 'fao_la_lot',
+      source_code: 'FAO_VN_2007',
+      state: 'raw',
+      name_en: 'Lolot leaves',
+      name_primary: 'Lá lốt',
+      food: 'lolot leaves, raw',
+      aliases_en: ['wild betel leaves'],
+      names_vi: ['lá lốt'],
+      part_cut: 'leaves',
+      form_processing: null,
+      cooking_method: null,
+      fat_level: null,
+      brand: null,
+      eaten_state: 'ingredient',
+    },
+    // A search artifact built before the column existed: no eaten_state.
+    {
+      id: 'fao_la_lot_dried',
+      source_code: 'FAO_VN_2007',
+      state: 'raw',
+      name_en: 'Lolot leaves, dried',
+      name_primary: 'Lá lốt khô',
+      food: 'lolot leaves, dried',
+      aliases_en: [],
+      names_vi: ['lá lốt khô'],
+      part_cut: 'leaves',
+      form_processing: 'dried',
+      cooking_method: null,
+      fat_level: null,
+      brand: null,
+    },
+  ];
+  const laLot = { rawName: 'Lá lốt', canonicalName: 'Lolot leaves' };
+
+  it('carries eatenState, and a dish row its names, onto each candidate', async () => {
+    const [result] = await cards([laLot], mockDb(true, [], DISH_ROWS), gemini);
+    const byId = new Map(
+      result.candidates.map((c) => [c.info.foodCompositionId, c.info])
+    );
+    const dish = byId.get('nin_cha_la_lot');
+    expect(dish?.eatenState).toBe('dish');
+    expect(dish?.rowNames).toEqual(
+      expect.arrayContaining([
+        'Chả lá lốt, rán',
+        'Fried pork rolls in betel leaves',
+        'fried pork rolls in lolot leaves',
+        'betel leaf pork rolls',
+        'chả lá lốt',
+      ])
+    );
+    expect(byId.get('fao_la_lot')?.eatenState).toBe('ingredient');
+    // Only a dish row carries its names (the stage log stores candidates).
+    expect(byId.get('fao_la_lot')?.rowNames).toBeUndefined();
+    // Missing column (old artifact) reads as an ingredient.
+    expect(byId.get('fao_la_lot_dried')?.eatenState).toBe('ingredient');
+  });
+});
+
 describe('cardLabel', () => {
   it('shows food, facets, VI name and the row name', () => {
     expect(
@@ -512,7 +589,9 @@ describe('cardLabel', () => {
           food: 'serrano pepper, raw',
           namesVi: ['ớt serrano'],
           facets: ['fresh'],
+          eatenState: 'ingredient',
         },
+        names: [],
       })
     ).toBe(
       'serrano pepper, raw, fresh / ớt serrano [row: Peppers, serrano, raw]'

@@ -22,6 +22,11 @@ export type CatalogQueryRow = {
   cooking_method: string | null;
   fat_level: string | null;
   brand: string | null;
+  /**
+   * Optional: a search artifact built before the column existed has no such
+   * field, and reads as 'ingredient'.
+   */
+  eaten_state?: string | null;
 };
 
 const literal = (s: string) => `'${s.replaceAll("'", "''")}'`;
@@ -29,7 +34,7 @@ const literal = (s: string) => `'${s.replaceAll("'", "''")}'`;
 /** Every card's composition row from a matchable source. */
 export const CATALOG_ROWS_SQL = `SELECT v.id, s.code AS source_code, v.state, v.name_en, v.name_primary,
        c.food, c.aliases_en, c.names_vi, c.part_cut, c.form_processing,
-       c.cooking_method, c.fat_level, c.brand
+       c.cooking_method, c.fat_level, c.brand, c.eaten_state
 FROM vietnamese_food_composition v
 JOIN ingredient_sources s ON s.id = v.source_id
 JOIN food_cards c ON c.food_composition_id = v.id

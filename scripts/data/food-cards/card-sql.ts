@@ -28,6 +28,7 @@ interface Card {
   food: string;
   aliases_en: string[];
   names_vi: string[];
+  eaten_state?: string;
   card: string;
   [facet: string]: unknown;
 }
@@ -62,6 +63,7 @@ export function buildCardSql(): { sql: string; cards: number; sha: string } {
       arr(aliases),
       arr(namesVi),
       ...FACETS.map((f) => facet(c[f])),
+      lit(c.eaten_state?.trim() || 'ingredient'),
       lit(c.card.trim()),
     ].join(', ')})`;
   });
@@ -70,12 +72,13 @@ export function buildCardSql(): { sql: string; cards: number; sha: string } {
   for (let i = 0; i < values.length; i += CHUNK) {
     inserts.push(`INSERT INTO "food_cards" (
   "food_composition_id", "food", "aliases_en", "names_vi", "part_cut",
-  "form_processing", "cooking_method", "fat_level", "brand", "card"
+  "form_processing", "cooking_method", "fat_level", "brand", "eaten_state",
+  "card"
 )
 SELECT v.* FROM (VALUES
 ${values.slice(i, i + CHUNK).join(',\n')}
 ) AS v(food_composition_id, food, aliases_en, names_vi, part_cut,
-       form_processing, cooking_method, fat_level, brand, card)
+       form_processing, cooking_method, fat_level, brand, eaten_state, card)
 WHERE EXISTS (
   SELECT 1 FROM "vietnamese_food_composition" f WHERE f."id" = v.food_composition_id
 )
@@ -88,6 +91,7 @@ ON CONFLICT ("food_composition_id") DO UPDATE SET
   "cooking_method" = EXCLUDED."cooking_method",
   "fat_level" = EXCLUDED."fat_level",
   "brand" = EXCLUDED."brand",
+  "eaten_state" = EXCLUDED."eaten_state",
   "card" = EXCLUDED."card";`);
   }
 

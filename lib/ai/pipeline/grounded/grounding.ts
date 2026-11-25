@@ -21,6 +21,7 @@ import type { MealItemWithCandidates } from '@/lib/ai/prompts/build/grounded-can
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import { withDeadline } from '@/lib/core/async/with-deadline';
+import { dropWholeDishRowsFromParts } from './part-vs-dish';
 import { withStageLogV2 } from './stage-log';
 
 export interface GroundingPreparation {
@@ -62,12 +63,14 @@ export async function prepareGrounding(args: {
       // Work still to start must finish inside the stage deadline, with a
       // margin for assembling the results; past it, matching leaves an
       // ingredient unmatched rather than fail the meal.
-      return withDeadline(
+      const matched = await withDeadline(
         args.streamedMatching.match(ingredients, methods, legacy, {
           deadlineAt: Date.now() + MATCHING_TIMEOUT_MS - 750,
         }),
         MATCHING_TIMEOUT_MS
       );
+      // Inside the stage, so its log shows the candidates Call 2 sees.
+      return dropWholeDishRowsFromParts(decomposition, matched);
     }
   );
 
