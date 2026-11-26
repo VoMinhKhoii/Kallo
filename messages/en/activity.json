@@ -75,5 +75,50 @@
       "accepted": "Added",
       "unavailable": "No longer available"
     }
+  },
+  "reminder": {
+    "yesterday": [
+      "Morning! Any meals from yesterday you'd like to add? 🤔",
+      "Any little bites we missed yesterday? Let's add them together.",
+      "Morning ☀️ Shall we look back at yesterday's meals?",
+      "{name}, anything else from yesterday you'd like to add? 🤔",
+      "A fresh day ✨ Shall we give yesterday one last look?",
+      "{name}, what was on the menu yesterday? Tell me 😋",
+      "Meal detective here 🕵️ Shall we peek at yesterday's meals?",
+      "Morning 🌤️ Shall we check yesterday's meals together?",
+      "{name}, shall we catch up on yesterday's meals? ⏱️"
+    ],
+    "morning": [
+      "Morning, sunshine ☀️ What was for breakfast today?",
+      "Had breakfast yet? Hope you've had a little something 🥺",
+      "What was for breakfast? I'd love to hear 👀",
+      "Busy morning? Hope you've found a moment for breakfast 💪",
+      "Breakfast before the busy day? Tell me what you had.",
+      "Morning, {name} ⚡ What got your day off to a tasty start?",
+      "Had breakfast? Tell me what you had. Still to eat? Take your time 🫶",
+      "Running late? Hope there's still a moment for breakfast."
+    ],
+    "afternoon": [
+      "Hey, how was lunch? Tell Kallo what was on the menu 🍊",
+      "Busy day? Hope you've found a little lunch break.",
+      "Any boba or cake this afternoon? I'd love to hear 🧋",
+      "Shall we give today's lunch a little spot in your log? 👀",
+      "Feeling nicely fed? Let's pop lunch in before you get back to it.",
+      "What did you bring for lunch today? Tell me 🍱",
+      "Lunch with the team? Let's save your meal before work calls 🍕",
+      "What was for lunch? Kallo would love to hear 🥹"
+    ],
+    "evening": [
+      "Shall we wrap up today together? Add any little bites we missed 🌙",
+      "What was for dinner, {name}? Tell me, then rest easy 😴",
+      "Had dinner yet, {name}? Hope you've had something lovely 🥺",
+      "Late-night bite? You can pop it in your log too 😌",
+      "Was that everything for today? Shall we call it a night? ✅",
+      "Snack check-in 🍿 Anything tasty to add tonight?",
+      "What was for dinner? Tell Kallo the tasty details 😋",
+      "A cozy dinner at home or a little meal out tonight? 🍲",
+      "One little thing before we rest: shall we wrap up today's log? 🎯",
+      "It's been a long day. Add dinner when you're ready, then rest well 💤"
+    ]
   }
 }

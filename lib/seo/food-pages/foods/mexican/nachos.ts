@@ -31,7 +31,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four plates of nachos, from half a loaded bar platter to chips with cheese sauce and a homemade plate, broken down by topping.`,
     lead: (span) =>
-      `About ${span} kcal. Nachos are mostly chips, and how many you actually eat is the hard part to guess. Four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Nachos are mostly chips, and how many you actually eat is the hard part to guess. Four typical plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'loaded',
     breakdownLead:
       'In your half of the bar nachos, the chips alone are 298 kcal, more than the cheese and the beef together.',

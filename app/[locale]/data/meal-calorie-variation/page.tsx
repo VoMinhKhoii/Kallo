@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
-import { AuthRequestConfig } from '@/components/auth/request-config/auth-request-config';
-import { DocsH2, DocsParagraph } from '@/components/docs/mdx/prose';
+import { ClientAuthRequestConfig } from '@/components/auth/request-config/client-auth-request-config';
+import { DocsH2, DocsLink, DocsParagraph } from '@/components/docs/mdx/prose';
 import { TryItButton } from '@/components/seo/food-page/try-it-button';
 import { JsonLd } from '@/components/seo/json-ld';
 import { KindList } from '@/components/seo/meal-data/kind-list';
@@ -15,7 +14,12 @@ import { captureDateRange } from '@/lib/seo/food-pages/pages';
 import { FOOD_PAGE_LOCALES, isFoodLocale } from '@/lib/seo/food-pages/slugs';
 import { MEAL_DATA_COPY } from '@/lib/seo/meal-data/copy';
 import { mealData } from '@/lib/seo/meal-data/facts';
-import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
+import {
+  MEAL_DATA_CSV_PATH,
+  MEAL_DATA_JSON_PATH,
+  MEAL_DATA_LICENSE,
+  MEAL_DATA_PATH,
+} from '@/lib/seo/meal-data/path';
 import { SHARED_OPEN_GRAPH } from '@/lib/seo/open-graph';
 import { mealDataStructuredData } from '@/lib/seo/page-structured-data';
 import { SITE_URL } from '@/lib/seo/site';
@@ -109,6 +113,22 @@ export default async function MealDataPage({ params }: MealDataProps) {
             <DocsParagraph key={p.slice(0, 40)}>{p}</DocsParagraph>
           ))}
 
+          <DocsH2>{copy.downloadHeading}</DocsH2>
+          <DocsParagraph>{copy.downloadNote}</DocsParagraph>
+          <DocsParagraph>{copy.downloadDates(facts)}</DocsParagraph>
+          <DocsParagraph>
+            <DocsLink href={`${SITE_URL}${MEAL_DATA_CSV_PATH}`} download>
+              CSV
+            </DocsLink>
+            {' · '}
+            <DocsLink href={`${SITE_URL}${MEAL_DATA_JSON_PATH}`} download>
+              JSON
+            </DocsLink>
+          </DocsParagraph>
+          <DocsParagraph>
+            <DocsLink href={MEAL_DATA_LICENSE}>{copy.downloadLicense}</DocsLink>
+          </DocsParagraph>
+
           <DocsH2>{copy.citeHeading}</DocsH2>
           <DocsParagraph>{copy.cite(facts, url)}</DocsParagraph>
 
@@ -121,9 +141,7 @@ export default async function MealDataPage({ params }: MealDataProps) {
         </div>
       </article>
       <LazyAuthDialog />
-      <Suspense fallback={null}>
-        <AuthRequestConfig />
-      </Suspense>
+      <ClientAuthRequestConfig />
     </AuthProvider>
   );
 }

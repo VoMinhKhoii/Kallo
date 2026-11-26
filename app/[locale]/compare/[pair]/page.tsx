@@ -10,6 +10,7 @@ import {
 import { SourceLine } from '@/components/seo/alternatives/option-section';
 import { CompareTable } from '@/components/seo/compare/compare-table';
 import { VendorArticle } from '@/components/seo/vendor-article';
+import { ALTERNATIVES_CHROME } from '@/lib/seo/alternatives/chrome';
 import { alternativePath } from '@/lib/seo/alternatives/slugs';
 import { COMPARE_CHROME } from '@/lib/seo/compare/chrome';
 import { COMPARE_PAGES } from '@/lib/seo/compare/pages';
@@ -132,6 +133,11 @@ export default async function KalloVsPage({ params }: ComparePageProps) {
       <DocsParagraph>
         <DocsLink href={alternativePath(copy.alternatives)}>
           {COMPARE_CHROME.alternativesLink(copy.them)}
+        </DocsLink>
+      </DocsParagraph>
+      <DocsParagraph>
+        <DocsLink href={ALTERNATIVES_CHROME.docs.switching}>
+          {COMPARE_CHROME.switchingLink}
         </DocsLink>
       </DocsParagraph>
 

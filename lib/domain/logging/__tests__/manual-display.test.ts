@@ -103,12 +103,12 @@ describe('vessels and amounts', () => {
       initialManualGrams(
         food({ vessel: { family: 'bowl', dishClass: 'solid' } })
       )
-    ).toBe(225);
+    ).toBe(174);
     expect(
       initialManualGrams(
         food({ vessel: { family: 'cup', dishClass: 'drink' } })
       )
-    ).toBe(231);
+    ).toBe(236);
     expect(initialManualGrams(food({ vessel: null }))).toBe(100);
   });
 

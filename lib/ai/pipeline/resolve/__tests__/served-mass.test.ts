@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
-import type { MealDecompositionV2 } from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
+import type {
+  DishCount,
+  MealDecompositionV2,
+} from '@/lib/ai/pipeline/contracts/schemas/decomposition-v2';
 import type { GroundedEstimation } from '@/lib/ai/pipeline/contracts/schemas/grounded-estimation';
 import { RESCUE_PART_PORTION } from '@/lib/ai/pipeline/grounded/rescue/splice';
 import type { RunState } from '@/lib/ai/pipeline/grounded/run-state';
@@ -42,7 +45,12 @@ type Part = {
 
 /** One dish; every part matched one row (c1) and Call 2 gave it `g` grams and g/4 g carbohydrate. */
 function stateOf(
-  dish: { name: string; cookingMethod?: string; servedMassG?: number },
+  dish: {
+    name: string;
+    cookingMethod?: string;
+    servedMassG?: number;
+    dishCount?: DishCount;
+  },
   parts: Part[]
 ): RunState {
   const decomposition: MealDecompositionV2 = {
@@ -53,6 +61,7 @@ function stateOf(
         name: dish.name,
         cookingMethod: dish.cookingMethod ?? 'cooked',
         servedMassG: dish.servedMassG,
+        dishCount: dish.dishCount,
         ingredients: parts.map((p) => ({
           rawName: p.name,
           canonicalName: p.name,
@@ -359,15 +368,22 @@ describe('scaleToServedMass', () => {
     expect(grams(out.state)).toEqual([60, 227, 113]);
   });
 
-  it("moves parts that only carry the dish's count with the rest", () => {
-    // "2 bánh xèo 400g": Call 1 puts the dish's count on every food it
-    // splits into; none of them is a typed amount, so all of them move.
+  it("moves every part of a counted dish: the count is the dish's", () => {
+    // "2 bánh xèo 400g": the count is on the dish (`dishCount`), so no part
+    // carries a typed amount and all of them move.
     const out = scaleToServedMass(
-      stateOf({ name: 'Bánh xèo', servedMassG: 400 }, [
-        { name: 'bột gạo', g: 200, count: 2, unit: 'bánh xèo' },
-        { name: 'tôm', g: 100, count: 2, unit: 'bánh xèo' },
-        { name: 'dầu ăn', g: 20 },
-      ])
+      stateOf(
+        {
+          name: 'Bánh xèo',
+          servedMassG: 400,
+          dishCount: { count: 2, unitToken: 'bánh xèo' },
+        },
+        [
+          { name: 'bột gạo', g: 200 },
+          { name: 'tôm', g: 100 },
+          { name: 'dầu ăn', g: 20 },
+        ]
+      )
     );
     expect(grams(out.state)).toEqual([250, 125, 25]);
   });

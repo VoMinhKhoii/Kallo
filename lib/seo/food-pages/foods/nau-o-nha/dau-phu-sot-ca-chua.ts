@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa có đậu sốt cà chua thật: một bìa đậu rán với hai bát cơm, cơm bụi thêm vá cơm, đậu nhồi thịt và đậu hũ non không chiên.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một bữa. Đậu rán hay không rán thay đổi nhiều hơn phần sốt; thịt nhồi và cơm làm nên phần còn lại. Dưới đây là bốn bữa thật, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một bữa. Đậu rán hay không rán thay đổi nhiều hơn phần sốt; thịt nhồi và cơm làm nên phần còn lại. Dưới đây là bốn bữa thường gặp, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'mot-bia',
     breakdownLead:
       'Một bìa đậu phụ rán (120 g) là 351 calo, gần bằng hai bát cơm (303). Đậu hũ non không chiên, 150 g chỉ 101; phần sốt cà chua chỉ vài chục calo.',

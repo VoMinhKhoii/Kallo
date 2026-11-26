@@ -657,3 +657,682 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
     expect(warn).toHaveBeenCalled();
   });
 });
+
+describe('reconcileNutritionIds — double-counted frying oil and pure-fat guards', () => {
+  function makeMatch(
+    id: string,
+    name: string,
+    nutrition: Partial<MatchedIngredient['nutritionPer100g']>,
+    extra: Partial<MatchedIngredient> = {}
+  ): MatchedIngredient {
+    return {
+      ingredientId: id,
+      ingredientName: name,
+      foodCompositionId: `fc-${id}`,
+      matchedName: name,
+      similarity: 0.9,
+      confidence: 'high',
+      dbState: 'cooked',
+      nutritionPer100g: { ...NULL_NUTRITION_VALUES, ...nutrition },
+      ...extra,
+    };
+  }
+
+  const SOYBEAN_OIL_PER_100G = {
+    caloriesKcal: 884,
+    proteinG: 0,
+    carbohydrateG: 0,
+    fatG: 100,
+  };
+
+  const BUTTER_PER_100G = {
+    caloriesKcal: 717,
+    proteinG: 0.85,
+    carbohydrateG: 0.06,
+    fatG: 81,
+  };
+
+  it('holds a row that states 0 g fat at 0 beside a sibling oil row', () => {
+    const decomposition: MealDecompositionWithIds = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          mealItemId: 'm1',
+          name: 'Miến xào',
+          cookingMethod: 'xào',
+          ingredients: [
+            {
+              ingredientId: 'i-mien',
+              name: 'miến',
+              estimatedGrams: 150,
+              cookingMethod: 'xào',
+              userFacingUnit: null,
+            },
+            {
+              ingredientId: 'i-oil',
+              name: 'dầu ăn',
+              estimatedGrams: 10,
+              cookingMethod: 'xào',
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+    };
+    const matched: MatchedIngredient[] = [
+      makeMatch('i-mien', 'miến', {
+        caloriesKcal: 78,
+        proteinG: 0,
+        carbohydrateG: 20.6,
+        fatG: 0,
+      }),
+      makeMatch('i-oil', 'dầu ăn', SOYBEAN_OIL_PER_100G),
+    ];
+    const out = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Miến xào',
+            ingredients: [
+              {
+                ingredientName: 'miến',
+                proteinG: { low: 0, mid: 0, high: 0 },
+                carbohydrateG: { low: 30, mid: 31, high: 32 },
+                fatG: { low: 6, mid: 8, high: 10 },
+              },
+              {
+                ingredientName: 'dầu ăn',
+                proteinG: { low: 0, mid: 0, high: 0 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 9, mid: 10, high: 10 },
+              },
+            ],
+          },
+        ],
+      },
+      decomposition,
+      matched
+    );
+    expect(out.mealItems[0].ingredients[0].fatG).toEqual({
+      low: 0,
+      mid: 0,
+      high: 0,
+    });
+  });
+
+  it('reads a fat-named part by its matched row: peanut butter does not cap its siblings', () => {
+    const decomposition: MealDecompositionWithIds = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          mealItemId: 'm1',
+          name: 'Stir-fried pork with peanut sauce',
+          cookingMethod: 'stir-fried',
+          ingredients: [
+            {
+              ingredientId: 'i-pork',
+              name: 'pork ribs',
+              estimatedGrams: 100,
+              cookingMethod: 'stir-fried',
+              userFacingUnit: null,
+            },
+            {
+              ingredientId: 'i-pb',
+              name: 'peanut butter',
+              estimatedGrams: 20,
+              cookingMethod: 'stir-fried',
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+    };
+    const matched: MatchedIngredient[] = [
+      makeMatch('i-pork', 'pork ribs', {
+        caloriesKcal: 310,
+        proteinG: 20,
+        carbohydrateG: 0,
+        fatG: 25.7,
+      }),
+      // Peanut butter: 50 g fat, but 25 g protein and 20 g carbs per 100 g.
+      makeMatch('i-pb', 'peanut butter', {
+        caloriesKcal: 588,
+        proteinG: 25,
+        carbohydrateG: 20,
+        fatG: 50,
+      }),
+    ];
+    const out = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Stir-fried pork with peanut sauce',
+            ingredients: [
+              {
+                ingredientName: 'pork ribs',
+                proteinG: { low: 20, mid: 20, high: 20 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 30, mid: 34, high: 38 },
+              },
+              {
+                ingredientName: 'peanut butter',
+                proteinG: { low: 5, mid: 5, high: 5 },
+                carbohydrateG: { low: 4, mid: 4, high: 4 },
+                fatG: { low: 9, mid: 10, high: 11 },
+              },
+            ],
+          },
+        ],
+      },
+      decomposition,
+      matched
+    );
+    // No cooking-fat part, so the stir-fried pork keeps its oil allowance:
+    // 34 g stays (a sibling oil row would cap it at 1.25x = 32.1 g).
+    expect(out.mealItems[0].ingredients[0].fatG.mid).toBe(34);
+  });
+
+  it('caps fatty pork + sibling oil at <= 1.25x base fat while preserving low < mid < high bounds', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const decomposition: MealDecompositionWithIds = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          mealItemId: 'm1',
+          name: 'Sweet and sour pork ribs',
+          cookingMethod: 'stir-fried',
+          ingredients: [
+            {
+              ingredientId: 'i-pork',
+              name: 'pork ribs',
+              estimatedGrams: 100,
+              cookingMethod: 'stir-fried',
+              userFacingUnit: null,
+            },
+            {
+              ingredientId: 'i-oil',
+              name: 'cooking oil',
+              estimatedGrams: 10,
+              cookingMethod: 'stir-fried',
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+    };
+    const matched: MatchedIngredient[] = [
+      makeMatch('i-pork', 'pork ribs', {
+        caloriesKcal: 310,
+        proteinG: 20,
+        carbohydrateG: 0,
+        fatG: 25.7,
+      }),
+      makeMatch('i-oil', 'cooking oil', SOYBEAN_OIL_PER_100G),
+    ];
+
+    // Case 1: Call 2 inflates ribs to 45g fat (1.75× base 25.7g) beside 10g oil.
+    const overshot = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Sweet and sour pork ribs',
+            ingredients: [
+              {
+                ingredientName: 'pork ribs',
+                proteinG: { low: 20, mid: 20, high: 20 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 40, mid: 45, high: 50 },
+              },
+              {
+                ingredientName: 'cooking oil',
+                proteinG: { low: 0, mid: 0, high: 0 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 6, mid: 7, high: 8 },
+              },
+            ],
+          },
+        ],
+      },
+      decomposition,
+      matched
+    );
+    const porkOver = overshot.mealItems[0].ingredients[0];
+    const oilOver = overshot.mealItems[0].ingredients[1];
+    expect(porkOver.fatG.mid).toBeCloseTo(25.7 * 1.25, 5);
+    expect(porkOver.fatG.high).toBeLessThanOrEqual(25.7 * 1.25 + 1e-6);
+    expect(porkOver.fatG.low).toBeLessThan(porkOver.fatG.mid);
+    expect(oilOver.fatG).toEqual({ low: 10, mid: 10, high: 10 });
+
+    // Case 2: Call 2 mid is within 1.25× (29g) and high overshoots (36g) ->
+    // strict low < mid < high is kept with high held at 1.25× base.
+    const inBand = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Sweet and sour pork ribs',
+            ingredients: [
+              {
+                ingredientName: 'pork ribs',
+                proteinG: { low: 20, mid: 20, high: 20 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 24, mid: 29, high: 36 },
+              },
+              {
+                ingredientName: 'cooking oil',
+                proteinG: { low: 0, mid: 0, high: 0 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 9, mid: 10, high: 11 },
+              },
+            ],
+          },
+        ],
+      },
+      decomposition,
+      matched
+    );
+    const porkInBand = inBand.mealItems[0].ingredients[0];
+    expect(porkInBand.fatG.low).toBe(24);
+    expect(porkInBand.fatG.mid).toBe(29);
+    expect(porkInBand.fatG.high).toBeCloseTo(25.7 * 1.25, 5);
+    expect(porkInBand.fatG.low).toBeLessThan(porkInBand.fatG.mid);
+    expect(porkInBand.fatG.mid).toBeLessThan(porkInBand.fatG.high);
+  });
+
+  it('triggers sibling-fat cap when a sibling row is pure butter by composition (even with ambiguous name "bơ")', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const decomposition: MealDecompositionWithIds = {
+      isFood: true,
+      mealSlot: 'breakfast',
+      mealItems: [
+        {
+          mealItemId: 'm1',
+          name: 'Trứng áp chảo bơ',
+          cookingMethod: 'áp chảo',
+          ingredients: [
+            {
+              ingredientId: 'i-egg',
+              name: 'trứng gà',
+              estimatedGrams: 100,
+              cookingMethod: 'áp chảo',
+              userFacingUnit: null,
+            },
+            {
+              ingredientId: 'i-butter',
+              name: 'bơ',
+              estimatedGrams: 10,
+              cookingMethod: 'áp chảo',
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+    };
+    const matched: MatchedIngredient[] = [
+      makeMatch('i-egg', 'trứng gà', {
+        caloriesKcal: 155,
+        proteinG: 13,
+        carbohydrateG: 1.1,
+        fatG: 11,
+      }),
+      makeMatch('i-butter', 'bơ', BUTTER_PER_100G, {
+        matchedName: 'Bơ mặn',
+        matchedNameEn: 'Butter, salted',
+      }),
+    ];
+    const out = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Trứng áp chảo bơ',
+            ingredients: [
+              {
+                ingredientName: 'trứng gà',
+                proteinG: { low: 13, mid: 13, high: 13 },
+                carbohydrateG: { low: 1.1, mid: 1.1, high: 1.1 },
+                fatG: { low: 18, mid: 20, high: 22 },
+              },
+              {
+                ingredientName: 'bơ',
+                proteinG: { low: 0.1, mid: 0.1, high: 0.1 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 7.5, mid: 8, high: 8.4 },
+              },
+            ],
+          },
+        ],
+      },
+      decomposition,
+      matched
+    );
+    expect(out.mealItems[0].ingredients[0].fatG.mid).toBeCloseTo(11 * 1.25, 5);
+  });
+
+  it('sibling oil + "extra butter" prepNote still unlocks 2x fat while non-extra-fat prepNotes keep 1.25x ceiling and 0.5x floor', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const makeDecomp = (prepNotes: string[]): MealDecompositionWithIds => ({
+      isFood: true,
+      mealSlot: 'dinner',
+      mealItems: [
+        {
+          mealItemId: 'm1',
+          name: 'Pan-seared steak',
+          cookingMethod: 'pan-seared',
+          ingredients: [
+            {
+              ingredientId: 'i-steak',
+              name: 'beef steak',
+              estimatedGrams: 100,
+              cookingMethod: 'pan-seared',
+              userFacingUnit: null,
+              prepNotes,
+            },
+            {
+              ingredientId: 'i-oil',
+              name: 'oil',
+              estimatedGrams: 10,
+              cookingMethod: 'pan-seared',
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+    });
+    const matched: MatchedIngredient[] = [
+      makeMatch('i-steak', 'beef steak', {
+        caloriesKcal: 200,
+        proteinG: 26,
+        carbohydrateG: 0,
+        fatG: 10,
+      }),
+      makeMatch('i-oil', 'oil', SOYBEAN_OIL_PER_100G),
+    ];
+
+    const withExtraButter = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Pan-seared steak',
+            ingredients: [
+              {
+                ingredientName: 'beef steak',
+                proteinG: { low: 25, mid: 26, high: 27 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 17, mid: 19, high: 20 },
+              },
+              {
+                ingredientName: 'oil',
+                proteinG: { low: 0, mid: 0, high: 0 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 9, mid: 10, high: 11 },
+              },
+            ],
+          },
+        ],
+      },
+      makeDecomp(['extra butter']),
+      matched
+    );
+    expect(withExtraButter.mealItems[0].ingredients[0].fatG.mid).toBe(19);
+    expect(withExtraButter.mealItems[0].ingredients[0].fatG.high).toBe(20);
+
+    // Trimmed prep note: floor stays 0.5× (5g passes), ceiling stays 1.25×.
+    const trimmed = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Pan-seared steak',
+            ingredients: [
+              {
+                ingredientName: 'beef steak',
+                proteinG: { low: 25, mid: 26, high: 27 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 5, mid: 6, high: 7 },
+              },
+              {
+                ingredientName: 'oil',
+                proteinG: { low: 0, mid: 0, high: 0 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 9, mid: 10, high: 11 },
+              },
+            ],
+          },
+        ],
+      },
+      makeDecomp(['bỏ mỡ']),
+      matched
+    );
+    expect(trimmed.mealItems[0].ingredients[0].fatG).toEqual({
+      low: 5,
+      mid: 6,
+      high: 7,
+    });
+  });
+
+  it('caps an already-fried matched row without sibling oil at <= 1.25x base fat', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const decomposition: MealDecompositionWithIds = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          mealItemId: 'm1',
+          name: 'Fish noodle soup',
+          cookingMethod: 'fried',
+          ingredients: [
+            {
+              ingredientId: 'i-fish',
+              name: 'fried fish',
+              estimatedGrams: 100,
+              cookingMethod: 'fried',
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+    };
+    const matched: MatchedIngredient[] = [
+      makeMatch(
+        'i-fish',
+        'fried fish',
+        { caloriesKcal: 150, proteinG: 20, carbohydrateG: 5, fatG: 3.0 },
+        { matchedNameEn: 'Fish, cooked, fried' }
+      ),
+    ];
+    // Call 2 tries to push 3.0g base fat to 9.0g (3×).
+    const out = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Fish noodle soup',
+            ingredients: [
+              {
+                ingredientName: 'fried fish',
+                proteinG: { low: 20, mid: 20, high: 20 },
+                carbohydrateG: { low: 5, mid: 5, high: 5 },
+                fatG: { low: 7, mid: 9, high: 11 },
+              },
+            ],
+          },
+        ],
+      },
+      decomposition,
+      matched
+    );
+    const fish = out.mealItems[0].ingredients[0];
+    expect(fish.fatG.mid).toBeCloseTo(3.0 * 1.25, 5);
+    expect(fish.fatG.high).toBeCloseTo(3.0 * 1.25, 5);
+    expect(fish.fatG.low).toBeLessThan(fish.fatG.mid);
+  });
+
+  it('anchors 5g and 10g pure oil rows to exact DB fat even when Call 2 under-reports', () => {
+    for (const grams of [5, 10]) {
+      const decomposition: MealDecompositionWithIds = {
+        isFood: true,
+        mealSlot: 'dinner',
+        mealItems: [
+          {
+            mealItemId: 'm1',
+            name: 'Stir-fry',
+            cookingMethod: 'stir-fried',
+            ingredients: [
+              {
+                ingredientId: 'i-oil',
+                name: 'soybean oil',
+                estimatedGrams: grams,
+                cookingMethod: 'stir-fried',
+                userFacingUnit: null,
+              },
+            ],
+          },
+        ],
+      };
+      const matched = [makeMatch('i-oil', 'soybean oil', SOYBEAN_OIL_PER_100G)];
+      const out = reconcileNutritionIds(
+        {
+          mealItems: [
+            {
+              mealItemName: 'Stir-fry',
+              ingredients: [
+                {
+                  ingredientName: 'soybean oil',
+                  proteinG: { low: 0, mid: 0, high: 0 },
+                  carbohydrateG: { low: 0, mid: 0, high: 0 },
+                  fatG: {
+                    low: grams * 0.5,
+                    mid: grams * 0.7,
+                    high: grams * 0.8,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        decomposition,
+        matched
+      );
+      const oil = out.mealItems[0].ingredients[0];
+      expect(oil.fatG).toEqual({ low: grams, mid: grams, high: grams });
+      expect(oil.caloriesKcal).toEqual({
+        low: grams * 9,
+        mid: grams * 9,
+        high: grams * 9,
+      });
+    }
+  });
+
+  it('guards butter without prepNotes to [0.9x, 1.05x] base and keeps wider band with prepNotes', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const makeDecomp = (prepNotes?: string[]): MealDecompositionWithIds => ({
+      isFood: true,
+      mealSlot: 'breakfast',
+      mealItems: [
+        {
+          mealItemId: 'm1',
+          name: 'Buttered toast',
+          cookingMethod: 'toasted',
+          ingredients: [
+            {
+              ingredientId: 'i-butter',
+              name: 'butter',
+              estimatedGrams: 10,
+              cookingMethod: 'toasted',
+              userFacingUnit: null,
+              prepNotes,
+            },
+          ],
+        },
+      ],
+    });
+    const matched = [makeMatch('i-butter', 'butter', BUTTER_PER_100G)];
+    const baseFat = 8.1;
+
+    // Under-reported butter without prepNotes clamps up to 0.9× base.
+    const lowButter = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Buttered toast',
+            ingredients: [
+              {
+                ingredientName: 'butter',
+                proteinG: { low: 0.1, mid: 0.1, high: 0.1 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 4, mid: 5, high: 6 },
+              },
+            ],
+          },
+        ],
+      },
+      makeDecomp(undefined),
+      matched
+    );
+    expect(lowButter.mealItems[0].ingredients[0].fatG.mid).toBeCloseTo(
+      baseFat * 0.9,
+      5
+    );
+    expect(
+      lowButter.mealItems[0].ingredients[0].fatG.low
+    ).toBeGreaterThanOrEqual(baseFat * 0.9 - 1e-6);
+    expect(lowButter.mealItems[0].ingredients[0].fatG.high).toBeLessThanOrEqual(
+      baseFat * 1.05 + 1e-6
+    );
+
+    // Over-reported butter without prepNotes clamps down to 1.05× base.
+    const highButter = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Buttered toast',
+            ingredients: [
+              {
+                ingredientName: 'butter',
+                proteinG: { low: 0.1, mid: 0.1, high: 0.1 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 10, mid: 12, high: 14 },
+              },
+            ],
+          },
+        ],
+      },
+      makeDecomp(undefined),
+      matched
+    );
+    expect(highButter.mealItems[0].ingredients[0].fatG.mid).toBeCloseTo(
+      baseFat * 1.05,
+      5
+    );
+    expect(highButter.mealItems[0].ingredients[0].fatG.high).toBeCloseTo(
+      baseFat * 1.05,
+      5
+    );
+
+    // With prepNotes (e.g. "light"), keeps today's wider [0.5×, 2×] band.
+    const lightButter = reconcileNutritionIds(
+      {
+        mealItems: [
+          {
+            mealItemName: 'Buttered toast',
+            ingredients: [
+              {
+                ingredientName: 'butter',
+                proteinG: { low: 0.1, mid: 0.1, high: 0.1 },
+                carbohydrateG: { low: 0, mid: 0, high: 0 },
+                fatG: { low: 4.5, mid: 5, high: 5.5 },
+              },
+            ],
+          },
+        ],
+      },
+      makeDecomp(['light butter']),
+      matched
+    );
+    expect(lightButter.mealItems[0].ingredients[0].fatG).toEqual({
+      low: 4.5,
+      mid: 5,
+      high: 5.5,
+    });
+  });
+});

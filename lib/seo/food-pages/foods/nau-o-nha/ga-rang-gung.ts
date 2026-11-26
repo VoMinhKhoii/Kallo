@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một bữa. Bốn bữa có gà rang gừng: năm miếng có xương với hai bát cơm, gà hâm lại với cơm rang trứng, đùi bỏ da và ức gà.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một bữa. Phần gà và số bát cơm quyết định gần hết; da, dầu rang và đường thêm vào sau. Dưới đây là bốn bữa thật, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một bữa. Phần gà và số bát cơm quyết định gần hết; da, dầu rang và đường thêm vào sau. Dưới đây là bốn bữa thường gặp, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'nam-mieng',
     breakdownLead:
       'Trong bữa năm miếng gà có xương, gà là 362 calo và hai bát cơm 303; dầu rang thêm 72. Canh bí đỏ và su su luộc cộng lại chưa tới 100. Ba miếng ức gà (120 g) chỉ 162.',

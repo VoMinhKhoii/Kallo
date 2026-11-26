@@ -1,8 +1,10 @@
 'use client';
 
 import Image from 'next/image';
+import { useLocale } from 'next-intl';
 import {
   claimedAnchor,
+  containerReading,
   type PortionAnchor,
 } from '@/components/logging/feed/meal-entry/portion/portion-anchors';
 import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
@@ -46,7 +48,14 @@ export function VesselTape({
   const { glyphs, band } = tapeGlyphs(vessel, anchors);
   const scale = tapeScale(anchors, min, max);
   const width = TAPE_COLUMN * anchors.length;
+  const loc = useLocale() === 'vi' ? 'vi' : 'en';
   const claimed = claimedAnchor(anchors, grams);
+  // A container names what its grams read ("½ chén nhỏ"), like the Size row
+  // above it and the Flutter ruler; a piece only a tier it can claim.
+  const spoken =
+    vessel.family === 'piece'
+      ? claimed?.label
+      : containerReading(vessel, grams, loc).label;
   const { fraction, dragging, handlers } = useTapeInput({
     anchors,
     scale,
@@ -63,7 +72,7 @@ export function VesselTape({
       aria-valuemin={min}
       aria-valuemax={max}
       aria-valuenow={grams}
-      aria-valuetext={claimed ? `${grams} g — ${claimed.label}` : `${grams} g`}
+      aria-valuetext={spoken ? `${grams} g — ${spoken}` : `${grams} g`}
       {...handlers}
       className="relative cursor-grab touch-none select-none overflow-hidden rounded-lg outline-none [mask-image:linear-gradient(90deg,transparent_0,#000_16%,#000_84%,transparent_100%)] focus-visible:ring-2 focus-visible:ring-kallo-accent/40"
       style={{ height: band + NEEDLE_GAP + RULER + 4 + 18 + 8 }}

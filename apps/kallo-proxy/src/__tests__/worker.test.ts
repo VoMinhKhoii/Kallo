@@ -200,3 +200,46 @@ describe('fetch', () => {
     expect(upstream).toHaveBeenCalledOnce();
   });
 });
+
+describe('scheduled: the meal-reminder tick', () => {
+  const event = { cron: '*/15 * * * *', scheduledTime: 0 };
+
+  it('posts the tick to the origin with the origin lock and the bearer', async () => {
+    const env = { ...makeEnv(), REMINDER_TICK_SECRET: 'tick-secret' };
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    await worker.scheduled(event, env);
+
+    expect(upstream).toHaveBeenCalledOnce();
+    const [url, init] = upstream.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toBe(`https://${ORIGIN}/api/v1/reminders/tick`);
+    expect(init.method).toBe('POST');
+    expect(init.headers).toEqual({
+      'X-Origin-Verify': 'origin-secret',
+      Authorization: 'Bearer tick-secret',
+    });
+    log.mockRestore();
+  });
+
+  it('does nothing without its secret', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await worker.scheduled(event, makeEnv());
+
+    expect(upstream).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it('logs a failed tick instead of throwing', async () => {
+    const env = { ...makeEnv(), REMINDER_TICK_SECRET: 'tick-secret' };
+    upstream.mockResolvedValueOnce(new Response('nope', { status: 503 }));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(worker.scheduled(event, env)).resolves.toBeUndefined();
+    expect(error).toHaveBeenCalledWith('reminder tick failed: 503 nope');
+    error.mockRestore();
+  });
+});

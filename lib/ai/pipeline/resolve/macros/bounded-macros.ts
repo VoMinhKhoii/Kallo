@@ -12,7 +12,7 @@ import type { MacroBase } from '@/lib/ai/types/nutrition-adjustment';
 import type { BoundedEstimate } from '@/lib/ai/types/nutrition-values';
 import {
   absorbedOil,
-  isDiscreteOilIngredient,
+  prepNotesAskForExtraFat,
 } from '@/lib/domain/nutrition/absorbed-oil';
 import type { RawNutritionAdjustment } from '../macro-resolution';
 import { ALCOHOL_KCAL_PER_G } from './alcohol';
@@ -27,6 +27,12 @@ import {
   PREP_NOTES_PC_MAX_RATIO,
   scaleBounded,
 } from './macro-guard';
+
+/** Upper fat guard when cooking oil is already in a sibling row or a fried DB row. */
+export const FAT_ACCOUNTED_MAX_RATIO = 1.25;
+/** Plain butter (without prep notes) stays near its DB fat composition. */
+export const BUTTER_FAT_MIN_RATIO = 0.9;
+export const BUTTER_FAT_MAX_RATIO = 1.05;
 
 /**
  * Hard density ceiling for unmatched ingredients: kcal/100g cannot exceed pure
@@ -124,24 +130,15 @@ export function resolveIngredientMacros(
         PREP_NOTES_PC_MAX_RATIO
       )
     : flatTriple(base.carbohydrateG);
-  const oilMethodContext = [cookingMethod, ...prepNotes]
-    .filter((value): value is string => Boolean(value?.trim()))
-    .join(' ');
-  // The oil row itself keeps its allowance — it is not "absorbing" anything,
-  // but suppressing it would clamp a legitimate 25g of oil back toward a base
-  // that assumes an unfried food.
-  const oilAllowance =
-    siblingOilPresent && !isDiscreteOilIngredient(rawIng.ingredientName)
-      ? 0
-      : absorbedOil(oilMethodContext, grams ?? 0);
-  const fatG = guardMacro(
-    rawIng.fatG,
-    base.fatG,
-    rawIng.ingredientName,
-    'fatG',
-    prepNotesPresent ? PREP_NOTES_FAT_MAX_RATIO : HALLUCINATION_GUARD_RATIO,
-    oilAllowance
-  );
+  const fatG = resolveFatMacro({
+    rawIng,
+    base,
+    grams,
+    prepNotesPresent,
+    cookingMethod,
+    prepNotes,
+    siblingOilPresent,
+  });
   const macroKcal = deriveCaloriesFromMacros(proteinG, carbohydrateG, fatG);
   // Ethanol is in the row's kcal but in none of P/C/F, so the 4/4/9 identity
   // alone drops it. Added back flat: it comes from the DB row, not the LLM.
@@ -156,6 +153,93 @@ export function resolveIngredientMacros(
   };
   const alcoholG = alcoholKcal / ALCOHOL_KCAL_PER_G;
   return { caloriesKcal, proteinG, carbohydrateG, fatG, alcoholG };
+}
+
+function resolveFatMacro(args: {
+  rawIng: RawNutritionAdjustment['mealItems'][number]['ingredients'][number];
+  base: MacroBase;
+  grams: number | undefined;
+  prepNotesPresent: boolean;
+  cookingMethod: string | null;
+  prepNotes: string[];
+  siblingOilPresent: boolean;
+}): BoundedEstimate {
+  const {
+    rawIng,
+    base,
+    grams,
+    prepNotesPresent,
+    cookingMethod,
+    prepNotes,
+    siblingOilPresent,
+  } = args;
+
+  // Pure oil (≥95 g fat, ≤1 g P/C per 100 g) is anchored to its DB fat so
+  // Call 2 cannot under-report 10 g oil as 7 g fat. Keeps {low, mid, high}.
+  if (base.pureFatKind === 'oil') {
+    return flatTriple(base.fatG);
+  }
+  // Plain butter (80–95 g fat, ≤2 g P/C per 100 g) without prep notes stays
+  // tight around its DB fat; with prep notes, fall through to today's rules.
+  if (base.pureFatKind === 'butter' && !prepNotesPresent) {
+    return guardMacro(
+      rawIng.fatG,
+      base.fatG,
+      rawIng.ingredientName,
+      'fatG',
+      BUTTER_FAT_MAX_RATIO,
+      0,
+      BUTTER_FAT_MIN_RATIO
+    );
+  }
+
+  // A matched row's composition says whether this part is the fat itself.
+  const isOwnOil = base.pureFatKind != null;
+  const defaultMaxRatio = prepNotesPresent
+    ? PREP_NOTES_FAT_MAX_RATIO
+    : HALLUCINATION_GUARD_RATIO;
+  const extraFatRequested =
+    prepNotesPresent && prepNotesAskForExtraFat(prepNotes);
+
+  // When frying fat is already accounted for — either by a sibling cooking-fat
+  // row or because the matched DB row is already fried — cap fat at 1.25× base
+  // with no oil allowance, leaving the floor unchanged so reduction prep notes
+  // (e.g. "bỏ da", "bỏ mỡ") still work. Extra-fat prep notes unlock 2×.
+  if (
+    !isOwnOil &&
+    (siblingOilPresent || base.matchedRowIsFried) &&
+    !extraFatRequested
+  ) {
+    // The guard leaves a zero base alone (it cannot tell a missing value from
+    // a real zero); a row that states 0 g fat holds 0 g here, its oil being
+    // counted elsewhere.
+    if (base.fatIsZero) return flatTriple(0);
+    return guardMacro(
+      rawIng.fatG,
+      base.fatG,
+      rawIng.ingredientName,
+      'fatG',
+      FAT_ACCOUNTED_MAX_RATIO,
+      0,
+      1 / defaultMaxRatio
+    );
+  }
+
+  const oilMethodContext = [cookingMethod, ...prepNotes]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join(' ');
+  const oilAllowance =
+    siblingOilPresent && !isOwnOil
+      ? 0
+      : absorbedOil(oilMethodContext, grams ?? 0);
+  return guardMacro(
+    rawIng.fatG,
+    base.fatG,
+    rawIng.ingredientName,
+    'fatG',
+    defaultMaxRatio,
+    oilAllowance
+  );
 }
 
 export const __testing = {

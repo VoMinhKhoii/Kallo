@@ -2,12 +2,9 @@ import 'dart:ui';
 
 part 'palette/kallo_palette_values.dart';
 
-/// What the person picked in Settings → Appearance, stored per device.
-/// [system] follows the phone: light ↔ [KalloPaletteId.dark].
-enum KalloThemeChoice { system, light, dark, aurora }
-
-/// The palette actually painted — a [KalloThemeChoice] after resolving
-/// [KalloThemeChoice.system] against the phone's brightness.
+/// A palette. The app paints [light] on a light phone and [aurora] on a dark
+/// one (`theme_controller.dart`); [dark], the Graphite design, is no longer
+/// painted since the theme setting went (2026-11-25).
 enum KalloPaletteId { light, dark, aurora }
 
 /// Every colour token [KalloColors] exposes, for one palette.

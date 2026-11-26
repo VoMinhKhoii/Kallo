@@ -11,6 +11,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  */
 
 const db = { tag: 'db' };
+// Never resolves: register must not wait on the pool warm-up either.
+const warmDbPool = vi.fn(() => new Promise<void>(() => {}));
+const preloadSigningKeys = vi.fn(async () => {});
 const getNutritionCache = vi.fn(async () => ({}));
 const getCardCatalog = vi.fn(() => new Promise(() => {}));
 const cardIndexConfigured = vi.fn(() => false);
@@ -19,7 +22,13 @@ vi.mock('@sentry/nextjs', () => ({
   init: vi.fn(),
   captureRequestError: vi.fn(),
 }));
-vi.mock('@/lib/infra/db/client', () => ({ db }));
+vi.mock('@/lib/infra/db/client', () => ({ db, warmDbPool }));
+vi.mock('@/lib/infra/telemetry/monitoring/gc-pauses', () => ({
+  watchGcPauses: vi.fn(),
+}));
+vi.mock('@/lib/infra/auth/signing-keys/signing-keys', () => ({
+  preloadSigningKeys,
+}));
 vi.mock('@/lib/ai/cache/nutrition-cache', () => ({ getNutritionCache }));
 vi.mock('@/lib/ai/matching/cards/catalog', () => ({ getCardCatalog }));
 vi.mock('@/lib/ai/matching/cards/search-index/search-index', () => ({
@@ -70,6 +79,28 @@ describe('register', () => {
     await register();
 
     expect(getCardCatalog).toHaveBeenCalledWith(db);
+  });
+
+  it('opens the database pool and loads the signing keys at boot without waiting', async () => {
+    vi.stubEnv('NEXT_RUNTIME', 'nodejs');
+    vi.stubEnv('DATABASE_URL', 'postgres://u:p@h:6543/db');
+    const { register } = await import('@/instrumentation');
+
+    // warmDbPool never resolves here; register still finishes.
+    await register();
+
+    expect(warmDbPool).toHaveBeenCalledTimes(1);
+    expect(preloadSigningKeys).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not warm a pool with no database configured', async () => {
+    vi.stubEnv('NEXT_RUNTIME', 'nodejs');
+    vi.stubEnv('DATABASE_URL', '');
+    const { register } = await import('@/instrumentation');
+
+    await register();
+
+    expect(warmDbPool).not.toHaveBeenCalled();
   });
 
   it('loads the search artifact instead of the database catalog when one is pinned', async () => {

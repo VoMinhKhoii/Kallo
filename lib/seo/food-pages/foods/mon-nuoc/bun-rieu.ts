@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo một tô. Bốn tô bún riêu thật: bát đầy đủ riêu ốc đậu bắp bò, tô nhỏ chỉ riêu và cà chua, tô lớn kiểu Sài Gòn thêm giò heo, và tô đặc biệt thêm mỡ nước.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một tô. Riêu cua tự nó nhẹ; đậu phụ rán, giò heo, bắp bò và mỡ nước là những thứ làm con số tăng gấp bốn. Dưới đây là bốn tô thật, mỗi tô gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một tô. Riêu cua tự nó nhẹ; đậu phụ rán, giò heo, bắp bò và mỡ nước là những thứ làm con số tăng gấp bốn. Dưới đây là bốn tô thường gặp, mỗi tô gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'dac-biet',
     breakdownLead:
       'Ở tô đặc biệt, riêu cua chỉ 57 calo; đậu phụ rán (204), bắp bò (187) và một thìa mỡ nước (121) mới là phần nặng. Tô nhỏ chỉ có riêu và cà chua là 223.',

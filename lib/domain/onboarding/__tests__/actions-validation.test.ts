@@ -138,6 +138,18 @@ describe('profile write validation', () => {
     );
   });
 
+  it('keeps the stored language when a profile save does not send one', async () => {
+    const { preferredLocale: _omitted, ...withoutLocale } = profile;
+    await saveProfileSettings(withoutLocale);
+    expect(set).toHaveBeenLastCalledWith(
+      expect.not.objectContaining({ preferredLocale: expect.anything() })
+    );
+    await saveProfileSettings({ ...profile, preferredLocale: 'vi' });
+    expect(set).toHaveBeenLastCalledWith(
+      expect.objectContaining({ preferredLocale: 'vi' })
+    );
+  });
+
   it('accepts web/Flutter full steps, Settings subsets and empty Skip', async () => {
     const {
       countryOfOrigin,

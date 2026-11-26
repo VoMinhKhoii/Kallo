@@ -29,6 +29,14 @@ int? onboardingServerStepForScreen(int screen) => switch (screen) {
   _ => null,
 };
 
+/// What a SKIPPED screen still posts: nothing, except on screen 2, whose step
+/// carries screen 1's language. Skipping the countries must not drop it: the
+/// account holds the language the app follows.
+({int step, Map<String, dynamic> data})? onboardingSkipPayload(
+  int screen,
+  String preferredLocale,
+) => screen == 2 ? (step: 1, data: {'preferredLocale': preferredLocale}) : null;
+
 /// The screen to resume a signed-OUT draft on: the one after the furthest
 /// screen reached, clamped into the wizard.
 int onboardingScreenForDraft(int screenReached) =>

@@ -261,7 +261,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('the verb carries the brand brown', (tester) async {
+  testWidgets('the verb is muted ink', (tester) async {
     await tester.pumpWidget(
       _wrap(
         const PhaseFrame(StreamStatus.connecting),
@@ -271,7 +271,7 @@ void main() {
     );
     await tester.pump();
     final span = tester.widget<Text>(find.byType(Text)).textSpan! as TextSpan;
-    expect(span.style?.color, KalloColors.btn);
+    expect(span.style?.color, KalloColors.textMuted);
   });
 
   group('Vietnamese', () {

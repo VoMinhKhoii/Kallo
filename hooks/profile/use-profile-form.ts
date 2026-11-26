@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useTransition } from 'react';
 import { type FieldErrors, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -30,7 +30,6 @@ import {
 export function useProfileForm(profile: ProfileInput) {
   const t = useTranslations('settings');
   const tValidation = useTranslations('validation.bodyMetrics');
-  const locale = useLocale();
   const [isPending, startTransition] = useTransition();
   // Set synchronously, so a second submit (Enter while Save is pending)
   // can't start a save that races the first and lands older values last.
@@ -115,7 +114,6 @@ export function useProfileForm(profile: ProfileInput) {
           fatTargetG: macros.fatG,
           countryOfOrigin: values.countryOfOrigin,
           countryOfResidence: values.countryOfResidence,
-          preferredLocale: locale,
           oilUsage: values.oilUsage,
           defaultRicePortion: values.defaultRicePortion,
           defaultProteinPortion: values.defaultProteinPortion,

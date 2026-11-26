@@ -2,9 +2,10 @@
 
 Every PR gets a tier from the paths it changes, never from who wrote it. The tier
 sets what the owner reads before merging and what evidence the PR carries. It never
-stops review early: every tier loops until Codex approves.
+stops review early: every tier loops until Codex approves (or, while Codex is
+out of usage, until Neon finds nothing to fix on the current head).
 `node scripts/dev/risk-tier/risk-tier.mjs` prints the tier of the current branch;
-`/ship` runs it and puts the result in the PR body and a `risk:<tier>` label.
+`/kship` runs it and puts the result in the PR body and a `risk:<tier>` label.
 
 The high-risk paths come from where fixes landed between 2026-07-15 and
 2026-10-19: 38 of 79 fix PRs repaired a defect an earlier PR had shipped, and the
@@ -13,12 +14,12 @@ meal pipeline, migrations and deploy settings.
 
 | Tier | Paths | Agent review | Owner |
 | --- | --- | --- | --- |
-| **High** | the database (migrations, schema, client and pool); auth, session, redirects and email, including Supabase auth config and admin authorization; security infrastructure (rate limits, crypto); billing and entitlements (web pricing and checkout, webhooks, admin premium grants, the Flutter paywall and subscription screens); account export, deletion and privacy consent; CI, deploy and release (workflows, `scripts/ci`, `next.config`, release-please, iOS signing); the AI meal pipeline (`lib/ai/{pipeline,matching,portion,provider,prompts}`, `app/api/analyze-meal`) | Full `/ship` loop. Evidence says what ran and names what was not exercised in a real environment (device, browser, prod-like service, scratch database) | Reads "How to review", which names the decisions only the owner can make and the few diff excerpts worth reading |
-| **Medium** | Everything else | Full `/ship` loop | Reads the "How to review" section and the evidence, not the whole diff |
-| **Low** | Only docs, agent skills/agents/commands, tests, eval and bench scripts | Full `/ship` loop | Merges on green |
+| **High** | the database (migrations, schema, client and pool); auth, session, redirects and email, including Supabase auth config and admin authorization; security infrastructure (rate limits, crypto); billing and entitlements (web pricing and checkout, webhooks, admin premium grants, the Flutter paywall and subscription screens); account export, deletion and privacy consent; CI, deploy and release (workflows, `scripts/ci`, `next.config`, release-please, iOS signing); the AI meal pipeline (`lib/ai/{pipeline,matching,portion,provider,prompts}`, `app/api/analyze-meal`) | Full `/kship` loop. Evidence says what ran and names what was not exercised in a real environment (device, browser, prod-like service, scratch database) | Reads "How to review", which names the decisions only the owner can make and the few diff excerpts worth reading |
+| **Medium** | Everything else | Full `/kship` loop | Reads the "How to review" section and the evidence, not the whole diff |
+| **Low** | Only docs, agent skills/agents/commands, tests, eval and bench scripts | Full `/kship` loop | Merges on green |
 
 At any tier, a change a user can see carries screenshots from a real browser or
-simulator, or says why it could not run (`docs/REAL_RUN_EVIDENCE.md`, `/ship`
+simulator, or says why it could not run (`docs/REAL_RUN_EVIDENCE.md`, `/kship`
 Phase 3c).
 
 A test file under a high-risk folder (`__tests__/`) does not make a change high.

@@ -24,15 +24,17 @@ export const SOURCE_USDA = 2;
 /**
  * Which acceptance bucket each `ingredient_sources.code` matches through.
  * Curated Vietnamese sources (FAO and the additive NIN snapshot) share the
- * stricter domestic threshold. Codes left out — packaged products from Open
- * Food Facts (`OFF`) and FoodData Central Branded (`USDA_FDC`), which belong to
- * barcode scans — and any future source never reach ingredient matching until
- * they are added here.
+ * stricter domestic threshold; foreign reference tables (USDA SR and the
+ * curated MEXT 2020 rows) take the USDA one. Codes left out — packaged
+ * products from Open Food Facts (`OFF`) and FoodData Central Branded
+ * (`USDA_FDC`), which belong to barcode scans — and any future source never
+ * reach ingredient matching until they are added here.
  */
 const MATCHING_SOURCE_BUCKETS: Readonly<Record<string, 'fao' | 'usda'>> = {
   FAO_VN_2007: 'fao',
   NIN_WEB_2026: 'fao',
   USDA_SR: 'usda',
+  MEXT_2020: 'usda',
 };
 
 /** The `ingredient_sources.code`s that take part in ingredient matching. */
@@ -121,6 +123,20 @@ export function normalizeState(
   return 'unknown';
 }
 
+/**
+ * How a card's row is eaten (`food_cards.eaten_state`): a whole prepared
+ * dish, a drink, a snack, or an ingredient of something else.
+ */
+export type EatenState = 'dish' | 'drink' | 'snack' | 'ingredient';
+
+/** Unknown or missing (an artifact built before the column) reads as 'ingredient'. */
+export function normalizeEatenState(
+  raw: string | null | undefined
+): EatenState {
+  if (raw === 'dish' || raw === 'drink' || raw === 'snack') return raw;
+  return 'ingredient';
+}
+
 export interface MatchInfo {
   /** Run-scoped compact ingredient ID (§0.1). Set by cascade.ts when known. */
   ingredientId?: string;
@@ -136,6 +152,8 @@ export interface MatchInfo {
    * name obscures.
    */
   matchedNameEn?: string;
+  /** Curated card cooking method (e.g. "deep-fried"), when the row comes from cards. */
+  rowCookingMethod?: string;
   similarity: number;
   confidence: MatchConfidence;
   state: DbIngredientState;
@@ -147,6 +165,13 @@ export interface MatchInfo {
   latencyMs?: number;
   /** Set by the cascade when an alias-fallback rescued the original name. */
   viaAlias?: boolean;
+  /** Card retrieval only: how the row is eaten (see `EatenState`). */
+  eatenState?: EatenState;
+  /**
+   * Card retrieval, whole-dish rows only: every name of the row (name_primary,
+   * name_en, card food, VI names, EN aliases), shared with the catalog.
+   */
+  rowNames?: readonly string[];
 }
 
 export interface PickBestSourceContext {

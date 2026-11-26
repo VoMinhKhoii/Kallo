@@ -62,6 +62,16 @@ export interface HoldResult {
   gramsFactor: number;
 }
 
+/** A hold without the meal it returns: what logs and caches record. */
+export type HoldSummary = Omit<HoldResult, 'result'>;
+
+export function summarizeHold({
+  result: _,
+  ...summary
+}: HoldResult): HoldSummary {
+  return summary;
+}
+
 /** The factor that moves `appKcal` to the nearest edge of the band, or 1. */
 export function holdFactor(appKcal: number, readKcal: number): number {
   const low = readKcal / (1 + HOLD_BAND);

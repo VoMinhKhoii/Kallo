@@ -7,7 +7,8 @@
     "docs": "Docs",
     "signIn": "Sign in",
     "features": "Features",
-    "getStarted": "Start tracking smarter"
+    "getStarted": "Start tracking smarter",
+    "getStartedShort": "Start tracking"
   },
   "hero": {
     "headline": {
@@ -57,7 +58,19 @@
       }
     },
     "useWeb": "Try it on the web",
-    "videoLabel": "A breakfast typed into Kallo in plain words and split into foods with their calories"
+    "videoLabel": "A breakfast typed into Kallo in plain words and split into foods with their calories",
+    "waitlist": {
+      "label": "Email address",
+      "placeholder": "you@email.com",
+      "submit": "Get notified when iOS releases",
+      "submitting": "Sending…",
+      "success": "Check your inbox",
+      "successBody": "We sent you a link. Tap it to confirm — that's the only thing left to do.",
+      "invalidEmail": "Enter a valid email address.",
+      "error": "Something went wrong. Please try again.",
+      "rateLimited": "Too many tries. Please wait a moment and try again.",
+      "privacy": "One email to confirm, one when the mobile app is out. Nothing else."
+    }
   },
   "understanding": {
     "videoLabel": "Two logs of the same breakfast side by side, the detailed one with more calories",
@@ -207,9 +220,6 @@
     "already": "You're already on the list",
     "expired": "That link has expired",
     "invalid": "That link isn't valid"
-  },
-  "appStore": {
-    "label": "Download on the App Store"
   },
   "showcase": {
     "phones": {

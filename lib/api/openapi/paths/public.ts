@@ -28,6 +28,24 @@ export const PUBLIC_PATHS: Record<string, PathItem> = {
     }),
   },
 
+  '/api/v1/auth/client-config': {
+    get: open({
+      operationId: 'getAuthClientConfig',
+      summary: 'Public sign-in configuration',
+      description:
+        'The two public values the web sign-in dialog needs: the Google web OAuth client ID and the Cloudflare Turnstile site key. Either is null when that sign-in path is not configured on this deployment. Cacheable for 5 minutes.',
+      tags: ['Public'],
+      ok: {
+        type: 'object',
+        properties: {
+          googleClientId: { type: ['string', 'null'] },
+          turnstileSiteKey: { type: ['string', 'null'] },
+        },
+        required: ['googleClientId', 'turnstileSiteKey'],
+      },
+    }),
+  },
+
   '/api/v1/waitlist': {
     post: open({
       operationId: 'joinWaitlist',

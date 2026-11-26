@@ -303,6 +303,7 @@ describe('grounded-estimation prompt structure', () => {
       vesselMl: 700,
       guardG: { low: 470, high: 730 },
       midG: 595,
+      servings: 1,
     };
     const out = buildPrompt('một tô phở', [mealItem]);
     expect(out).toContain(
@@ -399,6 +400,7 @@ describe('grounded-estimation prompt structure', () => {
       vesselMl: 700,
       guardG: { low: 470, high: 730 },
       midG: 595,
+      servings: 1,
     };
     withRestoredEnv(['VESSEL_GUARD'], () => {
       process.env.VESSEL_GUARD = 'off';
@@ -515,6 +517,30 @@ describe('a piece count on the part a split dish is named after', () => {
     });
     expect(out).toContain('dish_count="1" dish_unit="miếng"');
     expect(out).not.toContain('user_count="1"');
+  });
+
+  it("shows Call 1's dishCount on the dish, beside each part's own count", () => {
+    const pho = dish('Phở bò', [
+      { rawName: 'bánh phở', canonicalName: 'Bánh phở' },
+      { ...shrimp, rawName: 'trứng', canonicalName: 'Trứng', unitToken: 'quả' },
+    ]);
+    pho.mealItem.dishCount = { count: 2, unitToken: 'tô' };
+    expect(dishPieceCount(pho)).toEqual({
+      ingredient: null,
+      count: 2,
+      unit: 'tô',
+    });
+    const out = buildGroundedEstimationPrompt({
+      originalPrompt: '2 tô phở bò thêm 1 trứng',
+      mealItems: [pho],
+      userContext: baseUserContext,
+    });
+    expect(out).toContain('dish_count="2" dish_unit="tô"');
+    expect(out).toContain('user_count="1"');
+    // A one-part dish's count is its food's: no dish_count beside it.
+    const rice = dish('Cơm', [{ ...shrimp, count: 2, unitToken: 'chén' }]);
+    rice.mealItem.dishCount = { count: 2, unitToken: 'chén' };
+    expect(dishPieceCount(rice)).toBeNull();
   });
 
   it('moves the count onto a hyphenated dish named from the part', () => {

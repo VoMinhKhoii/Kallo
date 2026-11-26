@@ -53,6 +53,7 @@ function toClientVessel(vessel?: PipelineVessel): ClientVessel | undefined {
           family: vessel.family,
           tier: vessel.tier,
           dishClass: vessel.dishClass,
+          ...(vessel.count !== undefined ? { count: vessel.count } : {}),
           ...(vessel.smallBowlG !== undefined
             ? { smallBowlG: vessel.smallBowlG }
             : {}),

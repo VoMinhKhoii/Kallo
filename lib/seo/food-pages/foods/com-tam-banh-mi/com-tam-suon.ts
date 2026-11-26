@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo. Bốn dĩa cơm tấm: sườn bì chả trứng thêm cơm, chỉ sườn nướng, hai miếng sườn đủ món kèm canh, nửa cơm nửa dưa leo.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một dĩa. Sườn và cơm là nền; bì, chả, trứng ốp la và miếng sườn thứ hai là những thứ nhân đôi con số. Dưới đây là bốn dĩa thật, mỗi dĩa gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một dĩa. Sườn và cơm là nền; bì, chả, trứng ốp la và miếng sườn thứ hai là những thứ nhân đôi con số. Dưới đây là bốn dĩa thường gặp, mỗi dĩa gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'hai-suon',
     breakdownLead:
       'Ở dĩa hai miếng sườn đủ bì chả trứng, riêng sườn đã 351 calo và cơm 227; trứng ốp la, chả trứng và bì cộng thêm khoảng 400 nữa. Một dĩa chỉ có sườn và cơm là 550.',

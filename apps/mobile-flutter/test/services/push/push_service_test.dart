@@ -52,6 +52,7 @@ void main() {
 
   late List<MethodCall> nativeCalls;
   late bool granted;
+  String? timeZone;
   Map<String, Object?>? initialTap;
 
   /// Native → Dart, the way `AppDelegate` invokes it.
@@ -68,11 +69,15 @@ void main() {
   setUp(() {
     nativeCalls = [];
     granted = true;
+    timeZone = null;
     initialTap = null;
     messenger.setMockMethodCallHandler(kPushMethodChannel, (call) async {
       nativeCalls.add(call);
       return switch (call.method) {
         'registerForPush' => granted,
+        'registerIfAuthorized' => granted,
+        'getTimeZone' => timeZone,
+        'takeClosedDays' => ['2026-11-04'],
         'getInitialTap' => initialTap,
         _ => null,
       };
@@ -88,7 +93,13 @@ void main() {
     final service = PushService(api);
 
     await service.registerForPush();
-    expect(nativeCalls.map((c) => c.method), contains('registerForPush'));
+    // Sign-in and app start never show the permission prompt: that waits
+    // for the first logged meal (`askPermission`).
+    expect(nativeCalls.map((c) => c.method), contains('registerIfAuthorized'));
+    expect(
+      nativeCalls.map((c) => c.method),
+      isNot(contains('registerForPush')),
+    );
     expect(api.requests, isEmpty, reason: 'no token yet');
 
     await fromNative('onToken', 'deadbeef');
@@ -249,6 +260,86 @@ void main() {
     // The POST never landed, so there is no row to release — deleting anyway
     // would be a guess at what the server holds.
     expect(api.requests.where((r) => r.method == 'DELETE'), isEmpty);
+  });
+
+  test(
+    'the prompt is asked for once, after sign-in, and never while signed out',
+    () async {
+      final service = PushService(FakeApiClient());
+
+      await service.askPermission();
+      expect(
+        nativeCalls.where((c) => c.method == 'registerForPush'),
+        isEmpty,
+        reason: 'signed out',
+      );
+
+      await service.registerForPush();
+      await service.askPermission();
+      await service.askPermission();
+      expect(nativeCalls.where((c) => c.method == 'registerForPush').length, 1);
+    },
+  );
+
+  test(
+    'every registration carries the device time zone when iOS reports one',
+    () async {
+      timeZone = 'Asia/Ho_Chi_Minh';
+      final api = FakeApiClient();
+      final service = PushService(api);
+      await service.registerForPush();
+
+      await fromNative('onToken', 'beef');
+      await pumpEventQueue();
+
+      expect(api.requests.single.body, {
+        'token': 'beef',
+        'platform': 'ios',
+        'timeZone': 'Asia/Ho_Chi_Minh',
+      });
+    },
+  );
+
+  test('a foreground check-in re-posts, spaced five minutes apart', () async {
+    final api = FakeApiClient();
+    final service = PushService(api);
+    await service.registerForPush();
+
+    await service.checkIn();
+    expect(api.requests, isEmpty, reason: 'no token to post yet');
+
+    await fromNative('onToken', 'abcd');
+    await pumpEventQueue();
+    expect(api.requests.length, 1);
+
+    await service.checkIn();
+    expect(api.requests.length, 1, reason: 'just posted');
+
+    await service.checkIn(now: DateTime.now().add(const Duration(minutes: 6)));
+    expect(api.requests.length, 2);
+    expect(api.requests.last.body, {'token': 'abcd', 'platform': 'ios'});
+  });
+
+  test(
+    'hands over the days closed from the lock screen, and survives no bridge',
+    () async {
+      final service = PushService(FakeApiClient());
+      expect(await service.takeClosedDays(), ['2026-11-04']);
+
+      messenger.setMockMethodCallHandler(kPushMethodChannel, null);
+      expect(await service.takeClosedDays(), isEmpty);
+    },
+  );
+
+  test('a close that lands while the app runs pings the listener', () async {
+    final service = PushService(FakeApiClient());
+    var pings = 0;
+    service.onDayClosed = () => pings++;
+    await service.registerForPush();
+
+    await fromNative('onDayClosed', '2026-11-04');
+
+    expect(pings, 1);
   });
 
   test('denied authorization is survivable and posts nothing', () async {

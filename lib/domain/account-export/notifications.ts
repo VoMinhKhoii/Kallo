@@ -1,6 +1,10 @@
 import { eq } from 'drizzle-orm';
 import type { AppDb } from '@/lib/infra/db/client';
-import { notifications, pushTokens } from '@/lib/infra/db/schema';
+import {
+  mealReminders,
+  notifications,
+  pushTokens,
+} from '@/lib/infra/db/schema';
 
 /** How many trailing characters of a push token the export keeps. */
 const TOKEN_TAIL = 6;
@@ -17,8 +21,9 @@ export function redactPushToken(token: string): string {
 }
 
 /**
- * The activity feed addressed to the user, and the devices registered to
- * receive it as push notifications.
+ * The activity feed addressed to the user, the devices registered to
+ * receive it as push notifications, and the meal reminders Kallo decided to
+ * send or hold back (the last 14 days).
  *
  * `rebadged` is left out: it is a per-statement scratch flag that means
  * nothing outside the upsert that set it (see the schema).
@@ -52,10 +57,21 @@ export async function loadNotificationsExport(
       token: pushTokens.token,
       platform: pushTokens.platform,
       lastSeenAt: pushTokens.lastSeenAt,
+      lastPushedAt: pushTokens.lastPushedAt,
       createdAt: pushTokens.createdAt,
     })
     .from(pushTokens)
     .where(eq(pushTokens.userId, userId));
+  const reminderRows = await db
+    .select({
+      localDate: mealReminders.localDate,
+      checkpointHour: mealReminders.checkpointHour,
+      outcome: mealReminders.outcome,
+      reason: mealReminders.reason,
+      createdAt: mealReminders.createdAt,
+    })
+    .from(mealReminders)
+    .where(eq(mealReminders.userId, userId));
 
   return {
     notifications: notificationRows,
@@ -63,5 +79,6 @@ export async function loadNotificationsExport(
       ...row,
       tokenHint: redactPushToken(token),
     })),
+    mealReminders: reminderRows,
   };
 }

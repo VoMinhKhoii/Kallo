@@ -31,6 +31,8 @@ const SKIP_INTL_PREFIXES = [
   // exist. They stay inside the matcher (unlike robots.txt / sitemap.xml, which
   // are excluded from it) so the origin-lock still covers them.
   '/openapi.json',
+  '/data/meal-calorie-variation.csv',
+  '/data/meal-calorie-variation.json',
   '/.well-known',
   // The markdown variants the proxy rewrites TO. A direct request must not be
   // locale-rewritten into a path that does not exist.

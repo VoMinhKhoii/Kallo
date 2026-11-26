@@ -231,18 +231,19 @@ const SAMPLES: Sample[] = [
 const keyOf = (s: Sample) => `${s.category}.${s.locale}.${s.variant}`;
 
 const [
-  { analyzeMealV2 },
+  { isPublishable, runPreciseAnalysis },
   gemini,
   { db },
   { toParsedMeal },
   { CLAUDE_FALLBACK_MODEL },
 ] = await Promise.all([
-  import('@/lib/ai/pipeline/grounded/orchestrator'),
+  import('@/lib/ai/pipeline/precise-analysis'),
   import('@/lib/ai/provider/provider'),
   import('@/lib/infra/db/client'),
   import('@/lib/ai/adapters/parsed-meal'),
   import('@/lib/ai/pipeline/config/model-profile'),
 ]);
+const { summarizeHold } = await import('@/lib/ai/pipeline/plain-read/hold');
 const provider = gemini.resolveGeminiProvider();
 // Routed like production: a Claude profile runs on Claude, Gemini fallback.
 const client = gemini.createPipelineLlm(provider, {
@@ -252,14 +253,23 @@ const client = gemini.createPipelineLlm(provider, {
 async function run(text: string, attempts = 3) {
   for (let attempt = 1; attempt <= attempts; attempt++) {
     let handle: ReturnType<typeof setTimeout> | undefined;
+    // A timed-out attempt also ends its plain read.
+    const controller = new AbortController();
     try {
       return await Promise.race([
-        analyzeMealV2(text, NEUTRAL, db, client),
+        // What the app shows: the pipeline held near the plain read.
+        runPreciseAnalysis({
+          rawInput: text,
+          userContext: NEUTRAL,
+          db,
+          gemini: client,
+          signal: controller.signal,
+        }),
         new Promise<never>((_, reject) => {
-          handle = setTimeout(
-            () => reject(new Error(`timeout after ${CASE_TIMEOUT_MS}ms`)),
-            CASE_TIMEOUT_MS
-          );
+          handle = setTimeout(() => {
+            controller.abort();
+            reject(new Error(`timeout after ${CASE_TIMEOUT_MS}ms`));
+          }, CASE_TIMEOUT_MS);
         }),
       ]).finally(() => clearTimeout(handle));
     } catch (error) {
@@ -275,7 +285,14 @@ async function run(text: string, attempts = 3) {
 // biome-ignore lint/suspicious/noExplicitAny: throwaway capture record
 const byKey: Record<string, any> = (() => {
   try {
-    return JSON.parse(readFileSync(OUT, 'utf8')).byKey ?? {};
+    // Only held entries are kept: an unheld one is captured again, and a
+    // failed recapture must not leave the old number beside held ones.
+    const saved = JSON.parse(readFileSync(OUT, 'utf8')).byKey ?? {};
+    return Object.fromEntries(
+      Object.entries(saved).filter(([, entry]: [string, any]) =>
+        isPublishable(entry?.hold)
+      )
+    );
   } catch {
     return {};
   }
@@ -306,15 +323,27 @@ let failed = 0;
 for (const [i, s] of todo.entries()) {
   const started = Date.now();
   try {
-    const res = await run(s.text);
+    const { response: res, hold } = await run(s.text);
     const ms = Date.now() - started;
-    if (!res.success) {
+    if (!res.success || res.unresolved) {
       failed++;
       console.log(`✗ ${keyOf(s)} — ${JSON.stringify(res).slice(0, 160)}`);
       continue;
     }
+    const outcome = hold?.outcome ?? 'no hold';
+    if (!isPublishable(hold)) {
+      failed++;
+      console.log(`✗ ${keyOf(s)} — not held (${outcome}): rerun`);
+      continue;
+    }
     const parsed = toParsedMeal(res.data);
-    byKey[keyOf(s)] = { ...s, ms, parsed, raw: res.data };
+    byKey[keyOf(s)] = {
+      ...s,
+      ms,
+      hold: summarizeHold(hold),
+      parsed,
+      raw: res.data,
+    };
     persist();
     ok++;
     const t = parsed.totalMacros;
@@ -357,4 +386,4 @@ for (const category of [...new Set(SAMPLES.map((s) => s.category))]) {
   }
 }
 console.log(`${ok} ok, ${failed} failed  ·  wrote ${OUT}`);
-process.exit(0);
+process.exit(failed > 0 ? 1 : 0);

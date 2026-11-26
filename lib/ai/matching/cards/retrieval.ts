@@ -170,12 +170,19 @@ function toMatchInfo(
     foodCompositionId: row.id,
     matchedName: row.namePrimary,
     ...(row.nameEn ? { matchedNameEn: row.nameEn } : {}),
+    ...(row.card?.cookingMethod
+      ? { rowCookingMethod: row.card.cookingMethod }
+      : {}),
     similarity,
     confidence: classifyConfidence(similarity),
     state: normalizeState(row.state),
     source: row.source,
     // Found by a vector arm, or only by the lexical arm.
     matchType: vector === undefined ? 'fuzzy' : 'vector',
+    ...(row.card ? { eatenState: row.card.eatenState } : {}),
+    // Only a whole-dish row needs its names downstream (the part-vs-dish
+    // guard); the matching stage log stores every candidate.
+    ...(row.card?.eatenState === 'dish' ? { rowNames: row.names } : {}),
   };
 }
 

@@ -114,6 +114,8 @@ export function pieceKindFromFoodGroup(
 }
 
 export interface PieceDishLike {
+  /** The whole dish's count ("2 miếng tonkatsu"), read when the food has none. */
+  dishCount?: { count: number; unitToken: string } | null;
   ingredients: Array<{
     rawName?: string;
     canonicalName?: string;
@@ -164,14 +166,19 @@ export function resolvePieceVessel(
   if (sources.length !== 1) return null;
 
   const source = sources[0];
-  if (source.count === undefined || source.count < 1) return null;
+  // A counted dish ("2 miếng tonkatsu") carries its count on the dish, and
+  // its main food describes one piece.
+  const own = source.count !== undefined;
+  const count = own ? source.count : dish.dishCount?.count;
+  if (count === undefined || count < 1) return null;
   // Call 1 sometimes preserves an English cut noun inside rawName instead of
   // repeating it as unitToken ("1 salmon fillet" → rawName="salmon fillet").
   // Recover only an allowlisted TRAILING cut and only when the model already
   // preserved the user's count. This affects the transient picker decoration;
   // it does not rename the food or change the estimated grams.
-  const unitToken = source.unitToken
-    ? normalizeWords(source.unitToken)
+  const typedUnit = own ? source.unitToken : dish.dishCount?.unitToken;
+  const unitToken = typedUnit
+    ? normalizeWords(typedUnit)
     : trailingPieceUnit(source.rawName);
   if (!unitToken || !PIECE_UNIT_TOKENS.has(unitToken)) {
     return null;
@@ -188,8 +195,8 @@ export function resolvePieceVessel(
   const dominantGrams = displayedTotal * dominant.share;
   return {
     family: 'piece',
-    tier: nearestPieceTier(dominantGrams / source.count),
-    count: source.count,
+    tier: nearestPieceTier(dominantGrams / count),
+    count,
     kind,
     provenance: 'piece_prior',
   };

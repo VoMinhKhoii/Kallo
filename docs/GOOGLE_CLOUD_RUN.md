@@ -10,12 +10,37 @@ This repo deploys a single production service via `cloud-run-prod.yml`:
 
 1. A pull request runs CI, including a `docker build` (not pushed).
 2. After review and verification, merge to `main`; its CI run pushes
-   `kallo:<sha>`.
+   `kallo:<sha>`, built with `NEXT_DEPLOYMENT_ID=<sha>` so every static asset
+   URL carries `?dpl=<sha>` (`deploymentId` in `next.config.ts`). Two builds
+   never share an asset URL, so a 404 Cloudflare cached for one build (Next
+   marks a missing `/_next/static` file `s-maxage=31536000`) cannot reach
+   another.
 3. Dispatch `cloud-run-prod.yml` from `main` (optionally with a `sha`).
 4. The prod job acquires its GCS lease, tags the image `prod-<sha>`
    (exempting it from cleanup), applies pending migrations, deploys a
-   no-traffic candidate, smoke-tests it, crawl-checks it (below), and only
-   then promotes traffic.
+   no-traffic candidate, smoke-tests it, crawl-checks it (below), warms its
+   API routes and landing images, and only then promotes traffic.
+   - The warm-up step requests the reads the phone app and the web shell open
+     with. It sends no session, so each answers 401 without touching the
+     database. Next loads a route's code on its first request, so without this
+     the first app launch on a new instance took 550–1000 ms per call (40–200 ms
+     once warm). It is best-effort and never fails the deploy.
+   - A second best-effort step resizes the landing page's comparison paintings
+     (`public/landing/meals/compare-*.webp`) at Next's default device widths.
+     Cloudflare does not cache `/_next/image`, and a new instance resizes each
+     image on first request (120–860 ms on one vCPU, delaying the visitor's
+     other requests). Warm, a resized copy is served in about 5 ms. Because
+     Next keeps these copies on the instance's own disk, an instance Cloud Run
+     starts later begins cold again.
+   - The instance itself opens its database pool and loads the token-signing
+     keys at boot (`instrumentation.ts`).
+   - The revision runs with `NODE_OPTIONS=--max-semi-space-size=64`: a 64 MiB V8
+     semi-space, so a young generation of up to ~192 MiB (three semi-spaces)
+     instead of ~48 MiB. With the default 16 MiB, a full garbage collection ran
+     every 30–60 s and paused every request in flight for 80–460 ms. The
+     server logs any pause of 50 ms or more as `gc-pause`
+     (`lib/infra/telemetry/monitoring/gc-pauses.ts`); the workflow comment has
+     the measurements.
 
 ### SEO crawl check
 
@@ -74,6 +99,35 @@ TestFlight and App Store builds use production APNs. Local Debug builds require
 an independently configured sandbox key and `APNS_PRODUCTION=false`; do not use
 the production-only key for local sandbox delivery. Apple capability and signing
 profile requirements are in [mobile releasing](../apps/docs/mobile/releasing.md#push-notifications-apns--what-ci-cannot-do-for-you).
+
+## Meal reminders (optional until configured)
+
+The reminder scheduler (`docs/NOTIFICATIONS.md` → "Reminders") needs two
+secrets, mounted as a pair by the "Detect the optional meal-reminder secrets"
+step of `cloud-run-prod.yml`; a deploy with only one of them fails on purpose:
+
+- `kallo-prod-reminder-tick-secret` → `REMINDER_TICK_SECRET`: the bearer
+  `POST /api/v1/reminders/tick` requires. The same value is set on the
+  `kallo-proxy` Worker (`apps/kallo-proxy/README.md` → "Reminder cron"), whose
+  cron trigger calls the route every 15 minutes.
+- `kallo-prod-reminder-action-secret` → `REMINDER_ACTION_SECRET`: the HMAC key
+  for the signed token a reminder's lock-screen "That was everything" button
+  posts to `POST /api/v1/reminders/close-day`. Server-only; never
+  give it to the Worker. Rotating it voids the buttons on reminders already
+  delivered (at most 36 hours' worth).
+
+```bash
+ openssl rand -base64 32 | tr -d '\n' | gcloud secrets create \
+  kallo-prod-reminder-tick-secret --data-file=-
+ openssl rand -base64 32 | tr -d '\n' | gcloud secrets create \
+  kallo-prod-reminder-action-secret --data-file=-
+# Grant roles/secretmanager.secretAccessor on both to the runtime and the
+# deployer service accounts, like every other kallo-prod-* secret.
+```
+
+Without them the tick route answers 503 and no reminder is sent; nothing
+else changes. The reminders also need the `20261104044856_add_meal_reminders`
+and `20261104044900_meal_reminders_retention` migrations applied first.
 
 ## Sign in with Apple token revocation (optional until configured)
 
@@ -163,6 +217,9 @@ Create or confirm these resources:
     (see "Sign in with Apple token revocation")
   - only for the Haiku trial: `kallo-prod-anthropic-api-key` (see "Meal
     pipeline model")
+  - optional: `kallo-prod-reminder-tick-secret` and
+    `kallo-prod-reminder-action-secret` — mounted only when both exist (see
+    "Meal reminders")
   - optional: `kallo-prod-turnstile-secret-key` (`TURNSTILE_SECRET_KEY`) —
     mounted only when it exists, and then the `TURNSTILE_SITE_KEY` repo
     variable must be set too. `TURNSTILE_MODE` (repo variable, unset =

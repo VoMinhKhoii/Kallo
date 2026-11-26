@@ -1,3 +1,4 @@
+import { ALTERNATIVES_CHROME } from './chrome';
 import type { AlternativePage, Source } from './types';
 
 /**
@@ -192,15 +193,15 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
       ours: true,
       logs: 'Typed text, barcode, nutrition label',
       free: 'Barcode scanning, manual logging, macros. Typing a meal is Premium. Everything is free while Kallo is in beta',
-      paid: 'Premium, $29.99 a year on the web or $34.99 on the App Store, once beta ends',
-      platforms: 'iOS, web',
+      paid: 'Premium, $29.99 a year on the web, once beta ends',
+      platforms: 'Web; iPhone app coming',
       bestFor: 'People who would rather type a meal than photograph it.',
       body: [
-        'Kallo logs a meal from the sentence you would say out loud, like “leftover spaghetti bolognese and a side salad”. It splits that into ingredients and counts calories and macros from USDA and FAO food data, as a range, not one number. When the words can’t settle a portion, it asks. Typing a meal is part of Premium; the free plan keeps barcode scanning and manual logging.',
+        'Kallo logs a meal from the sentence you would say out loud, like “leftover spaghetti bolognese and a side salad”. It splits that into ingredients and counts calories and macros from USDA and FAO food data and shows the portion it assumed for each part. When the words can’t settle a portion, it asks. Typing a meal is part of Premium; the free plan keeps barcode scanning and manual logging.',
         'No independent test has measured Kallo yet. The data below is our own.',
       ],
       drawback:
-        'It can’t log a meal from a photo of the plate, only from a nutrition label, and there is no Android app.',
+        'It can’t log a meal from a photo of the plate, only from a nutrition label. It runs on the web for now: the iPhone app is not out yet, and there is no Android app.',
       sources: [
         { label: 'Kallo pricing', url: 'https://kallo.fit/en/pricing' },
         {
@@ -208,8 +209,12 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
           url: 'https://kallo.fit/en/docs/logging/describe-a-meal',
         },
         {
-          label: 'Kallo on the App Store',
-          url: 'https://apps.apple.com/us/app/id6775761392',
+          label: 'Kallo accuracy and limits',
+          url: ALTERNATIVES_CHROME.docs.accuracy,
+        },
+        {
+          label: 'Switching from another app',
+          url: ALTERNATIVES_CHROME.docs.switching,
         },
       ],
     },
@@ -220,9 +225,20 @@ export const CAL_AI_ALTERNATIVES: AlternativePage = {
       'Every app here except Kallo has an Android app. Of those, only SnapCalorie logs a meal from a photo for free, up to 3 times a day. Kallo has no Android app, but it works in the browser on an Android phone at kallo.fit.',
     ],
   },
+  choose: {
+    heading: 'How to choose a Cal AI alternative',
+    checks: [
+      'Log a meal you eat often in each app you try, and time it: a photo, a typed sentence and a database search suit different people.',
+      'See whether the app shows how unsure an estimate is, or gives every meal one number.',
+      'Read what the free plan keeps after any trial ends, barcode scanning and your history in particular.',
+      'Make sure it runs where you log: iPhone, Android, a browser, or more than one.',
+      'Find out where your meals and photos are stored, and whether you can export them if you leave.',
+      'Compare the yearly price in your own country, since store prices differ by region.',
+    ],
+  },
   dataHeading: 'What moves the number more than the photo',
   data: (f) =>
-    `A photo can’t see the oil in the pan or how full the bowl was. We logged ${f.dishes} everyday meals in Kallo ${f.perDish} common ways each, ${f.meals} meals in all. For the typical dish, the heaviest version had ${f.ratio}× the calories of the lightest. Kallo counted cooking oil in ${f.withOil} of them, and in ${f.unnamed} nobody had mentioned oil, butter or frying. Whichever app you pick, say the portion and the cooking fat.`,
+    `A photo can’t see the oil in the pan or how full the bowl was. We logged ${f.dishes} everyday meals in Kallo ${f.perDish} common ways each, ${f.meals} meals in all. For the typical dish, the highest-calorie version had ${f.ratio}× the calories of the lowest. Kallo counted cooking oil in ${f.withOil} of them, and in ${f.unnamed} the description never mentioned oil, butter or frying. Whichever app you pick, say the portion and the cooking fat.`,
   dataLink: 'See all the numbers',
   methodHeading: 'How we checked',
   method: [

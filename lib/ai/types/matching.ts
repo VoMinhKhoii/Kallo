@@ -28,6 +28,10 @@ export interface MatchedIngredient {
   /** Authoritative DB food-group taxonomy from the winning composition row. */
   foodGroupEn?: string;
   matchedName: string;
+  /** English row name (`name_en`), when available from the food composition DB. */
+  matchedNameEn?: string;
+  /** Curated card cooking method (e.g. "deep-fried"), when available. */
+  rowCookingMethod?: string;
   similarity: number;
   confidence: MatchConfidence;
   nutritionPer100g: NutritionPer100g;

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { handleRouteError } from '@/lib/api/respond';
@@ -6,60 +6,20 @@ import {
   deletePushTokenBodySchema,
   pushTokenBodySchema,
 } from '@/lib/domain/notifications/contracts';
+import { registerDevice } from '@/lib/domain/notifications/push-devices';
 import { db } from '@/lib/infra/db/client';
 import { pushTokens } from '@/lib/infra/db/schema';
 
 /**
- * Register (or refresh) this device. The APNs token is unique across the
- * table because the OS hands the same string to whoever signs in on that
- * handset next: the conflict update REASSIGNS the row to the caller rather
- * than leaving a stale owner receiving the new user's notifications.
- * Idempotent, so the client can post on every launch and token refresh.
+ * Register (or refresh) this device — `registerDevice` owns the upsert, the
+ * ten-device prune and the reported time zone. Idempotent, so the client posts
+ * on every launch, token refresh and return to the foreground.
  */
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireUserId();
     const body = pushTokenBodySchema.parse(await readJsonBody(request));
-    await db.transaction(async (tx) => {
-      // Serialize registrations even when this user has no token rows yet.
-      await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtext(${`push-tokens:${userId}`}))`
-      );
-      const lastSeenAt = new Date();
-      await tx
-        .insert(pushTokens)
-        .values({
-          userId,
-          token: body.token,
-          platform: body.platform,
-          lastSeenAt,
-        })
-        .onConflictDoUpdate({
-          target: pushTokens.token,
-          set: {
-            userId,
-            platform: body.platform,
-            // The liveness signal the 270-day retention reap reads.
-            lastSeenAt,
-          },
-        });
-      const oldest = tx
-        .select({ id: pushTokens.id })
-        .from(pushTokens)
-        .where(eq(pushTokens.userId, userId))
-        .orderBy(
-          desc(pushTokens.lastSeenAt),
-          // Keep this registration when two refreshes share a millisecond.
-          sql`${pushTokens.token} = ${body.token} desc`,
-          desc(pushTokens.id)
-        )
-        .offset(10);
-      await tx
-        .delete(pushTokens)
-        .where(
-          and(eq(pushTokens.userId, userId), inArray(pushTokens.id, oldest))
-        );
-    });
+    await registerDevice(userId, body);
     return NextResponse.json({ registered: true });
   } catch (error) {
     return handleRouteError(error);

@@ -32,7 +32,7 @@ import type {
   MealItemNutrition,
 } from '@/lib/ai/types/nutrition-adjustment';
 import { nameKey } from '@/lib/core/text/name-key';
-import { mealItemHasDiscreteOil } from '@/lib/domain/nutrition/absorbed-oil';
+import { isCookingFatPart } from '@/lib/domain/nutrition/absorbed-oil';
 
 /**
  * Same partial-JSON marker as v1's nutrition stream. Each `{"mealItemName":`
@@ -135,15 +135,7 @@ export function resolveStreamingV2MealItem(
     else localIdxByName.set(key, [i]);
   });
 
-  // Same rule the reconciled path applies (`nutrition.ts`): one discrete oil
-  // row suppresses its siblings' absorbed-oil allowance. Without it the
-  // streamed preview shows the oil twice and then silently corrects itself
-  // once reconciliation lands.
-  const siblingOilPresent = mealItemHasDiscreteOil(
-    rawItem.ingredients.map((ing) => ing.ingredientName)
-  );
-
-  rawItem.ingredients.forEach((rawIng, streamIdx) => {
+  const prepared = rawItem.ingredients.map((rawIng, streamIdx) => {
     const localIdx =
       localIdxByName.get(nameKey(rawIng.ingredientName))?.shift() ?? streamIdx;
     const flatIdx = flatIngredientStart + localIdx;
@@ -166,7 +158,31 @@ export function resolveStreamingV2MealItem(
     totalGrams += grams;
 
     const base = computeBaseFromVerdict(rawIng, candidates, grams);
+    return {
+      rawIng,
+      decompForName,
+      prepNotesPresent,
+      cookingMethod,
+      grams,
+      base,
+    };
+  });
 
+  // Same rule the reconciled path applies (`macro-resolution.ts`): one
+  // cooking-fat part (by matched composition, or by name when unmatched)
+  // suppresses its siblings' absorbed-oil allowance and caps their fat.
+  const siblingOilPresent = prepared.some((entry) =>
+    isCookingFatPart(entry.rawIng.ingredientName, entry.base)
+  );
+
+  for (const {
+    rawIng,
+    decompForName,
+    prepNotesPresent,
+    cookingMethod,
+    grams,
+    base,
+  } of prepared) {
     // Every macro triple is schema-REQUIRED now, so a well-formed Call-2
     // response can never omit one. These defaults survive for exactly one
     // reason: this speculative streaming path reads partial chunks with no zod
@@ -199,7 +215,7 @@ export function resolveStreamingV2MealItem(
       ingredientName: rawIng.ingredientName,
       ...resolved,
     });
-  });
+  }
 
   return {
     nutrition: {
@@ -231,7 +247,10 @@ function computeBaseFromVerdict(
   const candidate = candidates[idx];
   const per100g = candidate.nutrition;
   if (!per100g) return undefined;
-  return scalePer100g(per100g, grams, candidate.info.foodGroupEn);
+  return scalePer100g(per100g, grams, candidate.info.foodGroupEn, {
+    matchedNameEn: candidate.prompt?.nameEn ?? candidate.info.matchedNameEn,
+    rowCookingMethod: candidate.info.rowCookingMethod,
+  });
 }
 
 function candidateFromVerdict(

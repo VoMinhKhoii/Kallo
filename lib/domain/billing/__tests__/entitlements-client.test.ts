@@ -1,17 +1,28 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
+import { BillingIdentityMismatchError } from '@/lib/domain/billing/identity';
+import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
+
+const ensureFreshBrowserSession = vi.fn(
+  async (_signal?: AbortSignal | null) => undefined
+);
+vi.mock('@/lib/infra/supabase/browser-session', () => ({
+  ensureFreshBrowserSession: (signal?: AbortSignal | null) =>
+    ensureFreshBrowserSession(signal),
+}));
+
+const {
   aiAnalysisAllowed,
   applyEntitlementSnapshot,
-  type EntitlementsResponse,
   entitlementsKeys,
   featureAllowed,
   featureLocked,
   fetchEntitlements,
   isPremium,
-} from '@/lib/domain/billing/entitlements-client';
-import { BillingIdentityMismatchError } from '@/lib/domain/billing/identity';
-import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
+  reconcileEntitlements,
+} = await import('@/lib/domain/billing/entitlements-client');
+
+import type { EntitlementsResponse } from '@/lib/domain/billing/entitlements-client';
 
 function makeFeatures(
   allowed: boolean,
@@ -72,6 +83,31 @@ describe('entitlement selectors', () => {
 
     await expect(fetchEntitlements('user-a')).rejects.toBeInstanceOf(
       BillingIdentityMismatchError
+    );
+  });
+
+  it('awaits ensureFreshBrowserSession before fetching or reconciling entitlements', async () => {
+    const order: string[] = [];
+    ensureFreshBrowserSession.mockClear();
+    ensureFreshBrowserSession.mockImplementation(async () => {
+      order.push('refresh');
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        order.push('fetch');
+        return Response.json(make({ userId: 'user-a' }));
+      })
+    );
+
+    const controller = new AbortController();
+    await fetchEntitlements('user-a', controller.signal);
+    await reconcileEntitlements('user-a', controller.signal);
+
+    expect(order).toEqual(['refresh', 'fetch', 'refresh', 'fetch']);
+    expect(ensureFreshBrowserSession).toHaveBeenCalledTimes(2);
+    expect(ensureFreshBrowserSession).toHaveBeenLastCalledWith(
+      controller.signal
     );
   });
 

@@ -11,13 +11,23 @@ import 'push_channel.dart';
 /// whoever signs in next, so re-posting simply reassigns the owner.
 const String kPushTokensPath = '/api/v1/notifications/push-tokens';
 
+/// The shortest gap between two foreground check-ins. The reminder gates read
+/// "opened in the last 45 minutes", so five minutes of slack is plenty and
+/// keeps flipping between apps from posting on every switch.
+const Duration kCheckInInterval = Duration(minutes: 5);
+
 /// Owns the APNs device token for the signed-in session.
 ///
 /// Contract:
-///   • [registerForPush] on sign-in AND on app start while signed in — asks iOS
-///     for authorization, then posts the token once it arrives (and re-posts an
-///     already-cached one straight away, so a second sign-in in the same
-///     process claims the token without waiting for the OS).
+///   • [registerForPush] on sign-in AND on app start while signed in — never
+///     shows the permission prompt: a device that already allowed
+///     notifications registers silently, posting the token once it arrives (and
+///     re-posting an already-cached one straight away, so a second sign-in in
+///     the same process claims the token without waiting for the OS).
+///   • [askPermission] after the first meal is logged — the one place the
+///     prompt appears (docs/NOTIFICATIONS.md → "Reminders", "Permission").
+///   • [checkIn] on every return to the foreground: re-posts the token, which
+///     refreshes the server's "last opened" and the device's time zone.
 ///   • iOS may rotate the token at any time; every `onToken` re-posts.
 ///   • [unregister] on sign-out — must run BEFORE the Supabase session is torn
 ///     down, since the DELETE rides the same Bearer token as every other call.
@@ -47,6 +57,19 @@ class PushService {
   /// stored row, so releasing [_token] — which may be a rotation that never
   /// got posted — would match nothing and strand the real registration.
   String? _registered;
+
+  /// When the server last accepted a registration — [checkIn] spaces its
+  /// re-posts by [kCheckInInterval] from this.
+  DateTime? _lastPostedAt;
+
+  /// The prompt is asked for at most once per process; iOS itself only ever
+  /// shows it once, so a second ask would only be a wasted channel call.
+  bool _askedPermission = false;
+
+  /// A reminder's lock-screen button closed a day while the app runs; the
+  /// listener then refreshes what it shows ([takeClosedDays] has the days).
+  void Function()? onDayClosed;
+
   PushPayload? _bufferedTap;
   void Function(PushPayload payload)? _onTap;
 
@@ -65,7 +88,8 @@ class PushService {
     }
   }
 
-  /// Ask iOS for notification authorization and register with APNs.
+  /// Start the session's registration: listen to the native bridge and, if
+  /// notifications are already allowed, register with APNs. Never prompts.
   Future<void> registerForPush() async {
     _active = true;
     try {
@@ -74,17 +98,61 @@ class PushService {
           onToken: _handleToken,
           onTokenError: _handleTokenError,
           onTap: _handleTap,
+          onDayClosed: () => onDayClosed?.call(),
         );
         _listening = true;
       }
       final cached = _token;
       if (cached != null) unawaited(_postToken(cached));
-      final granted = await _channel.requestPermission();
-      if (!granted) {
-        debugPrint('[push] notification authorization denied');
-      }
+      await _channel.registerIfAuthorized();
     } catch (error) {
       debugPrint('[push] registration failed: $error');
+    }
+  }
+
+  /// Show the notification prompt (first logged meal). A no-op once asked in
+  /// this process, and while signed out.
+  Future<void> askPermission() async {
+    if (!_active || _askedPermission) return;
+    _askedPermission = true;
+    try {
+      final granted = await _channel.requestPermission();
+      if (!granted) debugPrint('[push] notification authorization denied');
+    } catch (error) {
+      debugPrint('[push] permission request failed: $error');
+    }
+  }
+
+  /// The app came back to the foreground: re-post the registration, which is
+  /// the server's "opened Kallo" signal and carries the current time zone.
+  /// Spaced by [kCheckInInterval]; nothing to do without a token.
+  Future<void> checkIn({DateTime? now}) async {
+    final token = _token;
+    if (!_active || token == null) return;
+    final last = _lastPostedAt;
+    final at = now ?? DateTime.now();
+    if (last != null && at.difference(last) < kCheckInInterval) return;
+    await _postToken(token);
+  }
+
+  /// Days closed from the lock screen since the last call. Never throws.
+  Future<List<String>> takeClosedDays() async {
+    try {
+      return await _channel.takeClosedDays();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Register the reminder categories with titles in the app's language.
+  Future<void> setReminderCategories({
+    required Map<String, String> titles,
+    required String apiBase,
+  }) async {
+    try {
+      await _channel.setReminderCategories(titles: titles, apiBase: apiBase);
+    } catch (error) {
+      debugPrint('[push] reminder categories failed: $error');
     }
   }
 
@@ -153,17 +221,31 @@ class PushService {
     }
   }
 
+  /// Read fresh on every post (a phone that crossed a border reports its new
+  /// zone on the next check-in). A failed read sends no zone, never no post.
+  Future<String?> _timeZone() async {
+    try {
+      final zone = await _channel.timeZone();
+      return zone == null || zone.isEmpty ? null : zone;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Registration is refused when it *starts*, not when it is queued — a POST
   /// stuck behind a slow one must not land for an account that signed out
   /// while it waited.
   Future<void> _sendToken(String token) async {
     if (!_active) return;
     try {
+      final timeZone = await _timeZone();
       await _api.post<dynamic>(kPushTokensPath, {
         'token': token,
         'platform': 'ios',
+        if (timeZone != null) 'timeZone': timeZone,
       });
       _registered = token;
+      _lastPostedAt = DateTime.now();
     } catch (error) {
       debugPrint('[push] token registration failed: $error');
     }

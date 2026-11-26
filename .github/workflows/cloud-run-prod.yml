@@ -383,6 +383,28 @@ jobs:
             echo "secrets=" >> "$GITHUB_OUTPUT"
             echo "::notice::Turnstile secret not found; auth code requests are not checked this deploy."
           fi
+      # Meal reminders (docs/NOTIFICATIONS.md → "Reminders"): OPTIONAL until
+      # both secrets exist, then mounted as a pair. Without them the tick
+      # route answers 503 and the edge cron's calls do nothing; one without
+      # the other would offer lock-screen buttons that cannot work, so a half
+      # pair fails the deploy instead.
+      - id: reminders
+        name: Detect the optional meal-reminder secrets
+        run: |
+          tick=0; action=0
+          gcloud secrets describe kallo-prod-reminder-tick-secret > /dev/null 2>&1 && tick=1
+          gcloud secrets describe kallo-prod-reminder-action-secret > /dev/null 2>&1 && action=1
+          if [ "$tick$action" = "11" ]; then
+            gcloud secrets versions access latest --secret=kallo-prod-reminder-tick-secret > /dev/null
+            gcloud secrets versions access latest --secret=kallo-prod-reminder-action-secret > /dev/null
+            echo "secrets=,REMINDER_TICK_SECRET=kallo-prod-reminder-tick-secret:latest,REMINDER_ACTION_SECRET=kallo-prod-reminder-action-secret:latest" >> "$GITHUB_OUTPUT"
+          elif [ "$tick$action" = "00" ]; then
+            echo "secrets=" >> "$GITHUB_OUTPUT"
+            echo "::notice::Meal-reminder secrets not found; reminders stay off this deploy."
+          else
+            echo "Create both kallo-prod-reminder-tick-secret and kallo-prod-reminder-action-secret, or neither." >&2
+            exit 1
+          fi
       - id: svc
         name: Check if service already exists
         # --no-traffic + --tag are only valid once a first revision exists. On the
@@ -478,6 +500,16 @@ jobs:
           # pg_advisory_xact_lock. Migrations ("Read prod database URL" above)
           # stay on the session-mode secret, which `supabase db push` needs.
           #
+          # NODE_OPTIONS=--max-semi-space-size=64 gives V8 a 64 MiB semi-space
+          # (default 16 MiB); the young generation is three of them, so up to
+          # ~192 MiB instead of ~48 MiB. The process holds a ~165 MB long-lived
+          # heap (card catalog), so every full collection has to mark it, and
+          # with the default young space so much was promoted that a full GC ran
+          # every 30-60 s, pausing every request in flight for 80-460 ms (gc-pause
+          # logs, 2026-11-18). With a 64 MiB semi-space, full collections stop
+          # once the heap has grown after boot; 128 MiB measured no better.
+          # Costs at most ~144 MiB more of the 2 GiB, of which ~800 MB is in use.
+          #
           # Note `flags` is a folded scalar: everything indented under it is one
           # string of gcloud arguments, so `#` inside it is NOT a comment.
           flags: >-
@@ -492,8 +524,8 @@ jobs:
             --min-instances=0
             --max-instances=20
             ${{ steps.probe.outputs.flag }}
-            --set-secrets=DATABASE_URL=kallo-prod-database-url-tx:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-prod-supabase-service-role-key:latest,REVENUECAT_CUSTOMER_DELETE_API_KEY=kallo-prod-revenuecat-customer-delete-api-key:latest,REVENUECAT_REST_API_KEY=kallo-prod-revenuecat-rest-api-key:latest,REVENUECAT_WEBHOOK_SECRET=kallo-prod-revenuecat-webhook-secret:latest,CLOUDFLARE_EMAIL_API_TOKEN=kallo-prod-cloudflare-email-api-token:latest,SEND_EMAIL_HOOK_SECRET=kallo-prod-send-email-hook-secret:latest,USDA_API_KEY=kallo-prod-usda-api-key:latest,R2_ACCESS_KEY_ID=kallo-prod-r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=kallo-prod-r2-secret-access-key:latest,CLOUDFLARE_ANALYTICS_TOKEN=kallo-prod-cloudflare-analytics-token:latest,APNS_KEY_P8=kallo-prod-apns-key-p8:latest${{ steps.apple.outputs.secrets }}${{ steps.llm.outputs.secrets }}${{ steps.traceingest.outputs.secrets }}${{ steps.turnstile.outputs.secrets }}
-            --update-env-vars=^|^AI_PROVIDER=vertex|DB_POOL_MAX=8|SENTRY_ENVIRONMENT=production|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1|PIPELINE_V2_ENABLED=true|PIPELINE_MODEL_PROFILE=${{ vars.PIPELINE_MODEL_PROFILE || 'stable' }}|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_WEB_API_KEY_SANDBOX=${{ vars.REVENUECAT_WEB_API_KEY_SANDBOX }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false|GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}|TURNSTILE_SITE_KEY=${{ vars.TURNSTILE_SITE_KEY }}|TURNSTILE_MODE=${{ vars.TURNSTILE_MODE }}|APNS_KEY_ID=${{ vars.APNS_KEY_ID }}|APNS_TEAM_ID=ZNG57U88R5|APNS_BUNDLE_ID=com.khoivo.nham|APNS_PRODUCTION=true|APPLE_TEAM_ID=ZNG57U88R5|APPLE_SIGNIN_CLIENT_ID=com.khoivo.nham|APPLE_SIGNIN_KEY_ID=${{ vars.APPLE_SIGNIN_KEY_ID }}|R2_ACCOUNT_ID=${{ vars.R2_ACCOUNT_ID }}|CLOUDFLARE_ACCOUNT_ID=${{ vars.R2_ACCOUNT_ID }}|R2_BUCKET_PREFIX=kallo-prod|CARD_INDEX_URI=${{ env.CARD_INDEX_URI }}|TRACE_INGEST_URL=${{ vars.TRACE_INGEST_URL }}
+            --set-secrets=DATABASE_URL=kallo-prod-database-url-tx:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-prod-supabase-service-role-key:latest,REVENUECAT_CUSTOMER_DELETE_API_KEY=kallo-prod-revenuecat-customer-delete-api-key:latest,REVENUECAT_REST_API_KEY=kallo-prod-revenuecat-rest-api-key:latest,REVENUECAT_WEBHOOK_SECRET=kallo-prod-revenuecat-webhook-secret:latest,CLOUDFLARE_EMAIL_API_TOKEN=kallo-prod-cloudflare-email-api-token:latest,SEND_EMAIL_HOOK_SECRET=kallo-prod-send-email-hook-secret:latest,USDA_API_KEY=kallo-prod-usda-api-key:latest,R2_ACCESS_KEY_ID=kallo-prod-r2-access-key-id:latest,R2_SECRET_ACCESS_KEY=kallo-prod-r2-secret-access-key:latest,CLOUDFLARE_ANALYTICS_TOKEN=kallo-prod-cloudflare-analytics-token:latest,APNS_KEY_P8=kallo-prod-apns-key-p8:latest${{ steps.apple.outputs.secrets }}${{ steps.llm.outputs.secrets }}${{ steps.traceingest.outputs.secrets }}${{ steps.turnstile.outputs.secrets }}${{ steps.reminders.outputs.secrets }}
+            --update-env-vars=^|^AI_PROVIDER=vertex|DB_POOL_MAX=8|NODE_OPTIONS=--max-semi-space-size=64|SENTRY_ENVIRONMENT=production|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|GOOGLE_CLOUD_EMBEDDING_LOCATION=asia-southeast1|PIPELINE_V2_ENABLED=true|PIPELINE_MODEL_PROFILE=${{ vars.PIPELINE_MODEL_PROFILE || 'stable' }}|BILLING_ENVIRONMENT=production|BILLING_ENFORCEMENT_ENABLED=${{ vars.BILLING_ENFORCEMENT_ENABLED || 'false' }}|BILLING_PURCHASES_ENABLED=${{ vars.BILLING_PURCHASES_ENABLED || 'false' }}|BILLING_SANDBOX_USER_IDS=${{ vars.BILLING_SANDBOX_USER_IDS }}|REVENUECAT_PROJECT_ID=${{ vars.REVENUECAT_PROJECT_ID }}|REVENUECAT_WEB_API_KEY=${{ vars.REVENUECAT_WEB_API_KEY }}|REVENUECAT_WEB_API_KEY_SANDBOX=${{ vars.REVENUECAT_WEB_API_KEY_SANDBOX }}|REVENUECAT_ALLOWED_APP_IDS=${{ vars.REVENUECAT_ALLOWED_APP_IDS }}|REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT=${{ vars.REVENUECAT_INFER_MISSING_EVENT_ENVIRONMENT }}|REVENUECAT_ALLOW_OWNERSHIP_TRANSFER=false|GOOGLE_WEB_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}|TURNSTILE_SITE_KEY=${{ vars.TURNSTILE_SITE_KEY }}|TURNSTILE_MODE=${{ vars.TURNSTILE_MODE }}|APNS_KEY_ID=${{ vars.APNS_KEY_ID }}|APNS_TEAM_ID=ZNG57U88R5|APNS_BUNDLE_ID=com.khoivo.nham|APNS_PRODUCTION=true|APPLE_TEAM_ID=ZNG57U88R5|APPLE_SIGNIN_CLIENT_ID=com.khoivo.nham|APPLE_SIGNIN_KEY_ID=${{ vars.APPLE_SIGNIN_KEY_ID }}|R2_ACCOUNT_ID=${{ vars.R2_ACCOUNT_ID }}|CLOUDFLARE_ACCOUNT_ID=${{ vars.R2_ACCOUNT_ID }}|R2_BUCKET_PREFIX=kallo-prod|CARD_INDEX_URI=${{ env.CARD_INDEX_URI }}|TRACE_INGEST_URL=${{ vars.TRACE_INGEST_URL }}
       - name: Resolve smoke URL
         # Existing service → the candidate was deployed with --no-traffic, so smoke
         # its tagged URL (the live service URL still serves the old revision).
@@ -555,6 +587,56 @@ jobs:
           echo "::add-mask::$ORIGIN_SHARED_SECRET"
           export ORIGIN_SHARED_SECRET
           bun scripts/seo/crawl-check.ts "$SMOKE_URL" --live https://kallo.fit
+      - name: Warm the candidate's API routes
+        # Best-effort as a whole: nothing in this step (the secret lookup
+        # included) may stop a candidate that passed smoke and crawl checks
+        # from being promoted.
+        continue-on-error: true
+        # Next loads each route's code on its first request, so on a new
+        # instance the app's first launch burst paid for loading seven route
+        # modules at once (550-1000 ms per call on 2026-11-18, against 40-200 ms
+        # once warm). The crawl check above already loads the pages; this loads
+        # the reads the app and the web shell open with. Signed out, each
+        # answers 401 without touching the database. Best-effort: a failed warm
+        # request never blocks the deploy.
+        env:
+          SMOKE_URL: ${{ env.SMOKE_URL }}
+        run: |
+          ORIGIN_SHARED_SECRET="$(gcloud secrets versions access latest --secret=kallo-prod-origin-shared-secret)"
+          echo "::add-mask::$ORIGIN_SHARED_SECRET"
+          for path in \
+            /api/v1/account/entitlements /api/v1/dashboard /api/v1/groups/invites \
+            /api/v1/onboarding/profile /api/v1/logging/day /api/v1/groups/profile \
+            /api/v1/notifications/badge /api/v1/meals /api/v1/meals/dates/summaries \
+            /api/v1/chat-groups /api/v1/groups/friends/feed /api/v1/weight/summary \
+            /api/v1/dashboard/heatmap /api/v1/nutrition/overview; do
+            curl -s -o /dev/null --max-time 20 -w "%{http_code} %{time_total}s $path\n" \
+              -H "X-Origin-Verify: $ORIGIN_SHARED_SECRET" "$SMOKE_URL$path" || true
+          done
+      - name: Warm the candidate's landing images
+        # Best-effort, like the step above.
+        continue-on-error: true
+        # The landing page's comparison paintings go through /_next/image,
+        # which Cloudflare does not cache, and a new instance resizes each one
+        # on its first request: 230-860 ms on 2026-11-18, holding the single
+        # vCPU while the visitor's page prefetches waited behind it (~370 ms
+        # each). This resizes every painting at Next's default device widths
+        # now, so visitors get the cached copy. The optimizer's cache key is
+        # url + width + quality + format (not `dpl`), and a browser that takes
+        # WebP gets WebP, hence the Accept header.
+        env:
+          SMOKE_URL: ${{ env.SMOKE_URL }}
+        run: |
+          ORIGIN_SHARED_SECRET="$(gcloud secrets versions access latest --secret=kallo-prod-origin-shared-secret)"
+          echo "::add-mask::$ORIGIN_SHARED_SECRET"
+          for file in public/landing/meals/compare-*.webp; do
+            src="${file#public}"
+            for width in 640 750 828 1080 1200 1920 2048 3840; do
+              curl -s -o /dev/null --max-time 20 -w "%{http_code} %{time_total}s $src $width\n" \
+                -H "X-Origin-Verify: $ORIGIN_SHARED_SECRET" -H 'Accept: image/avif,image/webp,*/*' \
+                "$SMOKE_URL/_next/image?url=${src//\//%2F}&w=$width&q=75" || true
+            done
+          done
       - name: Promote candidate after smoke pass
         # Only for an existing service: shift 100% traffic to the validated
         # (latest) revision, then drop the candidate tag. On a first deploy the

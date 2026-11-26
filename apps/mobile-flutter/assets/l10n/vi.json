@@ -1864,13 +1864,6 @@
     "saved": "Đã lưu thay đổi",
     "language": "Ngôn ngữ",
     "languageHint": "Thay đổi ngôn ngữ ứng dụng",
-    "appearance": {
-      "title": "Giao diện",
-      "system": "Theo hệ thống",
-      "light": "Sáng",
-      "dark": "Tối",
-      "aurora": "Aurora"
-    },
     "sharing": {
       "autoShareLabel": "Tự động chia sẻ với vòng kết nối",
       "error": "Không thể cập nhật chia sẻ"
@@ -1974,6 +1967,10 @@
       "friendsLabel": "{count} bạn bè trong vòng kết nối",
       "editProfile": "Sửa hồ sơ",
       "editCircle": "Sửa vòng kết nối"
+    },
+    "reminders": {
+      "label": "Nhắc ghi bữa ăn",
+      "error": "Không thể cập nhật nhắc ghi bữa ăn"
     }
   },
   "errors": {
@@ -2076,5 +2073,13 @@
     "consentPrivacy": "Chính sách riêng tư",
     "premiumChip": "Premium",
     "premiumFeature": "Tính năng Premium"
+  },
+  "notifications": {
+    "reminderActions": {
+      "addToYesterday": "Ghi thêm cho hôm qua",
+      "logMeal": "Ghi món",
+      "logMore": "Ghi thêm",
+      "closeDay": "Vậy là hết rồi"
+    }
   }
 }

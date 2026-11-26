@@ -150,14 +150,17 @@ function buildHeaders(
  * ignores both and shows the alert as sent.
  */
 function buildApnsPayload(message: PushMessage): string {
-  const { sender, conversationId } = message;
+  const { sender, conversationId, category } = message;
   return JSON.stringify({
     aps: {
-      alert: { title: message.title, body: message.body },
+      alert: message.title
+        ? { title: message.title, body: message.body }
+        : { body: message.body },
       sound: 'default',
       ...(message.badge !== undefined && { badge: message.badge }),
       ...(sender && { 'mutable-content': 1 }),
       ...(conversationId && { 'thread-id': conversationId }),
+      ...(category && { category }),
     },
     ...message.data,
     ...(sender && {

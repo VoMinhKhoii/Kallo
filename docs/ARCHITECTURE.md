@@ -33,6 +33,15 @@ to `hooks/` without `hooks/` exporting a non-hook value.
 
 ## Rendering and caching
 
+`lib/seo/meal-data/download/` exports the committed food-page meal observations
+as CSV and JSON at `/data/meal-calorie-variation.csv` and
+`/data/meal-calorie-variation.json`. Both files contain both locale page sets;
+filter by `locale` to reproduce one analysis page. They share the page's oil
+checks and capture sources. The JSON includes the method and caveats. Reuse is
+licensed under CC BY 4.0 with credit to Kallo. These locale-free routes bypass
+locale rewriting and session refresh, retain the origin lock, and are listed
+in `/llms.txt`, not the sitemap.
+
 The locale root loads only Be Vietnam Pro and Lora, including Vietnamese
 subsets. The composer and its mention overlay use the same Be Vietnam Pro
 sans token to keep their text aligned. Code and numeric monospace use the
@@ -41,10 +50,11 @@ device's built-in monospace stack, with no additional font download.
 Next.js 16.3 with **Cache Components** and **Partial Prefetching** on (`next.config.ts`), which
 together give Instant Navigations. The rules the build enforces, and the choices made here:
 
-- **First paint on a slow connection.** `experimental.inlineCss` puts the stylesheet in the HTML,
-  and no `next/font` face is preloaded (`app/[locale]/layout.tsx`), so nothing queues ahead of the
-  CSS. The cost is a heavier document (about 210 KB gzipped on the landing page) because Next
-  repeats the CSS in the page data, and a brief font swap on first load. The landing page's phone
+- **First paint on a slow connection.** No `next/font` face is preloaded (`app/[locale]/layout.tsx`),
+  so nothing queues ahead of the stylesheet; the cost is a brief font swap on first load. The
+  stylesheet stays a separate, cached file: `experimental.inlineCss` was tried and dropped, because
+  Next repeats our ~200 KB stylesheet up to four times in every page's HTML (the landing page was
+  205 KB gzipped with it, 82 KB plus a 33 KB stylesheet without). The landing page's phone
   controls work before hydration (real links, plus an early theme listener in `ThemeScript`), and
   Sentry loads after the window's `load` event, so an error thrown before then is not reported.
 - **Request pipeline.** `proxy.ts` (the Next 16 name for `middleware.ts`; Node.js runtime) runs
@@ -103,8 +113,14 @@ together give Instant Navigations. The rules the build enforces, and the choices
   supported yet, fall back to next-intl's header or pass `{ locale }` explicitly. `proxy.ts` imports
   `i18n/routing.ts`, never `i18n/navigation.ts` (which drags in the request config).
 - **Runtime env in prerendered pages.** A `process.env` read during prerender is baked into the
-  HTML. Values meant to be per-environment at runtime (e.g. `GOOGLE_WEB_CLIENT_ID`) must be read
-  after `connection()` inside `<Suspense>` — see `components/auth/request-config/`.
+  HTML. Values meant to be per-environment at runtime (e.g. `GOOGLE_WEB_CLIENT_ID`) are read one
+  of two ways (both in `components/auth/request-config/`):
+  - after `connection()` inside `<Suspense>`, which renders that page per request; or
+  - from the client after load, so the page stays fully static. The calorie, tool, data and
+    comparison pages fetch the sign-in values from `/api/v1/auth/client-config`
+    (`ClientAuthRequestConfig`).
+  A Route Handler that reads only env is prerendered at build time too, so such a handler calls
+  `connection()` first (`app/api/v1/auth/client-config`, `app/api/startupz`).
 - **Kept-alive routes.** Visited routes are hidden with React `<Activity>` instead of unmounted
   (up to 3), so `useState`, form inputs and scroll survive a round trip. Keep drafts; clear
   transient results (a "sent" confirmation, a "Saved" note, an error) with
@@ -165,7 +181,7 @@ another domain module is a smell worth a second look.
 | Folder | Concern |
 |---|---|
 | `apple-auth/` | Sign in with Apple REST: the per-call ES256 client secret, the authorization-code exchange and refresh-token revocation (`apple-auth.ts`), each returning a typed verdict instead of throwing; `null` config when the `APPLE_*` vars are unset |
-| `auth/` | session/profile guard, redirect and next-param safety, and the email-code request + its error copy (`email-code.ts`) |
+| `auth/` | session/profile guard, redirect and next-param safety, and the email-code request + its error copy (`email-code.ts`); `signing-keys/` holds the project's token-signing keys in memory so a session check never fetches them per request |
 | `crypto/` | dependency-free primitives on `node:crypto`: the ES256 JWT signer Apple's APNs and Sign in with Apple both need (`es256-jwt.ts`), and `secret-box.ts` — versioned AES-256-GCM for credentials held at rest |
 | `db/` | Drizzle schema and client |
 | `email/` | transactional send + templates |
@@ -176,7 +192,7 @@ another domain module is a smell worth a second look.
 | `security/` | webhook signatures, the enforced CSP + violation-report parsing, request IP, and Cloudflare Turnstile (`turnstile.ts`: the server-side siteverify + rollout mode; `turnstile-script.ts`: the browser widget loader) |
 | `storage/` | object storage on Cloudflare R2 (`object-storage.ts`: put / list / delete / prefix purge / presigned read over the S3 API; `r2-client.ts` holds the credentials and bucket naming; `usage-cap.ts` is the hard cap at 95% of the R2 free tier) — `docs/STORAGE.md` |
 | `telemetry/` | what leaves the app about how it behaves (`docs/MONITORING.md`): `telemetry-url.ts` (every outgoing URL → origin + route template), `analytics/` (PostHog: EU init, the typed event list, `track`/identify/reset) and `monitoring/` (Sentry: options shared by browser, Node and Edge, the payload scrubbers, `reportError`) |
-| `supabase/` | client factories (browser, server, admin, middleware) and `cookie-options.ts`, the one definition of the session cookie's name, `Secure`, `SameSite` and `Max-Age` that all three session clients share |
+| `supabase/` | client factories (browser, server, admin, middleware), `cookie-options.ts`, the one definition of the session cookie's name, `Secure`, `SameSite` and `Max-Age` that all three session clients share, `shared-refresh.ts`, the `fetch` shared by server clients, middleware and `/api/supabase-proxy` that sends one refresh per refresh token + API key however many requests carry it, and `browser-session.ts`, which refreshes an expired browser cookie once before a waking tab fires parallel `/api/v1/*` requests |
 | `uploads/` | image and avatar file handling |
 
 ### `lib/domain/` — the product's nouns
@@ -194,7 +210,8 @@ another domain module is a smell worth a second look.
 | `ingredients/` | `search/` — the food-composition picker: recents, lexical + semantic arms, rank fusion, then `card-enrichment.ts` attaching each row's display fields in one query; `display/` — those fields from the row's food card: clean English name, a raw/cooked label only where the card says so, brand, and the vessel family its amount ruler offers |
 | `logging/` | meal logging and relog, plus the contracts its UI and hooks share: `types.ts`, `meal-input-handle.ts`, `stream-ticker.ts`; `manual-logging.ts` / `manual-display.ts` — manual logging's rows, totals, default meal title, and what its sheets print and compute (subtitle, vessel default, gram steps); `drafts/` owns account-scoped browser persistence and the account-exit write barrier |
 | `meals/` | dish quantity edits and the macro rescaling they imply, plus `meal-edit/` (the meal edit dialog's model: servings, amount and whole-meal steps per dish, and the saved/unsaved payloads it produces; Dart twin in the Flutter `logic/meal_edit/`), `save/` (the optimistic-meal builders and the cache choreography a save runs through) and `query-keys.ts`, the cache addresses that write side shares with `hooks/meals/` |
-| `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, the after-commit push fan-out (`push.ts` + its server-side `push-copy.ts` templates), plus `client.ts` and `query-keys.ts` |
+| `notifications/` | the activity layer's shared vocabulary: `types.ts`, `group-keys.ts` (the aggregation identities), `notify.ts` (the single write path producers call inside their tx), the isomorphic `contracts.ts`, the after-commit push fan-out (`push.ts` + its server-side `push-copy.ts` templates, `push-devices.ts`, the one owner of `push_tokens` rows: registration, iOS token reads, booking APNs results), plus `client.ts` and `query-keys.ts` |
+| `reminders/` | meal reminders, the pushes Kallo sends on its own: `schedule.ts` (the four checkpoints, each one record: line, copy, iOS category, close button), `facts.ts` (who is due on their own clock, loads bucketed per user into gate facts), `gates.ts` (pure should-it-fire), `load.ts` (every batched read + the send claim), `tick.ts` (the 15-minute orchestration), `send.ts`, `copy.ts`, the lock-screen close-day token (`action-token.ts`, `close-day.ts`) and `contracts.ts` (docs/NOTIFICATIONS.md → "Reminders") |
 | `nutrition/` | nutrition overview, catalog, pattern analysis, plus the OCR label contracts (`ocr-schema.ts`, `ocr-camera-types.ts`) its UI and hooks share, and `label-images/` — keeping each scanned label photo with its scan outcome (private `nutrition-labels` R2 bucket + `nutrition_label_images`) |
 | `onboarding/` | onboarding steps, schemas, TDEE, country data; actions validate full profile writes and step-keyed partial writes before reading or updating a profile; country fields use the existing 100-character bound and exclude angle brackets and embedded CR/LF; partial Settings edits and empty skips remain valid |
 | `privacy/` | consent to third-party AI processing (App Store 5.1.2(i)): `ai-consent.ts` (the server gate every AI entry point asks — `hasAiConsent` / `assertAiConsent`, 403 `ai_consent_required`) and `consent-gate.ts` (the `AiConsentGate` interface the client entry-point hooks receive) |
@@ -238,9 +255,11 @@ another domain module is a smell worth a second look.
 | `pipeline/grounded/text-checks/weights.ts` | holds Call 1's weights to the text: untyped weights removed, a dish weight that repeats its parts removed, a food's weight put back on that food | ok |
 | `pipeline/grounded/text-checks/calories.ts` | holds Call 1's calories to the text: untyped figures removed, a typed figure put on the dish or the one food named beside it, a per-unit figure multiplied by its count, figures about the day ignored | ok |
 | `pipeline/grounded/text-checks/described.ts` | what Call 1 wrote about a food beside its amounts: a weight on a food it describes as dry or raw is a raw weight; a Vietnamese name the user did not type shows in English in an English answer | ok |
-| `pipeline/grounded/text-checks/dish-count.ts` | whether a part's count is the dish's (Call 1 puts a counted dish's count on every part it splits into) or an amount typed for that part; asked by the fried-oil drop and the weighed-dish fit before treating a counted part as typed | ok |
+| `pipeline/grounded/text-checks/dish-count.ts` | holds a whole dish's count (`dishCount`: "2 burgers", "nửa dĩa cơm chiên") to the text: lifts a count Call 1 copied onto every part (main's old reading of such counts), strips the copies, keeps Call 1's own count (logged when the text reader cannot find it; a zero must be typed), and keeps a one-food dish's count on both the dish and its food; after it, a part's count is always that part's own amount | ok |
+| `pipeline/grounded/text-checks/typed-counts.ts` | whether a meal text states a count: digits, fractions, halves ("nửa", "rưỡi") and number words; guards a typed zero and logs a dish count it cannot read | ok |
 | `pipeline/grounded/text-checks/typed-facts.ts` | on the finished meal: sets a dish to the calories the user typed for it and marks the parts whose amount the user typed, so the plain-read hold leaves them | ok |
 | `pipeline/assemble/result-scale.ts` | arithmetic on a finished meal: scale a part's nutrients and carry the change into its dish and the meal totals (typed calories, the plain-read hold) | ok |
+| `pipeline/precise-analysis.ts` | a typed meal as the app shows it: the pipeline with the plain read beside it, held near the read; the precise branch and the offline captures (SEO food pages, landing) all call it | ok |
 | `pipeline/stream/` | the analyze-meal SSE state machine: cheat vs precise outcome, gates, staging | ok |
 | `pipeline/telemetry/cloud-trace/` | bounded structured stdout trace capture, privacy filtering and final result summaries; request counters/model names are held for at most 1,024 concurrent traces, swept after two minutes on the next start. `ingest-sink.ts` copies each line, fire-and-forget, to the kallo-trace-ingest Worker (Cloudflare D1) | ok |
 
@@ -281,7 +300,7 @@ The admin console itself is admin.kallo.fit, a separate repo (`kallo-aws-analyti
 | `onboarding/` | onboarding wizard and screens | split |
 | `privacy/` | `AiConsentProvider` (the app-wide AI-processing consent state, mounted in the `(app)` layout) and the one-time consent dialog it opens; its `gate` goes to the two transports that own the ask — `useStreamAnalysis` (every meal analysis) and `useNutritionOcr` (label scans) | ok |
 | `providers/` | root client providers: TanStack Query, the auth listener that keeps PostHog/Sentry identity in step, and `ComposerDraftSession` (purges composer storage on `SIGNED_OUT`, even without telemetry); `theme/` paints Settings → Appearance onto the app's own pages (a before-paint script plus an applier that re-reads the stored choice on every reveal, so pages kept alive by Next never disagree) and forces the marketing pages light (`LightOnly`) | split |
-| `settings/` | `dialog/` (the settings dialog: desktop rail, phone sheet, page switch) and `chrome/` (the rows every page renders into) plus one folder per panel — `account/` `appearance/` `feedback/` `identity/` `privacy/` `profile/` `sharing/` | ok |
+| `settings/` | `dialog/` (the settings dialog: desktop rail, phone sheet, page switch) and `chrome/` (the rows every page renders into) plus one folder per panel — `account/` `appearance/` `feedback/` `identity/` `privacy/` `profile/` `reminders/` `sharing/` | ok |
 | `shared/` | cross-feature UI atoms | split |
 | `shared/surface-state/` | the one shape every empty, error, 404 and offline surface takes — illustration → title → subtitle → one action, plus its retry button | ok |
 | `shared/invite-confirm/` | the confirm in front of accepting or dismissing a meal-share offer — shared by the Circle deck card and the Activity row | ok |

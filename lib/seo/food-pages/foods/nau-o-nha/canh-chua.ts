@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo. Bốn bữa có canh chua thật: canh chua cá lóc với một chén cơm, canh chua tôm và trứng chiên, canh chua bông điên điển với cá rô kho, và chỉ ăn canh.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo. Một tô canh chua rất nhẹ; con số lên xuống theo cơm và món mặn ăn kèm. Dưới đây là bốn bữa thật, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo. Một tô canh chua rất nhẹ; con số lên xuống theo cơm và món mặn ăn kèm. Dưới đây là bốn bữa thường gặp, mỗi bữa gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'ca-loc',
     breakdownLead:
       'Một tô canh chua cá lóc chỉ khoảng 160 calo: cá 76, phần còn lại là rau, thơm và chút đường. Chén cơm ăn kèm đã 152; bữa có thêm cá rô kho và hai chén cơm lên tới 766.',

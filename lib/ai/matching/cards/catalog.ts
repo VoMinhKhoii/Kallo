@@ -13,7 +13,11 @@
  */
 
 import { sql } from 'drizzle-orm';
-import { sourceBucket } from '@/lib/ai/matching/match-constants';
+import {
+  type EatenState,
+  normalizeEatenState,
+  sourceBucket,
+} from '@/lib/ai/matching/match-constants';
 import type { MatchSource } from '@/lib/ai/types/matching';
 import { safeError } from '@/lib/core/errors/safe-error';
 import type { AppDb } from '@/lib/infra/db/client';
@@ -28,7 +32,15 @@ export interface CatalogRow {
   nameEn: string;
   namePrimary: string;
   concept: string;
-  card: { food: string; namesVi: string[]; facets: string[] } | null;
+  card: {
+    food: string;
+    namesVi: string[];
+    facets: string[];
+    eatenState: EatenState;
+    cookingMethod?: string | null;
+  } | null;
+  /** Every name of the row: row names, card food, EN aliases, VI names. */
+  names: readonly string[];
 }
 
 export interface CardCatalog {
@@ -162,25 +174,26 @@ export function buildCardCatalog(
               r.fat_level,
               r.brand,
             ].filter(present),
+            eatenState: normalizeEatenState(r.eaten_state),
+            cookingMethod: present(r.cooking_method) ? r.cooking_method : null,
           }
         : null,
     };
+    const rowNames = new Set(
+      [
+        base.nameEn,
+        base.namePrimary,
+        base.card?.food,
+        ...(r.aliases_en ?? []),
+        ...(base.card?.namesVi ?? []),
+      ].filter(present)
+    );
     rows.set(r.id, {
       ...base,
+      names: [...rowNames],
       concept: conceptKey({ ...base, sourceCode: r.source_code }),
     });
-    names.set(
-      r.id,
-      new Set(
-        [
-          base.nameEn,
-          base.namePrimary,
-          base.card?.food,
-          ...(r.aliases_en ?? []),
-          ...(base.card?.namesVi ?? []),
-        ].filter(present)
-      )
-    );
+    names.set(r.id, rowNames);
   }
   return {
     rows,

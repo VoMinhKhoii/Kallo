@@ -34,6 +34,10 @@ export interface MealDataCopy {
   steadyLead: string;
   methodHeading: string;
   method: (f: MealDataFacts) => string[];
+  downloadHeading: string;
+  downloadNote: string;
+  downloadDates: (f: MealDataFacts) => string;
+  downloadLicense: string;
   citeHeading: string;
   cite: (f: MealDataFacts, url: string) => string;
   tryLine: string;
@@ -41,6 +45,12 @@ export interface MealDataCopy {
 
 export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
   en: {
+    downloadHeading: 'Download the data',
+    downloadNote:
+      "Kallo's estimates for meal descriptions we wrote, not measured food or user logs. Both files contain the English and Vietnamese page sets.",
+    downloadDates: (f) =>
+      `Captured: ${f.dates.from === f.dates.to ? f.dates.from : `${f.dates.from} to ${f.dates.to}`}.`,
+    downloadLicense: 'Free to reuse with credit to Kallo (CC BY 4.0).',
     metaTitle: (f) =>
       `Same Meal, ${f.ratio}× the Calories: ${f.meals} Logged Meals`,
     description: (f) =>
@@ -87,6 +97,12 @@ export const MEAL_DATA_COPY: Record<FoodLocale, MealDataCopy> = {
       'Kallo counts your meals the same way, from a sentence like "half a burrito bowl, no rice, extra salsa".',
   },
   vi: {
+    downloadHeading: 'Tải dữ liệu',
+    downloadNote:
+      'Đây là ước tính của Kallo cho các bữa ăn do chúng tôi viết mô tả, không phải kết quả đo thực phẩm hay nhật ký người dùng. Cả hai tệp đều có dữ liệu từ bộ trang tiếng Anh và tiếng Việt.',
+    downloadDates: (f) =>
+      `Thời gian ghi nhận: ${f.dates.from === f.dates.to ? f.dates.from : `${f.dates.from} đến ${f.dates.to}`}.`,
+    downloadLicense: 'Được tự do sử dụng lại khi ghi nguồn Kallo (CC BY 4.0).',
     metaTitle: (f) =>
       `Cùng một món, chênh nhau ${f.ratio} lần calo: ${f.meals} bữa ăn thật`,
     description: (f) =>

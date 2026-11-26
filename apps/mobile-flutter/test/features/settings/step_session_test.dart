@@ -252,15 +252,17 @@ void main() {
   });
 
   test('the region page shows the language the app is running in', () {
-    // A new device: the app came up in Vietnamese, the profile says English.
+    // The app is in Vietnamese while the account still says English.
     final region = StepSession.fromProfile(
       SettingsStep.region,
       ProfileRow(Map.of(kFullProfile)..['preferredLocale'] = 'en'),
       activeLocale: 'vi',
     );
-    expect(region.payload!['preferredLocale'], 'vi');
-    // Stored is still 'en', so the page offers to store the language in use.
-    expect(region.dirty, isTrue);
+    expect(region.answers.preferredLocale, 'vi');
+    // The language is stored by the picker, not by the page's button: only
+    // the countries make the page dirty.
+    expect(region.payload!.containsKey('preferredLocale'), isFalse);
+    expect(region.dirty, isFalse);
 
     final agreed = StepSession.fromProfile(
       SettingsStep.region,

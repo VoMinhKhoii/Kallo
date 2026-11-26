@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four plates of spaghetti bolognese: a big restaurant plate, lean homemade, a small portion and turkey sauce on zucchini noodles.`,
     lead: (span) =>
-      `About ${span} kcal. The amount of pasta on the plate is the biggest lever, then the meat in the sauce. Four real plates, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The amount of pasta on the plate is the biggest lever, then the meat in the sauce. Four typical plates, each typed into Kallo the way people describe them.`,
     breakdownOf: 'restaurant',
     breakdownLead:
       'At the restaurant, 280 g of cooked spaghetti is nearly half of the plate. The meat sauce adds 376 kcal.',

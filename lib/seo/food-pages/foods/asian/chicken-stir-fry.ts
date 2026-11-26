@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four chicken stir fries, takeout with rice, with egg noodles, homemade with jasmine rice and a no-rice version.`,
     lead: (span) =>
-      `About ${span} kcal. The vegetables add few calories. Most come from the rice or noodles, oil and sauce. Four real stir fries, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The vegetables add few calories. Most come from the rice or noodles, oil and sauce. Four typical stir fries, each typed into Kallo the way people describe them.`,
     breakdownOf: 'takeout',
     breakdownLead:
       'In the takeout box, the chicken and the rice are about a third each. The brown sauce adds 112 kcal.',

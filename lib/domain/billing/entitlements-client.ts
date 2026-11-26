@@ -4,6 +4,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { FeatureKey } from '@/lib/domain/billing/entitlement/features';
 import { assertBillingIdentity } from '@/lib/domain/billing/identity';
 import { nutritionKeys } from '@/lib/domain/nutrition/query-keys';
+import { ensureFreshBrowserSession } from '@/lib/infra/supabase/browser-session';
 
 // The browser side of the entitlement contract: the response shape the two
 // account endpoints return, the cache key everything scopes on, the two
@@ -58,6 +59,7 @@ export async function fetchEntitlements(
   expectedUserId: string,
   signal?: AbortSignal
 ): Promise<EntitlementsResponse> {
+  await ensureFreshBrowserSession(signal);
   const res = await fetch('/api/v1/account/entitlements', {
     cache: 'no-store',
     headers: { accept: 'application/json' },
@@ -76,6 +78,7 @@ export async function reconcileEntitlements(
   expectedUserId: string,
   signal?: AbortSignal
 ): Promise<EntitlementsResponse> {
+  await ensureFreshBrowserSession(signal);
   const res = await fetch('/api/v1/account/entitlements/reconcile', {
     method: 'POST',
     headers: { accept: 'application/json' },

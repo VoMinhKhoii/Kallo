@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four servings of chicken fried rice, a full takeout container, half of one, a homemade plate and a cauliflower rice version.`,
     lead: (span) =>
-      `About ${span} kcal. Fried rice is mostly rice and oil, so the portion and the pan decide it. Four real servings, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Fried rice is mostly rice and oil, so the portion and the pan decide it. Four typical servings, each typed into Kallo the way people describe them.`,
     breakdownOf: 'takeout',
     breakdownLead:
       'In the full takeout container, the rice is more than half of it. The chicken is only 68 kcal.',

@@ -1,0 +1,50 @@
+{
+  "updated": "2026-11-24",
+  "window": "90 days, non-brand, avg position 4-15, 5+ impressions",
+  "pages": {
+    "hot-dog": {
+      "position": 8.7,
+      "impressions": 17
+    },
+    "banh-bao": {
+      "position": 8.3,
+      "impressions": 40
+    },
+    "bun-thit-nuong": {
+      "position": 9.2,
+      "impressions": 10
+    },
+    "ca-kho-to": {
+      "position": 9.2,
+      "impressions": 13
+    },
+    "chao-long": {
+      "position": 11.6,
+      "impressions": 33
+    },
+    "dau-phu-sot-ca-chua": {
+      "position": 8.0,
+      "impressions": 29
+    },
+    "hu-tieu": {
+      "position": 9.5,
+      "impressions": 120
+    },
+    "mi-quang": {
+      "position": 9.2,
+      "impressions": 25
+    },
+    "pho-bo": {
+      "position": 8.8,
+      "impressions": 6
+    },
+    "rau-muong-xao-toi": {
+      "position": 11.1,
+      "impressions": 18
+    },
+    "thit-kho-trung": {
+      "position": 10.7,
+      "impressions": 6
+    }
+  }
+}

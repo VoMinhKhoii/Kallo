@@ -28,14 +28,14 @@ export const food: FoodContent = {
     name: 'Hủ tiếu',
     title: 'Hủ tiếu bao nhiêu calo?',
     metaTitle: (span) =>
-      `1 tô hủ tiếu bao nhiêu calo? ${span} kcal, 4 tô hủ tiếu thật`,
+      `Hủ tiếu bao nhiêu calo? Khô, gõ, Nam Vang: ${span} kcal một tô`,
     description: (span) =>
-      `Khoảng ${span} calo một tô. Bốn tô hủ tiếu: Nam Vang khô tô lớn, hủ tiếu gõ nửa hủ tiếu nửa mì, Nam Vang nước tô thường và hủ tiếu xào bò tự nấu.`,
+      `Khoảng ${span} calo một tô. Bốn tô hủ tiếu: Nam Vang khô tô lớn, hủ tiếu gõ nửa hủ tiếu nửa mì, Nam Vang nước tô thường và hủ tiếu xào bò tự nấu. 100 g hủ tiếu luộc khoảng 105 calo.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo một tô. Sợi hủ tiếu là phần lớn nhất; thịt bằm, bò viên, xá xíu và dầu tỏi làm nên phần còn lại. Dưới đây là bốn tô thật, mỗi tô gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo một tô. Sợi hủ tiếu là phần lớn nhất; thịt bằm, bò viên, xá xíu và dầu tỏi làm nên phần còn lại. Dưới đây là bốn tô thường gặp, mỗi tô gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'xao-nha',
     breakdownLead:
-      'Ở dĩa hủ tiếu xào tự nấu, 120 g hủ tiếu cân khô là 420 calo, nhiều hơn thịt bò (187) và một muỗng canh dầu (90) cộng lại. Sợi khô nở ra khoảng gấp ba khi trụng, nên cân khô hay cân chín cho con số khác hẳn.',
+      'Ở dĩa hủ tiếu xào tự nấu, 120 g hủ tiếu cân khô là 420 calo, nhiều hơn thịt bò (187) và một muỗng canh dầu (90) cộng lại. Sợi khô nở ra khoảng gấp ba khi trụng, nên cân khô hay cân chín cho con số khác hẳn: 100 g hủ tiếu khô khoảng 350 calo, còn 100 g hủ tiếu đã luộc chỉ khoảng 105 calo.',
     tryLine:
       'Gõ vào Kallo như khi kể lại bữa ăn: “hủ tiếu nam vang nước tô nhỏ, không gan, húp nửa nước”, Kallo lo phần còn lại.',
   },

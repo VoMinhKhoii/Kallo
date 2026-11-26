@@ -8,4 +8,6 @@ export const COMPARE_CHROME = {
   alternativesLink: (them: string) => `Every ${them} alternative we checked`,
   /** On an alternatives page, the link to the matching comparison page. */
   compareLink: (them: string) => `Kallo and ${them} side by side`,
+  /** On a comparison page, the link to the docs guide for people moving to Kallo. */
+  switchingLink: 'Switching to Kallo from another app',
 };

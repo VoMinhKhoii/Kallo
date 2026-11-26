@@ -75,5 +75,50 @@
       "accepted": "Đã thêm",
       "unavailable": "Không còn hiệu lực"
     }
+  },
+  "reminder": {
+    "yesterday": [
+      "Điểm danh! Hôm qua có quên ghi lại bữa ăn nào hong đó 🤔",
+      "Hôm qua còn quên ghi món nào hong nè?",
+      "Dậy chưa nè ☀️ Nhìn lại các bữa ăn hôm qua xíu nhen",
+      "Hôm qua {name} ăn có vậy thui hả? Có thiếu gì hông ta 🤔",
+      "Ngày mới rồi, xem lại hôm qua có quên ghi bữa ăn nào hông nha 🤭",
+      "Hôm qua {name} ăn gì dạ? Ghi đủ bữa chưa đó 😋",
+      "Tấp vô lề? Xuất trình bữa ăn hôm qua để Kallo kiểm tra 🕵️",
+      "Morning nha 🌤️ Hôm qua ghi đủ bữa hông đó?",
+      "Hình như hôm qua {name} quên ghi bữa ăn rồi phải hong ta ⏱️"
+    ],
+    "morning": [
+      "Bình minh ơi dậy chưa ☀️! Ghi lại buổi sáng hôm nay thôi nào",
+      "Ăn sáng chưa đó? Đừng nhịn nha 🥺",
+      "Sáng nay ăn gì kể mình nghe với 👀",
+      "Bận công việc cũng đừng quên bữa sáng nhen 💪",
+      "Đi làm mà bụng đói là hông được nha! Ăn gì kể Kallo với nhé",
+      "Morning {name}! Sáng nay nạp năng lượng bằng món gì rồi nè? ⚡",
+      "Ăn sáng rùi thì nhớ ghi lại cho tui biết với nhen, chưa ăn thì đi ăn nha 😤",
+      "Trễ rồi nè, ăn sáng chưa đó?"
+    ],
+    "afternoon": [
+      "Bữa trưa ăn bưởi chua chưa đấy! Nhớ ghi cho Kallo biết nhé 🍊.",
+      "Trưa nay ăn gì chưa đó? Bận cỡ nào cũng nhớ phải ăn nha",
+      "Chiều rồi, nay có uống trà sữa ăn bánh ngọt hong đó?",
+      "Bữa trưa hôm nay đi đâu rồi ta? 👀",
+      "No chưa? Ghi lẹ bữa hôm nay rồi làm tiếp nha",
+      "Cơm văn phòng hôm nay có gì nè? 🍱",
+      "Ăn chung với team hả? Ghi lại bữa ăn trước khi vô làm tiếp nhe 🍕",
+      "Trưa nay ăn gì dạ? Kể Kallo nghe với 🥹"
+    ],
+    "evening": [
+      "Chốt sổ hôm nay nè! Ghi nốt mấy món còn thiếu nha 🌙.",
+      "Tối nay ăn gì rồi {name} ơi? Ghi nốt rồi đi ngủ nè 😴",
+      "Ăn tối chưa đó {name}? Đừng nhịn nha 🥺",
+      "Ăn khuya thì ghi luôn, hông ai la đâu 😌",
+      "Hôm nay vậy là đủ chưa ta? ✅",
+      "Tấp vô lề! Có lén ăn vặt hông đó 🍿",
+      "Tối nay ăn món gì thế ngon hông? Kể Kallo nghe với 😋",
+      "Tối nay ăn cơm nhà hay đi ăn ngoài nè? 🍲",
+      "Nhiệm vụ cuối ngày: chốt sổ hôm nay nhe tình iu ơi 🎯",
+      "Hôm nay vất vả rồi, ghi nốt bữa tối rồi ngủ ngon nha 💤"
+    ]
   }
 }

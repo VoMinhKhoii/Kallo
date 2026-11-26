@@ -48,11 +48,11 @@ class VesselTierData {
 const Map<ContainerFamily, Map<int, VesselTierData>> vesselFamilies = {
   ContainerFamily.bowl: {
     1: VesselTierData(
-      ml: 400,
+      ml: 300,
       asset: VesselAsset('bowl-1-chen.webp', 1.36),
       viLabel: 'chén nhỏ',
       enLabel: 'small bowl',
-      sizeLabel: '400 ml',
+      sizeLabel: '300 ml',
     ),
     2: VesselTierData(
       ml: 700,
@@ -69,37 +69,37 @@ const Map<ContainerFamily, Map<int, VesselTierData>> vesselFamilies = {
       sizeLabel: '1000 ml',
     ),
     4: VesselTierData(
-      ml: 1300,
+      ml: 1500,
       asset: VesselAsset('bowl-4-pho.webp', 2.32),
       viLabel: 'tô rất lớn',
       enLabel: 'extra-large bowl',
-      sizeLabel: '1300 ml',
+      sizeLabel: '1500 ml',
     ),
   },
   ContainerFamily.plate: {
     1: VesselTierData(
-      ml: 420,
+      ml: 250,
       asset: VesselAsset('plate-1-side.webp', 2.31),
       viLabel: 'dĩa nhỏ',
       enLabel: 'side plate',
       sizeLabel: '16 cm',
     ),
     2: VesselTierData(
-      ml: 660,
+      ml: 550,
       asset: VesselAsset('plate-2-coupe.webp', 2.34),
       viLabel: 'dĩa vừa',
       enLabel: 'medium plate',
       sizeLabel: '20 cm',
     ),
     3: VesselTierData(
-      ml: 1030,
+      ml: 850,
       asset: VesselAsset('plate-3-dinner.webp', 2.1),
       viLabel: 'dĩa lớn',
       enLabel: 'dinner plate',
       sizeLabel: '25 cm',
     ),
     4: VesselTierData(
-      ml: 1480,
+      ml: 1200,
       asset: VesselAsset('plate-4-oval-platter.webp', 3.22),
       viLabel: 'dĩa đại',
       enLabel: 'serving platter',
@@ -115,11 +115,11 @@ const Map<ContainerFamily, Map<int, VesselTierData>> vesselFamilies = {
       sizeLabel: '150 ml',
     ),
     2: VesselTierData(
-      ml: 250,
+      ml: 300,
       asset: VesselAsset('cup-2-250ml.webp', 0.69),
       viLabel: 'ly vừa',
       enLabel: 'regular cup',
-      sizeLabel: '250 ml',
+      sizeLabel: '300 ml',
     ),
     3: VesselTierData(
       ml: 500,
@@ -154,10 +154,10 @@ class DensityFill {
 /// Only the midpoints are used client-side; the low/high guard band that also
 /// derives from these numbers is a pipeline concern.
 const Map<DishClass, DensityFill> densityFill = {
-  DishClass.soup: DensityFill(0.9, 1.1, 0.75, 0.95),
-  DishClass.solid: DensityFill(0.6, 0.9, 0.6, 0.9),
-  DishClass.airy: DensityFill(0.3, 0.6, 0.7, 1),
-  DishClass.drink: DensityFill(0.95, 1.05, 0.85, 1),
+  DishClass.soup: DensityFill(0.95, 1.08, 0.6, 0.85),
+  DishClass.solid: DensityFill(0.6, 0.95, 0.6, 0.9),
+  DishClass.airy: DensityFill(0.2, 0.65, 0.7, 1),
+  DishClass.drink: DensityFill(0.95, 1.08, 0.6, 0.95),
 };
 
 /// Centre-of-envelope grams for a container tier — the anchor the picker shows.

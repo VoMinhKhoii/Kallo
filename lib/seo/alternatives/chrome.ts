@@ -2,6 +2,11 @@
 export const ALTERNATIVES_CHROME = {
   /** The English footer column that links every alternatives and comparison page. */
   footerLabel: 'Compare apps',
+  /** Docs pages these pages and the comparison pages link from their Kallo copy. */
+  docs: {
+    switching: '/docs/switching',
+    accuracy: '/docs/estimates/accuracy-and-limits',
+  },
   /** The line under the title, from the page's `checkedOn` (`YYYY-MM-DD`). */
   checked: (isoDate: string) =>
     `Prices checked ${new Date(`${isoDate}T00:00:00Z`).toLocaleDateString(

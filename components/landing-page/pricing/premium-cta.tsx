@@ -35,7 +35,7 @@ export function PremiumCta({
       {savePercent !== null && (
         <span
           data-testid="pricing-save-chip"
-          className="pointer-events-none absolute -top-3 right-3 z-10 whitespace-nowrap rounded-full bg-kallo-ink-fixed px-2.5 py-1 font-medium font-sans-display text-kallo-gold text-xs"
+          className="pointer-events-none absolute -top-3 right-3 z-10 whitespace-nowrap rounded-full bg-kallo-ink-fixed px-2.5 py-1 font-medium font-sans-display text-white text-xs"
         >
           {t('discount', { percent: savePercent })}
         </span>

@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `Khoảng ${span} calo. Bốn tô bún thịt nướng: thêm chả giò và chén nước mắm, tô thường không chả giò, tô đặc biệt có nem nướng, tô ít bún thêm thịt.`,
     lead: (span) =>
-      `Từ khoảng ${span} calo. Bún chỉ chiếm một phần; thịt nướng và chả giò mới là thứ đẩy con số lên. Dưới đây là bốn tô thật, mỗi tô gõ vào Kallo đúng như người ta vẫn kể.`,
+      `Từ khoảng ${span} calo. Bún chỉ chiếm một phần; thịt nướng và chả giò mới là thứ đẩy con số lên. Dưới đây là bốn tô thường gặp, mỗi tô gõ vào Kallo đúng như người ta vẫn kể.`,
     breakdownOf: 'them-thit',
     breakdownLead:
       'Ở tô ít bún nhưng thêm một phần thịt, 200 g thịt nướng là 801 calo, còn bún chỉ 127. Bớt bún chẳng giảm được bao nhiêu nếu phần thịt tăng gấp đôi.',

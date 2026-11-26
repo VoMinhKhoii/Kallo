@@ -74,7 +74,13 @@ void main() {
     dir = await Directory.systemTemp.createTemp('dashboard-cache-test');
     cache = DashboardCache(directory: () async => dir);
   });
-  tearDown(() => dir.delete(recursive: true));
+  // The provider saves each fetched bundle without awaiting it, so a save can
+  // still be writing when a test ends; deleting under it fails with "Directory
+  // not empty". `clear` runs after any save under way for the user.
+  tearDown(() async {
+    await cache.clear(_userId);
+    await dir.delete(recursive: true);
+  });
 
   ProviderContainer containerWith(_Api api) {
     final container = ProviderContainer(

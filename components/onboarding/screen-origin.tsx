@@ -4,7 +4,7 @@ import { Globe, Languages, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
+import { useAccountLocaleSwitch } from '@/hooks/profile/use-account-locale-switch';
 import type { Locale } from '@/i18n/config';
 import { cn } from '@/lib/core/ui/cn';
 import { COUNTRIES } from '@/lib/domain/onboarding/data/countries';
@@ -251,7 +251,7 @@ function CountryPicker({
 
 export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
   const t = useTranslations('onboarding');
-  const switchLocale = useLocaleSwitch();
+  const switchLocale = useAccountLocaleSwitch();
   const [origin, setOrigin] = useState<string | null>(
     defaultValues.countryOfOrigin
   );
@@ -301,18 +301,17 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
           value={locale}
           onChange={(v) => {
             const nextLocale = v as Locale;
-            if (nextLocale === locale) {
-              return;
-            }
-
-            writeStepOneLocaleDraft({
-              countryOfOrigin: origin,
-              countryOfResidence: residence,
-              preferredLocale: nextLocale,
+            if (nextLocale === locale) return;
+            // Stored on the account first; shown and drafted once it lands.
+            void switchLocale(nextLocale, () => {
+              writeStepOneLocaleDraft({
+                countryOfOrigin: origin,
+                countryOfResidence: residence,
+                preferredLocale: nextLocale,
+              });
+              setLocale(nextLocale);
+              report(origin, residence, nextLocale);
             });
-            setLocale(nextLocale);
-            report(origin, residence, nextLocale);
-            switchLocale(nextLocale);
           }}
         />
       </div>

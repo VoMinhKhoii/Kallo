@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four club sandwiches, from a cafe club with chips to a two-slice turkey club without mayo, broken down layer by layer.`,
     lead: (span) =>
-      `About ${span} kcal. A club is three slices of bread with mayo between them, and that is where most of it sits. Four real club sandwiches, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. A club is three slices of bread with mayo between them, and that is where most of it sits. Four typical club sandwiches, each typed into Kallo the way people describe them.`,
     breakdownOf: 'cafe',
     breakdownLead:
       'In the cafe club, the bread is the biggest line at 191 kcal. The side of chips adds 147 more, about a quarter of the plate.',

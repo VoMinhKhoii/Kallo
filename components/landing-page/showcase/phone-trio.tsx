@@ -124,6 +124,11 @@ export function PhoneTrio() {
                     width={660}
                     height={1434}
                     sizes="(max-width: 767px) 72vw, 22vw"
+                    // The screens are already 660px WebP of about 50 KB, so the
+                    // optimizer had nothing to save. Served as the static file
+                    // they stay in Cloudflare's cache instead of being resized
+                    // on Cloud Run per request (p95 0.8 s there).
+                    unoptimized
                     className="h-auto w-full rounded-[12.4%/5.7%]"
                   />
                 </div>

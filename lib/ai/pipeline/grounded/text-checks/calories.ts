@@ -178,8 +178,8 @@ export function holdCaloriesToText(
     // hộp"): the dish is the figure times the count Call 1 read for it.
     const around = text.slice(Math.max(0, own[0].start - 12), own[0].end + 14);
     const counts = new Set(
-      dish.ingredients.flatMap((i) =>
-        i.count && i.count >= 2 ? [i.count] : []
+      [dish.dishCount, ...dish.ingredients].flatMap((i) =>
+        i?.count && i.count >= 2 ? [i.count] : []
       )
     );
     if (

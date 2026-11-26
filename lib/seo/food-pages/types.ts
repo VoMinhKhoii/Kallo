@@ -2,7 +2,7 @@
  * The shapes behind a food page: what is written by hand (`foods/<group>/<slug>.ts`)
  * and what the capture script writes (`captures/<slug>.json`).
  */
-import type { FoodLocale } from './slugs';
+import type { FoodLocale, FoodSlug } from './slugs';
 
 /**
  * One meal on a food page: the heading the reader sees and the sentence typed
@@ -17,6 +17,12 @@ export interface FoodPageMeal {
   key: string;
   label: string;
   text: string;
+  /**
+   * Dishes the text names that have their own page in the same locale. The
+   * meal card links the first place each one's words appear; the text itself
+   * does not change.
+   */
+  links?: { words: string; to: FoodSlug }[];
 }
 
 /**

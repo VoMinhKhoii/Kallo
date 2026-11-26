@@ -32,7 +32,7 @@ const RICE_BOWL_RULE: Record<EstimationPromptLocale, string> = {
 const REFUSE_VESSEL_RULE = `
 
 <vessel_rule>
-  When a <meal_item> carries serve_total_guard_g="L-H": the SERVED EDIBLE total of that dish — every ingredient's grossG after refusePct, with broth/liquid at 100% — must land inside [L, H] grams. resolved_grams anchors and explicit user weights are AUTHORITATIVE EDIBLE mass: never rescale them; fit the band by adjusting only non-anchored ingredients. If the anchored ingredients alone already exceed the band, the band yields — anchors always win; never distort other ingredients to compensate for an over-band anchored total. EATEN vs SERVED: macro triples cover what was EATEN — solids fully eaten; broth/liquid mass = served broth × broth_consumption from <user_context> (leave_it ≈ 10%, some ≈ 50%, finish_it = 100%). The eaten total may fall below the band when broth is not drunk; the SERVED total must still be plausible for the vessel. Portion cues on ingredients shift within the band: ít/little ≈ −30%, nhiều/extra ≈ +40%, nửa/half = ×0.5.
+  When a <meal_item> carries serve_total_guard_g="L-H": the SERVED EDIBLE total of that dish — every ingredient's grossG after refusePct, with broth/liquid at 100% — must land inside [L, H] grams. resolved_grams anchors and explicit user weights are AUTHORITATIVE EDIBLE mass: never rescale them; fit the band by adjusting only non-anchored ingredients. If the anchored ingredients alone already exceed the band, the band yields — anchors always win; never distort other ingredients to compensate for an over-band anchored total. EATEN vs SERVED: macro triples cover what was EATEN — solids fully eaten; broth/liquid mass = served broth × broth_consumption from <user_context> (leave_it ≈ 10%, some ≈ 50%, finish_it = 100%). The eaten total may fall below the band when broth is not drunk; the SERVED total must still be plausible for the vessel. Portion cues on ingredients shift within the band: ít/little ≈ −30%, nhiều/extra ≈ +40%, nửa/half = ×0.5. A half or a count of the whole dish is its dish_count, already inside the band: never apply it again.
 </vessel_rule>`;
 
 export function buildStaticPrefix(
@@ -109,7 +109,7 @@ ${gramsRule}
     - If the ingredient list ALREADY contains the cooking fat as its own entry (dầu ăn, dầu, mỡ, oil, butter, ghee, lard): that row carries the entire oil. Every OTHER ingredient in the dish keeps fatG at its own natural fat — do NOT also add absorbed oil to them, or the same oil is counted twice.
     - Only when NO such row exists may you fold absorbed oil into the fried food's fatG (${renderAbsorbedOilPromptRule()}; scale within the range using oil_usage in <user_context>). A pan-seared chicken breast is NEVER ≤3g fat.
     - Skip entirely when explicitly no-oil (luộc/hấp/steamed/boiled/air-fried).
-  dish_count and dish_unit on a <meal_item> are the user's count of whole pieces of the DISH ("1 miếng tôm tonkatsu" is one whole shrimp cutlet, breading included; "2 cái bánh bao" is two whole buns, ~100–120 g each, mostly wrapper): size one whole piece as served, multiply by dish_count, and share that weight across the dish's ingredients. Never size one ingredient as one unit of itself (one shrimp, one piece of filling).
+  dish_count and dish_unit on a <meal_item> are the user's count of the whole DISH, in pieces or vessels ("1 miếng tôm tonkatsu" is one whole shrimp cutlet, breading included; "2 cái bánh bao" is two whole buns, ~100–120 g each, mostly wrapper; "2 tô" is two bowls; 0.5 "chén" is half a small bowl): size ONE unit as served, multiply by dish_count, and share that weight across the dish's ingredients. Never size one ingredient as one unit of itself (one shrimp, one piece of filling). A user_count on an ingredient of that dish is the user's own amount of that ingredient for the whole meal item: keep it as typed, never multiply it by dish_count. A serve_total_guard_g on the same meal_item already covers all dish_count units: fit the total to it as given, never multiply or halve it again.
   ${RICE_BOWL_RULE[locale]}
   If user_count="0" on an ingredient: the user typed an explicit zero. The server has flagged it for a clarify and will DISCARD your numbers for it — ${zeroMassContract} and never treat the zero as one standard serving in meal-level reasoning.
 ${serverScalingRule}
@@ -120,7 +120,7 @@ ${serverScalingRule}
 
   ACCEPTED candidate, prep_notes EMPTY — the server replaces protein and carb with the DB row: keep those two brief (flat triples at base are fine); your effort belongs in grossG, refusePct, and fat.
     - fat: reflect cooking-method effect.
-        · chiên/rán/xào (oil): +30–80% over base.
+        · chiên/rán/xào/fried/stir-fried (oil): +30–80% over base ONLY when no cooking-fat row is listed in this dish and the selected candidate is not already fried; otherwise keep fat near base.
         · luộc/hấp: near base.
         · nướng without basting: near base.
         · kho with oil: modest increase.

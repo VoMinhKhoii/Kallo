@@ -1,0 +1,917 @@
+---
+name: kship
+description: |
+  MANUAL TRIGGER ONLY: invoke only when user types /kship. (Renamed from /ship: Claude Code 2.1.330 took that name for its own built-in.)
+  Full Git shipping workflow — from unstaged changes to a clean, merged-ready PR.
+  Handles: git add, branch creation (with meaningful name), conventional commit,
+  a local review before the first push (Gemini 4 Neon rounds, falling back to Codex
+  Sol only when Neon cannot run, an Astra pass when needed, a Fable thermo-nuclear
+  structure review, a regression check), push (behind a
+  pre-push gate hook), draft PR creation, CI monitoring and fixing, an always-on PR review
+  loop (a Gemini 4 Neon pass on each pushed head, posted on the PR, then `@codex review`
+  with a change brief, iterated until Codex approves the current head, or Neon finds
+  nothing to fix while Codex is out of usage; every finding judged on its merits),
+  CodeRabbit comment triage (auto-fix reasonable ones, dismiss false positives
+  with explanation, escalate architectural issues). Loops until all CI checks are
+  green, the head is approved, and all actionable review comments are resolved. Use when the user says "ship this", "commit and PR", "push and open a PR", "send this for review", "submit my changes", or anything that implies taking local changes all the way to a reviewable pull request.
+  Proactively suggest after any significant code change session.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - AskUserQuestion
+  - Agent
+---
+
+# Ship Skill
+
+Takes your working directory from unstaged changes to a clean draft PR, then loops
+until all CI checks are green, **the current head is approved** (by Codex, or by
+Neon while Codex is out of usage), and all CodeRabbit comments are resolved. The PR
+review (Neon, then Codex) is not optional and is never skipped; neither is our own
+judgment: the reviewers are second opinions, not the authority.
+
+---
+
+## Phase 0: Sanity Checks
+
+Before touching anything, orient yourself:
+
+```bash
+# Confirm we're inside a git repo
+git rev-parse --show-toplevel
+
+# Check current branch and status
+git status
+git branch --show-current
+
+# Confirm gh CLI is available
+gh --version
+
+# Confirm we're authenticated
+gh auth status
+```
+
+If `gh` is not installed or not authenticated, halt and tell the user:
+> "`gh` (GitHub CLI) is required. Install: https://cli.github.com — then run `gh auth login`."
+
+Check if there are any changes to ship at all (`git status`). If the working
+tree is completely clean and there are no staged changes, halt and ask the user
+what they want to ship.
+
+---
+
+## Phase 1: Stage Changes
+
+Review what's changed:
+
+```bash
+git diff --stat
+git diff --cached --stat
+```
+
+Stage **explicit paths** — the files this session changed — never `git add -A` /
+`git add .`. The checkout is shared: a blanket add once swept 67 of the user's untracked
+files into a pushed commit (`f6072383` L961-969) and another silently deleted
+`apps/docs/mobile/` (`56cfd62e` L3942). If the user has already partially staged changes
+(check `git status`), or untracked files exist that you did not create, confirm with the
+user before adding them. Then check `git diff --cached --stat` and
+`git diff --cached --diff-filter=D --name-only` — every staged deletion is one you meant.
+
+---
+
+## Phase 2: Branch
+
+Check if we're already on a feature branch (i.e., not `main` or `master`):
+
+```bash
+git branch --show-current
+```
+
+**If on `main`/`master`:** Create a new branch. Derive a meaningful name from the
+staged diff:
+
+```bash
+git diff --cached --stat
+git diff --cached -- . | head -200
+```
+
+Use the diff summary to generate a branch name following this pattern:
+`<type>/<short-slug>` where type is one of: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`.
+
+Examples: `feat/user-auth-jwt`, `fix/null-pointer-payment`, `chore/update-deps`
+
+```bash
+git checkout -b <branch-name>
+```
+
+**If already on a feature branch:** Keep it. Do not rename.
+
+---
+
+## Phase 3: Commit
+
+Write a conventional commit message derived from the staged diff.
+
+Format:
+```text
+<type>(<optional-scope>): <short imperative summary>
+
+<optional body: what changed and why, not how>
+
+<optional footer: breaking changes, issue refs>
+```
+
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`
+
+Rules:
+- Subject line ≤ 72 chars, imperative mood ("add" not "added")
+- Body only if the why isn't obvious from the diff
+- Reference issues if context is clear from the diff (e.g., `Closes #42`)
+
+```bash
+git commit -m "<message>"
+```
+
+---
+
+## Phase 3b: Local Review (every PR, before the first push)
+
+Before GitHub ever sees the branch, it is reviewed locally in this order (any
+tier, test-only and docs-only PRs included; #630 skipped it and said nothing):
+**up to three bug rounds**, **one Astra pass** only if round 3 still finds
+real bugs, **one Fable structure review** (`thermo-nuclear-code-quality-review`),
+then **one regression check** on the structure fixes. If that check is clean, we
+push and open the PR. The shape follows Anthropic's write-up of its own review loop:
+full review first, diff-only re-review after it, findings reported as classes, no
+repeats, and a step back after three rounds
+(<https://claude.dev/blog/solving-code-review-at-anthropic/>). On record, one local
+pass found 8 defects the GitHub Codex loop had missed.
+
+**Which model.** The bug rounds and the regression check run on **Gemini 4 Neon**
+(`gemini-4-neon-high`, through the Antigravity CLI `agy`); the Astra pass runs on
+Codex (`gpt-6-astra`). When a pass fails, these rules apply in order:
+
+1. **Neon failed once** (a refused tool: the run ends "jetski: no output produced
+   … required the "command" / "read_file" permission"; or a CLI error, a timeout,
+   output that is not a review): rerun Neon once on the same pass. After a refusal
+   the rerun may add a read-only command (never one that writes; no pipes or
+   chains) or a folder with no secrets in it, such as a package cache, to
+   `NEON_READ_ONLY`. Never add a folder that holds credentials or env files:
+   `~/.gemini` itself, `~/.ssh`, `~/.config`, `~/.aws`, or any checkout of the repo
+   (its `.env.local`).
+2. **Neon failed twice, `agy` is missing, or Neon is out of quota**: run the pass
+   on **Codex Sol** (`gpt-6.1-sol`) with the same brief and pass file. A missing
+   `agy` or an exhausted quota means Sol for the rest of this `/kship`.
+3. **Codex refuses the model** ("model is not supported when using Codex with a
+   ChatGPT account"; the current account refuses `gpt-6.1-sol` and `gpt-6-astra`):
+   an Astra pass runs on Neon instead, with the same "Step back" pass file and rule
+   1's retry. A Sol fallback that is refused or out of quota ends there: the pass
+   did not run. Never go back to a Neon that already failed twice, is missing or
+   is out of quota; a refused Astra pass then runs on Sol if Sol works, else it
+   did not run.
+
+**How each pass runs.** Every pass runs in the background (3-15 minutes; wait for
+the task notification, never a foreground `sleep`). Round 1 has no pass file:
+leave `<scratchpad>/pass-<name>.md` out of either command. Neon reviews a
+throwaway worktree of the pinned commit, and macOS `sandbox-exec` refuses its
+writes to the repo:
+
+```bash
+CK=<checkout>
+# A fresh throwaway worktree per run, removed however the run ends.
+REVIEW_DIR=$(mktemp -d <scratchpad>/review-<name>.XXXXXX) && rmdir "$REVIEW_DIR"
+git -C "$CK" worktree add --detach "$REVIEW_DIR" <pinned-sha> || exit 1
+trap 'git -C "$CK" worktree remove --force "$REVIEW_DIR" 2>/dev/null' EXIT
+trap 'exit 130' INT; trap 'exit 143' TERM   # a kill still runs the EXIT trap
+# The OS refuses writes to every worktree of this repo and to the shared .git
+# (allowed flags such as `git diff --output=<path>` write anywhere otherwise),
+# except the throwaway worktree's own git metadata.
+DENY=$(git -C "$CK" worktree list --porcelain | sed -n 's/^worktree //p' \
+  | grep -vxF "$REVIEW_DIR" | sed 's/.*/(subpath "&")/' | tr '\n' ' ')
+COMMON=$(git -C "$CK" rev-parse --path-format=absolute --git-common-dir)
+ADMIN=$(git -C "$REVIEW_DIR" rev-parse --path-format=absolute --git-dir)
+PROFILE="(version 1)(allow default)(deny file-write* $DENY(subpath \"$COMMON\"))(allow file-write* (subpath \"$ADMIN\"))"
+# Plan mode refuses any command not on the allow list, or chained with pipes,
+# && or ; (and ends the run); the deny rule refuses agy's own file writes.
+# The default mode writes files and runs unlisted commands: never drop
+# --mode plan. -p must come last and be joined with "=", or agy reads the next
+# flag as the prompt.
+# Reads: read_file(<dir>) allows every file under <dir>; read_file(<dir>/**)
+# matches nothing. Any other read is refused, and in print mode one refused
+# read ends the run with "jetski: no output produced" (exit 0). ~/.pub-cache
+# holds the Dart package sources a Flutter review reads (every Neon pass on
+# 2026-11-24 died reading easy_localization there until this rule was added).
+# ~/.gemini/memory is agy's own memory, which it reads on its own (#631's first
+# run died there); `git status` killed #628's regression check.
+NEON_READ_ONLY='{"permissions":{"allow":["command(git diff)","command(git log)","command(git show)","command(git status)","command(git rev-parse)","command(git ls-files)","command(git blame)","command(git grep)","command(grep)","command(ls)","command(cat)","command(head)","command(wc)","read_file('"$REVIEW_DIR"')","read_file('"$HOME"'/.pub-cache)","read_file('"$HOME"'/.gemini/memory)"],"deny":["write_file(*)"]}}'
+OUT=<scratchpad>/local-review-<name>.md
+(cd "$REVIEW_DIR" && sandbox-exec -p "$PROFILE" agy --model gemini-4-neon-high \
+  --mode plan --settings "$NEON_READ_ONLY" --print-timeout 20m \
+  -p="$(cat "$CK"/.claude/skills/kship/local-review.md \
+        <scratchpad>/codex-brief.md <scratchpad>/pass-<name>.md)") > "$OUT" 2>&1
+rc=$?
+# A refused run exits 0 with this one line, or with nothing at all.
+[ -s "$OUT" ] || rc=1
+grep -q '^jetski: no output produced' "$OUT" && rc=1
+echo "agy exit $rc"; [ "$rc" -eq 0 ]
+```
+`<checkout>` is the branch checkout's absolute path and `<pinned-sha>` the commit
+recorded for this pass. A non-zero exit is a failed pass, even when the output
+file has text in it: rerun it by the "Which model" rules.
+
+Sol fallback and the Astra pass, run from `<checkout>`:
+
+```bash
+# The prompt names the diff range: `codex review` rejects --base together
+# with custom instructions.
+cat .claude/skills/kship/local-review.md <scratchpad>/codex-brief.md \
+  <scratchpad>/pass-<name>.md \
+  | codex review -c 'model="<model>"' -c 'sandbox_mode="read-only"' - \
+  > <scratchpad>/local-review-<name>.md 2>&1
+```
+`<model>` is `gpt-6.1-sol`, except on the Astra pass (`gpt-6-astra`). For either
+CLI, check the output file is a review, not a CLI error, before reading silence as
+a clean pass.
+
+- **Pin the commit.** Just before launching any pass (Fable's too), record
+  `git rev-parse HEAD`: the commit that pass reviews. Fixes committed after the
+  launch are what the next pass reviews.
+- **Pass files.** Every pass after round 1 is diff-only and gets its own
+  `<scratchpad>/pass-<name>.md`, never lines appended to `codex-brief.md`, which
+  must still mean the whole branch when Phase 6c reuses it. A pass file holds
+  `Scope: git diff <previous-pass-sha>..HEAD` (the prompt adds the callers), an
+  "Already answered" list of every earlier pass's findings (finding, `Fixed in
+  <sha>` or `Not changing: <reason>`) so the reviewer does not raise them again, and what
+  that pass's step below adds.
+- **Judge every finding** as in 6c ("Judge every finding ourselves"), with one
+  difference: a finding that needs a product or design call is listed in the PR
+  body as a decision only the owner can make (any tier), not asked mid-review.
+  Commit fixes with explicit paths.
+
+1. **Write the brief now**, the three parts listed under Phase 5 (what changed and
+   why, where it could break, out of scope), to `<scratchpad>/codex-brief.md`. If
+   writing "where it could break" surfaces a bug, fix it first.
+2. **Round 1** (Neon, pass `1`) reviews the whole branch.
+3. **Rounds 2 and 3** (Neon, passes `2` and `3`). Each runs only when the round
+   before found a real bug (a finding we fixed, not one we rejected); a round with
+   none ends the bug rounds.
+4. **After round 3, step back; do not run a round 4.** If round 3 still found a
+   real bug, first ask whether the findings across all three rounds share one cause
+   (the same class reappearing at new sites, or an approach that keeps leaking).
+   If they do, change the approach, not the cases. Then fix, commit, and run **one
+   Astra pass** (pass `astra`, Scope from round 3's commit). Its pass file adds a
+   "Step back" section: the classes the three rounds found, the shared cause, and
+   the approach change made for it (or why none was needed), so Astra judges the
+   new approach, not just the new lines. Astra is the expensive model: it runs here
+   only, once per `/kship`, never as a routine round.
+5. **One Fable structure review** of the whole branch, once the bug rounds are
+   done. Dispatch one subagent with the Agent tool (`model: "fable"`,
+   `run_in_background: false`) and this brief: invoke the
+   `thermo-nuclear-code-quality-review` skill on `git diff origin/main...HEAD`; read
+   `<scratchpad>/codex-brief.md` for intent and scope; **REPORT ONLY. DO NOT EDIT
+   ANY FILES.**; return each finding as file:line, the structural problem, and the
+   restructuring proposed, then the count. Save its report to
+   `<scratchpad>/local-thermo.md`. Apply a finding when the restructuring keeps
+   behavior the same and the gates stay green; reject it with the reason otherwise.
+   Commit the structure fixes separately (`refactor: ...`).
+6. **One regression check** (Neon) on the structure fixes only (pass `regression`,
+   Scope from Fable's commit), skipped when step 5 changed nothing. Its pass file
+   adds the line "These commits are meant to change structure only; report any
+   behavior they change."
+   - **No findings** → push and open the PR (Phase 4 onward).
+   - **A real regression** → revert the restructuring that caused it unless the fix
+     is a few lines, then run this check once more on that fix (pass
+     `regression-2`). Push after that; the GitHub loop (6c) covers what remains.
+
+Record each pass's finding count (bug rounds, Astra if it ran, Fable structure
+review, regression check) under Evidence in the PR body, and which model ran each
+one (Neon, or Sol with the reason Neon could not).
+
+A local round (Neon or Sol) that already ran on this exact commit with the same brief
+(for example during `grill-your-own-work`), with its findings handled, counts as
+round 1; do not repeat it.
+
+If a pass cannot run on Neon or Sol (Neon failed twice and Sol is refused or out of quota), write
+"Local review did not run: <which pass>: <reason>" under Evidence in the PR body
+and continue. A pass that did not run is never a clean pass.
+
+---
+
+## Phase 3c: Real Run (changes a user can see)
+
+A change a user can see is opened in a real browser or simulator before the first
+push, and the PR shows the screenshots. More than half of the fixes for something an
+earlier PR broke came within a day, from exactly this kind of run (#307, #353,
+#241, #411). Setup, options and the iOS sign-in: `docs/REAL_RUN_EVIDENCE.md`.
+
+- **Web** (pages and components under `app/`, `components/`, `hooks/`,
+  `messages/`, styles): start `bun run dev` from the branch's checkout, then
+  capture every route the change reaches:
+
+  ```bash
+  node --env-file=.env.local scripts/dev/evidence/capture-web.mjs \
+    --out <scratchpad>/evidence /en/logging /en/dashboard
+  ```
+
+  It signs in as the dev evidence account, captures phone and desktop width, and
+  fails on console errors, failed requests, sideways scrolling, broken images or a
+  lost session. An issue that also happens on main goes in `--allow '<text>'` and
+  under Evidence as pre-existing. A state the route alone does not reach (an open
+  sheet, an error toast): sign Playwright MCP in with `sign-in.mjs` and screenshot it.
+- **iOS** (`apps/mobile-flutter/lib/`): mark the dev server's log, run the dev
+  app on the simulator with `tool/run_dev.sh` (its log kept in a file), drive it
+  by label with `drive-ios.mjs` (never by coordinates), and capture each screen
+  the change reaches with `capture-ios.mjs --log <run log> --server-log <dev
+  server log> <screen>`. It fails on a Flutter exception or layout overflow, or
+  an `/api/v1` call that got an error status.
+- **Look at every screenshot** (downscaled, AGENTS.md §8). A clean report means
+  nothing crashed, not that the screen is right. Fix what is wrong, re-capture.
+- **Publish**: `node scripts/dev/evidence/publish.mjs <scratchpad>/evidence`
+  uploads to the `pr-evidence` branch and prints the image Markdown for Evidence.
+
+When a run is not possible (no simulator, the dev database behind the branch's
+migrations), write "Not run on <web|iOS>: <reason>" under Evidence. Changes with
+nothing to see (server-only code, scripts, docs) skip this phase.
+
+---
+
+## Phase 4: Push
+
+```bash
+git push -u origin <branch-name>
+```
+
+A git pre-push hook (`.githooks/pre-push` → `scripts/dev/push-gates/`) runs CI's
+fast gates (structure, Biome, tsc, migration timestamps, `dart format`, `flutter
+analyze`, each only when the diff needs it) before any agent push, and makes git
+refuse the push with the failing output. Fix the failures and push again; never
+bypass it with `--no-verify`.
+
+If push is rejected due to diverged history (non-fast-forward), see
+**[Appendix: Handling Diverged Branch]** before proceeding.
+
+---
+
+## Phase 5: Create Draft PR
+
+Generate PR title and body from the branch name, commit history, and diff:
+
+```bash
+git log main..HEAD --oneline
+git diff main..HEAD --stat
+```
+
+**Title:** Conventional format mirroring the primary commit.
+Example: `feat(auth): add JWT-based user authentication`
+
+**Tier first.** `node scripts/dev/risk-tier/risk-tier.mjs` prints the review tier
+of the branch (low / medium / high) and why. The tier sets what the owner reads and
+what evidence the PR carries (`docs/REVIEW_TIERS.md`); every tier loops to
+approval. A fix-forward PR is reviewed as low when its "Regression of" PR merged in
+the last 14 days, its product code stays within files that PR touched (new tests
+and docs are fine), and its own tier is not high; the Risk tier section then says
+both, e.g. "medium by path, reviewed as low: fix-forward of #N".
+
+**Body:** fill every section of `.github/PULL_REQUEST_TEMPLATE.md`:
+- **Summary**, **Changes**: what the PR does and why; key changes from the diff.
+- **How to review** (medium and high): the owner reads this instead of the whole
+  diff. What behaves differently for a user; the 2-3 places the risk sits, as
+  `file:line`, and what could go wrong there; what the evidence covers and what it
+  cannot see. Write it for someone who has not read the code since last week. High
+  tier adds the decisions only the owner can make and the few diff excerpts
+  (`file:line` ranges) worth their reading; the full diff stays one click away. Low
+  tier: "Low tier, merge on green."
+- **Evidence**: each claim points at output you ran (gates, tests, screenshots of
+  the screen on a device or browser, the eval result, a migration on a scratch
+  database). Say what did not run as plainly as what did; a high tier PR names what
+  was not exercised in a real environment (device, browser, prod-like service).
+- **Risk tier**: the script's tier and reasons.
+- **Regression of**: the PR whose defect this fixes, or "none". It is how fix-forward
+  breakage gets counted, so never leave it blank.
+- **How to revert**: revert, or the flag / kill switch; name any migration or data
+  change a revert does not undo.
+
+Create as **draft** PR, labelled with its tier:
+
+```bash
+gh pr create \
+  --title "<title>" \
+  --body-file <scratchpad>/pr-body.md \
+  --draft \
+  --base main \
+  --label "risk:<tier>"
+```
+
+Print the PR URL. Save the PR number for polling later.
+
+**Before leaving this phase, refresh the Codex brief** written in Phase 3b (used in
+6c) so it matches the head being pushed. It is also our own review of the change, so
+do it honestly:
+
+1. **What changed and why** — 2-4 sentences in plain words: the behavior before,
+   the behavior after, and the reason.
+2. **Where it could break** — the 2-5 spots *we* consider riskiest (a boundary
+   condition, a cache, a migration, a trust boundary, a concurrency path), each
+   with file path and what to check. Name the function, field or invariant.
+3. **Out of scope** — anything deliberately not changed, so Codex does not flag it
+   as missing.
+
+If writing point 2 surfaces a real bug, fix it now, before asking Codex. We do
+not outsource finding our own bugs.
+
+---
+
+## Phase 6: CI + Codex + CodeRabbit Loop
+
+This is the main loop. Repeat until the exit condition in 6e holds: **all CI
+checks pass**, **the current head is approved** (by Codex, or by Neon while Codex
+is out of usage), and **no unresolved actionable comments remain**.
+
+### 6a. Wait for CI
+
+```bash
+# Poll every 30 seconds, up to 20 minutes
+gh pr checks <pr-number> --watch
+```
+
+Or manually poll:
+```bash
+gh pr checks <pr-number>
+```
+
+States to handle:
+
+| State | Action |
+|-------|--------|
+| All green ✅ | Proceed to 6c (Neon, then Codex) |
+| Any pending ⏳ | Wait 30s, re-poll |
+| Any failed ❌ | Go to **[CI Failure Triage]** |
+
+**Max wait:** 20 minutes. If still pending after 20 min, surface to user:
+> "CI has been running for 20 minutes without completing. Check for stuck runners:
+> `gh run list --branch <branch>`"
+
+### 6b. Triage CI Failures
+
+Read the full logs for each failed check:
+
+```bash
+# List runs
+gh run list --branch <branch-name> --limit 5
+
+# Get details for the failing run
+gh run view <run-id> --log-failed
+```
+
+For each failure:
+
+1. **Read the error carefully.** Identify root cause (test failure, lint error,
+   build error, type error, missing env var, etc.)
+
+2. **Categorize:**
+   - **Our code is broken** → fix it (see fix guidelines below)
+   - **CI config issue** → fix the workflow file if clearly wrong
+   - **Flaky test** (non-deterministic, network-dependent, timing) → re-run once:
+     `gh run rerun <run-id> --failed`. If it fails again, treat as real failure.
+   - **Main is broken** → See **[Appendix: Main Is Broken]**
+
+3. **Fix and recommit:**
+   After fixing, stage and commit with a `fix:` or `ci:` conventional commit,
+   then push. The CI loop restarts automatically.
+
+**CI fix guidelines:**
+- Fix the actual root cause, not just suppress the error
+- If a test is legitimately wrong (tests outdated behavior), update the test
+  with a comment explaining why
+- If CI would benefit from a new check (e.g., missing lint step, no test for
+  a new module), add it and note it in the next commit message
+
+### 6c. PR Review Loop: Neon first, then Codex (always runs)
+
+Every round has two reviewers, in this order: **Gemini 4 Neon** on the pushed
+head, then **Codex**. When Codex is out of usage, Neon carries the loop alone
+("Codex out of usage" below). Neither is ever skipped silently.
+
+#### Neon reviews the pushed head first
+
+Before every `@codex review`, run the Phase 3b Neon pass on the commit you are
+about to ask Codex about (pass `pr-<round>`, same command, same fallback rules).
+Round 1 reviews the whole branch with `codex-brief.md`; later rounds get a pass
+file scoped to `git diff <last-neon-sha>..HEAD` (`<last-neon-sha>` is the last
+commit a Neon pass reviewed) with the "Already answered" list, except that round 3
+reviews the whole branch ("From round 3 on" below). Skip running it only when a
+Neon pass already reviewed this exact commit (Phase 3b's last pass on the pushed
+head counts); then post that pass's result below instead.
+
+Post the result on the PR, so the PR itself shows Neon ran:
+
+```bash
+gh pr comment <pr-number> --body-file <scratchpad>/neon-pr-<round>.md
+```
+
+The comment starts with `**Gemini 4 Neon review** of <full sha>: <n> findings`,
+then one line per finding: file:line, the claim, and what we did (`Fixed in <sha>`
+or `Not changing: <reason>`). If Neon could not run, the comment says so and why.
+Judge Neon's findings like Codex's (below), commit and push the fixes, wait for CI,
+then request Codex on the new head. Codex reviews Neon's fixes; no second Neon pass
+is needed before it.
+
+#### Codex
+
+Codex is the `chatgpt-codex-connector[bot]` GitHub app. It reviews on demand when
+the PR gets a comment starting with `@codex review`; drafts are fine.
+
+#### Request a review
+
+Post the brief from Phase 5 as a PR comment. The first line must be exactly
+`@codex review`; the rest tells Codex what the change is and where to look:
+
+```bash
+REQUEST_SHA=$(git rev-parse HEAD)
+REQUEST_URL=$(gh pr comment <pr-number> --body "@codex review
+
+**Review commit:** $REQUEST_SHA
+
+$(cat <<'BODY'
+**Change:** <what changed and why, 2-4 sentences>
+
+**Please check in particular:**
+- `<path>`: <the invariant or edge case to verify>
+- `<path>`: <...>
+
+**Out of scope:** <what was deliberately left alone>
+BODY
+)")
+```
+
+On every later round, the comment names what changed since the last round:
+
+```text
+@codex review
+
+**Review commit:** <full HEAD sha>
+
+Round <n>. Since the last review (`<old-sha>`):
+- Fixed: <finding> in `<sha>`
+- Not changed, by design: <finding>: <one-line reason> (replied on the thread)
+Please re-check <the area the fix touched>.
+```
+
+#### Wait for the verdict
+
+Codex reacts 👀 while it runs (usually 2-10 minutes) and keeps a
+`## Codex Review Summary` status table comment up to date. That table is status,
+not a verdict. **Do not push while a round is running**: the verdict is tied to
+the commit the round was requested on, and a push mid-round leaves it judging a
+head that no longer exists. Never use foreground `sleep`; run a background poll or
+a Monitor until a verdict on the current head appears. The verdict is one of:
+
+- **Approved**: an issue comment from `chatgpt-codex-connector[bot]` containing
+  `Codex Review: Didn't find any major issues` whose `**Reviewed commit:**`
+  matches `git rev-parse --short=10 HEAD`. The comment opens with an HTML marker
+  (`<!-- codex-review-receipt:v1 -->`), so match with `contains`, not
+  `startswith`. The bot's `+1` lands on the PR itself, not on our request, and
+  carries no commit: treat it as a hint to look for the comment, never as the
+  approval.
+- **Findings**: a bot review whose `**Reviewed commit:**` is `HEAD`. Its findings
+  are the bot's inline comments with `original_commit_id == HEAD` (tagged
+  P0/P1/P2/P3). Never match inline comments on `commit_id`: GitHub moves it
+  forward on older comments that still apply.
+
+```bash
+HEAD_SHA=$(git rev-parse HEAD)
+BOT='chatgpt-codex-connector[bot]'
+# Approval comment for this head (ignores the status table)
+gh api repos/{owner}/{repo}/issues/<pr-number>/comments --paginate \
+  --jq ".[] | select(.user.login==\"$BOT\" and (.body | contains(\"Didn't find any major issues\")) and (.body | contains(\"${HEAD_SHA:0:10}\"))) | {created_at, body: .body[0:200]}"
+# Findings raised on this head. Filter on original_commit_id: GitHub moves
+# commit_id forward on older comments that still apply, which would resurface
+# findings from earlier rounds as if they were new.
+gh api repos/{owner}/{repo}/pulls/<pr-number>/comments --paginate \
+  --jq ".[] | select(.user.login==\"$BOT\" and .original_commit_id==\"$HEAD_SHA\") | {id, path, line, body}"
+```
+
+An approval for an **older** commit does not count. If nothing arrives after
+20 minutes, re-post the `@codex review` comment once; if it is silent again, treat
+it as out of usage (below).
+
+#### Codex out of usage
+
+The bot answers a request with `You have reached your Codex usage limits for code
+reviews` (its status table shows ❌ Failed). That is not a review and not a reason
+to stop reviewing: from here on **Neon is the PR reviewer** for this `/kship`.
+
+1. Do not re-request Codex every round. Each round is a Neon pass on the current
+   head (as above, posted on the PR), its findings judged, fixed, pushed, CI green.
+2. Loop until a Neon pass on the **current** head reports no finding we fix (a
+   finding we rejected with evidence does not block). The "From round 3 on" rules
+   below apply to these rounds too.
+3. If Neon cannot run on the current head (Phase 3b's rules exhausted), post that
+   on the PR, stop the loop, and hand the PR to the user: no reviewer has seen
+   this head, and a pass that did not run is never a clean pass.
+4. Once Neon is clean, and only if `HEAD` has moved past the commit Codex hit its
+   limit on, request `@codex review` once more on that head (limits reset).
+   Approved → done. Findings → Codex is back: leave out-of-usage mode, handle them
+   as usual, and run the normal loop until Codex approves or hits its limit again.
+   Usage limit again, or silence after one 20-minute wait → stop asking; the Neon
+   approval stands.
+5. Evidence and the Phase 7 summary say: "Codex: out of usage on <sha>; Neon
+   reviewed <n> rounds, clean on <sha>."
+
+#### Judge every finding ourselves
+
+Codex findings are claims to verify, not orders. For each one:
+
+1. **Reproduce the reasoning.** Read the code it points at and trace a real
+   caller or input to the failure. Write a failing test when the path is real.
+2. **Decide**, using the 6d framework (ACT / DISMISS / ESCALATE):
+   - Real bug, real path → fix at the root cause, add or extend a test.
+   - Real path, but the fix costs more than it prevents, or contradicts a repo
+     rule (`AGENTS.md`, a decision log entry) → do not change the code; reply on
+     the thread with the path traced and why.
+   - Wrong (misread the code, flags intended behavior) → reply with the evidence
+     (file:line, test name) and resolve.
+   - Architectural or ambiguous → escalate to the user.
+   - **Pipeline PRs** (any file under `lib/ai/prompts/`, `lib/ai/pipeline/`,
+     `lib/ai/matching/`): sort the finding before touching code (AGENTS.md "Code
+     Review Rules").
+     - *Code bug*: a term matched without a word boundary (the #247 `miến`/`miếng`
+       class), NFC/NFD, two prompt rules that contradict, wrong arithmetic or
+       units in a rule, a deadline / cancellation / dropped-field / mass-conversion /
+       provider-routing path. Fix it in this PR with a unit test or a
+       frozen-capture replay.
+     - *Food judgment*: the claim is "input X should yield Y" and only the model's
+       output on a meal can confirm it (a keyword-list entry such as "súp", sugar
+       implied in iced tea, how a dish count splits, which row state to pick). Do
+       not patch it on the reviewer's word. Write the meal as an arena case in the train
+       format of `~/Developer/kallo-meal-arena/climb/arena-train/meals.json`
+       (`{lang, text, components: [{name, role, grams, required}]}`) under
+       `arena-train/review-cases/pr<n>.json` with the comment id (never into
+       test30), and reply `Eval case: pr<n>/<id>, judged on the arena before any
+       change.` Run it the way `arena-train/CLIMB.md` records: a server-side change
+       uses the frozen-capture replay (no DB, no LLM); a prompt change needs a
+       Call 1/2 run, and any paid run needs the owner's go-ahead first. Judge it on
+       the measure the finding is about (the case's components, grams or kcal),
+       case by case, plus the aggregate to catch a regression elsewhere; the ±1.5
+       first-pick noise rule applies to retrieval comparisons only. Three outcomes,
+       stated in the PR's Evidence before un-drafting:
+       - the case fails today and a change fixes it without an aggregate
+         regression → make the change, with the numbers;
+       - the case already passes, or the change does not help → resolve the
+         thread with the result;
+       - the eval cannot run or is inconclusive → leave the case filed and ask the
+         owner whether to merge without it.
+       Review cases join `meals.json` only after a gold-curation batch.
+     - Codex re-raising an eval-routed finding gets the case id again, not a patch.
+3. **Sweep the class.** A finding usually names one site of a class of bug (a
+   missing deadline check, a substring match, an unhandled null). Name the class,
+   search the whole diff and its callers for it (`grep`, not memory), and fix every
+   site in this round. Say in the reply which sites were swept. #430 spent five
+   rounds finding one deadline site at a time. If our own brief named a risk Codex
+   did not comment on, check it again ourselves before treating silence as
+   clearance.
+
+Every Codex thread gets a reply (`Fixed in <sha>.`, `Not changing: <reason>.`,
+`Eval case: <id>.`, or `Pre-existing: <ttr task>.`) and is then **resolved**
+before the next round is requested. `main` requires conversation resolution, and an
+open thread at merge is how #419's finding shipped and came back as #420.
+
+```bash
+# Unresolved threads, with the first comment's id to match against our replies.
+# --paginate follows $endCursor, so a PR with over 100 threads is read whole.
+gh api graphql --paginate -F n=<pr-number> -f query='
+  query($n: Int!, $endCursor: String) {
+    repository(owner: "VoMinhKhoii", name: "Kallo") { pullRequest(number: $n) {
+      reviewThreads(first: 100, after: $endCursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes { id isResolved
+          comments(first: 1) { nodes { databaseId author { login } } } }
+  } } } }' \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)'
+# Resolve one after replying
+gh api graphql -f id=<thread-node-id> -f query='
+  mutation($id: ID!) { resolveReviewThread(input: {threadId: $id}) { thread { isResolved } } }'
+```
+
+Codex sometimes answers a thread reply by running its own cloud task and posting
+a `### Summary` comment with a commit and "PR metadata" on another branch. That
+patch is a suggestion: read it, take any idea that holds up into our own commit,
+and never merge or cherry-pick its branch.
+
+#### Iterate until approval
+
+Commit fixes with explicit paths (`fix: address review round <n>`), push,
+wait for CI (6a), then start the next round (Neon, then Codex). Repeat until the
+bot approves the **current** head, or, while Codex is out of usage, until Neon
+finds nothing we fix on it.
+
+**Every tier loops until approval.** The tier changes what the owner reads and
+what evidence the PR carries, never when review stops.
+
+**From round 3 on, change the round, not just the code.** Before the third and
+every later `@codex review`:
+1. List every finding so far by class. Sweep each class across the whole diff and
+   its callers (step 3 above), so this round fixes classes, not sites.
+2. Make that round's Neon pass review the whole branch at round 3 (not just the
+   diff). In later rounds it stays scoped to `git diff <last-neon-sha>..HEAD`
+   and the callers of what that changed, and a whole-branch pass runs again only
+   when the approach changed.
+3. Ask for a narrower review: the request names the last reviewed commit, asks
+   Codex to review `git diff <last-reviewed-sha>..HEAD` and the callers of what it
+   changed, and lists the findings already answered so they are not raised again.
+
+Keep looping while rounds find real bugs; the round count alone is never a reason
+to stop. When two rounds in a row find only new sites of classes already swept,
+change the approach instead of adding cases: a different mechanism, not a longer
+list (on #466 the gate stopped parsing Bash commands and used git's own pre-push
+hook, and the findings ended). Say so in the next request. Do not cave to win the
+approval either. Stop and put the positions to the user only when:
+- Codex or Neon re-raises a finding we rejected with evidence (do not change the
+  code just to quiet it);
+- Codex is out of usage and Neon cannot run on the current head (above);
+- a finding, or a change of approach, needs a product or design decision.
+
+### 6d. Triage CodeRabbit Comments
+
+After CI is green, fetch all open review comments:
+
+```bash
+gh pr view <pr-number> --comments
+gh api repos/{owner}/{repo}/pulls/<pr-number>/comments \
+  --jq '.[] | {id: .id, path: .path, line: .line, body: .body}'
+```
+
+Or use:
+```bash
+gh pr view <pr-number> --comments
+```
+
+For each unresolved comment from CodeRabbit:
+
+#### Decision Framework
+
+Read the full comment. Then decide:
+
+**→ ACT on it if:**
+- It identifies a real bug, edge case, or correctness issue
+- It flags a security concern (injection, unvalidated input, etc.)
+- It suggests a simplification that genuinely improves readability
+- It catches a missing error handler or null check
+- It points out a performance issue with a clear fix
+
+**→ DISMISS with explanation if:**
+- It's a false positive (e.g., flags a pattern that is intentionally used)
+- It conflicts with another comment and the alternative is clearly worse
+- It's a style preference that contradicts the project's existing conventions
+- It suggests adding abstraction that would make the code harder to follow
+- It's a nitpick that doesn't affect correctness, readability, or performance
+
+**→ ESCALATE to user if:**
+- The fix requires restructuring more than ~50 lines or touching multiple files
+  in a non-mechanical way (architectural change)
+- You're genuinely uncertain which of two conflicting approaches is better
+
+**Conflicting comments:** When two comments suggest opposite things
+(e.g., "extract this" vs "inline this"), reason which is better given:
+1. How often this code path is called
+2. Whether the extracted unit has a single clear responsibility
+3. What the surrounding code style already does
+
+Pick the better one, fix it, dismiss the other with a comment explaining the tradeoff.
+
+#### Applying Fixes
+
+Fix the code, then stage and push:
+
+```bash
+git add <the files you fixed>      # explicit paths, never -A
+git commit -m "fix: address CodeRabbit review comments"
+git push
+```
+
+After pushing, CI re-runs. Return to **Phase 6a**, then run the next 6c round
+(Neon, then Codex): any push invalidates the current approval, Codex's or Neon's.
+
+#### Resolving / Dismissing Comments
+
+After pushing fixes, reply to resolved comments via the API or CLI:
+
+```bash
+# Reply to a specific review comment
+gh api repos/{owner}/{repo}/pulls/<pr-number>/comments/<comment-id>/replies \
+  -f body="Fixed in <commit-sha>."
+
+# For dismissed false positives:
+gh api repos/{owner}/{repo}/pulls/<pr-number>/comments/<comment-id>/replies \
+  -f body="Not acting on this: <brief technical reason>."
+```
+
+Then resolve each answered thread (the GraphQL commands in 6c).
+
+### 6e. Loop Exit Condition
+
+Exit the loop when **all** are true:
+1. `gh pr checks <pr-number>` shows all checks as `pass`
+2. Codex has approved the current `HEAD` (6c); or Codex is out of usage and the
+   last Neon pass, on the current `HEAD`, found nothing we fix; or the user
+   explicitly accepted an open dispute. Codex out of usage with Neon unable to
+   run on the current `HEAD` is not an exit: stop and hand the PR to the user (6c)
+3. Every Codex and CodeRabbit thread has a reply and is resolved (the 6c query
+   returns nothing); an open dispute the user is deciding stays open and is named
+   in the summary
+4. No unresolved actionable CodeRabbit comments remain
+
+Then print a final summary (see Phase 7).
+
+---
+
+## Phase 7: Done — Hand Off to User
+
+Print a clean summary:
+
+```text
+✅ PR Ready for Review
+
+Branch:  <branch>
+PR:      <url>
+Status:  Draft — ready to mark as ready-for-review when you're happy
+Tier:    <low|medium|high> — <low: merge on green | medium: read "How to review"
+         and the evidence | high: also the decisions and excerpts it names>
+
+CI:      All checks green
+Neon:    <n> PR rounds, last on <sha>: <count> findings (comments on the PR)
+Codex:   Approved on <sha> after <n> rounds
+         (or: out of usage on <sha>; Neon clean on <sha>)
+         (or: Not approved; user accepted open dispute(s): <finding>, on <date>)
+         Fixed: <count>  Disputed (with reasons): <count>
+Review:  All CodeRabbit comments resolved or dismissed
+
+Commits this session:
+  <git log main..HEAD --oneline output>
+```
+
+Ask the user:
+> "PR is clean and draft. Want me to mark it as ready-for-review now? (`gh pr ready <pr-number>`)"
+
+Do not mark it ready without explicit confirmation.
+
+---
+
+## Appendix: Handling Diverged Branch
+
+If `git push` fails because the branch has diverged from remote:
+
+```bash
+git fetch origin
+git log --oneline HEAD..origin/<branch>  # what's on remote that we don't have
+```
+
+If the remote commits are ours (e.g., from a previous session):
+```bash
+git rebase origin/<branch>
+git push
+```
+
+If the remote has someone else's commits on our feature branch (unusual):
+Surface to user and halt. Do not force-push without confirmation.
+
+---
+
+## Appendix: Main Is Broken
+
+If CI fails and the root cause exists in `main` (not in our diff):
+
+```bash
+# Verify: does the failure exist on main independent of our changes?
+git stash
+git checkout main
+git pull
+# Check if the same CI failure exists on main's last green run
+gh run list --branch main --limit 5
+```
+
+If confirmed broken on main independently of our changes:
+1. Restore our branch: `git checkout <branch> && git stash pop`
+2. **Halt** and report to user:
+   > "CI is failing due to a pre-existing issue on `main` (not caused by this PR).
+   > Specifically: `<failure summary>`. You'll need to fix `main` first, or someone
+   > else needs to. I've kept your branch intact."
+3. Do **not** commit to main. Do **not** attempt to fix main.
+
+---
+
+## Appendix: Suggested CI Additions
+
+During CI triage, if you notice the repo is missing beneficial checks, propose
+them **after** the PR is clean, not during the fix loop. Examples worth suggesting:
+
+- No linter in CI but linter config exists locally → suggest adding lint step
+- No test coverage check → suggest adding coverage threshold
+- New file type introduced (e.g., first `.proto` file) → suggest schema lint
+- Secrets/credentials in diff → suggest adding secret scanning
+
+Propose via a follow-up message to the user, not as an autonomous commit.

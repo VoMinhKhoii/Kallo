@@ -80,6 +80,8 @@ export const routeInventory = {
     'accountExport',
     'lib/actions/identity/account.ts',
   ],
+  // The sign-in dialog's two public runtime values; no input, no database.
+  'api/v1/auth/client-config/route.ts': ['none', false, 'none-cheap'],
   'api/v1/auth/apple/token/route.ts': ['session', true, 'appleTokenLink'],
   'api/v1/barcode/image/[code]/route.ts': ['none', false, 'barcodeImageIp'],
   'api/v1/barcode/log/route.ts': ['session', true, 'none-cheap'],
@@ -228,8 +230,14 @@ export const routeInventory = {
   'api/v1/onboarding/profile/route.ts': ['session', false, 'none-cheap'],
   'api/v1/onboarding/screen/route.ts': ['session', true, 'none-cheap'],
   'api/v1/profile/ai-consent/route.ts': ['session', true, 'none-cheap'],
+  'api/v1/profile/reminders/route.ts': ['session', true, 'none-cheap'],
   'api/v1/profile/route.ts': ['session', true, 'none-cheap'],
   'api/v1/profile/sharing/route.ts': ['session', true, 'none-cheap'],
+  // The lock-screen close-day button: no session, the HMAC token the push
+  // carried is the authorization, verified before any database read.
+  'api/v1/reminders/close-day/route.ts': ['webhook-sig', true, 'webhook-sig'],
+  // The 15-minute scheduler tick: bearer secret from the edge Worker's cron.
+  'api/v1/reminders/tick/route.ts': ['webhook-sig', false, 'webhook-sig'],
   'api/v1/reports/route.ts': ['session', true, 'contentReport'],
   'api/v1/waitlist/confirm/route.ts': ['none', false, 'waitlistConfirmIp'],
   'api/v1/waitlist/route.ts': [
@@ -254,6 +262,8 @@ export const routeInventory = {
   // Static HTML with the public Turnstile site key: no DB, no upstream call.
   'auth/turnstile/route.ts': ['none', false, 'none-cheap'],
   'auth/verify/route.ts': ['none', false, 'authLinkIp'],
+  'data/meal-calorie-variation.csv/route.ts': ['none', false, 'none-cheap'],
+  'data/meal-calorie-variation.json/route.ts': ['none', false, 'none-cheap'],
   'feed.xml/route.ts': ['none', false, 'none-cheap'],
   'llms.txt/route.ts': ['none', false, 'none-cheap'],
   'md/[locale]/[...slug]/route.ts': ['none', false, 'none-cheap'],

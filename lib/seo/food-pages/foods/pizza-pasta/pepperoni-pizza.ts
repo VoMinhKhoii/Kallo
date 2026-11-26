@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four servings of pepperoni pizza, two slices from a pizza place, a deep-dish slice, half a thin crust and half a frozen pizza.`,
     lead: (span) =>
-      `About ${span} kcal. Most calories come from the crust. Its thickness and the number of slices matter more than the topping. Four real servings, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. Most calories come from the crust. Its thickness and the number of slices matter more than the topping. Four typical servings, each typed into Kallo the way people describe them.`,
     breakdownOf: 'two-slices',
     breakdownLead:
       'In two slices from a pizza place, the crust is more than half the calories. The pepperoni is 111 kcal.',

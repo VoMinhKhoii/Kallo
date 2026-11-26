@@ -6,6 +6,7 @@
  */
 
 import type { IngredientV2MatchResult } from '@/lib/ai/matching/candidate';
+import { dropWholeDishRowsFromParts } from '@/lib/ai/matching/rank/part-vs-dish';
 import type { StreamedMatching } from '@/lib/ai/matching/streamed-matching';
 import type { AnalyzeMealTraceContext } from '@/lib/ai/pipeline/analyze-meal';
 import { MATCHING_TIMEOUT_MS } from '@/lib/ai/pipeline/config/stage-timeouts';
@@ -62,12 +63,14 @@ export async function prepareGrounding(args: {
       // Work still to start must finish inside the stage deadline, with a
       // margin for assembling the results; past it, matching leaves an
       // ingredient unmatched rather than fail the meal.
-      return withDeadline(
+      const matched = await withDeadline(
         args.streamedMatching.match(ingredients, methods, legacy, {
           deadlineAt: Date.now() + MATCHING_TIMEOUT_MS - 750,
         }),
         MATCHING_TIMEOUT_MS
       );
+      // Inside the stage, so its log shows the candidates Call 2 sees.
+      return dropWholeDishRowsFromParts(decomposition, matched);
     }
   );
 

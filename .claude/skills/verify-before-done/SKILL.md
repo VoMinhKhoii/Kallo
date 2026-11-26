@@ -2,7 +2,7 @@
 name: verify-before-done
 description: |
   Invoke before ANY claim of done / fixed / complete / verified / ready for review — and
-  before /ship, pushing, un-drafting a PR, or telling the user "test it now". Green gates
+  before /kship, pushing, un-drafting a PR, or telling the user "test it now". Green gates
   are not proof the product works: requires CI-equivalent gates, the behavior observed
   once, and a report where every claim points at a tool result.
 allowed-tools:

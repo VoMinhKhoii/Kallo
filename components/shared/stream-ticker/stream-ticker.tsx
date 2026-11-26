@@ -35,14 +35,14 @@ export function StreamTicker({
       aria-live="polite"
       className={cn('flex min-w-0 items-center gap-3', className)}
     >
-      {/* The brand brown: the loader and the verb beside it are the app
-          working, so they carry the logo's umber rather than muted ink. */}
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center text-kallo-umber-text">
+      {/* Muted ink: text is ink or muted ink only, and the loader matches
+          the verb beside it. */}
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center text-kallo-text-muted">
         <CanvasLoader spec={loaderAt(loaderIndex)} size={20} />
       </span>
       <div className="flex min-w-0 flex-1 items-baseline gap-1">
         {line.prefix && (
-          <span className="shrink-0 text-kallo-umber-text text-sm">
+          <span className="shrink-0 text-kallo-text-muted text-sm">
             {line.prefix}
           </span>
         )}
@@ -57,7 +57,7 @@ export function StreamTicker({
               'min-w-0 truncate text-sm',
               line.kind === 'dish'
                 ? 'font-serif text-kallo-text italic'
-                : 'text-kallo-umber-text'
+                : 'text-kallo-text-muted'
             )}
           >
             {line.text}

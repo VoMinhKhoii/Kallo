@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { switchedFoodPath } from '@/lib/seo/food-pages/slugs';
+import { linkWords } from '../linked-words';
 import { FOOD_PAGE_CHROME } from '../page-copy';
 import {
   FOOD_PAGES,
@@ -48,6 +49,23 @@ describe.each(ALL_SLUGS)('food page %s', (slug) => {
         Math.abs(sum - mealKcal(variant)),
         `${variant.key}: ingredients ${sum} vs card ${mealKcal(variant)}`
       ).toBeLessThanOrEqual(roundingSlack(variant.ingredients.length));
+    }
+  });
+
+  it('links only dishes its meals name, to other pages in its locale', () => {
+    for (const meal of page.meals) {
+      for (const link of meal.links ?? []) {
+        expect(isFoodSlug(page.locale, link.to), link.to).toBe(true);
+        expect(link.to).not.toBe(slug);
+      }
+      // Every link renders: its words stand whole in the text and overlap no
+      // other link. Order is linkWords' own test; here both sides are sorted.
+      const rendered = linkWords(meal.text, meal.links ?? [])
+        .filter((part) => part.to)
+        .map((part) => `${part.text} → ${part.to}`);
+      expect(rendered.sort(), meal.key).toEqual(
+        (meal.links ?? []).map((link) => `${link.words} → ${link.to}`).sort()
+      );
     }
   });
 

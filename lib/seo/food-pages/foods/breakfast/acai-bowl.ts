@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four acai bowls, from a smoothie shop bowl with honey and coconut to a small one, showing where the calories really are.`,
     lead: (span) =>
-      `About ${span} kcal. The acai is the light part; the toppings are where an acai bowl gets its calories. Four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The acai is the light part; the toppings are where an acai bowl gets its calories. Four typical bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'shop',
     breakdownLead:
       'In the smoothie shop bowl, the granola is nearly half of it. The acai itself is only 62 kcal.',

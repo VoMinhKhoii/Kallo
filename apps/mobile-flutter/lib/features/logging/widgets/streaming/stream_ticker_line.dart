@@ -155,9 +155,8 @@ class _StreamTickerLineState extends State<StreamTickerLine> {
             child: SvgLoaderView(
               spec: loaderAt(widget.loaderIndex),
               size: 20,
-              // The brand brown: the loader and the verb beside it are the app
-              // working, so they carry the logo's umber rather than muted ink.
-              color: KalloColors.btn,
+              // Muted ink, matching the verb beside it (web parity).
+              color: KalloColors.textMuted,
             ),
           ),
         ),

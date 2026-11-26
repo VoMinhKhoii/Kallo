@@ -1,0 +1,1 @@
+ALTER TABLE "food_cards" ADD COLUMN "eaten_state" text DEFAULT 'ingredient' NOT NULL;

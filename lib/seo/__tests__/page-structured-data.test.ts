@@ -69,10 +69,13 @@ describe('page structured data', () => {
     expect(typed(tool, 'WebApplication').isAccessibleForFree).toBe(true);
   });
 
-  it('gives the data page a day-precise coverage and no licence claim', () => {
+  it.each([
+    'en',
+    'vi',
+  ])('licenses the %s data page and links both downloads', (locale) => {
     const dataset = typed(
       mealDataStructuredData({
-        locale: 'en',
+        locale,
         url: 'https://kallo.fit/en/data/meal-calorie-variation',
         name: 'n',
         description: 'd',
@@ -82,6 +85,20 @@ describe('page structured data', () => {
       'Dataset'
     );
     expect(dataset.temporalCoverage).toBe('2026-11-01/2026-11-02');
-    expect(dataset).not.toHaveProperty('license');
+    expect(dataset.license).toBe(
+      'https://creativecommons.org/licenses/by/4.0/'
+    );
+    expect(dataset.distribution).toEqual([
+      {
+        '@type': 'DataDownload',
+        encodingFormat: 'text/csv',
+        contentUrl: 'https://kallo.fit/data/meal-calorie-variation.csv',
+      },
+      {
+        '@type': 'DataDownload',
+        encodingFormat: 'application/json',
+        contentUrl: 'https://kallo.fit/data/meal-calorie-variation.json',
+      },
+    ]);
   });
 });

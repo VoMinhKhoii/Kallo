@@ -1,0 +1,30 @@
+import type { FoodSlugOf } from '@/lib/seo/food-pages/slugs';
+
+/** English labels for the Vietnamese page set; the original names ship too. */
+export const ENGLISH_NAMES: Record<FoodSlugOf<'vi'>, string> = {
+  'pho-bo': 'Beef phở',
+  'bun-bo-hue': 'Huế beef noodle soup',
+  'bun-rieu': 'Crab noodle soup',
+  'hu-tieu': 'Hủ tiếu noodle soup',
+  'mi-quang': 'Quảng noodles',
+  'chao-long': 'Pork offal rice porridge',
+  'bun-cha': 'Grilled pork with rice noodles',
+  'bun-thit-nuong': 'Grilled pork noodle bowl',
+  'banh-cuon': 'Steamed rice rolls',
+  'banh-xeo': 'Vietnamese sizzling pancake',
+  'bun-dau-mam-tom': 'Rice noodles and tofu with shrimp paste',
+  'com-tam-suon': 'Broken rice with pork chop',
+  'banh-mi-thit': 'Meat bánh mì',
+  xoi: 'Sticky rice',
+  'banh-bao': 'Steamed bun',
+  'tra-sua-tran-chau': 'Bubble milk tea',
+  'ca-phe-sua-da': 'Iced coffee with condensed milk',
+  'thit-kho-trung': 'Braised pork and eggs',
+  'ca-kho-to': 'Clay pot braised fish',
+  'canh-chua': 'Sour soup',
+  'rau-muong-xao-toi': 'Water spinach stir-fried with garlic',
+  'dau-phu-sot-ca-chua': 'Tofu in tomato sauce',
+  'ga-rang-gung': 'Ginger chicken',
+  'com-chien': 'Fried rice',
+  'mi-goi': 'Instant noodles',
+};

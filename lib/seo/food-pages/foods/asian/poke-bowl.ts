@@ -32,7 +32,7 @@ export const food: FoodContent = {
     description: (span) =>
       `From about ${span} kcal. Four poke bowls, from a shop bowl with salmon and spicy mayo to half rice, greens only and homemade with brown rice.`,
     lead: (span) =>
-      `About ${span} kcal. The fish is the steady part; the rice and the sauce are what move a poke bowl. Four real bowls, each typed into Kallo the way people describe them.`,
+      `About ${span} kcal. The fish is the steady part; the rice and the sauce are what move a poke bowl. Four typical bowls, each typed into Kallo the way people describe them.`,
     breakdownOf: 'shop',
     breakdownLead:
       'In the shop bowl, the salmon and the rice are about 200 kcal each. One spoon of spicy mayo adds 102.',
