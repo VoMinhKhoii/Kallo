@@ -2,16 +2,17 @@
  * Hold the pipeline's meal near the plain read (`plain-read.ts`).
  *
  * When the meal's shown calories sit more than `HOLD_BAND` away from the read,
- * its parts' nutrients are scaled by one factor so the total lands on the
- * band's edge. Each nutrient's low/mid/high scale together, so the parts keep
- * their split and confirm (which re-derives shown values from the bounded
- * triples) reproduces the held numbers. Grams are held the same way, but to
- * the read's grams: a meal can be wrong in calories because the row was wrong
- * and not the amount, and scaling grams by the calorie factor then spoils
- * grams that were right (Arena train, 194 meals: typical grams miss 16%
- * unheld, 20% scaled with the calories, 12% held to the read's grams). The shown values are goal-adjusted, so
- * the hold is measured on what the user sees, after the cut/bulk shift — and
- * because that shift is linear in the triple, scaling commutes with it.
+ * its unlocked parts' nutrients and grams are scaled by the same `factor` so
+ * the total lands on the band's edge while every ingredient keeps its food
+ * table's real calorie density (`kcal/g`). Scaling grams and calories by
+ * different factors breaks food physics whenever one side lists broth, water,
+ * or ice that the other omitted.
+ *
+ * The raw grams multiplier the read implied (`rawGramsFactor`) is still
+ * computed and returned on `HoldResult`: when it diverges sharply from
+ * `factor`, `runSeeingRescue` (`rescue.ts`) inspects the ingredient table with
+ * Sonnet to diagnose whether the cause is missing water/broth or a wrong food
+ * row, instead of scaling blindly.
  *
  * A part whose amount the user typed (`typedAmount`: a weight, a weighed dish,
  * calories for its dish) is never moved. The other parts are held to what the
@@ -45,6 +46,7 @@ export const MAX_HOLD_FACTOR = 5;
 
 export type HoldOutcome =
   | 'held'
+  | 'rescued'
   | 'within_band'
   | 'no_read'
   | 'typed_parts'
@@ -58,8 +60,14 @@ export interface HoldResult {
   readKcal: number | null;
   /** What the moved parts' nutrients were scaled by. */
   factor: number;
-  /** What the moved parts' grams were scaled by. */
+  /** What the moved parts' grams were scaled by (matches `factor` in `holdToPlainRead`). */
   gramsFactor: number;
+  /**
+   * The grams multiplier implied by the read's food weights alone, before
+   * coupling grams to `factor`. A large gap between `factor` and
+   * `rawGramsFactor` signals a structural or food-row mismatch for `rescue.ts`.
+   */
+  rawGramsFactor: number;
 }
 
 /** A hold without the meal it returns: what logs and caches record. */
@@ -184,13 +192,14 @@ export function holdToPlainRead(
 ): HoldResult {
   const appKcal = result.displayedNutrition.caloriesKcal;
   const readKcal = args.read?.totalKcal ?? null;
-  const unchanged = (outcome: HoldOutcome): HoldResult => ({
+  const unchanged = (outcome: HoldOutcome, rawGramsFactor = 1): HoldResult => ({
     result,
     outcome,
     appKcal,
     readKcal,
     factor: 1,
     gramsFactor: 1,
+    rawGramsFactor,
   });
   if (args.read == null || readKcal == null) return unchanged('no_read');
   if (appKcal == null || !(appKcal > 0)) return unchanged('no_calories');
@@ -209,21 +218,23 @@ export function holdToPlainRead(
     .filter((ing) => !ing.typedAmount)
     .reduce((g, ing) => g + ing.estimatedGrams, 0);
   let factor: number;
-  let gramsFactor: number;
+  let rawGramsFactor: number;
   // Whenever a part is typed, even one with no calories (200 g of water):
   // its grams are in the read's total too and must come out of the target.
   const readTyped = parts.some((ing) => ing.typedAmount)
     ? readOfTypedParts(result, args.read)
     : { kcal: 0, grams: 0 };
   if (readTyped != null) {
-    // The other parts are held to the read's figures for those same parts:
-    // calories to its calories, grams to its grams.
+    // The other parts are held to the read's calories, and grams move with
+    // calories so every food keeps its table's real calorie density.
+    // `rawGramsFactor` records what the read's weights alone implied so the
+    // seeing rescue can catch large calorie-vs-gram disagreements.
     const readFree = readKcal - readTyped.kcal;
     if (!(readFree > 0)) return unchanged('typed_parts');
     factor = holdFactor(freeKcal, readFree);
     const readFreeGrams =
       args.read.foods.reduce((g, f) => g + f.grams, 0) - readTyped.grams;
-    gramsFactor =
+    rawGramsFactor =
       freeGrams > 0 && readFreeGrams > 0
         ? holdFactor(freeGrams, readFreeGrams)
         : factor;
@@ -238,10 +249,11 @@ export function holdToPlainRead(
       MAX_BLIND_FACTOR,
       Math.max(1 / MAX_BLIND_FACTOR, (target - typedKcal) / freeKcal)
     );
-    gramsFactor = factor;
+    rawGramsFactor = factor;
   }
+  const gramsFactor = factor;
   const still = (f: number) => Math.abs(f - 1) < 1e-6;
-  if (still(factor) && still(gramsFactor)) return unchanged('within_band');
+  if (still(factor)) return unchanged('within_band', rawGramsFactor);
   return {
     result: scaleFreeParts(result, factor, gramsFactor),
     outcome: 'held',
@@ -249,6 +261,7 @@ export function holdToPlainRead(
     readKcal,
     factor,
     gramsFactor,
+    rawGramsFactor,
   };
 }
 

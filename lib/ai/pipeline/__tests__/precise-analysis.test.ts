@@ -9,10 +9,16 @@ const settle = vi.fn();
 const abort = vi.fn();
 const startPlainRead = vi.fn(() => ({ settle, abort }));
 const holdToPlainRead = vi.fn();
+const shouldRunSeeingRescue = vi.fn();
+const runSeeingRescue = vi.fn();
 
 vi.mock('@/lib/ai/pipeline/analyze-meal', () => ({ analyzeMeal }));
 vi.mock('@/lib/ai/pipeline/plain-read/plain-read', () => ({ startPlainRead }));
 vi.mock('@/lib/ai/pipeline/plain-read/hold', () => ({ holdToPlainRead }));
+vi.mock('@/lib/ai/pipeline/plain-read/rescue', () => ({
+  shouldRunSeeingRescue,
+  runSeeingRescue,
+}));
 
 const { isPublishable, runPreciseAnalysis } = await import(
   '../precise-analysis'
@@ -21,6 +27,7 @@ const { isPublishable, runPreciseAnalysis } = await import(
 const READ = { totalKcal: 500, foods: [] };
 const RAW = { displayedNutrition: { caloriesKcal: 800 } };
 const HELD = { displayedNutrition: { caloriesKcal: 550 } };
+const RESCUED = { displayedNutrition: { caloriesKcal: 520 } };
 
 function run(signal = new AbortController().signal) {
   return runPreciseAnalysis({
@@ -36,6 +43,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   settle.mockResolvedValue(READ);
   holdToPlainRead.mockReturnValue({ result: HELD, outcome: 'held' });
+  shouldRunSeeingRescue.mockReturnValue(false);
+  runSeeingRescue.mockResolvedValue(null);
 });
 
 describe('runPreciseAnalysis', () => {
@@ -110,6 +119,35 @@ describe('runPreciseAnalysis', () => {
     expect(holdToPlainRead).not.toHaveBeenCalled();
   });
 
+  it('runs the seeing rescue when the hold flags a divergence', async () => {
+    analyzeMeal.mockResolvedValue({ success: true, data: RAW });
+    shouldRunSeeingRescue.mockReturnValue(true);
+    runSeeingRescue.mockResolvedValue({ result: RESCUED, outcome: 'rescued' });
+
+    const { response, hold } = await run();
+
+    expect(runSeeingRescue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        raw: RAW,
+        read: READ,
+        mealText: 'phở gà tô nhỏ',
+      })
+    );
+    expect(response).toEqual({ success: true, data: RESCUED });
+    expect(hold?.outcome).toBe('rescued');
+  });
+
+  it('falls back to the single-factor hold when the seeing rescue returns null', async () => {
+    analyzeMeal.mockResolvedValue({ success: true, data: RAW });
+    shouldRunSeeingRescue.mockReturnValue(true);
+    runSeeingRescue.mockResolvedValue(null);
+
+    const { response, hold } = await run();
+
+    expect(response).toEqual({ success: true, data: HELD });
+    expect(hold?.outcome).toBe('held');
+  });
+
   it('ends the read when the pipeline throws', async () => {
     analyzeMeal.mockRejectedValue(new Error('boom'));
 
@@ -126,9 +164,15 @@ describe('isPublishable', () => {
       readKcal: 100,
       factor: 1,
       gramsFactor: 1,
+      rawGramsFactor: 1,
     }) as never;
 
-  it.each(['held', 'within_band', 'typed_parts'])('publishes %s', (outcome) => {
+  it.each([
+    'held',
+    'rescued',
+    'within_band',
+    'typed_parts',
+  ])('publishes %s', (outcome) => {
     expect(isPublishable(summary(outcome))).toBe(true);
   });
 

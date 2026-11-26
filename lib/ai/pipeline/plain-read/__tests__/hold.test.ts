@@ -165,9 +165,11 @@ describe('holdToPlainRead', () => {
     // The noodles land on the band edge of the read's noodles, not of the meal.
     const edge = 760 / (1 + HOLD_BAND);
     expect(kcalOf(noodles.displayedNutrition)).toBeCloseTo(edge);
-    // Its grams land on the band edge of the read's grams for it.
-    expect(noodles.estimatedGrams).toBeCloseTo(160 / (1 + HOLD_BAND));
-    expect(out.gramsFactor).toBeCloseTo(160 / (1 + HOLD_BAND) / 80);
+    // Grams follow the calorie factor so food density stays faithful to the row,
+    // while `rawGramsFactor` records what the read's weights alone implied.
+    expect(noodles.estimatedGrams).toBeCloseTo(80 * out.factor);
+    expect(out.gramsFactor).toBeCloseTo(out.factor);
+    expect(out.rawGramsFactor).toBeCloseTo(160 / (1 + HOLD_BAND) / 80);
     // Every total agrees.
     const shownVeg = kcalOf(veg.displayedNutrition);
     expect(kcalOf(out.result.displayedNutrition)).toBeCloseTo(edge + shownVeg);
@@ -176,30 +178,30 @@ describe('holdToPlainRead', () => {
     );
   });
 
-  it('leaves grams that agree with the read alone when only the calories are off', () => {
+  it('keeps grams coupled to calories while recording rawGramsFactor for rescue', () => {
     // Two packs of noodles at the right 160 g, priced on a row far too lean.
     const before = meal([ingredient('mì', 160, 340)]);
     const out = holdToPlainRead(before, { read: read(760, [[160, 760]]) });
     expect(out.outcome).toBe('held');
-    expect(out.gramsFactor).toBe(1);
+    expect(out.gramsFactor).toBeCloseTo(out.factor);
+    expect(out.rawGramsFactor).toBe(1);
     const [noodles] = out.result.mealItems[0].ingredients;
-    expect(noodles.estimatedGrams).toBe(160);
-    expect(noodles.rawEquivalentGrams).toBe(160);
+    expect(noodles.estimatedGrams).toBeCloseTo(160 * out.factor);
+    expect(noodles.rawEquivalentGrams).toBeCloseTo(160 * out.factor);
     expect(kcalOf(noodles.displayedNutrition)).toBeCloseTo(
       760 / (1 + HOLD_BAND)
     );
   });
 
-  it('moves grams alone when the calories already agree', () => {
+  it('stays within_band when calories agree while exposing rawGramsFactor divergence', () => {
     const before = meal([ingredient('soup', 100, 200)]);
     const app = kcalOf(before.displayedNutrition);
     const out = holdToPlainRead(before, { read: read(app, [[400, app]]) });
-    expect(out.outcome).toBe('held');
+    expect(out.outcome).toBe('within_band');
     expect(out.factor).toBe(1);
-    expect(out.result.mealItems[0].ingredients[0].estimatedGrams).toBeCloseTo(
-      400 / (1 + HOLD_BAND)
-    );
-    expect(kcalOf(out.result.displayedNutrition)).toBeCloseTo(app);
+    expect(out.gramsFactor).toBe(1);
+    expect(out.rawGramsFactor).toBeCloseTo(400 / (1 + HOLD_BAND) / 100);
+    expect(out.result).toBe(before);
   });
 
   it('does not make the other parts absorb a difference over a typed part', () => {

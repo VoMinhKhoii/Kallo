@@ -957,7 +957,7 @@ describe('POST /api/analyze-meal', () => {
       data: mockPipelineData,
     });
     const generateStructuredOutput = vi.fn().mockResolvedValue({
-      foods: [{ name: 'phở bò tái', grams: 550, kcal: 600 }],
+      foods: [{ name: 'phở bò tái', grams: 400, kcal: 600 }],
       totalKcal: 600,
     });
     mockCreateGeminiClient.mockReturnValue({ generateStructuredOutput });
@@ -965,17 +965,44 @@ describe('POST /api/analyze-meal', () => {
     const res = await POST(createRequest(mealRequestBody('Phở bò tái')));
     await readSSEEvents(res);
 
-    // 300 kcal against a 600 kcal read: scaled to the band's low edge.
+    // 300 kcal against a 600 kcal read: scaled to the band's low edge, with
+    // grams moving by the same factor so density stays faithful to the row.
     const edge = 600 / 1.1;
     const staged = mockInsertValues.mock.calls[0][0].pipelineResult;
     expect(staged.displayedNutrition.caloriesKcal).toBeCloseTo(edge);
-    // Grams are held to the read's grams: 200 g against 550 g.
     expect(staged.mealItems[0].ingredients[0].estimatedGrams).toBeCloseTo(
-      550 / 1.1
+      200 * (edge / 300)
     );
+    expect(generateStructuredOutput).toHaveBeenCalledTimes(1);
     expect(generateStructuredOutput.mock.calls[0][0].userMessage).toContain(
       'Phở bò tái'
     );
+  });
+
+  it('runs the seeing rescue when plain-read calories and grams diverge', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+    const generateStructuredOutput = vi
+      .fn()
+      .mockResolvedValueOnce({
+        foods: [{ name: 'phở bò tái', grams: 550, kcal: 600 }],
+        totalKcal: 600,
+      })
+      .mockResolvedValueOnce({
+        diagnosis: 'Broth weight omitted; resize bowl to 500 g / 545 kcal.',
+        edits: [{ index: 0, grams: 500, kcal: 545 }],
+      });
+    mockCreateGeminiClient.mockReturnValue({ generateStructuredOutput });
+
+    const res = await POST(createRequest(mealRequestBody('Phở bò tái')));
+    await readSSEEvents(res);
+
+    const staged = mockInsertValues.mock.calls[0][0].pipelineResult;
+    expect(generateStructuredOutput).toHaveBeenCalledTimes(2);
+    expect(staged.displayedNutrition.caloriesKcal).toBeCloseTo(545);
+    expect(staged.mealItems[0].ingredients[0].estimatedGrams).toBeCloseTo(500);
   });
 
   it('leaves a part the user weighed as computed, whatever the read says', async () => {

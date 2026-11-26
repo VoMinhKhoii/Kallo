@@ -18,6 +18,10 @@ import {
   holdToPlainRead,
 } from '@/lib/ai/pipeline/plain-read/hold';
 import { startPlainRead } from '@/lib/ai/pipeline/plain-read/plain-read';
+import {
+  runSeeingRescue,
+  shouldRunSeeingRescue,
+} from '@/lib/ai/pipeline/plain-read/rescue';
 import type { GeminiClient, StreamOptions } from '@/lib/ai/provider/provider';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineResponse } from '@/lib/ai/types/result';
@@ -33,9 +37,10 @@ export interface PreciseAnalysis {
 }
 
 /** The hold outcomes a page may publish: the read arrived and the meal has
- *  calories (held, already within the band, or pinned by typed amounts). */
+ *  calories (held, rescued, already within the band, or pinned by typed amounts). */
 const PUBLISHABLE: ReadonlySet<HoldOutcome> = new Set([
   'held',
+  'rescued',
   'within_band',
   'typed_parts',
 ]);
@@ -62,6 +67,7 @@ export async function runPreciseAnalysis(args: {
   onEvent?: (event: StreamEvent) => void;
   traceContext?: AnalyzeMealTraceContext;
   onPlainReadAttemptComplete?: StreamOptions['onAttemptComplete'];
+  onRescueAttemptComplete?: StreamOptions['onAttemptComplete'];
   onDiagnostics?: (diagnostics: V2PipelineDiagnostics) => void;
 }): Promise<PreciseAnalysis> {
   const plainRead = startPlainRead({
@@ -89,6 +95,25 @@ export async function runPreciseAnalysis(args: {
     // A hang-up while the read settled is not a missed read.
     if (args.signal.aborted) return { response, hold: null };
     const hold = holdToPlainRead(response.data, { read });
+    if (read && shouldRunSeeingRescue(hold)) {
+      const rescued = await runSeeingRescue({
+        raw: response.data,
+        read,
+        hold,
+        mealText: args.rawInput,
+        profile: args.userContext,
+        gemini: args.gemini,
+        signal: args.signal,
+        onAttemptComplete: args.onRescueAttemptComplete,
+      });
+      if (args.signal.aborted) return { response, hold: null };
+      if (rescued) {
+        return {
+          response: { ...response, data: rescued.result },
+          hold: rescued,
+        };
+      }
+    }
     return { response: { ...response, data: hold.result }, hold };
   } finally {
     plainRead.abort();
