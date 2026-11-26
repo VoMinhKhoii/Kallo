@@ -18,11 +18,16 @@ import {
 import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type { GeminiClient, StreamOptions } from '@/lib/ai/provider/provider';
 import type {
+  BoundedNutrition,
+  NutritionValues,
+} from '@/lib/ai/types/nutrition-values';
+import type {
   PipelineResult,
   ProcessedIngredient,
 } from '@/lib/ai/types/result';
 import { safeError } from '@/lib/core/errors/safe-error';
-import type { HoldResult } from './hold';
+import { type HoldResult, MAX_HOLD_FACTOR } from './hold';
+import { MAX_READ_KCAL } from './plain-read';
 import type { PlainRead, PlainReadProfile } from './prompt';
 import {
   buildRescueUserMessage,
@@ -40,6 +45,8 @@ const MAX_KCAL_PER_GRAM = 9.0;
 const PURE_FAT_DENSITY_FLOOR = 8.0;
 /** Minimum density allowed when editing a pure-fat row (blocks smuggling non-oil food onto oil). */
 const PURE_FAT_EDIT_MIN_DENSITY = 7.5;
+/** Hard mass ceiling for a rescued meal (10 kg) against hallucinated edits. */
+const MAX_RESCUED_GRAMS = 10_000;
 
 /** Ratio between the calorie multiplier and the raw read-implied grams multiplier. */
 export function holdDivergence(factor: number, rawGramsFactor: number): number {
@@ -57,11 +64,35 @@ export function shouldRunSeeingRescue(hold: HoldResult): boolean {
   );
 }
 
+function addConstantNutrient(
+  bounded: BoundedNutrition,
+  displayed: NutritionValues,
+  key: 'caloriesKcal' | 'fatG',
+  delta: number
+): { bounded: BoundedNutrition; displayed: NutritionValues } {
+  if (!(delta > 0)) return { bounded, displayed };
+  const prevB = bounded[key] ?? { low: 0, mid: 0, high: 0 };
+  return {
+    bounded: {
+      ...bounded,
+      [key]: {
+        low: prevB.low + delta,
+        mid: prevB.mid + delta,
+        high: prevB.high + delta,
+      },
+    },
+    displayed: {
+      ...displayed,
+      [key]: (displayed[key] ?? 0) + delta,
+    },
+  };
+}
+
 function editIngredient(
   ing: ProcessedIngredient,
   grams: number,
   kcal: number
-): ProcessedIngredient {
+): { updated: ProcessedIngredient; rejected: boolean } {
   const oldGrams = ing.estimatedGrams;
   const oldKcal = ing.displayedNutrition.caloriesKcal ?? 0;
   const tableKcal = ing.boundedNutrition.caloriesKcal?.mid ?? oldKcal;
@@ -71,7 +102,7 @@ function editIngredient(
   // goal adjustments never hide a pure-fat row.
   if (oldGrams > 0 && tableKcal / oldGrams >= PURE_FAT_DENSITY_FLOOR) {
     if (grams > 0 && kcal / grams < PURE_FAT_EDIT_MIN_DENSITY) {
-      return ing;
+      return { updated: ing, rejected: true };
     }
   }
 
@@ -79,53 +110,129 @@ function editIngredient(
   // Hard physics cap: no ingredient can exceed pure fat (9.0 kcal/g), and
   // zero grams always carries zero calories.
   const safeKcal = Math.max(0, Math.min(kcal, safeGrams * MAX_KCAL_PER_GRAM));
+  const gramsRatio = oldGrams > 0 ? safeGrams / oldGrams : 0;
+  const rawEquivalentGrams =
+    oldGrams > 0 ? ing.rawEquivalentGrams * gramsRatio : safeGrams;
 
-  // Without existing calories we have no macro proportions to scale safely.
+  // Without existing calories we have no macro split to lift above 0 kcal,
+  // but resizing a 0-kcal row (broth, salt, mineral water) still scales its
+  // micronutrients proportionally to grams (and zeroes them at 0 g).
   if (!(oldKcal > 0)) {
-    if (safeKcal > 0) return ing;
-    const rawEquivalentGrams =
-      oldGrams > 0
-        ? ing.rawEquivalentGrams * (safeGrams / oldGrams)
-        : safeGrams;
-    return { ...ing, estimatedGrams: safeGrams, rawEquivalentGrams };
+    if (safeKcal > 0) return { updated: ing, rejected: true };
+    return {
+      rejected: false,
+      updated: {
+        ...ing,
+        estimatedGrams: safeGrams,
+        rawEquivalentGrams,
+        boundedNutrition: scaleBoundedNutrition(
+          ing.boundedNutrition,
+          gramsRatio
+        ),
+        displayedNutrition: scaleNutritionValues(
+          ing.displayedNutrition,
+          gramsRatio
+        ),
+      },
+    };
   }
 
   const kcalRatio = safeKcal / oldKcal;
-  const rawEquivalentGrams =
-    oldGrams > 0 ? ing.rawEquivalentGrams * (safeGrams / oldGrams) : safeGrams;
+  const oldMacroGrams =
+    (ing.displayedNutrition.proteinG ?? 0) +
+    (ing.displayedNutrition.carbohydrateG ?? 0) +
+    (ing.displayedNutrition.fatG ?? 0) +
+    (ing.alcoholG ?? 0);
+
+  // If raising calorie density uniformly would push P + C + F + alcohol past
+  // the ingredient's physical weight (e.g. fixing a watery row to a creamy/oil
+  // sauce), shift the extra density into fat (9 kcal/g) so P + C + F <= grams
+  // and bounded/displayed nutrition still commute with goal adjustment.
+  let baseScale = kcalRatio;
+  let extraFatG = 0;
+  let extraKcal = 0;
+  if (oldMacroGrams > 0 && kcalRatio * oldMacroGrams > safeGrams) {
+    const denom = MAX_KCAL_PER_GRAM * oldMacroGrams - oldKcal;
+    if (denom > 1e-6) {
+      baseScale = Math.max(
+        0,
+        (MAX_KCAL_PER_GRAM * safeGrams - safeKcal) / denom
+      );
+      extraFatG = Math.max(0, safeGrams - baseScale * oldMacroGrams);
+      extraKcal = Math.max(0, safeKcal - baseScale * oldKcal);
+    } else {
+      baseScale = safeGrams / oldMacroGrams;
+    }
+  }
+
+  let bounded = scaleBoundedNutrition(ing.boundedNutrition, baseScale);
+  let displayed = scaleNutritionValues(ing.displayedNutrition, baseScale);
+  if (extraFatG > 0 || extraKcal > 0) {
+    ({ bounded, displayed } = addConstantNutrient(
+      bounded,
+      displayed,
+      'fatG',
+      extraFatG
+    ));
+    ({ bounded, displayed } = addConstantNutrient(
+      bounded,
+      displayed,
+      'caloriesKcal',
+      extraKcal
+    ));
+  }
 
   return {
-    ...ing,
-    estimatedGrams: safeGrams,
-    rawEquivalentGrams,
-    boundedNutrition: scaleBoundedNutrition(ing.boundedNutrition, kcalRatio),
-    displayedNutrition: scaleNutritionValues(ing.displayedNutrition, kcalRatio),
-    ...(ing.alcoholG != null && { alcoholG: ing.alcoholG * kcalRatio }),
+    rejected: false,
+    updated: {
+      ...ing,
+      estimatedGrams: safeGrams,
+      rawEquivalentGrams,
+      boundedNutrition: bounded,
+      displayedNutrition: displayed,
+      ...(ing.alcoholG != null && { alcoholG: ing.alcoholG * baseScale }),
+    },
   };
 }
 
-/**
- * Apply targeted per-ingredient rescue edits to the unheld `raw` pipeline
- * result. Locked (`typedAmount`) ingredients are never touched, physical
- * calorie-density bounds are enforced, and dish/meal totals stay in sync.
- */
-export function applyRescueEdits(
+function applyRescueEditsWithStats(
   raw: PipelineResult,
   edits: RescueOutput['edits']
-): PipelineResult {
-  if (edits.length === 0) return raw;
+): { result: PipelineResult; appliedCount: number; rejectedCount: number } {
+  if (edits.length === 0) {
+    return { result: raw, appliedCount: 0, rejectedCount: 0 };
+  }
   const byIndex = new Map(edits.map((e) => [e.index, e]));
+  let totalParts = 0;
+  for (const mi of raw.mealItems) totalParts += mi.ingredients.length;
+
+  let appliedCount = 0;
+  let rejectedCount = 0;
+  for (const idx of byIndex.keys()) {
+    if (idx < 0 || idx >= totalParts) rejectedCount++;
+  }
 
   let cursor = 0;
-  return raw.mealItems.reduce((acc, mi, itemIndex) => {
+  const result = raw.mealItems.reduce((acc, mi, itemIndex) => {
     let item = mi;
     for (const ing of mi.ingredients) {
       const idx = cursor++;
       const edit = byIndex.get(idx);
-      if (!edit || ing.typedAmount) continue;
-      if (!Number.isFinite(edit.grams) || !Number.isFinite(edit.kcal)) continue;
-      const updated = editIngredient(ing, edit.grams, edit.kcal);
-      if (updated === ing) continue;
+      if (!edit) continue;
+      if (
+        ing.typedAmount ||
+        !Number.isFinite(edit.grams) ||
+        !Number.isFinite(edit.kcal)
+      ) {
+        rejectedCount++;
+        continue;
+      }
+      const { updated, rejected } = editIngredient(ing, edit.grams, edit.kcal);
+      if (rejected) {
+        rejectedCount++;
+        continue;
+      }
+      appliedCount++;
       item = {
         ...item,
         ingredients: item.ingredients.map((cur) =>
@@ -145,12 +252,27 @@ export function applyRescueEdits(
     }
     return item === mi ? acc : replaceMealItem(acc, itemIndex, item);
   }, raw);
+
+  return { result, appliedCount, rejectedCount };
+}
+
+/**
+ * Apply targeted per-ingredient rescue edits to the unheld `raw` pipeline
+ * result. Locked (`typedAmount`) ingredients are never touched, physical
+ * calorie-density and macro-mass bounds are enforced, and dish/meal totals
+ * stay in sync.
+ */
+export function applyRescueEdits(
+  raw: PipelineResult,
+  edits: RescueOutput['edits']
+): PipelineResult {
+  return applyRescueEditsWithStats(raw, edits).result;
 }
 
 /**
  * Run the seeing rescue on a divergent meal. Returns a `HoldResult` with
- * `outcome: 'rescued'`, or `null` on timeout / abort / failure so the caller
- * falls back cleanly to the density-safe `holdToPlainRead` result.
+ * `outcome: 'rescued'`, or `null` on timeout / abort / rejected edits / failure
+ * so the caller falls back cleanly to the density-safe `holdToPlainRead` result.
  */
 export async function runSeeingRescue(args: {
   raw: PipelineResult;
@@ -192,16 +314,47 @@ export async function runSeeingRescue(args: {
 
     if (args.signal.aborted) return null;
 
-    const rescued = applyRescueEdits(args.raw, output.edits);
-    const rescuedKcal = rescued.displayedNutrition.caloriesKcal ?? 0;
-    // Sanity gate: never let a rescue zero out a meal that had calories.
-    if (!(rescuedKcal > 0)) return null;
+    const {
+      result: rescued,
+      appliedCount,
+      rejectedCount,
+    } = applyRescueEditsWithStats(args.raw, output.edits);
+
+    // If the model requested edits and every edit was rejected by guards, do
+    // not ship the unheld meal as rescued — fall back to the single-factor hold.
+    if (output.edits.length > 0 && appliedCount === 0 && rejectedCount > 0) {
+      return null;
+    }
+
+    const rescuedParts = rescued.mealItems.flatMap((mi) => mi.ingredients);
+    // Sum directly from ingredients to avoid IEEE-754 subtraction residue from
+    // `swapNutritionValues` defeating the minimum-calorie sanity gate.
+    const rescuedKcal = rescuedParts.reduce(
+      (sum, ing) => sum + (ing.displayedNutrition.caloriesKcal ?? 0),
+      0
+    );
+    const rescuedGrams = rescuedParts.reduce(
+      (sum, ing) => sum + ing.estimatedGrams,
+      0
+    );
 
     const appKcal = args.hold.appKcal;
+    const referenceCeiling =
+      Math.max(appKcal ?? 0, args.hold.readKcal ?? 0) * MAX_HOLD_FACTOR;
+    const maxAllowedKcal =
+      referenceCeiling > 0
+        ? Math.min(MAX_READ_KCAL, referenceCeiling)
+        : MAX_READ_KCAL;
+
+    if (
+      !(rescuedKcal >= 1) ||
+      rescuedKcal > maxAllowedKcal ||
+      rescuedGrams > MAX_RESCUED_GRAMS
+    ) {
+      return null;
+    }
+
     const rawGrams = args.raw.mealItems
-      .flatMap((mi) => mi.ingredients)
-      .reduce((g, ing) => g + ing.estimatedGrams, 0);
-    const rescuedGrams = rescued.mealItems
       .flatMap((mi) => mi.ingredients)
       .reduce((g, ing) => g + ing.estimatedGrams, 0);
 

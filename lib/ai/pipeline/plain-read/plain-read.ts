@@ -21,7 +21,7 @@ import {
 export const GRACE_MS = 2_000;
 /** A meal total outside this range is a broken read, not a meal. */
 const MIN_READ_KCAL = 10;
-const MAX_READ_KCAL = 8_000;
+export const MAX_READ_KCAL = 8_000;
 /** The listed foods must add up to the stated total within this share. */
 const SUM_TOLERANCE = 0.25;
 

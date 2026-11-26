@@ -214,6 +214,58 @@ describe('applyRescueEdits', () => {
     expect(kcalOf(herbs.displayedNutrition)).toBe(0);
   });
 
+  it('shifts excess density into fat so P + C + F never exceeds grams and confirm stays exact', () => {
+    const b = bounded(24, 0.5);
+    b.carbohydrateG = { low: 4.05, mid: 4.5, high: 4.95 };
+    b.fatG = { low: 0.36, mid: 0.4, high: 0.44 };
+    const sauce: ProcessedIngredient = {
+      ...ingredient('Garlic sauce', 15, 24),
+      boundedNutrition: b,
+      displayedNutrition: goalAdjustNutrition(b, 'cutting', 0.5),
+    };
+    const raw = meal([sauce]);
+
+    const rescued = applyRescueEdits(raw, [{ index: 0, grams: 15, kcal: 100 }]);
+    const [after] = rescued.mealItems[0].ingredients;
+    const d = after.displayedNutrition;
+    const macroSum = (d.proteinG ?? 0) + (d.carbohydrateG ?? 0) + (d.fatG ?? 0);
+
+    expect(after.estimatedGrams).toBe(15);
+    expect(kcalOf(d)).toBeCloseTo(100);
+    expect(macroSum).toBeLessThanOrEqual(15 + 1e-6);
+    expect(d.fatG ?? 0).toBeGreaterThan(7);
+
+    const reDerived = goalAdjustNutrition(
+      sumBoundedNutrition([after.boundedNutrition]),
+      'cutting',
+      0.5
+    );
+    expect(kcalOf(reDerived)).toBeCloseTo(kcalOf(rescued.displayedNutrition));
+    expect(reDerived.fatG).toBeCloseTo(d.fatG ?? 0);
+  });
+
+  it('scales micronutrients on a 0-kcal ingredient when resized', () => {
+    const b = bounded(0, 0);
+    b.sodiumMg = { low: 1080, mid: 1200, high: 1320 };
+    const broth: ProcessedIngredient = {
+      ...ingredient('Bone broth', 300, 0),
+      boundedNutrition: b,
+      displayedNutrition: goalAdjustNutrition(b, 'cutting', 0.5),
+    };
+    const raw = meal([broth]);
+
+    const zeroed = applyRescueEdits(raw, [{ index: 0, grams: 0, kcal: 0 }]);
+    expect(zeroed.mealItems[0].ingredients[0].displayedNutrition.sodiumMg).toBe(
+      0
+    );
+    expect(zeroed.displayedNutrition.sodiumMg).toBe(0);
+
+    const doubled = applyRescueEdits(raw, [{ index: 0, grams: 600, kcal: 0 }]);
+    expect(
+      doubled.mealItems[0].ingredients[0].displayedNutrition.sodiumMg
+    ).toBeCloseTo((broth.displayedNutrition.sodiumMg ?? 0) * 2);
+  });
+
   it('leaves the unheld meal intact when edits are empty', () => {
     const raw = meal([ingredient('Sữa đặc', 30, 100)]);
     expect(applyRescueEdits(raw, [])).toBe(raw);
@@ -327,5 +379,73 @@ describe('runSeeingRescue', () => {
       signal: new AbortController().signal,
     });
     expect(zeroed).toBeNull();
+  });
+
+  it('falls back to null when all requested edits are rejected by guards', async () => {
+    const out = await runSeeingRescue({
+      raw,
+      read,
+      hold,
+      mealText: '120g bơ sáp, 2 muỗng sữa đặc',
+      profile: NO_COUNTRY,
+      gemini: client(
+        vi.fn().mockResolvedValue({
+          diagnosis: 'Try editing locked index and out-of-range index',
+          edits: [
+            { index: 0, grams: 240, kcal: 400 },
+            { index: 9, grams: 50, kcal: 50 },
+          ],
+        })
+      ),
+      signal: new AbortController().signal,
+    });
+    expect(out).toBeNull();
+  });
+
+  it('falls back to null on floating-point zeroed totals and extreme calorie/gram hallucinations', async () => {
+    const multi = meal([
+      ingredient('a', 100, 110.3),
+      ingredient('b', 100, 220.6),
+      ingredient('c', 100, 330.9),
+    ]);
+    const zeroedResidue = await runSeeingRescue({
+      raw: multi,
+      read,
+      hold: {
+        ...hold,
+        result: multi,
+        appKcal: kcalOf(multi.displayedNutrition),
+      },
+      mealText: 'test',
+      profile: NO_COUNTRY,
+      gemini: client(
+        vi.fn().mockResolvedValue({
+          diagnosis: 'zero all',
+          edits: [
+            { index: 0, grams: 0, kcal: 0 },
+            { index: 1, grams: 0, kcal: 0 },
+            { index: 2, grams: 0, kcal: 0 },
+          ],
+        })
+      ),
+      signal: new AbortController().signal,
+    });
+    expect(zeroedResidue).toBeNull();
+
+    const extreme = await runSeeingRescue({
+      raw,
+      read,
+      hold,
+      mealText: 'test',
+      profile: NO_COUNTRY,
+      gemini: client(
+        vi.fn().mockResolvedValue({
+          diagnosis: 'injection',
+          edits: [{ index: 1, grams: 50_000, kcal: 100_000 }],
+        })
+      ),
+      signal: new AbortController().signal,
+    });
+    expect(extreme).toBeNull();
   });
 });
