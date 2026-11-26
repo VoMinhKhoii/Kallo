@@ -9,8 +9,9 @@ import { AppleLogo } from '@/components/shared/brand-logos';
 import { createClient } from '@/lib/infra/supabase/client';
 
 /**
- * "Continue with Apple" — the web twin of the iOS `AppleButton`: same place
- * (above Google), same colours (black, or white on the dark themes).
+ * "Continue with Apple" — sits above Google, as the iOS `AppleButton` does,
+ * and wears the Google button's quiet card-and-hairline style so the two
+ * read as one pair.
  *
  * It hands the browser to GoTrue's `/authorize`, which sends it on to Apple
  * with the `com.khoivo.nham.web` Services ID; Apple posts back to Supabase,
@@ -58,7 +59,7 @@ export function AppleSignInButton() {
       onClick={onClick}
       disabled={loading}
       aria-busy={loading}
-      className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-black px-4 py-3 font-medium font-sans-display text-sm text-white tracking-tight transition-all duration-200 hover:bg-[#1C1C1E] disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-[#E5E5EA]"
+      className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-kallo-border bg-card px-4 py-3 font-medium font-sans-display text-kallo-text text-sm tracking-tight transition-all duration-200 hover:bg-[#FFFCF8] disabled:opacity-60 dark:hover:bg-kallo-track"
     >
       {loading ? (
         <Loader2 className="size-icon-inline animate-spin" aria-hidden="true" />
