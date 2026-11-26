@@ -103,7 +103,7 @@ dev build without RevenueCat config still boots).
 > requests offline access, which is the grant behind Google's "you shared data with this
 > app" mail on every sign-in. Removing the iOS client ID from that Supabase list breaks
 > iOS Google sign-in outright. Android needs the
-> debug **SHA-1** registered on an Android OAuth client (package `com.nham.kallo_mobile`);
+> debug **SHA-1** registered on an Android OAuth client (package `fit.kallo.app`);
 > no Firebase / `google-services.json`.
 
 | Environment | API_BASE_URL | Supabase |

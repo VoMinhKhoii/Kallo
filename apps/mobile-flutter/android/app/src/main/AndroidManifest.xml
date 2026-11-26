@@ -1,7 +1,12 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Declared here, not left to a plugin's manifest merge: every network
          call (Supabase, the API, PostHog, Sentry) depends on it in release. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- The camera plugin merges RECORD_AUDIO in, but the scan camera opens
+         with enableAudio: false. Removed so Play does not list microphone
+         access the app never uses. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
     <application
         android:label="Kallo"
         android:name="${applicationName}"
