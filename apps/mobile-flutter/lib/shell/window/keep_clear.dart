@@ -25,9 +25,12 @@ enum KeepClearMode {
 ///
 /// Whether a piece is beside a corner depends on where the page puts it,
 /// which only layout knows, so this measures itself once laid out and, if it
-/// reaches into a corner, gives way from the next frame. Its own giving way
-/// never moves it out of the corner again (a row inset on the column's side
-/// keeps its top and only grows taller), so it settles. Inside a scroll view
+/// reaches into a corner, gives way from the next frame. Giving way on a side
+/// never moves it out of the corner again (the row keeps its width and only
+/// grows taller), so it settles. [KeepClearMode.below] needs a parent that
+/// lets the piece move down, one that lays out from the top or centres it:
+/// in a bottom-anchored parent the piece cannot move and its inset would
+/// grow every frame. Inside a scroll view
 /// it measures where it sits at rest: scrolled content that rises into a
 /// corner is hidden there by [KeepClearClip], not re-laid out.
 ///

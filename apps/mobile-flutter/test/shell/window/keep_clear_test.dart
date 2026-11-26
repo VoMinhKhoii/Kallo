@@ -154,6 +154,66 @@ void main() {
     );
   });
 
+  testWidgets('with the column on the left a row gives way on the left', (
+    tester,
+  ) async {
+    const key = Key('row');
+    await _pump(
+      tester,
+      _row(60, KeepClearMode.side, key: key),
+      insets: const EdgeInsets.only(left: 84, bottom: 34),
+    );
+    expect(
+      tester.getRect(find.byKey(key)),
+      const Rect.fromLTRB(108, 60, 442, 100),
+    );
+  });
+
+  testWidgets('on a turned outer display only the camera corner is kept', (
+    tester,
+  ) async {
+    const top = Key('top'), low = Key('low');
+    await _pump(
+      tester,
+      Stack(
+        children: [
+          _row(60, KeepClearMode.centred, key: top),
+          _row(400, KeepClearMode.centred, key: low),
+        ],
+      ),
+      insets: const EdgeInsets.only(right: 84, bottom: 34),
+      size: const Size(678, 466),
+    );
+    // Nothing is drawn at the column's top here, so the row keeps its width.
+    expect(
+      tester.getRect(find.byKey(top)),
+      const Rect.fromLTRB(24, 60, 654, 100),
+    );
+    // Beside the camera it narrows on both sides and stays centred.
+    final rect = tester.getRect(find.byKey(low));
+    expect(rect, const Rect.fromLTRB(108, 400, 570, 440));
+    expect(rect.center.dx, 678 / 2);
+  });
+
+  testWidgets('what the clip hides takes no taps', (tester) async {
+    var taps = 0;
+    await _pump(
+      tester,
+      KeepClearClip(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => taps++,
+          child: const SizedBox.expand(),
+        ),
+      ),
+    );
+    await tester.tapAt(const Offset(420, 80));
+    expect(taps, 0);
+    await tester.tapAt(const Offset(200, 80));
+    await tester.tapAt(const Offset(420, 300));
+    expect(taps, 2);
+  });
+
   testWidgets('a scroll view cuts the corner out of what it paints', (
     tester,
   ) async {

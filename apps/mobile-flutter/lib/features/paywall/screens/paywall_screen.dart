@@ -6,6 +6,8 @@ import '../../../shared/widgets/panes/narrative_panes.dart';
 import '../../../services/billing/entitlement_state.dart';
 import '../../../services/billing/entitlements_provider.dart';
 import '../../../shell/nav/nav_actions.dart';
+import '../../../shell/window/keep_clear.dart';
+import '../../../shell/window/keep_clear_clip.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../../onboarding/widgets/backdrop/start_aurora.dart';
@@ -168,10 +170,17 @@ class PaywallScreen extends ConsumerWidget {
             alignment: Alignment.topCenter,
             child: _header(context, stayFree: stayFree),
           ),
-          near: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(gutter),
-              child: child,
+          // Beside the status items of a control column the note narrows
+          // on both sides, so it stays on its pane's centre.
+          near: KeepClearClip(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(gutter),
+                child: KeepClear(
+                  mode: KeepClearMode.centred,
+                  child: Align(child: child),
+                ),
+              ),
             ),
           ),
           single: Column(
@@ -179,14 +188,16 @@ class PaywallScreen extends ConsumerWidget {
             children: [
               _header(context, stayFree: stayFree),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(
-                    gutter,
-                    KalloSpacing.sp4,
-                    gutter,
-                    KalloSpacing.sp8,
+                child: KeepClearClip(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(
+                      gutter,
+                      KalloSpacing.sp4,
+                      gutter,
+                      KalloSpacing.sp8,
+                    ),
+                    child: KeepClear(mode: KeepClearMode.centred, child: child),
                   ),
-                  child: child,
                 ),
               ),
             ],

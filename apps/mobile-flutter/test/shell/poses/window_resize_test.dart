@@ -97,6 +97,7 @@ void main() {
       // leaves the control column empty, so the decision's side runs to the
       // window's edge (its pieces keep out of the column's corners).
       if (pose == outerLandscape) {
+        expect(band.right, greaterThan(pose.size.width - pose.padding.right));
         expect(band.right, lessThanOrEqualTo(pose.size.width));
         expect(
           tester.getRect(find.byType(PlanComparison)).right,

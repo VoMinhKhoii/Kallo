@@ -6,13 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/surface/kallo_primitives.dart';
-import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../providers/auth_form_controller.dart';
 import '../providers/turnstile_controller.dart';
 import 'auth_controls.dart';
 import 'auth_submit_button.dart';
 import 'auth_text_field.dart';
+import 'email_code_heading.dart';
 import 'turnstile_view.dart';
 
 /// The code lengths GoTrue can be configured with (`otp_length`, clamped to
@@ -125,14 +125,7 @@ class _EmailCodeViewState extends ConsumerState<EmailCodeView> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(tr('auth.code.title'), style: kPageTitle()),
-        const SizedBox(height: KalloSpacing.sp2),
-        Text(tr('auth.code.sentTo'), style: dashBody(color: kInkMuted)),
-        const SizedBox(height: KalloSpacing.sp0_5),
-        Text(
-          state.pendingEmail ?? '',
-          style: dashBody(weight: FontWeight.w500),
-        ),
+        EmailCodeHeading(email: state.pendingEmail ?? ''),
         const SizedBox(height: KalloSpacing.sp5),
         AuthTextField(
           controller: _code,

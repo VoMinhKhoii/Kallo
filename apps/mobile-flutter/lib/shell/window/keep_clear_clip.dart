@@ -55,6 +55,14 @@ class RenderKeepClearClip extends RenderProxyBox {
     ];
   }
 
+  /// What the clip hides takes no taps either: a button scrolled under the
+  /// status items must not fire from the part nobody can see.
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (holes.any((hole) => hole.contains(position))) return false;
+    return super.hitTest(result, position: position);
+  }
+
   @override
   void paint(PaintingContext context, Offset offset) {
     final holes = this.holes;

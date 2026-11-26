@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kallo_mobile/features/onboarding/widgets/backdrop/backdrop_slice.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/start_aurora.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/step_backdrop.dart';
 import 'package:kallo_mobile/shared/widgets/brand/kallo_wordmark.dart';
@@ -10,7 +9,7 @@ import 'package:kallo_mobile/shell/window/keep_clear_clip.dart';
 
 /// Washes that fill the window behind a page on purpose. Nothing under them
 /// is foreground.
-const _backgrounds = {StepBackdrop, StartAurora, AuroraGlow, BackdropSlice};
+const _backgrounds = {StepBackdrop, StartAurora, AuroraGlow};
 
 /// Foreground pieces painted under [root] that a viewer can see inside one
 /// of [zones]: text and icon glyphs, fields, images, the wordmark, and any
@@ -111,6 +110,12 @@ Iterable<Rect> _pieces(Widget widget, RenderBox render) sync* {
       yield Offset.zero & render.size;
     }
   } else if (render is RenderPhysicalShape || render is RenderPhysicalModel) {
+    yield Offset.zero & render.size;
+  } else if (widget is ColoredBox &&
+      widget.color.a > 0 &&
+      render.size.height <= 12) {
+    // A thin filled strip: a progress bar or a rule. Taller fills are a
+    // pane's or a band's background.
     yield Offset.zero & render.size;
   }
 }
