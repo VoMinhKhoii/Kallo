@@ -46,26 +46,41 @@ Widget _row(double top, KeepClearMode mode, {Key? key}) => Column(
 );
 
 void main() {
-  test('the keep-clear corners sit at the top of the column, and at its '
-      'bottom too in a short window', () {
+  test('the keep-clear corner follows what the system puts in the column', () {
+    // Outer display upright: camera, clock and status icons at the top.
     expect(WindowLayout.resolve(_size, _column).keepClear, [
-      const Rect.fromLTWH(382, 0, 84, kColumnTopClear),
+      const Rect.fromLTWH(382, 0, 84, kOuterStatusClear),
     ]);
+    // Outer display on its side: only the camera, at the top with the column
+    // on the left and at the bottom with it on the right.
     expect(
       WindowLayout.resolve(
         const Size(678, 466),
         const EdgeInsets.only(left: 84),
       ).keepClear,
+      [const Rect.fromLTWH(0, 0, 84, kCameraCornerClear)],
+    );
+    expect(
+      WindowLayout.resolve(
+        const Size(678, 466),
+        const EdgeInsets.only(right: 84),
+      ).keepClear,
       [
-        const Rect.fromLTWH(0, 0, 84, kColumnTopClear),
         const Rect.fromLTWH(
-          0,
-          466 - kColumnBottomClear,
+          594,
+          466 - kCameraCornerClear,
           84,
-          kColumnBottomClear,
+          kCameraCornerClear,
         ),
       ],
     );
+    // Inner display, also under a pinned video: the status items alone.
+    for (final size in const [Size(951, 669), Size(951, 420)]) {
+      expect(
+        WindowLayout.resolve(size, const EdgeInsets.only(right: 84)).keepClear,
+        [const Rect.fromLTWH(867, 0, 84, kInnerStatusClear)],
+      );
+    }
     expect(
       WindowLayout.resolve(
         const Size(402, 874),
@@ -110,7 +125,7 @@ void main() {
     await _pump(tester, _row(60, KeepClearMode.below, key: key));
     expect(
       tester.getRect(find.byKey(key)),
-      const Rect.fromLTRB(24, kColumnTopClear, 442, kColumnTopClear + 40),
+      const Rect.fromLTRB(24, kOuterStatusClear, 442, kOuterStatusClear + 40),
     );
   });
 
@@ -151,7 +166,7 @@ void main() {
     final clip = tester.renderObject<RenderKeepClearClip>(
       find.byType(KeepClearClip),
     );
-    expect(clip.holes, [const Rect.fromLTWH(382, 0, 84, kColumnTopClear)]);
+    expect(clip.holes, [const Rect.fromLTWH(382, 0, 84, kOuterStatusClear)]);
     expect(
       tester.layers.whereType<ClipPathLayer>().single.clipPath!.contains(
         const Offset(420, 80),

@@ -8,7 +8,8 @@ import 'keep_clear_zones.dart';
 /// Hides a scroll view's content inside the keep-clear corners of a
 /// column-free page, so nothing scrolls under the status items or the
 /// camera: in the column's strip the viewport starts below the top corner
-/// (and, in a short window, ends above the bottom one).
+/// (or, on an outer display turned with the column on the right, ends above
+/// the camera's corner at the bottom).
 ///
 /// At rest the page keeps its pieces out of the corners itself
 /// ([KeepClear]); this only covers what scrolling brings into them. Off a

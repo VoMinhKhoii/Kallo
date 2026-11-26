@@ -204,9 +204,12 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
     takes the column's side out of the insets the page sees and pins the real window as
     `WindowLayout.columnFree`, so the page centres on the display and, beside a fold, the
     column's pane runs to the window's edge and mirrors the other. What stays empty is
-    `WindowLayout.keepClear`: the column's top 168pt, and in a short window its bottom
-    76pt as well (where the status items and the camera sit, measured on simulator
-    captures). Pieces beside those corners give way through `KeepClear`
+    `WindowLayout.keepClear` (`shell/window/keep_clear_zones.dart`), the part of the
+    column that holds the system's own items, measured on simulator captures because no
+    API reports it: the top 168pt on the upright outer display (camera, clock, status
+    icons), the top 124pt on the inner display (clock and status icons), and on an outer
+    display turned on its side only the camera's corner, 76pt at the top with the column
+    on the left or at the bottom with it on the right. Pieces beside those corners give way through `KeepClear`
     (`shell/window/keep_clear.dart`): a header's corner glyph and a title on the column's
     side, a progress bar, a toggle or a pinned button on both sides, a full-width field or
     card by starting below the corner. Scroll views wear `KeepClearClip`, which cuts the
