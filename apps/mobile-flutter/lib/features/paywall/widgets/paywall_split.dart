@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../../../shell/window/keep_clear_clip.dart';
 import '../../../shell/window/window_layout.dart';
 import '../../../shell/window/window_layout_scope.dart';
 import '../../../shell/window/window_regions.dart';
@@ -15,7 +16,10 @@ import 'paywall_top_inset.dart';
 ///
 /// The decision takes the side of the system's control column, as the near
 /// pane does beside a fold; where the window has a fold, the fold is the
-/// seam. Neither side reaches under the control column.
+/// seam. Neither side reaches under the control column, except on a page
+/// that leaves it empty (`WindowLayout.columnFree`): there the decision's
+/// side runs to the window's edge and its pieces keep out of the column's
+/// keep-clear corners.
 class PaywallSplit extends StatelessWidget {
   const PaywallSplit({
     required this.header,
@@ -51,26 +55,29 @@ class PaywallSplit extends StatelessWidget {
   Widget build(BuildContext context) {
     final layout = WindowLayout.of(context);
     final sides = _sides(layout);
+    final tableGutter = PaywallGutter.forWidth(sides.table.width, alone: true);
     return Stack(
       children: [
-        _side(
-          context,
-          layout,
-          sides.table,
-          PaywallGutter.forWidth(sides.table.width, alone: true),
-          table,
-        ),
+        _side(context, layout, sides.table, tableGutter, table),
         _side(
           context,
           layout,
           sides.decision,
-          PaywallGutter.decision,
+          // On a page that leaves the column empty the decision's outer
+          // gutter matches the table's, so the pair centres on the display.
+          layout.columnFree && !layout.twoPane
+              ? tableGutter
+              : PaywallGutter.decision,
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               header,
               Expanded(
-                child: Center(child: SingleChildScrollView(child: decision)),
+                child: Center(
+                  child: KeepClearClip(
+                    child: SingleChildScrollView(child: decision),
+                  ),
+                ),
               ),
             ],
           ),
@@ -83,10 +90,16 @@ class PaywallSplit extends StatelessWidget {
     final regions = WindowRegions(layout);
     if (layout.twoPane) return (table: regions.far, decision: regions.near);
     final safe = regions.safe;
-    final width = (safe.width * _decisionShare).clamp(
-      _decisionMin,
-      _decisionMax,
-    );
+    // The column's width stays in the decision's side when the page leaves
+    // the column empty: its corner glyph and title keep out of the status
+    // items, and the column still holds the width they had beside it.
+    final column = layout.columnFree ? layout.columnWidth : 0.0;
+    final width =
+        ((safe.width - column) * _decisionShare).clamp(
+          _decisionMin,
+          _decisionMax,
+        ) +
+        column;
     return layout.nearLeft
         ? (
           decision: Rect.fromLTWH(safe.left, 0, width, safe.height),

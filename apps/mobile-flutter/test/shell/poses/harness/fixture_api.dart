@@ -28,6 +28,10 @@ FakeApiClient fixtureApi(PoseFixtures f) => FakeApiClient((request) {
       ],
     },
     '/api/v1/groups/invites' => {'invites': <dynamic>[]},
+    '/api/v1/groups/invite/pose-invite' => {
+      'inviter': f.posts[0]['friend'],
+      'status': 'none',
+    },
     '/api/v1/chat-groups' => {'groups': <dynamic>[]},
     '/api/v1/meals/dates' => [for (var i = 0; i < 30; i++) f.date(i)],
     '/api/v1/account/entitlements' => {

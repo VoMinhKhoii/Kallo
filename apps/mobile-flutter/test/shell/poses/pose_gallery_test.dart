@@ -1,11 +1,15 @@
 // CI: flutter test test/shell/poses
 // Gallery: flutter test --update-goldens --dart-define=DUO_OUT=/absolute/path test/shell/poses
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/auth/screens/email_auth_screen.dart';
 import 'package:kallo_mobile/features/auth/screens/sign_in_screen.dart';
+import 'package:kallo_mobile/features/auth/screens/sign_up_screen.dart';
+import 'package:kallo_mobile/features/circle/screens/connect_screen.dart';
 import 'package:kallo_mobile/features/auth/widgets/auth_submit_button.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_screen.dart';
 import 'package:kallo_mobile/features/circle/screens/circle_thread_screen.dart';
@@ -15,7 +19,10 @@ import 'package:kallo_mobile/features/logging/screens/logging_screen.dart';
 import 'package:kallo_mobile/features/logging/widgets/meal_edit/meal_edit_sheet.dart';
 import 'package:kallo_mobile/features/logging/widgets/persisted/persisted_meal_card_content.dart';
 import 'package:kallo_mobile/features/nutrition/screens/nutrition_screen.dart';
+import 'package:kallo_mobile/features/onboarding/providers/first_run_finish.dart';
 import 'package:kallo_mobile/features/onboarding/screens/onboarding_screen.dart';
+import 'package:kallo_mobile/features/onboarding/screens/save_plan_screen.dart';
+import 'package:kallo_mobile/features/onboarding/screens/welcome_setup_screen.dart';
 import 'package:kallo_mobile/features/onboarding/screens/start_screen.dart';
 import 'package:kallo_mobile/features/paywall/screens/paywall_screen.dart';
 import 'package:kallo_mobile/features/paywall/widgets/pitch/plan_comparison.dart';
@@ -74,6 +81,8 @@ class Surface {
     this.widget, {
     this.scroll = true,
     this.signedIn = true,
+    this.columnFree = false,
+    this.overrides = const [],
     this.poses,
     this.open,
     this.check,
@@ -92,6 +101,14 @@ class Surface {
 
   /// False for the flows a signed-out user sees.
   final bool signedIn;
+
+  /// A screen that puts none of our controls in the control column. It is
+  /// also rendered with the column on the left, and its renders tint the
+  /// column's keep-clear corners.
+  final bool columnFree;
+
+  /// Provider overrides on top of the pose fixtures.
+  final List<Override> overrides;
 
   /// The pose names it is rendered at; null renders every pose.
   final Set<String>? poses;
@@ -185,11 +202,18 @@ final _surfaces = <Surface>[
     SettingsScreen,
     measure: (m) => m.rect('card', find.byType(GroupedListCard)),
   ),
-  const Surface('sign-in', '/sign-in', SignInScreen, signedIn: false),
+  const Surface(
+    'sign-in',
+    '/sign-in',
+    SignInScreen,
+    signedIn: false,
+    columnFree: true,
+  ),
   Surface(
     'paywall',
     '/paywall',
     PaywallScreen,
+    columnFree: true,
     measure: (m) {
       m.rect('band', find.byType(PaywallBuyBand));
       m.rect('toggle', find.byType(PlanToggle));
@@ -294,12 +318,20 @@ final _surfaces = <Surface>[
       await tester.pumpAndSettle();
     },
   ),
-  const Surface('start', '/start', StartScreen, scroll: false, signedIn: false),
+  const Surface(
+    'start',
+    '/start',
+    StartScreen,
+    scroll: false,
+    signedIn: false,
+    columnFree: true,
+  ),
   Surface(
     'email-auth',
     '/sign-in/email',
     EmailAuthScreen,
     signedIn: false,
+    columnFree: true,
     measure: (m) {
       m.rect('Send code', find.text('Send code'));
       m.rect('submit button', find.byType(AuthSubmitButton));
@@ -310,6 +342,7 @@ final _surfaces = <Surface>[
     '/onboarding',
     OnboardingScreen,
     signedIn: false,
+    columnFree: true,
     open: _continueOnboarding,
     check: (tester, pose) {
       if (pose.name != 'pip-pinned') return;
@@ -322,14 +355,98 @@ final _surfaces = <Surface>[
     '/onboarding',
     OnboardingScreen,
     signedIn: false,
-    open: (tester) async {
-      await _continueOnboarding(tester);
-      await tester.tap(find.text('Skip'));
-      await settlePose(tester);
-    },
+    columnFree: true,
+    open: (tester) => _skipOnboarding(tester, 1),
     measure: _measureOnboarding,
   ),
+  const Surface(
+    'language',
+    '/onboarding',
+    OnboardingScreen,
+    signedIn: false,
+    columnFree: true,
+  ),
+  Surface(
+    'goal',
+    '/onboarding',
+    OnboardingScreen,
+    signedIn: false,
+    columnFree: true,
+    open: (tester) => _skipOnboarding(tester, 2),
+  ),
+  Surface(
+    'cooking',
+    '/onboarding',
+    OnboardingScreen,
+    signedIn: false,
+    columnFree: true,
+    open: (tester) => _skipOnboarding(tester, 3),
+  ),
+  Surface(
+    'target',
+    '/onboarding',
+    OnboardingScreen,
+    signedIn: false,
+    columnFree: true,
+    open: (tester) => _skipOnboarding(tester, 4),
+  ),
+  const Surface(
+    'sign-up',
+    '/sign-up',
+    SignUpScreen,
+    signedIn: false,
+    columnFree: true,
+  ),
+  const Surface(
+    'save-plan',
+    '/save-plan',
+    SavePlanScreen,
+    signedIn: false,
+    columnFree: true,
+  ),
+  const Surface(
+    'save-plan-email',
+    '/save-plan/email',
+    EmailAuthScreen,
+    signedIn: false,
+    columnFree: true,
+  ),
+  Surface(
+    'welcome',
+    '/welcome',
+    WelcomeSetupScreen,
+    scroll: false,
+    columnFree: true,
+    overrides: [firstRunFinishProvider.overrideWith((ref) => _HeldFinish(ref))],
+    // Past the interstitial's minimum window, so no timer outlives the test.
+    open: (tester) => tester.pump(const Duration(seconds: 2)),
+  ),
+  const Surface(
+    'invite',
+    '/circle/invite/pose-invite',
+    ConnectScreen,
+    scroll: false,
+    columnFree: true,
+  ),
 ];
+
+/// Walks the wizard from its first screen past [skips] screens.
+Future<void> _skipOnboarding(WidgetTester tester, int skips) async {
+  await _continueOnboarding(tester);
+  for (var i = 0; i < skips; i++) {
+    await tester.tap(find.text('Skip'));
+    await settlePose(tester);
+  }
+}
+
+/// Holds `/welcome` on screen: the flush never finishes.
+class _HeldFinish extends FirstRunFinishController {
+  _HeldFinish(super.ref);
+
+  @override
+  Future<({int? target, String next})> finish() =>
+      Completer<({int? target, String next})>().future;
+}
 
 Future<void> _capture(WidgetTester tester, String name) async {
   if (_out.isEmpty) return;
@@ -408,7 +525,7 @@ void main() {
   });
 
   for (final surface in _surfaces) {
-    for (final pose in poses) {
+    for (final pose in [...poses, if (surface.columnFree) ...columnLeftPoses]) {
       if (surface.poses != null && !surface.poses!.contains(pose.name)) {
         continue;
       }
@@ -422,6 +539,8 @@ void main() {
             surface.route,
             signedIn: surface.signedIn,
             textScale: scale,
+            overrides: surface.overrides,
+            keepClearTint: surface.columnFree && _out.isNotEmpty,
           );
           try {
             await surface.open?.call(tester);

@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/mascot/bun_mascot.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
+import '../../../shell/window/keep_clear.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../shell/nav/nav_actions.dart';
@@ -109,9 +110,11 @@ class _SavePlanScreenState extends State<SavePlanScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: KalloSpacing.sp3),
-            BunMascot(speech: tr('onboarding.guide.step7')),
+            KeepClear(child: BunMascot(speech: tr('onboarding.guide.step7'))),
             const SizedBox(height: KalloSpacing.sp3),
-            Text(tr('onboarding.savePlanTitle'), style: kPageTitle()),
+            KeepClear(
+              child: Text(tr('onboarding.savePlanTitle'), style: kPageTitle()),
+            ),
           ],
         ),
       ),

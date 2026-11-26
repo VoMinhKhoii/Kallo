@@ -32,6 +32,7 @@ import 'shared/widgets/panes/detail_pane_route.dart';
 import 'shell/route_error_screen.dart';
 import 'shell/splash_screen.dart';
 import 'shell/tab_scaffold.dart';
+import 'shell/window/column_free_page.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -91,12 +92,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/start',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => const StartScreen(),
+        builder: (context, state) => const ColumnFreePage(child: StartScreen()),
       ),
       GoRoute(
         path: '/sign-in',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => const SignInScreen(),
+        builder:
+            (context, state) => const ColumnFreePage(child: SignInScreen()),
         routes: [
           // The email path, pushed from the welcome face's "Continue with
           // email". A child route so Back pops to the options that opened it.
@@ -104,26 +106,31 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'email',
             parentNavigatorKey: _rootKey,
             builder:
-                (context, state) => const EmailAuthScreen(createAccount: false),
+                (context, state) => const ColumnFreePage(
+                  child: EmailAuthScreen(createAccount: false),
+                ),
           ),
         ],
       ),
       GoRoute(
         path: '/sign-up',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => const SignUpScreen(),
+        builder:
+            (context, state) => const ColumnFreePage(child: SignUpScreen()),
       ),
       GoRoute(
         path: '/onboarding',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => const OnboardingScreen(),
+        builder:
+            (context, state) => const ColumnFreePage(child: OnboardingScreen()),
       ),
       // The last signed-out step: the auth surface under the wizard's chrome,
       // reached when the draft is complete.
       GoRoute(
         path: '/save-plan',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => const SavePlanScreen(),
+        builder:
+            (context, state) => const ColumnFreePage(child: SavePlanScreen()),
         routes: [
           // Same screen, opened on sign-UP: whoever just built a plan here has
           // no account yet. Back pops to `/save-plan`.
@@ -131,14 +138,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'email',
             parentNavigatorKey: _rootKey,
             builder:
-                (context, state) => const EmailAuthScreen(createAccount: true),
+                (context, state) => const ColumnFreePage(
+                  child: EmailAuthScreen(createAccount: true),
+                ),
           ),
         ],
       ),
       GoRoute(
         path: '/welcome',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => const WelcomeSetupScreen(),
+        builder:
+            (context, state) =>
+                const ColumnFreePage(child: WelcomeSetupScreen()),
       ),
       // Invite-accept deep link (`nham://invite/<slug>` / https invite links).
       // Pushed over the shell so it overlays the app; reachable while signed
@@ -147,8 +158,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/circle/invite/:slug',
         parentNavigatorKey: _rootKey,
         builder:
-            (context, state) =>
-                ConnectScreen(slug: state.pathParameters['slug'] ?? ''),
+            (context, state) => ColumnFreePage(
+              child: ConnectScreen(slug: state.pathParameters['slug'] ?? ''),
+            ),
       ),
       // Settings pushes over the shell from the header avatar — it's an
       // account surface, not a primary tab destination.
@@ -168,8 +180,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootKey,
         pageBuilder:
             (context, state) => MaterialPage<void>(
-              child: PaywallScreen(
-                onboarding: state.uri.queryParameters['onboarding'] == '1',
+              child: ColumnFreePage(
+                child: PaywallScreen(
+                  onboarding: state.uri.queryParameters['onboarding'] == '1',
+                ),
               ),
             ),
       ),

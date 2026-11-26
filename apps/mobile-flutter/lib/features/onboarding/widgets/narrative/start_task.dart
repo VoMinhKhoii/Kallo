@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/brand/kallo_wordmark.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../shared/widgets/typography/meta_action.dart';
+import '../../../../shell/window/keep_clear.dart';
+import '../../../../shell/window/keep_clear_clip.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 
@@ -21,32 +23,37 @@ class StartTask extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Center(child: KalloWordmark(height: wordmarkHeight)),
-            const SizedBox(height: KalloSpacing.sp4),
-            Text(
-              context.tr('onboarding.start.title'),
-              textAlign: TextAlign.center,
-              style: kPageTitle(),
-            ),
-            const SizedBox(height: 24),
-            KalloButton(
-              title: context.tr('onboarding.start.cta'),
-              variant: KalloButtonVariant.cta,
-              onPressed: () => context.push('/onboarding'),
-            ),
-            const SizedBox(height: 12),
-            MetaAction(
-              label: context.tr('onboarding.start.haveAccount'),
-              onTap: () => context.push('/sign-in'),
-            ),
-          ],
+    child: KeepClearClip(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Center(child: KalloWordmark(height: wordmarkHeight)),
+              const SizedBox(height: KalloSpacing.sp4),
+              KeepClear(
+                mode: KeepClearMode.centred,
+                child: Text(
+                  context.tr('onboarding.start.title'),
+                  textAlign: TextAlign.center,
+                  style: kPageTitle(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              KalloButton(
+                title: context.tr('onboarding.start.cta'),
+                variant: KalloButtonVariant.cta,
+                onPressed: () => context.push('/onboarding'),
+              ),
+              const SizedBox(height: 12),
+              MetaAction(
+                label: context.tr('onboarding.start.haveAccount'),
+                onTap: () => context.push('/sign-in'),
+              ),
+            ],
+          ),
         ),
       ),
     ),

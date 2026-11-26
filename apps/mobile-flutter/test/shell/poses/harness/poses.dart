@@ -66,6 +66,22 @@ const phoneLandscape = Pose(
   EdgeInsets.fromLTRB(62, 0, 62, 21),
 );
 
+// Turned the other way, the closed display and the open one keep their
+// column on the LEFT. Only the screens that leave the column empty are
+// rendered here; the others are checked with the column on the left in Split
+// View.
+const outerLandscapeLeft = Pose(
+  'outer-landscape-left',
+  Size(678, 466),
+  EdgeInsets.only(left: 84, bottom: 34),
+);
+const innerLandscapeLeft = Pose(
+  'inner-landscape-left',
+  Size(951, 669),
+  EdgeInsets.only(left: 84, bottom: 34),
+);
+const columnLeftPoses = [outerLandscapeLeft, innerLandscapeLeft];
+
 const poses = [
   phone,
   outerPortrait,

@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/typography/meta_action.dart';
+import '../../../shell/window/keep_clear.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_motion.dart';
@@ -71,7 +72,15 @@ class OnboardingStepHeader extends StatelessWidget {
                 ),
       ),
       const SizedBox(height: KalloSpacing.sp3),
-      Padding(padding: EdgeInsets.symmetric(horizontal: gutter), child: _bar()),
+      // Beside the status items the bar ends short on both sides, so it
+      // stays centred under the mark.
+      KeepClear(
+        mode: KeepClearMode.centred,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: gutter),
+          child: _bar(),
+        ),
+      ),
     ],
   );
 

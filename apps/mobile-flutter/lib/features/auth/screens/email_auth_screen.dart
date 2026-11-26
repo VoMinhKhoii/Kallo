@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shell/window/keep_clear.dart';
+import '../../../shell/window/keep_clear_clip.dart';
 import '../../../shell/window/window_layout.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
 
@@ -74,31 +76,33 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     final state = ref.watch(_provider);
     final showCode = state.pendingEmail != null;
 
-    final task = CustomScrollView(
-      key: _taskKey,
-      slivers: [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              kAuthInset,
-              KalloSpacing.sp5 +
-                  (WindowLayout.of(context).foldAcross ? 2 * _foldNudge : 0),
-              kAuthInset,
-              KalloSpacing.sp5,
-            ),
-            child: Align(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child:
-                    showCode
-                        ? EmailCodeView(provider: _provider, onNotice: _toast)
-                        : _form(state),
+    final task = KeepClearClip(
+      child: CustomScrollView(
+        key: _taskKey,
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                kAuthInset,
+                KalloSpacing.sp5 +
+                    (WindowLayout.of(context).foldAcross ? 2 * _foldNudge : 0),
+                kAuthInset,
+                KalloSpacing.sp5,
+              ),
+              child: Align(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child:
+                      showCode
+                          ? EmailCodeView(provider: _provider, onNotice: _toast)
+                          : _form(state),
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
     return Scaffold(
       backgroundColor: KalloColors.surface,
@@ -155,23 +159,30 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       children: [
         // The page title, in the sans page-title token. It was Lora 26 — the
         // serif is the wordmark's voice now, and the wordmark is right above it.
-        Text(
-          widget.createAccount
-              ? tr('auth.dialog.signUpTitle')
-              : tr('auth.dialog.signInTitle'),
-          style: kPageTitle(),
+        KeepClear(
+          child: Text(
+            widget.createAccount
+                ? tr('auth.dialog.signUpTitle')
+                : tr('auth.dialog.signInTitle'),
+            style: kPageTitle(),
+          ),
         ),
         if (!short) ...[
           const SizedBox(height: KalloSpacing.sp2),
-          Text(
-            widget.createAccount
-                ? tr('auth.dialog.signUpSubtitle')
-                : tr('auth.dialog.signInSubtitle'),
-            style: dashBody(color: kInkMuted),
+          KeepClear(
+            child: Text(
+              widget.createAccount
+                  ? tr('auth.dialog.signUpSubtitle')
+                  : tr('auth.dialog.signInSubtitle'),
+              style: dashBody(color: kInkMuted),
+            ),
           ),
         ],
         seam,
-        EmailAuthForm(provider: _provider),
+        KeepClear(
+          mode: KeepClearMode.below,
+          child: EmailAuthForm(provider: _provider),
+        ),
         seam,
         const _OrDivider(),
         seam,

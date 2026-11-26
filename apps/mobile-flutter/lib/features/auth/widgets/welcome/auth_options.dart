@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../shell/window/keep_clear.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -57,12 +58,17 @@ class AuthOptions extends StatelessWidget {
         const SizedBox(height: KalloSpacing.sp3),
         _EmailEntryButton(busy: busy, onPressed: onEmail),
         const SizedBox(height: KalloSpacing.sp6),
-        Text(
-          tr('auth.welcome.terms'),
-          textAlign: TextAlign.center,
-          style: dashMeta().copyWith(fontSize: kAuthFootnote),
+        // Beside the camera of a short window the footnote narrows on both
+        // sides, so it stays centred under the buttons.
+        KeepClear(
+          mode: KeepClearMode.centred,
+          child: Text(
+            tr('auth.welcome.terms'),
+            textAlign: TextAlign.center,
+            style: dashMeta().copyWith(fontSize: kAuthFootnote),
+          ),
         ),
-        const AuthLegalLinks(),
+        const KeepClear(mode: KeepClearMode.centred, child: AuthLegalLinks()),
       ],
     );
   }

@@ -23,6 +23,8 @@ import 'package:kallo_mobile/features/paywall/widgets/paywall_header.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/plan_cta.dart';
 import 'package:kallo_mobile/features/paywall/widgets/plans/plan_toggle.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
+import 'package:kallo_mobile/shell/window/keep_clear_zones.dart';
+import 'package:kallo_mobile/shell/window/window_layout.dart';
 import 'harness/pose_harness.dart';
 import 'harness/poses.dart';
 
@@ -112,8 +114,10 @@ void main() {
       );
       final state = tester.state(find.byType(AuthPage));
       final rect = tester.getRect(find.byType(AuthOptions));
+      // The near pane runs from the fold to the window's edge on this
+      // column-free page: 495.5 to 951, less its 24pt margins.
       expect(rect.left, 519.5);
-      expect(rect.width, 323.5);
+      expect(rect.width, 407.5);
       debugPrint('sign-in task: $rect');
       for (final pose in [outerPortrait, innerLandscape]) {
         resize(tester, pose);
@@ -147,7 +151,7 @@ void main() {
     await tester.pump();
     final button = tester.getRect(find.byType(KalloButton));
     expect(button.left, 519.5);
-    expect(button.width, 323.5);
+    expect(button.width, 407.5);
     debugPrint('onboarding CTA: $button; country offset: ${position.pixels}');
     for (final pose in [outerPortrait, innerLandscape]) {
       resize(tester, pose);
@@ -388,8 +392,11 @@ void main() {
       );
       final table = tester.getRect(find.byType(PlanComparison));
       expect(table.left, greaterThanOrEqualTo(495.5));
+      // The near pane is wide enough here for the table's reading size, and
+      // the card's foot runs a point under the band's top padding; the last
+      // row stands clear above the band.
       expect(
-        table.bottom,
+        tester.getRect(find.text('Groups & friends')).bottom,
         lessThanOrEqualTo(tester.getRect(find.byType(PaywallBuyBand)).top),
       );
       expectOneColumnEdge(tester);
@@ -407,12 +414,8 @@ void main() {
       '/sign-in/email',
       signedIn: false,
     );
-    final safe = outerLandscape.padding.deflateRect(
-      Offset.zero & outerLandscape.size,
-    );
     final google = tester.getRect(find.byType(GoogleButton));
-    expect(safe.contains(google.topLeft), isTrue, reason: '$google');
-    expect(safe.contains(google.bottomRight), isTrue, reason: '$google');
+    expectOnPage(outerLandscape, google);
     expect(find.text('Sign in to continue tracking your meals.'), findsNothing);
     await dispose();
   });
@@ -452,12 +455,10 @@ void main() {
       tester,
     ) async {
       final dispose = await bootPose(tester, pose, '/paywall');
-      final safe = pose.padding.deflateRect(Offset.zero & pose.size);
       final table = tester.getRect(find.byType(PlanComparison));
       final cta = tester.getRect(find.byType(PlanCta));
       for (final rect in [table, cta]) {
-        expect(safe.contains(rect.topLeft), isTrue, reason: '$rect');
-        expect(safe.contains(rect.bottomRight), isTrue, reason: '$rect');
+        expectOnPage(pose, rect);
       }
       expect(table.overlaps(cta), isFalse);
       for (final scroll in find.byType(Scrollable).evaluate()) {
@@ -501,14 +502,10 @@ void main() {
   // row is in view over the pinned band without a scroll.
   testWidgets('paywall on the closed display shows every row', (tester) async {
     final dispose = await bootPose(tester, outerPortrait, '/paywall');
-    final safe = outerPortrait.padding.deflateRect(
-      Offset.zero & outerPortrait.size,
-    );
     final last = tester.getRect(find.text('Groups & friends'));
     final cta = tester.getRect(find.byType(PlanCta));
     for (final rect in [last, cta]) {
-      expect(safe.contains(rect.topLeft), isTrue, reason: '$rect');
-      expect(safe.contains(rect.bottomRight), isTrue, reason: '$rect');
+      expectOnPage(outerPortrait, rect);
     }
     expect(last.overlaps(cta), isFalse);
     expect(
@@ -520,28 +517,42 @@ void main() {
   });
 }
 
-/// The title, the toggle, the table and the buy button share one left edge
-/// and one right edge, and the close glyph's strokes, 6pt into its box, start
-/// on that left edge as they do on a phone.
+/// [rect] is in view on a page that leaves the control column empty: inside
+/// the window less its top and bottom insets, and clear of the column's
+/// keep-clear corners.
+void expectOnPage(Pose pose, Rect rect) {
+  final page = Rect.fromLTRB(
+    0,
+    pose.padding.top,
+    pose.size.width,
+    pose.size.height - pose.padding.bottom,
+  );
+  expect(page.contains(rect.topLeft), isTrue, reason: '$rect');
+  expect(page.contains(rect.bottomRight), isTrue, reason: '$rect');
+  for (final zone in WindowLayout.resolve(pose.size, pose.padding).keepClear) {
+    expect(rect.overlaps(zone), isFalse, reason: '$rect in $zone');
+  }
+}
+
+/// The table and the buy button share one left edge and one right edge; the
+/// title starts on that left edge, and the close glyph's strokes, 6pt into
+/// its box, start there too, as they do on a phone. These windows leave the
+/// control column on the right empty, so beside its status items the title
+/// wraps before it and the toggle narrows on both sides, centred on the
+/// column.
 void expectOneColumnEdge(WidgetTester tester) {
   final table = tester.getRect(find.byType(PlanComparison));
-  for (final piece in [
-    find.byType(PlanToggle),
-    find.byType(PlanCta),
-    find.text('Choose your plan'),
-  ]) {
-    final rect = tester.getRect(piece);
-    expect(
-      rect.left,
-      moreOrLessEquals(table.left, epsilon: .01),
-      reason: '$piece',
-    );
-    expect(
-      rect.right,
-      moreOrLessEquals(table.right, epsilon: .01),
-      reason: '$piece',
-    );
-  }
+  final cta = tester.getRect(find.byType(PlanCta));
+  expect(cta.left, moreOrLessEquals(table.left, epsilon: .01));
+  expect(cta.right, moreOrLessEquals(table.right, epsilon: .01));
+  expect(
+    tester.getRect(find.text('Choose your plan')).left,
+    moreOrLessEquals(table.left, epsilon: .01),
+  );
+  expect(
+    tester.getRect(find.byType(PlanToggle)).center.dx,
+    moreOrLessEquals(table.center.dx, epsilon: .01),
+  );
   final glyph = tester.getRect(
     find.descendant(
       of: find.byType(PaywallHeader),

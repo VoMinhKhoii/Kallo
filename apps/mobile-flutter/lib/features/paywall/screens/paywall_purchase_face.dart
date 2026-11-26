@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../services/billing/entitlement_state.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
+import '../../../shell/window/keep_clear.dart';
 import '../../../shell/window/window_layout.dart';
 import '../../../shell/window/window_regions.dart';
 import '../../../theme/kallo_theme.dart';
@@ -129,9 +132,15 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
       return PaywallSplit(header: widget.header, table: pitch, decision: band);
     }
     // One gutter for the column, header and band included. `near` is the
-    // pane beside a fold, or the safe width without one.
+    // pane beside a fold, or the safe width without one. A page that takes
+    // the control column's width can be wider than the table's 420pt cap;
+    // there the gutter grows to meet the table, so they keep one edge.
+    final near = WindowRegions(layout).near.width;
     final column = PaywallGutter(
-      value: PaywallGutter.forWidth(WindowRegions(layout).near.width),
+      value:
+          layout.columnFree
+              ? math.max(PaywallGutter.forWidth(near), (near - 420) / 2)
+              : PaywallGutter.forWidth(near),
       child: PaywallTopInset(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -174,7 +183,9 @@ class _PaywallPurchaseFaceState extends ConsumerState<PaywallPurchaseFace> {
       PaywallGuide.title(),
       if (toggle != null) ...[
         const SizedBox(height: KalloSpacing.sp3_5),
-        toggle,
+        // Beside the table there is height to spare: the toggle moves down
+        // out of the status items' corner rather than narrowing.
+        KeepClear(mode: KeepClearMode.below, child: toggle),
       ],
     ],
   );

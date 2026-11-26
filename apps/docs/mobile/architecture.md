@@ -197,11 +197,26 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
     insets are lopsided there, which is how the app tells: a classic phone on its side
     reports the same inset on both sides. The tab pill turns into a vertical capsule and
     sits in that column (`shell/tab_scaffold.dart`, `shell/nav/`); content keeps the phone
-    layout in what remains (382pt on the outer display).
+    layout in what remains (382pt on the outer display). The pages that put none of our
+    controls in the column (`/start`, sign-in and sign-up, both email routes, every
+    onboarding step, `/save-plan`, `/welcome`, the paywall and an invite) are wrapped in
+    `ColumnFreePage` (`shell/window/column_free_page.dart`, applied in `router.dart`). It
+    takes the column's side out of the insets the page sees and pins the real window as
+    `WindowLayout.columnFree`, so the page centres on the display and, beside a fold, the
+    column's pane runs to the window's edge and mirrors the other. What stays empty is
+    `WindowLayout.keepClear`: the column's top 168pt, and in a short window its bottom
+    76pt as well (where the status items and the camera sit, measured on simulator
+    captures). Pieces beside those corners give way through `KeepClear`
+    (`shell/window/keep_clear.dart`): a header's corner glyph and a title on the column's
+    side, a progress bar, a toggle or a pinned button on both sides, a full-width field or
+    card by starting below the corner. Scroll views wear `KeepClearClip`, which cuts the
+    corners out of what they paint, so nothing scrolls under the status items. The tabbed
+    pages, Log and Settings keep the column.
   - *Two panes.* A window at least 840pt wide with a control column splits at the fold,
     which runs down the centre of the display (`shared/widgets/panes/two_pane_scaffold.dart`).
     The 40pt strip over the fold stays empty, so the panes are unequal: 0 to 455.5 and
-    495.5 to 867 on a 951pt window. Today, Log and Nutrition put the day on the far side
+    495.5 to 867 on a 951pt window (on a column-free page the near pane runs to 951, and
+    the two are mirror images). Today, Log and Nutrition put the day on the far side
     and the task beside the column. Circle and Settings show list and detail
     (`detail_pane_route.dart`): the route is the same in every window, so a thread that
     sits beside the feed when open is pushed over it once the phone is closed. The signed-out

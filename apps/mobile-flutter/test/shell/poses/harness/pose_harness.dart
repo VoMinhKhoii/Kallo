@@ -16,6 +16,7 @@ import '../../../app_fonts.dart';
 import '../../../l10n_test_loader.dart';
 import 'fixture_api.dart';
 import 'fixtures.dart';
+import 'keep_clear_tint.dart';
 import 'pose_overrides.dart';
 import '../../../features/circle/circle_feed_test_support.dart';
 import 'poses.dart';
@@ -52,6 +53,8 @@ Future<Future<void> Function()> bootPose(
   bool signedIn = true,
   double textScale = 1,
   FakeApiClient? apiOverride,
+  List<Override> overrides = const [],
+  bool keepClearTint = false,
 }) async {
   final dpr = pose.devicePixelRatio;
   BunMascot.debugRandom = Random(0);
@@ -73,7 +76,10 @@ Future<Future<void> Function()> bootPose(
   final errors = _ProviderErrors();
   final container = ProviderContainer(
     observers: [errors],
-    overrides: poseOverrides(fixtures: fixtures, api: api, signedIn: signedIn),
+    overrides: [
+      ...poseOverrides(fixtures: fixtures, api: api, signedIn: signedIn),
+      ...overrides,
+    ],
   );
   // Resolve the auth seed before routing: there are no native auth events to
   // refresh a router that first reads the session in its loading state.
@@ -116,7 +122,8 @@ Future<Future<void> Function()> bootPose(
                       data: MediaQuery.of(
                         context,
                       ).copyWith(textScaler: TextScaler.linear(textScale)),
-                      child: child!,
+                      child:
+                          keepClearTint ? KeepClearTint(child: child!) : child!,
                     ),
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,

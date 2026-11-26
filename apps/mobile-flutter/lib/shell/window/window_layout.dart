@@ -64,6 +64,7 @@ class WindowLayout {
     required this.size,
     required this.viewPadding,
     required this.controlEdge,
+    this.columnFree = false,
   });
 
   factory WindowLayout.resolve(Size size, EdgeInsets viewPadding) {
@@ -97,6 +98,20 @@ class WindowLayout {
   final EdgeInsets viewPadding;
 
   final ControlEdge controlEdge;
+
+  /// True on a page that puts none of our controls in the control column
+  /// (`ColumnFreePage`). Such a page lays out on the whole window, centred on
+  /// the display, and keeps only its keep-clear corners empty
+  /// (`keep_clear_zones.dart`).
+  final bool columnFree;
+
+  /// This window as a page that leaves the control column empty sees it.
+  WindowLayout get freeOfColumn => WindowLayout(
+    size: size,
+    viewPadding: viewPadding,
+    controlEdge: controlEdge,
+    columnFree: hasControlColumn,
+  );
 
   /// True when the system's controls run down a side of the window.
   bool get hasControlColumn => controlEdge != ControlEdge.bottom;
@@ -163,8 +178,9 @@ class WindowLayout {
   bool operator ==(Object other) =>
       other is WindowLayout &&
       other.size == size &&
-      other.viewPadding == viewPadding;
+      other.viewPadding == viewPadding &&
+      other.columnFree == columnFree;
 
   @override
-  int get hashCode => Object.hash(size, viewPadding);
+  int get hashCode => Object.hash(size, viewPadding, columnFree);
 }

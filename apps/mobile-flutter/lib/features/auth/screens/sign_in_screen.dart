@@ -5,6 +5,7 @@ import '../../../shared/widgets/brand/wordmark_bar.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
 import '../../../shell/header/app_header_back_button.dart';
 import '../../../shell/nav/nav_actions.dart';
+import '../../../shell/window/keep_clear.dart';
 import '../../../theme/kallo_colors.dart';
 import '../widgets/auth_page.dart';
 
@@ -53,14 +54,18 @@ class SignInScreen extends StatelessWidget {
     minimum: EdgeInsets.only(
       top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
     ),
-    child: Padding(
-      // The gutter every other back chevron in the flow stands on, so the
-      // glyph does not move between `/start` and here.
-      padding: const EdgeInsets.only(left: WordmarkBar.rowInset),
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: AppHeaderBackButton(
-          onBack: () => popOr(context, (router) => router.go('/start')),
+    // Beside the status items of an empty control column on the left, the
+    // chevron steps out of it.
+    child: KeepClear(
+      child: Padding(
+        // The gutter every other back chevron in the flow stands on, so the
+        // glyph does not move between `/start` and here.
+        padding: const EdgeInsets.only(left: WordmarkBar.rowInset),
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: AppHeaderBackButton(
+            onBack: () => popOr(context, (router) => router.go('/start')),
+          ),
         ),
       ),
     ),

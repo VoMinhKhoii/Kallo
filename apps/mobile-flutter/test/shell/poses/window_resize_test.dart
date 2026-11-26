@@ -93,10 +93,11 @@ void main() {
         expect(band.left, 0);
         expect(band.right, pose.size.width);
       }
-      // Wide and short, the band is the decision beside the table, clear of
-      // the control column.
+      // Wide and short, the band is the decision beside the table. The page
+      // leaves the control column empty, so the decision's side runs to the
+      // window's edge (its pieces keep out of the column's corners).
       if (pose == outerLandscape) {
-        expect(band.right, lessThanOrEqualTo(pose.size.width - 84));
+        expect(band.right, lessThanOrEqualTo(pose.size.width));
         expect(
           tester.getRect(find.byType(PlanComparison)).right,
           lessThanOrEqualTo(band.left),

@@ -9,6 +9,7 @@ import '../../../models/http/api_error.dart';
 import '../../../models/social/circle.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../shell/nav/nav_actions.dart';
+import '../../../shell/window/keep_clear.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
@@ -59,15 +60,14 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     return Screen(
       child: Stack(
         children: [
-          Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
+          KeepClear(
+            child: Container(
+              alignment: Alignment.topLeft,
               padding: const EdgeInsets.all(KalloSpacing.sp3),
               child: IconButton(
                 icon: const Icon(LucideIcons.x300, size: KalloIcons.size),
                 color: KalloColors.textMuted,
-                onPressed:
-                    () => popOr(context, (router) => router.go('/circle')),
+                onPressed: () => popOr(context, (r) => r.go('/circle')),
               ),
             ),
           ),

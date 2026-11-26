@@ -7,12 +7,17 @@ class WindowRegions {
   const WindowRegions(this.layout);
   final WindowLayout layout;
 
-  Rect get safe => Rect.fromLTRB(
-    layout.viewPadding.left,
-    0,
-    layout.size.width - layout.viewPadding.right,
-    layout.size.height,
-  );
+  /// The window less its side insets; the whole window on a page that
+  /// leaves the control column empty, so its panes run to the window's edge.
+  Rect get safe =>
+      layout.columnFree
+          ? Offset.zero & layout.size
+          : Rect.fromLTRB(
+            layout.viewPadding.left,
+            0,
+            layout.size.width - layout.viewPadding.right,
+            layout.size.height,
+          );
 
   Rect paneFor(double x) {
     if (!layout.twoPane) return safe;

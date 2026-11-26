@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../shell/window/keep_clear.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
@@ -124,7 +125,12 @@ class PaywallBuyBand extends StatelessWidget {
                     onPressed: onBuy,
                   ),
                   const SizedBox(height: KalloSpacing.sp2),
-                  const PaywallConsent(),
+                  // Beside the camera of a short window the consent narrows
+                  // on both sides, so it stays centred under the buttons.
+                  const KeepClear(
+                    mode: KeepClearMode.centred,
+                    child: PaywallConsent(),
+                  ),
                 ] else ...[
                   PlanCta(
                     label: offer.ctaLabel,
@@ -154,7 +160,12 @@ class PaywallBuyBand extends StatelessWidget {
                     onPressed: onStayFree,
                   ),
                   const SizedBox(height: KalloSpacing.sp2),
-                  const PaywallConsent(),
+                  // Beside the camera of a short window the consent narrows
+                  // on both sides, so it stays centred under the buttons.
+                  const KeepClear(
+                    mode: KeepClearMode.centred,
+                    child: PaywallConsent(),
+                  ),
                 ],
               ],
             ),

@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../../shell/window/keep_clear.dart';
+import '../../../../shell/window/keep_clear_clip.dart';
 import '../../../../shell/window/window_layout.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../paywall_gutter.dart';
@@ -73,12 +75,15 @@ class PaywallPitch extends StatelessWidget {
             if (tight) PaywallGuide.title() else PaywallGuide(line: guideLine!),
             SizedBox(height: tight ? KalloSpacing.sp2 : KalloSpacing.sp3_5),
             if (toggle != null) ...[
-              toggle!,
+              KeepClear(mode: KeepClearMode.centred, child: toggle!),
               SizedBox(height: tight ? KalloSpacing.sp2 : KalloSpacing.sp2_5),
             ],
           ],
           // Beside the decision the table is centred at its own height.
-          if (natural || alone) table else Expanded(child: table),
+          if (natural || alone)
+            KeepClear(mode: KeepClearMode.below, child: table)
+          else
+            Expanded(child: KeepClear(mode: KeepClearMode.below, child: table)),
         ],
       );
       // The padding goes INSIDE the fill, not around it as a SliverPadding:
@@ -101,15 +106,17 @@ class PaywallPitch extends StatelessWidget {
           ),
         ),
       );
-      return CustomScrollView(
-        controller: controller,
-        slivers: [
-          if (header != null) SliverToBoxAdapter(child: header),
-          if (natural)
-            SliverToBoxAdapter(child: body)
-          else
-            SliverFillRemaining(hasScrollBody: false, child: body),
-        ],
+      return KeepClearClip(
+        child: CustomScrollView(
+          controller: controller,
+          slivers: [
+            if (header != null) SliverToBoxAdapter(child: header),
+            if (natural)
+              SliverToBoxAdapter(child: body)
+            else
+              SliverFillRemaining(hasScrollBody: false, child: body),
+          ],
+        ),
       );
     },
   );

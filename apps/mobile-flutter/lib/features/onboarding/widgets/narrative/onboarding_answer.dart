@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import '../../../../shared/widgets/surface/kallo_primitives.dart';
+import '../../../../shell/window/keep_clear.dart';
 import '../../logic/onboarding_step_spec.dart';
 import '../backdrop/backdrop_slice.dart';
 import '../onboarding_step_content.dart';
@@ -74,13 +75,18 @@ class OnboardingAnswer extends StatelessWidget {
           fadeHeight: 40,
           child: Padding(
             padding: EdgeInsets.only(top: 40, bottom: 12 + inset),
-            child: KalloButton(
-              title: spec.ctaLabel,
-              animateTitle: true,
-              variant: KalloButtonVariant.cta,
-              loading: busy,
-              disabled: onContinue == null,
-              onPressed: onContinue,
+            // Beside the camera of a short window the button narrows on both
+            // sides, so it stays on the page's centre.
+            child: KeepClear(
+              mode: KeepClearMode.centred,
+              child: KalloButton(
+                title: spec.ctaLabel,
+                animateTitle: true,
+                variant: KalloButtonVariant.cta,
+                loading: busy,
+                disabled: onContinue == null,
+                onPressed: onContinue,
+              ),
             ),
           ),
         ),

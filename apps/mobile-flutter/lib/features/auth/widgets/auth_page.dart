@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
 
 import '../../../shared/widgets/toast/top_toast.dart';
+import '../../../shell/window/keep_clear.dart';
+import '../../../shell/window/keep_clear_clip.dart';
 import '../../onboarding/widgets/backdrop/step_backdrop.dart';
 import '../../onboarding/widgets/start/start_hero.dart';
 import '../../../theme/kallo_colors.dart';
@@ -104,12 +106,14 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               // the middle of nothing, so the stack anchors to the bottom.
               ? Align(
                 alignment: Alignment.bottomCenter,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: kAuthInset,
-                    vertical: KalloSpacing.sp3,
+                child: KeepClearClip(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: kAuthInset,
+                      vertical: KalloSpacing.sp3,
+                    ),
+                    child: column,
                   ),
-                  child: column,
                 ),
               )
               // On its own screen the face fills the safe area, so the welcome
@@ -119,21 +123,23 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               // The padding sits INSIDE the fill: a SliverPadding around it
               // leaves the trailing inset out of the fill's extent, so the
               // face ran 12pt past the safe area and always scrolled by 12.
-              : CustomScrollView(
-                slivers: [
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        kAuthInset,
-                        KalloSpacing.sp8,
-                        kAuthInset,
-                        KalloSpacing.sp3,
+              : KeepClearClip(
+                child: CustomScrollView(
+                  slivers: [
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          kAuthInset,
+                          KalloSpacing.sp8,
+                          kAuthInset,
+                          KalloSpacing.sp3,
+                        ),
+                        child: Center(child: column),
                       ),
-                      child: Center(child: column),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
     );
 
@@ -150,17 +156,25 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               near: SafeArea(
                 minimum: const EdgeInsets.only(top: 12),
                 child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 420),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const AuthBrandHero(),
-                          const SizedBox(height: KalloSpacing.sp8),
-                          options,
-                        ],
+                  child: KeepClearClip(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const KeepClear(
+                              mode: KeepClearMode.centred,
+                              child: AuthBrandHero(),
+                            ),
+                            const SizedBox(height: KalloSpacing.sp8),
+                            KeepClear(
+                              mode: KeepClearMode.below,
+                              child: options,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

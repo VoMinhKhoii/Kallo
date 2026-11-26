@@ -4,6 +4,7 @@ import 'narrative/onboarding_answer.dart';
 
 import '../../../shared/widgets/mascot/bun_mascot.dart';
 import '../../../shared/widgets/panes/narrative_panes.dart';
+import '../../../shell/window/keep_clear.dart';
 import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/constants.dart';
@@ -155,12 +156,15 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
       // title in one frame. NOT clipped — the bubble's tail and its shadow
       // both live outside its box, and clipping them would change how the
       // band reads at rest, not just mid-morph.
-      AnimatedSize(
-        duration: KalloMotion.quick,
-        curve: KalloEase.standard,
-        alignment: Alignment.topCenter,
-        clipBehavior: Clip.none,
-        child: BunMascot(speech: tr('onboarding.guide.step$screen')),
+      // Beside the status items the bubble ends short of the column.
+      KeepClear(
+        child: AnimatedSize(
+          duration: KalloMotion.quick,
+          curve: KalloEase.standard,
+          alignment: Alignment.topCenter,
+          clipBehavior: Clip.none,
+          child: BunMascot(speech: tr('onboarding.guide.step$screen')),
+        ),
       ),
       const SizedBox(height: KalloSpacing.sp3),
       Expanded(child: _body(field, inset)),
