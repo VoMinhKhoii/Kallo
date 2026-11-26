@@ -9,8 +9,8 @@
 # (gitignored).
 #
 # Env:
-#   KALLO_REVENUECAT_GOOGLE_API_KEY  goog_… SDK key (required: the paywall is
-#                                    unavailable without it)
+#   KALLO_REVENUECAT_GOOGLE_API_KEY  goog_… SDK key; without it the paywall
+#                                    shows "unavailable" (first upload only)
 #   KALLO_POSTHOG_KEY / KALLO_SENTRY_DSN   optional; empty = analytics/crash off
 #   BUILD_NUMBER                     Play versionCode; must beat the last upload
 set -euo pipefail
@@ -25,10 +25,15 @@ cd "$APP_DIR"
 
 API_BASE_URL="${KALLO_API_BASE_URL:-https://kallo.fit}"
 RC_KEY="${KALLO_REVENUECAT_GOOGLE_API_KEY:-}"
-[[ "$RC_KEY" == goog_* ]] || {
+if [[ -z "$RC_KEY" ]]; then
+  # Play only allows subscription products after a first upload, so the first
+  # internal-testing bundle ships without a key: the paywall shows its
+  # "unavailable" state. Never send a build without a key past internal testing.
+  echo "WARNING: no KALLO_REVENUECAT_GOOGLE_API_KEY; purchases are off in this build." >&2
+elif [[ "$RC_KEY" != goog_* ]]; then
   echo "KALLO_REVENUECAT_GOOGLE_API_KEY must be a goog_ SDK key." >&2
   exit 1
-}
+fi
 : "${BUILD_NUMBER:?set BUILD_NUMBER (Play versionCode, higher than the last upload)}"
 
 flutter build appbundle --release \
