@@ -22,6 +22,7 @@ import {
   scaleToServedMass,
 } from '@/lib/ai/pipeline/resolve/served-mass';
 import { pairIngredientsWithGrounded } from '@/lib/ai/pipeline/resolve/verdicts';
+import { fold } from '@/lib/core/text/fold';
 import {
   absorbedOil,
   isAlreadyFriedRow,
@@ -42,7 +43,9 @@ export async function reviewPicks(
     apply(
       state: RunState
     ): Promise<{ state: RunState; rescued: number } | null>;
-  } | null
+  } | null,
+  /** What the user typed, so review can tell a fat they named from one Call 1 added. */
+  opts: { rawInput?: string } = {}
 ): Promise<{
   state: RunState;
   changed: boolean;
@@ -52,7 +55,7 @@ export async function reviewPicks(
 }> {
   const reviewed = rejectWrongFormRows(state);
   const rescued = rescue ? await rescue.apply(reviewed.state) : null;
-  const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state);
+  const oil = dropOilInFriedRows(rescued?.state ?? reviewed.state, opts);
   logRawRowYields(oil.state);
   const served = scaleToServedMass(oil.state);
   return {
@@ -140,7 +143,10 @@ const MIN_FOOD_G = 20;
  * itself fat-cooked (its own cookingMethod implies absorbed oil, or the whole
  * dish is a stir-fry / fried rice / sauté). Returns new state.
  */
-export function dropOilInFriedRows(state: RunState): {
+export function dropOilInFriedRows(
+  state: RunState,
+  opts: { rawInput?: string } = {}
+): {
   state: RunState;
   dropped: number;
 } {
@@ -163,12 +169,23 @@ export function dropOilInFriedRows(state: RunState): {
     );
     // Only the implied frying fat goes: Call 1 gives a fat row no method of
     // its own, so the dish's method says whether it was fried in. On a mixed
-    // plate where only one part fries ("trứng chiên" in a bánh mì trứng,
-    // dish method "kẹp") the fat stays: nothing tells that plate's frying oil
-    // from the butter or mỡ hành it is served with, and deleting a fat the
-    // user ate costs more than keeping a few grams of oil twice (the fried
-    // part's own fat is still capped at 1.25x beside it).
-    const oils = fats.filter((f) => friedInIt(mi, pairs[f].ingredient));
+    // plate where only one part fries ("cá chiên giòn" in a bún cá, dish
+    // method "nấu"), a pure-oil row goes only when the user never typed it:
+    // Call 1 added it for the frying. A fat the user named ("mỡ hành",
+    // "phết bơ", "dầu tỏi") is one they ate, and stays.
+    const partFriesHere = foods.some(
+      (f) =>
+        isFriedRow(state, pairs[f].ground, f) &&
+        absorbedOil(pairs[f].ingredient.cookingMethod, 100) > 0
+    );
+    const oils = fats.filter(
+      (f) =>
+        friedInIt(mi, pairs[f].ingredient) ||
+        (partFriesHere &&
+          matchedFat(state, pairs[f].ground, f)?.pureFatKind === 'oil' &&
+          opts.rawInput != null &&
+          !namedIn(opts.rawInput, pairs[f].ingredient))
+    );
     if (foods.length === 0 || oils.length === 0) continue;
     const hasFriedFood = foods.some((f) =>
       isFriedRow(state, pairs[f].ground, f)
@@ -231,6 +248,23 @@ function foodNeedsCookingOil(
   // A frying method takes up oil; "không dầu" / "air-fried" on the part
   // cancels it (absorbedOil reads the negation first).
   return absorbedOil(context, 100) > 0;
+}
+
+/**
+ * Whether the user's own text names this part: one of its names appears there
+ * as a phrase, compared folded (case, diacritics, đ) at word edges.
+ */
+function namedIn(
+  rawInput: string,
+  ing: RunState['decomposition']['mealItems'][number]['ingredients'][number]
+): boolean {
+  const text = ` ${fold(rawInput).replace(/[^\p{L}\p{N}]+/gu, ' ')} `;
+  return [ing.rawName, ing.canonicalName, ing.nameVi].some((name) => {
+    const phrase = fold(name ?? '')
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim();
+    return phrase.length > 0 && text.includes(` ${phrase} `);
+  });
 }
 
 /** The fat row's own method, or the dish's when it has none, is a frying one. */

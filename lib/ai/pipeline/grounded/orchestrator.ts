@@ -226,7 +226,8 @@ export async function analyzeMealV2(
         portionResolutions,
         grounded: stage3.grounded,
       },
-      rescue
+      rescue,
+      { rawInput }
     );
     const { state: run, changed } = review;
     // A rescued dish's parts can change its class (a broth part makes it a

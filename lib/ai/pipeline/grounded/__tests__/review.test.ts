@@ -611,6 +611,61 @@ describe('dropOilInFriedRows', () => {
     ).toEqual(['trứng']);
   });
 
+  describe('a mixed plate where one part fries', () => {
+    const bunCa = (fat: typeof oil) =>
+      stateOf([
+        {
+          name: 'Bún cá rô đồng',
+          cookingMethod: 'nấu',
+          parts: [
+            {
+              name: 'cá rô chiên giòn',
+              g: 100,
+              kcal: 230,
+              method: 'chiên',
+              row: ['Fish, fried', 230],
+            },
+            {
+              name: 'bún',
+              g: 200,
+              kcal: 220,
+              row: ['Rice noodles, cooked', 110],
+            },
+            fat,
+          ],
+        },
+      ]);
+
+    it('drops the oil Call 1 added for the frying', () => {
+      const out = dropOilInFriedRows(bunCa(oil), {
+        rawInput: 'Bún cá rô đồng 1 bát: cá rô chiên giòn, chả cá, rau cần',
+      });
+      expect(out.dropped).toBe(1);
+    });
+
+    it('keeps an oil or a fat the user named', () => {
+      expect(
+        dropOilInFriedRows(bunCa(oil), {
+          rawInput: 'bún cá rô chiên giòn, thêm chút dầu ăn',
+        }).dropped
+      ).toBe(0);
+      const moHanh = {
+        ...oil,
+        name: 'mỡ hành',
+        row: ['Oil, lard', 900] as [string, number],
+      };
+      expect(
+        dropOilInFriedRows(bunCa(moHanh), {
+          rawInput: 'Bún cá rô chiên, rưới mỡ hành',
+        }).dropped
+      ).toBe(0);
+    });
+
+    it('keeps the fat when the text is unknown', () => {
+      expect(dropOilInFriedRows(bunCa(oil)).dropped).toBe(0);
+    });
+  });
+
   it('keeps the oil when another food in the dish still needs it', () => {
     const state = stateOf([
       {
