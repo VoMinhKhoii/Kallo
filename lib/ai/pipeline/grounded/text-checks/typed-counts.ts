@@ -96,3 +96,34 @@ function countsIn(text: string): number[] {
 export function isTypedCount(count: number, text: string): boolean {
   return countsIn(text).some((n) => Math.abs(n - count) < 0.01);
 }
+
+/**
+ * Whether the text states `count` of this unit: the count sits within a few
+ * words of the unit word ("2 con tôm", "1 chén rưỡi", "nửa chén"), not just
+ * anywhere in the meal ("cà muối mấy quả" states no count of quả).
+ */
+export function isTypedPartCount(
+  count: number,
+  unitToken: string,
+  text: string
+): boolean {
+  const unit = unitToken.normalize('NFC').toLocaleLowerCase().trim();
+  const lower = text.normalize('NFC').toLocaleLowerCase();
+  if (!unit) return false;
+  for (
+    let at = lower.indexOf(unit);
+    at >= 0;
+    at = lower.indexOf(unit, at + 1)
+  ) {
+    // A count comes before its unit; only "rưỡi" (a half more) follows it.
+    const after = /^\s*(?:rưỡi|ruoi|and a half)/u.exec(
+      lower.slice(at + unit.length)
+    );
+    const window = lower.slice(
+      Math.max(0, at - 12),
+      at + unit.length + (after?.[0].length ?? 0)
+    );
+    if (isTypedCount(count, window)) return true;
+  }
+  return false;
+}

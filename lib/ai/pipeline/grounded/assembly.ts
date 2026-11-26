@@ -97,7 +97,8 @@ export function runAssemblyStage(args: {
         result: markTypedParts(
           holdToTypedCalories(assembled.result, decomposition.mealItems),
           decomposition,
-          portionResolutions
+          portionResolutions,
+          rawInput
         ),
       };
     }

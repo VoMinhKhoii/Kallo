@@ -14,7 +14,12 @@ export type MealConfidence = 'high' | 'medium' | 'low';
 
 /** Final processed ingredient in the pipeline result */
 /** Which of a part's amounts the user typed. */
-export type TypedAmount = 'grams' | 'kcal';
+/**
+ * What the user typed for a part: its weight, its calories, or how many of it
+ * ("2 con tôm", "1 muỗng canh dầu"). Each is the user's own figure, so no
+ * later scaling moves the part.
+ */
+export type TypedAmount = 'grams' | 'kcal' | 'count';
 
 export interface ProcessedIngredient {
   ingredientName: string;

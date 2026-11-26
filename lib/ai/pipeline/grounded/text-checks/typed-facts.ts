@@ -33,6 +33,7 @@ import type {
   PipelineResult,
   TypedAmount,
 } from '@/lib/ai/types/result';
+import { isTypedPartCount } from './typed-counts';
 
 function scaleNutrients(mi: PipelineMealItem, f: number): PipelineMealItem {
   return {
@@ -152,15 +153,25 @@ function wholeKindOf(
   return !aligned || dish.servedMassG ? 'grams' : null;
 }
 
-/** Which amount of one part is the user's own: its calories, or else its grams. */
+/**
+ * Which amount of one part is the user's own: its calories, its grams, or how
+ * many of it, when that count is in the text ("2 con tôm").
+ */
 function partKindOf(
-  part: { statedKcal?: number } | undefined,
-  portion: PortionResolution | undefined
+  part:
+    | { statedKcal?: number; count?: number | null; unitToken?: string | null }
+    | undefined,
+  portion: PortionResolution | undefined,
+  text: string
 ): TypedAmount | null {
   if (part?.statedKcal) return 'kcal';
-  return portionAnchor(portion) !== null ||
-    portion === RESCUE_TYPED_PART_PORTION
-    ? 'grams'
+  if (portionAnchor(portion) !== null || portion === RESCUE_TYPED_PART_PORTION)
+    return 'grams';
+  return part?.count != null &&
+    part.count > 0 &&
+    part.unitToken &&
+    isTypedPartCount(part.count, part.unitToken, text)
+    ? 'count'
     : null;
 }
 
@@ -174,7 +185,9 @@ function partKindOf(
 export function markTypedParts(
   result: PipelineResult,
   decomposition: MealDecompositionV2,
-  portions: ReadonlyArray<PortionResolution | undefined>
+  portions: ReadonlyArray<PortionResolution | undefined>,
+  /** The meal text, so a part's count is marked only when the user typed it. */
+  text = ''
 ): PipelineResult {
   let flat = 0;
   const mealItems = result.mealItems.map((mi, index) => {
@@ -187,7 +200,8 @@ export function markTypedParts(
       dish.ingredients.length === mi.ingredients.length;
     const whole = wholeKindOf(dish, aligned);
     const typed = mi.ingredients.map(
-      (_, i) => whole ?? partKindOf(dish.ingredients[i], portions[start + i])
+      (_, i) =>
+        whole ?? partKindOf(dish.ingredients[i], portions[start + i], text)
     );
     if (!typed.some(Boolean)) return mi;
     return {

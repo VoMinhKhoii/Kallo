@@ -100,6 +100,9 @@ function takeClosest(
   kcal: number | null
 ): PlainRead['foods'][number] | null {
   if (by === 'kcal' && kcal == null) return null;
+  // A count ("2 con tôm") has no figure of the read to pair with: the hold
+  // then moves the other parts toward the read's total, grams with calories.
+  if (by === 'count') return null;
   let at = -1;
   let gap = Number.POSITIVE_INFINITY;
   foods.forEach((f, i) => {

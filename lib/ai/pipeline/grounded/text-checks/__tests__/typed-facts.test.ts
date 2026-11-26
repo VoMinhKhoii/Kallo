@@ -211,6 +211,53 @@ describe('markTypedParts', () => {
     expect(typedOf(marked)).toEqual([[true, true, false]]);
   });
 
+  it('marks a part whose count the user typed beside its unit', () => {
+    const before = result(
+      item('Bánh canh', part('tôm', 22, 20, 0), part('hành phi', 9, 40, 3))
+    );
+    const decomposition = {
+      isFood: true,
+      mealSlot: null,
+      mealItems: [
+        {
+          name: 'Bánh canh',
+          cookingMethod: 'nấu',
+          ingredients: [
+            {
+              rawName: 'Tôm',
+              canonicalName: 'Tôm',
+              count: 2,
+              unitToken: 'con',
+            },
+            {
+              rawName: 'Hành phi',
+              canonicalName: 'Hành phi',
+              count: 1,
+              unitToken: 'muỗng',
+            },
+          ],
+        },
+      ],
+    } as never;
+    const marked = markTypedParts(
+      before,
+      decomposition,
+      [free, free] as never,
+      'bánh canh cua, 2 con tôm, rắc hành phi'
+    );
+    expect(marked.mealItems[0].ingredients.map((i) => i.typedAmount)).toEqual([
+      'count',
+      undefined,
+    ]);
+    // Without the text, no count is taken as typed.
+    expect(
+      markTypedParts(before, decomposition, [
+        free,
+        free,
+      ] as never).mealItems[0].ingredients.map((i) => i.typedAmount)
+    ).toEqual([undefined, undefined]);
+  });
+
   it('marks a whole dish whose parts do not line up with Call 1', () => {
     const before = result(item('Mì', part('mì', 80, 380, 14)));
     const marked = markTypedParts(

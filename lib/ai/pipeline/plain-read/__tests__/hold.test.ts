@@ -254,6 +254,34 @@ describe('holdToPlainRead', () => {
     expect(out.result.mealItems[0].ingredients[0]).toBe(beef);
   });
 
+  it('keeps a counted part as typed and moves grams with calories for the rest', () => {
+    // "200g bánh canh, 2 con tôm": the read also counts a broth the meal lacks.
+    const noodles = {
+      ...ingredient('bánh canh', 200, 230),
+      typedAmount: 'grams' as const,
+    };
+    const shrimp = {
+      ...ingredient('tôm', 22, 20),
+      typedAmount: 'count' as const,
+    };
+    const before = meal([noodles, shrimp, ingredient('hành phi', 9, 40)]);
+    const out = holdToPlainRead(before, {
+      read: read(520, [
+        [200, 230],
+        [30, 25],
+        [400, 220],
+        [10, 45],
+      ]),
+    });
+    expect(out.outcome).toBe('held');
+    const [n, s, shallots] = out.result.mealItems[0].ingredients;
+    expect(n).toBe(noodles);
+    expect(s).toBe(shrimp);
+    // No grams from the read's broth land on the free part: they follow its calories.
+    expect(out.gramsFactor).toBe(out.factor);
+    expect(shallots.estimatedGrams).toBeCloseTo(9 * out.factor);
+  });
+
   it('leaves the meal alone when nothing is free or the typed parts reach the read', () => {
     const typed = (name: string, grams: number, kcal: number) => ({
       ...ingredient(name, grams, kcal),

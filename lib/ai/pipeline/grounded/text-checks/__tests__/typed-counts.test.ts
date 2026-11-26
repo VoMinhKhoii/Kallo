@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isTypedCount } from '../typed-counts';
+import { isTypedCount, isTypedPartCount } from '../typed-counts';
 
 describe('isTypedCount', () => {
   it('reads counts written as digits, fractions, halves and words', () => {
@@ -30,5 +30,21 @@ describe('isTypedCount', () => {
   it('does not read a count the text does not hold', () => {
     expect(isTypedCount(3, 'a burger and fries')).toBe(false);
     expect(isTypedCount(0, 'phở bò')).toBe(false);
+  });
+});
+
+describe('isTypedPartCount', () => {
+  it('needs the count beside its own unit', () => {
+    const meal =
+      'bánh canh 200g, 2 con tôm, 1 muỗng canh dầu điều, cơm 1 chén rưỡi, nửa chén chè';
+    expect(isTypedPartCount(2, 'con', meal)).toBe(true);
+    expect(isTypedPartCount(1, 'muỗng canh', meal)).toBe(true);
+    expect(isTypedPartCount(1.5, 'chén', meal)).toBe(true);
+    expect(isTypedPartCount(0.5, 'chén', meal)).toBe(true);
+    // A count Call 1 made up ("mấy quả") or moved to another unit.
+    expect(isTypedPartCount(3, 'quả', 'cà muối mấy quả, 3 bát cơm')).toBe(
+      false
+    );
+    expect(isTypedPartCount(2, 'muỗng', meal)).toBe(false);
   });
 });
