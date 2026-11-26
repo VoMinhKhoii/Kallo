@@ -15,12 +15,12 @@ import {
   USER_INPUT_OPEN,
 } from '@/lib/ai/prompts/text/decomposition-v2';
 import type { PipelineResult } from '@/lib/ai/types/result';
-import { mentionsRice } from './mentions-rice';
+import { mentionsRice } from '../mentions-rice';
 import {
   PLAIN_READ_MODEL,
   type PlainRead,
   type PlainReadProfile,
-} from './prompt';
+} from '../prompt';
 
 export const RESCUE_MODEL = PLAIN_READ_MODEL;
 /** Minimum `max(factor / rawGramsFactor, rawGramsFactor / factor)` to trigger rescue. */

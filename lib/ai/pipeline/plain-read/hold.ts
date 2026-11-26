@@ -22,11 +22,9 @@
  */
 
 import {
-  replaceMealItem,
+  mapIngredients,
   scaleBoundedNutrition,
   scaleNutritionValues,
-  swapBoundedNutrition,
-  swapNutritionValues,
 } from '@/lib/ai/pipeline/assemble/result-scale';
 import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
 import type {
@@ -255,7 +253,7 @@ export function holdToPlainRead(
   const still = (f: number) => Math.abs(f - 1) < 1e-6;
   if (still(factor)) return unchanged('within_band', rawGramsFactor);
   return {
-    result: scaleFreeParts(result, factor, gramsFactor),
+    result: scaleFreeParts(result, factor),
     outcome: 'held',
     appKcal,
     readKcal,
@@ -266,47 +264,23 @@ export function holdToPlainRead(
 }
 
 /**
- * Scale every part the user gave no amount for, nutrients by `f` and grams by
- * `gramsF`; dish and meal totals follow.
+ * Scale every part the user gave no amount for (nutrients and grams together by
+ * `f`); dish and meal totals follow.
  */
-function scaleFreeParts(
-  result: PipelineResult,
-  f: number,
-  gramsF: number
-): PipelineResult {
-  return result.mealItems.reduce((held, mi, index) => {
-    let item = mi;
-    for (const ing of mi.ingredients) {
-      if (ing.typedAmount) continue;
-      const scaled = scaleIngredient(ing, f, gramsF);
-      item = {
-        ...item,
-        ingredients: item.ingredients.map((i) => (i === ing ? scaled : i)),
-        boundedNutrition: swapBoundedNutrition(
-          item.boundedNutrition,
-          ing.boundedNutrition,
-          scaled.boundedNutrition
-        ),
-        displayedNutrition: swapNutritionValues(
-          item.displayedNutrition,
-          ing.displayedNutrition,
-          scaled.displayedNutrition
-        ),
-      };
-    }
-    return item === mi ? held : replaceMealItem(held, index, item);
-  }, result);
+function scaleFreeParts(result: PipelineResult, f: number): PipelineResult {
+  return mapIngredients(result, (ing) =>
+    ing.typedAmount ? ing : scaleIngredient(ing, f)
+  );
 }
 
 function scaleIngredient(
   ing: ProcessedIngredient,
-  f: number,
-  gramsF: number
+  f: number
 ): ProcessedIngredient {
   return {
     ...ing,
-    estimatedGrams: ing.estimatedGrams * gramsF,
-    rawEquivalentGrams: ing.rawEquivalentGrams * gramsF,
+    estimatedGrams: ing.estimatedGrams * f,
+    rawEquivalentGrams: ing.rawEquivalentGrams * f,
     boundedNutrition: scaleBoundedNutrition(ing.boundedNutrition, f),
     displayedNutrition: scaleNutritionValues(ing.displayedNutrition, f),
     ...(ing.alcoholG != null && { alcoholG: ing.alcoholG * f }),

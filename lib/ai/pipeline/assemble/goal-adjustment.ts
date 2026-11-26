@@ -76,7 +76,7 @@ export function sumBoundedNutrition(
 
     for (const item of items) {
       const val = item[key];
-      if (val !== null) {
+      if (val != null) {
         low += val.low;
         mid += val.mid;
         high += val.high;
@@ -105,7 +105,7 @@ export function sumDisplayedNutrition(
 
     for (const item of items) {
       const val = item[key];
-      if (val !== null) {
+      if (val != null) {
         sum += val;
         hasAny = true;
       }

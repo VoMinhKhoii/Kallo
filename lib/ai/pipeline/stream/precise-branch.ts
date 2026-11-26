@@ -2,7 +2,6 @@ import { toParsedMeal } from '@/lib/ai/adapters/parsed-meal';
 import { logUnmatchedIngredients } from '@/lib/ai/matching/unmatched-log';
 import { summarizeHold } from '@/lib/ai/pipeline/plain-read/hold';
 import { PLAIN_READ_MODEL } from '@/lib/ai/pipeline/plain-read/prompt';
-import { RESCUE_MODEL } from '@/lib/ai/pipeline/plain-read/rescue-prompt';
 import { runPreciseAnalysis } from '@/lib/ai/pipeline/precise-analysis';
 import { createBudgetAttemptRecorder } from '@/lib/ai/pipeline/telemetry/budget';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
@@ -51,7 +50,7 @@ export async function runPreciseBranch({
       db,
       requestId,
       workKind: 'primary',
-      model: RESCUE_MODEL,
+      model: PLAIN_READ_MODEL,
       stage: 'plain_read_rescue',
     }),
   });

@@ -13,18 +13,18 @@ import type {
   PipelineResult,
   ProcessedIngredient,
 } from '@/lib/ai/types/result';
-import type { HoldResult } from '../hold';
-import {
-  applyRescueEdits,
-  holdDivergence,
-  runSeeingRescue,
-  shouldRunSeeingRescue,
-} from '../rescue';
+import type { HoldResult } from '../../hold';
+import { applyRescueEdits } from '../apply-edits';
 import {
   RESCUE_DIVERGENCE_THRESHOLD,
   RESCUE_MODEL,
   RESCUE_TIMEOUT_MS,
-} from '../rescue-prompt';
+} from '../prompt';
+import {
+  holdDivergence,
+  runSeeingRescue,
+  shouldRunSeeingRescue,
+} from '../rescue';
 
 function bounded(kcal: number, protein: number): BoundedNutrition {
   const out = {} as Record<string, unknown>;
@@ -148,11 +148,12 @@ describe('applyRescueEdits', () => {
       ingredient('Dầu ăn', 12, 108),
     ]);
 
-    const rescued = applyRescueEdits(raw, [
+    const { result: rescued, appliedCount } = applyRescueEdits(raw, [
       { index: 1, grams: 40, kcal: 40 },
       { index: 2, grams: 10, kcal: 90 },
     ]);
 
+    expect(appliedCount).toBe(2);
     const [noodles, shrimp, oil] = rescued.mealItems[0].ingredients;
     expect(noodles).toBe(raw.mealItems[0].ingredients[0]);
     expect(shrimp.estimatedGrams).toBe(40);
@@ -177,9 +178,10 @@ describe('applyRescueEdits', () => {
       ingredient('Sữa đặc', 30, 100),
     ]);
 
-    const rescued = applyRescueEdits(raw, [
+    const { result: rescued, appliedCount } = applyRescueEdits(raw, [
       { index: 0, grams: 240, kcal: 414 },
     ]);
+    expect(appliedCount).toBe(0);
     expect(rescued).toBe(raw);
     expect(rescued.mealItems[0].ingredients[0].estimatedGrams).toBe(120);
   });
@@ -197,7 +199,7 @@ describe('applyRescueEdits', () => {
       ingredient('Herbs', 10, 5),
     ]);
 
-    const rescued = applyRescueEdits(raw, [
+    const { result: rescued } = applyRescueEdits(raw, [
       // Exceeds pure fat (9 kcal/g): clamped to 15 * 9 = 135 kcal.
       { index: 0, grams: 15, kcal: 200 },
       // Smuggling spring rolls onto oil (2.73 kcal/g on an 8.84 kcal/g row under bulking): rejected.
@@ -214,18 +216,22 @@ describe('applyRescueEdits', () => {
     expect(kcalOf(herbs.displayedNutrition)).toBe(0);
   });
 
-  it('shifts excess density into fat so P + C + F never exceeds grams and confirm stays exact', () => {
+  it('shifts excess density into fat so P + C + F never exceeds grams and null fatG totals update', () => {
     const b = bounded(24, 0.5);
     b.carbohydrateG = { low: 4.05, mid: 4.5, high: 4.95 };
-    b.fatG = { low: 0.36, mid: 0.4, high: 0.44 };
+    // Dish starts with fatG: null to verify recomputation propagates non-null fatG.
+    b.fatG = null;
     const sauce: ProcessedIngredient = {
       ...ingredient('Garlic sauce', 15, 24),
       boundedNutrition: b,
       displayedNutrition: goalAdjustNutrition(b, 'cutting', 0.5),
     };
     const raw = meal([sauce]);
+    expect(raw.displayedNutrition.fatG).toBeNull();
 
-    const rescued = applyRescueEdits(raw, [{ index: 0, grams: 15, kcal: 100 }]);
+    const { result: rescued } = applyRescueEdits(raw, [
+      { index: 0, grams: 15, kcal: 100 },
+    ]);
     const [after] = rescued.mealItems[0].ingredients;
     const d = after.displayedNutrition;
     const macroSum = (d.proteinG ?? 0) + (d.carbohydrateG ?? 0) + (d.fatG ?? 0);
@@ -233,7 +239,8 @@ describe('applyRescueEdits', () => {
     expect(after.estimatedGrams).toBe(15);
     expect(kcalOf(d)).toBeCloseTo(100);
     expect(macroSum).toBeLessThanOrEqual(15 + 1e-6);
-    expect(d.fatG ?? 0).toBeGreaterThan(7);
+    expect(d.fatG ?? 0).toBeGreaterThan(6);
+    expect(rescued.displayedNutrition.fatG).toBeCloseTo(d.fatG ?? 0);
 
     const reDerived = goalAdjustNutrition(
       sumBoundedNutrition([after.boundedNutrition]),
@@ -254,13 +261,17 @@ describe('applyRescueEdits', () => {
     };
     const raw = meal([broth]);
 
-    const zeroed = applyRescueEdits(raw, [{ index: 0, grams: 0, kcal: 0 }]);
+    const { result: zeroed } = applyRescueEdits(raw, [
+      { index: 0, grams: 0, kcal: 0 },
+    ]);
     expect(zeroed.mealItems[0].ingredients[0].displayedNutrition.sodiumMg).toBe(
       0
     );
     expect(zeroed.displayedNutrition.sodiumMg).toBe(0);
 
-    const doubled = applyRescueEdits(raw, [{ index: 0, grams: 600, kcal: 0 }]);
+    const { result: doubled } = applyRescueEdits(raw, [
+      { index: 0, grams: 600, kcal: 0 },
+    ]);
     expect(
       doubled.mealItems[0].ingredients[0].displayedNutrition.sodiumMg
     ).toBeCloseTo((broth.displayedNutrition.sodiumMg ?? 0) * 2);
@@ -268,7 +279,9 @@ describe('applyRescueEdits', () => {
 
   it('leaves the unheld meal intact when edits are empty', () => {
     const raw = meal([ingredient('Sữa đặc', 30, 100)]);
-    expect(applyRescueEdits(raw, [])).toBe(raw);
+    const { result, appliedCount } = applyRescueEdits(raw, []);
+    expect(result).toBe(raw);
+    expect(appliedCount).toBe(0);
   });
 });
 
@@ -295,10 +308,10 @@ describe('runSeeingRescue', () => {
     rawGramsFactor: 4.2,
   };
 
-  it('calls the rescue model and returns a rescued HoldResult', async () => {
+  it('calls the rescue model and reports unlocked-part ratios on HoldResult', async () => {
     const call = vi.fn().mockResolvedValue({
-      diagnosis: 'Crushed ice omitted; solids already accurate.',
-      edits: [],
+      diagnosis: 'Increase condensed milk slightly.',
+      edits: [{ index: 1, grams: 45, kcal: 150 }],
     });
 
     const out = await runSeeingRescue({
@@ -312,25 +325,26 @@ describe('runSeeingRescue', () => {
     });
 
     expect(out?.outcome).toBe('rescued');
-    expect(out?.result).toBe(raw);
     expect(out?.rawGramsFactor).toBe(4.2);
+    // Unlocked-part ratios: 30 g -> 45 g (1.5x), 105 displayed kcal -> 150 kcal.
+    expect(out?.gramsFactor).toBeCloseTo(1.5);
+    expect(out?.factor).toBeCloseTo(
+      150 / kcalOf(raw.mealItems[0].ingredients[1].displayedNutrition)
+    );
     const params = call.mock.calls[0][0];
     expect(params.model).toBe(RESCUE_MODEL);
     expect(params.userMessage).toContain('[LOCKED: user typed grams]');
     expect(params.userMessage).toContain('Sữa đặc');
   });
 
-  it('returns null and aborts when the rescue misses RESCUE_TIMEOUT_MS', async () => {
+  it('enforces RESCUE_TIMEOUT_MS even when the provider ignores abortSignal', async () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     let rescueSignal: AbortSignal | undefined;
+    // Intentionally never settles even after abortSignal fires.
     const call = vi.fn((params: { abortSignal: AbortSignal }) => {
       rescueSignal = params.abortSignal;
-      return new Promise((_, reject) => {
-        params.abortSignal.addEventListener('abort', () =>
-          reject(new Error('AbortError'))
-        );
-      });
+      return new Promise(() => {});
     });
 
     const pending = runSeeingRescue({
@@ -402,13 +416,13 @@ describe('runSeeingRescue', () => {
     expect(out).toBeNull();
   });
 
-  it('falls back to null on floating-point zeroed totals and extreme calorie/gram hallucinations', async () => {
+  it('falls back to null on zeroed multi-ingredient meals and extreme hallucinations', async () => {
     const multi = meal([
       ingredient('a', 100, 110.3),
       ingredient('b', 100, 220.6),
       ingredient('c', 100, 330.9),
     ]);
-    const zeroedResidue = await runSeeingRescue({
+    const zeroed = await runSeeingRescue({
       raw: multi,
       read,
       hold: {
@@ -430,7 +444,7 @@ describe('runSeeingRescue', () => {
       ),
       signal: new AbortController().signal,
     });
-    expect(zeroedResidue).toBeNull();
+    expect(zeroed).toBeNull();
 
     const extreme = await runSeeingRescue({
       raw,
