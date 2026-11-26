@@ -29,7 +29,7 @@ export function OAuthErrorToast() {
     const error = params.get('error');
     if (!error || !HANDLED_CODES.has(error)) return;
     fired.current = true;
-    let message = t('googleError');
+    let message = t('signInError');
     if (error === 'account_exists') message = t('accountExists');
     else if (error === 'verify_failed') message = t('verifyLinkError');
     toast.error(message);
