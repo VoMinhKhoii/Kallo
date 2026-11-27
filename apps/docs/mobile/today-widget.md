@@ -152,8 +152,9 @@ What differs from iOS, and why:
 - **Bitmap memory.** The system refuses a widget update whose bitmaps pass 1.5 × the screen's own
   ARGB size. The provider draws both cards at the screen density, or at a lower scale that keeps
   them under half that budget (a large card in both orientations can pass it on a small phone or a
-  foldable's cover screen), and if the launcher still refuses, draws the portrait card alone at
-  half that scale.
+  foldable's cover screen). If the system still refuses, it tries the portrait card alone at half
+  the scale, four times over, and last a card with no bitmap that still opens Today. It never keeps
+  the previous card, which after a sign-out or at midnight would show the old day.
 - **Corners** are the system widget radius on Android 12+ (16dp before), clipped into the bitmap.
 - **The clock.** No `updatePeriodMillis`. Each redraw sets one inexact alarm for the next
   midnight, 06:00 or 18:00, so the date, the theme and the empty new day change with the app

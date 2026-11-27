@@ -88,20 +88,34 @@ class TodayWidgetProvider : AppWidgetProvider() {
       }
       val oneShape = landscape == portrait
       val scale = scaleWithinBudget(context, if (oneShape) listOf(portrait) else listOf(landscape, portrait))
-      val views = if (oneShape) card(portrait, scale) else RemoteViews(card(landscape, scale), card(portrait, scale))
-      try {
-        manager.updateAppWidget(id, views)
-      } catch (tooBig: IllegalArgumentException) {
-        // The launcher refused the bitmaps after all (its budget is computed
-        // from a display this one may not be): the portrait card alone, at
-        // half the scale, rather than a receiver that throws on every update.
-        Log.w("TodayWidget", "widget bitmaps refused; redrawing smaller", tooBig)
+      // The system may still refuse the bitmaps: its budget is computed from a
+      // display this one may not be (a flip phone's cover screen). Each refusal
+      // tries the portrait card alone at half the scale before, four times
+      // (down to 1/256 of the bytes), and last a card with no bitmap at all,
+      // which still opens Today. Never "keep the last card": after a sign-out
+      // or at midnight that would leave the old day on the home screen. And
+      // never throw: a broadcast receiver that throws takes the app down.
+      val attempts = sequence {
+        yield { if (oneShape) card(portrait, scale) else RemoteViews(card(landscape, scale), card(portrait, scale)) }
+        var smaller = scale
+        repeat(4) {
+          smaller /= 2
+          val at = smaller
+          yield { card(portrait, at) }
+        }
+        yield {
+          RemoteViews(context.packageName, R.layout.today_widget).apply {
+            setContentDescription(R.id.today_widget_card, description)
+            setOnClickPendingIntent(R.id.today_widget_card, openToday(context))
+          }
+        }
+      }
+      for (views in attempts) {
         try {
-          manager.updateAppWidget(id, card(portrait, scale / 2))
-        } catch (stillTooBig: IllegalArgumentException) {
-          // Refused again: keep whatever the widget last showed. A broadcast
-          // receiver that throws takes the app's process down with it.
-          Log.w("TodayWidget", "smaller widget bitmap refused too; keeping the last card", stillTooBig)
+          manager.updateAppWidget(id, views())
+          return
+        } catch (refused: IllegalArgumentException) {
+          Log.w("TodayWidget", "widget update refused; trying a smaller card", refused)
         }
       }
     }
