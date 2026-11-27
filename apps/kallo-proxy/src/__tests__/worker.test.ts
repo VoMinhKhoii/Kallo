@@ -32,7 +32,10 @@ function request(
 }
 
 const upstream = vi.fn(
-  async (_req: Request) => new Response('from origin', { status: 200 })
+  async (
+    _req: Request,
+    _init?: RequestInit & { cf?: Record<string, unknown> }
+  ) => new Response('from origin', { status: 200 })
 );
 
 beforeEach(() => {
@@ -198,6 +201,56 @@ describe('fetch', () => {
 
     expect(res.status).toBe(200);
     expect(upstream).toHaveBeenCalledOnce();
+  });
+});
+
+describe('fetch: crawler copies of public pages', () => {
+  const GPTBOT =
+    'Mozilla/5.0 (compatible; GPTBot/1.2; +https://openai.com/gptbot)';
+
+  it('fetches a crawler page through the cache, under its own address', async () => {
+    await worker.fetch(
+      request('/vi/calories/mi-goi', { headers: { 'User-Agent': GPTBOT } }),
+      makeEnv()
+    );
+
+    const [req, init] = upstream.mock.calls[0];
+    expect(req.url).toBe(`https://${ORIGIN}/vi/calories/mi-goi?_edge=crawler`);
+    expect(req.headers.get('X-Origin-Verify')).toBe('origin-secret');
+    expect(req.headers.get('X-Forwarded-Host')).toBe('kallo.fit');
+    expect(init?.cf).toEqual({
+      cacheEverything: true,
+      cacheTtlByStatus: { '200-299': 86_400, '300-599': -1 },
+    });
+  });
+
+  it('forwards a browser exactly as before', async () => {
+    await worker.fetch(
+      request('/vi/calories/mi-goi', {
+        headers: { 'User-Agent': 'Mozilla/5.0 Safari/604.1' },
+      }),
+      makeEnv()
+    );
+
+    const [req, init] = upstream.mock.calls[0];
+    expect(req.url).toBe(`https://${ORIGIN}/vi/calories/mi-goi`);
+    expect(init).toBeUndefined();
+  });
+
+  it('takes the cache address out of a redirect', async () => {
+    upstream.mockResolvedValueOnce(
+      new Response(null, {
+        status: 307,
+        headers: { location: '/en/docs/overview?_edge=crawler' },
+      })
+    );
+    const res = await worker.fetch(
+      request('/en/docs', { headers: { 'User-Agent': GPTBOT } }),
+      makeEnv()
+    );
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe('/en/docs/overview');
   });
 });
 
