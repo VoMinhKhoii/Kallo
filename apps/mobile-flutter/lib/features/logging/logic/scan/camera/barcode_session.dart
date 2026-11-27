@@ -46,10 +46,19 @@ class BarcodeCameraSession {
   /// Re-arm the decode guard — scanning has (re)started.
   void arm() => _handledDetection = false;
 
-  void release() {
-    _controller?.dispose();
+  /// Completes once the plugin has stopped the camera. On Android the
+  /// scanner and the label camera share one process-wide CameraX provider,
+  /// and the scanner's stop unbinds everything bound to it, so the label
+  /// camera must not open before this completes.
+  Future<void> release() async {
+    final live = _controller;
     _controller = null;
+    await live?.dispose();
   }
+
+  /// The camera stopped on an error (a refused permission) — the user may
+  /// have fixed it in Settings since.
+  bool get hasFailed => _controller?.value.error != null;
 
   /// The light, for a code in a dim kitchen. The plugin only toggles, so this
   /// toggles only toward [on]; a camera that is not live yet (or has no

@@ -15,6 +15,7 @@ import 'camera/loading_overlay.dart';
 import 'camera/mode_chip.dart';
 import 'camera/switch_veil.dart';
 import 'panel/sheet.dart';
+import 'camera_handover.dart';
 import 'result_actions.dart';
 import 'screen_actions.dart';
 import 'panels.dart';
@@ -59,7 +60,11 @@ class ScanScreen extends ConsumerStatefulWidget {
 }
 
 class ScanScreenState extends ConsumerState<ScanScreen>
-    with WidgetsBindingObserver, ScanResultActions, ScanScreenActions {
+    with
+        WidgetsBindingObserver,
+        ScanResultActions,
+        ScanCameraHandover,
+        ScanScreenActions {
   @override
   void initState() {
     super.initState();
@@ -67,9 +72,18 @@ class ScanScreenState extends ConsumerState<ScanScreen>
     barcodeCamera.ensure();
   }
 
+  /// The app has left the foreground since the last resume.
+  bool _left = false;
+
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) =>
-      labelCamera.handleLifecycle(state);
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    labelCamera.handleLifecycle(state);
+    if (state == AppLifecycleState.paused) _left = true;
+    if (state == AppLifecycleState.resumed && _left) {
+      _left = false;
+      restartFailedScanner();
+    }
+  }
 
   @override
   void dispose() {
@@ -110,7 +124,12 @@ class ScanScreenState extends ConsumerState<ScanScreen>
         (mode == ScanType.label && label.phase == LabelScanPhase.scanning);
     final live = panel == null && !busy;
     return PopScope(
-      canPop: !saving,
+      // With a sheet up, Android's back steps back inside it, not off the
+      // screen with what was scanned.
+      canPop: !saving && panel == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && panel != null) stepBack();
+      },
       child: Scaffold(
         backgroundColor: Colors.black,
         resizeToAvoidBottomInset: false,

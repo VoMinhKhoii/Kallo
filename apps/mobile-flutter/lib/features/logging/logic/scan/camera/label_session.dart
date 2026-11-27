@@ -4,7 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show MissingPluginException;
 
-import '../../../../../logic/label/image.dart';
+import '../../label/image.dart';
 
 /// Owns the label branch's [CameraController] outright: built on [open], torn
 /// down when the app leaves the foreground (iOS revokes the capture session
@@ -15,11 +15,15 @@ import '../../../../../logic/label/image.dart';
 /// the lifetime rules (single-flight opens, the backgrounded-mid-initialize
 /// race, one shot at a time) are camera logic, not layout.
 class LabelCameraSession {
-  LabelCameraSession({required this.onFailure});
+  LabelCameraSession({required this.onFailure, required this.onOpened});
 
   /// A camera that would not open or would not shoot, mapped onto the same
   /// failures the picker path reports so one error card serves both.
   final ValueChanged<LabelImageFailure> onFailure;
+
+  /// A camera is live again: whatever failure was reported before (a refused
+  /// permission the user has since granted in Settings) no longer holds.
+  final VoidCallback onOpened;
 
   /// The live controller, or null while none is open. Listen to rebuild.
   final ValueNotifier<CameraController?> controller =
@@ -42,6 +46,23 @@ class LabelCameraSession {
   /// hardware ("camera in use", a black preview) — so every open waits for it.
   Future<void>? _teardown;
 
+  /// The open in flight, so [close] can wait for a controller it discards.
+  Future<void>? _run;
+
+  /// A resume arrived while an open was still running. On Android the
+  /// permission dialog pauses the activity (`inactive`), and the grant lands
+  /// before `resumed`: the open sees a backgrounded app and discards the
+  /// controller, and the resume's own open is turned away as a second open.
+  /// The finished open owes a reopen.
+  bool _resumedMidOpen = false;
+
+  /// The last open was refused permission, and the app has not left the
+  /// foreground since. A system permission dialog only takes the app to
+  /// `inactive`; reopening when it closes would ask a second time on Android
+  /// right after a "Don't allow". Leaving (`paused`, e.g. for Settings)
+  /// clears it, so coming back from a grant in Settings reopens.
+  bool _deniedInPlace = false;
+
   /// A shot is being taken; the shutter waits for it.
   bool get isShooting => _shooting;
 
@@ -56,10 +77,29 @@ class LabelCameraSession {
     // can re-enter here); one at a time.
     if (_opening || _disposed) return;
     _opening = true;
+    _resumedMidOpen = false;
+    final run = _open();
+    _run = run;
+    try {
+      await run;
+    } finally {
+      _opening = false;
+      _run = null;
+      if (_resumedMidOpen &&
+          _wanted &&
+          !_disposed &&
+          !_isBackgrounded &&
+          !_deniedInPlace &&
+          controller.value == null) {
+        open();
+      }
+    }
+  }
+
+  Future<void> _open() async {
     await _teardown;
     _teardown = null;
     if (_disposed || _isBackgrounded || !_wanted || controller.value != null) {
-      _opening = false;
       return;
     }
     try {
@@ -87,27 +127,34 @@ class LabelCameraSession {
         return;
       }
       controller.value = opened;
+      _deniedInPlace = false;
+      onOpened();
     } on CameraException catch (error) {
       if (_disposed) return;
-      onFailure(labelFailureForCamera(error.code));
+      final failure = labelFailureForCamera(error.code);
+      _deniedInPlace = failure == LabelImageFailure.permissionDenied;
+      onFailure(failure);
     } on MissingPluginException {
       // No camera plugin behind the channel (widget tests, unsupported host).
       // The stage stays dark and the library button is still the way in — this
       // is not something to report to the user as a failure.
-    } finally {
-      _opening = false;
     }
   }
 
   void handleLifecycle(AppLifecycleState state) {
     _lifecycle = state;
+    if (state == AppLifecycleState.paused) _deniedInPlace = false;
     final live = controller.value;
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       if (live == null) return;
       controller.value = null;
       _teardown = live.dispose();
-    } else if (state == AppLifecycleState.resumed && live == null && _wanted) {
+    } else if (state == AppLifecycleState.resumed &&
+        live == null &&
+        _wanted &&
+        !_deniedInPlace) {
+      if (_opening) _resumedMidOpen = true;
       // `open()` awaits [_teardown] and re-checks the lifecycle after it, so
       // a resume that lands mid-teardown reopens only once the device is free.
       open();
@@ -116,12 +163,21 @@ class LabelCameraSession {
 
   /// Hand the sensor back (the screen switched to the barcode scanner): the
   /// controller is torn down, and a resume leaves it shut until [open].
-  void close() {
+  ///
+  /// Completes once the device is released, including a controller an open
+  /// still in flight will discard. On Android the two camera plugins share
+  /// one process-wide CameraX provider and each one's teardown unbinds
+  /// everything bound to it, so the barcode scanner must not start before
+  /// this completes.
+  Future<void> close() async {
     _wanted = false;
     final live = controller.value;
-    if (live == null) return;
-    controller.value = null;
-    _teardown = live.dispose();
+    if (live != null) {
+      controller.value = null;
+      _teardown = live.dispose();
+    }
+    await _run;
+    await _teardown;
   }
 
   /// Take a still; resolves to its path, or null when there is no camera, a
