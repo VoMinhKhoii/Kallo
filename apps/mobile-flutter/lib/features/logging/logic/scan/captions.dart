@@ -6,9 +6,10 @@ import 'food.dart';
 
 /// Under a result's name: the brand, or that the numbers are the label's.
 /// Shared by the result and its other nutrients, which keep the same header.
-String? scanFoodSubtitle(ScanFood food) => food.source == ScanFoodSource.label
-    ? 'logging.scan.fromLabel'.tr()
-    : food.brand;
+String? scanFoodSubtitle(ScanFood food) =>
+    food.source == ScanFoodSource.label
+        ? 'logging.scan.fromLabel'.tr()
+        : food.brand;
 
 /// What the nutrients shown are for: "In 2 servings · 200 ml", "In 250 ml".
 String scanAmountCaption(
@@ -30,10 +31,7 @@ String scanAmountCaption(
       'logging.scan.servingWord',
     ),
     ScanPortion.pack => withSize(amount.packs, 'logging.scan.packWord'),
-    ScanPortion.custom =>
-      unit == 'serving'
-          ? withSize(amount.custom, 'logging.scan.servingWord')
-          : formatSize(resolved, unit),
+    ScanPortion.custom => formatSize(resolved, unit),
   };
   return 'logging.scan.inAmount'.tr(namedArgs: {'amount': text});
 }

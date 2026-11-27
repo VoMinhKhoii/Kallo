@@ -18,7 +18,7 @@ import {
   type ParsedBarcodeProduct,
   parseAmountUnit,
 } from '@/lib/domain/barcode/types';
-import { formatRawLoggedAmount } from '@/lib/domain/meals/serving-ladder';
+import { formatRawLoggedAmount } from '@/lib/domain/scan/format';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 

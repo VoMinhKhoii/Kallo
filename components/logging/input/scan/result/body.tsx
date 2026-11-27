@@ -122,8 +122,6 @@ export function ScanResultBody({
       count(amount.servings, 'servings')
     ) : amount.portion === 'pack' ? (
       count(amount.packs, 'packs')
-    ) : unit === 'serving' ? (
-      count(amount.custom, 'servings')
     ) : (
       <ScanAmountInput
         amount={Math.round(amount.custom)}

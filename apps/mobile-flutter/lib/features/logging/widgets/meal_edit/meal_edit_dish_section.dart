@@ -8,6 +8,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../logic/format.dart';
 import '../../logic/meal_edit/meal_edit_draft.dart';
 import '../../logic/meal_edit/meal_edit_format.dart';
+import '../../logic/serving_ladder.dart';
 import 'meal_edit_size_row.dart';
 import 'meal_edit_stepper_row.dart';
 
@@ -63,19 +64,22 @@ class MealEditDishSection extends StatelessWidget {
           children: [
             MealEditStepperRow(
               label: 'logging.mealEdit.servings'.tr(),
-              value: formatTimes(dish.servings, locale),
+              value: formatServingTimes(dish.servings, locale),
               minusRemoves: removes,
-              minusLabel: removes
-                  ? 'logging.mealEdit.removeDish'.tr(namedArgs: named)
-                  : 'logging.mealEdit.lessServing'.tr(namedArgs: named),
+              minusLabel:
+                  removes
+                      ? 'logging.mealEdit.removeDish'.tr(namedArgs: named)
+                      : 'logging.mealEdit.lessServing'.tr(namedArgs: named),
               plusLabel: 'logging.mealEdit.moreServing'.tr(namedArgs: named),
-              onMinus: draft.servingsMinusDisabled(dish)
-                  ? null
-                  : () => onDraft(draft.stepServings(dish.key, -1)),
+              onMinus:
+                  draft.servingsMinusDisabled(dish)
+                      ? null
+                      : () => onDraft(draft.stepServings(dish.key, -1)),
               // A dish logged with no grams cannot grow — only come out.
-              onPlus: dish.scalable
-                  ? () => onDraft(draft.stepServings(dish.key, 1))
-                  : null,
+              onPlus:
+                  dish.scalable
+                      ? () => onDraft(draft.stepServings(dish.key, 1))
+                      : null,
             ),
             if (dish.scalable && dish.unit != 'serving')
               MealEditStepperRow(
@@ -83,9 +87,10 @@ class MealEditDishSection extends StatelessWidget {
                 value: formatAmount(dish.grams, dish.unit, locale),
                 minusLabel: 'logging.mealEdit.lessAmount'.tr(namedArgs: named),
                 plusLabel: 'logging.mealEdit.moreAmount'.tr(namedArgs: named),
-                onMinus: dish.grams <= dish.floor
-                    ? null
-                    : () => onDraft(draft.stepAmount(dish.key, -1)),
+                onMinus:
+                    dish.amountMinusDisabled
+                        ? null
+                        : () => onDraft(draft.stepAmount(dish.key, -1)),
                 onPlus: () => onDraft(draft.stepAmount(dish.key, 1)),
               ),
             if (vessel != null)

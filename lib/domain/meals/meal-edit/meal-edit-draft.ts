@@ -14,13 +14,8 @@ import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 import { MIN_DISH_GRAMS } from '@/lib/domain/meals/quantity-recalculation';
 import {
   MIN_SERVING_MULTIPLIER,
-  SERVING_STEP_ABOVE_ONE,
   stepServingMultiplier,
 } from '@/lib/domain/meals/serving-ladder';
-
-/** Step size from 1× upward ("1×", "1.5×", "2×"); sub-1× follows the serving
- *  ladder (`0.25`, `1/3`, `0.5`, `2/3`, `0.75`). */
-export const SERVING_STEP = SERVING_STEP_ABOVE_ONE;
 
 /** Amount moves in tens, the step the old steppers used. */
 export const AMOUNT_STEP = 10;
@@ -187,7 +182,8 @@ export function findDish(
 
 /**
  * True when Servings' minus would take this dish out rather than shrink it: at
- * half a serving, at its floor, or for a dish with no grams to step.
+ * the bottom rung (`0.25×`), at `MIN_EDIT_GRAMS`, or for a dish with no grams
+ * to step.
  */
 export function removesOnMinus(draft: MealEditDraft, dish: EditDish): boolean {
   return atBottom(dish) && draft.canRemove && draft.dishes.length > 1;
@@ -199,6 +195,11 @@ export function servingsMinusDisabled(
   dish: EditDish
 ): boolean {
   return atBottom(dish) && !removesOnMinus(draft, dish);
+}
+
+/** True when Amount's −10 g/ml button cannot shrink the dish any further. */
+export function amountMinusDisabled(dish: EditDish): boolean {
+  return dish.grams <= floorOf(dish) + EPS;
 }
 
 function mapDish(

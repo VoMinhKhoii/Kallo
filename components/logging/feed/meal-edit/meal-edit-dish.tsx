@@ -4,8 +4,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import {
+  amountMinusDisabled,
   type EditDish,
-  floorOf,
   isScalable,
   type MealEditDraft,
   removesOnMinus,
@@ -16,6 +16,7 @@ import {
   stepServings,
   sumTotals,
 } from '@/lib/domain/meals/meal-edit/meal-edit-draft';
+import { formatEditAmount } from '@/lib/domain/meals/meal-edit/meal-edit-format';
 import { formatServingTimes } from '@/lib/domain/meals/serving-ladder';
 import { MealEditSizeRow } from './meal-edit-size-row';
 import { MealEditStepperRow } from './meal-edit-stepper-row';
@@ -52,10 +53,6 @@ export function MealEditDish({
   const scalable = isScalable(dish);
   const kcal = sumTotals([dish]).kcal;
   const times = formatServingTimes(servingsOf(dish), locale);
-  const amountText =
-    dish.grams >= 10
-      ? formatLocalizedNumber(Math.round(dish.grams), locale)
-      : formatLocalizedNumber(Math.round(dish.grams * 10) / 10, locale);
 
   return (
     <section ref={sectionRef} className="scroll-mt-4 font-sans-display">
@@ -92,11 +89,11 @@ export function MealEditDish({
         {scalable && dish.unit !== 'serving' && (
           <MealEditStepperRow
             label={t('amount')}
-            value={`${amountText} ${dish.unit}`}
+            value={formatEditAmount(dish.grams, dish.unit, locale)}
             minusLabel={t('lessAmount', named)}
             plusLabel={t('moreAmount', named)}
             onMinus={
-              dish.grams <= floorOf(dish)
+              amountMinusDisabled(dish)
                 ? undefined
                 : () => onDraft(stepAmount(draft, dish.key, -1))
             }

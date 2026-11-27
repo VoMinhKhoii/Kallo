@@ -13,10 +13,6 @@ import '../../../../models/nutrition/vessel.dart';
 import '../meal_utils.dart';
 import '../serving_ladder.dart';
 
-/// Step size from 1× upward ("1×", "1.5×", "2×"); sub-1× follows the serving
-/// ladder (`0.25`, `1/3`, `0.5`, `2/3`, `0.75`).
-const double servingStep = servingStepAboveOne;
-
 /// Amount moves in tens, the same step the old steppers used.
 const double amountStep = 10;
 
@@ -120,6 +116,9 @@ class EditDish {
       servings <= minServingMultiplier + _eps ||
       grams <= minEditGrams + _eps;
 
+  /// True when Amount's −10 g/ml button cannot shrink this dish any further.
+  bool get amountMinusDisabled => grams <= floor + _eps;
+
   EditTotals get totals => sumTotals([this]);
 
   EditDish _copy({required double grams, required double target}) => EditDish(
@@ -185,7 +184,7 @@ class MealEditDraft {
 
   final List<EditDish> dishes;
 
-  /// The Whole meal multiplier, in [servingStep]s from 1.
+  /// The Whole meal multiplier, along the serving ladder from 1.
   final double whole;
 
   /// Whether a dish may be taken out. Only a saved meal can drop a dish: the
@@ -202,7 +201,8 @@ class MealEditDraft {
   }
 
   /// True when Servings' minus would take this dish out rather than shrink it:
-  /// at half a serving, at its floor, or for a dish with no grams to step.
+  /// at the bottom rung (`0.25×`), at [minEditGrams], or for a dish with no
+  /// grams to step.
   bool removesOnMinus(EditDish dish) =>
       dish.atBottom && canRemove && dishes.length > 1;
 

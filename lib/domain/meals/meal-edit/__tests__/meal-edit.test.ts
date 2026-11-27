@@ -8,6 +8,7 @@ import type { NutritionValues } from '@/lib/ai/types/nutrition-values';
 import type { MealItem } from '@/lib/core/types/meal';
 import { deriveQuantityEdits } from '@/lib/domain/meals/quantity-recalculation';
 import {
+  amountMinusDisabled,
   findDish,
   floorOf,
   removesOnMinus,
@@ -203,6 +204,13 @@ describe('amount and floor', () => {
     const d = draftFromPersisted(bowl);
     expect(findDish(d, '0:dish 0')?.unit).toBe('g');
     expect(findDish(d, '1:dish 1')?.unit).toBe('ml');
+  });
+
+  it('disables Amount minus when Whole meal thirds land at the floor with float drift', () => {
+    const m = meal([dish(0, [ing('dip', 30)])]);
+    let d = draftFromPersisted(m);
+    for (let i = 0; i < 4; i++) d = stepWhole(d, -1); // 0.75 → 2/3 → 0.5 → 1/3 (≈10g)
+    expect(amountMinusDisabled(findDish(d, '0:dish 0')!)).toBe(true);
   });
 });
 

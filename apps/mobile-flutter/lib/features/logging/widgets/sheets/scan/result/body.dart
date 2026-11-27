@@ -67,25 +67,28 @@ class ScanResultBody extends StatelessWidget {
         ScanAmountCard(
           choices: [for (final p in portionsFor(food)) _choice(p)],
           selected: amount.portion,
-          onSelect: enabled
-              ? (p) => onAmount(amount.withPortion(p, food))
-              : null,
+          onSelect:
+              enabled ? (p) => onAmount(amount.withPortion(p, food)) : null,
           amount: ScanAmountStepper(
-            onDecrease: enabled && amount.canStep(food, -1)
-                ? () => onAmount(amount.stepped(food, -1))
-                : null,
-            onIncrease: enabled && amount.canStep(food, 1)
-                ? () => onAmount(amount.stepped(food, 1))
-                : null,
+            onDecrease:
+                enabled && amount.canStep(food, -1)
+                    ? () => onAmount(amount.stepped(food, -1))
+                    : null,
+            onIncrease:
+                enabled && amount.canStep(food, 1)
+                    ? () => onAmount(amount.stepped(food, 1))
+                    : null,
             child: _amountValue(localeOf(context)),
           ),
-          ruler: amount.portion == ScanPortion.custom && food.unit == 'ml'
-              ? ScanCupRuler(
-                  ml: amount.custom.round(),
-                  enabled: enabled,
-                  onChanged: (ml) => onAmount(amount.withCustom(ml.toDouble())),
-                )
-              : null,
+          ruler:
+              amount.portion == ScanPortion.custom && food.unit == 'ml'
+                  ? ScanCupRuler(
+                    ml: amount.custom.round(),
+                    enabled: enabled,
+                    onChanged:
+                        (ml) => onAmount(amount.withCustom(ml.toDouble())),
+                  )
+                  : null,
         ),
         if (hasOtherNutrients(food)) ...[
           const SizedBox(height: 12),
@@ -110,21 +113,24 @@ class ScanResultBody extends StatelessWidget {
       ScanPortion.serving => ScanPortionChoice(
         value: portion,
         label: 'logging.scan.portionServing'.tr(),
-        detail: unit == 'serving' || food.servingSize == null
-            ? null
-            : formatSize(food.servingSize!, unit),
-        display: unit == 'serving' || food.servingSize == null
-            ? 'logging.scan.portionServing'.tr()
-            : 'logging.scan.perServing'.tr(
-                namedArgs: {'size': formatSize(food.servingSize!, unit)},
-              ),
+        detail:
+            unit == 'serving' || food.servingSize == null
+                ? null
+                : formatSize(food.servingSize!, unit),
+        display:
+            unit == 'serving' || food.servingSize == null
+                ? 'logging.scan.portionServing'.tr()
+                : 'logging.scan.perServing'.tr(
+                  namedArgs: {'size': formatSize(food.servingSize!, unit)},
+                ),
       ),
       ScanPortion.pack => ScanPortionChoice(
         value: portion,
         label: 'logging.scan.portionPack'.tr(),
-        detail: food.packageSize == null || unit == 'serving'
-            ? null
-            : formatSize(food.packageSize!, unit),
+        detail:
+            food.packageSize == null || unit == 'serving'
+                ? null
+                : formatSize(food.packageSize!, unit),
         display: 'logging.scan.portionPack'.tr(),
       ),
       ScanPortion.custom => ScanPortionChoice(
@@ -151,16 +157,12 @@ class ScanResultBody extends StatelessWidget {
     return switch (amount.portion) {
       ScanPortion.serving => count(amount.servings, 'logging.scan.servingWord'),
       ScanPortion.pack => count(amount.packs, 'logging.scan.packWord'),
-      ScanPortion.custom =>
-        food.unit == 'serving'
-            ? count(amount.custom, 'logging.scan.servingWord')
-            : ScanAmountField(
-                amount: amount.custom.round(),
-                unit: food.unit,
-                enabled: enabled,
-                onChanged: (value) =>
-                    onAmount(amount.withCustom(value.toDouble())),
-              ),
+      ScanPortion.custom => ScanAmountField(
+        amount: amount.custom.round(),
+        unit: food.unit,
+        enabled: enabled,
+        onChanged: (value) => onAmount(amount.withCustom(value.toDouble())),
+      ),
     };
   }
 }

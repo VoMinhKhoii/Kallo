@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { formatRawLoggedAmount } from '@/lib/domain/scan/format';
 import {
   canStepServingMultiplier,
-  formatRawLoggedAmount,
   formatServingTimes,
   formatServingValue,
   MIN_SERVING_MULTIPLIER,

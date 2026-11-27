@@ -13,16 +13,25 @@ import type {
 } from '@/lib/actions/meals/types';
 import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 import type { MealItem } from '@/lib/core/types/meal';
+import { MIN_DISH_GRAMS } from '@/lib/domain/meals/quantity-recalculation';
 import {
   atGrams,
   type EditDish,
   findDish,
   type MealEditDraft,
+  MIN_EDIT_GRAMS,
   originalGrams,
   partScales,
   servingsOf,
   sumTotals,
 } from './meal-edit-draft';
+
+/** Thousandths precision with the {@link MIN_EDIT_GRAMS} floor: preserves
+ *  quarters (`0.25`, `0.75`) and thirds (`0.333`, `0.667`) without off-by-1
+ *  kcal drift, and keeps tiny parts strictly positive. */
+function roundEditGrams(value: number): number {
+  return Math.max(MIN_EDIT_GRAMS, Math.round(value * 1000) / 1000);
+}
 
 export interface PersistedMealEdit {
   edits: { id: string; newGrams: number }[];
@@ -90,9 +99,7 @@ export function persistedEditFrom(
     if (Math.abs(ratio - 1) < 1e-9) continue;
     for (const p of before.parts) {
       if (!p.id || p.grams == null || !partScales(p)) continue;
-      // Thousandths, not tenths: preserves quarters (0.25, 0.75) and thirds
-      // (0.333, 0.667) without off-by-1 kcal drift, and keeps tiny parts > 0.
-      const next = Math.max(0.01, Math.round(p.grams * ratio * 1000) / 1000);
+      const next = roundEditGrams(p.grams * ratio);
       if (next === p.grams) continue;
       out.edits.push({ id: p.id, newGrams: next });
     }
@@ -154,8 +161,8 @@ export function stagedItemsFrom(
     // leave an override behind that the user had just undone.
     const staged = originalGrams(dish);
     const rounded =
-      dish.unit === 'serving' || dish.grams < 10
-        ? Math.max(0.01, Math.round(dish.grams * 1000) / 1000)
+      dish.unit === 'serving' || dish.grams < MIN_DISH_GRAMS
+        ? roundEditGrams(dish.grams)
         : Math.round(dish.grams);
     const grams = Math.abs(dish.grams - staged) < 1e-6 ? staged : rounded;
     const t = sumTotals([atGrams(dish, grams)]);

@@ -67,9 +67,7 @@ export function ScanResultPanel({
         ? countWords(amount.packs, 'scan.packs')
         : amount.portion === 'serving'
           ? countWords(amount.servings, 'scan.servings')
-          : food.unit === 'serving'
-            ? countWords(amount.custom, 'scan.servings')
-            : null;
+          : null;
     const size =
       food.unit === 'serving' ? null : formatSize(resolved, food.unit);
     const inAmount = [words, size].filter(Boolean).join(' · ');

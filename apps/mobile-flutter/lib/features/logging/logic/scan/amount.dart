@@ -42,19 +42,15 @@ String formatSize(num value, String unit) {
 
 enum ScanPortion { serving, pack, custom }
 
-/// The portions [food] can be logged by, in menu order: serving and pack only
-/// when the source gives their size; custom always — except for a food whose
-/// only unit IS "serving", where a custom amount would just be a serving count.
+/// The portions [food] can be logged by, in menu order: serving when the source
+/// gives a serving size or the food's unit IS "serving"; pack when the source
+/// gives a pack size; custom for g/ml foods only — never for a serving-only
+/// food, where custom would just duplicate serving counts.
 List<ScanPortion> portionsFor(ScanFood food) => [
-  if (food.servingSize != null) ScanPortion.serving,
+  if (food.servingSize != null || food.unit == 'serving') ScanPortion.serving,
   if (food.packageSize != null) ScanPortion.pack,
-  if (food.unit != 'serving' || food.servingSize == null) ScanPortion.custom,
+  if (food.unit != 'serving') ScanPortion.custom,
 ];
-
-/// One press of the custom amount's − / +: 10 g or ml; a whole serving when
-/// the unit is servings.
-double customStepFor(String unit) =>
-    unit == 'serving' ? 1 : customStep.toDouble();
 
 class ScanAmount {
   const ScanAmount({
@@ -72,7 +68,6 @@ class ScanAmount {
       portion: portions.first,
       custom: _clampCustom(
         food.servingSize ?? food.packageSize ?? food.basisAmount,
-        unit: food.unit,
       ),
     );
   }
@@ -81,13 +76,11 @@ class ScanAmount {
   final double servings;
   final double packs;
 
-  /// The custom amount, in the food's unit.
+  /// The custom amount, in g or ml.
   final double custom;
 
-  static double _clampCustom(double amount, {String unit = 'g'}) {
-    final min = unit == 'serving' ? minServingMultiplier : 1.0;
-    return math.min(math.max(amount, min), maxScanAmount.toDouble());
-  }
+  static double _clampCustom(double amount) =>
+      math.min(math.max(amount, 1.0), maxScanAmount.toDouble());
 
   static double _clampResolved(double amount) => math.min(
     math.max(amount, minResolvedScanAmount),
@@ -102,18 +95,19 @@ class ScanAmount {
     ScanPortion.pack => _clampResolved(
       packs * (food.packageSize ?? food.basisAmount),
     ),
-    ScanPortion.custom => _clampCustom(custom, unit: food.unit),
+    ScanPortion.custom => _clampCustom(custom),
   };
 
   /// The most servings or packs of [size] one entry holds: [maxServings],
   /// or fewer when that many would pass [maxScanAmount] — so the count on
   /// screen is always the amount logged (99 packs of 2 kg would not be).
-  static double _maxCount(double? size) => size == null || size <= 0
-      ? maxServings.toDouble()
-      : math.max(
-          minServingMultiplier,
-          math.min(maxServings.toDouble(), maxScanAmount / size),
-        );
+  static double _maxCount(double? size) =>
+      size == null || size <= 0
+          ? maxServings.toDouble()
+          : math.max(
+            minServingMultiplier,
+            math.min(maxServings.toDouble(), maxScanAmount / size),
+          );
 
   /// The − / + of the Amount row for the current portion.
   ScanAmount stepped(ScanFood food, int direction) => switch (portion) {
@@ -132,16 +126,7 @@ class ScanAmount {
       ),
     ),
     ScanPortion.custom => copyWith(
-      custom: food.unit == 'serving'
-          ? stepServingMultiplier(
-              custom,
-              direction,
-              max: maxServings.toDouble(),
-            )
-          : _clampCustom(
-              custom + direction * customStepFor(food.unit),
-              unit: food.unit,
-            ),
+      custom: _clampCustom(custom + direction * customStep.toDouble()),
     ),
   };
 
@@ -156,16 +141,7 @@ class ScanAmount {
       direction,
       max: _maxCount(food.packageSize),
     ),
-    ScanPortion.custom =>
-      food.unit == 'serving'
-          ? canStepServingMultiplier(
-              custom,
-              direction,
-              max: maxServings.toDouble(),
-            )
-          : direction < 0
-          ? custom > 1
-          : custom < maxScanAmount,
+    ScanPortion.custom => direction < 0 ? custom > 1 : custom < maxScanAmount,
   };
 
   /// A typed or ruler-picked custom amount, kept inside the log's limits.
@@ -178,12 +154,9 @@ class ScanAmount {
   ScanAmount withPortion(ScanPortion next, ScanFood food) {
     if (next == ScanPortion.custom && portion != ScanPortion.custom) {
       final resolved = resolve(food);
-      final carried = food.unit == 'serving'
-          ? resolved
-          : resolved.roundToDouble();
       return copyWith(
         portion: next,
-        custom: _clampCustom(carried, unit: food.unit),
+        custom: _clampCustom(resolved.roundToDouble()),
       );
     }
     return copyWith(portion: next);
@@ -207,8 +180,8 @@ class ScanAmount {
 /// the result starts again from one serving.
 ScanAmount? carryAmount(ScanAmount? amount, ScanFood before, ScanFood after) =>
     amount != null &&
-        before.unit == after.unit &&
-        before.servingSize == after.servingSize &&
-        before.packageSize == after.packageSize
-    ? amount
-    : null;
+            before.unit == after.unit &&
+            before.servingSize == after.servingSize &&
+            before.packageSize == after.packageSize
+        ? amount
+        : null;

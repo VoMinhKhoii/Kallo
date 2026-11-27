@@ -138,6 +138,20 @@ void main() {
       expect(d.dish('0:dish 0')!.unit, 'g');
       expect(d.dish('1:dish 1')!.unit, 'ml');
     });
+
+    test(
+      'disables Amount minus when Whole meal thirds land at the floor with float drift',
+      () {
+        final m = meal([
+          dish(0, [ing('dip', grams: 30)]),
+        ]);
+        var d = draftFromPersisted(m);
+        for (var i = 0; i < 4; i++) {
+          d = d.stepWhole(-1); // 0.75 → 2/3 → 0.5 → 1/3 (≈10g)
+        }
+        expect(d.dish('0:dish 0')!.amountMinusDisabled, isTrue);
+      },
+    );
   });
 
   group('whole meal', () {

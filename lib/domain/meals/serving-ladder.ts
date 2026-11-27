@@ -114,16 +114,3 @@ export function formatServingValue(value: number, locale: string): string {
 export function formatServingTimes(value: number, locale: string): string {
   return `${formatServingValue(value, locale)}×`;
 }
-
-/** Compact logged amount for `rawInput` titles on staged barcode/label meals,
- *  so `1/3` serving or `33.3333...ml` never prints raw float tails. */
-export function formatRawLoggedAmount(
-  amount: number,
-  unit: 'g' | 'ml' | 'serving'
-): string {
-  if (unit === 'serving') {
-    const word = servingPluralCount(amount) === 1 ? 'serving' : 'servings';
-    return `${formatServingValue(amount, 'en')} ${word}`;
-  }
-  return `${Math.round(amount * 100) / 100}${unit}`;
-}
