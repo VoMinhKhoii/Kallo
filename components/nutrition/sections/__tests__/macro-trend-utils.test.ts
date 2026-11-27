@@ -75,10 +75,33 @@ describe('buildMacroTrendAxis', () => {
     expect(axis.maxLabel).toBe(100);
   });
 
-  it('falls back to a 2500 step for very high intake (maxY 16000)', () => {
-    const axis = buildMacroTrendAxis(16000);
+  it('keeps a 2500 step while it fits six lines (maxY 14000)', () => {
+    const axis = buildMacroTrendAxis(14000);
     expect(axis.step).toBe(2500);
-    expect(axis.maxLabel).toBe(17500);
+    expect(axis.maxLabel).toBe(15000);
+  });
+
+  it('keeps climbing past 2500 for extreme days', () => {
+    // A 16000 day used to get a 2500 step (7 lines); a 65,449 day got 27.
+    expect(buildMacroTrendAxis(16000).step).toBe(5000);
+    expect(buildMacroTrendAxis(34799).step).toBe(10000);
+    const axis = buildMacroTrendAxis(65449);
+    expect(axis.step).toBe(25000);
+    expect(axis.ticks).toEqual([25000, 50000, 75000]);
+  });
+
+  it('floors a non-finite max to an empty axis instead of looping', () => {
+    for (const maxY of [Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(buildMacroTrendAxis(maxY).step).toBe(100);
+    }
+  });
+
+  it('never draws more than six labelled lines', () => {
+    for (const maxY of [
+      1, 99, 601, 1501, 6001, 12001, 15001, 60001, 1e6, 3e7,
+    ]) {
+      expect(buildMacroTrendAxis(maxY).ticks.length).toBeLessThanOrEqual(6);
+    }
   });
 });
 
