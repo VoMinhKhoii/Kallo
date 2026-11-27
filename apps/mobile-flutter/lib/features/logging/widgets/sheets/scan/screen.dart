@@ -15,7 +15,6 @@ import 'camera/loading_overlay.dart';
 import 'camera/mode_chip.dart';
 import 'camera/switch_veil.dart';
 import 'panel/sheet.dart';
-import '../../../logic/scan/camera/teardown.dart';
 import 'camera_handover.dart';
 import 'result_actions.dart';
 import 'screen_actions.dart';
@@ -81,9 +80,7 @@ class ScanScreenState extends ConsumerState<ScanScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    ScanCameraReleases.track(
-      Future.wait([barcodeCamera.release(), labelCamera.dispose()]),
-    );
+    releaseCameras();
     super.dispose();
   }
 
@@ -132,8 +129,7 @@ class ScanScreenState extends ConsumerState<ScanScreen>
           children: [
             if (cameraMode == ScanType.barcode)
               BarcodeCameraLayer(
-                controller:
-                    barcodeCamera.isRunning ? barcodeCamera.ensure() : null,
+                controller: barcodeCamera.controller,
                 frozen: frozen,
                 onDetect: onDetect,
               )

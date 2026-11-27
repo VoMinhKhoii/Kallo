@@ -23,29 +23,38 @@ class BarcodeCameraSession {
   /// already in the pipeline after the first hit; only the first may search.
   bool _handledDetection = false;
 
-  /// True between [ensure] and [release].
+  /// True between [start] and [release].
   bool get isRunning => _controller != null;
 
-  /// Built lazily, when the scanning phase mounts.
-  MobileScannerController ensure() =>
-      _controller ??= MobileScannerController(
-        formats: _formats,
-        detectionSpeed: DetectionSpeed.noDuplicates,
-        // Ask for the standard 1x lens by name. The default (`any`) makes the
-        // plugin's iOS selector discover `.builtInTripleCamera` first
-        // (`MobileScannerCameraSelector.swift`, the `case nil` arm: triple →
-        // dual → wide angle), and a virtual multi-camera device opens at its
-        // WIDEST constituent — so the preview came up at 0.5x on every Pro
-        // phone. `normal` maps to `.builtInWideAngleCamera`, the 1x lens.
-        // Not `initialZoom`: zooming the ultra-wide back to 1x would crop a
-        // sensor that is already the wrong one for reading a barcode.
-        lensType: CameraLensType.normal,
-        // The frame each code was decoded from comes back with the capture, so
-        // the scan screen can hold it frozen — what was scanned stays in view
-        // while it is looked up and under the result. Only detection frames
-        // carry an image, and `noDuplicates` keeps those to one per code.
-        returnImage: true,
-      );
+  /// The scanner's controller while it runs; the camera layer mounts a
+  /// scanner on it.
+  MobileScannerController? get controller => _controller;
+
+  /// Build the scanner (the camera layer mounts it) and arm its decode guard.
+  /// Already running, it is only re-armed.
+  void start() {
+    _controller ??= _build();
+    arm();
+  }
+
+  static MobileScannerController _build() => MobileScannerController(
+    formats: _formats,
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    // Ask for the standard 1x lens by name. The default (`any`) makes the
+    // plugin's iOS selector discover `.builtInTripleCamera` first
+    // (`MobileScannerCameraSelector.swift`, the `case nil` arm: triple →
+    // dual → wide angle), and a virtual multi-camera device opens at its
+    // WIDEST constituent — so the preview came up at 0.5x on every Pro
+    // phone. `normal` maps to `.builtInWideAngleCamera`, the 1x lens.
+    // Not `initialZoom`: zooming the ultra-wide back to 1x would crop a
+    // sensor that is already the wrong one for reading a barcode.
+    lensType: CameraLensType.normal,
+    // The frame each code was decoded from comes back with the capture, so
+    // the scan screen can hold it frozen — what was scanned stays in view
+    // while it is looked up and under the result. Only detection frames
+    // carry an image, and `noDuplicates` keeps those to one per code.
+    returnImage: true,
+  );
 
   /// Re-arm the decode guard — scanning has (re)started.
   void arm() => _handledDetection = false;

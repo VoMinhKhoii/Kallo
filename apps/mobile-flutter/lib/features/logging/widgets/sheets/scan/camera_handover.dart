@@ -47,16 +47,12 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
   /// teardown are settled by the next change instead of racing it.
   Future<void> _handover = Future.value();
 
+  // A failed change is reported, not left in the chain: an error there
+  // would skip every camera change after it.
   Future<void> _queue(Future<void> Function() change) =>
-      _handover = _handover
-          .then((_) => mounted ? change() : null)
-          // A failed change is reported, not left in the chain: an error
-          // there would skip every camera change after it.
-          .catchError(
-            (Object error, StackTrace stack) => FlutterError.reportError(
-              FlutterErrorDetails(exception: error, stack: stack),
-            ),
-          );
+      _handover = reportingFailure(
+        _handover.then((_) => mounted ? change() : null),
+      );
 
   /// The veil is down: hand the sensor to the mode chosen by now (a second
   /// tap during the dip may have taken it back), and lift the veil.
@@ -79,8 +75,7 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
       if (mode == ScanType.label) {
         labelCamera.open();
       } else {
-        barcodeCamera.ensure();
-        barcodeCamera.arm();
+        barcodeCamera.start();
       }
     }
     setState(() {
@@ -101,15 +96,20 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
       labelCamera.open();
       return;
     }
-    barcodeCamera.arm();
-    if (barcodeCamera.isRunning) return;
+    if (barcodeCamera.isRunning) return barcodeCamera.arm();
     // A new controller mounts a new scanner (`BarcodeCameraLayer` keys it).
-    setState(barcodeCamera.ensure);
+    setState(barcodeCamera.start);
   });
 
   /// Rest the scanner while a caught code is looked up and under its result;
   /// [resumeCamera] builds it again.
   void restScanner() => _queue(barcodeCamera.release);
+
+  /// The screen is closing: hand both cameras back, and let the next scan
+  /// screen wait for that before it takes the sensor.
+  void releaseCameras() => ScanCameraReleases.track(
+    Future.wait([barcodeCamera.release(), labelCamera.dispose()]),
+  );
 
   /// The app has left the foreground since the last resume.
   bool _left = false;
@@ -138,10 +138,7 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
     await barcodeCamera.release();
     if (!mounted || !scanning()) return;
     // A new controller mounts a new scanner (`BarcodeCameraLayer` keys it).
-    setState(() {
-      barcodeCamera.ensure();
-      barcodeCamera.arm();
-    });
+    setState(barcodeCamera.start);
   });
 
   void toggleTorch() {
