@@ -47,6 +47,12 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Every link (nham:// and the https invite Universal Links of
+	     applinks:kallo.fit) is routed by an app_links listener. Flutter's own
+	     deep linking would also hand the URL to go_router, which has no
+	     /en/invite/... route and shows the error screen. -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
