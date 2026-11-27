@@ -50,11 +50,16 @@ class BarcodeCameraSession {
   /// scanner and the label camera share one process-wide CameraX provider,
   /// and the scanner's stop unbinds everything bound to it, so the label
   /// camera must not open before this completes.
+  ///
+  /// A second release while the first is still stopping waits for it too.
   Future<void> release() async {
     final live = _controller;
     _controller = null;
-    await live?.dispose();
+    if (live != null) _teardown = live.dispose();
+    await _teardown;
   }
+
+  Future<void>? _teardown;
 
   /// The camera stopped on an error (a refused permission) — the user may
   /// have fixed it in Settings since.

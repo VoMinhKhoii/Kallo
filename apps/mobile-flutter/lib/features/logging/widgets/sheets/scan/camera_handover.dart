@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/label_scan_providers.dart';
@@ -18,7 +18,7 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
     onFailure: (failure) {
       if (mode == ScanType.label) labelNotifier.reportCaptureFailure(failure);
     },
-    onOpened: () {
+    onRecovered: () {
       if (ref.read(labelScanProvider).cameraProblemKey != null) {
         labelNotifier.retake();
       }
@@ -35,17 +35,32 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
   /// The dip is covering the camera, or on its way to.
   bool veiled = false;
 
+  /// Every change of camera runs here, one after the other. Each one reads
+  /// [mode] and [cameraMode] when its turn comes, so taps that land during a
+  /// teardown are settled by the next change instead of racing it.
+  Future<void> _handover = Future.value();
+
+  Future<void> _queue(Future<void> Function() change) =>
+      _handover = _handover
+          .then((_) => mounted ? change() : null)
+          // A failed change is reported, not left in the chain: an error
+          // there would skip every camera change after it.
+          .catchError(
+            (Object error, StackTrace stack) => FlutterError.reportError(
+              FlutterErrorDetails(exception: error, stack: stack),
+            ),
+          );
+
   /// The veil is down: hand the sensor to the mode chosen by now (a second
   /// tap during the dip may have taken it back), and lift the veil.
   ///
-  /// The outgoing camera is released BEFORE the incoming one starts: on
-  /// Android both plugins share one process-wide CameraX provider, and each
-  /// one's teardown unbinds everything bound to it — started together, the
-  /// late teardown left the new camera black.
-  Future<void> swapCamera() async {
-    if (!mounted) return;
+  /// The camera on screen is released BEFORE the next one starts: on Android
+  /// both plugins share one process-wide CameraX provider, and each one's
+  /// teardown unbinds everything bound to it — started together, the late
+  /// teardown left the new camera black.
+  Future<void> swapCamera() => _queue(() async {
     if (mode != cameraMode) {
-      await (mode == ScanType.label
+      await (cameraMode == ScanType.barcode
           ? barcodeCamera.release()
           : labelCamera.close());
       if (!mounted) return;
@@ -61,27 +76,25 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
       cameraMode = mode;
       veiled = false;
     });
-  }
+  });
 
   /// Back from Settings with the scanner stopped on a refused permission:
   /// start a fresh one, which asks the plugin again. The screen calls this
   /// only after the app really left (`paused`) — a permission dialog only
   /// makes it `inactive`, and restarting as it closes would ask twice on
   /// Android.
-  Future<void> restartFailedScanner() async {
-    if (cameraMode != ScanType.barcode || !barcodeCamera.hasFailed) return;
+  Future<void> restartFailedScanner() => _queue(() async {
+    bool scanning() =>
+        mode == ScanType.barcode && cameraMode == ScanType.barcode;
+    if (!scanning() || !barcodeCamera.hasFailed) return;
     await barcodeCamera.release();
-    if (!mounted) return;
-    // One frame without a scanner, so the next one mounts on the new
-    // controller instead of updating the old widget in place.
-    setState(() {});
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || cameraMode != ScanType.barcode) return;
+    if (!mounted || !scanning()) return;
+    // A new controller mounts a new scanner (`BarcodeCameraLayer` keys it).
+    setState(() {
       barcodeCamera.ensure();
       barcodeCamera.arm();
-      setState(() {});
     });
-  }
+  });
 
   void toggleTorch() {
     setState(() => torch = !torch);

@@ -112,6 +112,15 @@ void setUpScanTests() {
           const MethodChannel('plugins.flutter.io/shared_preferences'),
           (call) async => call.method == 'getAll' ? <String, Object>{} : null,
         );
+    // No camera plugin on the test host: the label camera's channel answers
+    // with the MissingPluginException the label session treats as "no plugin
+    // here" (a dark stage, no error). Unanswered, `availableCameras` never
+    // returned, and a switch back to barcode waited on it forever.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/camera'),
+          (call) async => throw MissingPluginException(call.method),
+        );
     await EasyLocalization.ensureInitialized();
     // Real glyph widths: the placeholder font's 1em boxes overflow rows that
     // fit on a phone (test/AGENTS.md, "Measuring text width").

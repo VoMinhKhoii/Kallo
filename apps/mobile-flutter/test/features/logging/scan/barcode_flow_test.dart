@@ -41,6 +41,24 @@ void main() {
   }
 
   group('a caught code', () {
+    testWidgets('is still caught after a trip to label mode and back', (
+      tester,
+    ) async {
+      // The switch hands the sensor over one camera at a time, and a new
+      // scanner controller mounts a new scanner: the one back from label mode
+      // must be the one listening.
+      final h = ScanHarness(tester)..api.handler = found;
+      await h.open();
+      await h.tapText('Nutrition label');
+      await h.tapText('Barcode');
+      expect(find.text('Type barcode'), findsOneWidget, reason: 'barcode mode');
+
+      await h.detect(code);
+
+      expect(h.api.requests.map((r) => r.$2), contains(search));
+      expect(find.text('Coconut Water'), findsOneWidget);
+    });
+
     testWidgets('rises as the product, one serving to start', (tester) async {
       final h = ScanHarness(tester)..api.handler = found;
       await h.open();

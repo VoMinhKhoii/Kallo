@@ -15,15 +15,20 @@ import '../../label/image.dart';
 /// the lifetime rules (single-flight opens, the backgrounded-mid-initialize
 /// race, one shot at a time) are camera logic, not layout.
 class LabelCameraSession {
-  LabelCameraSession({required this.onFailure, required this.onOpened});
+  LabelCameraSession({required this.onFailure, required this.onRecovered});
 
   /// A camera that would not open or would not shoot, mapped onto the same
   /// failures the picker path reports so one error card serves both.
   final ValueChanged<LabelImageFailure> onFailure;
 
-  /// A camera is live again: whatever failure was reported before (a refused
-  /// permission the user has since granted in Settings) no longer holds.
-  final VoidCallback onOpened;
+  /// A camera is live again after this session reported a failure (a refused
+  /// permission the user has since granted in Settings): that failure no
+  /// longer holds. Not called after a clean open, so a failure the photo
+  /// picker reported meanwhile stays up.
+  final VoidCallback onRecovered;
+
+  /// [onFailure] was called and no open has succeeded since.
+  bool _reportedFailure = false;
 
   /// The live controller, or null while none is open. Listen to rebuild.
   final ValueNotifier<CameraController?> controller =
@@ -78,6 +83,9 @@ class LabelCameraSession {
     if (_opening || _disposed) return;
     _opening = true;
     _resumedMidOpen = false;
+    // Only a refusal from THIS open holds back the reopen when its dialog
+    // closes; an earlier one must not leave a camera granted now black.
+    _deniedInPlace = false;
     final run = _open();
     _run = run;
     try {
@@ -106,7 +114,7 @@ class LabelCameraSession {
       final camera = _camera ??= await _backCamera();
       if (camera == null) {
         if (_disposed) return;
-        onFailure(LabelImageFailure.cameraUnavailable);
+        _report(LabelImageFailure.cameraUnavailable);
         return;
       }
       // veryHigh is ~1080p: enough to read small print on a nutrition panel
@@ -127,13 +135,15 @@ class LabelCameraSession {
         return;
       }
       controller.value = opened;
-      _deniedInPlace = false;
-      onOpened();
+      if (_reportedFailure) {
+        _reportedFailure = false;
+        onRecovered();
+      }
     } on CameraException catch (error) {
       if (_disposed) return;
       final failure = labelFailureForCamera(error.code);
       _deniedInPlace = failure == LabelImageFailure.permissionDenied;
-      onFailure(failure);
+      _report(failure);
     } on MissingPluginException {
       // No camera plugin behind the channel (widget tests, unsupported host).
       // The stage stays dark and the library button is still the way in — this
@@ -190,7 +200,7 @@ class LabelCameraSession {
       final file = await live.takePicture();
       return _disposed ? null : file.path;
     } on CameraException catch (error) {
-      if (!_disposed) onFailure(labelFailureForCamera(error.code));
+      if (!_disposed) _report(labelFailureForCamera(error.code));
       return null;
     } finally {
       _shooting = false;
@@ -207,6 +217,11 @@ class LabelCameraSession {
     } on CameraException {
       // No torch on this camera — nothing to turn on.
     }
+  }
+
+  void _report(LabelImageFailure failure) {
+    _reportedFailure = true;
+    onFailure(failure);
   }
 
   void dispose() {
