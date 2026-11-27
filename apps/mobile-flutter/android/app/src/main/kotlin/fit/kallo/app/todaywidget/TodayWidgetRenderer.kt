@@ -11,6 +11,7 @@ import fit.kallo.app.R
 import fit.kallo.app.todaywidget.draw.WidgetType
 import fit.kallo.app.todaywidget.draw.drawLine
 import fit.kallo.app.todaywidget.draw.drawLineCentred
+import fit.kallo.app.todaywidget.draw.ellipsized
 import fit.kallo.app.todaywidget.gauge.DialRow
 import fit.kallo.app.todaywidget.gauge.GaugeReadout
 import fit.kallo.app.todaywidget.gauge.Macro
@@ -63,14 +64,32 @@ class TodayWidgetRenderer(private val context: Context) {
     return bitmap
   }
 
+  /**
+   * A card shorter than the smallest legible layout (the date over a radius-20
+   * dial; a 2-row widget in landscape on a short screen) is laid out at that
+   * height and drawn whole at a smaller scale, never clipped.
+   */
   private fun draw(canvas: Canvas, day: TodaySnapshot?, now: Long, w: Double, h: Double, theme: WidgetTheme) {
+    val shortest = CONTENT_TOP + GaugeReadout.calorieHeight(MIN_RADIUS) + MARGIN
+    if (h >= shortest) return drawContent(canvas, day, now, w, h, theme)
+    val k = h / shortest
+    canvas.save()
+    canvas.scale(k.toFloat(), k.toFloat())
+    drawContent(canvas, day, now, w / k, shortest, theme)
+    canvas.restore()
+  }
+
+  private fun drawContent(canvas: Canvas, day: TodaySnapshot?, now: Long, w: Double, h: Double, theme: WidgetTheme) {
     val left = MARGIN
     val inner = w - 2 * MARGIN
     val date = WidgetFormat(day?.locale ?: java.util.Locale.getDefault().language).dateHeader(now)
-    canvas.drawLine(date, type.paint(type.semibold, DATE_SIZE, theme.ink, -0.3), left, MARGIN, DATE_LINE_BOX)
+    val datePaint = type.paint(type.semibold, DATE_SIZE, theme.ink, -0.3)
+    // Every free-standing line is held to the card's width ("Th 5, thg 12 28"
+    // is 112dp; a 2-cell card can be 78dp inside its margins).
+    canvas.drawLine(datePaint.ellipsized(date, inner), datePaint, left, MARGIN, DATE_LINE_BOX)
     // Signed out draws the same dials, empty and dashed (`CalorieWording`).
     day ?: return
-    val top = MARGIN + DATE_LINE_BOX + DATE_GAP
+    val top = CONTENT_TOP
     val family = familyOf(w, h)
     // The large widget draws the medium's row, so it sizes from a medium's height.
     val rowBox = if (family == Family.LARGE) minOf(h, MEDIUM_HEIGHT) else h
@@ -110,7 +129,7 @@ class TodayWidgetRenderer(private val context: Context) {
       // Signed out: "Sign in to track" in the middle of where the meals go.
       val paint = type.paint(type.regular, MealList.SIZE, theme.muted)
       canvas.drawLineCentred(
-        day.copy.signedOut, paint, left + inner / 2, mealsTop + (room - MealList.LINE_BOX) / 2, MealList.LINE_BOX,
+        paint.ellipsized(day.copy.signedOut, inner), paint, left + inner / 2, mealsTop + (room - MealList.LINE_BOX) / 2, MealList.LINE_BOX,
       )
     }
   }
@@ -143,6 +162,9 @@ class TodayWidgetRenderer(private val context: Context) {
     const val DATE_GAP = 8.0
     const val MEALS_GAP = 24.0
     const val CALORIE_RADIUS_CAP = 57.0
+
+    /** Where the dials start: under the date header and its gap. */
+    private const val CONTENT_TOP = MARGIN + DATE_LINE_BOX + DATE_GAP
 
     /** The smallest calorie dial, the same floor `GaugeReadout.calorieRadius` stops at. */
     private const val MIN_RADIUS = 20.0

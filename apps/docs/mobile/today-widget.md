@@ -141,7 +141,9 @@ What differs from iOS, and why:
   that size down to 20, whose row fits the card across and down. When no radius fits four dials
   (a 3-cell widget in Vietnamese, a short landscape row), the calorie dial is drawn alone. A line
   no radius can narrow enough (a long signed-out sentence on a 2-cell card) is ellipsized and the
-  arc keeps the largest size that fits.
+  arc keeps the largest size that fits; so are the date header and the large card's "Sign in to
+  track". A card shorter than the date over a radius-20 dial (112.5dp; a 2-row widget in landscape
+  on a short screen) is laid out at that height and drawn whole at a smaller scale.
 - **Orientation.** Portrait (narrowest width, tallest height) and landscape (widest, shortest)
   each get a bitmap drawn at their own size, so a rotated home screen never shows a stretched
   card.

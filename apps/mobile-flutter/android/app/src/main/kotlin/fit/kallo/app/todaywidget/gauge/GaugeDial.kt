@@ -4,16 +4,15 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PointF
 import android.text.TextPaint
-import android.text.TextUtils
 import fit.kallo.app.todaywidget.draw.drawLineCentred
+import fit.kallo.app.todaywidget.draw.ellipsized
 import fit.kallo.app.todaywidget.draw.width
 
 /** One readout line: its words, its size and line box, and the paint it sets in. */
 class DialLine(val text: String, val metrics: GaugeReadout.Line, val paint: TextPaint) {
   /** [text], cut with an ellipsis to fit [maxWidth] dp. */
   fun fitted(maxWidth: Double): DialLine =
-    if (paint.width(text) <= maxWidth) this
-    else DialLine(TextUtils.ellipsize(text, paint, maxWidth.toFloat(), TextUtils.TruncateAt.END).toString(), metrics, paint)
+    if (paint.width(text) <= maxWidth) this else DialLine(paint.ellipsized(text, maxWidth), metrics, paint)
 }
 
 /**

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Typeface
 import android.text.TextPaint
+import android.text.TextUtils
 
 /**
  * Be Vietnam Pro, read from the TTFs the app already ships
@@ -46,6 +47,11 @@ class WidgetType private constructor(
       }
   }
 }
+
+/** [text], cut with an ellipsis where it would set wider than [maxWidth] dp. */
+fun TextPaint.ellipsized(text: String, maxWidth: Double): String =
+  if (width(text) <= maxWidth) text
+  else TextUtils.ellipsize(text, this, maxWidth.toFloat(), TextUtils.TruncateAt.END).toString()
 
 /** How wide [text] sets in [paint], in dp. */
 fun TextPaint.width(text: String): Double = measureText(text).toDouble()
