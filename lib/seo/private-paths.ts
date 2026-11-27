@@ -2,7 +2,7 @@
  * The authenticated app surfaces, as locale-relative path prefixes — every
  * route under `app/[locale]/(app)/`.
  *
- * Three consumers need the same list and must never disagree: `app/robots.ts`
+ * Three consumers need the same list and must never disagree: `lib/seo/robots.ts`
  * (which tells crawlers not to index them), the markdown content negotiation
  * in `proxy.ts` (which must let them fall through to the normal HTML pipeline
  * rather than answering with a markdown 404), and the signed-out redirect in

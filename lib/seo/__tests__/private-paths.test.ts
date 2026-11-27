@@ -1,7 +1,11 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { needsSignIn, PRIVATE_PATH_PREFIXES } from '@/lib/seo/private-paths';
+import {
+  isKnownNonMarkdownPath,
+  needsSignIn,
+  PRIVATE_PATH_PREFIXES,
+} from '@/lib/seo/private-paths';
 
 // The list is hand-maintained, and a route missing from it silently loses the
 // signed-out redirect, its robots Disallow, and markdown negotiation (`/activity`
@@ -28,5 +32,20 @@ describe('needsSignIn', () => {
   it('does not match a lookalike or a public page', () => {
     expect(needsSignIn('/dashboards')).toBe(false);
     expect(needsSignIn('/pricing')).toBe(false);
+  });
+});
+
+describe('isKnownNonMarkdownPath', () => {
+  it('matches a prefix and its children, not a lookalike', () => {
+    expect(isKnownNonMarkdownPath('/dashboard')).toBe(true);
+    expect(isKnownNonMarkdownPath('/dashboard/anything')).toBe(true);
+    expect(isKnownNonMarkdownPath('/dashboards')).toBe(false);
+    expect(isKnownNonMarkdownPath('/docs/overview')).toBe(false);
+  });
+
+  it('leaves out the public pages that have a Markdown form', () => {
+    for (const path of ['/calories/pho', '/tools', '/pricing', '/compare/x']) {
+      expect(isKnownNonMarkdownPath(path), path).toBe(false);
+    }
   });
 });

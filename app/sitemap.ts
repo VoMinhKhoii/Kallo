@@ -37,7 +37,8 @@ import {
 } from '@/lib/seo/tools/slugs';
 
 // Only the publicly crawlable, unauthenticated surfaces belong here. Everything
-// behind auth (dashboard, settings, groups, …) is disallowed in robots.ts.
+// behind auth (dashboard, settings, groups, …) is disallowed in robots.txt
+// (lib/seo/robots.ts).
 //
 // The docs paths are derived from the docs nav rather than listed by hand, so
 // adding a page cannot leave the sitemap behind. /privacy and /terms are gone:

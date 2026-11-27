@@ -268,4 +268,5 @@ export const routeInventory = {
   'llms.txt/route.ts': ['none', false, 'none-cheap'],
   'md/[locale]/[...slug]/route.ts': ['none', false, 'none-cheap'],
   'openapi.json/route.ts': ['none', false, 'none-cheap'],
+  'robots.txt/route.ts': ['none', false, 'none-cheap'],
 } as const satisfies Record<string, RouteInventoryEntry>;
