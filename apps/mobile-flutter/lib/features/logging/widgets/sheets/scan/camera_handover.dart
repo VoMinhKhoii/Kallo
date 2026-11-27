@@ -23,7 +23,12 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
   final barcodeCamera = BarcodeCameraSession();
   late final labelCamera = LabelCameraSession(
     onFailure: (failure) {
-      if (mode == ScanType.label) labelNotifier.reportCaptureFailure(failure);
+      // Only over the camera itself: a failure must not clear a photo that
+      // is being read or reviewed (a resume after the photo picker reopens
+      // the camera behind it).
+      if (mode == ScanType.label && _labelShowsCamera) {
+        labelNotifier.reportCaptureFailure(failure);
+      }
     },
     onRecovered: () {
       if (ref.read(labelScanProvider).cameraProblemKey != null) {
@@ -33,6 +38,12 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
   );
 
   LabelScanController get labelNotifier => ref.read(labelScanProvider.notifier);
+
+  /// The label screen shows its camera, not a photo held, read or reviewed.
+  bool get _labelShowsCamera {
+    final label = ref.read(labelScanProvider);
+    return label.phase == LabelScanPhase.capture && label.image == null;
+  }
 
   /// The camera actually running, and on screen. Trails [mode] by the dip a
   /// switch makes (`ScanCameraVeil`): the chip moves at once, the camera
@@ -118,7 +129,9 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
   /// the scanner is restarted only when the app comes back from really
   /// leaving, the trip a grant in Settings takes.
   void onAppLifecycle(AppLifecycleState state) {
-    labelCamera.handleLifecycle(state);
+    // Coming back from the photo picker (or another app) with a photo up:
+    // the camera reopens when the user goes back to it, not behind the photo.
+    labelCamera.handleLifecycle(state, reopen: _labelShowsCamera);
     if (state == AppLifecycleState.paused) _left = true;
     if (state == AppLifecycleState.resumed && _left) {
       _left = false;

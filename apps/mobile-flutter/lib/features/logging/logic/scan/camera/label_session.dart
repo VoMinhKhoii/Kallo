@@ -157,7 +157,9 @@ class LabelCameraSession {
     }
   }
 
-  void handleLifecycle(AppLifecycleState state) {
+  /// [reopen] false keeps a resume from opening the camera: the screen is
+  /// showing a photo, not the camera, and opens it again when it goes back.
+  void handleLifecycle(AppLifecycleState state, {bool reopen = true}) {
     _lifecycle = state;
     if (state == AppLifecycleState.paused) _deniedInPlace = false;
     final live = controller.value;
@@ -167,6 +169,7 @@ class LabelCameraSession {
       controller.value = null;
       _teardown = reportingFailure(live.dispose());
     } else if (state == AppLifecycleState.resumed &&
+        reopen &&
         live == null &&
         _wanted &&
         !_deniedInPlace) {
@@ -241,10 +244,13 @@ class LabelCameraSession {
     _disposed = true;
     final live = controller.value;
     final run = _run;
+    final teardown = _teardown;
     controller.dispose();
     return Future.wait([
       if (live != null) reportingFailure(live.dispose()),
       if (run != null) run,
+      // A close or a pause may still be letting go of the sensor.
+      if (teardown != null) teardown,
     ]);
   }
 
