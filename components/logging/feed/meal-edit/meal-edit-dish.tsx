@@ -16,6 +16,7 @@ import {
   stepServings,
   sumTotals,
 } from '@/lib/domain/meals/meal-edit/meal-edit-draft';
+import { formatServingTimes } from '@/lib/domain/meals/serving-ladder';
 import { MealEditSizeRow } from './meal-edit-size-row';
 import { MealEditStepperRow } from './meal-edit-stepper-row';
 
@@ -50,7 +51,11 @@ export function MealEditDish({
   const removes = removesOnMinus(draft, dish);
   const scalable = isScalable(dish);
   const kcal = sumTotals([dish]).kcal;
-  const times = `${formatLocalizedNumber(Math.round(servingsOf(dish) * 10) / 10, locale)}×`;
+  const times = formatServingTimes(servingsOf(dish), locale);
+  const amountText =
+    dish.grams >= 10
+      ? formatLocalizedNumber(Math.round(dish.grams), locale)
+      : formatLocalizedNumber(Math.round(dish.grams * 10) / 10, locale);
 
   return (
     <section ref={sectionRef} className="scroll-mt-4 font-sans-display">
@@ -84,10 +89,10 @@ export function MealEditDish({
               : undefined
           }
         />
-        {scalable && (
+        {scalable && dish.unit !== 'serving' && (
           <MealEditStepperRow
             label={t('amount')}
-            value={`${formatLocalizedNumber(Math.round(dish.grams), locale)} ${dish.unit}`}
+            value={`${amountText} ${dish.unit}`}
             minusLabel={t('lessAmount', named)}
             plusLabel={t('moreAmount', named)}
             onMinus={

@@ -1,22 +1,29 @@
 import 'package:easy_localization/easy_localization.dart';
 
+import '../serving_ladder.dart';
 import 'amount.dart';
 import 'food.dart';
 
 /// Under a result's name: the brand, or that the numbers are the label's.
 /// Shared by the result and its other nutrients, which keep the same header.
-String? scanFoodSubtitle(ScanFood food) =>
-    food.source == ScanFoodSource.label
-        ? 'logging.scan.fromLabel'.tr()
-        : food.brand;
+String? scanFoodSubtitle(ScanFood food) => food.source == ScanFoodSource.label
+    ? 'logging.scan.fromLabel'.tr()
+    : food.brand;
 
 /// What the nutrients shown are for: "In 2 servings · 200 ml", "In 250 ml".
-String scanAmountCaption(ScanFood food, ScanAmount amount, double resolved) {
+String scanAmountCaption(
+  ScanFood food,
+  ScanAmount amount,
+  double resolved, {
+  String locale = 'en',
+}) {
   final unit = food.unit;
-  String withSize(int n, String wordKey) =>
-      unit == 'serving'
-          ? '$n ${wordKey.plural(n)}'
-          : '$n ${wordKey.plural(n)} · ${formatSize(resolved, unit)}';
+  String withSize(double n, String wordKey) {
+    final label =
+        '${formatServingValue(n, locale)} ${wordKey.plural(servingPluralCount(n))}';
+    return unit == 'serving' ? label : '$label · ${formatSize(resolved, unit)}';
+  }
+
   final text = switch (amount.portion) {
     ScanPortion.serving => withSize(
       amount.servings,
@@ -25,7 +32,7 @@ String scanAmountCaption(ScanFood food, ScanAmount amount, double resolved) {
     ScanPortion.pack => withSize(amount.packs, 'logging.scan.packWord'),
     ScanPortion.custom =>
       unit == 'serving'
-          ? withSize(amount.custom.round(), 'logging.scan.servingWord')
+          ? withSize(amount.custom, 'logging.scan.servingWord')
           : formatSize(resolved, unit),
   };
   return 'logging.scan.inAmount'.tr(namedArgs: {'amount': text});

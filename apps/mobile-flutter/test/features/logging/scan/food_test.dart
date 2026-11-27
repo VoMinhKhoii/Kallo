@@ -101,26 +101,81 @@ void main() {
       expect(amount.resolve(food), 100);
     });
 
-    test('servings and packs count by one; custom steps by 10', () {
-      var amount = ScanAmount.initial(food).stepped(food, 1);
-      expect(amount.resolve(food), 200);
-      amount = amount.withPortion(ScanPortion.pack, food).stepped(food, 1);
-      expect(amount.resolve(food), 2000);
-      amount = amount.withPortion(ScanPortion.custom, food);
-      expect(
-        amount.resolve(food),
-        2000,
-        reason: 'custom starts from on-screen',
-      );
-      expect(amount.stepped(food, -1).resolve(food), 1990);
-    });
+    test(
+      'servings and packs follow the fractional ladder; custom steps by 10',
+      () {
+        var amount = ScanAmount.initial(food).stepped(food, 1);
+        expect(amount.servings, 1.5);
+        expect(amount.resolve(food), 150);
+        amount = amount.stepped(food, 1);
+        expect(amount.servings, 2);
+        expect(amount.resolve(food), 200);
+        amount = amount.withPortion(ScanPortion.pack, food).stepped(food, 1);
+        expect(amount.packs, 1.5);
+        expect(amount.resolve(food), 1500);
+        amount = amount.withPortion(ScanPortion.custom, food);
+        expect(
+          amount.resolve(food),
+          1500,
+          reason: 'custom starts from on-screen',
+        );
+        expect(amount.stepped(food, -1).resolve(food), 1490);
+      },
+    );
 
-    test('never goes below one', () {
-      final amount = ScanAmount.initial(food);
-      expect(amount.canStep(food, -1), isFalse);
-      final custom = amount.copyWith(portion: ScanPortion.custom, custom: 5);
-      expect(custom.stepped(food, -1).resolve(food), 1);
-    });
+    test(
+      'servings and packs step below 1 down to 0.25 through thirds and halves',
+      () {
+        var amount = ScanAmount.initial(food);
+        final servingSteps = <double>[];
+        while (amount.canStep(food, -1)) {
+          amount = amount.stepped(food, -1);
+          servingSteps.add(amount.servings);
+        }
+        expect(servingSteps, [0.75, 2 / 3, 0.5, 1 / 3, 0.25]);
+        expect(amount.resolve(food), 25);
+        expect(amount.canStep(food, -1), isFalse);
+
+        var pack = ScanAmount.initial(food).withPortion(ScanPortion.pack, food);
+        final packSteps = <double>[];
+        while (pack.canStep(food, -1)) {
+          pack = pack.stepped(food, -1);
+          packSteps.add(pack.packs);
+        }
+        expect(packSteps, [0.75, 2 / 3, 0.5, 1 / 3, 0.25]);
+        expect(pack.resolve(food), 250);
+        expect(pack.canStep(food, -1), isFalse);
+
+        final custom = amount.copyWith(portion: ScanPortion.custom, custom: 5);
+        expect(custom.stepped(food, -1).resolve(food), 1);
+      },
+    );
+
+    test(
+      'editing a barcode product to 1 serving keeps the serving portion and scales below 1',
+      () {
+        final edited = food.copyWith(
+          name: 'Mini Wontons',
+          unit: 'serving',
+          basisAmount: 1,
+          values: {
+            ...food.values,
+            'calories': 210,
+            'proteinGrams': 13,
+            'carbsGrams': 31,
+            'fatGrams': 5,
+          },
+          edited: true,
+        );
+        expect(portionsFor(edited), [ScanPortion.serving]);
+        final half = ScanAmount.initial(
+          edited,
+        ).stepped(edited, -1).stepped(edited, -1).stepped(edited, -1);
+        expect(half.servings, 0.5);
+        expect(half.resolve(edited), 0.5);
+        expect(edited.valueFor('calories', half.resolve(edited)), 105);
+      },
+    );
 
     test('a typed or ruler-picked amount stays inside the log limits', () {
       final amount = ScanAmount.initial(food);
@@ -141,7 +196,7 @@ void main() {
       );
       var amount = ScanAmount.initial(bigPack);
       expect(amount.portion, ScanPortion.pack);
-      for (var i = 0; i < 80; i++) {
+      for (var i = 0; i < 120; i++) {
         amount = amount.stepped(bigPack, 1);
       }
       expect(amount.packs, 50, reason: '50 x 2 kg is the 100 kg limit');

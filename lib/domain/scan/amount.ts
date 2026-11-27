@@ -1,4 +1,9 @@
 import { MAX_FOOD_ITEM_GRAMS } from '@/lib/core/validation/food-limits';
+import {
+  canStepServingMultiplier,
+  MIN_SERVING_MULTIPLIER,
+  stepServingMultiplier,
+} from '@/lib/domain/meals/serving-ladder';
 import type { ScanFood } from '@/lib/domain/scan/food';
 
 /**
@@ -11,6 +16,8 @@ export type ScanPortion = 'serving' | 'pack' | 'custom';
 
 /** The most one entry may log, in the food's unit (g or ml). */
 export const MAX_SCAN_AMOUNT = MAX_FOOD_ITEM_GRAMS;
+/** Smallest positive resolved amount (e.g. a quarter of a 1-serving food). */
+export const MIN_RESOLVED_SCAN_AMOUNT = 0.01;
 /** The most servings — or packs — one entry holds. */
 export const MAX_SERVINGS = 99;
 /** One press of a custom amount's − / +, in g or ml. Fine enough to land on a
@@ -25,8 +32,14 @@ export interface ScanAmount {
   custom: number;
 }
 
-const clamp = (amount: number) =>
-  Math.min(MAX_SCAN_AMOUNT, Math.max(1, amount));
+const clampCustom = (amount: number, unit: ScanFood['unit'] = 'g') =>
+  Math.min(
+    MAX_SCAN_AMOUNT,
+    Math.max(unit === 'serving' ? MIN_SERVING_MULTIPLIER : 1, amount)
+  );
+
+const clampResolved = (amount: number) =>
+  Math.min(MAX_SCAN_AMOUNT, Math.max(MIN_RESOLVED_SCAN_AMOUNT, amount));
 
 /** The most servings or packs of `size` one entry holds: MAX_SERVINGS, or
  *  fewer when that many would pass MAX_SCAN_AMOUNT — so the count on screen is
@@ -34,10 +47,10 @@ const clamp = (amount: number) =>
 const maxCount = (size: number | null) =>
   size === null || size <= 0
     ? MAX_SERVINGS
-    : Math.max(1, Math.min(MAX_SERVINGS, Math.floor(MAX_SCAN_AMOUNT / size)));
-
-const clampCount = (count: number, size: number | null) =>
-  Math.min(maxCount(size), Math.max(1, count));
+    : Math.max(
+        MIN_SERVING_MULTIPLIER,
+        Math.min(MAX_SERVINGS, MAX_SCAN_AMOUNT / size)
+      );
 
 /** The portions `food` can be logged by, in menu order: serving and pack only
  *  when the source gives their size; custom always — except for a food whose
@@ -58,7 +71,10 @@ export function initialScanAmount(food: ScanFood): ScanAmount {
     portion: portionsFor(food)[0],
     servings: 1,
     packs: 1,
-    custom: clamp(food.servingSize ?? food.packageSize ?? food.basisAmount),
+    custom: clampCustom(
+      food.servingSize ?? food.packageSize ?? food.basisAmount,
+      food.unit
+    ),
   };
 }
 
@@ -66,16 +82,17 @@ export function initialScanAmount(food: ScanFood): ScanAmount {
 export function resolveScanAmount(amount: ScanAmount, food: ScanFood): number {
   switch (amount.portion) {
     case 'serving':
-      return clamp(amount.servings * (food.servingSize ?? food.basisAmount));
+      return clampResolved(
+        amount.servings * (food.servingSize ?? food.basisAmount)
+      );
     case 'pack':
-      return clamp(amount.packs * (food.packageSize ?? food.basisAmount));
+      return clampResolved(
+        amount.packs * (food.packageSize ?? food.basisAmount)
+      );
     case 'custom':
-      return clamp(amount.custom);
+      return clampCustom(amount.custom, food.unit);
   }
 }
-
-const customStepFor = (food: ScanFood) =>
-  food.unit === 'serving' ? 1 : CUSTOM_STEP;
 
 /** The − / + of the Amount row for the current portion. */
 export function stepScanAmount(
@@ -87,17 +104,28 @@ export function stepScanAmount(
     case 'serving':
       return {
         ...amount,
-        servings: clampCount(amount.servings + direction, food.servingSize),
+        servings: stepServingMultiplier(
+          amount.servings,
+          direction,
+          maxCount(food.servingSize)
+        ),
       };
     case 'pack':
       return {
         ...amount,
-        packs: clampCount(amount.packs + direction, food.packageSize),
+        packs: stepServingMultiplier(
+          amount.packs,
+          direction,
+          maxCount(food.packageSize)
+        ),
       };
     case 'custom':
       return {
         ...amount,
-        custom: clamp(amount.custom + direction * customStepFor(food)),
+        custom:
+          food.unit === 'serving'
+            ? stepServingMultiplier(amount.custom, direction, MAX_SERVINGS)
+            : clampCustom(amount.custom + direction * CUSTOM_STEP, food.unit),
       };
   }
 }
@@ -107,30 +135,48 @@ export function canStepScanAmount(
   food: ScanFood,
   direction: 1 | -1
 ): boolean {
-  const [value, max] =
-    amount.portion === 'serving'
-      ? [amount.servings, maxCount(food.servingSize)]
-      : amount.portion === 'pack'
-        ? [amount.packs, maxCount(food.packageSize)]
-        : [amount.custom, MAX_SCAN_AMOUNT];
-  return direction < 0 ? value > 1 : value < max;
+  switch (amount.portion) {
+    case 'serving':
+      return canStepServingMultiplier(
+        amount.servings,
+        direction,
+        maxCount(food.servingSize)
+      );
+    case 'pack':
+      return canStepServingMultiplier(
+        amount.packs,
+        direction,
+        maxCount(food.packageSize)
+      );
+    case 'custom':
+      if (food.unit === 'serving') {
+        return canStepServingMultiplier(amount.custom, direction, MAX_SERVINGS);
+      }
+      return direction < 0
+        ? amount.custom > 1
+        : amount.custom < MAX_SCAN_AMOUNT;
+  }
 }
 
 /** Switch portion, carrying the current amount into custom so "Custom" starts
- *  from what was on screen rather than jumping. */
+ *  from what was on screen rather than jumping. Rounded to a whole g/ml for
+ *  the numeric field so what the field shows matches what Add logs. */
 export function withPortion(
   amount: ScanAmount,
   food: ScanFood,
   portion: ScanPortion
 ): ScanAmount {
-  return portion === 'custom' && amount.portion !== 'custom'
-    ? { ...amount, portion, custom: resolveScanAmount(amount, food) }
-    : { ...amount, portion };
+  if (portion === 'custom' && amount.portion !== 'custom') {
+    const resolved = resolveScanAmount(amount, food);
+    const carried = food.unit === 'serving' ? resolved : Math.round(resolved);
+    return { ...amount, portion, custom: clampCustom(carried, food.unit) };
+  }
+  return { ...amount, portion };
 }
 
 /** A typed or cup-picked custom amount, inside the log's limits. */
 export function withCustom(amount: ScanAmount, custom: number): ScanAmount {
-  return { ...amount, portion: 'custom', custom: clamp(custom) };
+  return { ...amount, portion: 'custom', custom: clampCustom(custom) };
 }
 
 /** A size as a pack prints it: whole numbers drop the ".0", and a litre or a

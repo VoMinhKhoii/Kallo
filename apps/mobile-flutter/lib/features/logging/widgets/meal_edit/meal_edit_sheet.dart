@@ -11,6 +11,7 @@ import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/meal_edit/meal_edit_draft.dart';
 import '../../logic/meal_edit/meal_edit_format.dart';
+import '../../logic/serving_ladder.dart';
 import 'meal_edit_dish_section.dart';
 import 'meal_edit_stepper_row.dart';
 import 'meal_edit_summary.dart';
@@ -26,13 +27,12 @@ Future<void> showMealEditSheet(
   String? openOnDish,
 }) => showNhamSheet<void>(
   context,
-  builder:
-      (_) => MealEditSheet(
-        draft: draft,
-        commitLabel: commitLabel,
-        onCommit: onCommit,
-        openOnDish: openOnDish,
-      ),
+  builder: (_) => MealEditSheet(
+    draft: draft,
+    commitLabel: commitLabel,
+    onCommit: onCommit,
+    openOnDish: openOnDish,
+  ),
 );
 
 /// The whole meal on top — its calories, bar and legend, and a Whole meal
@@ -143,20 +143,18 @@ class _MealEditSheetState extends State<MealEditSheet> {
                             value: formatTimes(d.whole, locale),
                             minusLabel: 'logging.mealEdit.lessWhole'.tr(),
                             plusLabel: 'logging.mealEdit.moreWhole'.tr(),
-                            onMinus:
-                                d.whole <= servingStep
-                                    ? null
-                                    : () => _set(d.stepWhole(-1)),
+                            onMinus: canStepServingMultiplier(d.whole, -1)
+                                ? () => _set(d.stepWhole(-1))
+                                : null,
                             onPlus: () => _set(d.stepWhole(1)),
                           ),
                         ],
                       ),
                       for (final dish in d.dishes)
                         MealEditDishSection(
-                          key:
-                              dish.key == widget.openOnDish
-                                  ? _dishTarget
-                                  : ValueKey(dish.key),
+                          key: dish.key == widget.openOnDish
+                              ? _dishTarget
+                              : ValueKey(dish.key),
                           draft: d,
                           dish: dish,
                           onDraft: _set,

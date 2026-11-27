@@ -86,13 +86,22 @@ describe('scanFoodFromBarcode', () => {
 
   it('a new unit drops sizes that no longer mean anything', () => {
     const food = scanFoodFromBarcode(coconutWater);
+    const inGrams = editScanFood(food, {
+      name: food.name,
+      unit: 'g',
+      basisAmount: 100,
+      values: food.values,
+    });
+    expect(inGrams.servingSize).toBeNull();
+    expect(inGrams.packageSize).toBeNull();
+
     const perServing = editScanFood(food, {
       name: food.name,
       unit: 'serving',
       basisAmount: 1,
       values: food.values,
     });
-    expect(perServing.servingSize).toBeNull();
+    expect(perServing.servingSize).toBe(1);
     expect(perServing.packageSize).toBeNull();
   });
 });

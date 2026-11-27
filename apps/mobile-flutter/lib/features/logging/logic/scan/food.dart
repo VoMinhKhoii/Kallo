@@ -145,8 +145,13 @@ class ScanFood {
     basisAmount: basisAmount ?? this.basisAmount,
     values: values ?? this.values,
     source: source,
-    // A new unit makes the old serving / pack sizes meaningless.
-    servingSize: unit == null || unit == this.unit ? servingSize : null,
+    // A serving-basis food always has a 1-serving portion (like a per-serving
+    // label); switching to g/ml drops the old unit's serving and pack sizes.
+    servingSize: unit == null || unit == this.unit
+        ? servingSize
+        : unit == 'serving'
+        ? 1.0
+        : null,
     packageSize: unit == null || unit == this.unit ? packageSize : null,
     barcode: barcode,
     edited: edited ?? this.edited,

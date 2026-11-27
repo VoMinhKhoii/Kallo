@@ -28,13 +28,12 @@ Widget _wrap(Widget child) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder:
-        (context) => MaterialApp(
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
-          home: Scaffold(body: child),
-        ),
+    builder: (context) => MaterialApp(
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
+      home: Scaffold(body: child),
+    ),
   ),
 );
 
@@ -67,22 +66,20 @@ Future<List<MealEditDraft>> _open(
   await tester.pumpWidget(
     _wrap(
       Builder(
-        builder:
-            (context) => TextButton(
-              onPressed:
-                  () => showMealEditSheet(
-                    context,
-                    draft: draft,
-                    commitLabel: 'Done',
-                    openOnDish: openOnDish,
-                    onCommit:
-                        onCommit ??
-                        (d) async {
-                          commits.add(d);
-                        },
-                  ),
-              child: const Text('open'),
-            ),
+        builder: (context) => TextButton(
+          onPressed: () => showMealEditSheet(
+            context,
+            draft: draft,
+            commitLabel: 'Done',
+            openOnDish: openOnDish,
+            onCommit:
+                onCommit ??
+                (d) async {
+                  commits.add(d);
+                },
+          ),
+          child: const Text('open'),
+        ),
       ),
     ),
   );
@@ -328,7 +325,7 @@ void main() {
     expect(find.text('Edit meal'), findsOneWidget);
   });
 
-  testWidgets('on a saved meal, minus at half a serving offers to remove', (
+  testWidgets('on a saved meal, minus at a quarter serving offers to remove', (
     tester,
   ) async {
     const meal = PersistedMeal(
@@ -369,8 +366,10 @@ void main() {
     );
     final commits = await _open(tester, draftFromPersisted(meal));
     expect(find.text('350 ml'), findsOneWidget);
-    await tester.tap(find.bySemanticsLabel('One less serving of Latte'));
-    await tester.pumpAndSettle();
+    for (var i = 0; i < 5; i++) {
+      await tester.tap(find.bySemanticsLabel('One less serving of Latte'));
+      await tester.pumpAndSettle();
+    }
     await tester.tap(find.bySemanticsLabel('Remove Latte'));
     await tester.pumpAndSettle();
     expect(find.text('Latte'), findsNothing);
@@ -381,4 +380,59 @@ void main() {
     expect(out.removeIds, ['latte']);
     expect(out.edits, isEmpty);
   });
+
+  testWidgets(
+    'per-serving meal hides Amount and scales down to 0.5× and 1/3×',
+    (tester) async {
+      const meal = PersistedMeal(
+        id: 'm',
+        rawInput: 'Mini Wontons (1 serving)',
+        loggedAt: '2026-10-23T12:00:00Z',
+        nutrition: MealNutrition(caloriesKcal: 210),
+        mealItemGroups: [
+          PersistedMealItemGroup(
+            name: 'Mini Wontons',
+            order: 0,
+            nutrition: MealNutrition(caloriesKcal: 210),
+            ingredients: [
+              PersistedIngredient(
+                id: 'wontons',
+                ingredientName: 'Mini Wontons',
+                estimatedGrams: 1,
+                userFacingUnit: 'serving',
+                nutrition: MealNutrition(
+                  caloriesKcal: 210,
+                  proteinG: 13,
+                  carbohydrateG: 31,
+                  fatG: 5,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+      final commits = await _open(tester, draftFromPersisted(meal));
+      expect(find.text('Amount'), findsNothing);
+      expect(find.text('1 g'), findsNothing);
+
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.bySemanticsLabel('Less of the whole meal'));
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('0.5×'), findsNWidgets(2));
+      expect(find.text('105'), findsOneWidget);
+
+      await tester.tap(find.bySemanticsLabel('Less of the whole meal'));
+      await tester.pumpAndSettle();
+      expect(find.text('1/3×'), findsNWidgets(2));
+      expect(find.text('70'), findsOneWidget);
+
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+      final out = persistedEditFrom(meal, commits.single);
+      expect(out.edits, [
+        {'id': 'wontons', 'newGrams': 0.333},
+      ]);
+    },
+  );
 }

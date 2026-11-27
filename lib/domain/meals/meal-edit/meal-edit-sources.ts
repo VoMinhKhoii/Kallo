@@ -49,11 +49,15 @@ function persistedDish(group: PersistedMealItemGroup): EditDish {
     // order-only key resized — or removed — both together.
     key: `${group.order}:${group.name}`,
     name: group.name,
-    // A drink logged in millilitres reads in ml; anything mixed in grams.
+    // Drinks read in ml, serving-only items stay serving (no fake "1 g" row),
+    // anything else reads in grams.
     unit:
       weighed.length > 0 && weighed.every((i) => i.userFacingUnit === 'ml')
         ? 'ml'
-        : 'g',
+        : weighed.length > 0 &&
+            weighed.every((i) => i.userFacingUnit === 'serving')
+          ? 'serving'
+          : 'g',
     grams: logged,
     parts: group.ingredients.map((i) => ({
       id: i.id,
@@ -86,9 +90,9 @@ export function persistedEditFrom(
     if (Math.abs(ratio - 1) < 1e-9) continue;
     for (const p of before.parts) {
       if (!p.id || p.grams == null || !partScales(p)) continue;
-      // Tenths, not whole grams: a 2 g pinch of salt at 1.5× is 3 g, and at a
-      // quarter it must not round away to nothing (the action wants > 0).
-      const next = Math.max(0.1, Math.round(p.grams * ratio * 10) / 10);
+      // Thousandths, not tenths: preserves quarters (0.25, 0.75) and thirds
+      // (0.333, 0.667) without off-by-1 kcal drift, and keeps tiny parts > 0.
+      const next = Math.max(0.01, Math.round(p.grams * ratio * 1000) / 1000);
       if (next === p.grams) continue;
       out.edits.push({ id: p.id, newGrams: next });
     }
@@ -113,7 +117,8 @@ export function draftFromStaged(
       return {
         key: item.id,
         name: item.name,
-        unit: item.unit === 'ml' ? 'ml' : 'g',
+        unit:
+          item.unit === 'ml' ? 'ml' : item.unit === 'serving' ? 'serving' : 'g',
         vessel: item.vessel,
         grams: item.quantity,
         parts: [
@@ -148,8 +153,11 @@ export function stagedItemsFrom(
     // staged figure itself. Rounding a fractional one — 12.5 g → 13 g — would
     // leave an override behind that the user had just undone.
     const staged = originalGrams(dish);
-    const grams =
-      Math.abs(dish.grams - staged) < 1e-6 ? staged : Math.round(dish.grams);
+    const rounded =
+      dish.unit === 'serving' || dish.grams < 10
+        ? Math.max(0.01, Math.round(dish.grams * 1000) / 1000)
+        : Math.round(dish.grams);
+    const grams = Math.abs(dish.grams - staged) < 1e-6 ? staged : rounded;
     const t = sumTotals([atGrams(dish, grams)]);
     return {
       ...item,

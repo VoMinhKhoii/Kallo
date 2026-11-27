@@ -43,11 +43,15 @@ EditDish _persistedDish(PersistedMealItemGroup group) {
       ),
   ];
   final weighed = group.ingredients.where((i) => (i.estimatedGrams ?? 0) > 0);
-  // A drink logged in millilitres reads in ml; anything mixed reads in grams.
+  // Drinks read in ml, serving-only items stay serving (no fake "1 g" row),
+  // anything else reads in grams.
   final unit =
       weighed.isNotEmpty && weighed.every((i) => i.userFacingUnit == 'ml')
-          ? 'ml'
-          : 'g';
+      ? 'ml'
+      : weighed.isNotEmpty &&
+            weighed.every((i) => i.userFacingUnit == 'serving')
+      ? 'serving'
+      : 'g';
   final logged = parts.fold<double>(
     0,
     (sum, p) => sum + (p.scales ? p.grams! : 0),
@@ -90,10 +94,10 @@ EditDish _persistedDish(PersistedMealItemGroup group) {
     for (final p in before.parts) {
       final grams = p.grams;
       if (p.id == null || grams == null || !p.scales) continue;
-      // Tenths, not whole grams: a 2 g pinch of salt at 1.5× is 3 g, and at
-      // 0.25× it must not round away to nothing (the endpoint wants > 0).
-      final rounded = (grams * ratio * 10).round() / 10;
-      final next = rounded < 0.1 ? 0.1 : rounded;
+      // Thousandths, not tenths: preserves quarters (0.25, 0.75) and thirds
+      // (0.333, 0.667) without off-by-1 kcal drift, and keeps tiny parts > 0.
+      final rounded = (grams * ratio * 1000).round() / 1000;
+      final next = rounded < 0.01 ? 0.01 : rounded;
       if (next == grams) continue;
       edits.add({'id': p.id, 'newGrams': next});
     }
@@ -147,8 +151,12 @@ MealItem _stagedItem(MealItem item, EditDish? dish, String locale) {
   // staged figure itself. Rounding a fractional one — 12.5 g → 13 g — would
   // leave an override behind that the user had just undone.
   final staged = dish.originalGrams;
-  final grams =
-      (dish.grams - staged).abs() < 1e-6 ? staged : dish.grams.roundToDouble();
+  final rounded = dish.unit == 'serving' || dish.grams < 10
+      ? (((dish.grams * 1000).round() / 1000) < 0.01
+            ? 0.01
+            : (dish.grams * 1000).round() / 1000)
+      : dish.grams.roundToDouble();
+  final grams = (dish.grams - staged).abs() < 1e-6 ? staged : rounded;
   final t = dish.at(grams).totals;
   final vessel = dish.vessel;
   return item.copyWith(
@@ -159,13 +167,8 @@ MealItem _stagedItem(MealItem item, EditDish? dish, String locale) {
       carbs: t.carbs ?? 0,
       fat: t.fat ?? 0,
     ),
-    vessel:
-        vessel == null
-            ? null
-            : repointVessel(
-              vessel,
-              buildAnchors(vessel, locale),
-              grams.round(),
-            ),
+    vessel: vessel == null
+        ? null
+        : repointVessel(vessel, buildAnchors(vessel, locale), grams.round()),
   );
 }

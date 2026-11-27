@@ -2,11 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../../models/nutrition_label.dart';
+import '../../../../../../shared/logic/display_format.dart';
 import '../../../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../../../shared/widgets/list/list_row.dart';
 import '../../../../../../theme/calm_tokens.dart';
 import '../../../../logic/scan/amount.dart';
 import '../../../../logic/scan/food.dart';
+import '../../../../logic/serving_ladder.dart';
 import 'amount/card.dart';
 import 'amount/field.dart';
 import 'amount/stepper.dart';
@@ -65,28 +67,25 @@ class ScanResultBody extends StatelessWidget {
         ScanAmountCard(
           choices: [for (final p in portionsFor(food)) _choice(p)],
           selected: amount.portion,
-          onSelect:
-              enabled ? (p) => onAmount(amount.withPortion(p, food)) : null,
+          onSelect: enabled
+              ? (p) => onAmount(amount.withPortion(p, food))
+              : null,
           amount: ScanAmountStepper(
-            onDecrease:
-                enabled && amount.canStep(food, -1)
-                    ? () => onAmount(amount.stepped(food, -1))
-                    : null,
-            onIncrease:
-                enabled && amount.canStep(food, 1)
-                    ? () => onAmount(amount.stepped(food, 1))
-                    : null,
-            child: _amountValue(),
+            onDecrease: enabled && amount.canStep(food, -1)
+                ? () => onAmount(amount.stepped(food, -1))
+                : null,
+            onIncrease: enabled && amount.canStep(food, 1)
+                ? () => onAmount(amount.stepped(food, 1))
+                : null,
+            child: _amountValue(localeOf(context)),
           ),
-          ruler:
-              amount.portion == ScanPortion.custom && food.unit == 'ml'
-                  ? ScanCupRuler(
-                    ml: amount.custom.round(),
-                    enabled: enabled,
-                    onChanged:
-                        (ml) => onAmount(amount.withCustom(ml.toDouble())),
-                  )
-                  : null,
+          ruler: amount.portion == ScanPortion.custom && food.unit == 'ml'
+              ? ScanCupRuler(
+                  ml: amount.custom.round(),
+                  enabled: enabled,
+                  onChanged: (ml) => onAmount(amount.withCustom(ml.toDouble())),
+                )
+              : null,
         ),
         if (hasOtherNutrients(food)) ...[
           const SizedBox(height: 12),
@@ -111,24 +110,21 @@ class ScanResultBody extends StatelessWidget {
       ScanPortion.serving => ScanPortionChoice(
         value: portion,
         label: 'logging.scan.portionServing'.tr(),
-        detail:
-            unit == 'serving' || food.servingSize == null
-                ? null
-                : formatSize(food.servingSize!, unit),
-        display:
-            unit == 'serving' || food.servingSize == null
-                ? 'logging.scan.portionServing'.tr()
-                : 'logging.scan.perServing'.tr(
-                  namedArgs: {'size': formatSize(food.servingSize!, unit)},
-                ),
+        detail: unit == 'serving' || food.servingSize == null
+            ? null
+            : formatSize(food.servingSize!, unit),
+        display: unit == 'serving' || food.servingSize == null
+            ? 'logging.scan.portionServing'.tr()
+            : 'logging.scan.perServing'.tr(
+                namedArgs: {'size': formatSize(food.servingSize!, unit)},
+              ),
       ),
       ScanPortion.pack => ScanPortionChoice(
         value: portion,
         label: 'logging.scan.portionPack'.tr(),
-        detail:
-            food.packageSize == null || unit == 'serving'
-                ? null
-                : formatSize(food.packageSize!, unit),
+        detail: food.packageSize == null || unit == 'serving'
+            ? null
+            : formatSize(food.packageSize!, unit),
         display: 'logging.scan.portionPack'.tr(),
       ),
       ScanPortion.custom => ScanPortionChoice(
@@ -139,13 +135,16 @@ class ScanResultBody extends StatelessWidget {
     };
   }
 
-  /// "1 serving", "2 packs", or the typed "250 ml".
-  Widget _amountValue() {
-    Widget count(int n, String wordKey) => Text.rich(
+  /// "1 serving", "1/3 serving", "0.5 pack", or the typed "250 ml".
+  Widget _amountValue(String locale) {
+    Widget count(double n, String wordKey) => Text.rich(
       TextSpan(
         children: [
-          TextSpan(text: '$n', style: dashValue()),
-          TextSpan(text: ' ${wordKey.plural(n)}', style: dashMeta()),
+          TextSpan(text: formatServingValue(n, locale), style: dashValue()),
+          TextSpan(
+            text: ' ${wordKey.plural(servingPluralCount(n))}',
+            style: dashMeta(),
+          ),
         ],
       ),
     );
@@ -154,14 +153,14 @@ class ScanResultBody extends StatelessWidget {
       ScanPortion.pack => count(amount.packs, 'logging.scan.packWord'),
       ScanPortion.custom =>
         food.unit == 'serving'
-            ? count(amount.custom.round(), 'logging.scan.servingWord')
+            ? count(amount.custom, 'logging.scan.servingWord')
             : ScanAmountField(
-              amount: amount.custom.round(),
-              unit: food.unit,
-              enabled: enabled,
-              onChanged:
-                  (value) => onAmount(amount.withCustom(value.toDouble())),
-            ),
+                amount: amount.custom.round(),
+                unit: food.unit,
+                enabled: enabled,
+                onChanged: (value) =>
+                    onAmount(amount.withCustom(value.toDouble())),
+              ),
     };
   }
 }

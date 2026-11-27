@@ -20,15 +20,14 @@ void main() {
   const barcodeLog = '/api/v1/barcode/log';
   const labelLog = '/api/v1/nutrition-label/log';
 
-  Object? found(String method, String path, Object? body) =>
-      path == search
-          ? <String, dynamic>{'product': coconutWaterJson}
-          : <String, dynamic>{};
+  Object? found(String method, String path, Object? body) => path == search
+      ? <String, dynamic>{'product': coconutWaterJson}
+      : <String, dynamic>{};
 
   Object? notFound(String method, String path, Object? body) =>
       path.startsWith('/api/v1/barcode/search')
-          ? throw apiError('BARCODE_NOT_FOUND', 404)
-          : <String, dynamic>{};
+      ? throw apiError('BARCODE_NOT_FOUND', 404)
+      : <String, dynamic>{};
 
   Future<ScanHarness> atProduct(
     WidgetTester tester, {
@@ -94,32 +93,58 @@ void main() {
   });
 
   group('portion and amount', () {
-    testWidgets('servings and packs count by one, and scale the kcal', (
-      tester,
-    ) async {
-      await atProduct(tester);
-      await tester.tap(find.bySemanticsLabel('More'));
-      await tester.pumpAndSettle();
-      expect(find.text('2 servings'), findsOneWidget);
-      expect(find.text('32'), findsOneWidget);
+    testWidgets(
+      'servings and packs follow the fractional ladder, and scale kcal',
+      (tester) async {
+        await atProduct(tester);
+        await tester.tap(find.bySemanticsLabel('More'));
+        await tester.pumpAndSettle();
+        expect(find.text('1.5 servings'), findsOneWidget);
+        expect(find.text('24'), findsOneWidget);
+        await tester.tap(find.bySemanticsLabel('More'));
+        await tester.pumpAndSettle();
+        expect(find.text('2 servings'), findsOneWidget);
+        expect(find.text('32'), findsOneWidget);
 
-      await tester.tap(find.text('100 ml / serving'));
-      await tester.pumpAndSettle();
-      expect(find.text('1 L'), findsOneWidget, reason: 'the pack, in the menu');
-      await tester.tap(find.text('Pack'));
-      await tester.pumpAndSettle();
-      expect(find.text('1 pack'), findsOneWidget);
-      expect(find.text('160'), findsOneWidget);
-      expect(
-        find.bySemanticsLabel('Less'),
-        findsOneWidget,
-        reason: 'still there, just disabled at one',
-      );
-    });
+        await tester.tap(find.text('100 ml / serving'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('1 L'),
+          findsOneWidget,
+          reason: 'the pack, in the menu',
+        );
+        await tester.tap(find.text('Pack'));
+        await tester.pumpAndSettle();
+        expect(find.text('1 pack'), findsOneWidget);
+        expect(find.text('160'), findsOneWidget);
+
+        // Step Pack down through the sub-1 ladder.
+        await tester.tap(find.bySemanticsLabel('Less'));
+        await tester.pumpAndSettle();
+        expect(find.text('0.75 pack'), findsOneWidget);
+        expect(find.text('120'), findsOneWidget);
+        await tester.tap(find.bySemanticsLabel('Less'));
+        await tester.pumpAndSettle();
+        expect(find.text('2/3 pack'), findsOneWidget);
+        await tester.tap(find.bySemanticsLabel('Less'));
+        await tester.pumpAndSettle();
+        expect(find.text('0.5 pack'), findsOneWidget);
+        expect(find.text('80'), findsOneWidget);
+        await tester.tap(find.bySemanticsLabel('Less'));
+        await tester.pumpAndSettle();
+        expect(find.text('1/3 pack'), findsOneWidget);
+        await tester.tap(find.bySemanticsLabel('Less'));
+        await tester.pumpAndSettle();
+        expect(find.text('0.25 pack'), findsOneWidget);
+        expect(find.text('40'), findsOneWidget);
+      },
+    );
 
     testWidgets('custom carries the amount on screen, steps by 10 and shows '
         'the cups for a drink', (tester) async {
       await atProduct(tester);
+      await tester.tap(find.bySemanticsLabel('More'));
+      await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel('More'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('100 ml / serving'));
@@ -165,9 +190,8 @@ void main() {
     await tester.tap(find.text('Custom'));
     await tester.pumpAndSettle();
     final answer = Completer<Object?>();
-    h.api.handler =
-        (_, path, _) =>
-            path == barcodeLog ? answer.future : <String, dynamic>{};
+    h.api.handler = (_, path, _) =>
+        path == barcodeLog ? answer.future : <String, dynamic>{};
     await tester.tap(find.text('Add meal'));
     await tester.pump();
 
@@ -189,6 +213,8 @@ void main() {
   group('other nutrients', () {
     testWidgets('opens over the same product and comes back', (tester) async {
       final h = await atProduct(tester);
+      await tester.tap(find.bySemanticsLabel('More'));
+      await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel('More'));
       await tester.pumpAndSettle();
       await h.tapText('Other nutrients');
@@ -216,6 +242,8 @@ void main() {
       final h = await atProduct(tester);
       await tester.tap(find.bySemanticsLabel('More'));
       await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('More'));
+      await tester.pumpAndSettle();
       await h.tapText('Add meal');
 
       final body = h.api.bodiesTo(barcodeLog).single! as Map<String, Object?>;
@@ -231,11 +259,11 @@ void main() {
       final h = await atProduct(tester);
       await tester.tap(find.bySemanticsLabel('More'));
       await tester.pumpAndSettle();
-      h.api.handler =
-          (_, path, _) =>
-              path == barcodeLog
-                  ? throw apiError('INTERNAL', 500)
-                  : <String, dynamic>{};
+      await tester.tap(find.bySemanticsLabel('More'));
+      await tester.pumpAndSettle();
+      h.api.handler = (_, path, _) => path == barcodeLog
+          ? throw apiError('INTERNAL', 500)
+          : <String, dynamic>{};
       await h.tapText('Add meal');
 
       expect(h.closed, isFalse);
@@ -304,6 +332,8 @@ void main() {
 
     testWidgets('keeps the chosen amount through an edit', (tester) async {
       final h = await atProduct(tester);
+      await tester.tap(find.bySemanticsLabel('More'));
+      await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel('More'));
       await tester.pumpAndSettle();
       await h.tapText('Edit');

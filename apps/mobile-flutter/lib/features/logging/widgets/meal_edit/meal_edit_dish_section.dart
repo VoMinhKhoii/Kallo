@@ -65,31 +65,27 @@ class MealEditDishSection extends StatelessWidget {
               label: 'logging.mealEdit.servings'.tr(),
               value: formatTimes(dish.servings, locale),
               minusRemoves: removes,
-              minusLabel:
-                  removes
-                      ? 'logging.mealEdit.removeDish'.tr(namedArgs: named)
-                      : 'logging.mealEdit.lessServing'.tr(namedArgs: named),
+              minusLabel: removes
+                  ? 'logging.mealEdit.removeDish'.tr(namedArgs: named)
+                  : 'logging.mealEdit.lessServing'.tr(namedArgs: named),
               plusLabel: 'logging.mealEdit.moreServing'.tr(namedArgs: named),
-              onMinus:
-                  draft.servingsMinusDisabled(dish)
-                      ? null
-                      : () => onDraft(draft.stepServings(dish.key, -1)),
+              onMinus: draft.servingsMinusDisabled(dish)
+                  ? null
+                  : () => onDraft(draft.stepServings(dish.key, -1)),
               // A dish logged with no grams cannot grow — only come out.
-              onPlus:
-                  dish.scalable
-                      ? () => onDraft(draft.stepServings(dish.key, 1))
-                      : null,
+              onPlus: dish.scalable
+                  ? () => onDraft(draft.stepServings(dish.key, 1))
+                  : null,
             ),
-            if (dish.scalable)
+            if (dish.scalable && dish.unit != 'serving')
               MealEditStepperRow(
                 label: 'logging.mealEdit.amount'.tr(),
                 value: formatAmount(dish.grams, dish.unit, locale),
                 minusLabel: 'logging.mealEdit.lessAmount'.tr(namedArgs: named),
                 plusLabel: 'logging.mealEdit.moreAmount'.tr(namedArgs: named),
-                onMinus:
-                    dish.grams <= dish.floor
-                        ? null
-                        : () => onDraft(draft.stepAmount(dish.key, -1)),
+                onMinus: dish.grams <= dish.floor
+                    ? null
+                    : () => onDraft(draft.stepAmount(dish.key, -1)),
                 onPlus: () => onDraft(draft.stepAmount(dish.key, 1)),
               ),
             if (vessel != null)

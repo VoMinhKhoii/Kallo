@@ -163,6 +163,8 @@ describe('ScanDialog — barcode', () => {
     expect(screen.getByText('Coco Xim')).toBeVisible();
     expect(screen.getByText('100 ml / serving')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getByText('24')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'More' }));
     expect(screen.getByText('32')).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Add meal' }));
@@ -175,6 +177,27 @@ describe('ScanDialog — barcode', () => {
       mealId: expect.any(String),
     });
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('scales a scanned barcode down to sub-1 fractions (0.75, 2/3, 0.5, 1/3, 0.25)', async () => {
+    const { user, onSuccess } = open();
+    await decode();
+    await screen.findByText('Coconut Water');
+
+    const less = screen.getByRole('button', { name: 'Less' });
+    await user.click(less); // 0.75
+    expect(screen.getByText('0.75')).toBeVisible();
+    await user.click(less); // 2/3
+    expect(screen.getByText('2/3')).toBeVisible();
+    await user.click(less); // 0.5
+    expect(screen.getByText('0.5')).toBeVisible();
+    expect(screen.getByText('8')).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Add meal' }));
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledOnce());
+    expect(stageBarcodeMealAction).toHaveBeenCalledWith(
+      expect.objectContaining({ barcode: coconutWater.barcode, grams: 50 })
+    );
   });
 
   it('closing the result goes back to a live camera', async () => {
@@ -274,6 +297,7 @@ describe('ScanDialog — barcode', () => {
     const { user } = open();
     await decode();
     await screen.findByText('Coconut Water');
+    await user.click(screen.getByRole('button', { name: 'More' }));
     await user.click(screen.getByRole('button', { name: 'More' }));
     await user.click(screen.getByRole('button', { name: 'Edit' }));
     const calories = screen.getByRole('textbox', { name: 'Calories' });

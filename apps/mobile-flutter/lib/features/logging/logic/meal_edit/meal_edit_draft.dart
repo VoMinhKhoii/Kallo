@@ -11,12 +11,18 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../models/nutrition/vessel.dart';
 import '../meal_utils.dart';
+import '../serving_ladder.dart';
 
-/// Servings move in halves: "1×", "1.5×", "2×".
-const double servingStep = 0.5;
+/// Step size from 1× upward ("1×", "1.5×", "2×"); sub-1× follows the serving
+/// ladder (`0.25`, `1/3`, `0.5`, `2/3`, `0.75`).
+const double servingStep = servingStepAboveOne;
 
 /// Amount moves in tens, the same step the old steppers used.
 const double amountStep = 10;
+
+/// Lowest positive weight/count a scaled dish can drop to (never 0, which the
+/// update endpoint rejects).
+const double minEditGrams = 0.01;
 
 /// What one part of a dish contributes, at the grams it was logged at.
 ///
@@ -75,16 +81,17 @@ class EditDish {
   final String key;
   final String name;
 
-  /// 'g' or 'ml'.
+  /// 'g', 'ml', or 'serving'.
   final String unit;
   final List<EditPart> parts;
 
-  /// The dish's grams now — what the sheet shows and what is saved.
+  /// The dish's grams (or serving count when [unit] is `'serving'`) now — what
+  /// the sheet shows and what is saved.
   final double grams;
 
-  /// The amount the Whole meal multiplier asked for, before the [floor]. It is
-  /// kept apart from [grams] so taking the whole meal down and back up returns
-  /// a dish that hit the floor to exactly where it started.
+  /// The amount the Whole meal multiplier asked for, before clamping to
+  /// [minEditGrams]. Kept apart from [grams] so taking the whole meal down and
+  /// back up returns a dish that hit the floor to where it started.
   final double target;
 
   /// The vessel the pipeline pictured it in — unsaved dishes only.
@@ -100,15 +107,18 @@ class EditDish {
   /// How much of the logged amount this is: 1 as logged, 2 for double.
   double get servings => scalable ? grams / originalGrams : 1;
 
-  /// The least this dish can be stepped down to: [minDishGrams], or what it
-  /// was logged at when that is less. A 5 g pat of butter stays 5 g until the
-  /// user moves it — opening the sheet never rewrites a saved amount.
+  /// The least the ±10 g/ml Amount stepper (and Size ruler) can step this dish
+  /// down to: [minDishGrams], or what it was logged at when that is less. A 5 g
+  /// pat of butter stays 5 g on Amount minus — Servings and Whole meal can
+  /// still scale it down along the fractional ladder.
   double get floor =>
       originalGrams < minDishGrams ? originalGrams : minDishGrams;
 
   /// True when no step down is left: the next minus would remove the dish.
   bool get atBottom =>
-      !scalable || servings <= servingStep + _eps || grams <= floor + _eps;
+      !scalable ||
+      servings <= minServingMultiplier + _eps ||
+      grams <= minEditGrams + _eps;
 
   EditTotals get totals => sumTotals([this]);
 
@@ -122,16 +132,17 @@ class EditDish {
     vessel: vessel,
   );
 
-  /// A user's own adjustment, held at the [floor].
+  /// A user's own adjustment, kept strictly positive.
   EditDish withGrams(double next) {
-    final g = next < floor ? floor : next;
+    final g = next < minEditGrams ? minEditGrams : next;
     return _copy(grams: g, target: g);
   }
 
-  /// The Whole meal multiplier: scales the [target], then floors the grams.
+  /// The Whole meal multiplier: scales the [target], clamped only at
+  /// [minEditGrams] so small or per-serving dishes still scale down.
   EditDish scaledBy(double factor) {
     final t = target * factor;
-    return _copy(grams: t < floor ? floor : t, target: t);
+    return _copy(grams: t < minEditGrams ? minEditGrams : t, target: t);
   }
 
   /// This dish at exactly [g] — for computing what a committed amount is
@@ -208,7 +219,8 @@ class MealEditDraft {
   MealEditDraft _map(String key, EditDish Function(EditDish) fn) =>
       _with([for (final d in dishes) d.key == key ? fn(d) : d]);
 
-  /// Up or down to the next whole half serving: 1.2× goes to 1.5× or 1×.
+  /// Up or down to the next rung on the serving ladder (`0.25, 1/3, 0.5, 2/3,
+  /// 0.75, 1, 1.5, 2, ...`).
   MealEditDraft stepServings(String key, int direction) {
     final d = dish(key);
     if (d == null) return this;
@@ -216,28 +228,25 @@ class MealEditDraft {
     if (!d.scalable || (direction < 0 && servingsMinusDisabled(d))) {
       return this;
     }
-    final steps = d.servings / servingStep;
-    final next =
-        direction > 0
-            ? ((steps + _eps).floorToDouble() + 1) * servingStep
-            : ((steps - _eps).ceilToDouble() - 1) * servingStep;
+    final next = stepServingMultiplier(d.servings, direction);
     return _map(key, (d) => d.withGrams(d.originalGrams * next));
   }
 
-  /// Ten grams either way, from the rounded figure the row shows.
-  MealEditDraft stepAmount(String key, int direction) => _map(
-    key,
-    (d) => d.withGrams(d.grams.roundToDouble() + direction * amountStep),
-  );
+  /// Ten grams either way, from the rounded figure the row shows, held at
+  /// [EditDish.floor].
+  MealEditDraft stepAmount(String key, int direction) => _map(key, (d) {
+    final next = d.grams.roundToDouble() + direction * amountStep;
+    return d.withGrams(next < d.floor ? d.floor : next);
+  });
 
-  /// Exact grams, from the Size ruler.
+  /// Exact grams, from the Size ruler, held at [EditDish.floor].
   MealEditDraft setGrams(String key, double grams) =>
-      _map(key, (d) => d.withGrams(grams));
+      _map(key, (d) => d.withGrams(grams < d.floor ? d.floor : grams));
 
-  /// Every dish by the same factor, half a meal at a time.
+  /// Every dish by the same factor, stepping along the serving ladder.
   MealEditDraft stepWhole(int direction) {
-    final next = whole + direction * servingStep;
-    if (next < servingStep) return this;
+    final next = stepServingMultiplier(whole, direction);
+    if ((next - whole).abs() < _eps) return this;
     final factor = next / whole;
     return _with([
       for (final d in dishes) d.scalable ? d.scaledBy(factor) : d,
