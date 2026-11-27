@@ -6,3 +6,6 @@
 // was already frozen at `next build`. Prod is the canonical origin even on
 // non-prod (which is never indexed). Change this line at the full brand rename.
 export const SITE_URL = 'https://kallo.fit';
+
+/** The pricing page, without the locale: `/en/pricing`, `/vi/pricing`. */
+export const PRICING_PATH = '/pricing';

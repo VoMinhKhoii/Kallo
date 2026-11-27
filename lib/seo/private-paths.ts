@@ -1,9 +1,3 @@
-import { ALTERNATIVES_PREFIX } from '@/lib/seo/alternatives/slugs';
-import { COMPARE_PREFIX } from '@/lib/seo/compare/slugs';
-import { FOOD_PAGE_PREFIX } from '@/lib/seo/food-pages/slugs';
-import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
-import { TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
-
 /**
  * The authenticated app surfaces, as locale-relative path prefixes — every
  * route under `app/[locale]/(app)/`.
@@ -32,17 +26,15 @@ export const ROBOTS_DISALLOWED_PREFIXES = PRIVATE_PATH_PREFIXES;
  * Public, non-markdown pages that exist under a locale prefix.
  *
  * Negotiation must not answer these with a markdown 404 — they are real pages,
- * they just have no markdown representation.
+ * they just have no markdown representation. The food, calculator, data,
+ * comparison and alternatives pages are not here: they have one
+ * (`lib/seo/markdown/site-pages.ts`), so a mistyped URL under them gets the
+ * markdown 404 like a mistyped docs URL.
  */
 export const PUBLIC_NON_MARKDOWN_PREFIXES = [
   '/invite',
   '/reset-password',
   '/design-system',
-  FOOD_PAGE_PREFIX,
-  MEAL_DATA_PATH,
-  TOOLS_PREFIX,
-  ALTERNATIVES_PREFIX,
-  COMPARE_PREFIX,
 ] as const;
 
 /** True when `path` is one of `prefixes` or sits under one of them. */

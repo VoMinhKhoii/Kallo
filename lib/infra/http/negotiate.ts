@@ -16,7 +16,9 @@ import {
   foodPageKey,
   isFoodLocale,
 } from '@/lib/seo/food-pages/slugs';
+import { MEAL_DATA_PATH } from '@/lib/seo/meal-data/path';
 import { isKnownNonMarkdownPath } from '@/lib/seo/private-paths';
+import { PRICING_PATH } from '@/lib/seo/site';
 import { isToolSlug, TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
 
 /**
@@ -62,6 +64,34 @@ function docSlug(rest: string): string | null {
   return isKnownDocSlug(slug) ? slug : null;
 }
 
+/** The slug after `prefix/`, or null when `rest` is not one level under it. */
+function childOf(rest: string, prefix: string): string | null {
+  return rest.startsWith(`${prefix}/`) ? rest.slice(prefix.length + 1) : null;
+}
+
+/**
+ * True when `rest` is one of the public pages outside the docs with a Markdown
+ * form (`lib/seo/markdown/site-pages.ts` renders them). Slug lists only, so the
+ * proxy never loads the pages' copy.
+ */
+function isSiteMarkdownPage(locale: string, rest: string): boolean {
+  if (rest === PRICING_PATH || rest === TOOLS_PREFIX) return true;
+  const tool = childOf(rest, TOOLS_PREFIX);
+  if (tool !== null) return isToolSlug(tool);
+  if (isFoodLocale(locale)) {
+    if (rest === FOOD_PAGE_PREFIX || rest === MEAL_DATA_PATH) return true;
+    const food = childOf(rest, FOOD_PAGE_PREFIX);
+    if (food !== null) return foodPageKey(locale, food) !== null;
+  }
+  const pair = childOf(rest, COMPARE_PREFIX);
+  if (pair !== null) return locale === COMPARE_LOCALE && isCompareSlug(pair);
+  const app = childOf(rest, ALTERNATIVES_PREFIX);
+  if (app !== null) {
+    return locale === ALTERNATIVES_LOCALE && isAlternativeSlug(app);
+  }
+  return false;
+}
+
 /**
  * The markdown route for a locale-relative path, or null when that path has no
  * markdown representation.
@@ -69,7 +99,10 @@ function docSlug(rest: string): string | null {
 function markdownTarget(locale: string, rest: string): string | null {
   if (rest === '') return `${MD_ROOT}/${locale}/index`;
   const slug = docSlug(rest);
-  return slug ? `${MD_ROOT}/${locale}/docs/${slug}` : null;
+  if (slug) return `${MD_ROOT}/${locale}/docs/${slug}`;
+  return isSiteMarkdownPage(locale, rest)
+    ? `${MD_ROOT}/${locale}${rest}`
+    : null;
 }
 
 function notFoundTarget(locale: string): string {

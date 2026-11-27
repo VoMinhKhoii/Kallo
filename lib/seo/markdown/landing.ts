@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/i18n/config';
 import { SITE_URL } from '@/lib/seo/site';
+import { pricingLines } from './pricing';
 
 /**
  * The `text/markdown` representation of the landing page.
@@ -49,18 +50,11 @@ export async function renderLandingMarkdown(locale: Locale): Promise<string> {
     lines.push(`- **${t(`understanding.categories.${key}.title`)}**`);
   }
 
-  lines.push('', `## ${t('pricing.title')}`, '');
   lines.push(
-    `- **${t('pricing.plans.free.name')}** (${t('pricing.plans.free.price')}) — ${t('pricing.plans.free.tagline')}. ${t('pricing.plans.free.fineprint')}`,
-    `- **${t('pricing.plans.premium.name')}** (${t('pricing.plans.premium.priceMonthly')}/mo, or ${t('pricing.plans.premium.priceYearly')}/mo billed yearly) — ${t('pricing.plans.premium.tagline')}. ${t(
-      'pricing.plans.premium.fineprintYearlyNoIntro',
-      { price: t('pricing.plans.premium.billedYearly') }
-    )}`,
-    `- **${t('pricing.plans.lifetime.name')}** (${t('pricing.plans.lifetime.price')}) — ${t('pricing.plans.lifetime.tagline')}. ${t('pricing.plans.lifetime.fineprint')}`,
     '',
-    t('pricing.offerNote'),
+    `## ${t('pricing.title')}`,
     '',
-    `Full plan comparison: [${base}/docs/account/premium](${base}/docs/account/premium)`,
+    ...(await pricingLines(locale)),
     '',
     '## Where to go next',
     '',
