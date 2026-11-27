@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.RemoteViews
 import fit.kallo.app.R
 import java.util.Calendar
@@ -80,14 +81,38 @@ class TodayWidgetProvider : AppWidgetProvider() {
       val renderer = TodayWidgetRenderer(context)
       val theme = theme(context, now)
       val description = describe(snapshot?.shownOn(TodaySnapshotStore.dayKey(now)))
-      fun card(size: Pair<Int, Int>) = RemoteViews(context.packageName, R.layout.today_widget).apply {
-        val bitmap = renderer.render(snapshot, now, size.first.toDouble(), size.second.toDouble(), theme)
+      fun card(size: Pair<Int, Int>, scale: Float) = RemoteViews(context.packageName, R.layout.today_widget).apply {
+        val bitmap = renderer.render(snapshot, now, size.first.toDouble(), size.second.toDouble(), theme, scale)
         setImageViewBitmap(R.id.today_widget_card, bitmap)
         setContentDescription(R.id.today_widget_card, description)
         setOnClickPendingIntent(R.id.today_widget_card, openToday(context))
       }
-      val views = if (landscape == portrait) card(portrait) else RemoteViews(card(landscape), card(portrait))
-      manager.updateAppWidget(id, views)
+      val sizes = if (landscape == portrait) listOf(portrait) else listOf(landscape, portrait)
+      val scale = scaleWithinBudget(context, sizes)
+      val views = if (sizes.size == 1) card(portrait, scale) else RemoteViews(card(landscape, scale), card(portrait, scale))
+      try {
+        manager.updateAppWidget(id, views)
+      } catch (tooBig: IllegalArgumentException) {
+        // The launcher refused the bitmaps after all (its budget is computed
+        // from a display this one may not be): the portrait card alone, at
+        // half the scale, rather than a receiver that throws on every update.
+        Log.w("TodayWidget", "widget bitmaps refused; redrawing smaller", tooBig)
+        manager.updateAppWidget(id, card(portrait, scale / 2))
+      }
+    }
+
+    /**
+     * Pixels per dp for this widget's cards: the screen density, or less when
+     * the cards together would pass half the bitmap memory the system allows a
+     * widget update (1.5 × the screen's own ARGB size), which a large card in
+     * both orientations can on a small phone or a foldable's cover screen.
+     */
+    private fun scaleWithinBudget(context: Context, sizesDp: List<Pair<Int, Int>>): Float {
+      val metrics = context.resources.displayMetrics
+      val budget = 0.5 * 1.5 * 4.0 * metrics.widthPixels * metrics.heightPixels
+      val perScale2 = 4.0 * sizesDp.sumOf { (w, h) -> w.toDouble() * h }
+      val fit = kotlin.math.sqrt(budget / perScale2).toFloat()
+      return minOf(metrics.density, fit)
     }
 
     private fun theme(context: Context, now: Long): WidgetTheme {

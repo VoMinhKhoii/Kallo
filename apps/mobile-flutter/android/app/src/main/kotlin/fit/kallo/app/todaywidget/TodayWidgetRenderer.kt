@@ -16,6 +16,7 @@ import fit.kallo.app.todaywidget.gauge.GaugeReadout
 import fit.kallo.app.todaywidget.gauge.Macro
 import fit.kallo.app.todaywidget.gauge.calorieDial
 import fit.kallo.app.todaywidget.meals.MealList
+import kotlin.math.floor
 
 /** The three looks the iOS widget has, picked here from the size the launcher gives. */
 enum class Family { SMALL, MEDIUM, LARGE }
@@ -33,22 +34,27 @@ enum class Family { SMALL, MEDIUM, LARGE }
 class TodayWidgetRenderer(private val context: Context) {
   private val type = WidgetType.of(context)
 
+  /**
+   * The card at [widthDp] × [heightDp], drawn at [scale] pixels per dp: the
+   * screen density, or less when the provider must keep its bitmaps inside
+   * the launcher's memory budget.
+   */
   fun render(
     snapshot: TodaySnapshot?,
     now: Long,
     widthDp: Double,
     heightDp: Double,
     theme: WidgetTheme,
+    scale: Float,
   ): Bitmap {
-    val density = context.resources.displayMetrics.density
     val bitmap = Bitmap.createBitmap(
-      maxOf(1, (widthDp * density).toInt()), maxOf(1, (heightDp * density).toInt()),
+      maxOf(1, (widthDp * scale).toInt()), maxOf(1, (heightDp * scale).toInt()),
       Bitmap.Config.ARGB_8888,
     )
     val canvas = Canvas(bitmap)
-    canvas.scale(density, density)
+    canvas.scale(scale, scale)
     // The card's own corners, so every launcher shows the same rounded card.
-    val corner = cornerRadiusDp(density)
+    val corner = cornerRadiusDp()
     canvas.clipPath(Path().apply {
       addRoundRect(RectF(0f, 0f, widthDp.toFloat(), heightDp.toFloat()), corner, corner, Path.Direction.CW)
     })
@@ -70,29 +76,26 @@ class TodayWidgetRenderer(private val context: Context) {
     val rowBox = if (family == Family.LARGE) minOf(h, MEDIUM_HEIGHT) else h
     val fullRadius =
       GaugeReadout.calorieRadius(rowBox - 2 * MARGIN - DATE_LINE_BOX - DATE_GAP, CALORIE_RADIUS_CAP)
-    // Launchers vary in width far more than iPhones do (any width from 2 to 5
-    // cells), so whatever is drawn gives up calorie radius until it fits across.
+    // Launchers vary far more than iPhones do (2 to 5 cells across, rows of
+    // any height, landscape), so the layout is searched, not assumed: the
+    // largest calorie radius whose drawing fits the box across AND down.
+    val radii = generateSequence(fullRadius) { it - 1 }.takeWhile { it >= MIN_RADIUS }
+    val signInBelow = family != Family.LARGE
     if (family != Family.SMALL) {
-      var radius = fullRadius
-      var row = dialRow(radius, day, theme, family)
-      while (row.minWidth > inner && radius > MIN_RADIUS) {
-        radius -= 1
-        row = dialRow(radius, day, theme, family)
-      }
-      if (row.minWidth <= inner) {
+      val row = radii.map { dialRow(it, day, theme, signInBelow) }
+        .firstOrNull { it.minWidth <= inner && top + it.height <= rowBox - MARGIN }
+      if (row != null) {
         row.draw(canvas, left, top, inner)
         if (family == Family.LARGE) drawMeals(canvas, day, theme, top + row.height + MEALS_GAP, inner, h)
         return
       }
-      // Too narrow for four dials even at their smallest (a 3-cell widget in
-      // Vietnamese): the calorie dial alone, as the small card draws it.
+      // No radius fits four dials (a 3-cell widget in Vietnamese, a short
+      // landscape row): the calorie dial alone, as the small card draws it.
     }
-    var radius = fullRadius
-    var dial = calorieDial(radius, day, theme, type, signInBelow = family != Family.LARGE)
-    while (dial.width > inner && radius > MIN_RADIUS) {
-      radius -= 1
-      dial = calorieDial(radius, day, theme, type, signInBelow = family != Family.LARGE)
-    }
+    // A line no radius can narrow enough (a long signed-out sentence on a
+    // 2-cell card) keeps the arc as large as fits and is ellipsized.
+    val dial = radii.map { calorieDial(it, day, theme, type, signInBelow) }.firstOrNull { it.width <= inner }
+      ?: calorieDial(minOf(fullRadius, maxOf(MIN_RADIUS, floor(inner / 2))), day, theme, type, signInBelow, inner)
     dial.draw(canvas, left + (inner - dial.width) / 2, top)
     if (family == Family.LARGE) drawMeals(canvas, day, theme, top + dial.height + MEALS_GAP, inner, h)
   }
@@ -112,8 +115,8 @@ class TodayWidgetRenderer(private val context: Context) {
     }
   }
 
-  private fun dialRow(radius: Double, day: TodaySnapshot, theme: WidgetTheme, family: Family) =
-    DialRow(radius, day, theme, type, ::glyph, signInBelow = family != Family.LARGE)
+  private fun dialRow(radius: Double, day: TodaySnapshot, theme: WidgetTheme, signInBelow: Boolean) =
+    DialRow(radius, day, theme, type, ::glyph, signInBelow)
 
   private fun glyph(macro: Macro): Drawable {
     val id = when (macro) {
@@ -125,9 +128,10 @@ class TodayWidgetRenderer(private val context: Context) {
   }
 
   /** The system's widget corner on Android 12+, the platform's 16 before it. */
-  private fun cornerRadiusDp(density: Float): Float =
+  private fun cornerRadiusDp(): Float =
     if (android.os.Build.VERSION.SDK_INT >= 31) {
-      context.resources.getDimension(android.R.dimen.system_app_widget_background_radius) / density
+      context.resources.getDimension(android.R.dimen.system_app_widget_background_radius) /
+        context.resources.displayMetrics.density
     } else {
       16f
     }

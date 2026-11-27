@@ -12,6 +12,8 @@ import fit.kallo.app.todaywidget.draw.width
  *
  * [signInBelow]: signed out, "Sign in to track" goes under the dial. False on
  * the large widget, which says it in its empty meal area instead.
+ * [maxLineWidth]: a line wider than this is ellipsized (a card too narrow for
+ * a sentence at any radius).
  */
 fun calorieDial(
   radius: Double,
@@ -19,6 +21,7 @@ fun calorieDial(
   theme: WidgetTheme,
   type: WidgetType,
   signInBelow: Boolean = true,
+  maxLineWidth: Double = Double.MAX_VALUE,
 ): GaugeDial {
   val m = GaugeReadout.calorieLines(radius)
   val unitPaint = type.paint(type.regular, m[1].size, theme.ink)
@@ -46,6 +49,7 @@ fun calorieDial(
         type.paint(type.regular, m[2].size, if (wording.isOver) theme.offTarget else theme.muted),
       ),
     ),
+    maxLineWidth = maxLineWidth,
   )
 }
 

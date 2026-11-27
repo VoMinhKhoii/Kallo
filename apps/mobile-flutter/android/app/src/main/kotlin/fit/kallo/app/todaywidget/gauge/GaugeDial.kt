@@ -4,11 +4,17 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PointF
 import android.text.TextPaint
+import android.text.TextUtils
 import fit.kallo.app.todaywidget.draw.drawLineCentred
 import fit.kallo.app.todaywidget.draw.width
 
 /** One readout line: its words, its size and line box, and the paint it sets in. */
-class DialLine(val text: String, val metrics: GaugeReadout.Line, val paint: TextPaint)
+class DialLine(val text: String, val metrics: GaugeReadout.Line, val paint: TextPaint) {
+  /** [text], cut with an ellipsis to fit [maxWidth] dp. */
+  fun fitted(maxWidth: Double): DialLine =
+    if (paint.width(text) <= maxWidth) this
+    else DialLine(TextUtils.ellipsize(text, paint, maxWidth.toFloat(), TextUtils.TruncateAt.END).toString(), metrics, paint)
+}
 
 /**
  * A dial: the 240° arc with its readout nested in the mouth, the second line
@@ -16,7 +22,8 @@ class DialLine(val text: String, val metrics: GaugeReadout.Line, val paint: Text
  * on the web).
  *
  * The READOUT sizes the box and the arc is painted behind it: a line is never
- * narrower for being cramped, only the box can give.
+ * narrower for being cramped, only the box can give, until the box reaches
+ * the card's width ([maxLineWidth]); then the line is ellipsized.
  */
 class GaugeDial(
   private val radius: Double,
@@ -24,12 +31,18 @@ class GaugeDial(
   private val fill: Int,
   private val track: Int,
   private val overFill: Int,
-  private val lines: List<DialLine>,
+  lines: List<DialLine>,
+  /** No line is drawn wider than this; a wider one is ellipsized. */
+  maxLineWidth: Double = Double.MAX_VALUE,
 ) {
-  private val layout = GaugeReadout.layout(radius, lines.map { it.metrics })
+  // Named apart from the parameter: in initializers a bare `lines` is the
+  // parameter, which would measure the uncut text.
+  private val fitted = lines.map { it.fitted(maxLineWidth) }
+
+  private val layout = GaugeReadout.layout(radius, fitted.map { it.metrics })
 
   /** The arc's width, or the widest line's when a line is wider. */
-  val width: Double = maxOf(radius * 2, lines.maxOf { it.paint.width(it.text) })
+  val width: Double = maxOf(radius * 2, fitted.maxOf { it.paint.width(it.text) })
   val height: Double = layout.height
 
   /** Draws the dial with its box's top-left corner at ([left], [top]). */
@@ -43,7 +56,7 @@ class GaugeDial(
     canvas.drawPath(GaugeGeometry.overCap(centre, radius, progress), paint.apply { color = overFill })
 
     var y = top + layout.readoutTop
-    for (line in lines) {
+    for (line in fitted) {
       canvas.drawLineCentred(line.text, line.paint, centreX, y, line.metrics.height)
       y += line.metrics.height + GaugeReadout.LINE_GAP
     }
