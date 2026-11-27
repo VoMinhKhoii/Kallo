@@ -201,6 +201,82 @@ describe('fetch', () => {
   });
 });
 
+describe('fetch: crawler copies of public pages', () => {
+  const GPTBOT =
+    'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; GPTBot/1.2; +https://openai.com/gptbot';
+  const SAFARI =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
+
+  const sent = () =>
+    upstream.mock.calls[0] as unknown as [
+      Request,
+      (RequestInit & { cf?: Record<string, unknown> }) | undefined,
+    ];
+
+  it('fetches a crawler page through the cache, under its own address', async () => {
+    await worker.fetch(
+      request('/vi/calories/mi-goi', { headers: { 'User-Agent': GPTBOT } }),
+      makeEnv()
+    );
+
+    const [req, init] = sent();
+    expect(req.url).toBe(`https://${ORIGIN}/vi/calories/mi-goi?_edge=crawler`);
+    expect(req.headers.get('X-Origin-Verify')).toBe('origin-secret');
+    expect(init?.cf).toEqual({
+      cacheEverything: true,
+      cacheTtlByStatus: { '200-299': 86_400, '300-599': -1 },
+    });
+  });
+
+  it.each([
+    ['a browser', '/en/calories/pho', { 'User-Agent': SAFARI }],
+    ['a crawler on the landing page', '/en', { 'User-Agent': GPTBOT }],
+    ['a crawler on pricing', '/en/pricing', { 'User-Agent': GPTBOT }],
+    [
+      'a crawler with a cookie',
+      '/en/calories/pho',
+      { 'User-Agent': GPTBOT, Cookie: 'sb-access-token=x' },
+    ],
+    [
+      'a client-side navigation',
+      '/en/docs/overview',
+      { 'User-Agent': GPTBOT, RSC: '1' },
+    ],
+    ['an API call', '/api/v1/foods', { 'User-Agent': GPTBOT }],
+  ])('sends %s straight to the origin', async (_name, path, headers) => {
+    await worker.fetch(request(path, { headers }), makeEnv());
+
+    const [req, init] = sent();
+    expect(new URL(req.url).search).toBe('');
+    expect(init).toBeUndefined();
+  });
+
+  it('leaves a query string alone, so no variant gets cached', async () => {
+    await worker.fetch(
+      request('/en/calories/pho?utm_source=x', {
+        headers: { 'User-Agent': GPTBOT },
+      }),
+      makeEnv()
+    );
+
+    const [req, init] = sent();
+    expect(req.url).toBe(`https://${ORIGIN}/en/calories/pho?utm_source=x`);
+    expect(init).toBeUndefined();
+  });
+
+  it('only caches reads', async () => {
+    await worker.fetch(
+      request('/en/calories/pho', {
+        method: 'POST',
+        headers: { 'User-Agent': GPTBOT },
+      }),
+      makeEnv()
+    );
+
+    expect(sent()[1]).toBeUndefined();
+  });
+});
+
 describe('scheduled: the meal-reminder tick', () => {
   const event = { cron: '*/15 * * * *', scheduledTime: 0 };
 
