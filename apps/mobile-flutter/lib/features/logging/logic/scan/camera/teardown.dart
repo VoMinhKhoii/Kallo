@@ -21,11 +21,17 @@ abstract final class ScanCameraReleases {
   static Future<void>? _pending;
 
   /// Capped: a release that never finishes (a plugin that never answers)
-  /// must not leave every later scan screen without a camera.
+  /// must not leave every later scan screen without a camera. It costs the
+  /// wait once: after it, that release is no longer waited for.
   static Future<void> get settled async {
     final pending = _pending;
     if (pending == null) return;
-    await pending.timeout(const Duration(seconds: 2), onTimeout: () {});
+    await pending.timeout(
+      const Duration(seconds: 2),
+      onTimeout: () {
+        if (identical(_pending, pending)) _pending = null;
+      },
+    );
   }
 
   /// A test's releases run in its own fake clock and never finish once it
