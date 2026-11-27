@@ -36,6 +36,14 @@ class _LogRoute extends PageRoute<void>
   /// changes (a fold, a rotation).
   bool _besideColumn = false;
 
+  /// The route under this one, the tab shell. Every way into Log pushes it
+  /// over a tab (`openLogging`); a bare `go('/logging')` leaves none.
+  Route<dynamic>? _below;
+
+  /// Whether the column beside this page is the shell's to paint. With no
+  /// shell underneath, an open column would show the window's black.
+  bool get _overShell => _besideColumn && _below != null;
+
   @override
   Widget buildContent(BuildContext context) => (settings as LogPage).child;
 
@@ -45,7 +53,7 @@ class _LogRoute extends PageRoute<void>
   /// Beside the column the shell has to keep painting under this page, or
   /// the column would be empty.
   @override
-  bool get opaque => !_besideColumn;
+  bool get opaque => !_overShell;
 
   /// Beside the column the shell stays put while Log slides in, as a tab
   /// switch leaves the capsule standing.
@@ -57,7 +65,7 @@ class _LogRoute extends PageRoute<void>
   /// page itself still takes every tap on it: `Screen` is an opaque target.
   @override
   Widget buildModalBarrier() =>
-      _besideColumn ? const IgnorePointer() : super.buildModalBarrier();
+      _overShell ? const IgnorePointer() : super.buildModalBarrier();
 
   /// Log pages standing over the shell. A set, not a flag: a page still
   /// leaving must not clear the mark for the next one already pushed.
@@ -87,13 +95,19 @@ class _LogRoute extends PageRoute<void>
     super.dispose();
   }
 
-  /// The route under this one, the tab shell.
-  Route<dynamic>? _below;
-
   @override
   void didChangePrevious(Route<dynamic>? previousRoute) {
     super.didChangePrevious(previousRoute);
+    final had = _below != null;
     _below = previousRoute;
+    if (had == (previousRoute != null)) return;
+    // The navigator may be mid-build here, and an overlay entry cannot
+    // change during one.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!isActive) return;
+      if (animation!.isCompleted) overlayEntries.first.opaque = opaque;
+      changedInternalState();
+    });
   }
 
   void _sync(bool besideColumn) {
@@ -118,11 +132,12 @@ class _LogRoute extends PageRoute<void>
     Animation<double> secondaryAnimation,
   ) {
     final column = WindowLayout.of(context).hasControlColumn;
+    final shown = column && _below != null;
     return _ColumnSync(
       besideColumn: column,
       onChanged: _sync,
       child: NavColumnShadow(
-        show: column,
+        show: shown,
         child: super.buildPage(context, animation, secondaryAnimation),
       ),
     );
@@ -140,7 +155,7 @@ class _LogRoute extends PageRoute<void>
     final layout = WindowLayout.of(context);
     return ClipRect(
       clipper: OutsideColumn(layout),
-      clipBehavior: layout.hasControlColumn ? Clip.hardEdge : Clip.none,
+      clipBehavior: _overShell ? Clip.hardEdge : Clip.none,
       child: super.buildTransitions(
         context,
         animation,

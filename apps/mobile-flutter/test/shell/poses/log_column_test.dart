@@ -305,6 +305,21 @@ void main() {
     await dispose();
   });
 
+  testWidgets('Log with no tab under it covers the column instead of leaving '
+      'it open', (tester) async {
+    final dispose = await bootPose(tester, outerPortrait, '/dashboard');
+    // Not how the app opens Log (see `openLogging`), but a bare `go` must
+    // not leave an open column with nothing behind it.
+    GoRouter.of(tester.element(find.byType(DashboardScreen))).go('/logging');
+    await settlePose(tester);
+    expect(find.byType(LoggingScreen), findsOneWidget);
+    expect(find.byType(PillNavCapsule), findsNothing);
+    final route = ModalRoute.of(tester.element(find.byType(LoggingScreen)))!;
+    expect(route.opaque, isTrue);
+    expect(tester.takeException(), isNull);
+    await dispose();
+  });
+
   for (final from in [innerPortrait, phone]) {
     testWidgets('a window that gains its column with Log open shows the '
         'capsule in it (from ${from.name})', (tester) async {

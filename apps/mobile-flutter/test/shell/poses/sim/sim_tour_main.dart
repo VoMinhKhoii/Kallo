@@ -31,6 +31,7 @@ import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_prov
 import 'package:kallo_mobile/router.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/shell/kallo_app_theme.dart';
+import 'package:kallo_mobile/shell/nav/nav_actions.dart';
 
 import '../harness/fixture_api.dart';
 import '../harness/fixtures.dart';
@@ -102,10 +103,16 @@ Future<void> main() async {
   // router is where the script wants it.
   var tries = 0;
   Timer.periodic(const Duration(milliseconds: 300), (timer) {
-    final path = router.routeInformationProvider.value.uri.path;
+    final shown = router.routeInformationProvider.value.uri.path;
+    // Log is reached the way the app reaches it: pushed over the tab shell,
+    // so its column shows the shell's capsule. A push does not move the
+    // reported URL; the top route's location does.
+    final log = route == '/logging';
+    final path = log && shown != '/' ? router.state.matchedLocation : shown;
     _note('DUO_ROUTE wanted=$route at=$path try=$tries');
     if (path == route || ++tries > 20) return timer.cancel();
-    if (path != '/') router.go(route);
+    if (shown == '/') return;
+    log ? openLogging(router) : router.go(route);
   });
 }
 
