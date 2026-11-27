@@ -1,0 +1,146 @@
+package fit.kallo.app.todaywidget
+
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.net.Uri
+import android.os.Bundle
+import android.widget.RemoteViews
+import fit.kallo.app.R
+import java.util.Calendar
+
+/**
+ * Kallo's home-screen "Today" widget on Android: the iOS widget's three sizes,
+ * drawn the same way. Docs: `apps/docs/mobile/today-widget.md`.
+ *
+ * The app writes the day (`lib/features/today_widget/`) through `home_widget`,
+ * which saves the JSON and broadcasts an update to this class by its full name
+ * (`kTodayWidgetAndroidProvider` in Dart). This side only reads and draws.
+ */
+class TodayWidgetProvider : AppWidgetProvider() {
+  override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
+    for (id in ids) draw(context, manager, id)
+    scheduleNextBoundary(context)
+  }
+
+  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) {
+    draw(context, manager, id)
+  }
+
+  override fun onReceive(context: Context, intent: Intent) {
+    when (intent.action) {
+      // A theme switch or midnight, or the phone's clock or zone moved under us.
+      ACTION_BOUNDARY, Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED,
+      Intent.ACTION_LOCALE_CHANGED -> redrawAll(context)
+      else -> super.onReceive(context, intent)
+    }
+  }
+
+  override fun onDisabled(context: Context) {
+    alarms(context).cancel(boundaryIntent(context))
+  }
+
+  companion object {
+    private const val ACTION_BOUNDARY = "fit.kallo.app.todaywidget.BOUNDARY"
+
+    /** Debug builds only: force a theme for screenshots, as the iOS widget's `today.debugTheme`. */
+    private const val DEBUG_THEME_KEY = "today.debugTheme"
+
+    /** The widget's tap target: `isTodayWidgetLink` in Dart routes it to Today. */
+    const val LINK = "nham://today"
+
+    private fun redrawAll(context: Context) {
+      val manager = AppWidgetManager.getInstance(context)
+      val ids = manager.getAppWidgetIds(ComponentName(context, TodayWidgetProvider::class.java))
+      for (id in ids) draw(context, manager, id)
+      if (ids.isNotEmpty()) scheduleNextBoundary(context)
+    }
+
+    private fun draw(context: Context, manager: AppWidgetManager, id: Int) {
+      val options = manager.getAppWidgetOptions(id)
+      // Portrait: the launcher's narrowest width and its tallest height.
+      val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: 170
+      val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: 170
+      val now = System.currentTimeMillis()
+      val snapshot = TodaySnapshotStore.read(context)
+      val bitmap = TodayWidgetRenderer(context)
+        .render(snapshot, now, width.toDouble(), height.toDouble(), theme(context, now))
+      val views = RemoteViews(context.packageName, R.layout.today_widget).apply {
+        setImageViewBitmap(R.id.today_widget_card, bitmap)
+        setContentDescription(R.id.today_widget_card, describe(snapshot?.shownOn(TodaySnapshotStore.dayKey(now))))
+        setOnClickPendingIntent(R.id.today_widget_card, openToday(context))
+      }
+      manager.updateAppWidget(id, views)
+    }
+
+    private fun theme(context: Context, now: Long): WidgetTheme {
+      if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+        val forced = context.getSharedPreferences(TodaySnapshotStore.PREFERENCES, Context.MODE_PRIVATE)
+          .getString(DEBUG_THEME_KEY, null)
+        if (forced == "light") return WidgetTheme.light
+        if (forced == "aurora") return WidgetTheme.aurora
+      }
+      return WidgetTheme.at(now)
+    }
+
+    /** What TalkBack reads for the card: the dial's own words. */
+    private fun describe(day: TodaySnapshot?): String? {
+      day ?: return null
+      if (!day.signedIn) return day.copy.signedOut
+      val wording = fit.kallo.app.todaywidget.gauge.CalorieWording.of(
+        day.eaten.kcal, day.target.kcal, "kcal" in day.floors, true, day.copy, WidgetFormat(day.locale),
+      )
+      return "${wording.figure} ${wording.unit}, ${wording.detail}"
+    }
+
+    private fun openToday(context: Context): PendingIntent {
+      val intent = Intent(Intent.ACTION_VIEW, Uri.parse(LINK)).setPackage(context.packageName)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+      return PendingIntent.getActivity(
+        context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+      )
+    }
+
+    private fun alarms(context: Context) = context.getSystemService(AlarmManager::class.java)
+
+    private fun boundaryIntent(context: Context): PendingIntent =
+      PendingIntent.getBroadcast(
+        context, 0,
+        Intent(context, TodayWidgetProvider::class.java).setAction(ACTION_BOUNDARY),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+      )
+
+    /**
+     * One inexact alarm at the next theme switch (06:00, 18:00) or midnight, so
+     * the date, the theme and an empty new day change with the app closed; each
+     * one redraws and sets the next. Inexact needs no exact-alarm permission and
+     * may land a few minutes late, which a date header can afford.
+     */
+    private fun scheduleNextBoundary(context: Context) {
+      alarms(context).set(AlarmManager.RTC, nextBoundary(System.currentTimeMillis()), boundaryIntent(context))
+    }
+
+    /** The first of midnight, 06:00 and 18:00 strictly after [now], local time. */
+    fun nextBoundary(now: Long): Long {
+      val day = Calendar.getInstance().apply {
+        timeInMillis = now
+        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+      }
+      for (offset in 0..1) {
+        for (hour in listOf(0, WidgetTheme.LIGHT_FROM, WidgetTheme.LIGHT_UNTIL)) {
+          val at = (day.clone() as Calendar).apply {
+            add(Calendar.DAY_OF_MONTH, offset); set(Calendar.HOUR_OF_DAY, hour)
+          }
+          if (at.timeInMillis > now) return at.timeInMillis
+        }
+      }
+      return now + 6 * 60 * 60 * 1000L
+    }
+  }
+}

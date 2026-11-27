@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mục widget trong bộ chọn. Theo ngôn ngữ của máy (launcher vẽ nó). -->
+<resources>
+    <string name="today_widget_name">Hôm nay</string>
+    <string name="today_widget_description">Hôm nay bạn đã ăn bao nhiêu so với mục tiêu.</string>
+</resources>

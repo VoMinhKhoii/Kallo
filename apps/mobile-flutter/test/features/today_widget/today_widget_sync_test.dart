@@ -23,7 +23,7 @@ import '../../l10n_test_loader.dart';
 
 /// Records what would reach the widget instead of writing it.
 class _RecordingStore extends TodayWidgetStore {
-  _RecordingStore() : super(isIOS: true);
+  _RecordingStore() : super(hasWidget: true);
   final List<Map<String, Object?>> saved = [];
 
   @override
