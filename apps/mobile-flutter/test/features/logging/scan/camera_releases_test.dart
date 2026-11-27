@@ -26,6 +26,24 @@ void main() {
     expect(second, isTrue, reason: 'the next screen does not wait again');
   });
 
+  testWidgets('a hung release is dropped even when another was tracked '
+      'during the wait', (tester) async {
+    ScanCameraReleases.track(Completer<void>().future); // never completes
+
+    var waited = false;
+    unawaited(ScanCameraReleases.settled.then((_) => waited = true));
+    await tester.pump(const Duration(seconds: 1));
+    // A screen that opened during the wait closes before the cap.
+    ScanCameraReleases.track(Future<void>.value());
+    await tester.pump(const Duration(seconds: 1));
+    expect(waited, isTrue);
+
+    var next = false;
+    unawaited(ScanCameraReleases.settled.then((_) => next = true));
+    await tester.pump();
+    expect(next, isTrue, reason: 'the hung release is not waited for again');
+  });
+
   testWidgets('a release that finishes is waited for, then forgotten', (
     tester,
   ) async {
