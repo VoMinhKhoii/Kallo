@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The Today widget is one bitmap, drawn by TodayWidgetRenderer: the dials
-     and Be Vietnam Pro cannot be set by launcher-side views. -->
+     and Be Vietnam Pro cannot be set by launcher-side views. Drawn at the
+     launcher's own size per orientation; fitCenter only guards a launcher
+     that reports one size and lays out another (never stretched). -->
 <ImageView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/today_widget_card"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:scaleType="fitXY" />
+    android:scaleType="fitCenter" />

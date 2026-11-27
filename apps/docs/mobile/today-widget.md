@@ -136,8 +136,12 @@ What differs from iOS, and why:
 - **Sizes come from the launcher**, not from three fixed families. The renderer picks the layout
   from the size it is given: under 250dp wide is the small card (calorie dial alone), 250dp tall
   adds the meals (large), otherwise medium. The large card sizes its dial row as a 170dp-tall
-  medium would. Launchers vary in width more than iPhones do, so a row that would overflow drops
-  calorie radius until it fits.
+  medium would. Launchers vary in width more than iPhones do, so the dial (small) or the row
+  (medium, large) drops calorie radius until it fits across; a row too wide even at radius 20 (a
+  3-cell widget in Vietnamese) draws the calorie dial alone.
+- **Orientation.** Portrait (narrowest width, tallest height) and landscape (widest, shortest)
+  each get a bitmap drawn at their own size, so a rotated home screen never shows a stretched
+  card.
 - **Corners** are the system widget radius on Android 12+ (16dp before), clipped into the bitmap.
 - **The clock.** No `updatePeriodMillis`. Each redraw sets one inexact alarm for the next
   midnight, 06:00 or 18:00, so the date, the theme and the empty new day change with the app

@@ -68,22 +68,38 @@ class TodayWidgetRenderer(private val context: Context) {
     val family = familyOf(w, h)
     // The large widget draws the medium's row, so it sizes from a medium's height.
     val rowBox = if (family == Family.LARGE) minOf(h, MEDIUM_HEIGHT) else h
-    var radius = GaugeReadout.calorieRadius(rowBox - 2 * MARGIN - DATE_LINE_BOX - DATE_GAP, CALORIE_RADIUS_CAP)
-    if (family == Family.SMALL) {
-      val dial = calorieDial(radius, day, theme, type)
-      dial.draw(canvas, left + (inner - dial.width) / 2, top)
-      return
+    val fullRadius =
+      GaugeReadout.calorieRadius(rowBox - 2 * MARGIN - DATE_LINE_BOX - DATE_GAP, CALORIE_RADIUS_CAP)
+    // Launchers vary in width far more than iPhones do (any width from 2 to 5
+    // cells), so whatever is drawn gives up calorie radius until it fits across.
+    if (family != Family.SMALL) {
+      var radius = fullRadius
+      var row = dialRow(radius, day, theme, family)
+      while (row.minWidth > inner && radius > MIN_RADIUS) {
+        radius -= 1
+        row = dialRow(radius, day, theme, family)
+      }
+      if (row.minWidth <= inner) {
+        row.draw(canvas, left, top, inner)
+        if (family == Family.LARGE) drawMeals(canvas, day, theme, top + row.height + MEALS_GAP, inner, h)
+        return
+      }
+      // Too narrow for four dials even at their smallest (a 3-cell widget in
+      // Vietnamese): the calorie dial alone, as the small card draws it.
     }
-    // Launchers vary more in width than iOS does: a row that would overflow
-    // gives up calorie radius until it fits.
-    var row = dialRow(radius, day, theme, family)
-    while (row.minWidth > inner && radius > 20) {
+    var radius = fullRadius
+    var dial = calorieDial(radius, day, theme, type, signInBelow = family != Family.LARGE)
+    while (dial.width > inner && radius > MIN_RADIUS) {
       radius -= 1
-      row = dialRow(radius, day, theme, family)
+      dial = calorieDial(radius, day, theme, type, signInBelow = family != Family.LARGE)
     }
-    row.draw(canvas, left, top, inner)
-    if (family != Family.LARGE) return
-    val mealsTop = top + row.height + MEALS_GAP
+    dial.draw(canvas, left + (inner - dial.width) / 2, top)
+    if (family == Family.LARGE) drawMeals(canvas, day, theme, top + dial.height + MEALS_GAP, inner, h)
+  }
+
+  /** The large card's meals under the dials, or "Sign in to track" where they would go. */
+  private fun drawMeals(canvas: Canvas, day: TodaySnapshot, theme: WidgetTheme, mealsTop: Double, inner: Double, h: Double) {
+    val left = MARGIN
     val room = h - MARGIN - mealsTop
     if (day.signedIn) {
       MealList(day.meals, theme, type).draw(canvas, left, mealsTop, inner, room)
@@ -123,6 +139,9 @@ class TodayWidgetRenderer(private val context: Context) {
     const val DATE_GAP = 8.0
     const val MEALS_GAP = 24.0
     const val CALORIE_RADIUS_CAP = 57.0
+
+    /** The smallest calorie dial, the same floor `GaugeReadout.calorieRadius` stops at. */
+    private const val MIN_RADIUS = 20.0
 
     /** The iOS medium widget's height on the largest phone: the large's row is sized for it. */
     const val MEDIUM_HEIGHT = 170.0

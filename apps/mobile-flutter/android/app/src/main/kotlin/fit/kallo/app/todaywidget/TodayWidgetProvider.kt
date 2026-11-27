@@ -63,18 +63,30 @@ class TodayWidgetProvider : AppWidgetProvider() {
 
     private fun draw(context: Context, manager: AppWidgetManager, id: Int) {
       val options = manager.getAppWidgetOptions(id)
-      // Portrait: the launcher's narrowest width and its tallest height.
-      val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: 170
-      val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: 170
+      fun dp(key: String) = options.getInt(key).takeIf { it > 0 }
+      // Portrait is the launcher's narrowest width and tallest height;
+      // landscape the widest and shortest. Each gets a card drawn at its own
+      // size, so neither is a stretched copy of the other.
+      val portrait = Pair(
+        dp(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH) ?: 170,
+        dp(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT) ?: 170,
+      )
+      val landscape = Pair(
+        dp(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH) ?: portrait.first,
+        dp(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT) ?: portrait.second,
+      )
       val now = System.currentTimeMillis()
       val snapshot = TodaySnapshotStore.read(context)
-      val bitmap = TodayWidgetRenderer(context)
-        .render(snapshot, now, width.toDouble(), height.toDouble(), theme(context, now))
-      val views = RemoteViews(context.packageName, R.layout.today_widget).apply {
+      val renderer = TodayWidgetRenderer(context)
+      val theme = theme(context, now)
+      val description = describe(snapshot?.shownOn(TodaySnapshotStore.dayKey(now)))
+      fun card(size: Pair<Int, Int>) = RemoteViews(context.packageName, R.layout.today_widget).apply {
+        val bitmap = renderer.render(snapshot, now, size.first.toDouble(), size.second.toDouble(), theme)
         setImageViewBitmap(R.id.today_widget_card, bitmap)
-        setContentDescription(R.id.today_widget_card, describe(snapshot?.shownOn(TodaySnapshotStore.dayKey(now))))
+        setContentDescription(R.id.today_widget_card, description)
         setOnClickPendingIntent(R.id.today_widget_card, openToday(context))
       }
+      val views = if (landscape == portrait) card(portrait) else RemoteViews(card(landscape), card(portrait))
       manager.updateAppWidget(id, views)
     }
 
