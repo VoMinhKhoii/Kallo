@@ -107,8 +107,9 @@ class TodayWidgetProvider : AppWidgetProvider() {
           RemoteViews(context.packageName, R.layout.today_widget).apply {
             // Cleared on purpose: the launcher reapplies an update with the same
             // layout onto the views it already has, so leaving the image out
-            // would keep the old card on screen.
-            setImageViewResource(R.id.today_widget_card, 0)
+            // would keep the old card on screen. A null bitmap, not resource 0:
+            // Android 7's async apply looks resource 0 up and fails the widget.
+            setImageViewBitmap(R.id.today_widget_card, null)
             setContentDescription(R.id.today_widget_card, description)
             setOnClickPendingIntent(R.id.today_widget_card, openToday(context))
           }
