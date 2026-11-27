@@ -162,9 +162,10 @@ What differs from iOS, and why:
 - **Even macro spacing.** iOS spreads the macro dials with `space-between`, so the gaps vary with
   the length of each label ("PROTEIN" against "FAT"). Android puts the four arcs on one even gap.
   Each pair of labels keeps 8dp between them, and the calorie arc keeps 12dp from the first macro
-  arc. When the card is too narrow for one gap everywhere (long Vietnamese labels), the macros
-  keep their even gap and the gap beside the calorie dial gives way, so the calorie dial keeps its
-  size.
+  arc. The gaps are measured from the calorie arc, not from its widest text line, which sits
+  below the macro row. When the card is too narrow for one gap everywhere (long Vietnamese
+  labels), the macros hold their least gap and the gap beside the calorie dial takes the rest
+  (never under 12dp), so the calorie dial keeps its size.
 - **Corners** are the system widget radius on Android 12+ (16dp before), clipped into the bitmap.
 - **The clock.** No `updatePeriodMillis`. Each redraw sets one inexact alarm for the next
   midnight, 06:00 or 18:00, so the date, the theme and the empty new day change with the app

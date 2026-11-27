@@ -24,6 +24,14 @@ class DialRow(
   private val macros = Macro.entries.map { MacroDial(it, MACRO_RADIUS, day, theme, type, glyphs(it)) }
   private val shift = GaugeReadout.alignCentres(calorieRadius, MACRO_RADIUS)
 
+  /**
+   * Where the calorie arc ends, from the row's left edge. The gaps are measured
+   * from here, not from the calorie dial's widest line: that line ("Đăng nhập
+   * để theo dõi") sits under the arc's tips, below the macro row, so it may
+   * reach into the gap without touching a macro.
+   */
+  private val calorieArcRight = calorie.width / 2 + calorieRadius
+
   /** The macro arcs' width (a readout can be wider than its arc). */
   private val arc = macros.maxOf { it.dialWidth }
 
@@ -49,7 +57,7 @@ class DialRow(
     calorieGap + macros.size * arc + (macros.size - 1) * macroGap + overhang(macros.last())
 
   /** The narrowest the row can be: every gap at its least. */
-  val minWidth: Double = calorie.width + span(calorieGapMin, macroGapMin)
+  val minWidth: Double = maxOf(calorie.width, calorieArcRight + span(calorieGapMin, macroGapMin))
 
   val height: Double = maxOf(
     shift.first + calorie.height,
@@ -58,18 +66,21 @@ class DialRow(
 
   /**
    * One gap between every pair of the four arcs when the card is wide enough.
-   * When it is not (long Vietnamese labels), the macros keep one even gap
-   * among themselves and the gap beside the calorie dial gives way, down to
-   * its least, rather than the calorie dial shrinking.
+   * When it is not (long Vietnamese labels), the macros hold their least gap
+   * and the gap beside the calorie dial takes the rest, so it narrows smoothly
+   * as the card does, and the calorie dial keeps its size.
    */
   fun draw(canvas: Canvas, left: Double, top: Double, width: Double) {
     calorie.draw(canvas, left, top + shift.first)
-    val room = width - span(0.0, 0.0) - calorie.width
+    val room = width - span(0.0, 0.0) - calorieArcRight
     val even = room / macros.size
-    val (calorieGap, macroGap) =
-      if (even >= macroGapMin && even >= calorieGapMin) even to even
-      else calorieGapMin to (room - calorieGapMin) / (macros.size - 1)
-    var arcLeft = left + calorie.width + calorieGap - macroGap
+    val between = macros.size - 1
+    val (calorieGap, macroGap) = when {
+      even >= macroGapMin && even >= calorieGapMin -> even to even
+      even < macroGapMin -> (room - between * macroGapMin) to macroGapMin
+      else -> calorieGapMin to (room - calorieGapMin) / between
+    }
+    var arcLeft = left + calorieArcRight + calorieGap - macroGap
     for (macro in macros) {
       arcLeft += macroGap
       // Each column is centred on its arc.
