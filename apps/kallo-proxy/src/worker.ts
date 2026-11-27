@@ -2,8 +2,9 @@
  * kallo-proxy — the Cloudflare Worker in front of Cloud Run on `kallo.fit/*`
  * and `*.kallo.fit/*` (`media.kallo.fit` and `admin.kallo.fit` have their own
  * routes). Deployed by hand with wrangler; see `../README.md`. It forwards every request to the Cloud Run origin with the
- * origin-lock secret, and refuses per-IP floods on the anonymous surfaces
- * before they cost a Cloud Run request.
+ * origin-lock secret, refuses per-IP floods on the anonymous surfaces
+ * before they cost a Cloud Run request, and serves crawlers cached copies of
+ * public pages (`crawler-cache.ts`).
  *
  * The flood limit is a breaker, never the real limit: carrier NAT puts many
  * real users behind one address, and Workers rate limits count per Cloudflare
@@ -12,7 +13,7 @@
  * already parses, so no client needs to know the edge exists.
  */
 
-import { MEDIA_HTML, preferredType } from '@/lib/infra/http/accept';
+import { fetchCrawlerCopy, isCrawlerPageRequest } from './crawler-cache';
 
 /** The Workers Rate Limiting binding (`ratelimits` in wrangler.jsonc). */
 export interface RateLimiter {
@@ -210,74 +211,6 @@ async function floodRefusal(
 }
 
 /**
- * Crawlers get public pages from Cloudflare's cache, so a crawl burst does not
- * wait on a Cloud Run instance waking from zero (Ahrefs measured 2 to 20 s on
- * 2026-11-23; warm answers take under 1 s). Only pages that are the same for
- * every visitor qualify: these sections are prerendered (`s-maxage`), unlike
- * the landing page and pricing.
- *
- * People are never served these copies. The cached fetch carries its own
- * query parameter, so its cache entry has an address no browser request uses,
- * and a copy kept across a deploy only reaches crawlers (it can name script
- * files the new build no longer has). Crawlers read the HTML, so a copy up to
- * a day old costs nothing.
- */
-const CRAWLER_CACHE_SECONDS = 86_400;
-const CRAWLER_CACHE_PARAM = '_edge';
-const CRAWLER_CACHE_VALUE = 'crawler';
-const CRAWLER_HOST = 'kallo.fit';
-// No trailing slash: Next redirects those, and a redirect is never cached.
-const CRAWLER_PAGE =
-  /^\/(en|vi)\/(calories|tools|compare|alternatives|docs|data)(\/[^/]+)*$/;
-const CRAWLER_AGENT =
-  /bot|crawl|spider|slurp|ChatGPT-User|Claude-User|Perplexity-User|facebookexternalhit|meta-externalagent|Bytespider|Google-InspectionTool/i;
-
-/**
- * True only when the origin's answer depends on nothing but the path, so one
- * cached copy is right for every request that reaches it. The cache key is the
- * URL alone; any other input that changes the answer must rule the request out.
- */
-export function isCrawlerPageRequest(request: Request, url: URL): boolean {
-  if (request.method !== 'GET' && request.method !== 'HEAD') return false;
-  if (url.hostname !== CRAWLER_HOST || url.search) return false;
-  if (!CRAWLER_PAGE.test(url.pathname)) return false;
-  const { headers } = request;
-  if (
-    // Signed in, or mid client-side navigation.
-    headers.has('cookie') ||
-    headers.has('authorization') ||
-    headers.has('rsc') ||
-    headers.has('next-router-prefetch') ||
-    headers.has('next-router-state-tree') ||
-    // A browser, whatever its user agent says ("CUBOT" phones, "Botim").
-    headers.has('sec-fetch-mode') ||
-    headers.has('sec-ch-ua')
-  ) {
-    return false;
-  }
-  // The docs pages answer Markdown to an agent that prefers it (proxy.ts,
-  // `negotiate`). Only requests the origin answers with HTML share the copy.
-  if (preferredType(headers.get('accept')) !== MEDIA_HTML) return false;
-  return CRAWLER_AGENT.test(headers.get('user-agent') ?? '');
-}
-
-/** A redirect must point at the public URL, never the cache's own address. */
-function withoutCacheParam(response: Response): Response {
-  const location = response.headers.get('location');
-  if (!location?.includes(`${CRAWLER_CACHE_PARAM}=`)) return response;
-  const target = new URL(location, `https://${CRAWLER_HOST}`);
-  target.searchParams.delete(CRAWLER_CACHE_PARAM);
-  const cleaned = new Response(response.body, response);
-  cleaned.headers.set(
-    'location',
-    location.startsWith('/')
-      ? `${target.pathname}${target.search}${target.hash}`
-      : target.toString()
-  );
-  return cleaned;
-}
-
-/**
  * The meal-reminder scheduler: every 15 minutes (`triggers.crons` in
  * wrangler.jsonc) ask the app to run one reminder tick. Cloudflare cron
  * triggers fire on time, which GitHub Actions' schedule does not; the app
@@ -313,28 +246,16 @@ export default {
     const refused = await floodRefusal(request, env);
     if (refused) return refused;
 
+    const crawler = isCrawlerPageRequest(request);
     const url = new URL(request.url);
-    const crawler = isCrawlerPageRequest(request, url);
     const originalHost = url.hostname;
     url.hostname = env.ORIGIN;
     url.protocol = 'https:';
-    if (crawler) url.searchParams.set(CRAWLER_CACHE_PARAM, CRAWLER_CACHE_VALUE);
 
     const forwarded = new Request(url, request);
     forwarded.headers.set('X-Origin-Verify', env.ORIGIN_SECRET);
     forwarded.headers.set('X-Forwarded-Host', originalHost);
     forwarded.headers.set('X-Forwarded-Proto', 'https');
-    if (!crawler) return fetch(forwarded);
-
-    // An explicit edge TTL makes Cloudflare cache the page and drop its
-    // Set-Cookie (the locale cookie, which a crawler has no use for).
-    // Only 2xx answers are kept: a 404 or 500 must not outlive its cause.
-    const init: RequestInit & { cf: Record<string, unknown> } = {
-      cf: {
-        cacheEverything: true,
-        cacheTtlByStatus: { '200-299': CRAWLER_CACHE_SECONDS, '300-599': -1 },
-      },
-    };
-    return withoutCacheParam(await fetch(forwarded, init));
+    return crawler ? fetchCrawlerCopy(forwarded) : fetch(forwarded);
   },
 };

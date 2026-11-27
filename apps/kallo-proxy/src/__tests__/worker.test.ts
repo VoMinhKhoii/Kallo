@@ -32,7 +32,10 @@ function request(
 }
 
 const upstream = vi.fn(
-  async (_req: Request) => new Response('from origin', { status: 200 })
+  async (
+    _req: Request,
+    _init?: RequestInit & { cf?: Record<string, unknown> }
+  ) => new Response('from origin', { status: 200 })
 );
 
 beforeEach(() => {
@@ -203,15 +206,7 @@ describe('fetch', () => {
 
 describe('fetch: crawler copies of public pages', () => {
   const GPTBOT =
-    'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; GPTBot/1.2; +https://openai.com/gptbot';
-  const SAFARI =
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
-
-  const sent = () =>
-    upstream.mock.calls[0] as unknown as [
-      Request,
-      (RequestInit & { cf?: Record<string, unknown> }) | undefined,
-    ];
+    'Mozilla/5.0 (compatible; GPTBot/1.2; +https://openai.com/gptbot)';
 
   it('fetches a crawler page through the cache, under its own address', async () => {
     await worker.fetch(
@@ -219,98 +214,35 @@ describe('fetch: crawler copies of public pages', () => {
       makeEnv()
     );
 
-    const [req, init] = sent();
+    const [req, init] = upstream.mock.calls[0];
     expect(req.url).toBe(`https://${ORIGIN}/vi/calories/mi-goi?_edge=crawler`);
     expect(req.headers.get('X-Origin-Verify')).toBe('origin-secret');
+    expect(req.headers.get('X-Forwarded-Host')).toBe('kallo.fit');
     expect(init?.cf).toEqual({
       cacheEverything: true,
       cacheTtlByStatus: { '200-299': 86_400, '300-599': -1 },
     });
   });
 
-  it.each([
-    ['a browser', '/en/calories/pho', { 'User-Agent': SAFARI }],
-    ['a crawler on the landing page', '/en', { 'User-Agent': GPTBOT }],
-    ['a crawler on pricing', '/en/pricing', { 'User-Agent': GPTBOT }],
-    [
-      'a crawler with a cookie',
-      '/en/calories/pho',
-      { 'User-Agent': GPTBOT, Cookie: 'sb-access-token=x' },
-    ],
-    [
-      'a client-side navigation',
-      '/en/docs/overview',
-      { 'User-Agent': GPTBOT, RSC: '1' },
-    ],
-    ['an API call', '/api/v1/foods', { 'User-Agent': GPTBOT }],
-    [
-      'an agent asking for Markdown',
-      '/en/docs/overview',
-      { 'User-Agent': GPTBOT, Accept: 'text/markdown, text/html;q=0.5' },
-    ],
-    [
-      'a client that takes neither HTML nor Markdown',
-      '/en/docs/overview',
-      { 'User-Agent': GPTBOT, Accept: 'application/json' },
-    ],
-    [
-      'a trailing-slash URL, which redirects',
-      '/en/calories/pho/',
-      { 'User-Agent': GPTBOT },
-    ],
-    [
-      'a browser whose user agent says "bot"',
-      '/en/calories/pho',
-      {
-        'User-Agent':
-          'Mozilla/5.0 (Linux; Android 13; CUBOT P80) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-        'Sec-CH-UA': '"Chromium";v="120"',
-        'Sec-Fetch-Mode': 'navigate',
-      },
-    ],
-  ])('sends %s straight to the origin', async (_name, path, headers) => {
-    await worker.fetch(request(path, { headers }), makeEnv());
-
-    const [req, init] = sent();
-    expect(new URL(req.url).search).toBe('');
-    expect(init).toBeUndefined();
-  });
-
-  it.each([
-    ['no Accept header', undefined],
-    ['a browser-style Accept', 'text/html,application/xhtml+xml,*/*;q=0.8'],
-    ['any type', '*/*'],
-  ])('caches the HTML answer for %s', async (_name, accept) => {
-    const headers: Record<string, string> = { 'User-Agent': GPTBOT };
-    if (accept) headers.Accept = accept;
-    await worker.fetch(request('/en/docs/overview', { headers }), makeEnv());
-
-    expect(sent()[1]?.cf).toBeDefined();
-  });
-
-  it('keeps the cache to kallo.fit itself', async () => {
-    const headers = new Headers({
-      'User-Agent': GPTBOT,
-      'cf-connecting-ip': '203.0.113.9',
-    });
+  it('forwards a browser exactly as before', async () => {
     await worker.fetch(
-      new Request('https://www.kallo.fit/en/calories/pho', { headers }),
+      request('/vi/calories/mi-goi', {
+        headers: { 'User-Agent': 'Mozilla/5.0 Safari/604.1' },
+      }),
       makeEnv()
     );
 
-    expect(sent()[1]).toBeUndefined();
+    const [req, init] = upstream.mock.calls[0];
+    expect(req.url).toBe(`https://${ORIGIN}/vi/calories/mi-goi`);
+    expect(init).toBeUndefined();
   });
 
-  it.each([
-    [
-      'https://kallo.fit/en/docs/overview?_edge=crawler',
-      'https://kallo.fit/en/docs/overview',
-    ],
-    ['/en/docs/overview?_edge=crawler', '/en/docs/overview'],
-    ['/en/docs/overview?a=1&_edge=crawler', '/en/docs/overview?a=1'],
-  ])('takes the cache address out of a redirect to %s', async (location, expected) => {
+  it('takes the cache address out of a redirect', async () => {
     upstream.mockResolvedValueOnce(
-      new Response(null, { status: 307, headers: { location } })
+      new Response(null, {
+        status: 307,
+        headers: { location: '/en/docs/overview?_edge=crawler' },
+      })
     );
     const res = await worker.fetch(
       request('/en/docs', { headers: { 'User-Agent': GPTBOT } }),
@@ -318,32 +250,7 @@ describe('fetch: crawler copies of public pages', () => {
     );
 
     expect(res.status).toBe(307);
-    expect(res.headers.get('location')).toBe(expected);
-  });
-
-  it('leaves a query string alone, so no variant gets cached', async () => {
-    await worker.fetch(
-      request('/en/calories/pho?utm_source=x', {
-        headers: { 'User-Agent': GPTBOT },
-      }),
-      makeEnv()
-    );
-
-    const [req, init] = sent();
-    expect(req.url).toBe(`https://${ORIGIN}/en/calories/pho?utm_source=x`);
-    expect(init).toBeUndefined();
-  });
-
-  it('only caches reads', async () => {
-    await worker.fetch(
-      request('/en/calories/pho', {
-        method: 'POST',
-        headers: { 'User-Agent': GPTBOT },
-      }),
-      makeEnv()
-    );
-
-    expect(sent()[1]).toBeUndefined();
+    expect(res.headers.get('location')).toBe('/en/docs/overview');
   });
 });
 
