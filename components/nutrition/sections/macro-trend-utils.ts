@@ -147,10 +147,7 @@ export function buildMacroTrendAxis(maxY: number): {
   ticks: number[];
 } {
   const axisTarget = Math.max(maxY, 1);
-  // First step that keeps the gridlines under seven. 100 floors the scale so a
-  // near-empty chart doesn't label in tens.
-  const steps = [100, 250, 500, 1000, 2000];
-  const step = steps.find((s) => axisTarget / s <= 6) ?? 2500;
+  const step = niceStep(axisTarget);
   const maxLabel = Math.ceil(axisTarget / step) * step;
   const topY = maxLabel + step * 0.35; // headroom so the top label isn't clipped
 
@@ -158,6 +155,22 @@ export function buildMacroTrendAxis(maxY: number): {
   for (let v = step; v <= maxLabel; v += step) ticks.push(v);
 
   return { step, maxLabel, topY, ticks };
+}
+
+/**
+ * First step that keeps the gridlines under seven. 100 floors the scale so a
+ * near-empty chart doesn't label in tens. Past 2000 the ladder keeps climbing
+ * (2500, 5000, 10000, 25000, …) with no ceiling: a capped step turned a 65,000
+ * kcal day into 26 stacked labels.
+ */
+function niceStep(axisTarget: number): number {
+  const step = [100, 250, 500, 1000, 2000].find((s) => axisTarget / s <= 6);
+  if (step !== undefined) return step;
+  for (let base = 1000; ; base *= 10) {
+    for (const multiple of [2.5, 5, 10]) {
+      if (axisTarget / (base * multiple) <= 6) return base * multiple;
+    }
+  }
 }
 
 /**

@@ -45,5 +45,11 @@ double _niceStep(double maxV) {
   for (final s in steps) {
     if (maxV / s <= 6) return s;
   }
-  return 2500;
+  // Past 2000 the ladder keeps climbing (2500, 5000, 10000, 25000, …) with no
+  // ceiling: a capped step turned a 65,000 kcal day into 26 stacked labels.
+  for (var base = 1000.0; ; base *= 10) {
+    for (final multiple in const [2.5, 5.0, 10.0]) {
+      if (maxV / (base * multiple) <= 6) return base * multiple;
+    }
+  }
 }
