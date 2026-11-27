@@ -103,6 +103,25 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
   /// A change that landed while a sync ran; it runs again after.
   bool _again = false;
 
+  /// Coalesces listener/lifecycle triggers onto the next microtask.
+  bool _syncScheduled = false;
+
+  /// Defers [_sync] to the next microtask so it never calls `ref.read`
+  /// synchronously inside a Riverpod listener callback. In Riverpod 2.6.1,
+  /// `FutureHandlerProviderElementMixin.handleFuture` notifies listeners
+  /// (`data(value)`) before calling `done()` (`_lastFutureSub?.call()`): a
+  /// re-entrant `ref.read` on a dirty `FutureProvider` flushes it inside
+  /// `data()`, replaces `_lastFutureSub` with the new fetch's cancel hook, and
+  /// the outer `done()` immediately cancels the real fetch (PR #627 regression).
+  void _scheduleSync() {
+    if (_syncScheduled) return;
+    _syncScheduled = true;
+    scheduleMicrotask(() {
+      _syncScheduled = false;
+      if (mounted) unawaited(_sync());
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -115,11 +134,11 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
         _repairAllowed = false;
         _repairFailed = false;
       }
-      unawaited(_sync());
+      _scheduleSync();
     });
-    ref.listenManual(profileProvider, (_, _) => unawaited(_sync()));
-    ref.listenManual(languageSavesProvider, (_, _) => unawaited(_sync()));
-    ref.listenManual(onboardingDraftProvider, (_, _) => unawaited(_sync()));
+    ref.listenManual(profileProvider, (_, _) => _scheduleSync());
+    ref.listenManual(languageSavesProvider, (_, _) => _scheduleSync());
+    ref.listenManual(onboardingDraftProvider, (_, _) => _scheduleSync());
   }
 
   @override
@@ -137,7 +156,7 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
       _refreshedAt = now;
       ref.invalidate(profileProvider);
     } else {
-      unawaited(_sync());
+      _scheduleSync();
     }
   }
 
@@ -149,7 +168,7 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
     // easy_localization reads a saved pick once, at launch.
     _appPicked = l10n?.savedLocale != null;
     _setLocale = l10n?.setLocale;
-    unawaited(_sync());
+    _scheduleSync();
   }
 
   Future<void> _sync() async {
@@ -212,7 +231,7 @@ class _AccountLanguageSyncState extends ConsumerState<AccountLanguageSync>
       _busy = false;
       if (_again && mounted) {
         _again = false;
-        unawaited(_sync());
+        _scheduleSync();
       }
     }
   }
