@@ -96,7 +96,13 @@ class TodayWidgetProvider : AppWidgetProvider() {
         // from a display this one may not be): the portrait card alone, at
         // half the scale, rather than a receiver that throws on every update.
         Log.w("TodayWidget", "widget bitmaps refused; redrawing smaller", tooBig)
-        manager.updateAppWidget(id, card(portrait, scale / 2))
+        try {
+          manager.updateAppWidget(id, card(portrait, scale / 2))
+        } catch (stillTooBig: IllegalArgumentException) {
+          // Refused again: keep whatever the widget last showed. A broadcast
+          // receiver that throws takes the app's process down with it.
+          Log.w("TodayWidget", "smaller widget bitmap refused too; keeping the last card", stillTooBig)
+        }
       }
     }
 
