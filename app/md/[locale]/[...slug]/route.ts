@@ -4,10 +4,8 @@ import { renderDocMarkdown } from '@/lib/domain/docs/markdown/render';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { renderLandingMarkdown } from '@/lib/seo/markdown/landing';
 import { renderNotFoundMarkdown } from '@/lib/seo/markdown/not-found';
-import {
-  renderSitePageMarkdown,
-  siteMarkdownPaths,
-} from '@/lib/seo/markdown/site-pages';
+import { renderSitePageMarkdown } from '@/lib/seo/markdown/site-pages';
+import { sitePagePaths } from '@/lib/seo/public-pages';
 
 /**
  * Every `text/markdown` representation the site serves.
@@ -35,7 +33,7 @@ export function generateStaticParams() {
       locale,
       slug: ['docs', ...docSlug.split('/')],
     })),
-    ...siteMarkdownPaths(locale).map((path) => ({
+    ...sitePagePaths(locale).map((path) => ({
       locale,
       slug: path.slice(1).split('/'),
     })),

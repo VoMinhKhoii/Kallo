@@ -35,6 +35,8 @@ import {
  * beyond the totals the meal cards already show.
  */
 
+// The meal card's formats (`formatCaloriesValue` / `formatMacroValue` in
+// components/logging/feed/format-inline-nutrition.ts, which lib cannot import).
 const kcal = (n: number) => `${Math.round(n)} kcal`;
 const grams = (n: number) => `${Math.round(n)}g`;
 
@@ -49,8 +51,8 @@ function totalsOf(variant: FoodPageVariant) {
   ];
 }
 
-/** "Chicken burrito — 300 to 1,000 kcal", linked: the HTML link list's rows. */
-function pageLinks(pages: FoodPage[]): string[] {
+/** "Chicken burrito — 300 to 1,000 kcal", linked: the rows of `FoodLinkList`. */
+export function foodPageLinks(pages: FoodPage[]): string[] {
   return bullets(
     pages.map(
       (page) =>
@@ -72,7 +74,12 @@ export function renderFoodHubMarkdown(locale: FoodLocale): string {
     '',
   ];
   for (const { group, pages } of pagesByGroup(locale)) {
-    lines.push(`## ${groupName(locale, group)}`, '', ...pageLinks(pages), '');
+    lines.push(
+      `## ${groupName(locale, group)}`,
+      '',
+      ...foodPageLinks(pages),
+      ''
+    );
   }
   return lines.join('\n');
 }
@@ -166,11 +173,11 @@ export async function renderFoodPageMarkdown(page: FoodPage): Promise<string> {
     ]),
     `## ${chrome.moreHeading}`,
     '',
-    ...pageLinks(relatedPages(page)),
+    ...foodPageLinks(relatedPages(page)),
     '',
     `## ${chrome.similarHeading}`,
     '',
-    ...pageLinks(similarCaloriePages(page)),
+    ...foodPageLinks(similarCaloriePages(page)),
     '',
     ...paragraphs([
       linkedSentence(

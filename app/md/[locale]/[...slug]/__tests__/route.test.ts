@@ -3,7 +3,7 @@ import { GET, generateStaticParams } from '@/app/md/[locale]/[...slug]/route';
 import { locales } from '@/i18n/config';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { negotiate } from '@/lib/infra/http/negotiate';
-import { siteMarkdownPaths } from '@/lib/seo/markdown/site-pages';
+import { sitePagePaths } from '@/lib/seo/public-pages';
 
 // `cacheLife()` only works inside a Next render; the caching itself is Next's
 // concern, so here it is a no-op and the function runs as plain code.
@@ -21,7 +21,7 @@ describe('generateStaticParams', () => {
     // standalone Docker image, so anything not prerendered here would ENOENT
     // in production.
     const params = generateStaticParams();
-    const sitePages = locales.flatMap(siteMarkdownPaths).length;
+    const sitePages = locales.flatMap(sitePagePaths).length;
     expect(params).toHaveLength(
       locales.length * (DOCS_SLUGS.length + 2) + sitePages
     );
@@ -35,7 +35,7 @@ describe('generateStaticParams', () => {
           slug: ['docs', ...slug.split('/')],
         });
       }
-      for (const path of siteMarkdownPaths(locale)) {
+      for (const path of sitePagePaths(locale)) {
         expect(params).toContainEqual({
           locale,
           slug: path.slice(1).split('/'),
@@ -46,12 +46,13 @@ describe('generateStaticParams', () => {
 });
 
 describe('the public pages outside the docs', () => {
-  // Every page the route lists must render, and the proxy must send its URL
-  // here: the two lists are kept apart so the proxy never loads the copy.
+  // Every page the route prerenders must render, and the proxy must send its
+  // URL here. What each page says is tested beside its renderer
+  // (lib/seo/markdown/__tests__/).
   it.each(
     locales
   )('renders every one in %s, and negotiation routes each one here', async (locale) => {
-    const paths = siteMarkdownPaths(locale);
+    const paths = sitePagePaths(locale);
     expect(paths.length).toBeGreaterThan(5);
     for (const path of paths) {
       const url = `/${locale}${path}`;
@@ -68,36 +69,6 @@ describe('the public pages outside the docs', () => {
       // Links are absolute: an agent has no base URL to resolve against.
       expect(body, url).not.toMatch(/\]\(\//);
     }
-  });
-
-  it('carries the food page numbers: the summary table and each meal', async () => {
-    const body = await (
-      await call('en', ['calories', 'chicken-burrito'])
-    ).text();
-    expect(body).toMatch(
-      /^\| Meal \| Calories \| Protein \| Carbs \| Fat \|$/m
-    );
-    expect(body.match(/^### /gm)?.length).toBeGreaterThanOrEqual(4);
-    // Translations are mocked to their keys here: the card's `total`.
-    expect(body).toMatch(/\| \*\*total\*\* \| \d+ kcal \| \d+g \|/);
-    expect(body).toContain('https://kallo.fit/en/data/meal-calorie-variation');
-  });
-
-  it('writes a Vietnamese food page in Vietnamese', async () => {
-    const body = await (await call('vi', ['calories', 'pho-bo'])).text();
-    expect(body).toMatch(/^\| Bữa \| Calo \| Đạm \| Tinh bột \| Chất béo \|$/m);
-    expect(body).not.toContain('**Total**');
-  });
-
-  it('gives pricing the plans and the new-account offer', async () => {
-    const body = await (await call('en', ['pricing'])).text();
-    // Translations are mocked to their keys here.
-    for (const key of ['plans.free.name', 'plans.premium.name', 'offerNote']) {
-      expect(body).toContain(key);
-    }
-    // Lifetime cannot be bought on the web, and the page does not show it.
-    expect(body).not.toContain('lifetime');
-    expect(body).toContain('https://kallo.fit/en/docs/account/premium');
   });
 
   it('404s a page the locale does not have', async () => {

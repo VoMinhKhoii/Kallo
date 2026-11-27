@@ -1,7 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/i18n/config';
 import { FOOD_PAGE_CHROME } from '@/lib/seo/food-pages/page-copy';
-import { kcalSpan } from '@/lib/seo/food-pages/pages';
 import {
   FOOD_PAGE_PREFIX,
   FOOD_SLUGS,
@@ -16,6 +15,7 @@ import {
   toolPath,
 } from '@/lib/seo/tools/slugs';
 import { bullets, link, linkedSentence, pageUrl, paragraphs } from './blocks';
+import { foodPageLinks } from './food';
 
 /**
  * The `text/markdown` form of the calculators hub and each calculator page.
@@ -77,12 +77,7 @@ export async function renderToolMarkdown(
       '',
       hub.exampleMeals.lead,
       '',
-      ...bullets(
-        exampleMealPages(locale, slug).map(
-          (page) =>
-            `${link(page.name, pageUrl(locale, `${FOOD_PAGE_PREFIX}/${page.slug}`))} — ${kcalSpan(page.capture, locale)} kcal`
-        )
-      ),
+      ...foodPageLinks(exampleMealPages(locale, slug)),
       '',
       linkedSentence(
         browse,
