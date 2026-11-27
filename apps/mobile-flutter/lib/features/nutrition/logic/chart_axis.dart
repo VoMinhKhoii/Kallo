@@ -28,7 +28,9 @@ class MacroTrendAxis {
 /// bottom third under half a chart of empty grid — comparability across ranges
 /// nobody was making, paid for in the resolution of the one chart on screen.
 MacroTrendAxis buildMacroTrendAxis(double maxY) {
-  final axisTarget = maxY > 1 ? maxY : 1.0;
+  // A non-finite max (an overflowed total) would never satisfy the step
+  // ladder, so it floors to 1 like an empty chart.
+  final axisTarget = maxY.isFinite && maxY > 1 ? maxY : 1.0;
   final step = _niceStep(axisTarget);
   final maxLabel = (axisTarget / step).ceil() * step;
   return MacroTrendAxis(

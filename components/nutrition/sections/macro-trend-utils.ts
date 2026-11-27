@@ -146,7 +146,9 @@ export function buildMacroTrendAxis(maxY: number): {
   topY: number;
   ticks: number[];
 } {
-  const axisTarget = Math.max(maxY, 1);
+  // A non-finite max (a NaN or overflowed total) would never satisfy the step
+  // ladder below, so it floors to 1 like an empty chart.
+  const axisTarget = Number.isFinite(maxY) ? Math.max(maxY, 1) : 1;
   const step = niceStep(axisTarget);
   const maxLabel = Math.ceil(axisTarget / step) * step;
   const topY = maxLabel + step * 0.35; // headroom so the top label isn't clipped

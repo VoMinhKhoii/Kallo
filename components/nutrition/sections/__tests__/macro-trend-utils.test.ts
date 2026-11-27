@@ -90,6 +90,12 @@ describe('buildMacroTrendAxis', () => {
     expect(axis.ticks).toEqual([25000, 50000, 75000]);
   });
 
+  it('floors a non-finite max to an empty axis instead of looping', () => {
+    for (const maxY of [Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(buildMacroTrendAxis(maxY).step).toBe(100);
+    }
+  });
+
   it('never draws more than six labelled lines', () => {
     for (const maxY of [
       1, 99, 601, 1501, 6001, 12001, 15001, 60001, 1e6, 3e7,

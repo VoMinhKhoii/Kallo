@@ -23,6 +23,11 @@ void main() {
       expect(axis.maxLabel, 75000);
     });
 
+    test('floors a non-finite max to an empty axis instead of looping', () {
+      expect(buildMacroTrendAxis(double.nan).step, 100);
+      expect(buildMacroTrendAxis(double.infinity).step, 100);
+    });
+
     test('never draws more than six labelled lines', () {
       for (final maxY in <double>[
         1.0,
