@@ -105,6 +105,10 @@ class TodayWidgetProvider : AppWidgetProvider() {
         }
         yield {
           RemoteViews(context.packageName, R.layout.today_widget).apply {
+            // Cleared on purpose: the launcher reapplies an update with the same
+            // layout onto the views it already has, so leaving the image out
+            // would keep the old card on screen.
+            setImageViewResource(R.id.today_widget_card, 0)
             setContentDescription(R.id.today_widget_card, description)
             setOnClickPendingIntent(R.id.today_widget_card, openToday(context))
           }
