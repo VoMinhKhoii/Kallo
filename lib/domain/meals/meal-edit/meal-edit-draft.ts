@@ -12,12 +12,17 @@
  */
 import type { ClientVessel } from '@/lib/ai/portion/vessel/types';
 import { MIN_DISH_GRAMS } from '@/lib/domain/meals/quantity-recalculation';
-
-/** Servings move in halves: "1×", "1.5×", "2×". */
-export const SERVING_STEP = 0.5;
+import {
+  MIN_SERVING_MULTIPLIER,
+  stepServingMultiplier,
+} from '@/lib/domain/meals/serving-ladder';
 
 /** Amount moves in tens, the step the old steppers used. */
 export const AMOUNT_STEP = 10;
+
+/** Lowest positive weight/count a scaled dish can drop to (never 0, which the
+ *  update endpoint rejects). */
+export const MIN_EDIT_GRAMS = 0.01;
 
 /**
  * What one part of a dish contributes, at the grams it was logged at. A null
@@ -45,14 +50,16 @@ export interface EditDish {
   /** Stable identity: `order:name` on a saved meal, the item id otherwise. */
   key: string;
   name: string;
-  unit: 'g' | 'ml';
+  unit: 'g' | 'ml' | 'serving';
   parts: EditPart[];
-  /** The dish's grams now — what the dialog shows and what is saved. */
+  /** The dish's grams (or serving count when `unit === 'serving'`) now — what
+   *  the dialog shows and what is saved. */
   grams: number;
   /**
-   * The amount the Whole meal multiplier asked for, before the floor. Kept apart
-   * from `grams` so taking the whole meal down and back up returns a dish that
-   * hit the floor to exactly where it started. Defaults to `grams`.
+   * The amount the Whole meal multiplier asked for, before clamping to
+   * {@link MIN_EDIT_GRAMS}. Kept apart from `grams` so taking the whole meal
+   * down and back up returns a dish that hit the floor to where it started.
+   * Defaults to `grams`.
    */
   target?: number;
   /** The vessel the pipeline pictured it in — unsaved dishes only. */
@@ -61,7 +68,7 @@ export interface EditDish {
 
 export interface MealEditDraft {
   dishes: EditDish[];
-  /** The Whole meal multiplier, in SERVING_STEPs from 1. */
+  /** The Whole meal multiplier, along the serving ladder from 1. */
   whole: number;
   /**
    * Whether a dish may be taken out. Only a saved meal can drop a dish: the
@@ -106,9 +113,10 @@ export function servingsOf(dish: EditDish): number {
 }
 
 /**
- * The least a dish can be stepped down to: MIN_DISH_GRAMS, or what it was
- * logged at when that is less. A 5 g pat of butter stays 5 g until the user
- * moves it — opening the dialog never rewrites a saved amount.
+ * The least the ±10 g/ml Amount stepper (and Size picker) can step a dish down
+ * to: MIN_DISH_GRAMS, or what it was logged at when that is less. A 5 g pat of
+ * butter stays 5 g on Amount minus — Servings and Whole meal can still scale it
+ * down along the fractional ladder.
  */
 export function floorOf(dish: EditDish): number {
   return Math.min(MIN_DISH_GRAMS, originalGrams(dish));
@@ -118,21 +126,22 @@ export function floorOf(dish: EditDish): number {
 export function atBottom(dish: EditDish): boolean {
   return (
     !isScalable(dish) ||
-    servingsOf(dish) <= SERVING_STEP + EPS ||
-    dish.grams <= floorOf(dish) + EPS
+    servingsOf(dish) <= MIN_SERVING_MULTIPLIER + EPS ||
+    dish.grams <= MIN_EDIT_GRAMS + EPS
   );
 }
 
-/** A user's own adjustment, held at the floor. */
+/** A user's own adjustment, kept strictly positive. */
 export function withGrams(dish: EditDish, next: number): EditDish {
-  const grams = Math.max(floorOf(dish), next);
+  const grams = Math.max(MIN_EDIT_GRAMS, next);
   return { ...dish, grams, target: grams };
 }
 
-/** The Whole meal multiplier: scales the target, then floors the grams. */
+/** The Whole meal multiplier: scales the target, clamped only at
+ *  {@link MIN_EDIT_GRAMS} so small or per-serving dishes still scale down. */
 function scaledBy(dish: EditDish, factor: number): EditDish {
   const target = (dish.target ?? dish.grams) * factor;
-  return { ...dish, grams: Math.max(floorOf(dish), target), target };
+  return { ...dish, grams: Math.max(MIN_EDIT_GRAMS, target), target };
 }
 
 /** The dish at exactly `grams` — for pricing a committed amount, not an edit. */
@@ -173,7 +182,8 @@ export function findDish(
 
 /**
  * True when Servings' minus would take this dish out rather than shrink it: at
- * half a serving, at its floor, or for a dish with no grams to step.
+ * the bottom rung (`0.25×`), at `MIN_EDIT_GRAMS`, or for a dish with no grams
+ * to step.
  */
 export function removesOnMinus(draft: MealEditDraft, dish: EditDish): boolean {
   return atBottom(dish) && draft.canRemove && draft.dishes.length > 1;
@@ -185,6 +195,11 @@ export function servingsMinusDisabled(
   dish: EditDish
 ): boolean {
   return atBottom(dish) && !removesOnMinus(draft, dish);
+}
+
+/** True when Amount's −10 g/ml button cannot shrink the dish any further. */
+export function amountMinusDisabled(dish: EditDish): boolean {
+  return dish.grams <= floorOf(dish) + EPS;
 }
 
 function mapDish(
@@ -203,7 +218,8 @@ export function removeDish(draft: MealEditDraft, key: string): MealEditDraft {
   return { ...draft, dishes: draft.dishes.filter((d) => d.key !== key) };
 }
 
-/** Up or down to the next whole half serving: 1.2× goes to 1.5× or 1×. */
+/** Up or down to the next rung on the serving ladder (`0.25, 1/3, 0.5, 2/3,
+ *  0.75, 1, 1.5, 2, ...`). */
 export function stepServings(
   draft: MealEditDraft,
   key: string,
@@ -218,41 +234,41 @@ export function stepServings(
     (direction < 0 && servingsMinusDisabled(draft, dish))
   )
     return draft;
-  const steps = servingsOf(dish) / SERVING_STEP;
-  const next =
-    direction > 0
-      ? (Math.floor(steps + EPS) + 1) * SERVING_STEP
-      : (Math.ceil(steps - EPS) - 1) * SERVING_STEP;
+  const next = stepServingMultiplier(servingsOf(dish), direction);
   return mapDish(draft, key, (d) => withGrams(d, originalGrams(d) * next));
 }
 
-/** Ten grams either way, from the rounded figure the row shows. */
+/** Ten grams either way, from the rounded figure the row shows, held at
+ *  {@link floorOf}. */
 export function stepAmount(
   draft: MealEditDraft,
   key: string,
   direction: 1 | -1
 ): MealEditDraft {
   return mapDish(draft, key, (d) =>
-    withGrams(d, Math.round(d.grams) + direction * AMOUNT_STEP)
+    withGrams(
+      d,
+      Math.max(floorOf(d), Math.round(d.grams) + direction * AMOUNT_STEP)
+    )
   );
 }
 
-/** Exact grams, from the Size picker. */
+/** Exact grams, from the Size picker, held at {@link floorOf}. */
 export function setDishGrams(
   draft: MealEditDraft,
   key: string,
   grams: number
 ): MealEditDraft {
-  return mapDish(draft, key, (d) => withGrams(d, grams));
+  return mapDish(draft, key, (d) => withGrams(d, Math.max(floorOf(d), grams)));
 }
 
-/** Every dish by the same factor, half a meal at a time. */
+/** Every dish by the same factor, stepping along the serving ladder. */
 export function stepWhole(
   draft: MealEditDraft,
   direction: 1 | -1
 ): MealEditDraft {
-  const next = draft.whole + direction * SERVING_STEP;
-  if (next < SERVING_STEP) return draft;
+  const next = stepServingMultiplier(draft.whole, direction);
+  if (Math.abs(next - draft.whole) < EPS) return draft;
   const factor = next / draft.whole;
   return {
     ...draft,

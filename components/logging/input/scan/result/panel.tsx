@@ -1,10 +1,14 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ResponsiveSheetHeader } from '@/components/shared/responsive-sheet-header';
 import { SheetCapsuleButton } from '@/components/shared/sheet-capsule-button';
+import {
+  formatServingValue,
+  servingPluralCount,
+} from '@/lib/domain/meals/serving-ladder';
 import {
   formatSize,
   initialScanAmount,
@@ -49,17 +53,20 @@ export function ScanResultPanel({
   onAdd: (amount: number) => void;
 }) {
   const t = useTranslations('logging');
+  const locale = useLocale();
   const [others, setOthers] = useState(false);
   const amount = chosen ?? initialScanAmount(food);
   const resolved = resolveScanAmount(amount, food);
   const subtitle = food.source === 'label' ? t('scan.fromLabel') : food.brand;
 
   if (others) {
+    const countWords = (n: number, word: 'scan.packs' | 'scan.servings') =>
+      `${formatServingValue(n, locale)} ${t(word, { count: servingPluralCount(n) })}`;
     const words =
       amount.portion === 'pack'
-        ? `${amount.packs} ${t('scan.packs', { count: amount.packs })}`
+        ? countWords(amount.packs, 'scan.packs')
         : amount.portion === 'serving'
-          ? `${amount.servings} ${t('scan.servings', { count: amount.servings })}`
+          ? countWords(amount.servings, 'scan.servings')
           : null;
     const size =
       food.unit === 'serving' ? null : formatSize(resolved, food.unit);

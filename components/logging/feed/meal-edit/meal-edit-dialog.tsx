@@ -4,13 +4,15 @@ import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ResponsiveModal } from '@/components/shared/responsive-modal';
-import { formatLocalizedNumber } from '@/lib/core/text/format-number';
 import {
   type MealEditDraft,
-  SERVING_STEP,
   stepWhole,
   sumTotals,
 } from '@/lib/domain/meals/meal-edit/meal-edit-draft';
+import {
+  canStepServingMultiplier,
+  formatServingTimes,
+} from '@/lib/domain/meals/serving-ladder';
 import { MealEditDish } from './meal-edit-dish';
 import { MealEditStepperRow } from './meal-edit-stepper-row';
 import { MealEditSummary } from './meal-edit-summary';
@@ -97,13 +99,13 @@ function MealEditBody({
         <div className="mt-4 rounded-xl border border-kallo-border/60 bg-card px-3.5">
           <MealEditStepperRow
             label={t('wholeMeal')}
-            value={`${formatLocalizedNumber(draft.whole, locale)}×`}
+            value={formatServingTimes(draft.whole, locale)}
             minusLabel={t('lessWhole')}
             plusLabel={t('moreWhole')}
             onMinus={
-              draft.whole <= SERVING_STEP
-                ? undefined
-                : () => setDraft(stepWhole(draft, -1))
+              canStepServingMultiplier(draft.whole, -1)
+                ? () => setDraft(stepWhole(draft, -1))
+                : undefined
             }
             onPlus={() => setDraft(stepWhole(draft, 1))}
           />

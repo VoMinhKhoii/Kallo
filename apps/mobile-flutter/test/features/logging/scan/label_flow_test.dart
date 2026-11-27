@@ -81,6 +81,8 @@ void main() {
       await h.tapText('Library');
       await tester.tap(find.bySemanticsLabel('More'));
       await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('More'));
+      await tester.pumpAndSettle();
       await h.tapText('Add meal');
 
       final body = h.api.bodiesTo(labelLog).single! as Map<String, Object?>;
@@ -93,6 +95,31 @@ void main() {
       expect(body['labelImageId'], 'img-1');
       expect(body.containsKey('fiberGrams'), isFalse, reason: 'not printed');
       expect(h.outcome, isA<ScanSaved>());
+    });
+
+    testWidgets('scales a scanned label down to 1/3 and 0.5 serving', (
+      tester,
+    ) async {
+      final h = await inLabelMode(tester);
+      await h.tapText('Library');
+      await tester.tap(find.bySemanticsLabel('Less')); // 0.75
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Less')); // 2/3
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Less')); // 0.5
+      await tester.pumpAndSettle();
+      expect(find.text('0.5 serving'), findsOneWidget);
+      expect(find.text('72'), findsOneWidget, reason: '144 kcal x 0.5');
+
+      await tester.tap(find.bySemanticsLabel('Less')); // 1/3
+      await tester.pumpAndSettle();
+      expect(find.text('1/3 serving'), findsOneWidget);
+      expect(find.text('48'), findsOneWidget, reason: '144 kcal x 1/3');
+      await h.tapText('Add meal');
+
+      final body = h.api.bodiesTo(labelLog).single! as Map<String, Object?>;
+      expect(body['amount'], closeTo(10, 1e-9));
+      expect(body['calories'], 48);
     });
 
     testWidgets('an edit keeps the photo link and logs the edited values', (

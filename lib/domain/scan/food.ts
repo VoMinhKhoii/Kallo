@@ -207,7 +207,13 @@ export function editScanFood(
   return {
     ...food,
     ...edit,
-    servingSize: sameUnit ? food.servingSize : null,
+    // A serving-basis food always has a 1-serving portion (like a per-serving
+    // label); switching to g/ml drops the old unit's serving and pack sizes.
+    servingSize: sameUnit
+      ? food.servingSize
+      : edit.unit === 'serving'
+        ? 1
+        : null,
     packageSize: sameUnit ? food.packageSize : null,
     edited: true,
   };

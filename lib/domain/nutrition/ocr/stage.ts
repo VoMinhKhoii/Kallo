@@ -15,6 +15,7 @@ import { NUTRITION_KEYS } from '@/lib/ai/types/nutrition-values';
 import type { PipelineResult } from '@/lib/ai/types/result';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import type { OcrReviewPayload } from '@/lib/domain/nutrition/ocr/schema';
+import { formatRawLoggedAmount } from '@/lib/domain/scan/format';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 
@@ -121,7 +122,7 @@ export async function stageOcrMeal(
     .values({
       userId,
       pipelineResult,
-      rawInput: `${input.productName} (${input.amount}${input.unit})`,
+      rawInput: `${input.productName} (${formatRawLoggedAmount(input.amount, input.unit)})`,
       entryMode: 'precise',
       loggedAt,
     })

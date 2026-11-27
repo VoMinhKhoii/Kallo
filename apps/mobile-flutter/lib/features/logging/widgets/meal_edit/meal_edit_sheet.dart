@@ -10,7 +10,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_motion.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/meal_edit/meal_edit_draft.dart';
-import '../../logic/meal_edit/meal_edit_format.dart';
+import '../../logic/serving_ladder.dart';
 import 'meal_edit_dish_section.dart';
 import 'meal_edit_stepper_row.dart';
 import 'meal_edit_summary.dart';
@@ -140,13 +140,13 @@ class _MealEditSheetState extends State<MealEditSheet> {
                         children: [
                           MealEditStepperRow(
                             label: 'logging.mealEdit.wholeMeal'.tr(),
-                            value: formatTimes(d.whole, locale),
+                            value: formatServingTimes(d.whole, locale),
                             minusLabel: 'logging.mealEdit.lessWhole'.tr(),
                             plusLabel: 'logging.mealEdit.moreWhole'.tr(),
                             onMinus:
-                                d.whole <= servingStep
-                                    ? null
-                                    : () => _set(d.stepWhole(-1)),
+                                canStepServingMultiplier(d.whole, -1)
+                                    ? () => _set(d.stepWhole(-1))
+                                    : null,
                             onPlus: () => _set(d.stepWhole(1)),
                           ),
                         ],

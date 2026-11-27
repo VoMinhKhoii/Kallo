@@ -18,6 +18,7 @@ import {
   type ParsedBarcodeProduct,
   parseAmountUnit,
 } from '@/lib/domain/barcode/types';
+import { formatRawLoggedAmount } from '@/lib/domain/scan/format';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 
@@ -168,7 +169,7 @@ export async function stageBarcodeMeal(
     .values({
       userId,
       pipelineResult,
-      rawInput: `${dbProduct.namePrimary} (${input.grams}${parseAmountUnit(dbProduct.amountUnit)})`,
+      rawInput: `${dbProduct.namePrimary} (${formatRawLoggedAmount(input.grams, parseAmountUnit(dbProduct.amountUnit))})`,
       entryMode: 'precise',
       loggedAt,
     })

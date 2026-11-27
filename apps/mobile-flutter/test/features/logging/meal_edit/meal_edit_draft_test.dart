@@ -74,20 +74,52 @@ void main() {
       expect(d.stepServings('0:dish 0', -1).dish('0:dish 0')!.servings, 1);
     });
 
-    test('minus at half a serving removes the dish on a saved meal', () {
-      final d = draftFromPersisted(bowl).stepServings('1:dish 1', -1);
-      expect(d.dish('1:dish 1')!.servings, 0.5);
+    test('minus at a quarter serving removes the dish on a saved meal', () {
+      var d = draftFromPersisted(bowl);
+      final steps = <double>[];
+      for (var i = 0; i < 5; i++) {
+        d = d.stepServings('1:dish 1', -1);
+        steps.add(d.dish('1:dish 1')!.servings);
+      }
+      expect(steps, [0.75, 2 / 3, 0.5, 1 / 3, 0.25]);
       expect(d.removesOnMinus(d.dish('1:dish 1')!), isTrue);
       expect(d.stepServings('1:dish 1', -1).dish('1:dish 1'), isNull);
     });
 
     test('the last dish can never be removed', () {
-      final one = draftFromPersisted(meal([bowl.mealItemGroups[1]]));
-      final half = one.stepServings('1:dish 1', -1);
-      expect(half.removesOnMinus(half.dish('1:dish 1')!), isFalse);
-      expect(half.servingsMinusDisabled(half.dish('1:dish 1')!), isTrue);
-      expect(half.stepServings('1:dish 1', -1).dish('1:dish 1')!.servings, 0.5);
+      var one = draftFromPersisted(meal([bowl.mealItemGroups[1]]));
+      for (var i = 0; i < 5; i++) {
+        one = one.stepServings('1:dish 1', -1);
+      }
+      expect(one.removesOnMinus(one.dish('1:dish 1')!), isFalse);
+      expect(one.servingsMinusDisabled(one.dish('1:dish 1')!), isTrue);
+      expect(one.stepServings('1:dish 1', -1).dish('1:dish 1')!.servings, 0.25);
     });
+
+    test(
+      'a per-serving logged food scales down by Servings and Whole meal',
+      () {
+        final wontons = meal([
+          dish(0, [
+            ing('wontons', grams: 1, kcal: 210, p: 13, unit: 'serving'),
+          ]),
+        ]);
+        final opened = draftFromPersisted(wontons);
+        expect(opened.dish('0:dish 0')!.unit, 'serving');
+        final half = opened.stepWhole(-1).stepWhole(-1).stepWhole(-1);
+        expect(half.whole, 0.5);
+        expect(half.dish('0:dish 0')!.grams, closeTo(0.5, 1e-9));
+        expect(half.totals.kcal, closeTo(105, 1e-9));
+        expect(persistedEditFrom(wontons, half).edits, [
+          {'id': 'wontons', 'newGrams': 0.5},
+        ]);
+        final third = half.stepWhole(-1);
+        expect(third.totals.kcal, closeTo(70, 1e-9));
+        expect(persistedEditFrom(wontons, third).edits, [
+          {'id': 'wontons', 'newGrams': 0.333},
+        ]);
+      },
+    );
   });
 
   group('amount', () {
@@ -106,16 +138,34 @@ void main() {
       expect(d.dish('0:dish 0')!.unit, 'g');
       expect(d.dish('1:dish 1')!.unit, 'ml');
     });
+
+    test(
+      'disables Amount minus when Whole meal thirds land at the floor with float drift',
+      () {
+        final m = meal([
+          dish(0, [ing('dip', grams: 30)]),
+        ]);
+        var d = draftFromPersisted(m);
+        for (var i = 0; i < 4; i++) {
+          d = d.stepWhole(-1); // 0.75 → 2/3 → 0.5 → 1/3 (≈10g)
+        }
+        expect(d.dish('0:dish 0')!.amountMinusDisabled, isTrue);
+      },
+    );
   });
 
   group('whole meal', () {
-    test('scales every dish by the same factor and keeps its own step', () {
+    test('scales every dish along the serving ladder and stops at 0.25×', () {
       final d = draftFromPersisted(bowl).stepWhole(1);
       expect(d.whole, 1.5);
       expect(d.dish('0:dish 0')!.grams, 525);
       expect(d.dish('1:dish 1')!.grams, 525);
-      expect(d.stepWhole(-1).stepWhole(-1).whole, 0.5);
-      expect(d.stepWhole(-1).stepWhole(-1).stepWhole(-1).whole, 0.5);
+      var cur = d;
+      for (var i = 0; i < 8; i++) {
+        cur = cur.stepWhole(-1);
+      }
+      expect(cur.whole, 0.25);
+      expect(cur.dish('0:dish 0')!.grams, closeTo(87.5, 1e-9));
     });
   });
 
@@ -176,10 +226,10 @@ void main() {
     });
 
     test('a resized dish sends every weighed row; a removed one its ids', () {
-      final draft = draftFromPersisted(bowl)
-          .stepServings('0:dish 0', 1)
-          .stepServings('1:dish 1', -1)
-          .stepServings('1:dish 1', -1);
+      var draft = draftFromPersisted(bowl).stepServings('0:dish 0', 1);
+      for (var i = 0; i < 6; i++) {
+        draft = draft.stepServings('1:dish 1', -1);
+      }
       final out = persistedEditFrom(bowl, draft);
       expect(out.edits, [
         {'id': 'rice', 'newGrams': 300.0},
@@ -190,15 +240,16 @@ void main() {
 
     test('a tiny part keeps a positive amount', () {
       final m = meal([
-        dish(0, [ing('rice', grams: 200), ing('salt', grams: 0.1)]),
+        dish(0, [ing('rice', grams: 200), ing('salt', grams: 0.01)]),
       ]);
-      final out = persistedEditFrom(
-        m,
-        draftFromPersisted(m).stepServings('0:dish 0', -1),
-      );
+      var d = draftFromPersisted(m);
+      for (var i = 0; i < 3; i++) {
+        d = d.stepServings('0:dish 0', -1); // 0.5×
+      }
+      final out = persistedEditFrom(m, d);
       expect(out.edits, [
         {'id': 'rice', 'newGrams': 100.0},
-      ]); // the salt stays at its 0.1 g floor rather than rounding to 0
+      ]); // the salt stays at its 0.01 g floor rather than rounding to 0
     });
   });
 
@@ -212,9 +263,10 @@ void main() {
             ingredients: [ing(id, grams: 100, kcal: 100)],
           );
       final m = meal([twin('Rice', 'rice'), twin('Soup', 'soup')]);
-      final d = draftFromPersisted(
-        m,
-      ).stepServings('0:Rice', -1).stepServings('0:Rice', -1);
+      var d = draftFromPersisted(m);
+      for (var i = 0; i < 6; i++) {
+        d = d.stepServings('0:Rice', -1);
+      }
       expect(d.dish('0:Rice'), isNull);
       expect(d.dish('0:Soup')!.grams, 100);
       final out = persistedEditFrom(m, d);
@@ -246,13 +298,16 @@ void main() {
       expect(high.stepServings('0:dish 0', 1).dish('0:dish 0')!.servings, 1.5);
     });
 
-    test('a small dish can still be removed once it hits the floor', () {
+    test('a small dish scales down through quarters and removes at 0.25×', () {
       final m = meal([
         dish(0, [ing('rice', grams: 200)]),
         dish(1, [ing('sauce', grams: 15)]),
       ]);
-      final d = draftFromPersisted(m).stepServings('1:dish 1', -1);
-      expect(d.dish('1:dish 1')!.grams, 10); // 0.67×, held at the floor
+      var d = draftFromPersisted(m);
+      for (var i = 0; i < 5; i++) {
+        d = d.stepServings('1:dish 1', -1);
+      }
+      expect(d.dish('1:dish 1')!.grams, closeTo(3.75, 1e-9));
       expect(d.removesOnMinus(d.dish('1:dish 1')!), isTrue);
       expect(d.stepServings('1:dish 1', -1).dish('1:dish 1'), isNull);
     });
@@ -268,17 +323,26 @@ void main() {
       expect(d.stepServings('1:dish 1', -1).dish('1:dish 1'), isNull);
     });
 
-    test('Whole meal down then up restores a dish that hit the floor', () {
-      final m = meal([
-        dish(0, [ing('rice', grams: 200)]),
-        dish(1, [ing('sauce', grams: 15)]),
-      ]);
-      final d = draftFromPersisted(m).stepWhole(-1);
-      expect(d.dish('1:dish 1')!.grams, 10);
-      final back = d.stepWhole(1);
-      expect(back.dish('1:dish 1')!.grams, 15);
-      expect(persistedEditFrom(m, back).edits, isEmpty);
-    });
+    test(
+      'Whole meal down then up restores a dish that hit the minimum floor',
+      () {
+        final m = meal([
+          dish(0, [ing('rice', grams: 200)]),
+          dish(1, [ing('spice', grams: 0.02)]),
+        ]);
+        var d = draftFromPersisted(m);
+        for (var i = 0; i < 5; i++) {
+          d = d.stepWhole(-1); // 0.25× → 0.005 clamped to 0.01
+        }
+        expect(d.dish('1:dish 1')!.grams, 0.01);
+        var back = d;
+        for (var i = 0; i < 5; i++) {
+          back = back.stepWhole(1);
+        }
+        expect(back.dish('1:dish 1')!.grams, closeTo(0.02, 1e-9));
+        expect(persistedEditFrom(m, back).edits, isEmpty);
+      },
+    );
   });
 
   group('unsaved', () {
@@ -287,8 +351,11 @@ void main() {
     test('scales off the item as staged and cannot remove a dish', () {
       final draft = draftFromStaged(staged, staged);
       expect(draft.canRemove, isFalse);
-      final half = draft.stepServings('a', -1);
-      expect(half.servingsMinusDisabled(half.dish('a')!), isTrue);
+      var bottom = draft;
+      for (var i = 0; i < 5; i++) {
+        bottom = bottom.stepServings('a', -1);
+      }
+      expect(bottom.servingsMinusDisabled(bottom.dish('a')!), isTrue);
       final out = stagedItemsFrom(draft.stepServings('a', 1), staged, 'en');
       expect(out.first.quantity, 600);
       expect(out.first.macros.calories, 900);
