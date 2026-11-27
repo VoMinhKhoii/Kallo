@@ -21,7 +21,12 @@ import 'start_device_preview.dart';
 /// Because the box takes the whole leftover, the 24pt under the title is the
 /// WHOLE gap to the CTA: every spare point goes into the art, not into air.
 class StartPreviewBox extends StatelessWidget {
-  const StartPreviewBox({super.key});
+  const StartPreviewBox({super.key, this.dissolve = true});
+
+  /// Whether the block fades out at its foot. `/start`'s single column sets
+  /// its title in that fade. Beside the fold nothing follows the block, so
+  /// the far pane shows the device and its dishes whole.
+  final bool dissolve;
 
   /// All of it. The block ends on the band's bottom edge and the title starts
   /// there, so nothing overflows this box downward any more.
@@ -47,7 +52,10 @@ class StartPreviewBox extends StatelessWidget {
             child: SizedBox(
               width: DishScatter.canvasWidth * scale,
               height: StartDevicePreview.blockHeight * scale,
-              child: const FittedBox(fit: BoxFit.fill, child: _StartBlock()),
+              child: FittedBox(
+                fit: BoxFit.fill,
+                child: _StartBlock(dissolve: dissolve),
+              ),
             ),
           ),
         );
@@ -69,7 +77,9 @@ class StartPreviewBox extends StatelessWidget {
 /// backdrop as well as on `/start`'s, and a band of flat canvas there cut a
 /// straight edge into the colour under it.
 class _StartBlock extends StatelessWidget {
-  const _StartBlock();
+  const _StartBlock({required this.dissolve});
+
+  final bool dissolve;
 
   /// Canvas x of the device card — 92, which centres 206 in 390.
   static const double _deviceLeft =
@@ -98,8 +108,23 @@ class _StartBlock extends StatelessWidget {
     ],
   ).createShader(bounds);
 
+  static const Widget _art = Stack(
+    clipBehavior: Clip.none,
+    children: [
+      Positioned.fill(child: DishScatter(front: false)),
+      Positioned(
+        left: _deviceLeft,
+        top: 0,
+        width: StartDevicePreview.width,
+        height: StartDevicePreview.cardHeight,
+        child: StartDevicePreview(),
+      ),
+      Positioned.fill(child: DishScatter(front: true)),
+    ],
+  );
+
   @override
-  Widget build(BuildContext context) => const SizedBox(
+  Widget build(BuildContext context) => SizedBox(
     width: DishScatter.canvasWidth,
     height: StartDevicePreview.blockHeight,
     // Clipped along the bottom ONLY: the band's lower edge is where the art
@@ -107,27 +132,17 @@ class _StartBlock extends StatelessWidget {
     // it as a smudge behind the promise. The sides and the top stay open —
     // the scatter bleeds off both screen edges and the top two dishes reach
     // up into the air between the block and the wordmark.
-    child: ClipRect(
-      clipper: _BandBottom(),
-      child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: _dissolve,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned.fill(child: DishScatter(front: false)),
-            Positioned(
-              left: _deviceLeft,
-              top: 0,
-              width: StartDevicePreview.width,
-              height: StartDevicePreview.cardHeight,
-              child: StartDevicePreview(),
-            ),
-            Positioned.fill(child: DishScatter(front: true)),
-          ],
-        ),
-      ),
-    ),
+    child:
+        dissolve
+            ? const ClipRect(
+              clipper: _BandBottom(),
+              child: ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: _dissolve,
+                child: _art,
+              ),
+            )
+            : _art,
   );
 }
 

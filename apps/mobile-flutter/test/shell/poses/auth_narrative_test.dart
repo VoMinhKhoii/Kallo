@@ -9,6 +9,7 @@ import 'package:kallo_mobile/features/auth/widgets/welcome/google_button.dart';
 import 'package:kallo_mobile/features/auth/widgets/auth_submit_button.dart';
 import 'package:kallo_mobile/features/auth/widgets/auth_text_field.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/backdrop/step_backdrop.dart';
+import 'package:kallo_mobile/features/onboarding/widgets/start/start_device_preview.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/start/start_hero.dart';
 import 'package:kallo_mobile/features/onboarding/widgets/start/start_preview_box.dart';
 import 'package:kallo_mobile/shared/widgets/brand/kallo_wordmark.dart';
@@ -209,6 +210,26 @@ void main() {
   // its first screen to its last: the start preview. Only the near pane
   // changes, so nothing is left hanging in a corner beside an empty half.
   group('beside the fold', () {
+    testWidgets('column on the left: the dishes stop short of the fold', (
+      tester,
+    ) async {
+      final dispose = await bootPose(
+        tester,
+        innerLandscapeLeft,
+        '/start',
+        signedIn: false,
+      );
+      final hero = tester.getRect(find.byType(StartHero));
+      final card = tester.getRect(find.byKey(StartDevicePreview.previewKey));
+      final scale = card.height / StartDevicePreview.cardHeight;
+      // The far pane is the right one here, so the phở (200pt left of the
+      // middle at scale 1) is the dish facing the fold.
+      expect(hero.left, greaterThanOrEqualTo(495.5));
+      expect(card.center.dx - 200 * scale, greaterThanOrEqualTo(hero.left));
+      expect(tester.takeException(), isNull);
+      await dispose();
+    });
+
     for (final route in [
       '/start',
       '/sign-in',
@@ -228,6 +249,26 @@ void main() {
         final hero = tester.getRect(find.byType(StartHero));
         expect(hero.left, 0);
         expect(hero.right, lessThanOrEqualTo(455.5));
+        // Nothing stands over or under the device here, so it is shown whole
+        // and centred on the line the near column centres on: the middle of
+        // the safe area, whose top is at least 12.
+        final card = tester.getRect(find.byKey(StartDevicePreview.previewKey));
+        expect(
+          card.center.dy,
+          moreOrLessEquals(
+            (12 + innerLandscape.size.height - innerLandscape.padding.bottom) /
+                2,
+            epsilon: .5,
+          ),
+        );
+        // The dishes over the card (40pt at scale 1) and under it (56pt) stay
+        // on the display, and the ones beside it (190pt from the middle)
+        // stop short of the fold.
+        final scale = card.height / StartDevicePreview.cardHeight;
+        expect(card.top, greaterThan(40 * scale));
+        expect(card.bottom, lessThan(innerLandscape.size.height - 56 * scale));
+        expect(card.center.dx + 190 * scale, lessThanOrEqualTo(455.5));
+        expect(scale, greaterThan(1.15));
         // The preview is the device alone, the same on every screen, so the
         // name is said once, in the screen's own column.
         expect(

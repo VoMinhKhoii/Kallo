@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../../shell/window/window_layout.dart';
 import 'start_device_preview.dart';
 import 'start_preview_box.dart';
 
@@ -18,54 +19,72 @@ import 'start_preview_box.dart';
 class StartHero extends StatelessWidget {
   const StartHero({super.key});
 
-  /// How far the top two dishes rise over the device card at scale 1: the
-  /// bánh mì starts 29pt above it, and its tilt lifts a corner further.
-  static const double _dishReach = 40;
+  /// How far the dishes reach past the device card at scale 1. Above, the
+  /// bánh mì starts 29pt over it and its tilt lifts a corner further. Below,
+  /// the pasta and the curry end 54pt under it.
+  static const double _reachAbove = 40;
+  static const double _reachBelow =
+      StartPreviewBox.visibleHeight - StartDevicePreview.cardHeight;
 
-  /// Where the art still reads at scale 1: the dissolve starts at
-  /// [StartDevicePreview.fadeTop], and halfway through it the art is mostly
-  /// gone. The block's box runs on past this, faded to nothing.
-  static const double _artBottom =
-      StartDevicePreview.fadeTop +
-      (StartDevicePreview.blockHeight - StartDevicePreview.fadeTop) / 2;
+  /// How far the dishes reach sideways from the canvas's centre line at
+  /// scale 1. On the right the sushi plate ends 187pt out, on the left the
+  /// phở starts 197pt out. Only the side at the fold counts: off the
+  /// display's own edge a dish may run, as it does on a phone.
+  static const double _reachRight = 190;
+  static const double _reachLeft = 200;
 
-  /// Clear air above the dishes and below the art.
-  static const double _margin = 24;
+  /// Clear air between the dishes and the display's edge.
+  static const double _margin = 12;
 
   @override
-  Widget build(BuildContext context) => const Hero(
-    tag: 'start-hero',
-    transitionOnUserGestures: true,
-    // In flight the pane's own clip is gone, and the dishes bleed past the
-    // pane on both sides by design.
-    child: ClipRect(
-      child: SafeArea(
-        minimum: EdgeInsets.only(top: 12),
-        child: LayoutBuilder(builder: _place),
-      ),
-    ),
-  );
-
-  /// Centres what the eye sees (the dishes on top down to the dissolve) on
-  /// the pane, rather than the block's box, whose bottom is mostly faded:
-  /// centring the box left the art riding high and cut the top dishes at the
-  /// display's edge. The faded tail may run past the pane, which clips it.
-  static Widget _place(BuildContext context, BoxConstraints box) {
-    const art = _dishReach + _artBottom;
-    final scale = math.min(
-      (box.maxHeight - 2 * _margin) / art,
-      StartPreviewBox.maxScale,
+  Widget build(BuildContext context) {
+    final padding = MediaQuery.paddingOf(context);
+    // The far pane stands right of the fold when the column is on the left.
+    final toFold = WindowLayout.of(context).nearLeft ? _reachLeft : _reachRight;
+    final inset = EdgeInsets.only(
+      top: math.max(padding.top, 12),
+      bottom: padding.bottom,
     );
-    final top = (box.maxHeight - art * scale) / 2 + _dishReach * scale;
+    return Hero(
+      tag: 'start-hero',
+      transitionOnUserGestures: true,
+      // In flight the pane's own clip is gone, and the dishes bleed past the
+      // pane's outer edge by design.
+      child: ClipRect(
+        child: Padding(
+          padding: inset,
+          child: LayoutBuilder(builder: (_, box) => _place(box, inset, toFold)),
+        ),
+      ),
+    );
+  }
+
+  /// Centres the device on the pane, on the line the near pane centres its
+  /// own column on (the middle of the safe area), and shows it whole. No
+  /// wordmark sits above it and no title below it here, so nothing needs the
+  /// room the single column leaves or the fade it sets its title in.
+  ///
+  /// It is as large as the dishes allow: the ones over and under the card
+  /// stay on the display, where they may stand in the safe area's own strip,
+  /// and the ones beside it stop short of the fold.
+  static Widget _place(BoxConstraints box, EdgeInsets inset, double toFold) {
+    const card = StartDevicePreview.cardHeight;
+    final half = box.maxHeight / 2;
+    final scale = [
+      (half + inset.top - _margin) / (card / 2 + _reachAbove),
+      (half + inset.bottom - _margin) / (card / 2 + _reachBelow),
+      box.maxWidth / 2 / toFold,
+      StartPreviewBox.maxScale,
+    ].reduce(math.min);
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Positioned(
           left: 0,
           right: 0,
-          top: top,
+          top: half - card * scale / 2,
           height: StartPreviewBox.visibleHeight * scale,
-          child: const StartPreviewBox(),
+          child: const StartPreviewBox(dissolve: false),
         ),
       ],
     );
