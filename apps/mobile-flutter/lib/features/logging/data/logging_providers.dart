@@ -24,6 +24,7 @@ import '../../dashboard/data/dashboard_cache.dart';
 import '../../dashboard/data/dashboard_providers.dart' as dash;
 import '../../nutrition/providers/nutrition_overview_provider.dart';
 import '../logic/meal_log_mode.dart';
+import 'days/day_list_provider.dart';
 import 'logging_keys.dart';
 import 'logging_models.dart';
 import 'handoff_slots.dart';
@@ -259,6 +260,7 @@ void invalidateMealSurfaces(
     invalidate(loggingDayProvider(LoggingDayArgs(userId, date)));
   }
   invalidate(mealDatesProvider(userId));
+  invalidate(loggingDayListProvider(userId));
   invalidate(recentCheatOccasionsProvider(userId));
   invalidate(dash.dashboardBundleProvider((userId: userId, date: date)));
   // A meal written before the dashboard first opened this session must not be

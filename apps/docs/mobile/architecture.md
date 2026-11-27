@@ -167,9 +167,10 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   window has a control column, both around `pill_nav_capsule.dart`; the web-parity drawer/hamburger retired in
   the 2026-08-31 native pass). Branches: dashboard, nutrition, circle (+ off-bar
   admin); the bar's center `+` opens the Add sheet (meal / weight). **Log pushes
-  full-screen** over the shell as a root `MaterialPage` (the composer owns its
-  bottom edge; swipe-back returns to the previous tab), like `/settings`, which now
-  pushes from the dashboard avatar.
+  full-screen** over the shell as a root page (`LogPage`, a Material route; the
+  composer owns its bottom edge; swipe-back returns to the previous tab), like
+  `/settings`, which now pushes from the dashboard avatar. Beside a control column
+  the shell's capsule stays visible on Log (see "Window layout").
 - **The back gesture:** every pushed route can be dragged back from ANYWHERE on the
   page, not from iOS's 20pt edge strip (`shell/nav/swipe_back/`, 2026-09-10). It is
   a vendored Cupertino gesture installed once as `KalloTheme.build`'s
@@ -215,13 +216,29 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
     side, a progress bar, a toggle or a pinned button on both sides, a full-width field or
     card by starting below the corner. Scroll views wear `KeepClearClip`, which cuts the
     corners out of what they paint, so nothing scrolls under the status items. The tabbed
-    pages, Log and Settings keep the column.
+    pages, Log and Settings keep the column. Log is a page pushed over the shell on the
+    root navigator, and beside a control column it leaves that column to the shell
+    (`LogPage`, `shell/nav/over_shell/log_page.dart`): the route stops being opaque, its
+    barrier lets taps through, and its transition is clipped short of the column, so the
+    shell's own capsule stays where it stands on the tabs and marks Log as current. Today,
+    Nutrition and Circle on it leave Log for that tab. The page redraws the part of the
+    capsule's shadow it covers (`NavColumnShadow`, beside it), and the branch under the
+    page leaves the semantics tree while Log is up. Without a column Log is the plain
+    opaque page it was.
   - *Two panes.* A window at least 840pt wide with a control column splits at the fold,
     which runs down the centre of the display (`shared/widgets/panes/two_pane_scaffold.dart`).
     The 40pt strip over the fold stays empty, so the panes are unequal: 0 to 455.5 and
     495.5 to 867 on a 951pt window (on a column-free page the near pane runs to 951, and
-    the two are mirror images). Today, Log and Nutrition put the day on the far side
-    and the task beside the column. Circle and Settings show list and detail
+    the two are mirror images). Today and Nutrition put the day on the far side
+    and the task beside the column. Log puts its days on the far side: the back
+    chevron, one month of calorie rings drawn as the web calendar draws them (ink while
+    short, green from 85% of the target, bare for the future), paged by month over the
+    90-day heatmap, then this week's days from today back to Monday, each with its
+    macros and calories (`features/logging/widgets/days/`). Beside the column is the day
+    as one column shows it, less the week strip: its title, the four gauges in one row,
+    the feed and the composer. The rows read each day through the feed's own provider,
+    two at a time after the first frame, so a tapped day is already loaded; no other
+    window asks for them. Circle and Settings show list and detail
     (`detail_pane_route.dart`): the route is the same in every window, so a thread that
     sits beside the feed when open is pushed over it once the phone is closed. The signed-out
     flow (`/start`, sign-in, email sign-in, every onboarding step, `/save-plan`) and the

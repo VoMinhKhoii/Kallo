@@ -7,6 +7,7 @@ import '../../../../services/http/api_client.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../circle/data/circle_providers.dart'
     show mealShareInvitesProvider;
+import '../../data/days/day_list_provider.dart';
 import '../../data/logging_models.dart';
 import '../../data/logging_providers.dart';
 import '../../data/stream_analysis_controller.dart';
@@ -94,6 +95,7 @@ class FeedMealActions {
   /// platform refresh control holds its spinner until the data settles.
   Future<void> refreshDay() async {
     ref.invalidate(mealDatesProvider(userId));
+    ref.invalidate(loggingDayListProvider(userId));
     await ref
         .read(loggingDayProvider(LoggingDayArgs(userId, date)).notifier)
         .refresh();

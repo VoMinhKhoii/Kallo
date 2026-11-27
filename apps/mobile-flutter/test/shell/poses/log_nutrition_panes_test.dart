@@ -12,7 +12,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_area.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_list.dart';
 import 'package:kallo_mobile/features/logging/widgets/timeline/timeline_picker.dart';
-import 'package:kallo_mobile/features/logging/widgets/timeline/timeline_strip.dart';
+import 'package:kallo_mobile/features/logging/widgets/days/log_days_pane.dart';
+import 'package:kallo_mobile/features/logging/widgets/days/log_month_header.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/summary/macro_summary.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
@@ -56,6 +57,12 @@ void main() {
           tester.widget<FeedList>(find.byType(FeedList)).scrollController;
       scroll.jumpTo(scroll.position.maxScrollExtent);
       await tester.pump(const Duration(milliseconds: 400));
+      // The pinned title and gauges leave the feed a shorter viewport, and
+      // the first jump lands before the live turn has been laid out.
+      await tester.ensureVisible(
+        find.byType(StreamingEntry, skipOffstage: false),
+      );
+      await tester.pump();
       expect(find.byType(StreamingEntry), findsOneWidget);
       final element = find.byType(StreamingEntry).evaluate().single;
       for (final pose in [outerPortrait, innerLandscape]) {
@@ -98,11 +105,11 @@ void main() {
       apiOverride: api,
     );
     final owner = tester.state(find.byType(FeedArea));
-    final strip = tester.widget<TimelineStrip>(find.byType(TimelineStrip));
+    final days = tester.widget<LogDaysPane>(find.byType(LogDaysPane));
     final yesterday = DateTime.parse(
-      strip.today,
+      days.today,
     ).subtract(const Duration(days: 1)).toIso8601String().substring(0, 10);
-    strip.onSelectDate(yesterday);
+    days.onSelectDate(yesterday);
     await settlePose(tester);
     final field = find.byType(EditableText).last;
     await tester.enterText(field, '2 eggs and toast');
@@ -113,7 +120,7 @@ void main() {
     expect(input.left, 495.5);
     expect(input.right, 855);
     expect(input.bottom, 623);
-    expect(tester.getRect(find.byType(TimelineStrip)).top, 76);
+    expect(tester.getRect(find.byType(LogMonthHeader)).top, 28);
     tester.view.viewInsets = const FakeViewPadding(bottom: 440);
     tester.view.padding = const FakeViewPadding(right: 168);
     await tester.pump();

@@ -16,6 +16,7 @@ import '../../dashboard/data/dashboard_providers.dart'
         dashboardBundleProvider,
         dashboardDayProvider,
         localTimezoneOffsetMinutes;
+import '../../logging/data/days/day_list_provider.dart';
 import '../../logging/data/logging_keys.dart' show todayDateString;
 import '../../logging/data/logging_providers.dart'
     show loggingDayProvider, mealDatesProvider;
@@ -43,6 +44,8 @@ Future<String> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
   // timeline needs a dot on a day it has already cached — without this the
   // caller navigates to a date the picker still shows as empty.
   ref.invalidate(mealDatesProvider);
+  // And the two-pane Log's month calendar, whose ring for that day grew.
+  ref.invalidate(loggingDayListProvider);
   // A newly-logged meal must also heal the dashboard's Today + week-strip ring,
   // which read off a separate bundle/day cache.
   DashboardCache.forgetAll();

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../theme/kallo_colors.dart';
 import 'nav/nav_visibility.dart';
+import 'nav/over_shell/log_page.dart';
 import 'nav/pill_nav_bottom.dart';
 import 'nav/pill_nav_column.dart';
 import 'window/window_layout.dart';
@@ -46,15 +47,26 @@ class TabScaffold extends ConsumerWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          NotificationListener<UserScrollNotification>(
-            onNotification:
-                (n) =>
-                    layout.hasControlColumn
-                        ? false
-                        : ref
-                            .read(navVisibilityProvider.notifier)
-                            .applyScroll(n),
-            child: navigationShell,
+          // Beside the column a Log page no longer blocks what is beneath
+          // it ([LogPage]), so the branch it covers leaves the semantics tree
+          // and only the capsule stays reachable.
+          ValueListenableBuilder<bool>(
+            valueListenable: logOverShell,
+            builder:
+                (context, covered, child) => ExcludeSemantics(
+                  excluding: covered && layout.hasControlColumn,
+                  child: child,
+                ),
+            child: NotificationListener<UserScrollNotification>(
+              onNotification:
+                  (n) =>
+                      layout.hasControlColumn
+                          ? false
+                          : ref
+                              .read(navVisibilityProvider.notifier)
+                              .applyScroll(n),
+              child: navigationShell,
+            ),
           ),
           if (layout.hasControlColumn)
             Positioned(

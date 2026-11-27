@@ -38,12 +38,12 @@ class FeedArea extends ConsumerStatefulWidget {
     super.key,
     required this.profile,
     required this.date,
-    this.farHeader,
+    this.panes,
   });
 
   final LoggingProfile profile;
   final String date;
-  final Widget? farHeader;
+  final FeedPaneParts? panes;
 
   @override
   ConsumerState<FeedArea> createState() => _FeedAreaState();
@@ -281,10 +281,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     );
 
     return FeedPanes(
-      farHeader: widget.farHeader,
-      summary: MacroSummary(view: view, profile: profile, full: true),
+      parts: widget.panes,
+      paneSummary: MacroSummary(view: view, profile: profile, pane: true),
       compactSummary: MacroSummary(view: view, profile: profile),
-      onRefresh: mealActions.refreshDay,
       overlay: FeedComposer(
         view: view,
         calorieTarget: profile.calorieTarget,

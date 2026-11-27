@@ -1312,6 +1312,15 @@
       "moreWhole": "More of the whole meal",
       "editDish": "Edit {name}"
     },
+    "days": {
+      "dayFormat": "EEE d",
+      "kcal": "{kcal} kcal",
+      "nothingLogged": "Nothing logged",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "targetMet": "Target met",
+      "belowTarget": "Below target"
+    },
     "timelineSidebar": {
       "navigationLabel": "Timeline navigation",
       "week": "Week {number}",

@@ -18,6 +18,7 @@ import 'features/circle/widgets/thread/thread_capsule_shadow.dart';
 import 'features/circle/screens/connect_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/logging/screens/logging_screen.dart';
+import 'shell/nav/over_shell/log_page.dart';
 import 'features/nutrition/screens/nutrition_screen.dart';
 import 'features/onboarding/providers/onboarding_draft_providers.dart';
 import 'features/onboarding/providers/onboarding_providers.dart';
@@ -190,13 +191,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       // The logging feed — FULL-SCREEN over the shell (the pill nav's Log
       // item, and every "take me to logging" call site via goToLogging). The
       // composer owns this screen's bottom edge, which is why it is not a
-      // shell branch under the floating bar.
+      // shell branch under the floating bar. Where the window has a control
+      // column, [LogPage] leaves that column to the shell's capsule.
       GoRoute(
         path: '/logging',
         parentNavigatorKey: _rootKey,
-        pageBuilder:
-            (context, state) =>
-                const MaterialPage<void>(child: LoggingScreen()),
+        pageBuilder: (context, state) => const LogPage(child: LoggingScreen()),
       ),
 
       // One Circle post and its replies, pushed over the shell from the feed's

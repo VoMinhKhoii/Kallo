@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'add_sheet.dart';
 import 'nav_actions.dart';
 import 'nav_visibility.dart';
+import 'over_shell/log_page.dart';
 import 'pill_nav_add_button.dart';
 import 'pill_nav_item.dart';
 import 'pill_nav_surface.dart';
@@ -23,7 +24,9 @@ import 'pill_nav_surface.dart';
 ///
 /// Today, Nutrition and Circle switch shell branches; Log PUSHES the logging
 /// feed full-screen over the shell (see [goToLogging]) — the composer owns
-/// that screen's bottom edge, and swipe-back returns here.
+/// that screen's bottom edge, and swipe-back returns here. Beside a control
+/// column the Log page leaves the column to this capsule ([LogPage]), which
+/// then marks Log as current; a branch item leaves Log for that tab.
 ///
 /// CupertinoTabBar cannot occupy the asymmetric safe-area column. Retire this
 /// custom placement when it can, preserving the Log push and Add sheet actions.
@@ -50,9 +53,18 @@ class PillNavCapsule extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      ValueListenableBuilder<bool>(
+        valueListenable: logOverShell,
+        builder: (context, logShown, _) => _capsule(context, ref, logShown),
+      );
+
+  Widget _capsule(BuildContext context, WidgetRef ref, bool logShown) {
+    // Only the side capsule stands beside a Log page; the bottom pill is
+    // covered by it, so it keeps its branch marked as it always has.
+    final onLog = logShown && axis == Axis.vertical;
     // Branch indices after the shell reorder: dashboard, nutrition, circle.
-    final current = navigationShell.currentIndex;
+    final current = onLog ? -1 : navigationShell.currentIndex;
     return PillNavSurface(
       axis: axis,
       child: Flex(
@@ -71,9 +83,13 @@ class PillNavCapsule extends ConsumerWidget {
           PillNavItem(
             axis: axis,
             icon: LucideIcons.pencilLine300,
+            activeIcon: LucideIcons.pencilLine400,
             label: tr('app.nav.log'),
-            active: false,
-            onTap: () => goToLogging(context),
+            active: onLog,
+            onTap: () {
+              // Already on Log: nothing to open.
+              if (!onLog) goToLogging(context);
+            },
           ),
           PillNavAddButton(
             axis: axis,

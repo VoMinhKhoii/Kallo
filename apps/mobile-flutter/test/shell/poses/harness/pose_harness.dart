@@ -10,6 +10,7 @@ import 'package:kallo_mobile/router.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/shell/kallo_app_theme.dart';
+import 'package:kallo_mobile/shell/nav/nav_actions.dart';
 import 'package:kallo_mobile/shared/widgets/mascot/bun_mascot.dart';
 
 import '../../../app_fonts.dart';
@@ -135,9 +136,21 @@ Future<Future<void> Function()> bootPose(
     ),
   );
   await tester.pumpAndSettle();
-  router.go(route);
+  // Log is reached the way the app reaches it: pushed over the tab shell,
+  // so a window with a control column shows the shell's capsule beside it.
+  if (route == '/logging') {
+    openLogging(router);
+  } else {
+    router.go(route);
+  }
   await settlePose(tester);
-  expect(router.routeInformationProvider.value.uri.path, route);
+  // A push does not move the reported URL; the top route's location does.
+  expect(
+    route == '/logging'
+        ? router.state.matchedLocation
+        : router.routeInformationProvider.value.uri.path,
+    route,
+  );
   return dispose;
 }
 

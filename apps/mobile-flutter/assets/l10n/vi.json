@@ -1309,6 +1309,15 @@
       "moreWhole": "Thêm cả bữa",
       "editDish": "Sửa {name}"
     },
+    "days": {
+      "dayFormat": "EEEE, d/M",
+      "kcal": "{kcal} kcal",
+      "nothingLogged": "Chưa ghi nhận",
+      "previousMonth": "Tháng trước",
+      "nextMonth": "Tháng sau",
+      "targetMet": "Đạt mục tiêu",
+      "belowTarget": "Chưa đạt"
+    },
     "timelineSidebar": {
       "navigationLabel": "Điều hướng dòng thời gian",
       "week": "Tuần {number}",

@@ -4,7 +4,8 @@ import '../../../../../shared/widgets/panes/two_pane_scaffold.dart';
 import '../../../../../shared/widgets/surface/kallo_primitives.dart';
 
 /// A loading silhouette in each pane, so profile loading promises the same
-/// arrangement as the loaded day without pinning cards in a short window.
+/// arrangement as the loaded day: the month and this week's rows in the far
+/// pane, the title, the gauge row and the cards in the near one.
 class LoggingPaneSkeleton extends StatelessWidget {
   const LoggingPaneSkeleton({super.key});
 
@@ -18,15 +19,17 @@ class LoggingPaneSkeleton extends StatelessWidget {
       // silhouette, outside this Screen, everywhere else.
       child: TwoPaneScaffold(
         single: null,
-        header: const SizedBox(height: 44),
         far: const Padding(
-          padding: EdgeInsets.only(left: 12),
+          padding: EdgeInsets.fromLTRB(24, 0, 12, 0),
           child: SingleChildScrollView(
             child: Column(
               children: [
-                SkeletonBar(height: 48, radius: 10),
                 SizedBox(height: 12),
-                SkeletonBar(height: 240, radius: 22),
+                SkeletonBar(height: 20, radius: 10),
+                SizedBox(height: 24),
+                SkeletonBar(height: 260, radius: 22),
+                SizedBox(height: 16),
+                SkeletonBar(height: 60, radius: 14),
               ],
             ),
           ),
@@ -34,6 +37,11 @@ class LoggingPaneSkeleton extends StatelessWidget {
         near: ListView(
           padding: const EdgeInsets.only(right: 12),
           children: [
+            const SizedBox(height: 12),
+            const SkeletonBar(width: 160, height: 20, radius: 10),
+            const SizedBox(height: 24),
+            const SkeletonBar(height: 88, radius: 22),
+            const SizedBox(height: 12),
             for (var i = 0; i < 3; i++)
               const Padding(
                 padding: EdgeInsets.only(bottom: 12),

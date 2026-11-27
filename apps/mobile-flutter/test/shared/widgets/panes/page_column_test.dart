@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/shared/widgets/surface/kallo_primitives.dart';
 import 'package:kallo_mobile/shared/widgets/list/grouped_list_card.dart';
+import 'package:kallo_mobile/features/logging/screens/logging_screen.dart';
 import 'package:kallo_mobile/features/logging/widgets/persisted/persisted_meal_card_content.dart';
 import 'package:kallo_mobile/shell/nav/pill_nav_surface.dart';
 import '../../../shell/poses/harness/pose_harness.dart';
@@ -20,11 +21,22 @@ void main() {
       '$route bounds its cards and keeps the scroll across column resizing',
       (tester) async {
         final dispose = await bootPose(tester, innerPortrait, route);
-        final cards = find.byWidgetPredicate(
-          (w) =>
-              w is KalloCard ||
-              w is GroupedListCard ||
-              w is PersistedMealCardContent,
+        // Beside a control column Log leaves the tab shell painting under
+        // it, so its cards and scroll views are looked for on Log alone.
+        Finder onPage(Finder finder) =>
+            route == '/logging'
+                ? find.descendant(
+                  of: find.byType(LoggingScreen),
+                  matching: finder,
+                )
+                : finder;
+        final cards = onPage(
+          find.byWidgetPredicate(
+            (w) =>
+                w is KalloCard ||
+                w is GroupedListCard ||
+                w is PersistedMealCardContent,
+          ),
         );
         expect(cards, findsWidgets);
         final rect = tester.getRect(cards.first);
@@ -35,10 +47,12 @@ void main() {
           expect(pill.left, 124.5);
           expect(pill.right, 544.5);
         }
-        final vertical = find.byWidgetPredicate(
-          (w) =>
-              w is Scrollable &&
-              axisDirectionToAxis(w.axisDirection) == Axis.vertical,
+        final vertical = onPage(
+          find.byWidgetPredicate(
+            (w) =>
+                w is Scrollable &&
+                axisDirectionToAxis(w.axisDirection) == Axis.vertical,
+          ),
         );
         final states =
             tester.stateList<ScrollableState>(vertical).toList()..sort(

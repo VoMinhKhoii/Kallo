@@ -28,46 +28,18 @@ class MacroSummary extends StatelessWidget {
     super.key,
     required this.view,
     required this.profile,
-    this.full = false,
+    this.pane = false,
   });
 
   final FeedViewState view;
   final LoggingProfile profile;
-  final bool full;
+
+  /// Beside the days in a two-pane window: the pane supplies the side
+  /// insets, so the row takes none of its own.
+  final bool pane;
 
   @override
   Widget build(BuildContext context) {
-    if (full) {
-      return Column(
-        children: [
-          const SizedBox(height: LoggingSpacing.block),
-          if (view.isLoading || view.hasError)
-            const MacroSummarySkeleton(full: true)
-          else ...[
-            CalorieDial(
-              logged: view.dailyCalories.toDouble(),
-              target: profile.calorieTarget.toDouble(),
-              goal: profile.goal,
-              atLeast: view.incompleteTotals.contains('calories'),
-            ),
-            const SizedBox(height: LoggingSpacing.block),
-            MacroDialRow(
-              atLeast: view.incompleteTotals,
-              current: {
-                'protein': view.dailyProtein,
-                'carbohydrate': view.dailyCarbs,
-                'fat': view.dailyFat,
-              },
-              target: {
-                'protein': profile.proteinTargetG,
-                'carbohydrate': profile.carbsTargetG,
-                'fat': profile.fatTargetG,
-              },
-            ),
-          ],
-        ],
-      );
-    }
     return FadeInUp(
       child: Container(
         // Clear in Aurora, so the page's glow runs on behind the dials
@@ -77,10 +49,10 @@ class MacroSummary extends StatelessWidget {
             KalloPalette.currentId == KalloPaletteId.aurora
                 ? null
                 : KalloColors.surface,
-        padding: const EdgeInsets.fromLTRB(
-          KalloSpacing.sp3,
+        padding: EdgeInsets.fromLTRB(
+          pane ? 0 : KalloSpacing.sp3,
           LoggingSpacing.block,
-          KalloSpacing.sp3,
+          pane ? 0 : KalloSpacing.sp3,
           LoggingSpacing.block,
         ),
         child:

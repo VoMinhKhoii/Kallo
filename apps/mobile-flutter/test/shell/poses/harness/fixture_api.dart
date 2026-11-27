@@ -7,7 +7,9 @@ FakeApiClient fixtureApi(PoseFixtures f) => FakeApiClient((request) {
   return switch (path) {
     '/api/v1/dashboard' => f.dashboard,
     '/api/v1/dashboard/heatmap' => f.heatmap,
-    '/api/v1/logging/day' => f.day,
+    '/api/v1/logging/day' => f.dayFor(
+      Uri.parse(request.path).queryParameters['date'],
+    ),
     '/api/v1/onboarding/profile' => f.profile,
     '/api/v1/nutrition/overview' => nutritionFixture(f),
     '/api/v1/groups/profile' => {'profile': f.circleProfile},

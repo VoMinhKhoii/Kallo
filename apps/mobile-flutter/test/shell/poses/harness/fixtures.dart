@@ -65,6 +65,46 @@ class PoseFixtures {
     'markedComplete': true,
   };
 
+  static const pastMealNames = [
+    'overnight oats with berries and almond butter',
+    'turkey and avocado wrap',
+    'miso soup with tofu and rice',
+    'peanut butter banana toast',
+    'lentil soup with crusty bread',
+    'shakshuka with pita',
+  ];
+
+  /// The day [when] names, as `/logging/day` serves it: today is [day];
+  /// every fourth day back is empty; the rest hold three or four meals.
+  Map<String, dynamic> dayFor(String? when) {
+    final ago =
+        when == null
+            ? 0
+            : DateTime.parse(date(0)).difference(DateTime.parse(when)).inDays;
+    if (ago <= 0) return day;
+    if (ago % 4 == 3) {
+      return {
+        'persistedMeals': <dynamic>[],
+        'pendingConfirmations': <dynamic>[],
+      };
+    }
+    // Yesterday is whole, so the under-logged note stays down.
+    final count = ago == 1 ? 4 : 3;
+    return {
+      'persistedMeals': [
+        for (var i = 0; i < count; i++)
+          {
+            'id': 'synthetic-past-$ago-$i',
+            'rawInput': pastMealNames[(ago + i) % pastMealNames.length],
+            'loggedAt': '${when}T${['08', '12', '16', '19'][i]}:00:00',
+            'nutrition': macros((ago + i) % 4),
+            'mealItemGroups': <dynamic>[],
+          },
+      ],
+      'pendingConfirmations': <dynamic>[],
+    };
+  }
+
   Map<String, dynamic> get weights => {
     'range': '30d',
     'weights': [for (var i = 0; i < 20; i++) 69.6 - i * .05],

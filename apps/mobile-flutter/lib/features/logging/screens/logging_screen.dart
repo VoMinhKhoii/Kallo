@@ -12,16 +12,17 @@ import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
 import '../logic/logging_spacing.dart';
-import '../logic/timeline_utils.dart' show formatTimelineDayLabel;
+import '../widgets/days/log_day_title.dart';
+import '../widgets/days/log_days_pane.dart';
 import '../widgets/feed/feed_area.dart';
+import '../widgets/feed/feed_panes.dart';
 import '../widgets/timeline/partial_yesterday_prompt.dart';
 import '../widgets/timeline/picker_dismiss_layer.dart';
 import '../widgets/timeline/timeline_picker.dart';
 import '../data/handoff_slots.dart';
+import '../data/days/day_row_variant_provider.dart';
 import '../../../shell/window/two_pane_transition.dart';
 import '../../../shell/window/window_layout.dart';
-import '../../../shell/header/app_header_back_button.dart';
-import '../widgets/timeline/timeline_strip.dart';
 import '../widgets/feed/placeholder/logging_pane_skeleton.dart';
 
 /// The logging tab. Owns the selected date + picker-expanded state so the date
@@ -116,6 +117,16 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen>
       );
     }
 
+    final showPrompt =
+        _selectedDate == today &&
+        !ref.watch(yesterdayPromptDismissedProvider(yesterday));
+    final prompt = PartialYesterdayPrompt(
+      userId: userId,
+      yesterday: yesterday,
+      calorieTarget: profile.calorieTarget,
+      onOpenDay: (date) => setState(() => _selectedDate = date),
+    );
+
     // The date chip MORPHS in place into the week strip (fixed height, so the
     // feed never shifts) — a buttery cross-dissolve, not a panel that opens
     // below. The scrim catches outside-taps to collapse back to the chip.
@@ -132,63 +143,32 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen>
       bottom: false,
       child: Column(
         children: [
-          Padding(
-            // No bottom inset — the macro summary below owns the one
-            // block gap, so the date strip never double-spaces it.
-            padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-            child:
-                twoPane
-                    ? SizedBox(
-                      height: 48,
-                      child: Row(
-                        mainAxisAlignment:
-                            WindowLayout.of(context).nearLeft
-                                ? MainAxisAlignment.end
-                                : MainAxisAlignment.start,
-                        children: [
-                          AppHeaderBackButton(
-                            onBack: () => Navigator.of(context).maybePop(),
-                          ),
-                          // The open strip below shows weekday and day only.
-                          // The chip it replaces also names the month, and
-                          // paging back a few weeks without one loses you.
-                          Text(
-                            formatTimelineDayLabel(
-                              _selectedDate,
-                              context.locale.toString(),
-                            ),
-                            style: dashBody(),
-                          ),
-                        ],
-                      ),
-                    )
-                    : ValueListenableBuilder<bool>(
-                      valueListenable: _pickerExpanded,
-                      builder:
-                          (_, expanded, _) => DateMorph(
-                            dates: mealDates,
-                            today: today,
-                            selectedDate: _selectedDate,
-                            expanded: expanded,
-                            // Changing the DAY does have to rebuild the feed.
-                            onSelectDate:
-                                (date) => setState(() => _selectedDate = date),
-                            onExpand: () => _pickerExpanded.value = true,
-                            onCollapse: () => _pickerExpanded.value = false,
-                          ),
+          // Two panes title the day in the near pane and page through days
+          // in the far one, so they have no header row here.
+          if (!twoPane)
+            Padding(
+              // No bottom inset — the macro summary below owns the one
+              // block gap, so the date strip never double-spaces it.
+              padding: const EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _pickerExpanded,
+                builder:
+                    (_, expanded, _) => DateMorph(
+                      dates: mealDates,
+                      today: today,
+                      selectedDate: _selectedDate,
+                      expanded: expanded,
+                      // Changing the DAY does have to rebuild the feed.
+                      onSelectDate:
+                          (date) => setState(() => _selectedDate = date),
+                      onExpand: () => _pickerExpanded.value = true,
+                      onCollapse: () => _pickerExpanded.value = false,
                     ),
-          ),
+              ),
+            ),
           // A once-daily nudge when *yesterday* was under-logged — only while
           // viewing today, and only until dismissed this session.
-          if (!twoPane &&
-              _selectedDate == today &&
-              !ref.watch(yesterdayPromptDismissedProvider(yesterday)))
-            PartialYesterdayPrompt(
-              userId: userId,
-              yesterday: yesterday,
-              calorieTarget: profile.calorieTarget,
-              onOpenDay: (date) => setState(() => _selectedDate = date),
-            ),
+          if (!twoPane && showPrompt) prompt,
           Expanded(
             // The outside-tap scrim reads the same notifier, so opening and
             // closing the picker never touches the feed beneath it.
@@ -198,28 +178,23 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen>
               child: FeedArea(
                 profile: profile,
                 date: _selectedDate,
-                farHeader: Column(
-                  children: [
-                    TimelineStrip(
-                      dates: mealDates,
-                      today: today,
-                      selectedDate: _selectedDate,
-                      expanded: true,
-                      onSelectDate:
-                          (date) => setState(() => _selectedDate = date),
-                      onClose: () {},
-                    ),
-                    if (_selectedDate == today &&
-                        !ref.watch(yesterdayPromptDismissedProvider(yesterday)))
-                      PartialYesterdayPrompt(
-                        userId: userId,
-                        yesterday: yesterday,
-                        calorieTarget: profile.calorieTarget,
-                        onOpenDay:
-                            (date) => setState(() => _selectedDate = date),
-                      ),
-                  ],
-                ),
+                panes:
+                    twoPane
+                        ? FeedPaneParts(
+                          title: LogDayTitle(date: _selectedDate, today: today),
+                          nudge: showPrompt ? prompt : null,
+                          far: LogDaysPane(
+                            userId: userId,
+                            today: today,
+                            selectedDate: _selectedDate,
+                            calorieTarget: profile.calorieTarget,
+                            variant: ref.watch(logDayRowVariantProvider),
+                            onSelectDate:
+                                (date) => setState(() => _selectedDate = date),
+                            onBack: () => Navigator.of(context).maybePop(),
+                          ),
+                        )
+                        : null,
               ),
             ),
           ),

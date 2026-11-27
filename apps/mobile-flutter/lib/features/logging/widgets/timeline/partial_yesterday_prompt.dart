@@ -67,7 +67,7 @@ class PartialYesterdayPrompt extends ConsumerWidget {
     return Padding(
       padding: paneInsets(
         context,
-        // FeedPanes already pads the far header in two-pane mode.
+        // FeedPanes already pads it in two-pane mode, atop the feed.
         side: WindowLayout.of(context).twoPane ? 0 : KalloSpacing.sp3,
         top: KalloSpacing.sp3,
       ),

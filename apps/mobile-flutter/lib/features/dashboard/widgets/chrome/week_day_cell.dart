@@ -14,7 +14,7 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../logging/logic/timeline_utils.dart';
 import '../../logic/dashboard_spacing.dart';
-import 'week_day_ring_painter.dart';
+import '../../../../shared/widgets/gauge/day_ring_painter.dart';
 
 class WeekDayCell extends StatelessWidget {
   const WeekDayCell({
@@ -109,7 +109,7 @@ class WeekDayCell extends StatelessWidget {
             width: ring,
             height: ring,
             child: CustomPaint(
-              painter: WeekDayRingPainter(
+              painter: DayRingPainter(
                 fraction: fraction,
                 arcColor: arcColor,
                 // In-range days (even unlogged) get a faint track; future bare.

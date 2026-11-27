@@ -31,8 +31,7 @@ class PillNavItem extends ConsumerWidget {
   /// reads bolder (`400`, 2.0) than the idle ones (`300`, 1.5) without any
   /// runtime-built [IconData] — `--tree-shake-icons` needs the const form.
   /// Colour alone was carrying selection and it did not survive a glance.
-  /// Null (the Log tab, which pushes full-screen and is never active) keeps
-  /// [icon] in both states.
+  /// Null keeps [icon] in both states.
   final IconData? activeIcon;
 
   final String label;
