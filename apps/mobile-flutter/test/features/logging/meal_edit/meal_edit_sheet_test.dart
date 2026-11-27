@@ -28,12 +28,13 @@ Widget _wrap(Widget child) => EasyLocalization(
   fallbackLocale: const Locale('en'),
   assetLoader: const FsL10nLoader(),
   child: Builder(
-    builder: (context) => MaterialApp(
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      home: Scaffold(body: child),
-    ),
+    builder:
+        (context) => MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: Scaffold(body: child),
+        ),
   ),
 );
 
@@ -66,20 +67,22 @@ Future<List<MealEditDraft>> _open(
   await tester.pumpWidget(
     _wrap(
       Builder(
-        builder: (context) => TextButton(
-          onPressed: () => showMealEditSheet(
-            context,
-            draft: draft,
-            commitLabel: 'Done',
-            openOnDish: openOnDish,
-            onCommit:
-                onCommit ??
-                (d) async {
-                  commits.add(d);
-                },
-          ),
-          child: const Text('open'),
-        ),
+        builder:
+            (context) => TextButton(
+              onPressed:
+                  () => showMealEditSheet(
+                    context,
+                    draft: draft,
+                    commitLabel: 'Done',
+                    openOnDish: openOnDish,
+                    onCommit:
+                        onCommit ??
+                        (d) async {
+                          commits.add(d);
+                        },
+                  ),
+              child: const Text('open'),
+            ),
       ),
     ),
   );

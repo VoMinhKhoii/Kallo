@@ -17,9 +17,13 @@ void main() {
   const scan = '/api/v1/nutrition-label/scan';
   const labelLog = '/api/v1/nutrition-label/log';
 
-  Object? reads(String method, String path, Object? body) => path == scan
-      ? <String, dynamic>{'label': biscuitLabelJson, 'labelImageId': 'img-1'}
-      : <String, dynamic>{};
+  Object? reads(String method, String path, Object? body) =>
+      path == scan
+          ? <String, dynamic>{
+            'label': biscuitLabelJson,
+            'labelImageId': 'img-1',
+          }
+          : <String, dynamic>{};
 
   Future<ScanHarness> inLabelMode(
     WidgetTester tester, {
@@ -148,9 +152,10 @@ void main() {
   });
 
   group('a label that could not be read', () {
-    Object? noLabel(String method, String path, Object? body) => path == scan
-        ? throw apiError('OCR_NO_LABEL_DETECTED', 422)
-        : <String, dynamic>{};
+    Object? noLabel(String method, String path, Object? body) =>
+        path == scan
+            ? throw apiError('OCR_NO_LABEL_DETECTED', 422)
+            : <String, dynamic>{};
 
     testWidgets('says so, never offers the same photo again, and retakes', (
       tester,

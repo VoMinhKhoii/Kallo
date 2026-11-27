@@ -20,14 +20,15 @@ void main() {
   const barcodeLog = '/api/v1/barcode/log';
   const labelLog = '/api/v1/nutrition-label/log';
 
-  Object? found(String method, String path, Object? body) => path == search
-      ? <String, dynamic>{'product': coconutWaterJson}
-      : <String, dynamic>{};
+  Object? found(String method, String path, Object? body) =>
+      path == search
+          ? <String, dynamic>{'product': coconutWaterJson}
+          : <String, dynamic>{};
 
   Object? notFound(String method, String path, Object? body) =>
       path.startsWith('/api/v1/barcode/search')
-      ? throw apiError('BARCODE_NOT_FOUND', 404)
-      : <String, dynamic>{};
+          ? throw apiError('BARCODE_NOT_FOUND', 404)
+          : <String, dynamic>{};
 
   Future<ScanHarness> atProduct(
     WidgetTester tester, {
@@ -190,8 +191,9 @@ void main() {
     await tester.tap(find.text('Custom'));
     await tester.pumpAndSettle();
     final answer = Completer<Object?>();
-    h.api.handler = (_, path, _) =>
-        path == barcodeLog ? answer.future : <String, dynamic>{};
+    h.api.handler =
+        (_, path, _) =>
+            path == barcodeLog ? answer.future : <String, dynamic>{};
     await tester.tap(find.text('Add meal'));
     await tester.pump();
 
@@ -261,9 +263,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel('More'));
       await tester.pumpAndSettle();
-      h.api.handler = (_, path, _) => path == barcodeLog
-          ? throw apiError('INTERNAL', 500)
-          : <String, dynamic>{};
+      h.api.handler =
+          (_, path, _) =>
+              path == barcodeLog
+                  ? throw apiError('INTERNAL', 500)
+                  : <String, dynamic>{};
       await h.tapText('Add meal');
 
       expect(h.closed, isFalse);
