@@ -180,6 +180,35 @@ same team. The widget needs iOS 17 (its deployment target); on iOS 15–16 the a
 the widget is simply not offered. How the widget works and how to test it:
 [today-widget.md](./today-widget.md).
 
+### Invite links open the app (Universal Links / App Links)
+
+A shared invite link, `https://kallo.fit/<locale>/invite/<slug>`, opens the app when it is
+installed and the web invite page when it is not. Three pieces have to agree:
+
+- **Web**: `kallo.fit/.well-known/apple-app-site-association` and
+  `kallo.fit/.well-known/assetlinks.json` (`app/.well-known/`), built from
+  `lib/app-links/associations.ts`: the iOS app id, the Play package `fit.kallo.app`, its two
+  signing-cert SHA-256s (Play app signing + our upload key) and the invite path prefixes. They
+  only take effect once the web is deployed.
+- **iOS**: `applinks:kallo.fit` in `Runner.entitlements`. The App ID `com.khoivo.nham` has the
+  **Associated Domains** capability (enabled 2026-11-27) and the match profile was regenerated
+  with it; a profile without it fails codesign. iOS fetches the file through Apple's CDN at
+  install, so a new path shows up on devices about a day after a deploy.
+- **Android**: the `autoVerify` intent filter in `AndroidManifest.xml`, whose `pathPrefix`
+  list a web test holds equal to the web's. Android checks `assetlinks.json` at install. A
+  new signing key (or a new package) must be added to `ANDROID_CERT_SHA256`, or links open in
+  the browser.
+
+Both apps set Flutter's own deep linking off (`FlutterDeepLinkingEnabled`,
+`flutter_deeplinking_enabled`): `app_links` listeners route every link, and go_router would
+otherwise get `/en/invite/<slug>` too and show the error screen.
+
+Checks: on iOS, long-press a link in Notes → "Open in Kallo"; Apple's cached copy is at
+`https://app-site-association.cdn-apple.com/a/v1/kallo.fit`. On Android,
+`adb shell pm get-app-links fit.kallo.app` shows `kallo.fit: verified`; before the web is
+deployed, `adb shell pm set-app-links-user-selection --user cur --package <pkg> true kallo.fit`
+lets you test the routing.
+
 ## Export compliance
 
 `ios/Runner/Info.plist` sets `ITSAppUsesNonExemptEncryption = false` — Kallo uses only standard

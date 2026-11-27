@@ -253,6 +253,12 @@ export const routeInventory = {
   // Route handlers outside `app/api` -- the ones the old `app/api`-only walk
   // could not see. The four static ones are rendered at build time and serve
   // bytes; the two auth-link endpoints are anonymous and call GoTrue.
+  '.well-known/apple-app-site-association/route.ts': [
+    'none',
+    false,
+    'none-cheap',
+  ],
+  '.well-known/assetlinks.json/route.ts': ['none', false, 'none-cheap'],
   '.well-known/oauth-protected-resource/route.ts': [
     'none',
     false,

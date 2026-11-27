@@ -226,6 +226,7 @@ another domain module is a smell worth a second look.
 | `ai/` | everything that talks to an LLM — see its own section below |
 | `actions/` | Server Actions, grouped by the surface they serve |
 | `api/` | route-handler plumbing: auth guard, respond, query parse, client fetch |
+| `app-links/` | which kallo.fit links open the mobile apps (invite links) and which builds may claim them — read by `app/.well-known/apple-app-site-association` and `assetlinks.json` |
 | `admin/` | the admin plane's logic — see its own section below |
 | `brand/` · `i18n/` | small single-concern modules; `brand/` holds the vector wordmark paths plus `illustrations/` — the generated Koboyo surface-state cast and its `cast.ts` picker |
 | `sidebar/` | the rail's cookie persistence, its vocabulary, and `state-machine.ts` — the pure 3-state FSM `useSidebarState` binds to |

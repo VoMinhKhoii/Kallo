@@ -12,6 +12,8 @@
  */
 export const APP_ROUTE_PATTERNS = [
   '/',
+  '/.well-known/apple-app-site-association',
+  '/.well-known/assetlinks.json',
   '/.well-known/oauth-protected-resource',
   '/[locale]',
   '/[locale]/[...rest]',

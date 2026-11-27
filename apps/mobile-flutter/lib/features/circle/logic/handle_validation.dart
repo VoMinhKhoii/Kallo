@@ -5,6 +5,9 @@
 /// flag obviously-bad input before the round-trip. The server still owns the
 /// reserved-word and uniqueness checks, so a draft passing these is not yet
 /// guaranteed to save.
+///
+/// [isValidHandleShape] also guards deep links: `inviteSlugFrom`
+/// (`circle_deep_links.dart`) routes only a slug of this shape.
 library;
 
 /// Web `HANDLE_MIN_LENGTH`.

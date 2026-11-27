@@ -39,15 +39,35 @@
             <!-- Circle invite deep link: nham://invite/<slug>. Captured by the
                  app_links listener (CircleDeepLinkListener) and routed to the
                  in-app connect screen. iOS accepts any host on the registered
-                 `nham` scheme, so no Info.plist change is needed there.
-                 TODO(P2): add an autoVerify https App Link + assetlinks.json so
-                 shareable https invite links open the app too (infra handoff). -->
+                 `nham` scheme, so no Info.plist change is needed there. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="nham" android:host="invite"/>
             </intent-filter>
+            <!-- Shared invite links, https://kallo.fit/<locale>/invite/<slug>:
+                 an App Link, verified against kallo.fit/.well-known/assetlinks.json
+                 (app/.well-known/assetlinks.json/route.ts), so they open the app
+                 instead of the browser. The prefixes match INVITE_PATH_PREFIXES
+                 in lib/app-links/associations.ts; a test holds the two equal. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="kallo.fit"/>
+                <data android:pathPrefix="/en/invite/"/>
+                <data android:pathPrefix="/vi/invite/"/>
+                <data android:pathPrefix="/invite/"/>
+            </intent-filter>
+            <!-- Every link is routed by an app_links listener
+                 (CircleDeepLinkListener, TodayWidgetLink, supabase_flutter).
+                 Flutter's own deep linking would also hand the URL to go_router,
+                 which has no /en/invite/... route and shows the error screen. -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false"
+              />
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
