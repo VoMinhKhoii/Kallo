@@ -52,14 +52,16 @@ List<String?> monthCells(DateTime month) {
   ];
 }
 
-/// Whether the month before [month] holds a day the data covers.
+/// Whether the data covers the whole month before [month].
 ///
 /// The covered days run unbroken from the oldest one to today, so the oldest
-/// alone answers it. No data yet means nothing to page back to.
+/// alone answers it. A month the data only reaches into would draw its
+/// earlier days as empty when nobody knows what they hold, so it is not
+/// offered. No data yet means nothing to page back to.
 bool canShowPreviousMonth(DateTime month, List<HeatmapCell>? days) {
   if (days == null || days.isEmpty) return false;
   final oldest = days.last.date;
-  return oldest.compareTo(dateToDateString(month)) < 0;
+  return oldest.compareTo(dateToDateString(shiftMonth(month, -1))) <= 0;
 }
 
 /// Whether a month after [month] has begun by [today].

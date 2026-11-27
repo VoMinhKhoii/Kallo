@@ -6,6 +6,8 @@ import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/panes/pane_insets.dart';
 import '../../../../shared/widgets/panes/pane_slot.dart';
 import '../../data/days/day_list_provider.dart';
+import '../../data/days/held_removals_provider.dart';
+import '../../data/days/week_days_refresh.dart';
 import '../../data/logging_providers.dart';
 import '../../logic/days/log_calendar.dart';
 import '../../logic/days/this_week.dart';
@@ -75,6 +77,7 @@ class _LogDaysPaneState extends ConsumerState<LogDaysPane> {
       ref.refresh(loggingDayListProvider(widget.userId).future),
       ref.read(loggingDayProvider(day).notifier).refresh(),
     ]);
+    await refreshLoadedWeekDays(ref, widget.userId, widget.selectedDate);
   }
 
   @override
@@ -93,15 +96,17 @@ class _LogDaysPaneState extends ConsumerState<LogDaysPane> {
             )
             .valueOrNull;
 
+    final held = ref.watch(heldMealRemovalsProvider);
     return LogWeekDays(
       userId: widget.userId,
       today: widget.today,
+      selectedDate: widget.selectedDate,
       builder: (week, totals) {
         double? kcalFor(String date) {
           final loaded = totals[date];
           if (loaded != null) return loaded.kcal;
           if (date == widget.selectedDate && selected != null) {
-            return DayTotals.of(selected).kcal;
+            return DayTotals.of(selected, held: held).kcal;
           }
           return byDate[date]?.calories;
         }

@@ -82,6 +82,26 @@ void main() {
       expect(totals.empty, isFalse);
     });
 
+    test('a meal waiting out its undo is not counted', () {
+      final day = LoggingDayData(
+        persistedMeals: [
+          _meal('oats with berries', '2026-11-18T08:00:00', kcal: 420),
+          _meal('lentil soup', '2026-11-18T12:30:00', kcal: 380),
+        ],
+        pendingConfirmations: const [],
+      );
+      final totals = DayTotals.of(day, held: {'lentil soup'});
+      expect(totals.kcal, 420);
+      expect(totals.typed, ['oats with berries']);
+      // The only meal held: the day reads as empty, as the feed shows it.
+      final none = DayTotals.of(
+        day,
+        held: {'oats with berries', 'lentil soup'},
+      );
+      expect(none.empty, isTrue);
+      expect(none.kcal, isNull);
+    });
+
     test('a missing macro stays unknown rather than reading as zero', () {
       final totals = DayTotals.of(
         LoggingDayData(

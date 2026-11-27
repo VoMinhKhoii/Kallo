@@ -22,6 +22,7 @@ import '../../dashboard/data/dashboard_providers.dart'
         dashboardBundleProvider,
         dashboardDayProvider,
         localTimezoneOffsetMinutes;
+import '../../logging/data/days/day_list_provider.dart';
 import '../../logging/data/logging_providers.dart' show loggingDayProvider;
 import '../../../models/http/api_error.dart';
 import 'feed_providers.dart'
@@ -363,6 +364,9 @@ Future<void> shareMealWithFriends(
     if (splits != null) 'splits': splits,
   });
   container.invalidate(loggingDayProvider);
+  // A split cuts the owner's meal down, so its day's ring on Log's calendar
+  // moves too.
+  container.invalidate(loggingDayListProvider);
   // The dashboard reads its ring off a separate bundle/day cache — invalidate
   // it too or the Today card + week-strip ring keep the pre-split total.
   DashboardCache.forgetAll();

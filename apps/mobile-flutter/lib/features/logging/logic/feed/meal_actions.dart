@@ -8,6 +8,8 @@ import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../circle/data/circle_providers.dart'
     show mealShareInvitesProvider;
 import '../../data/days/day_list_provider.dart';
+import '../../data/days/held_removals_provider.dart';
+import '../../data/days/week_days_refresh.dart';
 import '../../data/logging_models.dart';
 import '../../data/logging_providers.dart';
 import '../../data/stream_analysis_controller.dart';
@@ -52,6 +54,11 @@ class FeedMealActions {
   /// within the grace window.
   void remove(PersistedMeal meal) {
     onHoldRemoval(meal.id);
+    holdMealRemoval(
+      ProviderScope.containerOf(context, listen: false),
+      meal.id,
+      held: true,
+    );
     _finalizeRemoval(meal);
   }
 
@@ -95,10 +102,13 @@ class FeedMealActions {
   /// platform refresh control holds its spinner until the data settles.
   Future<void> refreshDay() async {
     ref.invalidate(mealDatesProvider(userId));
+    // Only a two-pane Log has the calendar, and with it the week's rows.
+    final days = ref.exists(loggingDayListProvider(userId));
     ref.invalidate(loggingDayListProvider(userId));
     await ref
         .read(loggingDayProvider(LoggingDayArgs(userId, date)).notifier)
         .refresh();
+    if (days) await refreshLoadedWeekDays(ref, userId, date);
   }
 
   Future<void> _finalizeDiscard(String analysisId) => _deleteAfterUndoWindow(
@@ -158,6 +168,7 @@ class FeedMealActions {
       duration: const Duration(seconds: 5),
       onAction: () {
         undone = true;
+        holdMealRemoval(scope, id, held: false);
         if (context.mounted) onReleaseRemoval(id);
       },
     );
@@ -172,6 +183,7 @@ class FeedMealActions {
       if (!gone) {
         // Releasing the id makes the card reappear, keeping the feed truthful.
         invalidateMealSurfaces(scope.invalidate, userId, date);
+        holdMealRemoval(scope, id, held: false);
         if (context.mounted) onRemovalFailed(id);
         return;
       }
@@ -182,7 +194,10 @@ class FeedMealActions {
     // with nobody on this day it is just marked stale.
     final open = context.mounted;
     invalidateMealSurfaces(scope.invalidate, userId, date, includeDay: !open);
-    if (!open) return;
+    if (!open) {
+      holdMealRemoval(scope, id, held: false);
+      return;
+    }
     try {
       await scope
           .read(loggingDayProvider(LoggingDayArgs(userId, date)).notifier)
@@ -192,6 +207,7 @@ class FeedMealActions {
       // harmless no-op once a later fetch succeeds).
       return;
     }
+    holdMealRemoval(scope, id, held: false);
     if (context.mounted) onReleaseRemoval(id);
   }
 }

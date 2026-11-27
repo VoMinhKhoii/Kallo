@@ -16,6 +16,7 @@ import 'package:kallo_mobile/features/logging/widgets/days/log_day_row.dart';
 import 'package:kallo_mobile/features/logging/widgets/days/log_days_pane.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_area.dart';
 import 'package:kallo_mobile/features/nutrition/screens/nutrition_screen.dart';
+import 'package:kallo_mobile/shared/widgets/feedback/kallo_refresh.dart';
 import 'package:kallo_mobile/shared/widgets/sheet/kallo_sheet.dart';
 import 'package:kallo_mobile/shell/header/app_header_back_button.dart';
 import 'package:kallo_mobile/shell/nav/pill_nav_capsule.dart';
@@ -269,6 +270,57 @@ void main() {
         typed.evaluate().length,
         variant == LogDayRowVariant.withMeals ? greaterThan(1) : greaterThan(0),
       );
+      await dispose();
+    });
+  }
+
+  testWidgets('a pull to refresh on the days refetches the loaded week, two '
+      'at a time', (tester) async {
+    final api = _SlowDays(const Duration(milliseconds: 150));
+    final dispose = await bootPose(
+      tester,
+      innerLandscape,
+      '/logging',
+      apiOverride: api,
+    );
+    final today = tester.widget<LogDaysPane>(find.byType(LogDaysPane)).today;
+    api.dates.clear();
+    api.peak = 0;
+    final scroll = tester.widget<KalloRefreshableScroll>(
+      find.descendant(
+        of: find.byType(LogDaysPane),
+        matching: find.byType(KalloRefreshableScroll),
+      ),
+    );
+    final done = scroll.onRefresh();
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await done;
+    // Each day of this week once: a meal logged elsewhere reaches its row.
+    expect(api.dates.toSet(), thisWeekDays(today).toSet());
+    expect(api.dates, hasLength(thisWeekDays(today).length));
+    expect(api.peak, lessThanOrEqualTo(2));
+    expect(tester.takeException(), isNull);
+    await dispose();
+  });
+
+  for (final from in [innerPortrait, phone]) {
+    testWidgets('a window that gains its column with Log open shows the '
+        'capsule in it (from ${from.name})', (tester) async {
+      final dispose = await bootPose(tester, from, '/logging');
+      for (final to in [innerLandscape, innerLandscapeLeft, outerPortrait]) {
+        resize(tester, to);
+        await settlePose(tester);
+        // The shell slid aside under the opaque page; beside a column it
+        // has to be back, or the column is empty and the capsule off screen.
+        final capsule = tester.getRect(find.byType(PillNavCapsule));
+        final left = to.padding.left > 0 ? 0.0 : to.size.width - 84;
+        expect(capsule.left, greaterThanOrEqualTo(left), reason: to.name);
+        expect(capsule.right, lessThanOrEqualTo(left + 84), reason: to.name);
+        expect(find.byType(LoggingScreen), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
       await dispose();
     });
   }

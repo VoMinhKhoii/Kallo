@@ -38,10 +38,14 @@ class DayTotals {
     required this.empty,
   });
 
-  /// Saved meals only: a staged card has not been eaten yet.
-  factory DayTotals.of(LoggingDayData day) {
-    final meals = [...day.persistedMeals]
-      ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
+  /// Saved meals only: a staged card has not been eaten yet. A meal in
+  /// [held] is being deleted and waits out its undo window; the gauges have
+  /// stopped counting it, so this does too.
+  factory DayTotals.of(LoggingDayData day, {Set<String> held = const {}}) {
+    final meals = [
+      for (final meal in day.persistedMeals)
+        if (!held.contains(meal.id)) meal,
+    ]..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
     double? sum(double? Function(MealNutrition n) pick) {
       double? total;
       for (final meal in meals) {

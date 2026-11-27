@@ -53,6 +53,7 @@ class FeedPanes extends StatefulWidget {
 
 class _FeedPanesState extends State<FeedPanes> {
   final _nearKey = GlobalKey(debugLabel: 'logging-feed');
+  final _farKey = GlobalKey(debugLabel: 'logging-days');
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +113,11 @@ class _FeedPanesState extends State<FeedPanes> {
     );
     return TwoPaneScaffold(
       single: near,
-      far: widget.parts?.far ?? const SizedBox.shrink(),
+      // Under a key, so the month on show survives the panes changing sides.
+      far:
+          widget.parts == null
+              ? const SizedBox.shrink()
+              : KeyedSubtree(key: _farKey, child: widget.parts!.far),
       near: near,
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../window/window_layout.dart';
 import 'nav_column_shadow.dart';
+import 'outside_column.dart';
 
 /// True from the moment a Log page is pushed over the tab shell until it
 /// starts to leave.
@@ -86,10 +87,27 @@ class _LogRoute extends PageRoute<void>
     super.dispose();
   }
 
+  /// The route under this one, the tab shell.
+  Route<dynamic>? _below;
+
+  @override
+  void didChangePrevious(Route<dynamic>? previousRoute) {
+    super.didChangePrevious(previousRoute);
+    _below = previousRoute;
+  }
+
   void _sync(bool besideColumn) {
     if (besideColumn == _besideColumn || !isActive) return;
     _besideColumn = besideColumn;
     if (animation!.isCompleted) overlayEntries.first.opaque = opaque;
+    // The shell decided whether to slide away under this page when the page
+    // was pushed, by asking [canTransitionFrom]. Without a column it slid a
+    // third of the window aside and is parked there; with one it must stand
+    // still. A window that gains or loses its column while Log is open (a
+    // rotation, a fold) makes it ask again, as the navigator does when the
+    // route over it changes.
+    // ignore: invalid_use_of_protected_member
+    if (_below?.isActive ?? false) _below!.didChangeNext(this);
     changedInternalState();
   }
 
@@ -121,7 +139,7 @@ class _LogRoute extends PageRoute<void>
   ) {
     final layout = WindowLayout.of(context);
     return ClipRect(
-      clipper: _OutsideColumn(layout),
+      clipper: OutsideColumn(layout),
       clipBehavior: layout.hasControlColumn ? Clip.hardEdge : Clip.none,
       child: super.buildTransitions(
         context,
@@ -131,32 +149,6 @@ class _LogRoute extends PageRoute<void>
       ),
     );
   }
-}
-
-/// The window less its control column.
-class _OutsideColumn extends CustomClipper<Rect> {
-  const _OutsideColumn(this.layout);
-  final WindowLayout layout;
-
-  @override
-  Rect getClip(Size size) => switch (layout.controlEdge) {
-    ControlEdge.bottom => Offset.zero & size,
-    ControlEdge.left => Rect.fromLTRB(
-      layout.columnWidth,
-      0,
-      size.width,
-      size.height,
-    ),
-    ControlEdge.right => Rect.fromLTRB(
-      0,
-      0,
-      size.width - layout.columnWidth,
-      size.height,
-    ),
-  };
-
-  @override
-  bool shouldReclip(_OutsideColumn oldClipper) => oldClipper.layout != layout;
 }
 
 /// Tells the route when the window gains or loses its column, after the

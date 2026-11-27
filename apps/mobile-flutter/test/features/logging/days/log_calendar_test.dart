@@ -46,14 +46,17 @@ void main() {
       expect(canShowNextMonth(DateTime(2025, 12), '2026-01-02'), isTrue);
     });
 
-    test('previous needs a covered day in the month before', () {
+    test('previous needs the whole month before to be covered', () {
       // 90 days back from Nov 18 reach Aug 21.
       final days = [
         _cell('2026-11-18', HeatmapCellStatus.logged),
         _cell('2026-08-21', HeatmapCellStatus.unlogged),
       ];
       expect(canShowPreviousMonth(DateTime(2026, 11), days), isTrue);
-      expect(canShowPreviousMonth(DateTime(2026, 9), days), isTrue);
+      expect(canShowPreviousMonth(DateTime(2026, 10), days), isTrue);
+      // August is covered from the 21st only: its first twenty days would
+      // draw as empty when nobody knows what they hold.
+      expect(canShowPreviousMonth(DateTime(2026, 9), days), isFalse);
       expect(canShowPreviousMonth(DateTime(2026, 8), days), isFalse);
     });
 
@@ -68,6 +71,8 @@ void main() {
         final days = [_cell('2026-10-01', HeatmapCellStatus.unlogged)];
         expect(canShowPreviousMonth(DateTime(2026, 11), days), isTrue);
         expect(canShowPreviousMonth(DateTime(2026, 10), days), isFalse);
+        final dayLater = [_cell('2026-10-02', HeatmapCellStatus.unlogged)];
+        expect(canShowPreviousMonth(DateTime(2026, 11), dayLater), isFalse);
       },
     );
   });

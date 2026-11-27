@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/days/held_removals_provider.dart';
 import '../../data/logging_providers.dart';
 import '../../logic/days/this_week.dart';
 
@@ -15,11 +16,16 @@ class LogWeekDays extends ConsumerStatefulWidget {
     super.key,
     required this.userId,
     required this.today,
+    required this.selectedDate,
     required this.builder,
   });
 
   final String userId;
   final String today;
+
+  /// The day the feed beside the pane is showing. Its request is the feed's,
+  /// and counts against [inFlight] while it runs.
+  final String selectedDate;
 
   /// This week's days, newest first, and the totals of those that arrived.
   final Widget Function(List<String> week, Map<String, DayTotals> totals)
@@ -48,15 +54,26 @@ class _LogWeekDaysState extends ConsumerState<LogWeekDays> {
   @override
   Widget build(BuildContext context) {
     final week = thisWeekDays(widget.today);
+    final held = ref.watch(heldMealRemovalsProvider);
     final totals = <String, DayTotals>{};
     var loading = 0;
+    if (!_admitted.contains(widget.selectedDate) &&
+        ref
+            .watch(
+              loggingDayProvider(
+                LoggingDayArgs(widget.userId, widget.selectedDate),
+              ),
+            )
+            .isLoading) {
+      loading++;
+    }
     for (final date in _admitted) {
       final day = ref.watch(
         loggingDayProvider(LoggingDayArgs(widget.userId, date)),
       );
       final value = day.valueOrNull;
       if (value != null) {
-        totals[date] = DayTotals.of(value);
+        totals[date] = DayTotals.of(value, held: held);
       } else if (!day.hasError) {
         loading++;
       }
