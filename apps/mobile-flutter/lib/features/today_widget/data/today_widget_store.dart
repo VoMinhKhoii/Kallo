@@ -1,10 +1,13 @@
 /// Hands the day to the home-screen widget, through `home_widget`.
 ///
-/// The package stores the JSON under [kTodayWidgetKey] in the App Group's
+/// iOS: the package stores the JSON under [kTodayWidgetKey] in the App Group's
 /// `UserDefaults` — the suite the extension reads
 /// (`ios/TodayWidget/TodaySnapshot.swift`) — and asks WidgetKit to reload the
-/// timeline of [kTodayWidgetKind]. The widget UI stays native SwiftUI; this is
-/// only the bridge.
+/// timeline of [kTodayWidgetKind]. Android: the same key in the package's own
+/// SharedPreferences, then an update broadcast to
+/// [kTodayWidgetAndroidProvider], which redraws
+/// (`android/.../todaywidget/TodaySnapshot.kt`). Both widget UIs stay native;
+/// this is only the bridge.
 library;
 
 import 'dart:convert';
@@ -24,11 +27,21 @@ const String kTodayWidgetKey = 'today.snapshot';
 /// The widget's `kind` (`TodayWidget.kind` in the extension).
 const String kTodayWidgetKind = 'TodayWidget';
 
-class TodayWidgetStore {
-  TodayWidgetStore({bool? isIOS})
-    : _isIOS = isIOS ?? defaultTargetPlatform == TargetPlatform.iOS;
+/// The Android widget's `AppWidgetProvider`, by its full class name: it lives
+/// under the app's namespace, which home_widget's short `androidName` does not
+/// resolve against when the namespace and application id ever part.
+const String kTodayWidgetAndroidProvider =
+    'fit.kallo.app.todaywidget.TodayWidgetProvider';
 
-  final bool _isIOS;
+class TodayWidgetStore {
+  TodayWidgetStore({bool? hasWidget})
+    : _hasWidget =
+          hasWidget ??
+          (defaultTargetPlatform == TargetPlatform.iOS ||
+              defaultTargetPlatform == TargetPlatform.android);
+
+  /// Only the two phones have a home-screen widget to write to.
+  final bool _hasWidget;
 
   /// The JSON that last LANDED (null once a write failed part-way), and the
   /// latest one asked for. Writes run one
@@ -40,9 +53,9 @@ class TodayWidgetStore {
 
   /// Asks for [snapshot] to be the widget's day. An unchanged day is not
   /// written again — every write asks WidgetKit for a reload, and its daily
-  /// budget is finite.
+  /// budget is finite (on Android, every write redraws the bitmap).
   Future<void> save(Map<String, Object?> snapshot) {
-    if (!_isIOS) return Future.value();
+    if (!_hasWidget) return Future.value();
     _wanted = jsonEncode(snapshot);
     final running = _draining;
     if (running != null) return running;
@@ -79,7 +92,10 @@ class TodayWidgetStore {
         json,
         appGroupId: kTodayWidgetAppGroup,
       );
-      await HomeWidget.updateWidget(iOSName: kTodayWidgetKind);
+      await HomeWidget.updateWidget(
+        iOSName: kTodayWidgetKind,
+        qualifiedAndroidName: kTodayWidgetAndroidProvider,
+      );
       return true;
     } on MissingPluginException {
       // A host without the native half (widget tests, an old build) — the

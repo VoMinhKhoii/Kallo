@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Small (2x2), medium (4x2) and large (4x4), as the iOS widget's families.
+     No updatePeriodMillis: the app pushes every change, and the provider sets
+     its own alarm for midnight and the 06:00 / 18:00 theme switch.
+     The picker preview is a capture of the small card on an API 35 emulator
+     (a sample day, light theme), cut to the card's rounded corners. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:maxResizeWidth="520dp"
+    android:maxResizeHeight="520dp"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/today_widget"
+    android:previewImage="@drawable/today_widget_preview"
+    android:description="@string/today_widget_description" />

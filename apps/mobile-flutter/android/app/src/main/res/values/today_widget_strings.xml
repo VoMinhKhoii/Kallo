@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget picker entry. Follows the phone language (the launcher draws
+     it), as the iOS widget's Localizable.strings do. -->
+<resources>
+    <string name="today_widget_name">Today</string>
+    <string name="today_widget_description">What you ate today against your targets.</string>
+</resources>

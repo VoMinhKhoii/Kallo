@@ -1,8 +1,9 @@
-# The iOS home-screen "Today" widget
+# The home-screen "Today" widget (iOS and Android)
 
 Small, medium and large, in English and Vietnamese. Design: direction "I · Dial row", approved
-2026-11-04. The app writes the day; a WidgetKit extension draws it. There is no network call,
-no l10n and no business rule in the extension.
+2026-11-04. The app writes the day; a WidgetKit extension (iOS) or an `AppWidgetProvider`
+(Android, [below](#android)) draws it. There is no network call, no l10n and no business rule
+on either native side.
 
 ## Data flow
 
@@ -101,7 +102,100 @@ xcrun simctl install booted build/ios/iphonesimulator/Runner.app
 
 Delete `today.debugTheme` afterwards. The override is compiled out of release builds.
 
+## Android
+
+The same card, drawn by `android/app/src/main/kotlin/fit/kallo/app/todaywidget/`. The Dart side
+is shared: `TodayWidgetStore` makes the same two `home_widget` calls on Android. The plugin
+ignores the App Group there and saves the JSON under `today.snapshot` in its own
+SharedPreferences file, `HomeWidgetPreferences`; `updateWidget(qualifiedAndroidName:
+'fit.kallo.app.todaywidget.TodayWidgetProvider')` then broadcasts `APPWIDGET_UPDATE` to that
+class, which redraws. The full class name is used because `androidName` resolves against the
+application id, not the namespace the class lives in.
+
+| Kotlin | Ported from (Swift) |
+|---|---|
+| `TodaySnapshot.kt` | `TodaySnapshot.swift`: the same JSON, version check and `shownOn(day)` |
+| `WidgetTheme.kt` | `WidgetTheme.swift`: both palettes, the 06–18 light hours, Aurora's two lights |
+| `gauge/GaugeGeometry.kt`, `gauge/GaugeReadout.kt` | `Gauge/GaugeGeometry.swift`, `Gauge/GaugeReadout.swift`, line for line |
+| `gauge/CalorieDial.kt`, `MacroDial.kt`, `DialRow.kt`, `GaugeDial.kt` | the `Gauge/` views |
+| `meals/MealFit.kt`, `meals/MealList.kt` | `Meals/`: newest meals that fit, two lines each |
+| `TodayWidgetRenderer.kt` | `TodayWidgetView.swift`: margins, date header, the three layouts |
+| `TodayBoundary.kt` | `TodayTimeline.swift`'s boundaries: midnight, 06:00, 18:00 |
+| `draw/WidgetType.kt`, `draw/TextLine.kt` | `WidgetFont.swift`, `ReadoutText.swift`: the fonts, and one line centred in its box |
+
+`test/android/today_widget_test.dart` pins the Kotlin to the same sources the iOS test pins the
+Swift to (palette, dial and readout constants, card sizes, JSON keys, the prefs file and key, the
+provider's class name and manifest entry, the tap link), so drift fails `flutter test`. CI builds
+no Android on a pull request; that test is what stands in for it.
+
+What differs from iOS, and why:
+
+- **One bitmap.** The provider draws the whole card into a bitmap (`TodayWidgetRenderer`) and
+  hands it to a single `ImageView`. A launcher-side `TextView` cannot set Be Vietnam Pro, and the
+  dial is a drawing. The fonts are read from the TTFs the app already bundles
+  (`flutter_assets/assets/google_fonts/`), so there is no second copy. TalkBack reads the calorie
+  dial's own words from the content description.
+- **Sizes come from the launcher**, not from three fixed families. The renderer picks the layout
+  from the size it is given: under 250dp wide is the small card (calorie dial alone), 250dp tall
+  adds the meals (large), otherwise medium. The large card sizes its dial row as a 170dp-tall
+  medium would. Launchers vary far more than iPhones do (2 to 5 cells across, rows of any
+  height, landscape), so the layout is searched, not assumed: the largest calorie radius, from
+  that size down to 20, whose row fits the card across and down. When no radius fits four dials
+  (a 3-cell widget in Vietnamese, a short landscape row), the calorie dial is drawn alone. A line
+  no radius can narrow enough (a long signed-out sentence on a 2-cell card) is ellipsized and the
+  arc keeps the largest size that fits; so are the date header and the large card's "Sign in to
+  track". A card shorter than the date over a radius-20 dial (112.5dp; a 2-row widget in landscape
+  on a short screen) is laid out at that height and drawn whole at a smaller scale.
+- **Orientation.** Portrait (narrowest width, tallest height) and landscape (widest, shortest)
+  each get a bitmap drawn at their own size, so a rotated home screen never shows a stretched
+  card.
+- **Bitmap memory.** The system refuses a widget update whose bitmaps pass 1.5 × the screen's own
+  ARGB size. The provider draws both cards at the screen density, or at a lower scale that keeps
+  them under half that budget (a large card in both orientations can pass it on a small phone or a
+  foldable's cover screen). If the system still refuses, it tries the portrait card alone at half
+  the scale, four times over, and last a card with no bitmap that still opens Today. It never keeps
+  the previous card, which after a sign-out or at midnight would show the old day.
+- **Centred dials.** Android's cells are taller than iOS's (a 2x2 Pixel cell is about 172x224dp
+  to the iPhone's 170x170), so on the small and medium cards the dials are centred in the room
+  between the date and the bottom margin rather than leaving the extra height under them. The
+  large card keeps them at the top, with the meals underneath.
+- **Even macro spacing.** iOS spreads the macro dials with `space-between`, so the gaps vary with
+  the length of each label ("PROTEIN" against "FAT"). Android puts the four arcs on one even gap.
+  Each pair of labels keeps 8dp between them, and the calorie arc keeps 12dp from the first macro
+  arc. The gaps are measured from the calorie arc, not from its widest text line, which sits
+  below the macro row. When the card is too narrow for one gap everywhere (long Vietnamese
+  labels), the macros hold their least gap and the gap beside the calorie dial takes the rest
+  (never under 12dp), so the calorie dial keeps its size.
+- **Corners** are the system widget radius on Android 12+ (16dp before), clipped into the bitmap.
+- **The clock.** No `updatePeriodMillis`. Each redraw sets one inexact alarm for the next
+  midnight, 06:00 or 18:00, so the date, the theme and the empty new day change with the app
+  closed (it may land a few minutes late; inexact alarms need no permission). `TIME_SET`,
+  `TIMEZONE_CHANGED` and `LOCALE_CHANGED` redraw too.
+- **Tap** is a `PendingIntent` for `nham://today`, which `MainActivity` declares an intent filter
+  for; `app_links` hands it to `TodayWidgetLink` as on iOS.
+- **The picker** shows "Today" / "Hôm nay" (`res/values*/today_widget_strings.xml`) and a
+  preview captured from the emulator (`res/drawable-nodpi/today_widget_preview.png`, a sample day
+  in English, light theme).
+
+### Testing it on the emulator
+
+Install a debug build, go home, long-press the wallpaper → Widgets → search "Kallo" → Add, then
+long-press the widget to drag its handles (4 wide for medium, 4 high for large). To render a
+crafted day, stop the app (it rewrites the snapshot when it runs), write the prefs file, and
+reinstall the same APK, which makes the launcher redraw every widget:
+
+```bash
+adb shell am force-stop fit.kallo.app
+adb push prefs.xml /data/local/tmp/prefs.xml
+adb shell "run-as fit.kallo.app sh -c 'cat /data/local/tmp/prefs.xml > shared_prefs/HomeWidgetPreferences.xml'"
+adb install -r build/app/outputs/flutter-apk/app-debug.apk
+```
+
+`prefs.xml` is a SharedPreferences map holding the JSON (XML-escaped) as
+`<string name="today.snapshot">`. Debug builds also read `<string name="today.debugTheme">`
+(`light` or `aurora`) from the same file to force a theme; release builds ignore it.
+
 ## Not in this widget
 
 Push updates (iOS 26 `WidgetPushHandler`), interactive buttons, lock-screen and StandBy families,
-Android.
+Android 15's generated (Glance) picker previews.
