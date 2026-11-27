@@ -18,17 +18,18 @@ import 'handle_validation.dart';
 /// (empty, `../settings`, `a/b`) is not an invite.
 @visibleForTesting
 String? inviteSlugFrom(Uri uri) {
-  // Handles are stored lowercase — normalize so a typed/QR'd uppercase link
-  // still resolves instead of 404ing.
   final segments = uri.pathSegments;
   final inviteIdx = segments.indexOf('invite');
-  String? slug;
-  if (inviteIdx != -1 && inviteIdx + 1 < segments.length) {
-    slug = segments[inviteIdx + 1].toLowerCase();
-  } else if (uri.host == 'invite' && segments.isNotEmpty) {
-    // Custom scheme puts `invite` in the host and the slug in the first segment.
-    slug = segments.first.toLowerCase();
-  }
+  final raw =
+      inviteIdx != -1 && inviteIdx + 1 < segments.length
+          ? segments[inviteIdx + 1]
+          // Custom scheme: `invite` is the host, the slug the first segment.
+          : uri.host == 'invite' && segments.isNotEmpty
+          ? segments.first
+          : null;
+  // Handles are stored lowercase — normalize so a typed/QR'd uppercase link
+  // still resolves instead of 404ing.
+  final slug = raw?.toLowerCase();
   return slug != null && isValidHandleShape(slug) ? slug : null;
 }
 

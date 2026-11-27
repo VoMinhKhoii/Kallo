@@ -1,7 +1,7 @@
 // Guards the native half of https invite links (DEV-73). The web half,
 // kallo.fit/.well-known/apple-app-site-association and assetlinks.json, is
-// tested beside its routes in app/.well-known/; the Android path prefixes are
-// held equal to the web's list there.
+// tested in lib/app-links/__tests__/, which also owns the contract that the
+// manifest's pathPrefix list equals the web's INVITE_PATH_PREFIXES.
 
 import 'dart:io';
 
@@ -17,15 +17,16 @@ void main() {
   test('iOS claims kallo.fit as a Universal Link domain', () {
     expect(
       entitlements,
-      contains(
-        '<key>com.apple.developer.associated-domains</key>\n'
-        '\t<array>\n'
-        '\t\t<string>applinks:kallo.fit</string>',
+      matches(
+        RegExp(
+          r'<key>com\.apple\.developer\.associated-domains</key>\s*<array>\s*'
+          r'<string>applinks:kallo\.fit</string>',
+        ),
       ),
     );
   });
 
-  test('Android verifies kallo.fit invite links as App Links', () {
+  test('Android verifies kallo.fit links as App Links', () {
     final filter = RegExp(
       r'<intent-filter android:autoVerify="true">([\s\S]*?)</intent-filter>',
     ).firstMatch(manifest);
@@ -34,9 +35,8 @@ void main() {
     expect(body, contains('android.intent.category.BROWSABLE'));
     expect(
       body,
-      contains('<data android:scheme="https" android:host="kallo.fit"/>'),
+      matches(RegExp(r'android:scheme="https"\s+android:host="kallo\.fit"')),
     );
-    expect(body, contains('android:pathPrefix="/en/invite/"'));
   });
 
   test("Flutter's own deep linking is off on both platforms", () {
@@ -45,13 +45,15 @@ void main() {
     // error screen.
     expect(
       infoPlist,
-      contains('<key>FlutterDeepLinkingEnabled</key>\n\t<false/>'),
+      matches(RegExp(r'<key>FlutterDeepLinkingEnabled</key>\s*<false/>')),
     );
     expect(
       manifest,
-      contains(
-        'android:name="flutter_deeplinking_enabled"\n'
-        '              android:value="false"',
+      matches(
+        RegExp(
+          r'android:name="flutter_deeplinking_enabled"\s+'
+          r'android:value="false"',
+        ),
       ),
     );
   });
