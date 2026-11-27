@@ -10,6 +10,12 @@ import 'screen.dart';
 /// Which camera holds the sensor: the barcode scanner or the label camera,
 /// never both, handed over behind the switch's dip and restarted when the
 /// user comes back from Settings with the permission they had refused.
+///
+/// Every start and stop of either camera goes through [_queue] — nothing
+/// else in the screen opens or releases one. On Android both plugins share
+/// one process-wide CameraX provider and each one's teardown unbinds
+/// everything bound to it, so a camera started beside another's teardown
+/// came up black.
 mixin ScanCameraHandover on ConsumerState<ScanScreen> {
   ScanType mode = ScanType.barcode;
   bool torch = false;
@@ -35,7 +41,7 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
   /// The dip is covering the camera, or on its way to.
   bool veiled = false;
 
-  /// Every change of camera runs here, one after the other. Each one reads
+  /// Every camera change runs here, one after the other. Each one reads
   /// [mode] and [cameraMode] when its turn comes, so taps that land during a
   /// teardown are settled by the next change instead of racing it.
   Future<void> _handover = Future.value();
@@ -77,6 +83,27 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
       veiled = false;
     });
   });
+
+  /// Back to the live camera of the mode on screen — from a result or a miss,
+  /// or a switch taken back before its dip landed. With a switch still
+  /// pending (`mode != cameraMode`), that switch opens the right camera.
+  Future<void> resumeCamera() => _queue(() async {
+    if (mode != cameraMode) return;
+    if (mode == ScanType.label) {
+      // A no-op while the preview is up; re-reports a camera that would not
+      // open, whose message the caller's retake just cleared.
+      labelCamera.open();
+      return;
+    }
+    barcodeCamera.arm();
+    if (barcodeCamera.isRunning) return;
+    // A new controller mounts a new scanner (`BarcodeCameraLayer` keys it).
+    setState(barcodeCamera.ensure);
+  });
+
+  /// Rest the scanner while a caught code is looked up and under its result;
+  /// [resumeCamera] builds it again.
+  void restScanner() => _queue(barcodeCamera.release);
 
   /// Back from Settings with the scanner stopped on a refused permission:
   /// start a fresh one, which asks the plugin again. The screen calls this

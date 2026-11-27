@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show MissingPluginException;
 
 import '../../label/image.dart';
+import 'teardown.dart';
 
 /// Owns the label branch's [CameraController] outright: built on [open], torn
 /// down when the app leaves the foreground (iOS revokes the capture session
@@ -27,7 +28,7 @@ class LabelCameraSession {
   /// picker reported meanwhile stays up.
   final VoidCallback onRecovered;
 
-  /// [onFailure] was called and no open has succeeded since.
+  /// An open failed and was reported, and no open has succeeded since.
   bool _reportedFailure = false;
 
   /// The live controller, or null while none is open. Listen to rebuild.
@@ -159,7 +160,7 @@ class LabelCameraSession {
         state == AppLifecycleState.paused) {
       if (live == null) return;
       controller.value = null;
-      _teardown = live.dispose();
+      _teardown = reportingFailure(live.dispose());
     } else if (state == AppLifecycleState.resumed &&
         live == null &&
         _wanted &&
@@ -181,10 +182,13 @@ class LabelCameraSession {
   /// this completes.
   Future<void> close() async {
     _wanted = false;
+    // A failure is the open's to recover from; the next open after a close is
+    // a fresh start, and must not clear what the photo picker says meanwhile.
+    _reportedFailure = false;
     final live = controller.value;
     if (live != null) {
       controller.value = null;
-      _teardown = live.dispose();
+      _teardown = reportingFailure(live.dispose());
     }
     await _run;
     await _teardown;
@@ -200,7 +204,9 @@ class LabelCameraSession {
       final file = await live.takePicture();
       return _disposed ? null : file.path;
     } on CameraException catch (error) {
-      if (!_disposed) _report(labelFailureForCamera(error.code));
+      // Not [_report]: the camera is still open, so no later open recovers
+      // from this, and one that did must not clear a newer picker failure.
+      if (!_disposed) onFailure(labelFailureForCamera(error.code));
       return null;
     } finally {
       _shooting = false;

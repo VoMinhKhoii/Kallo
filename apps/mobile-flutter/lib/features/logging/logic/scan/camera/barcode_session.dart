@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:mobile_scanner/mobile_scanner.dart';
+
+import 'teardown.dart';
 
 /// Owns the scanner's controller so the camera runs during the scanning phase
 /// and nowhere else — it must not keep streaming behind the quantity step.
@@ -55,11 +59,33 @@ class BarcodeCameraSession {
   Future<void> release() async {
     final live = _controller;
     _controller = null;
-    if (live != null) _teardown = live.dispose();
+    if (live != null) _teardown = reportingFailure(_stop(live));
     await _teardown;
   }
 
   Future<void>? _teardown;
+
+  /// A scanner still starting has not bound its camera yet: disposed now, the
+  /// plugin stops nothing, and the start that lands later unbinds whatever
+  /// opened in the meantime and keeps the sensor. So the start lands first.
+  static Future<void> _stop(MobileScannerController live) async {
+    if (live.value.isStarting) await _started(live);
+    await live.dispose();
+  }
+
+  /// Completes once [live] is no longer starting. Capped, because a start
+  /// that throws something other than a scanner error never clears the flag.
+  static Future<void> _started(MobileScannerController live) {
+    final done = Completer<void>();
+    void check() {
+      if (!live.value.isStarting && !done.isCompleted) done.complete();
+    }
+
+    live.addListener(check);
+    return done.future
+        .timeout(const Duration(seconds: 5), onTimeout: () {})
+        .whenComplete(() => live.removeListener(check));
+  }
 
   /// The camera stopped on an error (a refused permission) — the user may
   /// have fixed it in Settings since.

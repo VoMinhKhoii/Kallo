@@ -47,6 +47,10 @@ mixin ScanScreenActions
     });
     barcodeNotifier.scanAgain();
     labelNotifier.retake();
+    // Taken back before the dip landed: no swap comes, and the camera this
+    // mode shows may have been resting under the result that was just
+    // cleared.
+    if (!veiled) resumeCamera();
   }
 
   void onDetect(BarcodeCapture capture) {
@@ -67,7 +71,7 @@ mixin ScanScreenActions
     });
     // With a frame to hold, the camera can rest while the code is looked up
     // and under its result; resuming builds it again.
-    if (frame != null) barcodeCamera.release();
+    if (frame != null) restScanner();
     barcodeNotifier.search(raw);
   }
 
@@ -138,20 +142,9 @@ mixin ScanScreenActions
       frozen = null;
       clearResult();
     });
-    // Mid-dip, the swap about to land opens the right camera itself.
-    if (cameraMode != mode) {
-      mode == ScanType.barcode
-          ? barcodeNotifier.scanAgain()
-          : labelNotifier.retake();
-    } else if (mode == ScanType.barcode) {
-      barcodeNotifier.scanAgain();
-      barcodeCamera.ensure();
-      barcodeCamera.arm();
-    } else {
-      labelNotifier.retake();
-      // A no-op while the preview is up; re-reports a camera that would not
-      // open, whose message the retake just cleared.
-      labelCamera.open();
-    }
+    mode == ScanType.barcode
+        ? barcodeNotifier.scanAgain()
+        : labelNotifier.retake();
+    resumeCamera();
   }
 }
