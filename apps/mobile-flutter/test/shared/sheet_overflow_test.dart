@@ -244,13 +244,12 @@ void main() {
           tester,
           (c) => () => showMealModeSheet(c, current: MealLogMode.normal),
         );
-        // The last row is the one the 9/16 cap used to eat. Barcode is gated
-        // behind `isBarcodeLoggingSupported`, which is false under the test
-        // binding, so Manual is the deepest row this harness can assert on —
-        // in production the sheet is one row taller than what's covered here.
+        // The last row is the one the 9/16 cap used to eat. The test binding
+        // runs as Android, where Scan product is offered, so it is the
+        // deepest row — the same sheet a phone shows.
         await _expectReachable(
           tester,
-          find.text('logging.modeSelector.manual'.tr()),
+          find.text('logging.modeSelector.barcode'.tr()),
           entry.value,
         );
       });
