@@ -11,8 +11,9 @@ export function pageUrl(locale: string, path: string): string {
   return `${SITE_URL}/${locale}${path}`;
 }
 
+/** A link; brackets and backslashes in its text are escaped so they cannot close it early. */
 export function link(text: string, url: string): string {
-  return `[${text}](${url})`;
+  return `[${text.replace(/[\\[\]]/g, '\\$&')}](${url})`;
 }
 
 /** A sentence wrapped around one link, the way the pages write them. */
@@ -28,9 +29,16 @@ export function bullets(items: string[]): string[] {
   return items.map((item) => `- ${item}`);
 }
 
-/** A cell may not hold a line break or an unescaped pipe. */
-function cell(value: string): string {
-  return value.replace(/\|/g, '\\|').replace(/\s*\n\s*/g, ' ');
+/**
+ * A cell may not hold a line break or an unescaped pipe. Backslashes are
+ * escaped first, so a cell ending in `\` cannot turn the pipe's escape into
+ * an escaped backslash and a live column break.
+ */
+export function cell(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/\s*\n\s*/g, ' ');
 }
 
 /** A GitHub-flavoured table; `numeric` columns are right-aligned. */
