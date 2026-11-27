@@ -111,11 +111,12 @@ mixin ScanScreenActions
   }
 
   /// Send the held photo — once consent is on record. "Not now" drops the
-  /// photo and goes back to the camera rather than leaving it frozen there.
+  /// photo and goes back to the camera rather than leaving it frozen there
+  /// (reopened: a trip out of the app while the photo was held shut it).
   Future<void> scanLabel() async {
     final ok = await ensureAiConsent(context, ref);
     if (!mounted) return;
-    ok ? labelNotifier.scan() : labelNotifier.retake();
+    ok ? labelNotifier.scan() : resumeScanning();
   }
 
   void pickFromLibrary() => _takePhoto(

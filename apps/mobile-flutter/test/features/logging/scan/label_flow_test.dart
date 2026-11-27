@@ -102,6 +102,39 @@ void main() {
       expect(find.byType(ScanCameraProblem), findsNothing);
     });
 
+    testWidgets('"Not now" on AI consent goes back to an open camera', (
+      tester,
+    ) async {
+      var opens = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/camera'),
+            (call) async {
+              if (call.method == 'availableCameras') opens++;
+              throw MissingPluginException(call.method);
+            },
+          );
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+              const MethodChannel('plugins.flutter.io/camera'),
+              (call) async => throw MissingPluginException(call.method),
+            ),
+      );
+      final h = ScanHarness(tester, consented: false)..api.handler = reads;
+      await h.open();
+      await h.tapText('Nutrition label');
+      final before = opens;
+
+      await h.tapText('Library');
+      expect(find.text('Not now'), findsOneWidget, reason: 'consent asked');
+      await h.tapText('Not now');
+
+      expect(h.cameraIsLive, isTrue);
+      expect(h.api.bodiesTo(scan), isEmpty, reason: 'nothing sent');
+      expect(opens, greaterThan(before), reason: 'the camera is opened again');
+    });
+
     testWidgets('rises as the extracted table, one serving to start', (
       tester,
     ) async {

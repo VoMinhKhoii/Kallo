@@ -95,7 +95,7 @@ class ScanScreenState extends ConsumerState<ScanScreen>
       if (next.isAiConsentRequired && !(prev?.isAiConsentRequired ?? false)) {
         reaskAiConsent(context, ref).then((ok) {
           if (!mounted) return;
-          ok ? scanLabel() : labelNotifier.retake();
+          ok ? scanLabel() : resumeScanning();
         });
       }
     });

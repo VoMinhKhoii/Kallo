@@ -137,6 +137,7 @@ class ScanHarness {
     this.tester, {
     this.purpose = ScanPurpose.log,
     this.locked = false,
+    this.consented = true,
   });
 
   final WidgetTester tester;
@@ -144,6 +145,9 @@ class ScanHarness {
 
   /// A free account: label scan, Edit and Enter manually go to the paywall.
   final bool locked;
+
+  /// AI consent on record. Without it, reading a label asks first.
+  final bool consented;
 
   final api = ScanApi();
   final scanner = FakeScannerPlatform();
@@ -199,7 +203,7 @@ class ScanHarness {
           premiumLockProvider(
             PremiumFeature.labelScan,
           ).overrideWithValue(locked),
-          aiConsentProvider.overrideWithValue(true),
+          aiConsentProvider.overrideWithValue(consented),
           labelImageCaptureProvider.overrideWithValue((_) => picker()),
         ],
         child: EasyLocalization(
