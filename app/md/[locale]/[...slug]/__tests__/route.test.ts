@@ -95,6 +95,8 @@ describe('the public pages outside the docs', () => {
     for (const key of ['plans.free.name', 'plans.premium.name', 'offerNote']) {
       expect(body).toContain(key);
     }
+    // Lifetime cannot be bought on the web, and the page does not show it.
+    expect(body).not.toContain('lifetime');
     expect(body).toContain('https://kallo.fit/en/docs/account/premium');
   });
 
