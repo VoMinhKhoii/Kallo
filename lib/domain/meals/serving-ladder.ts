@@ -28,17 +28,28 @@ const THIRD_DISPLAY_EPS = 0.005;
 
 const SUB_AND_ONE_STEPS = [...SUB_ONE_SERVING_STEPS, 1] as const;
 
+/** Snap a value already rendered as `1/3` or `2/3` (e.g. `0.33` or `0.67` from
+ *  a rounded staged dish) onto its exact rung so the first `+` / `−` tap leaves
+ *  that rung instead of moving `0.33 → 0.333…` invisibly. Terminating rungs
+ *  stay exact (`EPS`) so off-step gram amounts still snap to the nearest rung. */
+function snapDisplayedThird(value: number): number {
+  if (Math.abs(value - 1 / 3) < THIRD_DISPLAY_EPS) return 1 / 3;
+  if (Math.abs(value - 2 / 3) < THIRD_DISPLAY_EPS) return 2 / 3;
+  return value;
+}
+
 /** The next rung up from `current`, or `current` when `max` stops it. */
 function stepUp(current: number, max?: number): number {
+  const base = snapDisplayedThird(current);
   let candidate: number | undefined;
   for (const rung of SUB_AND_ONE_STEPS) {
-    if (rung > current + EPS) {
+    if (rung > base + EPS) {
       candidate = rung;
       break;
     }
   }
   if (candidate === undefined) {
-    const steps = current / SERVING_STEP_ABOVE_ONE;
+    const steps = base / SERVING_STEP_ABOVE_ONE;
     candidate = (Math.floor(steps + EPS) + 1) * SERVING_STEP_ABOVE_ONE;
   }
   if (max !== undefined && candidate > max + EPS) return current;
@@ -47,13 +58,14 @@ function stepUp(current: number, max?: number): number {
 
 /** The next rung down from `current`, held at {@link MIN_SERVING_MULTIPLIER}. */
 function stepDown(current: number): number {
-  if (current > 1 + EPS) {
-    const steps = current / SERVING_STEP_ABOVE_ONE;
+  const base = snapDisplayedThird(current);
+  if (base > 1 + EPS) {
+    const steps = base / SERVING_STEP_ABOVE_ONE;
     return (Math.ceil(steps - EPS) - 1) * SERVING_STEP_ABOVE_ONE;
   }
   for (let i = SUB_ONE_SERVING_STEPS.length - 1; i >= 0; i--) {
     const rung = SUB_ONE_SERVING_STEPS[i];
-    if (rung < current - EPS) return rung;
+    if (rung < base - EPS) return rung;
   }
   return MIN_SERVING_MULTIPLIER;
 }

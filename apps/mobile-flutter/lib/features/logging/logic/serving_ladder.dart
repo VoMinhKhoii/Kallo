@@ -27,29 +27,41 @@ const double _thirdDisplayEps = 0.005;
 
 const List<double> _subAndOneSteps = [...subOneServingSteps, 1.0];
 
+/// Snap a value already rendered as `1/3` or `2/3` (e.g. `0.33` or `0.67` from
+/// a rounded staged dish) onto its exact rung so the first `+` / `−` tap leaves
+/// that rung instead of moving `0.33 → 0.333…` invisibly. Terminating rungs
+/// stay exact (`_eps`) so off-step gram amounts still snap to the nearest rung.
+double _snapDisplayedThird(double value) {
+  if ((value - 1 / 3).abs() < _thirdDisplayEps) return 1 / 3;
+  if ((value - 2 / 3).abs() < _thirdDisplayEps) return 2 / 3;
+  return value;
+}
+
 double _stepUp(double current, {double? max}) {
+  final base = _snapDisplayedThird(current);
   double? candidate;
   for (final rung in _subAndOneSteps) {
-    if (rung > current + _eps) {
+    if (rung > base + _eps) {
       candidate = rung;
       break;
     }
   }
   candidate ??=
-      ((current / servingStepAboveOne + _eps).floorToDouble() + 1) *
+      ((base / servingStepAboveOne + _eps).floorToDouble() + 1) *
       servingStepAboveOne;
   if (max != null && candidate > max + _eps) return current;
   return candidate;
 }
 
 double _stepDown(double current) {
-  if (current > 1.0 + _eps) {
-    return ((current / servingStepAboveOne - _eps).ceilToDouble() - 1) *
+  final base = _snapDisplayedThird(current);
+  if (base > 1.0 + _eps) {
+    return ((base / servingStepAboveOne - _eps).ceilToDouble() - 1) *
         servingStepAboveOne;
   }
   for (var i = subOneServingSteps.length - 1; i >= 0; i--) {
     final rung = subOneServingSteps[i];
-    if (rung < current - _eps) return rung;
+    if (rung < base - _eps) return rung;
   }
   return minServingMultiplier;
 }
@@ -76,9 +88,10 @@ int servingPluralCount(double value) => value > 1.0 + _eps ? 2 : 1;
 String formatServingValue(double value, String locale) {
   if ((value - 1 / 3).abs() < _thirdDisplayEps) return '1/3';
   if ((value - 2 / 3).abs() < _thirdDisplayEps) return '2/3';
-  final f = NumberFormat.decimalPattern(locale)
-    ..minimumFractionDigits = 0
-    ..maximumFractionDigits = 2;
+  final f =
+      NumberFormat.decimalPattern(locale)
+        ..minimumFractionDigits = 0
+        ..maximumFractionDigits = 2;
   return f.format(value);
 }
 

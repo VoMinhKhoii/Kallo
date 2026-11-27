@@ -40,6 +40,20 @@ void main() {
       expect(stepServingMultiplier(1.475, 1), 1.5);
     });
 
+    test(
+      'leaves displayed thirds (0.33 / 0.67) on the first tap in either direction',
+      () {
+        expect(stepServingMultiplier(0.33, 1), 0.5);
+        expect(stepServingMultiplier(0.33, -1), 0.25);
+        expect(stepServingMultiplier(0.335, 1), 0.5);
+        expect(stepServingMultiplier(0.335, -1), 0.25);
+        expect(stepServingMultiplier(0.665, 1), 0.75);
+        expect(stepServingMultiplier(0.665, -1), 0.5);
+        expect(stepServingMultiplier(0.67, 1), 0.75);
+        expect(stepServingMultiplier(0.67, -1), 0.5);
+      },
+    );
+
     test('honors an upper bound when stepping up', () {
       expect(canStepServingMultiplier(1.5, 1, max: 1.6), isFalse);
       expect(stepServingMultiplier(1.5, 1, max: 1.6), 1.5);
