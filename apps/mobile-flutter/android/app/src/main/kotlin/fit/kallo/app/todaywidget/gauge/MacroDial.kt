@@ -3,7 +3,6 @@ package fit.kallo.app.todaywidget.gauge
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import fit.kallo.app.todaywidget.TodaySnapshot
-import fit.kallo.app.todaywidget.WidgetFormat
 import fit.kallo.app.todaywidget.WidgetTheme
 import fit.kallo.app.todaywidget.draw.WidgetType
 import fit.kallo.app.todaywidget.draw.drawLine
@@ -36,7 +35,7 @@ class MacroDial(
       Macro.CARBS -> Parts(day.eaten.carbs, day.target.carbs, day.copy.carbs, theme.carbs)
       Macro.FAT -> Parts(day.eaten.fat, day.target.fat, day.copy.fat, theme.fat)
     }
-    label = name.uppercase(WidgetFormat(day.locale).locale)
+    label = name.uppercase(day.format.locale)
     glyph.mutate().setTint(color)
     val m = GaugeReadout.macroLines(radius)
     val dash = GaugeReadout.NO_VALUE

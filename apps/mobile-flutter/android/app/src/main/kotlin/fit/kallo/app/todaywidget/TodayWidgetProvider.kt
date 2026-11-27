@@ -1,6 +1,5 @@
 package fit.kallo.app.todaywidget
 
-import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -13,7 +12,8 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.RemoteViews
 import fit.kallo.app.R
-import java.util.Calendar
+import fit.kallo.app.todaywidget.gauge.CalorieWording
+import kotlin.math.sqrt
 
 /**
  * Kallo's home-screen "Today" widget on Android: the iOS widget's three sizes,
@@ -26,7 +26,7 @@ import java.util.Calendar
 class TodayWidgetProvider : AppWidgetProvider() {
   override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
     for (id in ids) draw(context, manager, id)
-    scheduleNextBoundary(context)
+    TodayBoundary.schedule(context)
   }
 
   override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) {
@@ -36,19 +36,17 @@ class TodayWidgetProvider : AppWidgetProvider() {
   override fun onReceive(context: Context, intent: Intent) {
     when (intent.action) {
       // A theme switch or midnight, or the phone's clock or zone moved under us.
-      ACTION_BOUNDARY, Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED,
+      TodayBoundary.ACTION, Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED,
       Intent.ACTION_LOCALE_CHANGED -> redrawAll(context)
       else -> super.onReceive(context, intent)
     }
   }
 
   override fun onDisabled(context: Context) {
-    alarms(context).cancel(boundaryIntent(context))
+    TodayBoundary.cancel(context)
   }
 
   companion object {
-    private const val ACTION_BOUNDARY = "fit.kallo.app.todaywidget.BOUNDARY"
-
     /** Debug builds only: force a theme for screenshots, as the iOS widget's `today.debugTheme`. */
     private const val DEBUG_THEME_KEY = "today.debugTheme"
 
@@ -59,7 +57,7 @@ class TodayWidgetProvider : AppWidgetProvider() {
       val manager = AppWidgetManager.getInstance(context)
       val ids = manager.getAppWidgetIds(ComponentName(context, TodayWidgetProvider::class.java))
       for (id in ids) draw(context, manager, id)
-      if (ids.isNotEmpty()) scheduleNextBoundary(context)
+      if (ids.isNotEmpty()) TodayBoundary.schedule(context)
     }
 
     private fun draw(context: Context, manager: AppWidgetManager, id: Int) {
@@ -68,28 +66,29 @@ class TodayWidgetProvider : AppWidgetProvider() {
       // Portrait is the launcher's narrowest width and tallest height;
       // landscape the widest and shortest. Each gets a card drawn at its own
       // size, so neither is a stretched copy of the other.
-      val portrait = Pair(
+      val portrait = SizeDp(
         dp(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH) ?: 170,
         dp(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT) ?: 170,
       )
-      val landscape = Pair(
-        dp(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH) ?: portrait.first,
-        dp(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT) ?: portrait.second,
+      val landscape = SizeDp(
+        dp(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH) ?: portrait.width,
+        dp(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT) ?: portrait.height,
       )
       val now = System.currentTimeMillis()
-      val snapshot = TodaySnapshotStore.read(context)
+      // The day as it reads now: an earlier day's snapshot is an empty new day.
+      val day = TodaySnapshotStore.read(context)?.shownAt(now)
       val renderer = TodayWidgetRenderer(context)
       val theme = theme(context, now)
-      val description = describe(snapshot?.shownOn(TodaySnapshotStore.dayKey(now)))
-      fun card(size: Pair<Int, Int>, scale: Float) = RemoteViews(context.packageName, R.layout.today_widget).apply {
-        val bitmap = renderer.render(snapshot, now, size.first.toDouble(), size.second.toDouble(), theme, scale)
+      val description = describe(day)
+      fun card(size: SizeDp, scale: Float) = RemoteViews(context.packageName, R.layout.today_widget).apply {
+        val bitmap = renderer.render(day, now, size.width.toDouble(), size.height.toDouble(), theme, scale)
         setImageViewBitmap(R.id.today_widget_card, bitmap)
         setContentDescription(R.id.today_widget_card, description)
         setOnClickPendingIntent(R.id.today_widget_card, openToday(context))
       }
-      val sizes = if (landscape == portrait) listOf(portrait) else listOf(landscape, portrait)
-      val scale = scaleWithinBudget(context, sizes)
-      val views = if (sizes.size == 1) card(portrait, scale) else RemoteViews(card(landscape, scale), card(portrait, scale))
+      val oneShape = landscape == portrait
+      val scale = scaleWithinBudget(context, if (oneShape) listOf(portrait) else listOf(landscape, portrait))
+      val views = if (oneShape) card(portrait, scale) else RemoteViews(card(landscape, scale), card(portrait, scale))
       try {
         manager.updateAppWidget(id, views)
       } catch (tooBig: IllegalArgumentException) {
@@ -101,17 +100,20 @@ class TodayWidgetProvider : AppWidgetProvider() {
       }
     }
 
+    /** A launcher-reported widget size, in dp. */
+    private data class SizeDp(val width: Int, val height: Int)
+
     /**
      * Pixels per dp for this widget's cards: the screen density, or less when
      * the cards together would pass half the bitmap memory the system allows a
      * widget update (1.5 × the screen's own ARGB size), which a large card in
      * both orientations can on a small phone or a foldable's cover screen.
      */
-    private fun scaleWithinBudget(context: Context, sizesDp: List<Pair<Int, Int>>): Float {
+    private fun scaleWithinBudget(context: Context, sizesDp: List<SizeDp>): Float {
       val metrics = context.resources.displayMetrics
       val budget = 0.5 * 1.5 * 4.0 * metrics.widthPixels * metrics.heightPixels
-      val perScale2 = 4.0 * sizesDp.sumOf { (w, h) -> w.toDouble() * h }
-      val fit = kotlin.math.sqrt(budget / perScale2).toFloat()
+      val perScale2 = 4.0 * sizesDp.sumOf { it.width.toDouble() * it.height }
+      val fit = sqrt(budget / perScale2).toFloat()
       return minOf(metrics.density, fit)
     }
 
@@ -125,13 +127,11 @@ class TodayWidgetProvider : AppWidgetProvider() {
       return WidgetTheme.at(now)
     }
 
-    /** What TalkBack reads for the card: the dial's own words. */
+    /** What TalkBack reads for the card: the calorie dial's own words. */
     private fun describe(day: TodaySnapshot?): String? {
       day ?: return null
       if (!day.signedIn) return day.copy.signedOut
-      val wording = fit.kallo.app.todaywidget.gauge.CalorieWording.of(
-        day.eaten.kcal, day.target.kcal, "kcal" in day.floors, true, day.copy, WidgetFormat(day.locale),
-      )
+      val wording = CalorieWording.of(day, long = true)
       return "${wording.figure} ${wording.unit}, ${wording.detail}"
     }
 
@@ -141,43 +141,6 @@ class TodayWidgetProvider : AppWidgetProvider() {
       return PendingIntent.getActivity(
         context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
       )
-    }
-
-    private fun alarms(context: Context) = context.getSystemService(AlarmManager::class.java)
-
-    private fun boundaryIntent(context: Context): PendingIntent =
-      PendingIntent.getBroadcast(
-        context, 0,
-        Intent(context, TodayWidgetProvider::class.java).setAction(ACTION_BOUNDARY),
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-      )
-
-    /**
-     * One inexact alarm at the next theme switch (06:00, 18:00) or midnight, so
-     * the date, the theme and an empty new day change with the app closed; each
-     * one redraws and sets the next. Inexact needs no exact-alarm permission and
-     * may land a few minutes late, which a date header can afford.
-     */
-    private fun scheduleNextBoundary(context: Context) {
-      alarms(context).set(AlarmManager.RTC, nextBoundary(System.currentTimeMillis()), boundaryIntent(context))
-    }
-
-    /** The first of midnight, 06:00 and 18:00 strictly after [now], local time. */
-    fun nextBoundary(now: Long): Long {
-      val day = Calendar.getInstance().apply {
-        timeInMillis = now
-        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-      }
-      for (offset in 0..1) {
-        for (hour in listOf(0, WidgetTheme.LIGHT_FROM, WidgetTheme.LIGHT_UNTIL)) {
-          val at = (day.clone() as Calendar).apply {
-            add(Calendar.DAY_OF_MONTH, offset); set(Calendar.HOUR_OF_DAY, hour)
-          }
-          if (at.timeInMillis > now) return at.timeInMillis
-        }
-      }
-      return now + 6 * 60 * 60 * 1000L
     }
   }
 }

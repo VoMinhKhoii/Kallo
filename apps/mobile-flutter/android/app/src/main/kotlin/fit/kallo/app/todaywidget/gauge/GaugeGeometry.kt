@@ -3,6 +3,7 @@ package fit.kallo.app.todaywidget.gauge
 import android.graphics.Path
 import android.graphics.PointF
 import android.graphics.RectF
+import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -125,7 +126,7 @@ object GaugeGeometry {
       var sweep = to - from
       if (clockwise) { while (sweep < 0) sweep += 360.0 } else { while (sweep > 0) sweep -= 360.0 }
       // A float-noise "almost back to the start" is no arc, not a full turn.
-      if (kotlin.math.abs(sweep) > 359.9) sweep = 0.0
+      if (abs(sweep) > 359.9) sweep = 0.0
       val r = radius.toFloat()
       val oval = RectF(centre.x - r, centre.y - r, centre.x + r, centre.y + r)
       path.arcTo(oval, from.toFloat(), sweep.toFloat(), false)

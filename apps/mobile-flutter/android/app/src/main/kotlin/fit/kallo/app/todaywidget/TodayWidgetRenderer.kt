@@ -3,10 +3,10 @@ package fit.kallo.app.todaywidget
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
+import android.os.Build
 import fit.kallo.app.R
 import fit.kallo.app.todaywidget.draw.WidgetType
 import fit.kallo.app.todaywidget.draw.drawLine
@@ -17,10 +17,11 @@ import fit.kallo.app.todaywidget.gauge.GaugeReadout
 import fit.kallo.app.todaywidget.gauge.Macro
 import fit.kallo.app.todaywidget.gauge.calorieDial
 import fit.kallo.app.todaywidget.meals.MealList
+import java.util.Locale
 import kotlin.math.floor
 
 /** The three looks the iOS widget has, picked here from the size the launcher gives. */
-enum class Family { SMALL, MEDIUM, LARGE }
+private enum class Family { SMALL, MEDIUM, LARGE }
 
 /**
  * Draws the whole card into one bitmap: direction "I · Dial row", the same
@@ -36,12 +37,13 @@ class TodayWidgetRenderer(private val context: Context) {
   private val type = WidgetType.of(context)
 
   /**
-   * The card at [widthDp] × [heightDp], drawn at [scale] pixels per dp: the
+   * [day] (already the day as shown at [now]) as a card of [widthDp] ×
+   * [heightDp], drawn at [scale] pixels per dp: the
    * screen density, or less when the provider must keep its bitmaps inside
    * the launcher's memory budget.
    */
   fun render(
-    snapshot: TodaySnapshot?,
+    day: TodaySnapshot?,
     now: Long,
     widthDp: Double,
     heightDp: Double,
@@ -60,7 +62,7 @@ class TodayWidgetRenderer(private val context: Context) {
       addRoundRect(RectF(0f, 0f, widthDp.toFloat(), heightDp.toFloat()), corner, corner, Path.Direction.CW)
     })
     theme.paintBackground(canvas, widthDp.toFloat(), heightDp.toFloat())
-    draw(canvas, snapshot?.shownOn(TodaySnapshotStore.dayKey(now)), now, widthDp, heightDp, theme)
+    draw(canvas, day, now, widthDp, heightDp, theme)
     return bitmap
   }
 
@@ -70,7 +72,7 @@ class TodayWidgetRenderer(private val context: Context) {
    * height and drawn whole at a smaller scale, never clipped.
    */
   private fun draw(canvas: Canvas, day: TodaySnapshot?, now: Long, w: Double, h: Double, theme: WidgetTheme) {
-    val shortest = CONTENT_TOP + GaugeReadout.calorieHeight(MIN_RADIUS) + MARGIN
+    val shortest = CONTENT_TOP + GaugeReadout.calorieHeight(GaugeReadout.MIN_CALORIE_RADIUS) + MARGIN
     if (h >= shortest) return drawContent(canvas, day, now, w, h, theme)
     val k = h / shortest
     canvas.save()
@@ -82,31 +84,45 @@ class TodayWidgetRenderer(private val context: Context) {
   private fun drawContent(canvas: Canvas, day: TodaySnapshot?, now: Long, w: Double, h: Double, theme: WidgetTheme) {
     val left = MARGIN
     val inner = w - 2 * MARGIN
-    val date = WidgetFormat(day?.locale ?: java.util.Locale.getDefault().language).dateHeader(now)
+    val date = WidgetFormat(day?.locale ?: Locale.getDefault().language).dateHeader(now)
     val datePaint = type.paint(type.semibold, DATE_SIZE, theme.ink, -0.3)
     // Every free-standing line is held to the card's width ("Th 5, thg 12 28"
     // is 112dp; a 2-cell card can be 78dp inside its margins).
     canvas.drawLine(datePaint.ellipsized(date, inner), datePaint, left, MARGIN, DATE_LINE_BOX)
     // Signed out draws the same dials, empty and dashed (`CalorieWording`).
     day ?: return
-    val top = CONTENT_TOP
     val family = familyOf(w, h)
+    val drawn = drawDials(canvas, day, theme, family, inner, h)
+    if (family == Family.LARGE) drawMeals(canvas, day, theme, CONTENT_TOP + drawn + MEALS_GAP, inner, h)
+  }
+
+  /**
+   * The dial row (or the calorie dial alone) under the date; returns the
+   * height it drew.
+   *
+   * Launchers vary far more than iPhones do (2 to 5 cells across, rows of any
+   * height, landscape), so the layout is searched, not assumed: the largest
+   * calorie radius whose drawing fits the box across AND down.
+   */
+  private fun drawDials(
+    canvas: Canvas,
+    day: TodaySnapshot,
+    theme: WidgetTheme,
+    family: Family,
+    inner: Double,
+    h: Double,
+  ): Double {
     // The large widget draws the medium's row, so it sizes from a medium's height.
     val rowBox = if (family == Family.LARGE) minOf(h, MEDIUM_HEIGHT) else h
-    val fullRadius =
-      GaugeReadout.calorieRadius(rowBox - 2 * MARGIN - DATE_LINE_BOX - DATE_GAP, CALORIE_RADIUS_CAP)
-    // Launchers vary far more than iPhones do (2 to 5 cells across, rows of
-    // any height, landscape), so the layout is searched, not assumed: the
-    // largest calorie radius whose drawing fits the box across AND down.
-    val radii = generateSequence(fullRadius) { it - 1 }.takeWhile { it >= MIN_RADIUS }
+    val fullRadius = GaugeReadout.calorieRadius(rowBox - CONTENT_TOP - MARGIN, CALORIE_RADIUS_CAP)
+    val radii = generateSequence(fullRadius) { it - 1 }.takeWhile { it >= GaugeReadout.MIN_CALORIE_RADIUS }
     val signInBelow = family != Family.LARGE
     if (family != Family.SMALL) {
-      val row = radii.map { dialRow(it, day, theme, signInBelow) }
-        .firstOrNull { it.minWidth <= inner && top + it.height <= rowBox - MARGIN }
+      val row = radii.map { DialRow(it, day, theme, type, ::glyph, signInBelow) }
+        .firstOrNull { it.minWidth <= inner && CONTENT_TOP + it.height <= rowBox - MARGIN }
       if (row != null) {
-        row.draw(canvas, left, top, inner)
-        if (family == Family.LARGE) drawMeals(canvas, day, theme, top + row.height + MEALS_GAP, inner, h)
-        return
+        row.draw(canvas, MARGIN, CONTENT_TOP, inner)
+        return row.height
       }
       // No radius fits four dials (a 3-cell widget in Vietnamese, a short
       // landscape row): the calorie dial alone, as the small card draws it.
@@ -114,9 +130,12 @@ class TodayWidgetRenderer(private val context: Context) {
     // A line no radius can narrow enough (a long signed-out sentence on a
     // 2-cell card) keeps the arc as large as fits and is ellipsized.
     val dial = radii.map { calorieDial(it, day, theme, type, signInBelow) }.firstOrNull { it.width <= inner }
-      ?: calorieDial(minOf(fullRadius, maxOf(MIN_RADIUS, floor(inner / 2))), day, theme, type, signInBelow, inner)
-    dial.draw(canvas, left + (inner - dial.width) / 2, top)
-    if (family == Family.LARGE) drawMeals(canvas, day, theme, top + dial.height + MEALS_GAP, inner, h)
+      ?: calorieDial(
+        minOf(fullRadius, maxOf(GaugeReadout.MIN_CALORIE_RADIUS, floor(inner / 2))),
+        day, theme, type, signInBelow, inner,
+      )
+    dial.draw(canvas, MARGIN + (inner - dial.width) / 2, CONTENT_TOP)
+    return dial.height
   }
 
   /** The large card's meals under the dials, or "Sign in to track" where they would go. */
@@ -134,9 +153,7 @@ class TodayWidgetRenderer(private val context: Context) {
     }
   }
 
-  private fun dialRow(radius: Double, day: TodaySnapshot, theme: WidgetTheme, signInBelow: Boolean) =
-    DialRow(radius, day, theme, type, ::glyph, signInBelow)
-
+  /** The macro's Lucide glyph. Resolved here so `gauge/` stays free of app resources. */
   private fun glyph(macro: Macro): Drawable {
     val id = when (macro) {
       Macro.PROTEIN -> R.drawable.today_widget_protein
@@ -148,7 +165,7 @@ class TodayWidgetRenderer(private val context: Context) {
 
   /** The system's widget corner on Android 12+, the platform's 16 before it. */
   private fun cornerRadiusDp(): Float =
-    if (android.os.Build.VERSION.SDK_INT >= 31) {
+    if (Build.VERSION.SDK_INT >= 31) {
       context.resources.getDimension(android.R.dimen.system_app_widget_background_radius) /
         context.resources.displayMetrics.density
     } else {
@@ -166,14 +183,11 @@ class TodayWidgetRenderer(private val context: Context) {
     /** Where the dials start: under the date header and its gap. */
     private const val CONTENT_TOP = MARGIN + DATE_LINE_BOX + DATE_GAP
 
-    /** The smallest calorie dial, the same floor `GaugeReadout.calorieRadius` stops at. */
-    private const val MIN_RADIUS = 20.0
-
     /** The iOS medium widget's height on the largest phone: the large's row is sized for it. */
-    const val MEDIUM_HEIGHT = 170.0
+    private const val MEDIUM_HEIGHT = 170.0
 
     /** Under 250dp across holds only the calorie dial; 250dp down adds the meals. */
-    fun familyOf(widthDp: Double, heightDp: Double): Family = when {
+    private fun familyOf(widthDp: Double, heightDp: Double): Family = when {
       widthDp < 250 -> Family.SMALL
       heightDp < 250 -> Family.MEDIUM
       else -> Family.LARGE

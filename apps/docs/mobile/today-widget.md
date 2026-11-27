@@ -120,6 +120,8 @@ application id, not the namespace the class lives in.
 | `gauge/CalorieDial.kt`, `MacroDial.kt`, `DialRow.kt`, `GaugeDial.kt` | the `Gauge/` views |
 | `meals/MealFit.kt`, `meals/MealList.kt` | `Meals/`: newest meals that fit, two lines each |
 | `TodayWidgetRenderer.kt` | `TodayWidgetView.swift`: margins, date header, the three layouts |
+| `TodayBoundary.kt` | `TodayTimeline.swift`'s boundaries: midnight, 06:00, 18:00 |
+| `draw/WidgetType.kt`, `draw/TextLine.kt` | `WidgetFont.swift`, `ReadoutText.swift`: the fonts, and one line centred in its box |
 
 `test/android/today_widget_test.dart` pins the Kotlin to the same sources the iOS test pins the
 Swift to (palette, dial and readout constants, card sizes, JSON keys, the prefs file and key, the

@@ -28,10 +28,7 @@ fun calorieDial(
   val long = GaugeReadout.fitsUnit(unitPaint.width(day.copy.kcalEaten), radius)
   val wording =
     if (day.signedIn) {
-      CalorieWording.of(
-        eaten = day.eaten.kcal, target = day.target.kcal, atLeast = "kcal" in day.floors,
-        long = long, copy = day.copy, format = WidgetFormat(day.locale),
-      )
+      CalorieWording.of(day, long)
     } else {
       CalorieWording.signedOut(long, signInBelow, day.copy)
     }
@@ -60,6 +57,13 @@ fun calorieDial(
  */
 data class CalorieWording(val figure: String, val unit: String, val detail: String, val isOver: Boolean) {
   companion object {
+    /**
+     * A signed-in [day]'s wording; the one place the dial and the card's
+     * TalkBack description read it from, so the two never drift apart.
+     */
+    fun of(day: TodaySnapshot, long: Boolean): CalorieWording =
+      of(day.eaten.kcal, day.target.kcal, "kcal" in day.floors, long, day.copy, day.format)
+
     /**
      * Signed out: the same dial, empty, with a dash for every number. The
      * detail is either "Sign in to track" or the usual wording, dashed.

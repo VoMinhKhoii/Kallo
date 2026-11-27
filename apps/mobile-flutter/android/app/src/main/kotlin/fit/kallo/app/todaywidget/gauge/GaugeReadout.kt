@@ -115,13 +115,16 @@ object GaugeReadout {
     return maxOf(0.0, m - c) to maxOf(0.0, c - m)
   }
 
+  /** The smallest calorie dial drawn; every radius search stops here. */
+  const val MIN_CALORIE_RADIUS = 20.0
+
   /** The calorie dial's whole height at [r]. */
   fun calorieHeight(r: Double) = layout(r, calorieLines(r)).height
 
   /** The largest whole radius, up to [cap], whose calorie dial fits [room] dp of height. */
   fun calorieRadius(room: Double, cap: Double): Double {
     var r = cap
-    while (r > 20 && calorieHeight(r) > room) r -= 1
+    while (r > MIN_CALORIE_RADIUS && calorieHeight(r) > room) r -= 1
     return r
   }
 }

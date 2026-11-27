@@ -16,10 +16,9 @@ import kotlin.math.ceil
  * most), and its kcal, newest last (`ios/TodayWidget/Meals/MealList.swift`,
  * `MealRow.swift`). 14 on an 18 line box, as the board sets it.
  */
-class MealList(meals: List<TodaySnapshot.Meal>, private val theme: WidgetTheme, type: WidgetType) {
+class MealList(private val meals: List<TodaySnapshot.Meal>, private val theme: WidgetTheme, type: WidgetType) {
   private val muted = type.paint(type.regular, SIZE, theme.muted)
   private val ink = type.paint(type.regular, SIZE, theme.ink)
-  private val rows = meals
 
   /**
    * The time column is as wide as the day's widest 24-hour time ("8:12" or
@@ -29,7 +28,7 @@ class MealList(meals: List<TodaySnapshot.Meal>, private val theme: WidgetTheme, 
 
   /** Draws the newest rows that fit in [room] dp under ([left], [top]). */
   fun draw(canvas: Canvas, left: Double, top: Double, width: Double, room: Double) {
-    val laid = rows.map { meal ->
+    val laid = meals.map { meal ->
       val kcalWidth = ink.width(meal.kcal)
       val textWidth = maxOf(1.0, width - timeWidth - GAP - GAP - kcalWidth)
       val text = StaticLayout.Builder

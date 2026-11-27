@@ -1,6 +1,7 @@
 package fit.kallo.app.todaywidget
 
 import android.content.Context
+import org.json.JSONException
 import org.json.JSONObject
 import java.util.Calendar
 import java.util.GregorianCalendar
@@ -64,12 +65,30 @@ data class TodaySnapshot(
     if (day == date) this
     else copy(date = day, eaten = Macros.zero, floors = emptyList(), meals = emptyList())
 
+  /** [shownOn] the local day [millis] falls on. */
+  fun shownAt(millis: Long): TodaySnapshot = shownOn(dayKey(millis))
+
+  /** Number and date formatting in the language chosen in Kallo. */
+  val format: WidgetFormat get() = WidgetFormat(locale)
+
   companion object {
     /**
      * Bumped when the shape changes; a widget reading another version shows
      * nothing rather than guessing.
      */
     const val VERSION = 1
+
+    /**
+     * `yyyy-MM-dd` for [millis] in the phone's time zone, on the Gregorian
+     * calendar: the same key the app's `todayDateString()` builds.
+     */
+    fun dayKey(millis: Long): String {
+      val c = GregorianCalendar().apply { timeInMillis = millis }
+      return String.format(
+        Locale.ROOT, "%04d-%02d-%02d",
+        c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH),
+      )
+    }
 
     /** Throws on a malformed or partial snapshot; [TodaySnapshotStore.read] catches. */
     fun parse(json: String): TodaySnapshot {
@@ -120,20 +139,8 @@ object TodaySnapshotStore {
         ?: return null
     return try {
       TodaySnapshot.parse(json).takeIf { it.v == TodaySnapshot.VERSION }
-    } catch (_: org.json.JSONException) {
+    } catch (_: JSONException) {
       null
     }
-  }
-
-  /**
-   * `yyyy-MM-dd` for [millis] in the phone's time zone, on the Gregorian
-   * calendar: the same key the app's `todayDateString()` builds.
-   */
-  fun dayKey(millis: Long): String {
-    val c = GregorianCalendar().apply { timeInMillis = millis }
-    return String.format(
-      Locale.ROOT, "%04d-%02d-%02d",
-      c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH),
-    )
   }
 }
