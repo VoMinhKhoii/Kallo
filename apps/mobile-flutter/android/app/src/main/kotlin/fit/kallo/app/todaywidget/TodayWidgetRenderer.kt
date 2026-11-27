@@ -98,7 +98,11 @@ class TodayWidgetRenderer(private val context: Context) {
 
   /**
    * The dial row (or the calorie dial alone) under the date; returns the
-   * height it drew.
+   * height it drew. On the small and medium cards it is centred in the room
+   * between the date and the bottom margin: Android's cells are taller than
+   * iOS's (a 2x2 Pixel cell is about 172x224dp to the iPhone's 170x170), and
+   * at the top the extra height would all collect under the dials. The large
+   * card keeps it at the top, where the meals hang under it.
    *
    * Launchers vary far more than iPhones do (2 to 5 cells across, rows of any
    * height, landscape), so the layout is searched, not assumed: the largest
@@ -121,7 +125,7 @@ class TodayWidgetRenderer(private val context: Context) {
       val row = radii.map { DialRow(it, day, theme, type, ::glyph, signInBelow) }
         .firstOrNull { it.minWidth <= inner && CONTENT_TOP + it.height <= rowBox - MARGIN }
       if (row != null) {
-        row.draw(canvas, MARGIN, CONTENT_TOP, inner)
+        row.draw(canvas, MARGIN, dialsTop(family, row.height, h), inner)
         return row.height
       }
       // No radius fits four dials (a 3-cell widget in Vietnamese, a short
@@ -134,9 +138,14 @@ class TodayWidgetRenderer(private val context: Context) {
         minOf(fullRadius, maxOf(GaugeReadout.MIN_CALORIE_RADIUS, floor(inner / 2))),
         day, theme, type, signInBelow, inner,
       )
-    dial.draw(canvas, MARGIN + (inner - dial.width) / 2, CONTENT_TOP)
+    dial.draw(canvas, MARGIN + (inner - dial.width) / 2, dialsTop(family, dial.height, h))
     return dial.height
   }
+
+  /** Under the date on the large card; centred in the room left on the others. */
+  private fun dialsTop(family: Family, height: Double, h: Double): Double =
+    if (family == Family.LARGE) CONTENT_TOP
+    else CONTENT_TOP + maxOf(0.0, (h - MARGIN - CONTENT_TOP - height) / 2)
 
   /** The large card's meals under the dials, or "Sign in to track" where they would go. */
   private fun drawMeals(canvas: Canvas, day: TodaySnapshot, theme: WidgetTheme, mealsTop: Double, inner: Double, h: Double) {

@@ -155,6 +155,16 @@ What differs from iOS, and why:
   foldable's cover screen). If the system still refuses, it tries the portrait card alone at half
   the scale, four times over, and last a card with no bitmap that still opens Today. It never keeps
   the previous card, which after a sign-out or at midnight would show the old day.
+- **Centred dials.** Android's cells are taller than iOS's (a 2x2 Pixel cell is about 172x224dp
+  to the iPhone's 170x170), so on the small and medium cards the dials are centred in the room
+  between the date and the bottom margin rather than leaving the extra height under them. The
+  large card keeps them at the top, with the meals underneath.
+- **Even macro spacing.** iOS spreads the macro dials with `space-between`, so the gaps vary with
+  the length of each label ("PROTEIN" against "FAT"). Android puts the four arcs on one even gap.
+  Each pair of labels keeps 8dp between them, and the calorie arc keeps 12dp from the first macro
+  arc. When the card is too narrow for one gap everywhere (long Vietnamese labels), the macros
+  keep their even gap and the gap beside the calorie dial gives way, so the calorie dial keeps its
+  size.
 - **Corners** are the system widget radius on Android 12+ (16dp before), clipped into the bitmap.
 - **The clock.** No `updatePeriodMillis`. Each redraw sets one inexact alarm for the next
   midnight, 06:00 or 18:00, so the date, the theme and the empty new day change with the app

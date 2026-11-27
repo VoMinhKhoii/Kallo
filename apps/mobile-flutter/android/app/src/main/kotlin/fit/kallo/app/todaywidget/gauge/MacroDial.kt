@@ -61,6 +61,9 @@ class MacroDial(
   private val labelRowWidth = glyphSize + 6 + labelPaint.width(label)
 
   val width: Double = maxOf(labelRowWidth, dial.width)
+
+  /** The dial's own width under the label: its arc, or a wider readout. */
+  val dialWidth: Double get() = dial.width
   val height: Double = labelHeight + GaugeReadout.LABEL_GAP + dial.height
 
   /** Draws the label row and the dial with the box's top-left corner at ([left], [top]). */
