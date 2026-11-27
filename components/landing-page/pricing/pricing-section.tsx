@@ -97,14 +97,14 @@ export function PricingSection({
           </div>
         )}
 
-        {/* Not beside a checkout status: "free while in beta" would
-            contradict the charge the user just made. */}
+        {/* Not beside a checkout status: the new-account offer means
+            nothing to someone who just paid. */}
         {!status && (
           <p
             data-reveal=""
             className="mt-8 text-center font-sans-display text-kallo-text-soft text-xs leading-relaxed"
           >
-            {t('betaNote')}
+            {t('offerNote')}
           </p>
         )}
       </div>

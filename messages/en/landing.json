@@ -22,7 +22,7 @@
       }
     },
     "subtitle": "Tell Kallo what you ate the way you'd tell a friend. It helps split into real ingredients and derives calories and macros from trusted data.",
-    "beta": "Free while in beta · born in Vietnam, built for every kitchen",
+    "offer": "First 30 days of Premium on us · born in Vietnam, built for every kitchen",
     "total": "Total",
     "toggleDetails": "Toggle details",
     "meals": {
@@ -200,7 +200,7 @@
       "payOnce": "One payment instead of a subscription",
       "futureUpdates": "Every future update included"
     },
-    "betaNote": "Kallo is free while it is in beta. These prices start when beta ends, and we will tell you before that happens.",
+    "offerNote": "New accounts get their first 30 days of Premium on us.",
     "period": {
       "monthly": "Monthly",
       "yearly": "Yearly"
