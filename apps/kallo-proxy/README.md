@@ -34,8 +34,9 @@ the authority. When the binding fails, or a request has no `cf-connecting-ip`,
 the Worker forwards rather than refuses.
 
 Code: `src/worker.ts`; tests: `src/__tests__/worker.test.ts` (run by the root
-`bun run test`). It has no dependencies of its own; `wrangler` is only needed to
-deploy.
+`bun run test`). It has no package dependencies; it imports one file from the
+app, `lib/infra/http/accept.ts` (no imports of its own), which wrangler
+bundles. `wrangler` is only needed to deploy.
 
 ## Deploy
 
@@ -73,9 +74,15 @@ So a crawler (user agent with `bot`, `crawl`, `spider`, `ChatGPT-User`,
 gets it from Cloudflare's cache, kept for a day. Public pages are the
 prerendered sections: `/{en,vi}/` + `calories`, `tools`, `compare`,
 `alternatives`, `docs`, `data`. The landing page and pricing are left out
-because they are rendered per request. A request with a cookie, an
-`Authorization` header, a query string or Next's navigation headers (`RSC`,
-`Next-Router-*`) always goes to the origin.
+because they are rendered per request. The cache key is the URL alone, so a
+request goes to the origin whenever anything else would change the answer:
+a cookie, an `Authorization` header, a query string, a trailing slash (Next
+redirects it), a host other than `kallo.fit`, Next's navigation headers
+(`RSC`, `Next-Router-*`), or an `Accept` header the origin would answer with
+Markdown (the docs pages negotiate; the Worker uses the same parser,
+`lib/infra/http/accept.ts`). So does any browser (`Sec-Fetch-Mode` or
+`Sec-CH-UA` present), whatever its user agent says. If the origin redirects a
+cached request, the Worker takes `_edge=crawler` out of the `Location`.
 
 People never get these copies. The cached fetch adds `?_edge=crawler` to the
 origin URL, so its cache entry sits at an address no browser request uses.

@@ -12,6 +12,8 @@
  * already parses, so no client needs to know the edge exists.
  */
 
+import { MEDIA_HTML, preferredType } from '@/lib/infra/http/accept';
+
 /** The Workers Rate Limiting binding (`ratelimits` in wrangler.jsonc). */
 export interface RateLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
@@ -221,27 +223,58 @@ async function floodRefusal(
  * a day old costs nothing.
  */
 const CRAWLER_CACHE_SECONDS = 86_400;
-const CRAWLER_CACHE_PARAM = '_edge=crawler';
+const CRAWLER_CACHE_PARAM = '_edge';
+const CRAWLER_CACHE_VALUE = 'crawler';
+const CRAWLER_HOST = 'kallo.fit';
+// No trailing slash: Next redirects those, and a redirect is never cached.
 const CRAWLER_PAGE =
-  /^\/(en|vi)\/(calories|tools|compare|alternatives|docs|data)(\/|$)/;
+  /^\/(en|vi)\/(calories|tools|compare|alternatives|docs|data)(\/[^/]+)*$/;
 const CRAWLER_AGENT =
   /bot|crawl|spider|slurp|ChatGPT-User|Claude-User|Perplexity-User|facebookexternalhit|meta-externalagent|Bytespider|Google-InspectionTool/i;
 
+/**
+ * True only when the origin's answer depends on nothing but the path, so one
+ * cached copy is right for every request that reaches it. The cache key is the
+ * URL alone; any other input that changes the answer must rule the request out.
+ */
 export function isCrawlerPageRequest(request: Request, url: URL): boolean {
   if (request.method !== 'GET' && request.method !== 'HEAD') return false;
-  if (url.search || !CRAWLER_PAGE.test(url.pathname)) return false;
+  if (url.hostname !== CRAWLER_HOST || url.search) return false;
+  if (!CRAWLER_PAGE.test(url.pathname)) return false;
   const { headers } = request;
-  // Anything signed in or mid client-side navigation goes to the origin.
   if (
+    // Signed in, or mid client-side navigation.
     headers.has('cookie') ||
     headers.has('authorization') ||
     headers.has('rsc') ||
     headers.has('next-router-prefetch') ||
-    headers.has('next-router-state-tree')
+    headers.has('next-router-state-tree') ||
+    // A browser, whatever its user agent says ("CUBOT" phones, "Botim").
+    headers.has('sec-fetch-mode') ||
+    headers.has('sec-ch-ua')
   ) {
     return false;
   }
+  // The docs pages answer Markdown to an agent that prefers it (proxy.ts,
+  // `negotiate`). Only requests the origin answers with HTML share the copy.
+  if (preferredType(headers.get('accept')) !== MEDIA_HTML) return false;
   return CRAWLER_AGENT.test(headers.get('user-agent') ?? '');
+}
+
+/** A redirect must point at the public URL, never the cache's own address. */
+function withoutCacheParam(response: Response): Response {
+  const location = response.headers.get('location');
+  if (!location?.includes(`${CRAWLER_CACHE_PARAM}=`)) return response;
+  const target = new URL(location, `https://${CRAWLER_HOST}`);
+  target.searchParams.delete(CRAWLER_CACHE_PARAM);
+  const cleaned = new Response(response.body, response);
+  cleaned.headers.set(
+    'location',
+    location.startsWith('/')
+      ? `${target.pathname}${target.search}${target.hash}`
+      : target.toString()
+  );
+  return cleaned;
 }
 
 /**
@@ -285,7 +318,7 @@ export default {
     const originalHost = url.hostname;
     url.hostname = env.ORIGIN;
     url.protocol = 'https:';
-    if (crawler) url.search = CRAWLER_CACHE_PARAM;
+    if (crawler) url.searchParams.set(CRAWLER_CACHE_PARAM, CRAWLER_CACHE_VALUE);
 
     const forwarded = new Request(url, request);
     forwarded.headers.set('X-Origin-Verify', env.ORIGIN_SECRET);
@@ -302,6 +335,6 @@ export default {
         cacheTtlByStatus: { '200-299': CRAWLER_CACHE_SECONDS, '300-599': -1 },
       },
     };
-    return fetch(forwarded, init);
+    return withoutCacheParam(await fetch(forwarded, init));
   },
 };
