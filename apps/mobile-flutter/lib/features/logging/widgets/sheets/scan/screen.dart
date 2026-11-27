@@ -15,6 +15,7 @@ import 'camera/loading_overlay.dart';
 import 'camera/mode_chip.dart';
 import 'camera/switch_veil.dart';
 import 'panel/sheet.dart';
+import '../../../logic/scan/camera/teardown.dart';
 import 'camera_handover.dart';
 import 'result_actions.dart';
 import 'screen_actions.dart';
@@ -69,27 +70,20 @@ class ScanScreenState extends ConsumerState<ScanScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    barcodeCamera.ensure();
+    // Queued, not started here: it waits for a scan screen just closed.
+    resumeCamera();
   }
-
-  /// The app has left the foreground since the last resume.
-  bool _left = false;
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    labelCamera.handleLifecycle(state);
-    if (state == AppLifecycleState.paused) _left = true;
-    if (state == AppLifecycleState.resumed && _left) {
-      _left = false;
-      restartFailedScanner();
-    }
-  }
+  void didChangeAppLifecycleState(AppLifecycleState state) =>
+      onAppLifecycle(state);
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    barcodeCamera.release();
-    labelCamera.dispose();
+    ScanCameraReleases.track(
+      Future.wait([barcodeCamera.release(), labelCamera.dispose()]),
+    );
     super.dispose();
   }
 

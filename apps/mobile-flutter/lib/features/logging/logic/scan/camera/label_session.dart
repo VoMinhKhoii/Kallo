@@ -87,7 +87,10 @@ class LabelCameraSession {
     // Only a refusal from THIS open holds back the reopen when its dialog
     // closes; an earlier one must not leave a camera granted now black.
     _deniedInPlace = false;
-    final run = _open();
+    // Never rejects: [close] awaits it inside the screen's camera queue, and
+    // a plugin error thrown past `_open`'s own catches (a PlatformException
+    // from `availableCameras` or `dispose`) would stop the switch short.
+    final run = reportingFailure(_open());
     _run = run;
     try {
       await run;
@@ -114,7 +117,7 @@ class LabelCameraSession {
     try {
       final camera = _camera ??= await _backCamera();
       if (camera == null) {
-        if (_disposed) return;
+        if (_disposed || !_wanted) return;
         _report(LabelImageFailure.cameraUnavailable);
         return;
       }
@@ -132,7 +135,7 @@ class LabelCameraSession {
       // never reopen it — so drop it and let the next resume start afresh.
       // Likewise a [close] that landed mid-initialize.
       if (_disposed || _isBackgrounded || !_wanted) {
-        await opened.dispose();
+        await reportingFailure(opened.dispose());
         return;
       }
       controller.value = opened;
@@ -141,7 +144,9 @@ class LabelCameraSession {
         onRecovered();
       }
     } on CameraException catch (error) {
-      if (_disposed) return;
+      // An open that [close] already gave up on reports nothing: no one is
+      // looking at it, and its flags would outlive the close.
+      if (_disposed || !_wanted) return;
       final failure = labelFailureForCamera(error.code);
       _deniedInPlace = failure == LabelImageFailure.permissionDenied;
       _report(failure);
@@ -230,10 +235,17 @@ class LabelCameraSession {
     onFailure(failure);
   }
 
-  void dispose() {
+  /// Completes once the camera is released, including a controller an open
+  /// still in flight will discard.
+  Future<void> dispose() {
     _disposed = true;
-    controller.value?.dispose();
+    final live = controller.value;
+    final run = _run;
     controller.dispose();
+    return Future.wait([
+      if (live != null) reportingFailure(live.dispose()),
+      if (run != null) run,
+    ]);
   }
 
   Future<CameraDescription?> _backCamera() async {

@@ -59,6 +59,23 @@ void main() {
       expect(find.text('Coconut Water'), findsOneWidget);
     });
 
+    testWidgets(
+      'is caught on a scan screen opened again right after one closed',
+      (tester) async {
+        // The reopened screen waits for the closed one to let go of the camera
+        // (process-wide on Android), then starts its own scanner.
+        final h = ScanHarness(tester)..api.handler = found;
+        await h.open();
+        await h.tapLabel('Close');
+        expect(h.closed, isTrue);
+        await h.tapText('open');
+
+        await h.detect(code);
+
+        expect(find.text('Coconut Water'), findsOneWidget);
+      },
+    );
+
     testWidgets('rises as the product, one serving to start', (tester) async {
       final h = ScanHarness(tester)..api.handler = found;
       await h.open();

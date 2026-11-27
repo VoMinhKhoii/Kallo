@@ -1,9 +1,10 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/label_scan_providers.dart';
 import '../../../logic/scan/camera/barcode_session.dart';
 import '../../../logic/scan/camera/label_session.dart';
+import '../../../logic/scan/camera/teardown.dart';
 import 'camera/mode_chip.dart';
 import 'screen.dart';
 
@@ -65,6 +66,10 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
   /// teardown unbinds everything bound to it — started together, the late
   /// teardown left the new camera black.
   Future<void> swapCamera() => _queue(() async {
+    // The camera queue is per screen; a screen closed a moment ago may still
+    // be letting go of the sensor this one is about to take.
+    await ScanCameraReleases.settled;
+    if (!mounted) return;
     if (mode != cameraMode) {
       await (cameraMode == ScanType.barcode
           ? barcodeCamera.release()
@@ -88,7 +93,8 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
   /// or a switch taken back before its dip landed. With a switch still
   /// pending (`mode != cameraMode`), that switch opens the right camera.
   Future<void> resumeCamera() => _queue(() async {
-    if (mode != cameraMode) return;
+    await ScanCameraReleases.settled;
+    if (!mounted || mode != cameraMode) return;
     if (mode == ScanType.label) {
       // A no-op while the preview is up; re-reports a camera that would not
       // open, whose message the caller's retake just cleared.
@@ -104,6 +110,21 @@ mixin ScanCameraHandover on ConsumerState<ScanScreen> {
   /// Rest the scanner while a caught code is looked up and under its result;
   /// [resumeCamera] builds it again.
   void restScanner() => _queue(barcodeCamera.release);
+
+  /// The app has left the foreground since the last resume.
+  bool _left = false;
+
+  /// The label camera follows the app in and out of the foreground itself;
+  /// the scanner is restarted only when the app comes back from really
+  /// leaving, the trip a grant in Settings takes.
+  void onAppLifecycle(AppLifecycleState state) {
+    labelCamera.handleLifecycle(state);
+    if (state == AppLifecycleState.paused) _left = true;
+    if (state == AppLifecycleState.resumed && _left) {
+      _left = false;
+      restartFailedScanner();
+    }
+  }
 
   /// Back from Settings with the scanner stopped on a refused permission:
   /// start a fresh one, which asks the plugin again. The screen calls this

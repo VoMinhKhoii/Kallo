@@ -13,6 +13,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:kallo_mobile/features/logging/data/label_scan_providers.dart';
 import 'package:kallo_mobile/features/logging/logic/label/image.dart';
 import 'package:kallo_mobile/features/logging/logic/relog/scan_purpose.dart';
+import 'package:kallo_mobile/features/logging/logic/scan/camera/teardown.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/camera/controls.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/editor.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/field.dart';
@@ -106,6 +107,7 @@ LabelImage labelPhoto() {
 
 void setUpScanTests() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(ScanCameraReleases.reset);
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
