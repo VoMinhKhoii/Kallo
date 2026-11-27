@@ -1,5 +1,4 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -41,9 +40,7 @@ class AuthOptions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showApple =
-        defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS;
+    final showApple = appleSignInAvailable();
 
     return Column(
       mainAxisSize: MainAxisSize.min,

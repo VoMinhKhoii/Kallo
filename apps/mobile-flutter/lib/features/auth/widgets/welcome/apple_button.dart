@@ -1,10 +1,17 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_palette.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../auth_controls.dart' show kAuthButtonHeight;
+
+/// Sign in with Apple is offered only on Apple platforms: Android has no Apple
+/// ID sheet, and every screen that shows [AppleButton] checks this first.
+bool appleSignInAvailable() =>
+    defaultTargetPlatform == TargetPlatform.iOS ||
+    defaultTargetPlatform == TargetPlatform.macOS;
 
 /// "Continue with Apple" — a custom button matching the Google / email buttons.
 ///
