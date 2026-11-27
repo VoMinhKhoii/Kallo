@@ -113,6 +113,21 @@ void main() {
       expect(inviteSlugFrom(Uri.parse('nham://auth-callback')), isNull);
       expect(inviteSlugFrom(Uri.parse('https://nham.app/dashboard')), isNull);
     });
+
+    test('returns null when the slug is not a handle', () {
+      // https invite links reach the app now, so a crafted one must not route
+      // anywhere but the connect screen: no empty slug, no `..`, no `%2F`.
+      for (final link in [
+        'https://kallo.fit/en/invite/',
+        'nham://invite/',
+        'https://kallo.fit/en/invite/..%2F..%2Fsettings',
+        'https://kallo.fit/en/invite/foo%2Fbar',
+        'https://kallo.fit/en/invite/a%3Fx%3D1',
+        'https://kallo.fit/en/invite/ab',
+      ]) {
+        expect(inviteSlugFrom(Uri.parse(link)), isNull, reason: link);
+      }
+    });
   });
 
   group('discTintIndex', () {

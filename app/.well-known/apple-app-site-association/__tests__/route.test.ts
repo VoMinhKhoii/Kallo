@@ -24,9 +24,9 @@ describe('/.well-known/apple-app-site-association', () => {
       {
         appIDs: ['ZNG57U88R5.com.khoivo.nham'],
         components: [
-          { '/': '/en/invite/*' },
-          { '/': '/vi/invite/*' },
-          { '/': '/invite/*' },
+          { '/': '/en/invite/?*' },
+          { '/': '/vi/invite/?*' },
+          { '/': '/invite/?*' },
         ],
       },
     ]);

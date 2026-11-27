@@ -5,26 +5,31 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../router.dart';
+import 'handle_validation.dart';
 
 /// Extracts an invite slug from an inbound link, or null if it isn't one.
 ///
 /// Handles both link shapes:
 ///   • custom scheme  `nham://invite/<slug>`         (host = invite)
 ///   • universal link `https://<domain>/<loc>/invite/<slug>` or `.../invite/<slug>`
+///
+/// Only a slug with the shape of a handle counts. Segments arrive
+/// percent-decoded, and the slug goes straight into a route, so anything else
+/// (empty, `../settings`, `a/b`) is not an invite.
 @visibleForTesting
 String? inviteSlugFrom(Uri uri) {
   // Handles are stored lowercase — normalize so a typed/QR'd uppercase link
   // still resolves instead of 404ing.
   final segments = uri.pathSegments;
   final inviteIdx = segments.indexOf('invite');
+  String? slug;
   if (inviteIdx != -1 && inviteIdx + 1 < segments.length) {
-    return segments[inviteIdx + 1].toLowerCase();
+    slug = segments[inviteIdx + 1].toLowerCase();
+  } else if (uri.host == 'invite' && segments.isNotEmpty) {
+    // Custom scheme puts `invite` in the host and the slug in the first segment.
+    slug = segments.first.toLowerCase();
   }
-  // Custom scheme puts `invite` in the host and the slug in the first segment.
-  if (uri.host == 'invite' && segments.isNotEmpty) {
-    return segments.first.toLowerCase();
-  }
-  return null;
+  return slug != null && isValidHandleShape(slug) ? slug : null;
 }
 
 /// Listens for inbound invite deep links (cold-start + while-running) and routes

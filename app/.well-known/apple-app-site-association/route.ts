@@ -19,8 +19,10 @@ async function appSiteAssociation(): Promise<string> {
         details: [
           {
             appIDs: [IOS_APP_ID],
+            // `?*`: at least one character after the prefix, so a bare
+            // `/en/invite/` with no slug stays on the web.
             components: INVITE_PATH_PREFIXES.map((prefix) => ({
-              '/': `${prefix}*`,
+              '/': `${prefix}?*`,
             })),
           },
         ],
