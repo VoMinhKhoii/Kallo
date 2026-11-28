@@ -8,6 +8,7 @@ import type {
 } from '../types';
 import {
   type createClaudeStructuredOutput,
+  isClaudeImageMimeType,
   slipReason,
 } from './structured-output';
 
@@ -63,7 +64,9 @@ export function withClaudeRouting(
         warnNoKeyOnce();
         return viaGemini(fallback, opts);
       }
-      if (params.image) return viaGemini(fallback, opts);
+      if (params.image && !isClaudeImageMimeType(params.image.mimeType)) {
+        return viaGemini(fallback, opts);
+      }
       let attempts = 0;
       for (const step of steps) {
         const counted = countAttempts(

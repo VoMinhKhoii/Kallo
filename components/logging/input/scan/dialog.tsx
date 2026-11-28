@@ -60,14 +60,14 @@ export function ScanDialog(props: ScanDialogProps) {
             labelLocked={s.labelLocked}
             lightOn={labelCamera.torchEnabled}
             onLight={
-              mode === 'label' && labelCamera.capabilities.torch
+              mode !== 'barcode' && labelCamera.capabilities.torch
                 ? () => labelCamera.setTorch(!labelCamera.torchEnabled)
                 : undefined
             }
             onMode={s.switchMode}
             onClose={s.close}
             onTypeBarcode={() => s.result.setTyping(true)}
-            onPickFile={label.read}
+            onPickFile={s.pickFile}
             onShutter={s.shoot}
             onEnterManually={s.enterManually}
           />

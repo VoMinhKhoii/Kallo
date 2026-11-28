@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { scanNutritionLabelAction } from '@/lib/actions/logging/nutrition-ocr';
+import type { ScanNutritionLabelKind } from '@/lib/api/contracts/nutrition-label';
 import {
   isOcrSourceImageMimeType,
   OCR_CLIENT_RESIZE_WIDTH,
@@ -143,8 +144,12 @@ export function useNutritionOcr(aiConsent: AiConsentGate) {
   const [isCompressing, setIsCompressing] = useState(false);
   const [errorCode, setErrorCode] = useState<OcrErrorCode | null>(null);
 
-  const mutation = useMutation<ParsedNutritionLabel | null, Error, File>({
-    mutationFn: async (file: File) => {
+  const mutation = useMutation<
+    ParsedNutritionLabel | null,
+    Error,
+    { file: File; kind?: ScanNutritionLabelKind }
+  >({
+    mutationFn: async ({ file, kind }) => {
       setErrorCode(null);
       setIsCompressing(true);
 
@@ -167,6 +172,7 @@ export function useNutritionOcr(aiConsent: AiConsentGate) {
           return await scanNutritionLabelAction({
             imageBase64: compressed.base64Data,
             mimeType: compressed.mimeType,
+            kind,
           });
         } catch (error) {
           setErrorCode('server_error');
@@ -189,8 +195,8 @@ export function useNutritionOcr(aiConsent: AiConsentGate) {
     },
   });
 
-  const scanLabel = async (file: File) =>
-    (await aiConsent.ensure()) ? mutation.mutateAsync(file) : null;
+  const scanLabel = async (file: File, kind?: ScanNutritionLabelKind) =>
+    (await aiConsent.ensure()) ? mutation.mutateAsync({ file, kind }) : null;
 
   return {
     scanLabel,

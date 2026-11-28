@@ -458,6 +458,12 @@ To stop it, `gh variable delete PIPELINE_MODEL_PROFILE` and deploy. The secret i
 mounted only while the variable is `haiku`; with `haiku` set and the secret
 missing or unreadable, the deploy fails before it starts.
 
+Macro-card OCR (`lib/ai/pipeline/estimator/macro-card-ocr/`) uses the same
+three-step waterfall (`claude-haiku-5-5` → Vertex Haiku → `gemini-3.1-flash-lite`
+at `MINIMAL` thinking). Until `kallo-prod-anthropic-api-key` is mounted in prod
+(via `PIPELINE_MODEL_PROFILE=haiku` or an explicit secret mount), scans fall
+through to Gemini automatically without failing.
+
 ## Recommended naming
 
 Use names close to these so the guide and workflows stay easy to map:

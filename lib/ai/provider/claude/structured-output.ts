@@ -93,6 +93,44 @@ function toUsageMetadata(usage: Anthropic.Usage): StreamUsageMetadata {
   };
 }
 
+/** Media types accepted by Anthropic's base64 `image` content block. */
+export const CLAUDE_IMAGE_MEDIA_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+] as const;
+
+export type ClaudeImageMediaType = (typeof CLAUDE_IMAGE_MEDIA_TYPES)[number];
+
+export function isClaudeImageMimeType(
+  mimeType: string
+): mimeType is ClaudeImageMediaType {
+  return (CLAUDE_IMAGE_MEDIA_TYPES as readonly string[]).includes(mimeType);
+}
+
+function userContent(
+  params: Pick<StructuredOutputParams<unknown>, 'image' | 'userMessage'>
+): string | Anthropic.ContentBlockParam[] {
+  if (!params.image) return params.userMessage;
+  if (!isClaudeImageMimeType(params.image.mimeType)) {
+    throw new Error(
+      `Unsupported image media type for Claude: ${params.image.mimeType}`
+    );
+  }
+  return [
+    {
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: params.image.mimeType,
+        data: params.image.base64Data,
+      },
+    },
+    { type: 'text', text: params.userMessage },
+  ];
+}
+
 function schemaSlip(message: string): Error {
   const err = new Error(message);
   err.name = 'ZodError';
@@ -155,7 +193,7 @@ export function createClaudeStructuredOutput(
             max_tokens: 16_000,
             thinking: thinkingOff(params.model),
             system: systemBlocks(params.systemPrompt),
-            messages: [{ role: 'user', content: params.userMessage }],
+            messages: [{ role: 'user', content: userContent(params) }],
             output_config: {
               effort: 'medium',
               format: { type: 'json_schema', schema },
