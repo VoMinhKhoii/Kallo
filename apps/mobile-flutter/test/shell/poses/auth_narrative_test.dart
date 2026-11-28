@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/auth/widgets/auth_page.dart';
@@ -460,6 +461,34 @@ void main() {
     expect(find.text('Sign in to continue tracking your meals.'), findsNothing);
     await dispose();
   });
+
+  // The suite runs as Android and in English: sign-in has no Apple button
+  // there, and the terms sentence is one line. On an iPhone in Vietnamese
+  // the stack is a button and a line taller, and a window on its side has
+  // no height to spare for either.
+  for (final route in ['/sign-in', '/sign-in/email']) {
+    for (final pose in [outerLandscape, phoneLandscape]) {
+      testWidgets('$route in Vietnamese on an iPhone fits ${pose.name}', (
+        tester,
+      ) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        try {
+          final dispose = await bootPose(
+            tester,
+            pose,
+            route,
+            signedIn: false,
+            locale: 'vi',
+          );
+          expect(find.text('Tiếp tục với Apple'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await dispose();
+        } finally {
+          debugDefaultTargetPlatformOverride = null;
+        }
+      });
+    }
+  }
 
   // Held tall, the form is centred, and the fold line at half the window's
   // height falls in the gap between the email field and its button.

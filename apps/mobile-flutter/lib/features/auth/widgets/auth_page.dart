@@ -12,6 +12,7 @@ import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../providers/auth_form_controller.dart';
 import 'auth_controls.dart';
+import 'auth_fill.dart';
 import 'welcome/auth_brand_hero.dart';
 import 'welcome/auth_options.dart';
 import 'welcome/welcome_view.dart';
@@ -126,17 +127,14 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               : KeepClearClip(
                 child: CustomScrollView(
                   slivers: [
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          kAuthInset,
-                          KalloSpacing.sp8,
-                          kAuthInset,
-                          KalloSpacing.sp3,
-                        ),
-                        child: Center(child: column),
+                    AuthFill(
+                      padding: const EdgeInsets.fromLTRB(
+                        kAuthInset,
+                        KalloSpacing.sp8,
+                        kAuthInset,
+                        KalloSpacing.sp3,
                       ),
+                      child: Center(child: column),
                     ),
                   ],
                 ),

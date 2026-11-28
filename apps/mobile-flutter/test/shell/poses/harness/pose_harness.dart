@@ -61,6 +61,7 @@ Future<Future<void> Function()> bootPose(
   FakeApiClient? apiOverride,
   List<Override> overrides = const [],
   bool keepClearTint = false,
+  String locale = _locale,
 }) async {
   final dpr = pose.devicePixelRatio;
   BunMascot.debugRandom = Random(0);
@@ -77,7 +78,7 @@ Future<Future<void> Function()> bootPose(
   tester.view.viewPadding = padding;
   addTearDown(tester.view.reset);
 
-  final fixtures = PoseFixtures(locale: _locale);
+  final fixtures = PoseFixtures(locale: locale);
   final api = apiOverride ?? fixtureApi(fixtures);
   final errors = _ProviderErrors();
   final container = ProviderContainer(
@@ -114,7 +115,7 @@ Future<Future<void> Function()> bootPose(
       container: container,
       child: EasyLocalization(
         supportedLocales: const [Locale('en'), Locale('vi')],
-        startLocale: const Locale(_locale),
+        startLocale: Locale(locale),
         fallbackLocale: const Locale('en'),
         path: 'assets/l10n',
         assetLoader: const FsL10nLoader(),
