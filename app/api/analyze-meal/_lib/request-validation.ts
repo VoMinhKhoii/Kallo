@@ -16,7 +16,7 @@ import { findCachedRows } from '@/lib/domain/barcode/cache';
 import { barcodeNotCachedError } from '@/lib/domain/barcode/errors';
 import { barcodeRefsOf } from '@/lib/domain/logging/relog/relog';
 import {
-  isPastLocalDay,
+  isOnPastLocalDay,
   type LoggedAtStamp,
   stampLoggedAt,
 } from '@/lib/domain/meals/logged-at';
@@ -152,17 +152,15 @@ export async function validateRequest(request: NextRequest) {
         // consent, billing and rate-limit checks, and a meal logged on that day
         // while this one is analyzed still ends up above it. The clock is the
         // request's, so a meal sent at 23:59 for today stays on today even when
-        // the analysis ends after midnight. A refine's `backfilled` is its own
-        // day read: the route never sees the original meal's row, and the
-        // corrected meal is shared when it is saved, so a refine made after
-        // its day ended is a share long after the eating, like any backfill.
+        // the analysis ends after midnight. A refine keeps the original's
+        // instant, so its flag is read from that instant's own day.
         resolveLoggedAt: (): Promise<LoggedAtStamp> => {
           const inherited = parsed.data.inheritLoggedAt;
           return inherited
             ? Promise.resolve({
                 loggedAt: new Date(inherited),
-                backfilled: isPastLocalDay(
-                  parsed.data.loggedDate,
+                backfilled: isOnPastLocalDay(
+                  new Date(inherited),
                   parsed.data.timezoneOffset,
                   requestedAt
                 ),

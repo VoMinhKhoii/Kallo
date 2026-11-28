@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Push (Phase 4) rides on next/server's `after()`, which needs a request scope
 // these unit suites don't have. The double runs the callback inline so the
@@ -268,6 +268,37 @@ describe('logSharedMealAction', () => {
     });
     expect(result.meal.loggedAt).toBe('2026-07-10T05:00:00.000Z');
     expect(result.meal.mealSlot).toBe('lunch');
+  });
+
+  describe('a copy of a meal my friend logged live', () => {
+    // Their 12:00 (UTC+7) lunch on Jul 10, logged at the time: not backfilled.
+    afterEach(() => vi.useRealTimers());
+
+    it('stays unflagged when I log it the same day', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-07-10T09:00:00.000Z')); // 16:00 Jul 10
+      queueSource([sourceMeal({ backfilled: false })]);
+      queueItems([sourceItem()]);
+      const captured = captureCopies();
+
+      await log(1);
+
+      expect(captured.meal).toMatchObject({ backfilled: false });
+    });
+
+    it('is flagged when I log it the next morning, a day past for me', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-07-11T01:00:00.000Z')); // 08:00 Jul 11
+      queueSource([sourceMeal({ backfilled: false })]);
+      queueItems([sourceItem()]);
+      const captured = captureCopies();
+
+      await log(1);
+
+      // My share goes out now under Jul 10, 20h after a 13h-old meal: the
+      // gap guess would miss it, the flag does not.
+      expect(captured.meal).toMatchObject({ backfilled: true });
+    });
   });
 
   it('schedules the owner push once the copy commits', async () => {

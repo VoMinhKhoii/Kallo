@@ -23,6 +23,7 @@ import {
   acceptMealShareInviteSchema,
   dismissMealShareInviteSchema,
 } from '@/lib/core/validation/social';
+import { isOnPastLocalDay } from '@/lib/domain/meals/logged-at';
 import {
   shareInviteAcceptedKey,
   shareInviteKey,
@@ -118,7 +119,11 @@ export async function acceptMealShareInviteAction(input: {
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt,
-      backfilled: source.backfilled,
+      // Theirs, or mine: a meal from a day already past for me lands on that
+      // day in my diary, so sharing it now is a backfill on my side too.
+      backfilled:
+        source.backfilled ||
+        isOnPastLocalDay(source.loggedAt, parsed.timezoneOffset),
       mealSlot: source.mealSlot,
     });
 

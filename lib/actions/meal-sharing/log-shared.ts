@@ -15,6 +15,7 @@ import {
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
+import { isOnPastLocalDay } from '@/lib/domain/meals/logged-at';
 import { shareLoggedKey } from '@/lib/domain/notifications/group-keys';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { canViewShare } from '@/lib/domain/social/shares/share-visibility';
@@ -97,7 +98,11 @@ export async function logSharedMealAction(input: {
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt: source.loggedAt,
-      backfilled: source.backfilled,
+      // Theirs, or mine: a meal from a day already past for me lands on that
+      // day in my diary, so sharing it now is a backfill on my side too.
+      backfilled:
+        source.backfilled ||
+        isOnPastLocalDay(source.loggedAt, parsed.timezoneOffset),
       mealSlot: source.mealSlot,
       factor: parsed.factor,
     });

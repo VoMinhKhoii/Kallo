@@ -3,9 +3,10 @@
 // past, without touching `db`. The day read itself is tested in
 // logged-at.test.ts.
 
+import { toLocalDayKey } from '@/lib/core/date/day-key';
 import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
-// Type only, and `isPastLocalDay` restated below: the suites mock
-// logged-at.ts itself with this double.
+// Type only, and `isPastLocalDay` / `isOnPastLocalDay` restated below: the
+// suites mock logged-at.ts itself with this double.
 import type { LoggedAtStamp } from '@/lib/domain/meals/logged-at';
 
 export function pastLocalDay(
@@ -17,6 +18,14 @@ export function pastLocalDay(
     getUtcInstantForLocalDate(date, timezoneOffset, now).getTime() <
     now.getTime()
   );
+}
+
+export function onPastLocalDay(
+  at: Date,
+  timezoneOffset: number,
+  now = new Date()
+): boolean {
+  return toLocalDayKey(at, timezoneOffset) < toLocalDayKey(now, timezoneOffset);
 }
 
 export async function clockStamp(

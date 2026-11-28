@@ -1,5 +1,6 @@
 import { and, eq, gte, lt, max, sql } from 'drizzle-orm';
 import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
+import { toLocalDayKey } from '@/lib/core/date/day-key';
 import {
   getUtcDayRangeForLocalDate,
   getUtcInstantForLocalDate,
@@ -46,6 +47,19 @@ export function isPastLocalDay(
     getUtcInstantForLocalDate(date, timezoneOffset, now).getTime() <
     now.getTime()
   );
+}
+
+/**
+ * Whether the instant `at` falls on a local day before the user's today at
+ * `now`. The flag for a meal that keeps an instant it did not stamp: a refine
+ * keeps the original's, and a friend's meal copied into my diary keeps theirs.
+ */
+export function isOnPastLocalDay(
+  at: Date,
+  timezoneOffset: number,
+  now = new Date()
+): boolean {
+  return toLocalDayKey(at, timezoneOffset) < toLocalDayKey(now, timezoneOffset);
 }
 
 /**

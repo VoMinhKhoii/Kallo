@@ -5,11 +5,15 @@ import type { StreamEvent } from '@/lib/ai/streaming/types';
 
 const mockStampLoggedAt = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/domain/meals/logged-at', async () => {
-  const { clockStamp, pastLocalDay } = await import(
+  const { clockStamp, onPastLocalDay, pastLocalDay } = await import(
     '@/lib/domain/meals/__tests__/logged-at-double'
   );
   mockStampLoggedAt.mockImplementation(clockStamp);
-  return { stampLoggedAt: mockStampLoggedAt, isPastLocalDay: pastLocalDay };
+  return {
+    stampLoggedAt: mockStampLoggedAt,
+    isPastLocalDay: pastLocalDay,
+    isOnPastLocalDay: onPastLocalDay,
+  };
 });
 
 const mockGetUser = vi.fn();
