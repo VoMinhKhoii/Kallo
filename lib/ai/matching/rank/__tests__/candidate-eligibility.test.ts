@@ -87,15 +87,37 @@ describe('isCandidateEligibleForIngredient: species', () => {
     expect(kept('turkey stuffing', [STUFFING, CHICKEN])).toEqual(['stuffing']);
   });
 
+  it('pairs a species across languages', () => {
+    const viOnly = [CHICKEN, TURKEY, PHEASANT, GROUSE].map((r) => ({
+      ...r,
+      name_en: '',
+    }));
+    const enOnly = [CHICKEN, TURKEY, PHEASANT, GROUSE].map((r) => ({
+      ...r,
+      name_primary: r.name_en,
+      name_en: '',
+    }));
+
+    expect(kept('turkey thigh', viOnly)).toEqual(['turkey']);
+    expect(kept('pheasant leg', viOnly)).toEqual(['pheasant']);
+    expect(kept('đùi gà tây', enOnly)).toEqual(['turkey']);
+    expect(kept('ức gà gô', enOnly)).toEqual(['grouse']);
+    expect(kept('đùi gà', enOnly)).toEqual(['chicken']);
+  });
+
   it('reads decomposed (NFD) Vietnamese on both sides', () => {
+    // Vietnamese-only rows: an English name would satisfy the guard by itself.
     const nfd = (r: Row): Row => ({
       ...r,
       name_primary: r.name_primary.normalize('NFD'),
+      name_en: '',
     });
     const rows = [nfd(TURKEY), nfd(CHICKEN)];
 
     expect(kept('đùi gà'.normalize('NFD'), rows)).toEqual(['chicken']);
     expect(kept('đùi gà tây'.normalize('NFD'), rows)).toEqual(['turkey']);
+    expect(kept('đùi gà', rows)).toEqual(['chicken']);
+    expect(kept('đùi gà tây', rows)).toEqual(['turkey']);
   });
 });
 
