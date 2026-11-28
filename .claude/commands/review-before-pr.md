@@ -62,7 +62,7 @@ After all dispatched subagents return:
 
 1. Print a one-line **per-subagent verdict**: subagent → `PASS` | `findings: <count>` | `escalated: <count>`.
 2. Group findings by **severity** (blocker / important / nice-to-have), not by subagent. Each finding shows `[area]` tag, file:line, and the recommendation.
-3. List **escalations separately** at the top — these are decisions that need user approval before any auto-fix.
+3. List **escalations separately** at the top — these are decisions that need user approval before anything is changed.
 4. End with a **suggested next step**:
    - All `PASS` → "Ready to ship. Suggest `/kship` or `gh pr create`."
    - Blockers present → "Fix N blockers, then re-run `/review-before-pr` on the affected areas."
@@ -98,7 +98,7 @@ Branch: <branch>  ·  <N commits>, <M files>  ·  base: main
 
 ## Constraints
 
-- Reviewers never edit in this command. Apply the fixes you accept yourself, one at a time, after every reviewer has returned. Structural changes (file moves, schema rewrites, public API renames) need the user's approval first.
+- This command reports and edits nothing: the reviewers never edit, and you apply no fix while it runs. The user reads the report first. Fixes come after it, and every escalation and structural change (file moves, schema rewrites, public API renames) waits for the user's approval.
 - Do not run `gh pr create` or `git push` from this command. That belongs to `/kship` (if available) or explicit user request.
 - Do not wait for one subagent's output to dispatch the next — the whole point of multi-axis review is parallelism.
 - If the diff is empty (`git diff main...HEAD` returns nothing), say so and exit without dispatching.

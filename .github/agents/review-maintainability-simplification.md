@@ -145,7 +145,8 @@ Kallo repository.
    - **Verification gate:** after moving, run `bunx tsc --noEmit`,
      `bunx @biomejs/biome@2.4.2 check .`, and `bun run test`; all three
      must pass before the apply phase ends. If any fails, stop and escalate
-     with the failing output and the list of files you moved. Never run
+     with the failing output, the files you moved (their renames are still
+     staged) and every file whose imports you edited. Never run
      `git restore`, `git checkout --` or `git reset` to undo it: the diff
      also holds the user's own renames and edits, and those commands discard
      them for good.

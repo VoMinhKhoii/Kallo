@@ -207,6 +207,9 @@ Always pass the same scope to every reviewer in a single run.
    - Only after the detect phase is merged and the pre-edit rule gate passes
      should you apply safe fixes.
    - Apply edits one reviewer at a time, grouped by file, to avoid edit races.
+   - If a reviewer reports that its verification gate failed and left edits in
+     the working tree, stop the apply phase there and take it to the user. Do
+     not dispatch the next reviewer onto a broken tree.
    - For reviewers that are allowed to edit, pass a second canonical payload:
 
      ```text
