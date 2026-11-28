@@ -4,13 +4,20 @@
 # passed to Claude as the brief: what changed, what to check, what is out of scope,
 # or a narrower range such as `git diff <old-sha>..HEAD`.
 #
+# The review is the pipeline from Anthropic's code-review plugin:
+# https://github.com/anthropics/claude-plugins-official/blob/main/plugins/code-review/commands/code-review.md
+# (haiku file scan, sonnet summary, 4 parallel reviewers, a validation agent per
+# finding). Changes from the plugin: no "should we stop" step (drafts, small PRs and
+# repeat rounds are reviewed, since a person asked), AGENTS.md is read along with
+# CLAUDE.md, findings are tagged [P0]..[P3], and the workflow posts the summary.
+#
 # Usage comes from a Claude subscription (CLAUDE_CODE_OAUTH_TOKEN, made with
-# `claude setup-token`), not API credits. Model: Opus 5.5 at high effort.
-# Nothing runs on push.
+# `claude setup-token`), not API credits. The main session runs Opus 5.5 at high
+# effort. Nothing runs on push.
 #
 # Output, per round:
 #   - one inline comment per finding, tagged [P0]..[P3], posted by github-actions[bot]
-#   - one receipt comment from github-actions[bot] that /kship polls for:
+#   - one receipt comment from github-actions[bot] that /kship and /ship poll for:
 #       <!-- claude-review-receipt:v1 -->
 #       **Reviewed commit:** <full sha>
 #       Claude Review: No major issues found | Claude Review: <n> findings | Claude Review: failed
@@ -30,7 +37,7 @@ jobs:
       startsWith(github.event.comment.body, '@claude review') &&
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     concurrency:
       group: claude-review-${{ github.event.issue.number }}
       cancel-in-progress: false
@@ -60,39 +67,98 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
           prompt: |
-            You are reviewing pull request #${{ github.event.issue.number }} in ${{ github.repository }}.
-            The checkout is at the PR head, commit ${{ steps.pr.outputs.sha }}. The base branch is origin/${{ steps.pr.outputs.base }}.
+            Provide a code review for pull request #${{ github.event.issue.number }} in ${{ github.repository }}.
+            The checkout is at the PR head, full commit sha ${{ steps.pr.outputs.sha }}. The base branch is origin/${{ steps.pr.outputs.base }}.
 
-            Scope: by default, review the whole PR, `git diff origin/${{ steps.pr.outputs.base }}...HEAD`.
-            If the request below names a narrower range (for example `git diff <sha>..HEAD`), review that
-            range plus the callers of what it changed, and do not re-raise findings it lists as already answered.
+            Someone with write access asked for this review, so review it even if the PR is a draft, is small,
+            or Claude has reviewed it before.
 
-            Read `gh pr view ${{ github.event.issue.number }}` for the title and description, and
-            `gh pr view ${{ github.event.issue.number }} --comments` for earlier rounds.
-            Read any CLAUDE.md or AGENTS.md at the repo root and in the directories the PR touches.
+            Scope: by default, the whole pull request (`gh pr diff ${{ github.event.issue.number }}`). If the
+            request at the end names a narrower range (for example `git diff <sha>..HEAD`), review that range,
+            and do not re-raise findings it lists as already answered.
 
-            Report only high-signal problems:
-            - bugs: wrong results, crashes, broken error paths, races, data loss
-            - security issues in the changed code
-            - code that will not compile, parse, or type-check
-            - clear violations of a CLAUDE.md / AGENTS.md rule (quote the rule)
-            Do not report style, naming, missing tests, speculative issues, pre-existing problems, or
-            anything a linter catches. Before reporting a finding, verify it: read the surrounding code
-            and trace a real caller or input to the failure. If you are not confident it is real, drop it.
+            **Agent assumptions (applies to all agents and subagents):**
+            - All tools are functional and will work without error. Do not test tools or make exploratory calls. Make sure this is clear to every subagent that is launched.
+            - Only call a tool if it is required to complete the task. Every tool call should have a clear purpose.
 
-            Post each finding as one inline comment with mcp__github_inline_comment__create_inline_comment
-            (confirmed: true), on the changed line closest to the problem. Start the body with a severity
-            tag: [P0] breaks prod or loses data, [P1] real bug on a common path, [P2] real bug on an
-            edge path, [P3] minor but real. Then: what is wrong, the input or path that triggers it, and
-            the fix. Use a suggestion block only when committing it fixes the issue completely.
-            One comment per issue. Do not post any other PR comment; the workflow posts the summary.
+            To do this, follow these steps precisely:
+
+            1. Launch a haiku agent to return a list of file paths (not their contents) for all relevant CLAUDE.md and AGENTS.md files including:
+               - The root CLAUDE.md and AGENTS.md files, if they exist
+               - Any CLAUDE.md or AGENTS.md files in directories containing files modified by the pull request
+
+            2. Launch a sonnet agent to view the pull request and return a summary of the changes
+
+            3. Launch 4 agents in parallel to independently review the changes. Each agent should return the list of issues, where each issue includes a description and the reason it was flagged (e.g. "CLAUDE.md adherence", "bug"). The agents should do the following:
+
+               Agents 1 + 2: CLAUDE.md compliance sonnet agents
+               Audit changes for CLAUDE.md and AGENTS.md compliance in parallel. Note: When evaluating compliance for a file, you should only consider CLAUDE.md and AGENTS.md files that share a file path with the file or parents.
+
+               Agent 3: Opus bug agent (parallel subagent with agent 4)
+               Scan for obvious bugs. Focus only on the diff itself without reading extra context. Flag only significant bugs; ignore nitpicks and likely false positives. Do not flag issues that you cannot validate without looking at context outside of the git diff.
+
+               Agent 4: Opus bug agent (parallel subagent with agent 3)
+               Look for problems that exist in the introduced code. This could be security issues, incorrect logic, etc. Only look for issues that fall within the changed code.
+
+               **CRITICAL: We only want HIGH SIGNAL issues.** Flag issues where:
+               - The code will fail to compile or parse (syntax errors, type errors, missing imports, unresolved references)
+               - The code will definitely produce wrong results regardless of inputs (clear logic errors)
+               - Clear, unambiguous CLAUDE.md or AGENTS.md violations where you can quote the exact rule being broken
+
+               Do NOT flag:
+               - Code style or quality concerns
+               - Potential issues that depend on specific inputs or state
+               - Subjective suggestions or improvements
+
+               If you are not certain an issue is real, do not flag it. False positives erode trust and waste reviewer time.
+
+               In addition to the above, each subagent should be told the PR title and description, and the request at the end of this prompt. This will help provide context regarding the author's intent.
+
+            4. For each issue found in the previous step by agents 3 and 4, launch parallel subagents to validate the issue. These subagents should get the PR title and description along with a description of the issue. The agent's job is to review the issue to validate that the stated issue is truly an issue with high confidence. For example, if an issue such as "variable is not defined" was flagged, the subagent's job would be to validate that is actually true in the code. Another example would be CLAUDE.md issues. The agent should validate that the CLAUDE.md or AGENTS.md rule that was violated is scoped for this file and is actually violated. Use Opus subagents for bugs and logic issues, and sonnet agents for CLAUDE.md and AGENTS.md violations.
+
+            5. Filter out any issues that were not validated in step 4. This step will give us our list of high signal issues for our review.
+
+            6. If no issues remain, stop. Do not post anything; the workflow posts the summary comment.
+
+            7. Create a list of all comments that you plan on leaving. This is only for you to make sure you are comfortable with the comments. Do not post this list anywhere.
+
+            8. Post inline comments for each issue using `mcp__github_inline_comment__create_inline_comment` with `confirmed: true`. For each comment:
+               - Start with a severity tag: [P0] breaks prod or loses data, [P1] real bug on a common path, [P2] real bug on an edge path, [P3] minor but real
+               - Provide a brief description of the issue
+               - For small, self-contained fixes, include a committable suggestion block
+               - For larger fixes (6+ lines, structural changes, or changes spanning multiple locations), describe the issue and suggested fix without a suggestion block
+               - Never post a committable suggestion UNLESS committing the suggestion fixes the issue entirely. If follow up steps are required, do not leave a committable suggestion.
+
+               **IMPORTANT: Only post ONE comment per unique issue. Do not post duplicate comments.** Do not post any other PR comment; the workflow posts the summary.
+
+            Use this list when evaluating issues in Steps 3 and 4 (these are false positives, do NOT flag):
+
+            - Pre-existing issues
+            - Something that appears to be a bug but is actually correct
+            - Pedantic nitpicks that a senior engineer would not flag
+            - Issues that a linter will catch (do not run the linter to verify)
+            - General code quality concerns (e.g., lack of test coverage, general security issues) unless explicitly required in CLAUDE.md or AGENTS.md
+            - Issues mentioned in CLAUDE.md or AGENTS.md but explicitly silenced in the code (e.g., via a lint ignore comment)
+
+            Notes:
+
+            - Use gh CLI to interact with GitHub (e.g., fetch pull requests). Do not use web fetch.
+            - Create a todo list before starting.
+            - You must cite and link each issue in inline comments (e.g., if referring to a CLAUDE.md, include a link to it).
+            - When linking to code in inline comments, follow the following format precisely, otherwise the Markdown preview won't render correctly: https://github.com/${{ github.repository }}/blob/${{ steps.pr.outputs.sha }}/path/to/file#L10-L15
+              - Requires full git sha
+              - You must provide the full sha. Commands like `https://github.com/owner/repo/blob/$(git rev-parse HEAD)/foo/bar` will not work, since your comment will be directly rendered in Markdown.
+              - Repo name must match the repo you're code reviewing
+              - # sign after the file name
+              - Line range format is L[start]-L[end]
+              - Provide at least 1 line of context before and after, centered on the line you are commenting about (eg. if you are commenting about lines 5-6, you should link to `L4-7`)
 
             The request comment:
             ---
             ${{ github.event.comment.body }}
           claude_args: >-
             --model claude-opus-5-5 --effort high
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git blame:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
+            --allowedTools "Agent,Task,TodoWrite,Read,Glob,Grep,mcp__github_inline_comment__create_inline_comment,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git blame:*)"
 
       - name: Post receipt
         if: always() && steps.pr.outputs.sha != ''
