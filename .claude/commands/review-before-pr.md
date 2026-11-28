@@ -52,7 +52,7 @@ Each subagent prompt should:
 1. State the branch + commit count + files-changed count (from pre-flight).
 2. Note any `--security-heavy` or other intensifier flags.
 3. Tell the agent to focus only on its area and follow its own output format.
-4. Contain, verbatim: **"REPORT ONLY. DO NOT EDIT ANY FILES."** The reviewers share one working tree and run at the same time, so a fix a reviewer's definition calls an auto-fix comes back as a finding with the exact change.
+4. Contain, verbatim: **"REPORT ONLY. DO NOT EDIT ANY FILES."** The reviewers share one working tree and run at the same time, so a fix a reviewer's definition calls an auto-fix is not applied: the reviewer writes `None.` under `## Auto-Applied Fixes` and puts the exact change under `## Important Findings`.
 
 Use the `Agent` tool with `subagent_type` set to the matching subagent name (e.g. `review-architecture-boundaries`). Run them in **a single message with multiple tool blocks** so they execute concurrently.
 
