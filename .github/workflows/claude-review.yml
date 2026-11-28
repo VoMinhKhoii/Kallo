@@ -181,3 +181,14 @@ jobs:
           fi
           printf '<!-- claude-review-receipt:v1 -->\n**Reviewed commit:** %s\n\n%s\n' "$SHA" "$verdict" > receipt.md
           gh pr comment "$PR" --repo "${{ github.repository }}" --body-file receipt.md
+
+          # Show the verdict in the PR's Reviewers box, pinned to the reviewed commit:
+          # a tick when clean, "changes requested" when there are findings (so an older
+          # tick doesn't stay up). A failed run leaves the box as it was. Needs
+          # Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests".
+          if [ "$OUTCOME" = "success" ]; then
+            if [ "$n" = "0" ]; then event=APPROVE; else event=REQUEST_CHANGES; fi
+            gh api "repos/${{ github.repository }}/pulls/$PR/reviews" \
+              -f commit_id="$SHA" -f event="$event" -f body="$verdict on \`$SHA\`." >/dev/null \
+              || echo "::warning::Could not set the review state. Allow GitHub Actions to approve PRs in the repo's Actions settings."
+          fi
