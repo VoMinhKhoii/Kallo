@@ -52,6 +52,7 @@ Each subagent prompt should:
 1. State the branch + commit count + files-changed count (from pre-flight).
 2. Note any `--security-heavy` or other intensifier flags.
 3. Tell the agent to focus only on its area and follow its own output format.
+4. Contain, verbatim: **"REPORT ONLY. DO NOT EDIT ANY FILES."** The reviewers share one working tree and run at the same time, so a fix a reviewer's definition calls an auto-fix comes back as a finding with the exact change.
 
 Use the `Agent` tool with `subagent_type` set to the matching subagent name (e.g. `review-architecture-boundaries`). Run them in **a single message with multiple tool blocks** so they execute concurrently.
 
@@ -97,7 +98,7 @@ Branch: <branch>  ·  <N commits>, <M files>  ·  base: main
 
 ## Constraints
 
-- Do not auto-apply structural changes (file moves, schema rewrites, public API renames). Subagents own that decision per their definitions.
+- Reviewers never edit in this command. Apply the fixes you accept yourself, one at a time, after every reviewer has returned. Structural changes (file moves, schema rewrites, public API renames) need the user's approval first.
 - Do not run `gh pr create` or `git push` from this command. That belongs to `/kship` (if available) or explicit user request.
 - Do not wait for one subagent's output to dispatch the next — the whole point of multi-axis review is parallelism.
 - If the diff is empty (`git diff main...HEAD` returns nothing), say so and exit without dispatching.
