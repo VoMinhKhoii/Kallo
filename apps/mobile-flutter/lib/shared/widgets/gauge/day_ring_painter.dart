@@ -1,19 +1,17 @@
-/// The week strip cell's calorie ring.
-///
-/// Its own file because `week_day_cell.dart` is one widget per file like every
-/// other widget here — the cell composes this painter, it does not contain it.
+/// One day's calorie ring: the week strip's cell on Today and the month
+/// calendar beside a two-pane Log both draw a day with it.
 library;
 
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../../theme/kallo_colors.dart';
+import '../../../theme/kallo_colors.dart';
 
 /// A small progress ring: a faint track + a rounded arc swept clockwise from 12
-/// o'clock for [fraction] of the circle, in the heatmap tier [arcColor].
-class WeekDayRingPainter extends CustomPainter {
-  WeekDayRingPainter({
+/// o'clock for [fraction] of the circle, in [arcColor].
+class DayRingPainter extends CustomPainter {
+  DayRingPainter({
     required this.fraction,
     required this.arcColor,
     required this.showTrack,
@@ -58,7 +56,7 @@ class WeekDayRingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(WeekDayRingPainter old) =>
+  bool shouldRepaint(DayRingPainter old) =>
       old.fraction != fraction ||
       old.arcColor != arcColor ||
       old.showTrack != showTrack;

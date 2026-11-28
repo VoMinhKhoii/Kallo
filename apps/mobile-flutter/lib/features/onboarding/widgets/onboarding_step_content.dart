@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../shell/window/keep_clear.dart';
+import '../../../shell/window/keep_clear_clip.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../logic/onboarding_step_spec.dart';
@@ -37,14 +39,17 @@ class OnboardingStepContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(spec.title, style: kPageTitle()),
+          KeepClear(child: Text(spec.title, style: kPageTitle())),
           const SizedBox(height: KalloSpacing.sp3),
           Expanded(
-            child: SingleChildScrollView(
-              primary: false,
-              padding: EdgeInsets.only(bottom: bottomInset),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: spec.body,
+            child: KeepClearClip(
+              child: SingleChildScrollView(
+                primary: false,
+                padding: EdgeInsets.only(bottom: bottomInset),
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                child: spec.body,
+              ),
             ),
           ),
         ],

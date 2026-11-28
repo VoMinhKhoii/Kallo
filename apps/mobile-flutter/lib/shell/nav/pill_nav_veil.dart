@@ -12,21 +12,31 @@ import '../../theme/kallo_motion.dart';
 /// height is the bottom inset every tab body scrolls against, it would also
 /// yank that inset to zero mid-gesture.
 class PillNavVeil extends StatelessWidget {
-  const PillNavVeil({super.key, required this.hidden, required this.child});
+  const PillNavVeil({
+    super.key,
+    required this.hidden,
+    required this.child,
+    this.direction = const Offset(0, 1),
+  });
 
   final bool hidden;
   final Widget child;
+  final Offset direction;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedSlide(
       duration: KalloMotion.quick,
       curve: KalloEase.standard,
-      offset: hidden ? const Offset(0, 1) : Offset.zero,
-      child: AnimatedOpacity(
-        duration: KalloMotion.press,
-        opacity: hidden ? 0 : 1,
-        child: child,
+      offset: hidden ? direction : Offset.zero,
+      child: IgnorePointer(
+        // The side capsule can still intersect its column mid-slide.
+        ignoring: hidden && direction.dx != 0,
+        child: AnimatedOpacity(
+          duration: KalloMotion.press,
+          opacity: hidden ? 0 : 1,
+          child: child,
+        ),
       ),
     );
   }

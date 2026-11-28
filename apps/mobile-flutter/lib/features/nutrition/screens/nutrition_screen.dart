@@ -1,4 +1,6 @@
-import 'package:easy_localization/easy_localization.dart';
+import '../../../shared/widgets/panes/pane_insets.dart';
+import '../../../shared/widgets/panes/pane_slot.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,7 +9,7 @@ import '../../../services/auth/session_provider.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition/nutrition.dart';
 import '../../../shared/widgets/surface/kallo_primitives.dart';
-import '../../../shared/widgets/feedback/kallo_refresh.dart';
+import '../../../shell/window/window_layout.dart';
 import '../../../shared/widgets/feedback/sliver_centered_state.dart';
 import '../../../shared/widgets/typography/section_header_row.dart';
 import '../../../shared/widgets/toast/top_toast.dart';
@@ -26,6 +28,7 @@ import '../widgets/states/nutrition_skeleton.dart';
 import '../widgets/scope/range_selector.dart';
 import '../widgets/nutrients/source_attribution.dart';
 import '../widgets/nutrients/suggested_foods_sheet.dart';
+import '../widgets/overview/nutrition_panes.dart';
 
 /// Whether the suggested-foods CTA is offered.
 ///
@@ -79,6 +82,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
 
     if (userId == null) {
       return Screen(
+        bounded: true,
         glow: true,
         bottom: false,
         child: Center(
@@ -114,12 +118,17 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     final isFetching = async.isLoading && async.hasValue;
 
     return Screen(
+      bounded: true,
       glow: true,
       bottom: false,
       child: ScrollSeparator(
         header: Padding(
           padding: const EdgeInsets.fromLTRB(_side, 0, _side, _side),
           child: Row(
+            textDirection:
+                WindowLayout.of(context).mirrored
+                    ? TextDirection.rtl
+                    : TextDirection.ltr,
             children: [
               // Shrink-to-fit, never ellipsis: the title row gives the 216pt
               // range control its width first, and "Dinh dưỡng" is wider than
@@ -128,7 +137,10 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
               Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
+                  alignment:
+                      WindowLayout.of(context).mirrored
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                   child: Text(
                     tr('nutrition.title'),
                     maxLines: 1,
@@ -158,17 +170,12 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             ],
           ),
         ),
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: _clearSelection,
-          child: KalloRefreshableScroll(
-            onRefresh:
-                () =>
-                    ref
-                        .read(nutritionOverviewProvider(_arg).notifier)
-                        .refetch(),
-            slivers: (bottomInset) => _page(async, isFetching, bottomInset),
-          ),
+        child: NutritionPanes(
+          onClearSelection: _clearSelection,
+          onRefresh:
+              () =>
+                  ref.read(nutritionOverviewProvider(_arg).notifier).refetch(),
+          page: (bottom, slot) => _page(async, isFetching, bottom, slot),
         ),
       ),
     );
@@ -183,11 +190,22 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     AsyncValue<NutritionOverview> async,
     bool isFetching,
     double bottomInset,
+    PaneSlot slot,
   ) {
     final overview = async.valueOrNull;
-    if (overview != null) return _scrollPage(_buildBody(overview), bottomInset);
+    if (overview != null) {
+      return _scrollPage(_buildBody(overview, slot), bottomInset, slot);
+    }
+    if (slot == PaneSlot.near && !async.isLoading) return [];
+    if (slot == PaneSlot.near) {
+      return _scrollPage(
+        const NutritionSkeleton(slot: PaneSlot.near),
+        bottomInset,
+        slot,
+      );
+    }
     if (async.isLoading) {
-      return _scrollPage(const NutritionSkeleton(), bottomInset);
+      return _scrollPage(NutritionSkeleton(slot: slot), bottomInset, slot);
     }
     // The failed page has nothing on it but the state card, so the card sits
     // at the MIDDLE of it rather than under the title with the rest blank —
@@ -211,9 +229,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   }
 
   /// The scrolling page: [body] under the title, then the source line.
-  List<Widget> _scrollPage(Widget body, double bottomInset) => [
+  List<Widget> _scrollPage(Widget body, double bottomInset, PaneSlot slot) => [
     SliverPadding(
-      padding: const EdgeInsets.fromLTRB(_side, 0, _side, 0),
+      padding: paneInsets(context, slot: slot, side: _side),
       sliver: SliverToBoxAdapter(child: body),
     ),
     // The source line belongs to the PAGE, not to the section above it — the
@@ -223,14 +241,21 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       // The inset clears the floating pill nav — this is a tab, and the bar
       // hovers over the last thing on the page. It is paid INSIDE the fill: a
       // trailing spacer sliver would push the tail off the viewport.
-      padding: EdgeInsets.fromLTRB(_side, 0, _side, bottomInset),
-      footer: const SourceAttribution(),
+      padding: paneInsets(
+        context,
+        slot: slot,
+        side: _side,
+        bottom: bottomInset,
+      ),
+      // Once per page. In two panes the targets it credits are the vitamin
+      // and mineral ones, so it closes the pane that shows them.
+      footer: slot == PaneSlot.far ? null : const SourceAttribution(),
     ),
   ];
 
   /// The content page's body. Every figure on it is resolved first — one pass
   /// over the overview and the tapped column — so what follows is layout.
-  Widget _buildBody(NutritionOverview overview) {
+  Widget _buildBody(NutritionOverview overview, PaneSlot slot) {
     final view = OverviewSelection.resolve(
       overview,
       selectedIndex: _selectedIndex,
@@ -245,64 +270,74 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // The section header names the scope the figure is averaged over. The
-        // unit used to carry it ("kcal per complete day"); saying it once here
-        // keeps the figure clean without leaving the scope inferable only from
-        // a button that names the OTHER one. A selected column is that bucket,
-        // not an average over a day scope, so it drops the qualifier.
-        SectionHeaderRow(
-          title: tr('nutrition.macros.calories'),
-          meta:
-              view.active != null
-                  ? tr('nutrition.cardTitle')
-                  : '${tr('nutrition.cardTitle')} · '
-                      '${tr(overview.loggedDays == 0 || _dayScope == NutritionDayScope.all ? 'nutrition.rhythm.loggedDays' : 'nutrition.rhythm.completeDays')}',
-        ),
-        const SizedBox(height: _gap),
-        DaySummary(
-          macros: view.macros,
-          resolvedRange: overview.resolvedRange,
-          daySeries: overview.daySeries,
-          calorieAverages: overview.calorieAverages,
-          previousCalorieAverages: overview.previousCalorieAverages,
-          scope: _dayScope,
-          onScopeChange: (scope) => setState(() => _dayScope = scope),
-          dateSpan: view.dateSpan,
-          todayIndex: view.todayIndex,
-          selectedIndex: view.active,
-          onSelect:
-              (index) => setState(
-                () => _selectedIndex = _selectedIndex == index ? null : index,
-              ),
-          isEmpty: overview.loggedDays == 0,
-        ),
-        // The three macros belong to the calorie section — same average, same
-        // scope, broken out — so they carry no header of their own.
-        const SizedBox(height: _gap),
-        MacroRowsCard(macros: view.macros),
-        // Nothing logged yet: the page keeps its shape at zero, and the prompt
-        // sits under the card rather than replacing everything — so the layout
-        // someone will use every day is the first thing they see.
-        if (overview.loggedDays == 0) ...[
-          const SizedBox(height: _gap),
-          const EmptyState(),
-        ],
-        // The single CTA sits right under the summary so it's visible on load,
-        // not buried below the full nutrient list.
-        if (kShowSuggestedFoods && foodNutrients.isNotEmpty) ...[
-          const SizedBox(height: _gap),
-          // The in-app primary tier — beige + ink, fully rounded — not a
-          // bespoke umber pill.
-          KalloButton(
-            title: tr('nutrition.suggestedFoods.button'),
-            onPressed:
-                () =>
-                    showSuggestedFoodsSheet(context, nutrients: foodNutrients),
+        if (slot != PaneSlot.near) ...[
+          // The section header names the scope the figure is averaged over. The
+          // unit used to carry it ("kcal per complete day"); saying it once here
+          // keeps the figure clean without leaving the scope inferable only from
+          // a button that names the OTHER one. A selected column is that bucket,
+          // not an average over a day scope, so it drops the qualifier.
+          SectionHeaderRow(
+            title: tr('nutrition.macros.calories'),
+            meta:
+                view.active != null
+                    ? tr('nutrition.cardTitle')
+                    : '${tr('nutrition.cardTitle')} · '
+                        '${tr(overview.loggedDays == 0 || _dayScope == NutritionDayScope.all ? 'nutrition.rhythm.loggedDays' : 'nutrition.rhythm.completeDays')}',
           ),
+          const SizedBox(height: _gap),
+          DaySummary(
+            macros: view.macros,
+            resolvedRange: overview.resolvedRange,
+            daySeries: overview.daySeries,
+            calorieAverages: overview.calorieAverages,
+            previousCalorieAverages: overview.previousCalorieAverages,
+            scope: _dayScope,
+            onScopeChange: (scope) => setState(() => _dayScope = scope),
+            dateSpan: view.dateSpan,
+            todayIndex: view.todayIndex,
+            selectedIndex: view.active,
+            onSelect:
+                (index) => setState(
+                  () => _selectedIndex = _selectedIndex == index ? null : index,
+                ),
+            isEmpty: overview.loggedDays == 0,
+          ),
+          // The three macros belong to the calorie section — same average, same
+          // scope, broken out — so they carry no header of their own.
+          const SizedBox(height: _gap),
+          MacroRowsCard(macros: view.macros),
+          // Nothing logged yet: the page keeps its shape at zero, and the prompt
+          // sits under the card rather than replacing everything — so the layout
+          // someone will use every day is the first thing they see.
+          if (overview.loggedDays == 0) ...[
+            const SizedBox(height: _gap),
+            const EmptyState(),
+          ],
+          // The single CTA sits right under the summary so it's visible on load,
+          // not buried below the full nutrient list.
+          if (kShowSuggestedFoods && foodNutrients.isNotEmpty) ...[
+            const SizedBox(height: _gap),
+            // The in-app primary tier — beige + ink, fully rounded — not a
+            // bespoke umber pill.
+            KalloButton(
+              title: tr('nutrition.suggestedFoods.button'),
+              onPressed:
+                  () => showSuggestedFoodsSheet(
+                    context,
+                    nutrients: foodNutrients,
+                  ),
+            ),
+          ],
         ],
-        if (overview.micronutrientsLocked) const MicronutrientsLockedCard(),
-        ..._group(tr('nutrition.nutrientGroups.vitamins'), view.vitamins),
-        ..._group(tr('nutrition.nutrientGroups.minerals'), view.minerals),
+        if (slot != PaneSlot.far) ...[
+          if (overview.micronutrientsLocked) const MicronutrientsLockedCard(),
+          ..._group(
+            tr('nutrition.nutrientGroups.vitamins'),
+            view.vitamins,
+            first: slot == PaneSlot.near,
+          ),
+          ..._group(tr('nutrition.nutrientGroups.minerals'), view.minerals),
+        ],
       ],
     );
   }
@@ -313,13 +348,17 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   /// The header's meta says "Limited data" when anything in the group is too
   /// thinly covered to trust — said once for the group rather than repeated as
   /// a caveat on every cell it applies to.
-  List<Widget> _group(String title, List<NutrientCardData> cards) {
+  List<Widget> _group(
+    String title,
+    List<NutrientCardData> cards, {
+    bool first = false,
+  }) {
     if (cards.isEmpty) return const [];
     return [
       // The same asymmetry the dashboard uses: a doubled break above the
       // header, the plain rhythm below it, so the two screens separate their
       // sections the same way.
-      const SizedBox(height: DashboardSpacing.sectionBreak),
+      if (!first) const SizedBox(height: DashboardSpacing.sectionBreak),
       SectionHeaderRow(
         title: title,
         meta:

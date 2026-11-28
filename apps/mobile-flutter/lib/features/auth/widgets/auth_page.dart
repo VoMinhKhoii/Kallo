@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared/widgets/panes/narrative_panes.dart';
 
 import '../../../shared/widgets/toast/top_toast.dart';
+import '../../../shell/window/keep_clear.dart';
+import '../../../shell/window/keep_clear_clip.dart';
 import '../../onboarding/widgets/backdrop/step_backdrop.dart';
+import '../../onboarding/widgets/start/start_hero.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
 import '../providers/auth_form_controller.dart';
 import 'auth_controls.dart';
+import 'auth_fill.dart';
+import 'welcome/auth_brand_hero.dart';
 import 'welcome/auth_options.dart';
 import 'welcome/welcome_view.dart';
 
@@ -90,7 +96,10 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       child: face,
     );
 
-    final Widget content = SafeArea(
+    final Widget single = SafeArea(
+      minimum: EdgeInsets.only(
+        top: MediaQuery.viewPaddingOf(context).top == 0 ? 12 : 0,
+      ),
       child:
           widget.compact
               // Compact is a GUEST on someone else's screen, whose title sits
@@ -98,12 +107,14 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               // the middle of nothing, so the stack anchors to the bottom.
               ? Align(
                 alignment: Alignment.bottomCenter,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: kAuthInset,
-                    vertical: KalloSpacing.sp3,
+                child: KeepClearClip(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: kAuthInset,
+                      vertical: KalloSpacing.sp3,
+                    ),
+                    child: column,
                   ),
-                  child: column,
                 ),
               )
               // On its own screen the face fills the safe area, so the welcome
@@ -113,11 +124,10 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               // The padding sits INSIDE the fill: a SliverPadding around it
               // leaves the trailing inset out of the fill's extent, so the
               // face ran 12pt past the safe area and always scrolled by 12.
-              : CustomScrollView(
-                slivers: [
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
+              : KeepClearClip(
+                child: CustomScrollView(
+                  slivers: [
+                    AuthFill(
                       padding: const EdgeInsets.fromLTRB(
                         kAuthInset,
                         KalloSpacing.sp8,
@@ -126,10 +136,50 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                       ),
                       child: Center(child: column),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
     );
+
+    // Compact is a guest inside someone else's screen, so it never splits.
+    final Widget content =
+        widget.compact
+            ? single
+            // Beside the fold the start preview keeps the far pane, as it
+            // does through the whole signed-out flow. The preview is the
+            // device alone, so the brand block stands directly over the
+            // options and the two centre as one group.
+            : NarrativePanes(
+              far: const StartHero(),
+              near: SafeArea(
+                minimum: const EdgeInsets.only(top: 12),
+                child: Center(
+                  child: KeepClearClip(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const KeepClear(
+                              mode: KeepClearMode.centred,
+                              child: AuthBrandHero(),
+                            ),
+                            const SizedBox(height: KalloSpacing.sp8),
+                            KeepClear(
+                              mode: KeepClearMode.below,
+                              child: options,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              single: single,
+            );
 
     return Stack(
       children: [

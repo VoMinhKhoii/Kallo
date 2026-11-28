@@ -1,10 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
-import '../../../theme/calm_tokens.dart';
-import '../../../theme/kallo_theme.dart';
 import 'kallo_alert_surface.dart';
-import 'kallo_confirm_actions.dart';
+import 'kallo_confirm_dialog.dart';
 
 /// The app's ONE confirmation dialog.
 ///
@@ -75,7 +73,7 @@ Future<bool> showKalloConfirm(
     transitionDuration: kKalloAlertFade,
     transitionBuilder: kalloAlertTransition,
     pageBuilder:
-        (dialogContext, _, __) => _KalloConfirmDialog(
+        (dialogContext, _, __) => KalloConfirmDialog(
           title: title,
           description: description,
           confirmLabel: confirmLabel,
@@ -93,101 +91,4 @@ Future<bool> showKalloConfirm(
     useRootNavigator: true,
   );
   return confirmed ?? false;
-}
-
-class _KalloConfirmDialog extends StatelessWidget {
-  const _KalloConfirmDialog({
-    required this.title,
-    required this.description,
-    required this.confirmLabel,
-    required this.cancelLabel,
-    required this.destructive,
-  });
-
-  final String title;
-  final String? description;
-  final String confirmLabel;
-  final String cancelLabel;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final message = description;
-    // The route hands its page the whole screen, so the card's width is
-    // read from that, not from MediaQuery — which a caller (or a test) may
-    // have narrowed to text settings only.
-    return LayoutBuilder(
-      builder:
-          (context, screen) => Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp6),
-              child: SizedBox(
-                width: kalloAlertWidth(screen.maxWidth),
-                child: KalloAlertSurface(
-                  // Outside any Material, `WidgetsApp`'s fallback DefaultTextStyle
-                  // is the red/double-yellow-underline error style, and every
-                  // `Text(style: …)` here MERGES onto it — which is where the
-                  // yellow underline under the title came from. Naming the default
-                  // (with an explicit `decoration: none`) is the fix.
-                  child: DefaultTextStyle(
-                    style: dashBody().copyWith(decoration: TextDecoration.none),
-                    // Two long verbs at the 1.3x Dynamic Type cap outgrow a short
-                    // phone; the card scrolls rather than overflowing.
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            // The iOS 26 alert's text inset: 30pt at the
-                            // sides, the title's cap ~22pt below the top.
-                            padding: const EdgeInsets.fromLTRB(
-                              kKalloAlertTextInset,
-                              KalloSpacing.sp5,
-                              kKalloAlertTextInset,
-                              KalloSpacing.sp6,
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(title, style: kSheetTitle()),
-                                if (message != null) ...[
-                                  const SizedBox(height: KalloSpacing.sp2),
-                                  // Muted under the title, as the system
-                                  // sets it; Body, not Meta, because 14
-                                  // read as fine print.
-                                  Text(
-                                    message,
-                                    style: dashBody(color: kInkMuted),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              kKalloAlertActionInset,
-                              0,
-                              kKalloAlertActionInset,
-                              kKalloAlertActionInset,
-                            ),
-                            child: KalloConfirmActions(
-                              confirmLabel: confirmLabel,
-                              cancelLabel: cancelLabel,
-                              destructive: destructive,
-                              onConfirm: () => Navigator.of(context).pop(true),
-                              onCancel: () => Navigator.of(context).pop(false),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-    );
-  }
 }

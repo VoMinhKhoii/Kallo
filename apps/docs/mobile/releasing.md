@@ -225,6 +225,17 @@ live **encrypted in a private git repo** and are fetched **read-only** in CI, so
 never mints a new certificate (which would burn Apple's cert cap). The `signing` lane uses match;
 `ExportOptions.plist` and the lane both reference the match profile name `match AppStore com.khoivo.nham`.
 
+**iPhone Duo needs a newer SDK than this job builds with.** How an app appears on Duo
+depends on the SDK it was built against
+([Apple's guide](https://developer.apple.com/iphone-duo/prepare/)): built with the iOS 26
+SDK it sits centred with empty space on the inner display, the iOS 27 SDK lets it resize,
+and only the iOS 27.1 SDK gives it the full display. The Duo layouts in the app
+(architecture.md, "Window layout") therefore stay dormant on Duo until this job builds
+with Xcode 27.1. That means moving the runner to GitHub's `xcode-27` image and Flutter to
+3.44.8 or the 3.47 line (3.44.1 predates Xcode 27). `ios-duo-sim.yml` already builds the
+app for the simulator on that image with Flutter 3.47, so the build itself is known to
+work; signing and upload on the new image are not yet tested.
+
 The job installs fastlane from the committed `apps/mobile-flutter/ios/Gemfile.lock` with
 `BUNDLE_FROZEN=true`, so every gem version and checksum is pinned, and a missing or stale lock
 fails the job instead of resolving fresh gems. The signing secrets are set only on the steps that

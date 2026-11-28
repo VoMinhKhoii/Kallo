@@ -127,13 +127,16 @@ Future<void> _expectReachable(
   expect(action, findsOneWidget);
   await tester.ensureVisible(action);
   await tester.pumpAndSettle();
+  expect(tester.getRect(action).top, greaterThanOrEqualTo(0));
+  // A ruler can be taller than a below-fold sheet. Reach both ends by scroll.
+  await Scrollable.ensureVisible(tester.element(action), alignment: 1);
+  await tester.pumpAndSettle();
   final rect = tester.getRect(action);
   expect(
     rect.bottom,
     lessThanOrEqualTo(size.height),
     reason: 'action clipped below the viewport on ${size.width}x${size.height}',
   );
-  expect(rect.top, greaterThanOrEqualTo(0));
 }
 
 void main() {

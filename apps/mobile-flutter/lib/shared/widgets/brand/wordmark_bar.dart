@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../shell/window/keep_clear.dart';
 import '../../../theme/kallo_theme.dart';
 import 'kallo_wordmark.dart';
 
@@ -45,10 +46,20 @@ class WordmarkBar extends StatelessWidget {
       child: Stack(
         children: [
           const Center(child: KalloWordmark(height: wordmarkHeight)),
-          if (leading != null)
-            Align(alignment: Alignment.centerLeft, child: leading!),
-          if (trailing != null)
-            Align(alignment: Alignment.centerRight, child: trailing!),
+          // Beside the status items of an empty control column the corner
+          // slots give way to it; the mark stays on the page's centre.
+          Positioned.fill(
+            child: KeepClear(
+              child: Stack(
+                children: [
+                  if (leading != null)
+                    Align(alignment: Alignment.centerLeft, child: leading!),
+                  if (trailing != null)
+                    Align(alignment: Alignment.centerRight, child: trailing!),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     ),

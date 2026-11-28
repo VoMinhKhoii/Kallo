@@ -43,6 +43,7 @@ class GaugeDial extends StatelessWidget {
     required this.secondary,
     this.tertiary,
     this.clampReadout = false,
+    this.readoutScale,
     super.key,
   });
 
@@ -74,6 +75,9 @@ class GaugeDial extends StatelessWidget {
   /// on both sides at three digits. A figure has no business leaving the mark
   /// it belongs to; a sentence never fitted inside one to begin with.
   final bool clampReadout;
+
+  /// A row can give its dials one shared fit, keeping their figures equal.
+  final double? readoutScale;
 
   @override
   Widget build(BuildContext context) {
@@ -161,10 +165,29 @@ class GaugeDial extends StatelessWidget {
                 // One line each, always: the placement above measures a single
                 // line per [GaugeLine], and a wrapped one would slide every
                 // line below it off the tips.
-                GaugeReadoutLine(
-                  line: line,
-                  maxWidth: clampReadout ? clearWidthFor(i) : null,
-                  height: heightOf(line),
+                SizedBox(
+                  height: readoutScale == null ? null : heightOf(line),
+                  child: Center(
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    child: GaugeReadoutLine(
+                      line:
+                          readoutScale == null
+                              ? line
+                              : GaugeLine(
+                                line.text,
+                                line.style.copyWith(
+                                  fontSize:
+                                      line.style.fontSize! * readoutScale!,
+                                ),
+                              ),
+                      maxWidth:
+                          clampReadout && readoutScale == null
+                              ? clearWidthFor(i)
+                              : null,
+                      height: heightOf(line),
+                    ),
+                  ),
                 ),
               ],
             ],

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../macros/macro_trio.dart';
+import '../macros/dish_nutrition_row.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
-import '../../../../theme/kallo_theme.dart';
 import '../../data/logging_models.dart';
 import '../../logic/logging_spacing.dart';
 
@@ -32,35 +32,29 @@ class PersistedMealExpandedDetails extends StatelessWidget {
           for (final group in groups)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: LoggingSpacing.row),
-              child: Row(
+              child: DishNutritionRow(
                 // The macro figures hug the FIRST line of the dish name. A
                 // two-line Vietnamese name used to drag them down to its
                 // centre, so the numbers floated between the two lines they
                 // belong to the top of.
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // TWO lines, not one. The macro tail is fixed-width, so the
-                  // name gets ~96pt on a 390 phone — under half of what "Top
-                  // blade áp chảo" needs (128 measured). At one line, ordinary
-                  // Vietnamese dish names ellipsize away the part that
-                  // identifies them; the row grows a line only for the names
-                  // that need it.
-                  Expanded(
-                    child: Text(
-                      group.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: dashBody(),
-                    ),
-                  ),
-                  const SizedBox(width: KalloSpacing.sp3), // gap-3
-                  MacroTrio(
-                    protein: group.nutrition.proteinG,
-                    carbs: group.nutrition.carbohydrateG,
-                    fat: group.nutrition.fatG,
-                    calories: group.nutrition.caloriesKcal,
-                  ),
-                ],
+                // TWO lines, not one. The macro tail is fixed-width, so the
+                // name gets ~96pt on a 390 phone — under half of what "Top
+                // blade áp chảo" needs (128 measured). At one line, ordinary
+                // Vietnamese dish names ellipsize away the part that
+                // identifies them; the row grows a line only for the names
+                // that need it.
+                name: Text(
+                  group.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: dashBody(),
+                ),
+                nutrition: MacroTrio(
+                  protein: group.nutrition.proteinG,
+                  carbs: group.nutrition.carbohydrateG,
+                  fat: group.nutrition.fatG,
+                  calories: group.nutrition.caloriesKcal,
+                ),
               ),
             ),
         ],

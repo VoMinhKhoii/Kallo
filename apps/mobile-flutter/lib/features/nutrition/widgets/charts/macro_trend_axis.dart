@@ -14,7 +14,11 @@ import '../../../../theme/calm_tokens.dart';
 /// kcal gridline labels, right-aligned in the gutter. Ticks at or below zero
 /// and above the top labelled line stay bare — the axis line itself carries no
 /// number, and `topY` sits above `maxLabel` purely as headroom.
-AxisTitles kcalAxisTitles({required double step, required double maxLabel}) {
+AxisTitles kcalAxisTitles({
+  required double step,
+  required double maxLabel,
+  required TextScaler textScaler,
+}) {
   return AxisTitles(
     sideTitles: SideTitles(
       showTitles: true,
@@ -22,7 +26,7 @@ AxisTitles kcalAxisTitles({required double step, required double maxLabel}) {
       // Four digits at 12pt plus the 6pt gap. Sized generously on purpose: at
       // 28 "3000" wrapped to two lines, which is far uglier than a slightly
       // wide gutter.
-      reservedSize: 38,
+      reservedSize: textScaler.scale(32) + 6,
       getTitlesWidget: (value, meta) {
         if (value <= 0 || value > maxLabel) return const SizedBox.shrink();
         return Padding(

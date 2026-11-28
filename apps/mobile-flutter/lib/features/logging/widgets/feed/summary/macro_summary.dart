@@ -13,7 +13,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../../../shared/widgets/gauge/calorie_dial.dart';
-import '../../../../../shared/widgets/gauge/macro_dial_row.dart';
+import '../../../../../shared/widgets/gauge/macros/macro_dial_row.dart';
 import '../../../../../theme/kallo_colors.dart';
 import '../../../../../theme/kallo_palette.dart';
 import '../../../../../theme/kallo_theme.dart';
@@ -24,10 +24,19 @@ import '../../composer/entrances.dart';
 import '../placeholder/loading_skeletons.dart';
 
 class MacroSummary extends StatelessWidget {
-  const MacroSummary({super.key, required this.view, required this.profile});
+  const MacroSummary({
+    super.key,
+    required this.view,
+    required this.profile,
+    this.pane = false,
+  });
 
   final FeedViewState view;
   final LoggingProfile profile;
+
+  /// Beside the days in a two-pane window: the pane supplies the side
+  /// insets, so the row takes none of its own.
+  final bool pane;
 
   @override
   Widget build(BuildContext context) {
@@ -40,56 +49,46 @@ class MacroSummary extends StatelessWidget {
             KalloPalette.currentId == KalloPaletteId.aurora
                 ? null
                 : KalloColors.surface,
-        padding: const EdgeInsets.fromLTRB(
-          KalloSpacing.sp3,
+        padding: EdgeInsets.fromLTRB(
+          pane ? 0 : KalloSpacing.sp3,
           LoggingSpacing.block,
-          KalloSpacing.sp3,
+          pane ? 0 : KalloSpacing.sp3,
           LoggingSpacing.block,
         ),
         child:
             view.isLoading
                 ? const MacroSummarySkeleton()
                 : LayoutBuilder(
-                  builder:
-                      (context, constraints) => Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CalorieDial.compact(
-                            logged: view.dailyCalories.toDouble(),
-                            target: profile.calorieTarget.toDouble(),
-                            goal: profile.goal,
-                            atLeast: view.incompleteTotals.contains('calories'),
-                            // What the macros can spare at their full size:
-                            // the calorie dial shrinks and drops its verb
-                            // before it squeezes them (review of #396).
-                            maxWidth: calorieDialRoom(constraints.maxWidth),
-                          ),
-                          // The calorie dial is the widest single mark in
-                          // the row; everything left over goes to the three
-                          // macros, which shrink to fit rather than overflow,
-                          // so this gap is width taken straight off their
-                          // labels. At 12 the Vietnamese fat label ellipsized;
-                          // 8 is the smallest step that still reads as a gap
-                          // between two kinds of mark. The screen inset either
-                          // side stays at the app-wide 12 (page rhythm).
-                          const SizedBox(width: KalloSpacing.sp2),
-                          Expanded(
-                            child: MacroDialRow.compact(
-                              atLeast: view.incompleteTotals,
-                              current: {
-                                'protein': view.dailyProtein,
-                                'carbohydrate': view.dailyCarbs,
-                                'fat': view.dailyFat,
-                              },
-                              target: {
-                                'protein': profile.proteinTargetG,
-                                'carbohydrate': profile.carbsTargetG,
-                                'fat': profile.fatTargetG,
-                              },
-                            ),
-                          ),
-                        ],
+                  builder: (context, constraints) {
+                    // What the macros can spare at their full size: the
+                    // calorie dial shrinks and drops its verb before it
+                    // squeezes them (review of #396).
+                    final room = calorieDialRoom(constraints.maxWidth);
+                    // The row spaces all four marks evenly, so the header
+                    // reads as one row at any width (see leadRowFit). The
+                    // screen inset either side stays at the app-wide 12.
+                    return MacroDialRow.compact(
+                      leading: CalorieDial.compact(
+                        logged: view.dailyCalories.toDouble(),
+                        target: profile.calorieTarget.toDouble(),
+                        goal: profile.goal,
+                        atLeast: view.incompleteTotals.contains('calories'),
+                        maxWidth: room,
                       ),
+                      leadingWidth: compactCalorieDialRadius(room) * 2,
+                      atLeast: view.incompleteTotals,
+                      current: {
+                        'protein': view.dailyProtein,
+                        'carbohydrate': view.dailyCarbs,
+                        'fat': view.dailyFat,
+                      },
+                      target: {
+                        'protein': profile.proteinTargetG,
+                        'carbohydrate': profile.carbsTargetG,
+                        'fat': profile.fatTargetG,
+                      },
+                    );
+                  },
                 ),
       ),
     );

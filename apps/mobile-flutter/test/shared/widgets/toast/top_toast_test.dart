@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/shared/widgets/toast/top_toast.dart';
+import 'package:kallo_mobile/shared/widgets/toast/top_toast_pill.dart';
 
 /// The toast is inserted into the ROOT overlay, above every Material in the
 /// app. Text with no Material ancestor inherits Flutter's fallback style, which
@@ -28,6 +29,22 @@ Widget _host(void Function(BuildContext) show) => MaterialApp(
 );
 
 void main() {
+  for (final width in [466.0, 951.0]) {
+    testWidgets('toast centres outside side column at $width', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 669);
+      tester.view.viewPadding = const FakeViewPadding(right: 84, bottom: 34);
+      tester.view.padding = const FakeViewPadding(right: 84, bottom: 34);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_host((c) => showTopToast(c, 'Saved')));
+      await tester.tap(find.text('go'));
+      await tester.pumpAndSettle();
+      final rect = tester.getRect(find.byType(TopToastPill));
+      expect(rect.center.dx, width >= 840 ? 681.25 : (width - 84) / 2);
+      expect(rect.right, lessThanOrEqualTo(width - 84));
+      await tester.pumpAndSettle(const Duration(seconds: 3));
+    });
+  }
   testWidgets('message carries no inherited text decoration', (tester) async {
     await tester.pumpWidget(_host((c) => showTopToast(c, 'Saved')));
     await tester.tap(find.text('go'));

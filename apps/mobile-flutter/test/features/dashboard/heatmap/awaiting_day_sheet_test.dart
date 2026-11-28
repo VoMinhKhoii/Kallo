@@ -166,9 +166,13 @@ Widget _app({
 
 /// Taps the sheet's confirm, then answers the "are you sure?" yes.
 Future<void> _confirmDay(WidgetTester tester) async {
+  await tester.ensureVisible(find.text("That's everything I ate"));
+  await tester.pumpAndSettle();
   await tester.tap(find.text("That's everything I ate"));
   await tester.pumpAndSettle();
   expect(find.text('Mark this day as fully logged?'), findsOneWidget);
+  await tester.ensureVisible(find.text("That's everything I ate").last);
+  await tester.pumpAndSettle();
   await tester.tap(find.text("That's everything I ate").last);
   await tester.pump();
 }

@@ -1,7 +1,9 @@
+import '../../../../shared/widgets/panes/pane_insets.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../../shell/window/window_layout.dart';
 
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
@@ -13,8 +15,7 @@ import '../../logic/format.dart';
 import '../../logic/meal_utils.dart' show isLikelyPartialDay;
 
 /// A once-daily nudge shown above today's feed when *yesterday* looks
-/// under-logged: it opens yesterday so the user can fold in whatever they
-/// missed. Ported from the web `partial-yesterday-prompt.tsx`.
+/// under-logged: it opens yesterday so the user can fill in missing meals.
 ///
 /// Renders nothing when yesterday has no meals, has any meal with unknown
 /// calories (the calorie-based check can't be trusted), or is above the
@@ -64,11 +65,11 @@ class PartialYesterdayPrompt extends ConsumerWidget {
     final t = 'logging.feedArea.partialYesterdayPrompt';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        KalloSpacing.sp3,
-        KalloSpacing.sp3,
-        KalloSpacing.sp3,
-        0,
+      padding: paneInsets(
+        context,
+        // FeedPanes already pads it in two-pane mode, atop the feed.
+        side: WindowLayout.of(context).twoPane ? 0 : KalloSpacing.sp3,
+        top: KalloSpacing.sp3,
       ),
       child: Container(
         padding: const EdgeInsets.all(KalloSpacing.sp3),

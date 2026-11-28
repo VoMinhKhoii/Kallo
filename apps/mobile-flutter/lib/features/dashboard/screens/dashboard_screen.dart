@@ -13,35 +13,23 @@ library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/profile/dashboard.dart';
-import '../../../shared/widgets/brand/kallo_wordmark.dart';
-import '../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../shared/widgets/feedback/skeleton.dart';
 import '../../../shared/widgets/surface/kallo_screen.dart';
-import '../../../shared/widgets/surface/scroll_separator.dart';
-import '../../../shared/widgets/typography/section_header_row.dart';
 import '../widgets/states/card_skeletons.dart';
 import '../widgets/states/section_state.dart';
 import '../../../services/auth/session_provider.dart';
-import '../../../shell/header/app_header.dart';
-import '../../../shell/header/profile_avatar_button.dart';
-import '../../../theme/kallo_motion.dart';
 import '../../../theme/kallo_theme.dart';
-import '../../logging/logic/timeline_utils.dart' hide WeekStrip;
 import '../data/dashboard_providers.dart';
-import '../logic/day_window.dart';
 import '../../../shared/logic/display_format.dart';
-import '../logic/dashboard_spacing.dart';
-import '../widgets/heatmap/adherence_heatmap.dart';
 import '../../../theme/calm_tokens.dart';
 import '../widgets/today/dock_targets.dart';
-import '../widgets/today/day_pager.dart';
-import '../widgets/today/today_section.dart';
-import '../widgets/chrome/week_strip.dart';
-import '../widgets/weight/weight_chart.dart';
+import 'dashboard_content.dart';
+import '../widgets/chrome/dashboard_frame.dart';
+import '../widgets/chrome/dashboard_header.dart';
+import '../widgets/states/dashboard_failure.dart';
 
 // EN copy (messages/en.json `dashboard.*`), matching the RN inlined COPY.
 
@@ -86,42 +74,31 @@ class DashboardScreen extends ConsumerWidget {
     return Screen(
       glow: true,
       bottom: false,
-      child: ScrollSeparator(
-        header: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-          child: AppHeader(
-            // Wordmark hard left, avatar hard right: the leading slot is
-            // collapsed so the mark starts at the page inset rather than
-            // 44pt in behind an empty spacer.
-            leading: SizedBox.shrink(),
-            // Settings moved behind the avatar when the drawer retired.
-            trailing: ProfileAvatarButton(),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: KalloWordmark(height: _wordmarkHeight),
-            ),
-          ),
-        ),
+      bounded: true,
+      child: DashboardFrame(
+        header: const DashboardHeader(),
         child: bundle.when(
           // Skeleton of the real layout, not a spinner, so the load previews
           // its own shape; one outer pulse keeps nested pulses in phase.
           loading:
               () => SkeletonPulse(child: DashboardSkeleton(onRefresh: refresh)),
           error:
-              (_, __) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(KalloSpacing.sp6),
-                  child: SectionState(
-                    compact: false,
-                    message: tr('dashboard.todayLoadError'),
-                    actionLabel: tr('dashboard.retry'),
-                    onAction:
-                        () => ref.invalidate(dashboardBundleProvider(args)),
+              (_, __) => DashboardFailure(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(KalloSpacing.sp6),
+                    child: SectionState(
+                      compact: false,
+                      message: tr('dashboard.todayLoadError'),
+                      actionLabel: tr('dashboard.retry'),
+                      onAction:
+                          () => ref.invalidate(dashboardBundleProvider(args)),
+                    ),
                   ),
                 ),
               ),
           data:
-              (data) => _Content(
+              (data) => DashboardContent(
                 args: args,
                 todayDate: todayDate,
                 targets: _targetsFor(data),
@@ -163,203 +140,6 @@ class DashboardScreen extends ConsumerWidget {
       fatTargetG: p?.fatTargetG ?? _defaultFatTargetG,
       // Null until onboarding sets it; the dial reads that as counting up.
       goal: p?.goal,
-    );
-  }
-}
-
-/// Optical height of the masthead wordmark, matching the header line the
-/// serif setting used to occupy.
-const double _wordmarkHeight = 26;
-
-class _Content extends StatefulWidget {
-  const _Content({
-    required this.args,
-    required this.todayDate,
-    required this.targets,
-    required this.isFirstRun,
-    required this.onRefresh,
-  });
-
-  /// Pull-to-refresh: refetches the one aggregate the whole screen reads.
-  final Future<void> Function() onRefresh;
-
-  /// Today-anchored args — Progress (30d), Consistency (90d) and the week
-  /// strip's rings stay "as of today" regardless of the selected day.
-  final DashboardArgs args;
-  final String todayDate;
-  final DockTargets targets;
-  final bool isFirstRun;
-
-  @override
-  State<_Content> createState() => _ContentState();
-}
-
-class _ContentState extends State<_Content> {
-  // The day whose summary the Today card shows; tapping a strip day or swiping
-  // the card changes it. The window is unbounded into the past and clamped at
-  // today, so pages map to dates through `logic/day_window.dart` instead of
-  // indexing a fixed list — today is [kDayPageBase], the last page.
-  int _page = kDayPageBase;
-  final PageController _pageController = PageController(
-    initialPage: kDayPageBase,
-  );
-
-  String get _selectedDate => dateForDayPage(widget.todayDate, _page);
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  /// Strip tap → animate the day card to that page (selection haptic fires in
-  /// the strip's own GestureDetector). Days after today have no page.
-  ///
-  /// First-run renders the static FirstRunCard instead of the DayPager, so the
-  /// controller has no PageView to drive — `animateToPage` / `jumpToPage` then
-  /// throw `StateError: No element` (Sentry KALLO-MOBILE-1). A new user has
-  /// only today to show, so the tap is a no-op until the pager mounts.
-  void _onSelectDay(String date) {
-    if (!_pageController.hasClients) return;
-    final page = dayPageForDate(widget.todayDate, date);
-    if (page == _page || page < 0 || page > kDayPageBase) return;
-    // Animating across many pages builds every intermediate day, and each one
-    // fetches `/api/v1/logging/day` — jump straight there beyond a neighbour.
-    if ((page - _page).abs() > 1) {
-      _pageController.jumpToPage(page);
-      return;
-    }
-    _pageController.animateToPage(
-      page,
-      duration: KalloMotion.page,
-      curve: KalloEase.decelerate,
-    );
-  }
-
-  /// Swipe → update selection + fire the same selection haptic the strip uses.
-  void _onPageChanged(int page) {
-    if (page == _page) return;
-    HapticFeedback.selectionClick();
-    setState(() => _page = page);
-  }
-
-  /// A human date line for the card: "Today" / "Yesterday" / a localized
-  /// weekday-month-day (e.g. "Mon, Jun 9").
-  String _dateLabel(String date, String locale) {
-    if (date == widget.todayDate) return tr('dashboard.today');
-    if (date == addDays(widget.todayDate, -1)) {
-      return tr('dashboard.yesterday');
-    }
-    return DateFormat('EEE, MMM d', locale).format(dateStringToDate(date));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = context.locale.toString();
-
-    // The shared refreshable page scroll: bouncing physics and the refresh
-    // control as the first sliver, so the page holds down for the whole
-    // refetch — see [KalloRefreshableScroll].
-    return KalloRefreshableScroll(
-      onRefresh: widget.onRefresh,
-      slivers:
-          (bottomInset) => [
-            SliverPadding(
-              padding: EdgeInsets.only(
-                left: KalloSpacing.sp3,
-                right: KalloSpacing.sp3,
-                // AppHeader already pays sp1 below itself; sp2 here nets the one
-                // 12px step between the wordmark and the week strip.
-                top: KalloSpacing.sp2,
-                // The floating pill nav is not part of the layout (the shell runs
-                // extendBody), so it arrives as the body's bottom padding — its
-                // MEASURED height, on this device, with this home indicator.
-                bottom: bottomInset,
-              ),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // SECTION 1 — week strip + the paged day-viewer (the wordmark
-                  // lives in the header row, beside the avatar).
-                  WeekStrip(
-                    args: widget.args,
-                    todayDate: widget.todayDate,
-                    selectedDate: _selectedDate,
-                    onSelectDay: _onSelectDay,
-                  ),
-                  // No trailing margin: each _Section below pays its own break.
-                  if (widget.isFirstRun)
-                    TodaySection(
-                      args: widget.args,
-                      targets: widget.targets,
-                      dateLabel: _dateLabel(widget.todayDate, locale),
-                      isFirstRun: true,
-                    )
-                  else
-                    DayPager(
-                      controller: _pageController,
-                      todayDate: widget.todayDate,
-                      userId: widget.args.userId,
-                      targets: widget.targets,
-                      onPageChanged: _onPageChanged,
-                      dateLabel: (d) => _dateLabel(d, locale),
-                    ),
-                  // SECTION 2 — Progress.
-                  _Section(
-                    children: [
-                      SectionHeaderRow(
-                        title: tr('dashboard.progress'),
-                        meta: tr('dashboard.ranges.thirtyDays'),
-                      ),
-                      WeightChart(args: widget.args),
-                    ],
-                  ),
-                  // SECTION 3 — Consistency. The padding's bottom is the nav
-                  // clearance, so the scroll ends right under the heatmap.
-                  _Section(
-                    children: [
-                      // No meta here: the heatmap card states its own window in
-                      // its "{percent}% on track · {window}" line, and unlike a
-                      // static header that line TRACKS the range the layout
-                      // resolved to. A fixed "90 days" up here both repeated it
-                      // and would have gone on claiming 90 days on a tablet that
-                      // had stepped up to the year.
-                      SectionHeaderRow(title: tr('dashboard.consistency')),
-                      AdherenceHeatmap(args: widget.args),
-                    ],
-                  ),
-                ]),
-              ),
-            ),
-          ],
-    );
-  }
-}
-
-/// A dashboard section: header + card, bound together on the
-/// [DashboardSpacing.block] rhythm and pushed away from whatever precedes them
-/// by [DashboardSpacing.sectionBreak].
-///
-/// The break is paid on TOP, by the section that needs it, rather than as a
-/// trailing margin on the block above — so a section is separated by the fact
-/// of being one, and the last section needs no special case to avoid a dead
-/// gap under the scroll.
-class _Section extends StatelessWidget {
-  const _Section({required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: DashboardSpacing.sectionBreak),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(height: DashboardSpacing.block),
-            children[i],
-          ],
-        ],
-      ),
     );
   }
 }

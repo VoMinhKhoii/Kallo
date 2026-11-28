@@ -86,7 +86,10 @@ class _WeekStripState extends ConsumerState<WeekStrip> {
     return Padding(
       padding: const EdgeInsets.only(bottom: DashboardSpacing.block),
       child: SizedBox(
-        height: WeekDayCell.height,
+        height:
+            WeekDayCell.height +
+            MediaQuery.textScalerOf(context).scale(14) * 1.25 -
+            14 * 1.25,
         child: PageView.builder(
           controller: _controller,
           physics: const PageScrollPhysics(),

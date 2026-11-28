@@ -137,9 +137,10 @@ void main() {
     expect(cta.top - title.bottom, closeTo(24, 0.5));
 
     // The wordmark is the top-centre header: a 44pt row 8pt under the safe
-    // area, the 34pt mark centred in it.
+    // area, the 34pt mark centred in it. With no top system inset, the host
+    // adds the same 12pt clearance as the other full-bleed narrative screens.
     final wordmark = tester.getRect(find.byType(KalloWordmark));
-    expect(wordmark.top, closeTo(8 + (44 - 34) / 2, 0.5));
+    expect(wordmark.top, closeTo(12 + 8 + (44 - 34) / 2, 0.5));
     expect(wordmark.center.dx, closeTo(390 / 2, 0.5));
   });
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/calm_tokens.dart';
 import '../../logic/macro_composition.dart';
+import '../../logic/text_fit/macro_legend_fit.dart';
 
 /// The row under a calorie-share bar: a 14px food glyph and a Caption gram
 /// label per macro, spread across the full width. Optional [leading] /
@@ -58,13 +59,41 @@ class MacroLegend extends StatelessWidget {
         ],
       );
     }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        if (leading != null) leading!,
-        ...entries,
-        if (trailing != null) trailing!,
-      ],
+    final children = <Widget>[
+      if (leading != null) leading!,
+      ...entries,
+      if (trailing != null) trailing!,
+    ];
+    return LayoutBuilder(
+      builder: (context, bounds) {
+        final width = macroLegendWidth(
+          context,
+          gramLabels: gramLabels,
+          leading: leading,
+          trailing: trailing,
+          childCount: children.length,
+        );
+        if (width > bounds.maxWidth && (leading != null || trailing != null)) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (leading != null)
+                Align(alignment: Alignment.centerLeft, child: leading!),
+              if (trailing != null)
+                Align(alignment: Alignment.centerRight, child: trailing!),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: entries,
+              ),
+            ],
+          );
+        }
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: children,
+        );
+      },
     );
   }
 

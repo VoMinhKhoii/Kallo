@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../models/social/circle.dart';
 import '../../../../shared/widgets/feedback/kallo_refresh.dart';
 import '../../../../shared/widgets/list/grouped_list_card.dart';
+import '../../../../shared/widgets/panes/pane_insets.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../data/local_blocks.dart';
 import '../feed/feed_entry.dart';
@@ -75,12 +76,7 @@ class ThreadBody extends ConsumerWidget {
       slivers:
           (_) => [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                KalloSpacing.sp3,
-                KalloSpacing.sp2,
-                KalloSpacing.sp3,
-                0,
-              ),
+              padding: paneInsets(context, top: KalloSpacing.sp2),
               sliver: SliverToBoxAdapter(
                 child: GroupedListCard(
                   showSeparators: false,

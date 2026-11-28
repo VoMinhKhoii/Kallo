@@ -58,9 +58,19 @@ void main() {
 
         // In landscape the plate scrolls under the pinned Save; reach the row
         // the way a thumb would.
-        await tester.ensureVisible(find.text('Add ingredient'));
+        await Scrollable.ensureVisible(
+          tester.element(find.text('Add ingredient')),
+          alignment: 0.5,
+        );
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Add ingredient'));
+        final add = find.text('Add ingredient');
+        final viewport =
+            find.ancestor(of: add, matching: find.byType(Scrollable)).first;
+        final visibleAdd = tester
+            .getRect(add)
+            .intersect(tester.getRect(viewport));
+        expect(visibleAdd.height, greaterThan(0));
+        await tester.tapAt(visibleAdd.center);
         await tester.pumpAndSettle();
         await _expectOnScreen(
           tester,

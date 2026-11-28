@@ -1,12 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../shared/widgets/icons/brush_check.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../../../theme/kallo_theme.dart';
 import '../../logic/compare_rows.dart';
+import 'comparison_columns.dart';
+import 'plan_comparison_row.dart';
 
 /// The Free ↔ Pro table: the thing the screen is actually for.
 ///
@@ -16,71 +16,48 @@ import '../../logic/compare_rows.dart';
 /// verticals however long a label runs, and the label column takes whatever
 /// is left rather than the columns flexing under it.
 class PlanComparison extends StatelessWidget {
-  const PlanComparison({super.key});
+  const PlanComparison({this.availableWidth, this.dense = false, super.key});
 
-  /// The Free column only ever holds a glyph, "2 / 10" or its own heading;
-  /// Pro also carries Vietnamese "Không giới hạn", the longest cell in either
-  /// language.
-  ///
-  /// Both were measured against bundled Be Vietnam Pro metrics and both were
-  /// a hair too tight on a real handset — "Miễn phí" (48.5 measured) wrapped
-  /// inside 50 and then lost its second line to a fixed-height header row.
-  /// They carry a few points of slack now, and [_columnText] makes the fit
-  /// unconditional rather than a measurement that has to keep being right.
-  static const double _freeColumn = 56;
-  static const double _proColumn = 92;
+  /// The pitch host supplies its constrained table width because its sliver
+  /// queries intrinsic height, which LayoutBuilder cannot answer.
+  final double? availableWidth;
 
-  /// The narrowest screen that sets the table in the app's regular reading
-  /// size (16, [dashBody]). Plus / Pro Max widths (428+) fit every label on
-  /// one line in both languages; at 393 most of the Vietnamese rows wrap and
-  /// the table outgrows the screen, so narrower phones keep one step down
-  /// (14, [dashMeta]).
-  static const double _roomyWidth = 428;
-
-  /// The type under the row labels: column heads, notes and quantities sit
-  /// one step below the label, whichever size the label is.
-  static TextStyle _small(
-    bool roomy, {
-    Color? color,
-    FontWeight weight = FontWeight.w400,
-  }) =>
-      roomy
-          ? dashMeta(color: color, weight: weight)
-          : dashCaption(color: color, weight: weight);
-
-  /// Column text that CANNOT wrap: it shrinks to fit instead.
-  ///
-  /// These two columns are fixed-width by design — that is what holds every
-  /// tick on the same two verticals however long a row label runs — so text
-  /// inside them has no room to reflow into. Wrapping was the failure mode,
-  /// not the fallback. Same `FittedBox(scaleDown)` the meta row under the buy
-  /// button and [SegmentedStrip]'s labels use, and for the same reason.
-  static Widget _columnText(String label, TextStyle style) => FittedBox(
-    fit: BoxFit.scaleDown,
-    child: Text(
-      label,
-      style: style,
-      maxLines: 1,
-      softWrap: false,
-      textAlign: TextAlign.center,
-    ),
-  );
+  /// Set when the host is too short for all eight rows at their regular
+  /// height: the rows and the card's own padding close up, the type does not
+  /// change.
+  final bool dense;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      availableWidth != null
+          ? _table(context, availableWidth!)
+          : LayoutBuilder(
+            builder:
+                (context, constraints) => _table(context, constraints.maxWidth),
+          );
+
+  Widget _table(BuildContext context, double width) {
     final rows = compareRows();
-    final roomy = MediaQuery.sizeOf(context).width >= _roomyWidth;
+    final roomy = width >= ComparisonColumns.roomyWidth;
+    // Too narrow for every label on one line: the label column gets what
+    // the two narrow columns do not need, and the card's sides close up.
+    final narrow = width < ComparisonColumns.unwrappedWidth;
+    final columns =
+        narrow
+            ? ComparisonColumns.fitted(context, rows, roomy: roomy)
+            : ComparisonColumns.fixed;
+    final side = narrow ? KalloSpacing.sp3 : KalloSpacing.sp4;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: kCardSurface,
         borderRadius: BorderRadius.circular(kCardRadius),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          KalloSpacing.sp4,
-          KalloSpacing.sp1_5,
-          KalloSpacing.sp4,
-          KalloSpacing.sp4,
+        padding: EdgeInsets.fromLTRB(
+          side,
+          dense ? KalloSpacing.sp0_5 : KalloSpacing.sp1_5,
+          side,
+          dense ? KalloSpacing.sp2 : KalloSpacing.sp4,
         ),
         // Given more height than it needs (the paywall hands it the rest of
         // the screen), the table spreads its rows rather than leaving a void
@@ -89,10 +66,15 @@ class PlanComparison extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _header(roomy),
+            _header(roomy, columns),
             for (var i = 0; i < rows.length; i++) ...[
               if (i > 0) _rule,
-              _PlanComparisonRow(row: rows[i], roomy: roomy),
+              PlanComparisonRow(
+                row: rows[i],
+                roomy: roomy,
+                dense: dense,
+                columns: columns,
+              ),
             ],
           ],
         ),
@@ -110,90 +92,28 @@ class PlanComparison extends StatelessWidget {
 
   /// The two column names. Pro is ink and semibold, Free is muted — the
   /// column heads carry the ranking so the rows below them do not have to.
-  Widget _header(bool roomy) => Container(
+  Widget _header(bool roomy, ColumnWidths columns) => Container(
     // A MINIMUM, never a fixed height: at 26 exactly, a heading that wrapped
     // had its second line clipped instead of pushing the row open.
-    constraints: const BoxConstraints(minHeight: 26),
+    constraints: BoxConstraints(minHeight: dense ? 20 : 26),
     alignment: Alignment.bottomCenter,
     child: Row(
       children: [
         const Spacer(),
-        _head(tr('paywall.columnFree'), _freeColumn, _small(roomy)),
+        _head(
+          tr('paywall.columnFree'),
+          columns.free,
+          ComparisonColumns.small(roomy),
+        ),
         _head(
           tr('paywall.columnPro'),
-          _proColumn,
-          _small(roomy, color: kInk, weight: FontWeight.w600),
+          columns.pro,
+          ComparisonColumns.small(roomy, color: kInk, weight: FontWeight.w600),
         ),
       ],
     ),
   );
 
   static Widget _head(String label, double width, TextStyle style) =>
-      SizedBox(width: width, child: _columnText(label, style));
-}
-
-/// One row of the table. Its own widget so the row's height is set by its own
-/// content — a label that wraps in Vietnamese grows only its own line.
-class _PlanComparisonRow extends StatelessWidget {
-  const _PlanComparisonRow({required this.row, required this.roomy});
-
-  final CompareRow row;
-
-  /// See [PlanComparison._roomyWidth].
-  final bool roomy;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 30),
-      padding: const EdgeInsets.symmetric(vertical: KalloSpacing.sp1),
-      child: Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(right: KalloSpacing.sp2),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    row.label,
-                    style: roomy ? dashBody() : dashMeta(color: kInk),
-                  ),
-                  if (row.note != null)
-                    Text(row.note!, style: PlanComparison._small(roomy)),
-                ],
-              ),
-            ),
-          ),
-          _cell(row.free, pro: false, width: PlanComparison._freeColumn),
-          _cell(row.pro, pro: true, width: PlanComparison._proColumn),
-        ],
-      ),
-    );
-  }
-
-  /// The Pro tick is the app's success emerald and the Free tick is muted ink:
-  /// both mean "included", and the colour is what says which column is the
-  /// offer. Exhaustive over [Cell] — a new kind fails to compile here.
-  Widget _cell(Cell value, {required bool pro, required double width}) {
-    final Widget child = switch (value) {
-      Included() => BrushCheck(
-        size: KalloIcons.tertiary,
-        color: pro ? KalloColors.successAccent : kInkMuted,
-      ),
-      Excluded() => Icon(
-        LucideIcons.minus300,
-        size: KalloIcons.tertiary,
-        color: KalloColors.textMuted50,
-      ),
-      // Same no-wrap rule as the headings: "Không giới hạn" broke across two
-      // lines against a one-glyph cell opposite it and read as a defect.
-      Quantity(:final text) => PlanComparison._columnText(
-        text,
-        PlanComparison._small(roomy, color: pro ? kInk : kInkMuted),
-      ),
-    };
-    return SizedBox(width: width, child: Center(child: child));
-  }
+      SizedBox(width: width, child: ComparisonColumns.columnText(label, style));
 }

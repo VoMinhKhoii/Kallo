@@ -6,13 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/models/nutrition/nutrition_enums.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/calorie_dial.dart';
-import 'package:kallo_mobile/shared/widgets/gauge/macro_dial_row.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/macros/macro_dial_row.dart';
+import 'package:kallo_mobile/shared/widgets/gauge/gauge_dial.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/gauge_arc_geometry.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
 import 'package:kallo_mobile/theme/kallo_theme.dart';
 
-import '../../../app_fonts.dart';
-import '../../../l10n_test_loader.dart';
+import '../../../../app_fonts.dart';
+import '../../../../l10n_test_loader.dart';
 
 /// The dock's real width on a 390pt phone, less the page's 16pt inset.
 const double _dockWidth = 358;
@@ -93,6 +94,35 @@ void main() {
     expect(find.text('/220g'), findsOneWidget);
     expect(find.text('21g'), findsOneWidget);
     expect(find.text('/62g'), findsOneWidget);
+  });
+
+  testWidgets('compact readouts share their smallest fit at large text', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        const MacroDialRow.compact(
+          current: {'protein': 131, 'carbohydrate': 210, 'fat': 74},
+          target: _target,
+        ),
+        textScale: 1.3,
+        width: 228,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final dials = tester.widgetList<GaugeDial>(find.byType(GaugeDial)).toList();
+    expect(dials.length, 3);
+    expect(dials.map((dial) => dial.readoutScale).toSet().length, 1);
+    expect(dials.first.readoutScale, lessThan(1));
+    for (final label in ['PROTEIN', 'CARBS', 'FAT']) {
+      expect(
+        tester
+            .renderObject<RenderParagraph>(find.text(label))
+            .didExceedMaxLines,
+        isFalse,
+      );
+    }
+    expect(tester.takeException(), isNull);
   });
 
   // ── The logging header, in Vietnamese ───────────────────────────────────

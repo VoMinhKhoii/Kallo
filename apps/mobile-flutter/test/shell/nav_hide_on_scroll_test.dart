@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:kallo_mobile/features/circle/data/circle_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
-import 'package:kallo_mobile/shell/nav/pill_nav_bar.dart';
+import 'package:kallo_mobile/shell/nav/pill_nav_bottom.dart';
 import 'package:kallo_mobile/shell/tab_scaffold.dart';
 
 import '../l10n_test_loader.dart';
@@ -93,12 +93,12 @@ void main() {
     return router;
   }
 
-  /// The pill's own rect. `PillNavBar` is the bottomNavigationBar SLOT, whose
+  /// The pill's own rect. `PillNavBottom` is the bottomNavigationBar SLOT, whose
   /// height never changes; the capsule inside it is what travels.
   Rect pill(WidgetTester tester) => tester.getRect(
     find
         .descendant(
-          of: find.byType(PillNavBar),
+          of: find.byType(PillNavBottom),
           matching: find.byType(Container),
         )
         .first,
@@ -109,7 +109,7 @@ void main() {
   ) async {
     await pump(tester);
     final screen = tester.getSize(find.byType(MaterialApp)).height;
-    final slotHeight = tester.getSize(find.byType(PillNavBar)).height;
+    final slotHeight = tester.getSize(find.byType(PillNavBottom)).height;
     expect(pill(tester).bottom, lessThanOrEqualTo(screen));
 
     // Drag up = read down the page.
@@ -124,7 +124,7 @@ void main() {
       reason: 'the capsule must be translated fully off the bottom edge',
     );
     expect(
-      tester.getSize(find.byType(PillNavBar)).height,
+      tester.getSize(find.byType(PillNavBottom)).height,
       slotHeight,
       reason:
           'hiding must translate the bar, never resize the nav slot — '

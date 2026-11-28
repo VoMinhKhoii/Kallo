@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/widgets/surface/scroll_separator.dart';
 import '../../../../shared/widgets/toast/top_toast.dart';
 import '../../../../models/logging/relog.dart';
 import '../../data/logging_models.dart';
@@ -27,16 +26,24 @@ import 'feed_footer.dart';
 import 'feed_list.dart';
 import 'feed_scroll_pin.dart';
 import 'summary/macro_summary.dart';
+import 'feed_panes.dart';
 
 /// The day's meal feed: macro summary header, the scrollable card list, the
 /// pending/streaming footer, and the natural-language meal input.
 ///
-/// Ported 1:1 from web `components/logging/feed/feed-area.tsx`.
+/// Feed actions follow web `components/logging/feed/feed-area.tsx`; FeedPanes
+/// owns the window-specific summary placement and composer frame.
 class FeedArea extends ConsumerStatefulWidget {
-  const FeedArea({super.key, required this.profile, required this.date});
+  const FeedArea({
+    super.key,
+    required this.profile,
+    required this.date,
+    this.panes,
+  });
 
   final LoggingProfile profile;
   final String date;
+  final FeedPaneParts? panes;
 
   @override
   ConsumerState<FeedArea> createState() => _FeedAreaState();
@@ -273,61 +280,53 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       onDiscardReveal: mealActions.discardStaged,
     );
 
-    // The hairline anchors under the macro summary, not under the date strip
-    // above it: the summary does not scroll, so a rule any higher would claim
-    // content had passed beneath it when it had not.
-    return ScrollSeparator(
-      header: MacroSummary(view: view, profile: profile),
-
-      // Filled, not bottom-anchored: the dock must be BOUNDED by this Stack or
-      // the `/` picker grows past its top and is clipped. See [FeedComposer].
-      overlay: Positioned.fill(
-        child: FeedComposer(
-          view: view,
-          calorieTarget: profile.calorieTarget,
-          errorText: _errorText,
-          mode: mode,
-          cheatIntensity: cheatIntensity,
-          userId: profile.userId,
-          stagingRepeat: _stagingRepeat,
-          onRepeatCheat: cheatActions.repeat,
-          controller: _inputController,
-          textController: _textController,
-          onSync: _onComposerSync,
-          relogQuery: _picker.query,
-          onSelectRelog: _selectRelogCandidate,
-          onDismissRelog: _picker.dismiss,
-          onSubmit: _submitComposer,
-          onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
-          analyzing: stream.isAnalyzing,
-          onModePressed: sheets.openMode,
-          onBarcodePressed: sheets.openBarcodeFromComposer,
-          noticeDismissed: _noticeDismissedFor == widget.date,
-          onDismissNotice:
-              () => _rebuild(() => _noticeDismissedFor = widget.date),
-          onHeightChanged: (height) => _rebuild(() => _dockHeight = height),
-        ),
-      ),
-      // The card list. The composer floats over its bottom edge as an
-      // `overlay`, NOT as a child — it owns a multiline field whose own
-      // vertical Scrollable would otherwise reach the hairline listener as a
-      // depth-0 sibling and raise the rule while the feed sat at the top.
-      child: FeedList(
+    return FeedPanes(
+      parts: widget.panes,
+      paneSummary: MacroSummary(view: view, profile: profile, pane: true),
+      compactSummary: MacroSummary(view: view, profile: profile),
+      overlay: FeedComposer(
         view: view,
-        dockHeight: _dockHeight,
-        scrollController: _scrollController,
-        pin: _pin,
-        footer: footer,
-        confirmPending: confirmPending,
-        onRefresh: mealActions.refreshDay,
-        onRetryDay: () => ref.invalidate(loggingDayProvider(_dayArgs)),
-        onRemoveMeal: mealActions.remove,
-        onDiscardPending: mealActions.discardPending,
-        onUpdateMeal: mealActions.update,
-        onLogAgain: mealActions.logAgain,
-        onConfirm: confirmActions.confirmPending,
-        onConfirmCheat: confirmActions.confirmCheatPending,
+        calorieTarget: profile.calorieTarget,
+        errorText: _errorText,
+        mode: mode,
+        cheatIntensity: cheatIntensity,
+        userId: profile.userId,
+        stagingRepeat: _stagingRepeat,
+        onRepeatCheat: cheatActions.repeat,
+        controller: _inputController,
+        textController: _textController,
+        onSync: _onComposerSync,
+        relogQuery: _picker.query,
+        onSelectRelog: _selectRelogCandidate,
+        onDismissRelog: _picker.dismiss,
+        onSubmit: _submitComposer,
+        onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
+        analyzing: stream.isAnalyzing,
+        onModePressed: sheets.openMode,
+        onBarcodePressed: sheets.openBarcodeFromComposer,
+        noticeDismissed: _noticeDismissedFor == widget.date,
+        onDismissNotice:
+            () => _rebuild(() => _noticeDismissedFor = widget.date),
+        onHeightChanged: (height) => _rebuild(() => _dockHeight = height),
       ),
+      feed:
+          (header) => FeedList(
+            header: header,
+            view: view,
+            dockHeight: _dockHeight,
+            scrollController: _scrollController,
+            pin: _pin,
+            footer: footer,
+            confirmPending: confirmPending,
+            onRefresh: mealActions.refreshDay,
+            onRetryDay: () => ref.invalidate(loggingDayProvider(_dayArgs)),
+            onRemoveMeal: mealActions.remove,
+            onDiscardPending: mealActions.discardPending,
+            onUpdateMeal: mealActions.update,
+            onLogAgain: mealActions.logAgain,
+            onConfirm: confirmActions.confirmPending,
+            onConfirmCheat: confirmActions.confirmCheatPending,
+          ),
     );
   }
 }

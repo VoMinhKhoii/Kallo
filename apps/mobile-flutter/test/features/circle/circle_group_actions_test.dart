@@ -31,6 +31,14 @@ final _groupsRefreshProvider =
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+  }
+
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
@@ -188,7 +196,7 @@ void main() {
     await tester.pump();
     expect(submit().onPressed, isNull);
     expect(find.text('0 selected'), findsOneWidget);
-    await tester.tap(find.text('Mai'));
+    await tapVisible(tester, find.text('Mai'));
     await tester.pump();
 
     expect(find.text('1 selected'), findsOneWidget);
@@ -216,9 +224,9 @@ void main() {
       tester.element(find.byType(CreateGroupSheet)),
     );
     await tester.enterText(find.byType(TextField).first, 'Dinner crew');
-    await tester.tap(find.text('Mai'));
+    await tapVisible(tester, find.text('Mai'));
     await tester.pump();
-    await tester.tap(find.widgetWithText(FilledButton, 'Create group'));
+    await tapVisible(tester, find.widgetWithText(FilledButton, 'Create group'));
     await tester.pumpAndSettle();
 
     expect(container.read(circleSelectedViewProvider), 'new-group');
@@ -257,9 +265,9 @@ void main() {
       ],
     );
     await tester.enterText(find.byType(TextField).first, 'Dinner crew');
-    await tester.tap(find.text('Mai'));
+    await tapVisible(tester, find.text('Mai'));
     await tester.pump();
-    await tester.tap(find.widgetWithText(FilledButton, 'Create group'));
+    await tapVisible(tester, find.widgetWithText(FilledButton, 'Create group'));
     await tester.pumpAndSettle();
 
     expect(find.text('PAYWALL'), findsOneWidget);
@@ -339,6 +347,8 @@ void main() {
       ],
     );
     // Removal is a trailing swipe on the row, not an X beside every name.
+    await tester.ensureVisible(find.text('Mai'));
+    await tester.pumpAndSettle();
     await tester.drag(find.text('Mai'), const Offset(-500, 0));
     await tester.pumpAndSettle();
     // Both options are verbs now (2026-09-03): "Remove" against "Keep", on a
@@ -374,6 +384,8 @@ void main() {
         circleFriendsProvider.overrideWith((_) async => [_friend()]),
       ],
     );
+    await tester.ensureVisible(find.text('Mai'));
+    await tester.pumpAndSettle();
     await tester.drag(find.text('Mai'), const Offset(-500, 0));
     await tester.pumpAndSettle();
     await tester.tap(
@@ -637,7 +649,7 @@ void main() {
     final container = ProviderScope.containerOf(
       tester.element(find.byType(GroupInfoSheet)),
     );
-    await tester.tap(find.text('Leave group'));
+    await tapVisible(tester, find.text('Leave group'));
     await tester.pumpAndSettle();
     // The dialog repeats the row's label ("Leave group", against "Stay"), so
     // scope to the alert or this finds the row behind the barrier.

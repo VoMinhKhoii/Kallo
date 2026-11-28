@@ -20,6 +20,7 @@ import '../../dashboard/data/dashboard_providers.dart'
         dashboardBundleProvider,
         dashboardDayProvider,
         localTimezoneOffsetMinutes;
+import '../../logging/data/days/day_list_provider.dart';
 import '../../logging/data/logging_keys.dart' show todayDateString;
 import '../../logging/data/logging_providers.dart'
     show loggingDayProvider, mealDatesProvider;
@@ -167,6 +168,8 @@ Future<void> logSharedMeal(WidgetRef ref, String shareId) async {
   // reads empty, so the toast says "logged" and the meal is nowhere the user
   // thinks to look.
   ref.invalidate(mealDatesProvider);
+  // And the two-pane Log's month calendar, whose ring for that day grew.
+  ref.invalidate(loggingDayListProvider);
   // The dashboard reads its ring off a separate bundle/day cache, so heal it
   // too or the Today + week-strip ring keep the pre-log total.
   DashboardCache.forgetAll();

@@ -147,6 +147,60 @@ tells the app to send without one. To exercise the widget, set Cloudflare's test
 `.env.local` (see `.env.example`); they work on `localhost` and a LAN IP alike. The code arrives
 by email only when the dev server can send mail (`docs/EMAIL.md` → "Local development").
 
+## Checking layouts at iPhone Duo's window sizes
+
+Two tools, and neither needs Xcode 27 on your Mac.
+
+**The pose suite** renders the real router, shell and screens against a fake API at every
+window iPhone Duo hands an app, plus a classic phone both ways up, and fails on any layout
+exception. It runs with the ordinary tests:
+
+```bash
+cd apps/mobile-flutter
+flutter test test/shell/poses
+```
+
+To look at the result, ask it for PNGs (one per screen and window, about a minute for all
+of them):
+
+```bash
+flutter test test/shell/poses --update-goldens --dart-define=DUO_OUT=/absolute/output/dir
+```
+
+`DUO_OUT` must be an absolute path. The images are for review and are never committed or
+compared. Add `--dart-define=POSE_LOCALE=vi` to render in Vietnamese, strings and fixture
+meals both; `pose_gallery_test.dart` then still fails on a layout exception, while the
+cases that open something by its English name fail at that step. Windows are named in `test/shell/poses/harness/poses.dart`, beside the boot and
+`resize` helpers the other window tests share. Screens are the list at the top of
+`pose_gallery_test.dart`, and each entry carries its own steps to open it and what to
+measure. Add to the end of either list: the renders depend on the order the cases run in.
+Shadows render as solid slabs in these images (a test-mode artefact),
+so judge shadows on a device. For a quick look without one, a scratch test can boot a
+pose with `bootPose`, set `debugDisableShadows = false`, pump, write the PNG with
+`matchesGoldenFile`, and set the flag back to `true` in a `finally`.
+
+**The simulator tour** shows what only iOS draws: the status column, the Dynamic Island,
+the fold. `.github/workflows/ios-duo-sim.yml` builds `test/shell/poses/sim/sim_tour_main.dart`
+(the same fixtures as the pose suite, as an app) on GitHub's `xcode-27` runner, which
+ships Xcode 27.1 and the iPhone Duo simulator, then closes, opens, half-folds and turns
+the simulated phone and uploads two pictures of each screen in each pose: the display's
+own pixels (`<pose>/<screen>.png`) and the device with its frame around it
+(`<pose>/framed/<screen>.png`). A route written `/onboarding@5` opens the wizard on its
+fifth screen. Run it from the Actions tab ("iOS Duo simulator"). It runs twice, side by
+side, once in English and once in Vietnamese (the script writes the language to
+`duo_locale.txt` beside the route), and takes about an hour. Each language has two
+artifacts: `duo-sim-tour-<en|vi>` with everything, and `duo-sim-framed-<en|vi>` with only
+the framed shots and the classic iPhone's. The simulator
+has two displays, so a screenshot needs `--display=1` (outer) or `--display=3` (inner).
+No command opens or folds the simulated phone, so the job clicks Device Hub's pose
+buttons; if Apple moves them, the `desktop-*.png` files in the artifact show where they
+went. Device Hub now and then drops a rotate click, so after every fold or turn the
+job reads the window's size from the app and clicks rotate again when the shape is wrong;
+a pose that still will not turn fails the job. Device Hub's own screenshot button saves the display without the frame, so the
+framed picture is a crop of the desktop: the job sets the desktop to 1920x1080, puts
+Device Hub in full screen and zooms in first, which draws the device about 900 points
+wide.
+
 ## Gotchas
 
 ### Gotcha: blank white/black screen on the simulator

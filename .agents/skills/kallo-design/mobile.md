@@ -712,7 +712,9 @@ Reach for these before writing a local variant:
 
 ### The pill nav (replaces the drawer, 2026-08-31)
 
-`lib/shell/nav/pill_nav_bar.dart`: a floating 358×72 white capsule (radius 36,
+`lib/shell/nav/pill_nav_bottom.dart` (the capsule itself is `pill_nav_capsule.dart`;
+where iOS keeps its controls in a side column, as on iPhone Duo, `pill_nav_column.dart`
+stands the same five targets up in a 56pt-wide capsule there): a floating 358×72 white capsule (radius 36,
 `kNavShadows` — the nav is TRUE elevation), four tabs as 24pt stroke glyphs
 alone (ink when active, muted idle — icon-only since 2026-09-02, the tab name
 lives in `Semantics`; `kNavShowsLabels` restores 10pt regular labels), Nutrition's

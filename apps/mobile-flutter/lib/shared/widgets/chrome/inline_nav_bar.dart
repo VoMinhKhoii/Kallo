@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_colors.dart';
 import '../../../theme/kallo_theme.dart';
+import '../panes/detail_pane.dart';
 
 /// iOS's inline navigation bar for a page one level down — a
 /// [CupertinoNavigationBar]: "‹ " + the page it came from on the leading edge,
@@ -65,7 +66,7 @@ class InlineNavBar extends StatelessWidget {
           // The chevron's own inset is set in [_backButton]; the bar's
           // default 16 would double it.
           padding: const EdgeInsetsDirectional.only(start: 0),
-          leading: _backButton(context),
+          leading: DetailPane.of(context) ? null : _backButton(context),
           middle: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
           // Whatever the bar sits on — the page or a sheet — shows through:
           // a transparent bar with the blur off, not a second surface.

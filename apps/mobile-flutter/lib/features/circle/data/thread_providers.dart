@@ -24,6 +24,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../../models/social/circle.dart';
 import '../logic/find_share_entry.dart';
@@ -33,6 +34,16 @@ import 'share_entry_provider.dart';
 
 /// Which post, in which feed. `scope` null is the combined friends feed.
 typedef ThreadRef = ({String? scope, String shareId});
+
+/// The feed's reply glyph can focus the already open conversation's draft.
+final threadFocusProvider = Provider.autoDispose.family<FocusNode, String>((
+  ref,
+  shareId,
+) {
+  final node = FocusNode();
+  ref.onDispose(node.dispose);
+  return node;
+});
 
 /// One post out of a live feed, or why it is not there.
 ///

@@ -11,6 +11,10 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/widgets/panes/detail_pane_route.dart';
+import '../../../shell/window/window_layout.dart';
+import '../data/thread_providers.dart';
 
 /// `/circle/<shareId>[?scope=<groupId>][&compose=1]`.
 ///
@@ -40,6 +44,29 @@ void openCircleThread(
   required String shareId,
   String? scope,
   bool compose = false,
-}) => GoRouter.of(
-  context,
-).push(circleThreadLocation(shareId: shareId, scope: scope, compose: compose));
+}) {
+  final router = GoRouter.of(context);
+  final location = circleThreadLocation(
+    shareId: shareId,
+    scope: scope,
+    compose: compose,
+  );
+  if (WindowLayout.of(context).twoPane &&
+      router.state.uri.path == Uri.parse(location).path) {
+    if (compose) {
+      ProviderScope.containerOf(
+        context,
+        listen: false,
+      ).read(threadFocusProvider(shareId)).requestFocus();
+    }
+    return;
+  }
+  if (replacesDetail(
+    context,
+    hasDetail: router.state.pathParameters.containsKey('shareId'),
+  )) {
+    router.pushReplacement(location);
+    return;
+  }
+  router.push(location);
+}

@@ -159,7 +159,11 @@ class MacroTrendChart extends StatelessWidget {
               rightTitles: const AxisTitles(
                 sideTitles: SideTitles(showTitles: false),
               ),
-              leftTitles: kcalAxisTitles(step: step, maxLabel: axis.maxLabel),
+              leftTitles: kcalAxisTitles(
+                step: step,
+                maxLabel: axis.maxLabel,
+                textScaler: MediaQuery.textScalerOf(context),
+              ),
               bottomTitles: bucketAxisTitles(
                 labels: tickLabels,
                 todayIndex: todayIndex,

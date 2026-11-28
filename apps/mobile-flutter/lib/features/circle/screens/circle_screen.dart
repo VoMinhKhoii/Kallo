@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/data/surface_cast.dart';
 import '../../../shared/widgets/surface/kallo_screen.dart';
 import '../../../shared/widgets/surface/scroll_separator.dart';
+import '../../../shared/widgets/panes/list_pane.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/kallo_theme.dart';
 import '../data/chat_group_providers.dart';
@@ -38,52 +39,58 @@ class CircleScreen extends ConsumerWidget {
             ?.title ??
         '';
     return Screen(
+      bounded: true,
       glow: true,
       bottom: false,
-      child: ScrollSeparator(
-        // A large LEFT-aligned page title, not a centred header line (native
-        // pass, 2026-08-31): 28/700 is the top of the header ramp, and the
-        // iOS large-title idiom anchors it to the leading edge with the one
-        // action opposite. The 44pt add control sits in the trailing slot, so
-        // the title's optical baseline and the glyph's centre still agree.
-        header: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-          child: _CircleTitleRow(),
+      child: ListPane(
+        emptyDetail: Center(
+          child: Text(tr('groups.feed.chooseThread'), style: dashMeta()),
         ),
-        child: ThreadFeed(
-          scope: selected,
-          onRefresh: () => _refresh(ref, selected),
-          feed: feed,
-          header: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Edge to edge; everything under it keeps the page's inset.
-              ViewSwitcher(),
-              // MealInvitesSection collapses to nothing when there are no
-              // invites, so it owns the gap above itself rather than having
-              // one reserved here for a widget that usually is not there.
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
-                child: MealInvitesSection(),
-              ),
-            ],
+        child: ScrollSeparator(
+          // A large LEFT-aligned page title, not a centred header line (native
+          // pass, 2026-08-31): 28/700 is the top of the header ramp, and the
+          // iOS large-title idiom anchors it to the leading edge with the one
+          // action opposite. The 44pt add control sits in the trailing slot, so
+          // the title's optical baseline and the glyph's centre still agree.
+          header: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
+            child: _CircleTitleRow(),
           ),
-          onRetry: () => ref.invalidate(sharedMealFeedProvider(selected)),
-          onAddFriend: () => showAddFriendSheet(context),
-          emptyTitleKey:
-              selected == null
-                  ? 'groups.page.friendsEmptyTitle'
-                  : 'groups.page.groupNoActivity',
-          emptyDescriptionKey:
-              selected == null
-                  ? 'groups.page.friendsNoMealToday'
-                  : 'groups.page.groupNoActivity',
-          emptyNamedArgs: {'name': name},
-          // A group with no posts is a box nobody has climbed out of yet; the
-          // friends wall is the capybara still looking for someone.
-          emptyPose:
-              selected == null ? SurfaceKind.empty : SurfaceKind.emptyAlt,
-          showAddFriend: selected == null,
+          child: ThreadFeed(
+            scope: selected,
+            onRefresh: () => _refresh(ref, selected),
+            feed: feed,
+            header: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Edge to edge; everything under it keeps the page's inset.
+                ViewSwitcher(),
+                // MealInvitesSection collapses to nothing when there are no
+                // invites, so it owns the gap above itself rather than having
+                // one reserved here for a widget that usually is not there.
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: KalloSpacing.sp3),
+                  child: MealInvitesSection(),
+                ),
+              ],
+            ),
+            onRetry: () => ref.invalidate(sharedMealFeedProvider(selected)),
+            onAddFriend: () => showAddFriendSheet(context),
+            emptyTitleKey:
+                selected == null
+                    ? 'groups.page.friendsEmptyTitle'
+                    : 'groups.page.groupNoActivity',
+            emptyDescriptionKey:
+                selected == null
+                    ? 'groups.page.friendsNoMealToday'
+                    : 'groups.page.groupNoActivity',
+            emptyNamedArgs: {'name': name},
+            // A group with no posts is a box nobody has climbed out of yet; the
+            // friends wall is the capybara still looking for someone.
+            emptyPose:
+                selected == null ? SurfaceKind.empty : SurfaceKind.emptyAlt,
+            showAddFriend: selected == null,
+          ),
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/mascot/bun_mascot.dart';
+import '../../../../shell/window/keep_clear.dart';
 import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_theme.dart';
 
@@ -29,9 +30,14 @@ class PaywallGuide extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      BunMascot(size: bunSize, speech: line),
+      KeepClear(child: BunMascot(size: bunSize, speech: line)),
       const SizedBox(height: KalloSpacing.sp3),
-      Text(tr('paywall.choosePlan'), style: kPageTitle()),
+      title(),
     ],
   );
+
+  /// The title alone, for a window too short to give the bun its line.
+  /// Beside the status items it wraps before the control column.
+  static Widget title() =>
+      KeepClear(child: Text(tr('paywall.choosePlan'), style: kPageTitle()));
 }

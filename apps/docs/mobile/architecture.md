@@ -22,6 +22,8 @@ lib/
   main.dart            app entry: env assert, Supabase init, runApp
   app.dart             root widget (theme, localization, router wiring)
   router.dart          go_router routes + redirect/auth seam
+  router_redirect.dart the redirect rule, as a pure function
+  router_refresh.dart  what re-runs the redirect: auth events, the profile, the draft
   services/            infrastructure edges, one folder per concern:
     http/                api_client.dart, api_client_uploads.dart, api_auth.dart, query.dart
     auth/                supabase_service.dart, session_provider.dart
@@ -163,12 +165,14 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   stay unread. Remote group-list changes reconcile at most once per minute of feed
   loads. Older servers without receipts keep the original list-refetch behavior.
 - **Navigation:** `go_router` with a `StatefulShellRoute` behind a **floating pill
-  tab bar** (`shell/nav/pill_nav_bar.dart`; the web-parity drawer/hamburger retired in
+  tab bar** (`shell/nav/pill_nav_bottom.dart`, or `pill_nav_column.dart` where the
+  window has a control column, both around `pill_nav_capsule.dart`; the web-parity drawer/hamburger retired in
   the 2026-08-31 native pass). Branches: dashboard, nutrition, circle (+ off-bar
   admin); the bar's center `+` opens the Add sheet (meal / weight). **Log pushes
-  full-screen** over the shell as a root `MaterialPage` (the composer owns its
-  bottom edge; swipe-back returns to the previous tab), like `/settings`, which now
-  pushes from the dashboard avatar.
+  full-screen** over the shell as a root page (`LogPage`, a Material route; the
+  composer owns its bottom edge; swipe-back returns to the previous tab), like
+  `/settings`, which now pushes from the dashboard avatar. Beside a control column
+  the shell's capsule stays visible on Log (see "Window layout").
 - **The back gesture:** every pushed route can be dragged back from ANYWHERE on the
   page, not from iOS's 20pt edge strip (`shell/nav/swipe_back/`, 2026-09-10). It is
   a vendored Cupertino gesture installed once as `KalloTheme.build`'s
@@ -186,6 +190,92 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
   seeds `/circle` and pushes the thread over it (`nav_actions.openPushDestination`)
   so a cold tap still has something underneath; a meal-reminder tap pushes
   `/logging` on the reminder's day over the current tab (Dashboard on a cold tap).
+- **Window layout (iPhone Duo):** every layout decision reads the window, through
+  `WindowLayout` (`shell/window/window_layout.dart`): its size and its safe-area insets.
+  Nothing reads the device, its idiom or its orientation, because on iPhone Duo the same
+  app moves between the outer display, the inner display, half of a Split View and a strip
+  under a pinned video, sometimes mid-session. Three cases follow from it.
+  - *A control column.* Duo's outer display, and its inner display in landscape, keep the
+    status bar and the system's bars in an 84pt column down one side (the left side for the
+    left app of a Split View, or when the closed phone is turned the other way). The side
+    insets are lopsided there, which is how the app tells: a classic phone on its side
+    reports the same inset on both sides. The tab pill turns into a vertical capsule and
+    sits in that column (`shell/tab_scaffold.dart`, `shell/nav/`); content keeps the phone
+    layout in what remains (382pt on the outer display). The pages that put none of our
+    controls in the column (`/start`, sign-in and sign-up, both email routes, every
+    onboarding step, `/save-plan`, `/welcome`, the paywall and an invite) are wrapped in
+    `ColumnFreePage` (`shell/window/column_free_page.dart`, applied in `router.dart`). It
+    takes the column's side out of the insets the page sees and pins the real window as
+    `WindowLayout.columnFree`, so the page centres on the display and, beside a fold, the
+    column's pane runs to the window's edge and mirrors the other. What stays empty is
+    `WindowLayout.keepClear` (`shell/window/keep_clear_zones.dart`), the part of the
+    column that holds the system's own items, measured on simulator captures because no
+    API reports it: the top 168pt on the upright outer display (camera, clock, status
+    icons), the top 124pt on the inner display (clock and status icons), and on an outer
+    display turned on its side only the camera's corner, 76pt at the top with the column
+    on the left or at the bottom with it on the right. Pieces beside those corners give way through `KeepClear`
+    (`shell/window/keep_clear.dart`): a header's corner glyph and a title on the column's
+    side, a progress bar, a toggle or a pinned button on both sides, a full-width field or
+    card by starting below the corner. Scroll views wear `KeepClearClip`, which cuts the
+    corners out of what they paint, so nothing scrolls under the status items. The tabbed
+    pages, Log and Settings keep the column. Log is a page pushed over the shell on the
+    root navigator, and beside a control column it leaves that column to the shell
+    (`LogPage`, `shell/nav/over_shell/log_page.dart`): the route stops being opaque, its
+    barrier lets taps through, and its transition is clipped short of the column, so the
+    shell's own capsule stays where it stands on the tabs and marks Log as current. Today,
+    Nutrition and Circle on it leave Log for that tab. The page redraws the part of the
+    capsule's shadow it covers (`NavColumnShadow`, beside it), and the branch under the
+    page leaves the semantics tree while Log is up. Without a column Log is the plain
+    opaque page it was.
+  - *Two panes.* A window at least 840pt wide with a control column splits at the fold,
+    which runs down the centre of the display (`shared/widgets/panes/two_pane_scaffold.dart`).
+    The 40pt strip over the fold stays empty, so the panes are unequal: 0 to 455.5 and
+    495.5 to 867 on a 951pt window (on a column-free page the near pane runs to 951, and
+    the two are mirror images). Today and Nutrition put the day on the far side
+    and the task beside the column. Log puts its days on the far side: the back
+    chevron, one week of calorie rings, Monday first, drawn as the web calendar draws them
+    (ink while short, green from 85% of the target, bare for the future) and paged a week
+    at a time over the 90-day heatmap, then that week's seven days as rows, each with its
+    macros and calories on one line. The rows share the height left under the rings, so
+    the week ends level with the composer (`features/logging/widgets/days/`). Beside the column is the day
+    as one column shows it, less the week strip: the four gauges in one row, the feed
+    and the composer; the days beside it say which day it is. The rows read each day through the feed's own provider,
+    two at a time after the first frame, so a tapped day is already loaded; no other
+    window asks for them. Circle and Settings show list and detail
+    (`detail_pane_route.dart`): the route is the same in every window, so a thread that
+    sits beside the feed when open is pushed over it once the phone is closed. The signed-out
+    flow (`/start`, sign-in, email sign-in, every onboarding step, `/save-plan`) and the
+    paywall at its end keep one thing on the far side from the first screen to the last:
+    the start preview, the device and its dishes with no wordmark
+    (`features/onboarding/widgets/start/start_hero.dart`). The near pane is the screen's
+    own column, as on a phone, and wears the wordmark: the bar at the top of the email,
+    onboarding and `/save-plan` columns and the paywall, the brand block over the options
+    on sign-in, the mark over the title on `/start`. The preview is a `Hero`, so it
+    stands still while a route is pushed beside it.
+  - *Wide and short.* A window under 500pt tall with at least 560pt of safe width (the
+    closed display or a phone on its side, the inner display under a pinned video) puts
+    the paywall's table on one side and the header, the title, the plan toggle and the
+    buttons on the other, because stacked the pinned buttons covered the whole table
+    (`features/paywall/widgets/paywall_split.dart`). Each paywall column shares one
+    gutter, close glyph and buttons included (`paywall_gutter.dart`). In the same kind of
+    window, with room for all four at full size, Today draws the calorie dial and the
+    three macro dials in one row (`features/dashboard/widgets/today/today_dials.dart`).
+    The Log header uses the same row (`MacroDialRow` with `leading`), where every dial
+    gets the same inset so the gaps between the four arcs are equal.
+  - *One bounded column.* A wide window with no control column (the inner display held
+    tall, or any phone on its side) keeps each page in a centred 560pt column
+    (`page_column.dart`). Held tall, the fold crosses the middle of the window
+    (`WindowLayout.foldAcross`): sheets and dialogs stay on one side of it, scrolling
+    content crosses it freely.
+  Sheets, dialogs, toasts and anchored menus take their frame from `WindowRegions`
+  (`shell/window/window_regions.dart`): inside the horizontal safe area, in the pane beside
+  the control column when there are two, never on the fold. A fold or a rotation must not
+  lose state, so each pane's scroll view sits under a `GlobalKey` and moves between
+  arrangements instead of being rebuilt; the selected day, a draft in the composer, an
+  analysis in flight and an open thread all survive. The window sizes and insets are
+  written down in `test/shell/poses/harness/poses.dart`, measured on the Duo simulator. Flutter
+  does not report the fold on iOS (`MediaQuery.displayFeatures` is empty), so the app
+  cannot tell flat from half-folded and always keeps the fold strip clear.
 - **Motion:** durations and curves are tokens (`theme/kallo_motion.dart`: `KalloMotion`,
   `KalloEase`), named by role. Full rules, and the traps behind them, in `kallo-design/mobile.md`.
 - **Dialogs:** one confirmation surface, `shared/widgets/dialog/kallo_confirm.dart`

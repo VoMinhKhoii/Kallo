@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -101,12 +100,12 @@ void main() {
     expect(find.textContaining('Gemini'), findsOneWidget);
     // The disclosure names every kind of text that reaches the AI.
     expect(find.textContaining('ingredient searches'), findsOneWidget);
-    // A Cupertino route, not Material's bottom sheet.
+    // The shared modal host owns safe-pane placement.
     expect(
       ModalRoute.of(tester.element(find.byType(AiConsentSheet))),
-      isA<CupertinoModalPopupRoute<bool>>(),
+      isA<ModalBottomSheetRoute<bool>>(),
     );
-    expect(find.byType(BottomSheet), findsNothing);
+    expect(find.byType(BottomSheet), findsOneWidget);
 
     await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
