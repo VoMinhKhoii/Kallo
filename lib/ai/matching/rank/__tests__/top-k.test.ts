@@ -267,6 +267,41 @@ describe('buildMatchTopK', () => {
     ]);
   });
 
+  it('keeps grouse, jungle fowl and guinea fowl apart', () => {
+    const rows = [
+      row({
+        id: 'grouse',
+        name_primary: 'Ức gà gô rừng',
+        name_en: 'Grouse, ruffed, breast meat, skinless, raw',
+        similarity: 1.001,
+      }),
+      row({
+        id: 'jungle-fowl',
+        name_primary: 'Thịt gà rừng',
+        name_en: 'Jungle fowl',
+        similarity: 0.99,
+      }),
+      row({
+        id: 'guinea-fowl',
+        name_primary: 'Thịt gà sao',
+        name_en: 'Guinea hen, meat and skin, raw',
+        similarity: 0.98,
+      }),
+    ];
+    const ids = (query: string) =>
+      buildMatchTopK(query, rows, 3, 0.7).map(
+        (candidate) => candidate.foodCompositionId
+      );
+
+    expect(ids('thịt gà rừng')).toEqual(['jungle-fowl']);
+    expect(ids('jungle fowl')).toEqual(['jungle-fowl']);
+    expect(ids('grouse breast')).toEqual(['grouse']);
+    expect(ids('ức gà gô')).toEqual(['grouse']);
+    expect(ids('guinea fowl')).toEqual(['guinea-fowl']);
+    expect(ids('gà sao')).toEqual(['guinea-fowl']);
+    expect(ids('thịt gà')).toEqual([]);
+  });
+
   it('applies the species guards to decomposed (NFD) Vietnamese text', () => {
     const rows = [
       row({
