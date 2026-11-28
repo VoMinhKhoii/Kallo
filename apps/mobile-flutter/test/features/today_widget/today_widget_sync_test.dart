@@ -16,14 +16,16 @@ import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.
 import 'package:kallo_mobile/features/today_widget/data/today_widget_store.dart';
 import 'package:kallo_mobile/features/today_widget/logic/today_widget_link.dart';
 import 'package:kallo_mobile/features/today_widget/logic/today_widget_sync.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
+import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 
 import '../../l10n_test_loader.dart';
 
 /// Records what would reach the widget instead of writing it.
 class _RecordingStore extends TodayWidgetStore {
-  _RecordingStore() : super(isIOS: true);
+  _RecordingStore() : super(hasWidget: true);
   final List<Map<String, Object?>> saved = [];
 
   @override
@@ -196,9 +198,192 @@ void main() {
     expect(store.saved.last['meals'], hasLength(2));
   });
 
+  testWidgets(
+    'failed profile reload after sign-in does not overwrite widget with default targets',
+    (tester) async {
+      final store = _RecordingStore();
+      final uidState = StateProvider<String?>((ref) => null);
+      final fetchGate = Completer<Map<String, dynamic>?>();
+      final c = ProviderContainer(
+        overrides: [
+          dash.loggingDayProvider.overrideWith(
+            (ref, args) => Completer<dash_day.LoggingDayData>().future,
+          ),
+          sessionProvider.overrideWith((ref) => Stream<Session?>.value(null)),
+          signedInUserIdProvider.overrideWith((ref) => ref.watch(uidState)),
+          todayWidgetStoreProvider.overrideWithValue(store),
+          loggingDayProvider.overrideWith(_Day.new),
+          // Drive the real `profileProvider` through the API boundary.
+          apiClientProvider.overrideWithValue(_DelayedProfileApi(fetchGate)),
+        ],
+      );
+      addTearDown(c.dispose);
+      // Seed profileProvider with synchronous signed-out AsyncData(null).
+      c.read(profileProvider);
+      await tester.pumpWidget(_app(c));
+      await tester.pumpAndSettle();
+      store.saved.clear();
+
+      // Transition to signed in: profileProvider is reloading (hasValue: true,
+      // value: null, isReloading: true), then fails (AsyncError with hasValue: true).
+      c.read(uidState.notifier).state = 'u1';
+      await tester.pump();
+      expect(c.read(profileProvider).isReloading, isTrue);
+      expect(store.saved, isEmpty);
+
+      fetchGate.completeError(ApiError('OFFLINE', 503, false, 'offline'));
+      await tester.pumpAndSettle();
+
+      final errored = c.read(profileProvider);
+      expect(errored.hasError, isTrue);
+      expect(errored.hasValue, isTrue);
+      expect(
+        store.saved,
+        isEmpty,
+        reason: 'a failed reload must not write default targets to the widget',
+      );
+    },
+  );
+
+  testWidgets(
+    'failed profile refresh after a loaded profile still writes new meals with last good targets',
+    (tester) async {
+      final store = _RecordingStore();
+      var shouldFail = false;
+      final refreshedDay = Completer<dash_day.LoggingDayData>();
+      final c = ProviderContainer(
+        overrides: [
+          dash.loggingDayProvider.overrideWith(
+            (ref, args) => refreshedDay.future,
+          ),
+          sessionProvider.overrideWith((ref) => Stream<Session?>.value(null)),
+          signedInUserIdProvider.overrideWithValue('u1'),
+          todayWidgetStoreProvider.overrideWithValue(store),
+          loggingDayProvider.overrideWith(_Day.new),
+          profileProvider.overrideWith((ref) async {
+            if (shouldFail) throw StateError('offline');
+            return const ProfileRow({
+              'calorieTarget': 1932,
+              'proteinTargetG': 145,
+              'carbsTargetG': 169,
+              'fatTargetG': 75,
+            });
+          }),
+        ],
+      );
+      addTearDown(c.dispose);
+      await tester.pumpWidget(_app(c));
+      await tester.pumpAndSettle();
+      expect((store.saved.last['target']! as Map)['kcal'], 1932);
+      store.saved.clear();
+
+      // Invalidate profileProvider and fail the refetch: AsyncError keeps the
+      // last good ProfileRow in valueOrNull.
+      shouldFail = true;
+      c.invalidate(profileProvider);
+      await tester.pumpAndSettle();
+      expect(c.read(profileProvider).hasError, isTrue);
+      expect(c.read(profileProvider).valueOrNull, isNotNull);
+
+      // A new meal arrives on Today: the widget must still update with the
+      // last good targets (1932 kcal) and the new meal total (750 kcal).
+      refreshedDay.complete(
+        dash_day.LoggingDayData.fromJson({
+          'persistedMeals': [
+            for (final (id, kcal) in [('m1', 450), ('w1', 300)])
+              {
+                'id': id,
+                'rawInput': 'bánh mì',
+                'loggedAt': DateTime.now().toUtc().toIso8601String(),
+                'nutrition': {
+                  'caloriesKcal': kcal,
+                  'proteinG': 10,
+                  'carbohydrateG': 40,
+                  'fatG': 8,
+                },
+              },
+          ],
+        }),
+      );
+      await tester.pumpAndSettle();
+
+      expect(store.saved, isNotEmpty);
+      expect((store.saved.last['target']! as Map)['kcal'], 1932);
+      expect((store.saved.last['eaten']! as Map)['kcal'], 750);
+    },
+  );
+
+  testWidgets(
+    'direct account switch whose profile fetch fails does not leak prior user targets',
+    (tester) async {
+      final store = _RecordingStore();
+      final uidState = StateProvider<String?>((ref) => 'u1');
+      final secondUserGate = Completer<Map<String, dynamic>?>();
+      var reads = 0;
+      final c = ProviderContainer(
+        overrides: [
+          dash.loggingDayProvider.overrideWith(
+            (ref, args) => Completer<dash_day.LoggingDayData>().future,
+          ),
+          sessionProvider.overrideWith((ref) => Stream<Session?>.value(null)),
+          signedInUserIdProvider.overrideWith((ref) => ref.watch(uidState)),
+          todayWidgetStoreProvider.overrideWithValue(store),
+          loggingDayProvider.overrideWith(_Day.new),
+          apiClientProvider.overrideWithValue(
+            _ScriptedProfileApi(() {
+              reads++;
+              if (reads == 1) {
+                return Future.value(const {'calorieTarget': 1932});
+              }
+              return secondUserGate.future;
+            }),
+          ),
+        ],
+      );
+      addTearDown(c.dispose);
+      await tester.pumpWidget(_app(c));
+      await tester.pumpAndSettle();
+      expect((store.saved.last['target']! as Map)['kcal'], 1932);
+      store.saved.clear();
+
+      // Direct switch u1 -> u2 with no signed-out frame in between, then fail u2.
+      c.read(uidState.notifier).state = 'u2';
+      await tester.pump();
+      expect(c.read(profileProvider).isReloading, isTrue);
+
+      secondUserGate.completeError(ApiError('OFFLINE', 503, false, 'offline'));
+      await tester.pumpAndSettle();
+
+      expect(c.read(profileProvider).hasError, isTrue);
+      expect(
+        store.saved,
+        isEmpty,
+        reason: 'must not write user 1 targets under user 2',
+      );
+    },
+  );
+
   test('the widget tap link is the Today link, and only that', () {
     expect(isTodayWidgetLink(Uri.parse('nham://today')), isTrue);
     expect(isTodayWidgetLink(Uri.parse('nham://invite/abc')), isFalse);
     expect(isTodayWidgetLink(Uri.parse('https://kallo.fit/today')), isFalse);
   });
+}
+
+class _DelayedProfileApi extends ApiClient {
+  _DelayedProfileApi(this._gate);
+
+  final Completer<Map<String, dynamic>?> _gate;
+
+  @override
+  Future<T> get<T>(String path) async => (await _gate.future) as T;
+}
+
+class _ScriptedProfileApi extends ApiClient {
+  _ScriptedProfileApi(this._onGet);
+
+  final Future<Map<String, dynamic>?> Function() _onGet;
+
+  @override
+  Future<T> get<T>(String path) async => (await _onGet()) as T;
 }

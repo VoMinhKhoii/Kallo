@@ -1117,7 +1117,7 @@
     "barcode": {
       "title": "Quét mã vạch",
       "torch": "Đèn pin",
-      "cameraDenied": "Chưa cấp quyền camera. Hãy bật camera cho Kallo trong Cài đặt > Quyền riêng tư > Camera, hoặc nhập mã vạch bên dưới.",
+      "cameraDenied": "Chưa cấp quyền camera. Hãy bật camera cho Kallo trong phần cài đặt của điện thoại, hoặc nhập mã vạch bên dưới.",
       "cameraError": "Camera không khả dụng trên thiết bị này.",
       "manualEntry": "Nhập mã vạch thủ công",
       "backToCamera": "Quay lại camera",
@@ -1534,7 +1534,7 @@
         "rateLimited": "Hệ thống đang bận. Vui lòng thử lại sau giây lát.",
         "serverError": "Không thể quét bảng dinh dưỡng. Vui lòng thử lại sau.",
         "featureLocked": "Quét bảng dinh dưỡng là tính năng Premium. Nâng cấp Premium để dùng.",
-        "permissionDenied": "Chưa cấp quyền camera và ảnh. Hãy bật cho Kallo trong Cài đặt > Quyền riêng tư, hoặc nhập số bằng tay.",
+        "permissionDenied": "Chưa cấp quyền camera và ảnh. Hãy bật cho Kallo trong phần cài đặt của điện thoại, hoặc nhập số bằng tay.",
         "imageTooLarge": "Ảnh này quá lớn để gửi. Hãy chụp lại, ảnh mới sẽ được tự động thu nhỏ.",
         "aiConsentRequired": "Quét nhãn sẽ gửi ảnh của bạn đến Google Gemini. Hãy cho phép phân tích bằng AI để quét nhãn."
       }

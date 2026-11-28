@@ -1,7 +1,12 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Declared here, not left to a plugin's manifest merge: every network
          call (Supabase, the API, PostHog, Sentry) depends on it in release. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- The camera plugin merges RECORD_AUDIO in, but the scan camera opens
+         with enableAudio: false. Removed so Play does not list microphone
+         access the app never uses. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
     <application
         android:label="Kallo"
         android:name="${applicationName}"
@@ -48,7 +53,33 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="nham" android:host="invite"/>
             </intent-filter>
+            <!-- Home-screen widget tap: nham://today (TodayWidgetProvider.LINK).
+                 TodayWidgetLink routes it to Today, as on iOS. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="nham" android:host="today"/>
+            </intent-filter>
         </activity>
+        <!-- The home-screen "Today" widget (apps/docs/mobile/today-widget.md).
+             The app writes the day through home_widget, which broadcasts
+             APPWIDGET_UPDATE to this class by name. The other actions are the
+             provider's own midnight / theme alarm and clock changes, which
+             all redraw the date and theme with the app closed. -->
+        <receiver
+            android:name=".todaywidget.TodayWidgetProvider"
+            android:label="@string/today_widget_name"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="android.intent.action.TIME_SET"/>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+                <action android:name="android.intent.action.LOCALE_CHANGED"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/today_widget_info"/>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

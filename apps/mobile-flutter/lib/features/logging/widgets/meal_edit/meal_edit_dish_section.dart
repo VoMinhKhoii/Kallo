@@ -8,6 +8,7 @@ import '../../../../theme/kallo_theme.dart';
 import '../../logic/format.dart';
 import '../../logic/meal_edit/meal_edit_draft.dart';
 import '../../logic/meal_edit/meal_edit_format.dart';
+import '../../logic/serving_ladder.dart';
 import 'meal_edit_size_row.dart';
 import 'meal_edit_stepper_row.dart';
 
@@ -63,7 +64,7 @@ class MealEditDishSection extends StatelessWidget {
           children: [
             MealEditStepperRow(
               label: 'logging.mealEdit.servings'.tr(),
-              value: formatTimes(dish.servings, locale),
+              value: formatServingTimes(dish.servings, locale),
               minusRemoves: removes,
               minusLabel:
                   removes
@@ -80,14 +81,14 @@ class MealEditDishSection extends StatelessWidget {
                       ? () => onDraft(draft.stepServings(dish.key, 1))
                       : null,
             ),
-            if (dish.scalable)
+            if (dish.scalable && dish.unit != 'serving')
               MealEditStepperRow(
                 label: 'logging.mealEdit.amount'.tr(),
                 value: formatAmount(dish.grams, dish.unit, locale),
                 minusLabel: 'logging.mealEdit.lessAmount'.tr(namedArgs: named),
                 plusLabel: 'logging.mealEdit.moreAmount'.tr(namedArgs: named),
                 onMinus:
-                    dish.grams <= dish.floor
+                    dish.amountMinusDisabled
                         ? null
                         : () => onDraft(draft.stepAmount(dish.key, -1)),
                 onPlus: () => onDraft(draft.stepAmount(dish.key, 1)),

@@ -28,7 +28,9 @@ class MacroTrendAxis {
 /// bottom third under half a chart of empty grid — comparability across ranges
 /// nobody was making, paid for in the resolution of the one chart on screen.
 MacroTrendAxis buildMacroTrendAxis(double maxY) {
-  final axisTarget = maxY > 1 ? maxY : 1.0;
+  // A non-finite max (an overflowed total) would never satisfy the step
+  // ladder, so it floors to 1 like an empty chart.
+  final axisTarget = maxY.isFinite && maxY > 1 ? maxY : 1.0;
   final step = _niceStep(axisTarget);
   final maxLabel = (axisTarget / step).ceil() * step;
   return MacroTrendAxis(
@@ -45,5 +47,11 @@ double _niceStep(double maxV) {
   for (final s in steps) {
     if (maxV / s <= 6) return s;
   }
-  return 2500;
+  // Past 2000 the ladder keeps climbing (2500, 5000, 10000, 25000, …) with no
+  // ceiling: a capped step turned a 65,000 kcal day into 26 stacked labels.
+  for (var base = 1000.0; ; base *= 10) {
+    for (final multiple in const [2.5, 5.0, 10.0]) {
+      if (maxV / (base * multiple) <= 6) return base * multiple;
+    }
+  }
 }

@@ -335,7 +335,11 @@ describe('acceptMealShareInviteAction', () => {
       { sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND, copyFactor: 1 },
     ]);
     queueLimitSelect([
-      sourceMeal({ loggedAt: breakfast, mealSlot: 'breakfast' }),
+      sourceMeal({
+        loggedAt: breakfast,
+        mealSlot: 'breakfast',
+        isBackfilled: true,
+      }),
     ]);
     installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
     queueLimitSelect([{ id: 'friendship-1' }]);
@@ -356,6 +360,8 @@ describe('acceptMealShareInviteAction', () => {
     const mealVals = captured.meal.vals as Record<string, unknown>;
     expect(mealVals.loggedAt).toEqual(breakfast);
     expect(mealVals.mealSlot).toBe('breakfast');
+    // The source was logged for a past day, and so is my copy of it.
+    expect(mealVals.isBackfilled).toBe(true);
     // The returned card has to agree with the row, or the optimistic feed
     // reconciles onto a meal that sits somewhere else in the day.
     expect(result.meal.loggedAt).toBe(breakfast.toISOString());

@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/lib/domain/meals/logged-at', async () => ({
+  stampLoggedAt: (await import('@/lib/domain/meals/__tests__/logged-at-double'))
+    .clockStamp,
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks — both cheat actions run straight off the db singleton (no transaction).
 // ---------------------------------------------------------------------------

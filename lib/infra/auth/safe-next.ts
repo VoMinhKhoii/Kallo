@@ -2,7 +2,11 @@
 // prefixed path (never an open redirect). Mirrors the guard in
 // app/auth/callback/route.ts, shared so the landing page can reuse it.
 
-const SAFE_NEXT_RE = /^\/(en|vi)(\/[\w\-./?&=%#]*)?$/;
+import { locales } from '@/i18n/config';
+
+const SAFE_NEXT_RE = new RegExp(
+  `^/(${locales.join('|')})(/[\\w\\-./?&=%#]*)?$`
+);
 
 export function safeNextPath(raw: string | null | undefined): string | null {
   if (!raw) return null;

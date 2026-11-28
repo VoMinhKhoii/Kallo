@@ -2,11 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../../models/nutrition_label.dart';
+import '../../../../../../shared/logic/display_format.dart';
 import '../../../../../../shared/widgets/list/grouped_list_card.dart';
 import '../../../../../../shared/widgets/list/list_row.dart';
 import '../../../../../../theme/calm_tokens.dart';
 import '../../../../logic/scan/amount.dart';
 import '../../../../logic/scan/food.dart';
+import '../../../../logic/serving_ladder.dart';
 import 'amount/card.dart';
 import 'amount/field.dart';
 import 'amount/stepper.dart';
@@ -76,7 +78,7 @@ class ScanResultBody extends StatelessWidget {
                 enabled && amount.canStep(food, 1)
                     ? () => onAmount(amount.stepped(food, 1))
                     : null,
-            child: _amountValue(),
+            child: _amountValue(localeOf(context)),
           ),
           ruler:
               amount.portion == ScanPortion.custom && food.unit == 'ml'
@@ -139,29 +141,28 @@ class ScanResultBody extends StatelessWidget {
     };
   }
 
-  /// "1 serving", "2 packs", or the typed "250 ml".
-  Widget _amountValue() {
-    Widget count(int n, String wordKey) => Text.rich(
+  /// "1 serving", "1/3 serving", "0.5 pack", or the typed "250 ml".
+  Widget _amountValue(String locale) {
+    Widget count(double n, String wordKey) => Text.rich(
       TextSpan(
         children: [
-          TextSpan(text: '$n', style: dashValue()),
-          TextSpan(text: ' ${wordKey.plural(n)}', style: dashMeta()),
+          TextSpan(text: formatServingValue(n, locale), style: dashValue()),
+          TextSpan(
+            text: ' ${wordKey.plural(servingPluralCount(n))}',
+            style: dashMeta(),
+          ),
         ],
       ),
     );
     return switch (amount.portion) {
       ScanPortion.serving => count(amount.servings, 'logging.scan.servingWord'),
       ScanPortion.pack => count(amount.packs, 'logging.scan.packWord'),
-      ScanPortion.custom =>
-        food.unit == 'serving'
-            ? count(amount.custom.round(), 'logging.scan.servingWord')
-            : ScanAmountField(
-              amount: amount.custom.round(),
-              unit: food.unit,
-              enabled: enabled,
-              onChanged:
-                  (value) => onAmount(amount.withCustom(value.toDouble())),
-            ),
+      ScanPortion.custom => ScanAmountField(
+        amount: amount.custom.round(),
+        unit: food.unit,
+        enabled: enabled,
+        onChanged: (value) => onAmount(amount.withCustom(value.toDouble())),
+      ),
     };
   }
 }

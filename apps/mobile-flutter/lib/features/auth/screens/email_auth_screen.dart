@@ -183,8 +183,10 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
         seam,
         // The same two social options the welcome face offers, on the same
         // controller — so nobody has to go back to reach them.
-        AppleButton(busy: state.busy, onPressed: _controller.signInWithApple),
-        const SizedBox(height: KalloSpacing.sp3),
+        if (appleSignInAvailable()) ...[
+          AppleButton(busy: state.busy, onPressed: _controller.signInWithApple),
+          const SizedBox(height: KalloSpacing.sp3),
+        ],
         GoogleButton(
           busy: state.busy,
           loading: state.googleBusy,

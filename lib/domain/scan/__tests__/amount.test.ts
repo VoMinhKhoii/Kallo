@@ -12,7 +12,12 @@ import {
   withCustom,
   withPortion,
 } from '@/lib/domain/scan/amount';
-import { blankScanFood, scanFoodFromBarcode } from '@/lib/domain/scan/food';
+import {
+  blankScanFood,
+  editScanFood,
+  emptyNutrition,
+  scanFoodFromBarcode,
+} from '@/lib/domain/scan/food';
 
 const product = (
   overrides: Partial<ParsedBarcodeProduct>
@@ -53,23 +58,77 @@ describe('portions', () => {
 });
 
 describe('stepping', () => {
-  it('counts servings and packs by one, custom by 10', () => {
+  it('steps servings and packs along the fractional ladder and custom by 10', () => {
     let amount = stepScanAmount(initialScanAmount(food), food, 1);
+    expect(amount.servings).toBe(1.5);
+    expect(resolveScanAmount(amount, food)).toBe(150);
+    amount = stepScanAmount(amount, food, 1);
+    expect(amount.servings).toBe(2);
     expect(resolveScanAmount(amount, food)).toBe(200);
+
     amount = stepScanAmount(withPortion(amount, food, 'pack'), food, 1);
-    expect(resolveScanAmount(amount, food)).toBe(2000);
+    expect(amount.packs).toBe(1.5);
+    expect(resolveScanAmount(amount, food)).toBe(1500);
     amount = withPortion(amount, food, 'custom');
-    expect(resolveScanAmount(amount, food)).toBe(2000);
+    expect(resolveScanAmount(amount, food)).toBe(1500);
     expect(resolveScanAmount(stepScanAmount(amount, food, -1), food)).toBe(
-      2000 - CUSTOM_STEP
+      1500 - CUSTOM_STEP
     );
   });
 
-  it('never goes below one', () => {
-    const amount = initialScanAmount(food);
+  it('steps servings and packs below 1 down to 0.25 through thirds and halves', () => {
+    let amount = initialScanAmount(food);
+    const servingSteps: number[] = [];
+    while (canStepScanAmount(amount, food, -1)) {
+      amount = stepScanAmount(amount, food, -1);
+      servingSteps.push(amount.servings);
+    }
+    expect(servingSteps).toEqual([0.75, 2 / 3, 0.5, 1 / 3, 0.25]);
+    expect(resolveScanAmount(amount, food)).toBe(25);
     expect(canStepScanAmount(amount, food, -1)).toBe(false);
+
+    let pack = withPortion(initialScanAmount(food), food, 'pack');
+    const packSteps: number[] = [];
+    while (canStepScanAmount(pack, food, -1)) {
+      pack = stepScanAmount(pack, food, -1);
+      packSteps.push(pack.packs);
+    }
+    expect(packSteps).toEqual([0.75, 2 / 3, 0.5, 1 / 3, 0.25]);
+    expect(resolveScanAmount(pack, food)).toBe(250);
+    expect(canStepScanAmount(pack, food, -1)).toBe(false);
+
     const custom = withCustom(amount, 5);
     expect(resolveScanAmount(stepScanAmount(custom, food, -1), food)).toBe(1);
+  });
+
+  it('editing a barcode product to 1 serving keeps the serving portion and scales below 1', () => {
+    const edited = editScanFood(food, {
+      name: 'Mini Wontons',
+      unit: 'serving',
+      basisAmount: 1,
+      values: {
+        ...emptyNutrition(),
+        calories: 210,
+        proteinGrams: 13,
+        carbsGrams: 31,
+        fatGrams: 5,
+      },
+    });
+    expect(portionsFor(edited)).toEqual(['serving']);
+    let amount = initialScanAmount(edited);
+    amount = stepScanAmount(amount, edited, -1); // 0.75
+    amount = stepScanAmount(amount, edited, -1); // 2/3
+    amount = stepScanAmount(amount, edited, -1); // 0.5
+    expect(amount.servings).toBe(0.5);
+    expect(resolveScanAmount(amount, edited)).toBe(0.5);
+  });
+
+  it('rounds a fractional resolved amount when carrying into custom g/ml', () => {
+    let amount = initialScanAmount(food);
+    for (let i = 0; i < 4; i++) amount = stepScanAmount(amount, food, -1); // 1/3 of 100 ml
+    const custom = withPortion(amount, food, 'custom');
+    expect(custom.custom).toBe(33);
+    expect(resolveScanAmount(custom, food)).toBe(33);
   });
 
   it('stops a count where the entry would pass the log limit', () => {
@@ -78,7 +137,7 @@ describe('stepping', () => {
     );
     let amount = initialScanAmount(rice);
     expect(amount.portion).toBe('pack');
-    for (let i = 0; i < 80; i++) amount = stepScanAmount(amount, rice, 1);
+    for (let i = 0; i < 120; i++) amount = stepScanAmount(amount, rice, 1);
     expect(amount.packs).toBe(MAX_SCAN_AMOUNT / 2000);
     expect(canStepScanAmount(amount, rice, 1)).toBe(false);
   });

@@ -492,30 +492,38 @@ void main() {
 
   // Held tall, the form is centred, and the fold line at half the window's
   // height falls in the gap between the email field and its button.
+  //
+  // As an iPhone: the Apple button is part of the form there and not on
+  // Android, and where the fold falls depends on the form's height.
   testWidgets('email sign-in held tall keeps the fold off the controls', (
     tester,
   ) async {
-    final dispose = await bootPose(
-      tester,
-      innerPortrait,
-      '/sign-in/email',
-      signedIn: false,
-    );
-    final fold = innerPortrait.size.height / 2;
-    final field = tester.getRect(find.byType(AuthTextField));
-    final send = tester.getRect(find.byType(AuthSubmitButton));
-    expect(field.bottom, lessThan(fold));
-    expect(send.top, greaterThan(fold));
-    final title = tester.getRect(find.text('Welcome back'));
-    final legal = tester.getRect(find.byType(AuthLegalLinks));
-    final safeMiddle =
-        (innerPortrait.padding.top +
-            44 +
-            innerPortrait.size.height -
-            innerPortrait.padding.bottom) /
-        2;
-    expect((title.top + legal.bottom) / 2, closeTo(safeMiddle, 24 + 1));
-    await dispose();
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      final dispose = await bootPose(
+        tester,
+        innerPortrait,
+        '/sign-in/email',
+        signedIn: false,
+      );
+      final fold = innerPortrait.size.height / 2;
+      final field = tester.getRect(find.byType(AuthTextField));
+      final send = tester.getRect(find.byType(AuthSubmitButton));
+      expect(field.bottom, lessThan(fold));
+      expect(send.top, greaterThan(fold));
+      final title = tester.getRect(find.text('Welcome back'));
+      final legal = tester.getRect(find.byType(AuthLegalLinks));
+      final safeMiddle =
+          (innerPortrait.padding.top +
+              44 +
+              innerPortrait.size.height -
+              innerPortrait.padding.bottom) /
+          2;
+      expect((title.top + legal.bottom) / 2, closeTo(safeMiddle, 24 + 1));
+      await dispose();
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   // Wide and short (the closed display on its side): stacked, the band

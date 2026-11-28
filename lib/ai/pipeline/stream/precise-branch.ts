@@ -5,13 +5,12 @@ import { PLAIN_READ_MODEL } from '@/lib/ai/pipeline/plain-read/prompt';
 import { runPreciseAnalysis } from '@/lib/ai/pipeline/precise-analysis';
 import { createBudgetAttemptRecorder } from '@/lib/ai/pipeline/telemetry/budget';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
-import { withDeadline } from '@/lib/core/async/with-deadline';
 import { safeError } from '@/lib/core/errors/safe-error';
 import {
   buildRelogRawInput,
   capRawInput,
 } from '@/lib/domain/logging/relog/relog';
-import { PERSIST_DEADLINE_MS, upsertPendingAnalysis } from './persist-analysis';
+import { stampAndStage } from './persist-analysis';
 import type { StreamRun } from './types';
 import { emitPartialFailure } from './unresolved-response';
 
@@ -162,18 +161,17 @@ export async function runPreciseBranch({
   // failed insert produces an error path with no half-state. If we emit
   // `result` first and then the insert throws, the client has a populated meal
   // preview with no `analysisId` to confirm it.
-  const [inserted] = await withDeadline(
-    upsertPendingAnalysis({
-      userId,
-      pipelineResult: result.data,
-      rawInput,
-      entryMode: 'precise',
-      loggedAt: ctx.loggedAt,
-      attemptId: ctx.attemptId,
-      pipelineRequestId: requestId,
-    }),
-    PERSIST_DEADLINE_MS
-  );
+  const staged = await stampAndStage(ctx, {
+    userId,
+    pipelineResult: result.data,
+    rawInput,
+    entryMode: 'precise',
+    attemptId: ctx.attemptId,
+    pipelineRequestId: requestId,
+  });
+  if (!staged) {
+    return;
+  }
 
   // Now safe to surface the meal — durable row exists.
   emit({ type: 'result', data: meal });
@@ -181,7 +179,8 @@ export async function runPreciseBranch({
   // Terminal event — analysis stored, safe to confirm.
   emit({
     type: 'analysis_complete',
-    analysisId: inserted.id,
+    analysisId: staged.analysisId,
+    loggedAt: staged.loggedAt.toISOString(),
   });
 
   // Fire-and-forget: log success + unmatched ingredients

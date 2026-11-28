@@ -42,6 +42,10 @@ class BarcodeCameraLayer extends StatelessWidget {
             const ColoredBox(color: Color(0xFF000000)),
             if (live != null && frozen == null)
               ScanPreviewFadeIn(
+                // A new controller is a new scanner: mobile_scanner binds its
+                // controller once, in initState, so one swapped in under the
+                // same widget would never start.
+                key: ObjectKey(live),
                 source: live,
                 // An error shows at once: it is what the user must read.
                 isReady: () => live.value.isRunning || live.value.error != null,

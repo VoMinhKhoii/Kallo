@@ -77,7 +77,8 @@ describe('the scan editor', () => {
     expect(food.values.calories).toBe(16);
     expect(food.values.sodiumMg).toBe(0);
     expect(food.values.fiberGrams).toBeNull();
-    expect(food.servingSize).toBeNull();
+    expect(food.servingSize).toBe(1);
+    expect(food.packageSize).toBeNull();
     expect(logsByBarcode(food)).toBe(false);
   });
 

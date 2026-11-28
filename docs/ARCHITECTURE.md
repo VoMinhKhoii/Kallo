@@ -407,7 +407,7 @@ re-export another folder's module, which is what `card_skeletons.dart` and
 | `content/docs/{en,vi}/` | user-facing MDX documentation | ok |
 | `docs/` | engineering runbooks | ok |
 | `apps/docs/mobile/` | mobile-specific runbooks | ok |
-| `apps/kallo-proxy/` | the `kallo-proxy` Cloudflare Worker in front of Cloud Run (forwarding + per-IP flood breakers); deployed by hand with wrangler | ok |
+| `apps/kallo-proxy/` | the `kallo-proxy` Cloudflare Worker in front of Cloud Run (forwarding, per-IP flood breakers, cached copies of public pages for crawlers); deployed by hand with wrangler | ok |
 
 ---
 

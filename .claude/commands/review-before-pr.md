@@ -52,6 +52,7 @@ Each subagent prompt should:
 1. State the branch + commit count + files-changed count (from pre-flight).
 2. Note any `--security-heavy` or other intensifier flags.
 3. Tell the agent to focus only on its area and follow its own output format.
+4. Contain, verbatim: **"REPORT ONLY. DO NOT EDIT ANY FILES."** The reviewers share one working tree and run at the same time, so a fix a reviewer's definition calls an auto-fix is not applied: the reviewer writes `None.` under `## Auto-Applied Fixes` and puts the exact change under `## Important Findings`.
 
 Use the `Agent` tool with `subagent_type` set to the matching subagent name (e.g. `review-architecture-boundaries`). Run them in **a single message with multiple tool blocks** so they execute concurrently.
 
@@ -61,7 +62,7 @@ After all dispatched subagents return:
 
 1. Print a one-line **per-subagent verdict**: subagent → `PASS` | `findings: <count>` | `escalated: <count>`.
 2. Group findings by **severity** (blocker / important / nice-to-have), not by subagent. Each finding shows `[area]` tag, file:line, and the recommendation.
-3. List **escalations separately** at the top — these are decisions that need user approval before any auto-fix.
+3. List **escalations separately** at the top — these are decisions that need user approval before anything is changed.
 4. End with a **suggested next step**:
    - All `PASS` → "Ready to ship. Suggest `/kship` or `gh pr create`."
    - Blockers present → "Fix N blockers, then re-run `/review-before-pr` on the affected areas."
@@ -97,7 +98,7 @@ Branch: <branch>  ·  <N commits>, <M files>  ·  base: main
 
 ## Constraints
 
-- Do not auto-apply structural changes (file moves, schema rewrites, public API renames). Subagents own that decision per their definitions.
+- This command reports and edits nothing: the reviewers never edit, and you apply no fix while it runs. The user reads the report first. Fixes come after it, and every escalation and structural change (file moves, schema rewrites, public API renames) waits for the user's approval.
 - Do not run `gh pr create` or `git push` from this command. That belongs to `/kship` (if available) or explicit user request.
 - Do not wait for one subagent's output to dispatch the next — the whole point of multi-axis review is parallelism.
 - If the diff is empty (`git diff main...HEAD` returns nothing), say so and exit without dispatching.

@@ -1,7 +1,11 @@
 'use client';
 
 import { ChevronRight } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import {
+  formatServingValue,
+  servingPluralCount,
+} from '@/lib/domain/meals/serving-ladder';
 import {
   canStepScanAmount,
   formatSize,
@@ -72,6 +76,7 @@ export function ScanResultBody({
   onOtherNutrients: () => void;
 }) {
   const t = useTranslations('logging.scan');
+  const locale = useLocale();
   const resolved = resolveScanAmount(amount, food);
   const { unit } = food;
   const sized = (size: number | null) =>
@@ -105,8 +110,11 @@ export function ScanResultBody({
   };
 
   const count = (n: number, word: 'servings' | 'packs') => (
-    <span className="text-[16px] text-kallo-text tabular-nums">
-      {n} <span className="text-[14px]">{t(word, { count: n })}</span>
+    <span className="whitespace-nowrap text-[16px] text-kallo-text tabular-nums">
+      {formatServingValue(n, locale)}{' '}
+      <span className="text-[14px]">
+        {t(word, { count: servingPluralCount(n) })}
+      </span>
     </span>
   );
   const value =
@@ -114,8 +122,6 @@ export function ScanResultBody({
       count(amount.servings, 'servings')
     ) : amount.portion === 'pack' ? (
       count(amount.packs, 'packs')
-    ) : unit === 'serving' ? (
-      count(Math.round(amount.custom), 'servings')
     ) : (
       <ScanAmountInput
         amount={Math.round(amount.custom)}

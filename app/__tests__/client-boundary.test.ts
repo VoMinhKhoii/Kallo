@@ -18,7 +18,7 @@ import {
 // from a 'use client' module. Move shared values to a plain module.
 
 /** A React component name: PascalCase with at least one lowercase letter
- *  (so `OAuthErrorToast` is one and `TIMEZONE_COOKIE` is not). */
+ *  (so `AuthErrorToast` is one and `TIMEZONE_COOKIE` is not). */
 const isComponentName = (name: string) => /^[A-Z](?=.*[a-z])\w*$/.test(name);
 
 function plainClientImports() {

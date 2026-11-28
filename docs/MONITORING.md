@@ -153,5 +153,6 @@ using up the error quota.
 - **App Store privacy label / Play data safety**: update both by hand ("Diagnostics:
   crash data" and "Usage data: product interaction", linked to the user, not used for
   tracking) before shipping a build with keys.
-- **Android** has no release lane in the repo yet; when one is added, pass
-  `POSTHOG_KEY` / `SENTRY_DSN` like `ios/fastlane/Fastfile` does.
+- **Android** release builds (`apps/mobile-flutter/tool/build_android_release.sh`) pass
+  `POSTHOG_KEY` / `SENTRY_DSN` from `KALLO_POSTHOG_KEY` / `KALLO_SENTRY_DSN`, like
+  `ios/fastlane/Fastfile` does.

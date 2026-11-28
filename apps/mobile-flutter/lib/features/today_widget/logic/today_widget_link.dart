@@ -1,6 +1,7 @@
 /// Routes a tap on the home-screen widget to Today.
 ///
-/// The widget's `widgetURL` is `nham://today` (`TodayWidgetView.swift`). The
+/// The widget's tap is `nham://today` (`widgetURL` in `TodayWidgetView.swift`,
+/// `TodayWidgetProvider.LINK` on Android). The
 /// same one-per-process shape as `CircleDeepLinkListener`; both subscribe to
 /// `app_links`, which hands every link to every listener, and each ignores
 /// the links that are not its own. Mounted by `TodayWidgetSync`.

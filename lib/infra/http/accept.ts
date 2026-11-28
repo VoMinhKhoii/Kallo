@@ -9,6 +9,10 @@
  *
  * `text/html` leads `PRODUCES`: with no Accept header, or with `* / *`, the
  * first entry is what a client gets, and HTML is what a browser wants.
+ *
+ * Also bundled into the kallo-proxy Cloudflare Worker (apps/kallo-proxy, deployed
+ * by hand), which uses it to tell which requests get HTML: keep this file free
+ * of imports, and redeploy the Worker when its rules change.
  */
 
 export const MEDIA_HTML = 'text/html';

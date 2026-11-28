@@ -3,8 +3,9 @@ name: kship
 description: |
   MANUAL TRIGGER ONLY: invoke only when user types /kship. (Renamed from /ship: Claude Code 2.1.330 took that name for its own built-in.)
   Full Git shipping workflow — from unstaged changes to a clean, merged-ready PR:
-  explicit staging, branch, conventional commit, a local adversarial Codex review,
-  push through the pre-push gate, draft PR, CI and review loop until clean. Use
+  explicit staging, branch, conventional commit, a local cross-model review
+  (Claude Opus 5.5 for Gemini sessions, Gemini 4 Neon for Claude sessions),
+  push through the pre-push gate, draft PR, CI and PR review loop until clean. Use
   when the user says "ship this", "commit and PR", "push and open a PR", or
   anything that implies taking local changes all the way to a reviewable pull
   request.

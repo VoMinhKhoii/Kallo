@@ -80,6 +80,30 @@ void main() {
     expect(sheetTop(tester), resultTop);
   });
 
+  testWidgets("Android's system back steps out one level at a time", (
+    tester,
+  ) async {
+    final h = await atProduct(tester);
+    await tester.tap(find.text('Other nutrients'));
+    await tester.pumpAndSettle();
+
+    // The system back (Android's button or gesture) goes through the route's
+    // pop, which used to close the whole screen with the product on it.
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Add meal'), findsOneWidget, reason: 'back to result');
+    expect(h.closed, isFalse);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(h.cameraIsLive, isTrue, reason: 'the result closes to scanning');
+    expect(h.closed, isFalse);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(h.closed, isTrue, reason: 'only a bare camera leaves the screen');
+  });
+
   testWidgets('back pops from the left', (tester) async {
     await atProduct(tester);
     final addRestX = x(tester, 'Add meal');

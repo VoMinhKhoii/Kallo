@@ -2,8 +2,9 @@
  * kallo-proxy — the Cloudflare Worker in front of Cloud Run on `kallo.fit/*`
  * and `*.kallo.fit/*` (`media.kallo.fit` and `admin.kallo.fit` have their own
  * routes). Deployed by hand with wrangler; see `../README.md`. It forwards every request to the Cloud Run origin with the
- * origin-lock secret, and refuses per-IP floods on the anonymous surfaces
- * before they cost a Cloud Run request.
+ * origin-lock secret, refuses per-IP floods on the anonymous surfaces
+ * before they cost a Cloud Run request, and serves crawlers cached copies of
+ * public pages (`crawler-cache.ts`).
  *
  * The flood limit is a breaker, never the real limit: carrier NAT puts many
  * real users behind one address, and Workers rate limits count per Cloudflare
@@ -11,6 +12,8 @@
  * stays the authority. A refusal here answers in the shape each client
  * already parses, so no client needs to know the edge exists.
  */
+
+import { fetchCrawlerCopy, isCrawlerPageRequest } from './crawler-cache';
 
 /** The Workers Rate Limiting binding (`ratelimits` in wrangler.jsonc). */
 export interface RateLimiter {
@@ -243,6 +246,7 @@ export default {
     const refused = await floodRefusal(request, env);
     if (refused) return refused;
 
+    const crawler = isCrawlerPageRequest(request);
     const url = new URL(request.url);
     const originalHost = url.hostname;
     url.hostname = env.ORIGIN;
@@ -252,6 +256,6 @@ export default {
     forwarded.headers.set('X-Origin-Verify', env.ORIGIN_SECRET);
     forwarded.headers.set('X-Forwarded-Host', originalHost);
     forwarded.headers.set('X-Forwarded-Proto', 'https');
-    return fetch(forwarded);
+    return crawler ? fetchCrawlerCopy(forwarded) : fetch(forwarded);
   },
 };

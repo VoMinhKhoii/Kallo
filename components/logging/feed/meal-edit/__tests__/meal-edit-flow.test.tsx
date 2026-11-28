@@ -129,18 +129,56 @@ describe('editing a saved meal on web', () => {
     });
   });
 
-  it('removes a dish from its half-serving trash', async () => {
+  it('removes a dish from its quarter-serving trash', async () => {
     const user = userEvent.setup();
     const onUpdate = vi.fn().mockResolvedValue(undefined);
     renderCard({ onUpdate });
     await openEditFromMenu(user);
 
-    await user.click(screen.getAllByRole('button', { name: 'lessServing' })[1]);
+    for (let i = 0; i < 5; i++) {
+      await user.click(
+        screen.getAllByRole('button', { name: 'lessServing' })[1]
+      );
+    }
     await user.click(screen.getByRole('button', { name: 'removeDish' }));
     expect(screen.queryByText('Iced latte')).toBeNull();
     await user.click(screen.getByRole('button', { name: 'save' }));
     await waitFor(() =>
       expect(onUpdate).toHaveBeenCalledWith({ edits: [], removeIds: ['latte'] })
+    );
+  });
+
+  it('hides Amount and scales a per-serving meal down to 0.5×', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    const servingMeal: PersistedMeal = {
+      ...meal,
+      rawInput: 'Mini Wontons (1 serving)',
+      nutrition: n(210),
+      mealItemGroups: [
+        {
+          name: 'Mini Wontons',
+          order: 0,
+          nutrition: n(210),
+          ingredients: [ing('wontons', 1, 210, 'serving')],
+        },
+      ],
+    };
+    renderCard({ meal: servingMeal, onUpdate });
+    await openEditFromMenu(user);
+
+    expect(screen.queryByText('1 g')).toBeNull();
+    for (let i = 0; i < 3; i++) {
+      await user.click(screen.getByRole('button', { name: 'lessWhole' }));
+    }
+    expect(screen.getAllByText('0.5×')).toHaveLength(2);
+    expect(screen.getByText('105 kcal')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'save' }));
+    await waitFor(() =>
+      expect(onUpdate).toHaveBeenCalledWith({
+        edits: [{ id: 'wontons', newGrams: 0.5 }],
+        removeIds: [],
+      })
     );
   });
 

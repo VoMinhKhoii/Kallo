@@ -4,13 +4,16 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import type { AuthErrorCode } from '@/lib/infra/auth/redirects';
 
-const HANDLED_CODES = new Set([
-  'oauth_missing_code',
-  'oauth_exchange',
-  'account_exists',
-  'verify_failed',
-]);
+/** The `auth.dialog` message for each code. A code the routes add without a
+ * message here fails the type check. */
+const MESSAGE_KEY = {
+  oauth_missing_code: 'signInError',
+  oauth_exchange: 'signInError',
+  account_exists: 'accountExists',
+  verify_failed: 'verifyLinkError',
+} as const satisfies Record<AuthErrorCode, string>;
 
 /**
  * Surfaces auth callback/verify failures redirected to /{locale}/?error=*.
@@ -19,7 +22,7 @@ const HANDLED_CODES = new Set([
  * firing once we strip the param from the URL via history.replaceState so a
  * refresh doesn't replay the toast.
  */
-export function OAuthErrorToast() {
+export function AuthErrorToast() {
   const t = useTranslations('auth.dialog');
   const params = useSearchParams();
   const fired = useRef(false);
@@ -27,12 +30,9 @@ export function OAuthErrorToast() {
   useEffect(() => {
     if (fired.current) return;
     const error = params.get('error');
-    if (!error || !HANDLED_CODES.has(error)) return;
+    if (!error || !Object.hasOwn(MESSAGE_KEY, error)) return;
     fired.current = true;
-    let message = t('googleError');
-    if (error === 'account_exists') message = t('accountExists');
-    else if (error === 'verify_failed') message = t('verifyLinkError');
-    toast.error(message);
+    toast.error(t(MESSAGE_KEY[error as AuthErrorCode]));
 
     // Strip the param so a refresh doesn't replay the toast. Preserve
     // existing history.state — Next's App Router stores routing metadata

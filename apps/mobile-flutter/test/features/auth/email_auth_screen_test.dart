@@ -111,6 +111,18 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('leaves Apple out on Android, where there is no Apple ID sheet', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    await tester.pumpWidget(_app('/sign-in/email'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppleButton), findsNothing);
+    expect(find.byType(GoogleButton), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('wears the wizard canvas, edge to edge behind the status bar', (
     tester,
   ) async {

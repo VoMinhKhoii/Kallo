@@ -7,7 +7,6 @@ import {
   type StageRelogAnalysisInput,
   stageRelogAnalysisSchema,
 } from '@/lib/api/contracts/meals';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import type { ParsedMeal } from '@/lib/core/types/meal';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { buildPickPipelineResult } from '@/lib/domain/logging/relog/build-pick-pipeline-result';
@@ -16,6 +15,7 @@ import {
   capRawInput,
   relogRefsOf,
 } from '@/lib/domain/logging/relog/relog';
+import { stampLoggedAt } from '@/lib/domain/meals/logged-at';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { withRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 
@@ -90,7 +90,8 @@ export async function stageRelogAnalysisAction(
       const rawInput = parsed.displayText
         ? capRawInput(parsed.displayText)
         : buildRelogRawInput(picks.names);
-      const loggedAt = getUtcInstantForLocalDate(
+      const { loggedAt, isBackfilled } = await stampLoggedAt(
+        user.id,
         parsed.loggedDate,
         parsed.timezoneOffset
       );
@@ -101,6 +102,7 @@ export async function stageRelogAnalysisAction(
         rawInput,
         entryMode: 'precise',
         loggedAt,
+        isBackfilled,
         attemptId: parsed.attemptId,
       });
 

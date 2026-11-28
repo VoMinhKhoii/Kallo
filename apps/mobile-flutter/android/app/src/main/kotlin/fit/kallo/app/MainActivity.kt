@@ -1,4 +1,4 @@
-package com.nham.nham_mobile
+package fit.kallo.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -198,4 +198,45 @@ describe('toParsedMeal vessel mapping', () => {
       });
     });
   });
+
+  describe('unit and fractional quantity preservation', () => {
+    it('preserves serving unit and fractional quantity for relogged/staged items', () => {
+      const base = pipelineResult();
+      base.mealItems[0].ingredients[0].estimatedGrams = 0.5;
+      base.mealItems[0].ingredients[0].userFacingUnit = 'serving';
+      const half = toParsedMeal(base);
+      expect(half.items[0]).toMatchObject({ unit: 'serving', quantity: 0.5 });
+
+      base.mealItems[0].ingredients[0].estimatedGrams = 1 / 3;
+      const third = toParsedMeal(base);
+      expect(third.items[0]).toMatchObject({
+        unit: 'serving',
+        quantity: 0.333,
+      });
+
+      base.mealItems[0].ingredients[0].estimatedGrams = 1.5;
+      const oneHalf = toParsedMeal(base);
+      expect(oneHalf.items[0]).toMatchObject({
+        unit: 'serving',
+        quantity: 1.5,
+      });
+    });
+
+    it('preserves ml unit and sub-10 g fractional weights without rounding to 0', () => {
+      const base = pipelineResult();
+      base.mealItems[0].ingredients[0].estimatedGrams = 350;
+      base.mealItems[0].ingredients[0].userFacingUnit = 'ml';
+      expect(toParsedMeal(base).items[0]).toMatchObject({
+        unit: 'ml',
+        quantity: 350,
+      });
+
+      base.mealItems[0].ingredients[0].estimatedGrams = 0.25;
+      base.mealItems[0].ingredients[0].userFacingUnit = 'g';
+      expect(toParsedMeal(base).items[0]).toMatchObject({
+        unit: 'g',
+        quantity: 0.25,
+      });
+    });
+  });
 });

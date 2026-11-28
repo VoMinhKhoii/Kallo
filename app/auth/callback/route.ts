@@ -1,7 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
 import { isDuplicateEmailError } from '@/lib/infra/auth/duplicate-email';
-import { localeFromNext, publicUrl } from '@/lib/infra/auth/redirects';
+import {
+  authErrorUrl,
+  localeFromNext,
+  publicUrl,
+} from '@/lib/infra/auth/redirects';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
@@ -14,6 +19,15 @@ import { createClient } from '@/lib/infra/supabase/server';
  */
 export { DUPLICATE_EMAIL_MARKER } from '@/lib/infra/auth/duplicate-email';
 
+// What the provider (through Supabase) sends back: a `code` to exchange, or
+// `error`/`error_description` when it refused. Any of them may be absent, and
+// an empty `code` is a missing one. `next` is checked by `safeNextPath`.
+const CallbackParams = z.object({
+  code: z.string().min(1).nullable().catch(null),
+  error: z.string().nullable(),
+  error_description: z.string().nullable(),
+});
+
 /**
  * Handles the OAuth code-exchange and computes the redirect. Exported as a
  * plain helper so tests can inject a mocked Supabase client without leaking
@@ -25,7 +39,12 @@ export async function handleAuthCallback(
   deps?: { supabase?: Awaited<ReturnType<typeof createClient>> }
 ): Promise<NextResponse> {
   const url = new URL(request.url);
-  const code = url.searchParams.get('code');
+  const params = CallbackParams.parse({
+    code: url.searchParams.get('code'),
+    error: url.searchParams.get('error'),
+    error_description: url.searchParams.get('error_description'),
+  });
+  const { code } = params;
   const next = safeNextPath(url.searchParams.get('next'));
   const locale = localeFromNext(next);
 
@@ -33,18 +52,18 @@ export async function handleAuthCallback(
   // then redirects here with `error`/`error_description` instead of a `code`.
   // Surface that as a friendly "account exists" toast rather than a dead-end.
   if (!code) {
-    const providerError = url.searchParams.get('error');
-    const providerErrorDescription = url.searchParams.get('error_description');
+    const providerError = params.error;
+    const providerErrorDescription = params.error_description;
     if (providerError || providerErrorDescription) {
       const errorCode = isDuplicateEmailError(providerErrorDescription)
         ? 'account_exists'
         : 'oauth_exchange';
       return NextResponse.redirect(
-        publicUrl(request, `/${locale}/?error=${errorCode}`, url.origin)
+        authErrorUrl(request, locale, errorCode, url.origin)
       );
     }
     return NextResponse.redirect(
-      publicUrl(request, `/${locale}/?error=oauth_missing_code`, url.origin)
+      authErrorUrl(request, locale, 'oauth_missing_code', url.origin)
     );
   }
 
@@ -60,7 +79,7 @@ export async function handleAuthCallback(
       // A browser navigation gets a redirect, never a JSON 429 — the same
       // destination a failed exchange already uses.
       return NextResponse.redirect(
-        publicUrl(request, `/${locale}/?error=oauth_exchange`, url.origin)
+        authErrorUrl(request, locale, 'oauth_exchange', url.origin)
       );
     }
   }
@@ -73,7 +92,7 @@ export async function handleAuthCallback(
       ? 'account_exists'
       : 'oauth_exchange';
     return NextResponse.redirect(
-      publicUrl(request, `/${locale}/?error=${errorCode}`, url.origin)
+      authErrorUrl(request, locale, errorCode, url.origin)
     );
   }
 

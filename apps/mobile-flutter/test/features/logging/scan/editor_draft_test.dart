@@ -97,7 +97,12 @@ void main() {
     expect(food.unit, 'serving');
     expect(food.basisAmount, 1);
     expect(food.values['calories'], 16, reason: 'what was typed, per serving');
-    expect(food.servingSize, isNull, reason: 'ml sizes mean nothing now');
+    expect(
+      food.servingSize,
+      1,
+      reason: 'per-serving basis has a 1-serving portion',
+    );
+    expect(food.packageSize, isNull, reason: 'ml pack size means nothing now');
     expect(food.logsByBarcode, isFalse, reason: 'edited: its own numbers');
   });
 

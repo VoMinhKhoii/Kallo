@@ -8,8 +8,17 @@ library;
 
 import '../../../../models/logging/meal.dart';
 import '../../data/logging_models.dart';
+import '../meal_utils.dart';
 import '../portion/portion_anchors.dart';
 import 'meal_edit_draft.dart';
+
+/// Thousandths precision with the [minEditGrams] floor: preserves quarters
+/// (`0.25`, `0.75`) and thirds (`0.333`, `0.667`) without off-by-1 kcal drift,
+/// and keeps tiny parts strictly positive.
+double _roundEditGrams(double value) {
+  final rounded = (value * 1000).round() / 1000;
+  return rounded < minEditGrams ? minEditGrams : rounded;
+}
 
 /// Persist a saved meal's edit: gram overrides keyed by `meal_items` id, and
 /// the ids of the rows to drop. Resolves on success; throws to keep the sheet
@@ -43,10 +52,14 @@ EditDish _persistedDish(PersistedMealItemGroup group) {
       ),
   ];
   final weighed = group.ingredients.where((i) => (i.estimatedGrams ?? 0) > 0);
-  // A drink logged in millilitres reads in ml; anything mixed reads in grams.
+  // Drinks read in ml, serving-only items stay serving (no fake "1 g" row),
+  // anything else reads in grams.
   final unit =
       weighed.isNotEmpty && weighed.every((i) => i.userFacingUnit == 'ml')
           ? 'ml'
+          : weighed.isNotEmpty &&
+              weighed.every((i) => i.userFacingUnit == 'serving')
+          ? 'serving'
           : 'g';
   final logged = parts.fold<double>(
     0,
@@ -90,10 +103,7 @@ EditDish _persistedDish(PersistedMealItemGroup group) {
     for (final p in before.parts) {
       final grams = p.grams;
       if (p.id == null || grams == null || !p.scales) continue;
-      // Tenths, not whole grams: a 2 g pinch of salt at 1.5× is 3 g, and at
-      // 0.25× it must not round away to nothing (the endpoint wants > 0).
-      final rounded = (grams * ratio * 10).round() / 10;
-      final next = rounded < 0.1 ? 0.1 : rounded;
+      final next = _roundEditGrams(grams * ratio);
       if (next == grams) continue;
       edits.add({'id': p.id, 'newGrams': next});
     }
@@ -117,7 +127,12 @@ MealEditDraft draftFromStaged(List<MealItem> items, List<MealItem> original) {
 EditDish _stagedDish(MealItem item, MealItem base) => EditDish(
   key: item.id,
   name: item.name,
-  unit: item.unit,
+  unit:
+      item.unit == 'ml'
+          ? 'ml'
+          : item.unit == 'serving'
+          ? 'serving'
+          : 'g',
   vessel: item.vessel,
   grams: item.quantity,
   parts: [
@@ -147,8 +162,11 @@ MealItem _stagedItem(MealItem item, EditDish? dish, String locale) {
   // staged figure itself. Rounding a fractional one — 12.5 g → 13 g — would
   // leave an override behind that the user had just undone.
   final staged = dish.originalGrams;
-  final grams =
-      (dish.grams - staged).abs() < 1e-6 ? staged : dish.grams.roundToDouble();
+  final rounded =
+      dish.unit == 'serving' || dish.grams < minDishGrams
+          ? _roundEditGrams(dish.grams)
+          : dish.grams.roundToDouble();
+  final grams = (dish.grams - staged).abs() < 1e-6 ? staged : rounded;
   final t = dish.at(grams).totals;
   final vessel = dish.vessel;
   return item.copyWith(

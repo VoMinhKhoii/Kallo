@@ -61,17 +61,40 @@ function toClientVessel(vessel?: PipelineVessel): ClientVessel | undefined {
   return isRenderableVessel(client) ? client : undefined;
 }
 
+function unitForMealItem(
+  ingredients: PipelineResult['mealItems'][number]['ingredients']
+): 'g' | 'ml' | 'serving' {
+  const weighed = ingredients.filter((ing) => ing.estimatedGrams > 0);
+  if (weighed.length === 0) return 'g';
+  if (weighed.every((ing) => ing.userFacingUnit === 'ml')) return 'ml';
+  if (weighed.every((ing) => ing.userFacingUnit === 'serving')) {
+    return 'serving';
+  }
+  return 'g';
+}
+
 export function toParsedMeal(result: PipelineResult): ParsedMeal {
-  const items: MealItem[] = result.mealItems.map((mealItem, idx) => ({
-    id: `item-${idx + 1}`,
-    name: mealItem.name,
-    quantity: Math.round(
-      mealItem.ingredients.reduce((sum, ing) => sum + ing.estimatedGrams, 0)
-    ),
-    unit: 'g',
-    macros: toMacros(mealItem.displayedNutrition),
-    vessel: toClientVessel(mealItem.vessel),
-  }));
+  const items: MealItem[] = result.mealItems.map((mealItem, idx) => {
+    const total = mealItem.ingredients.reduce(
+      (sum, ing) => sum + ing.estimatedGrams,
+      0
+    );
+    const unit = unitForMealItem(mealItem.ingredients);
+    const quantity =
+      unit === 'serving' || total < 10
+        ? total > 0
+          ? Math.max(0.001, Math.round(total * 1000) / 1000)
+          : 0
+        : Math.round(total);
+    return {
+      id: `item-${idx + 1}`,
+      name: mealItem.name,
+      quantity,
+      unit,
+      macros: toMacros(mealItem.displayedNutrition),
+      vessel: toClientVessel(mealItem.vessel),
+    };
+  });
 
   return {
     mealName: result.mealItems.map((item) => item.name).join(', '),

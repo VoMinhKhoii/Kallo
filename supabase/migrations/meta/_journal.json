@@ -701,6 +701,13 @@
       "when": 1795624160283,
       "tag": "20261125162920_add_food_cards_eaten_state",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1795855587580,
+      "tag": "20261128084627_add_meals_is_backfilled",
+      "breakpoints": true
     }
   ]
 }

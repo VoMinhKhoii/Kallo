@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../../../../../shared/logic/display_format.dart';
 import '../../../../../../shared/widgets/sheet/kallo_sheet_sub_header.dart';
 import '../../../../logic/label/nutrients.dart';
 import '../../../../logic/scan/amount.dart';
@@ -54,7 +55,12 @@ class ScanOthersPanel extends StatelessWidget {
           carbs: food.valueFor('carbsGrams', resolved),
           fat: food.valueFor('fatGrams', resolved),
         ),
-        caption: scanAmountCaption(food, amount, resolved),
+        caption: scanAmountCaption(
+          food,
+          amount,
+          resolved,
+          locale: localeOf(context),
+        ),
         rows: [
           for (final d in labelMicronutrientDefinitions)
             if (food.valueFor(d.key, resolved) case final value?)

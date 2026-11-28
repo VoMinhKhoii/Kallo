@@ -1,6 +1,10 @@
 import type { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
-import { publicUrl } from '@/lib/infra/auth/redirects';
+import {
+  authErrorUrl,
+  localeFromNext,
+  publicUrl,
+} from '@/lib/infra/auth/redirects';
 
 const RUN_APP = 'https://kallo-prod-abc123-as.a.run.app';
 
@@ -45,5 +49,33 @@ describe('publicUrl', () => {
         RUN_APP
       ).toString()
     ).toBe('https://kallo.fit/en/logging');
+  });
+});
+
+describe('localeFromNext', () => {
+  it('reads the locale a next path starts with', () => {
+    expect(localeFromNext('/vi/logging')).toBe('vi');
+    expect(localeFromNext('/vi')).toBe('vi');
+    expect(localeFromNext('/en/settings?tab=plan')).toBe('en');
+  });
+
+  it('falls back to the default locale', () => {
+    expect(localeFromNext(null)).toBe('en');
+    expect(localeFromNext('/fr/logging')).toBe('en');
+    expect(localeFromNext('/video')).toBe('en');
+    expect(localeFromNext('/vi?tab=plan')).toBe('en');
+  });
+});
+
+describe('authErrorUrl', () => {
+  it('lands on the locale home with the error code', () => {
+    expect(
+      authErrorUrl(
+        request({ 'x-forwarded-host': 'kallo.fit' }),
+        'vi',
+        'verify_failed',
+        RUN_APP
+      ).toString()
+    ).toBe('https://kallo.fit/vi/?error=verify_failed');
   });
 });

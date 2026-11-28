@@ -144,10 +144,12 @@ Kallo repository.
      a barrel `index.ts` over breaking imports — or escalate.
    - **Verification gate:** after moving, run `bunx tsc --noEmit`,
      `bunx @biomejs/biome@2.4.2 check .`, and `bun run test`; all three
-     must pass before the apply phase ends. If any fails, revert only the
-     files that were renamed in this batch (derived from the current diff,
-     no hardcoded placeholders), then escalate. Example:
-     `git --no-pager diff --name-only --diff-filter=R | xargs -r git restore --staged --worktree --`.
+     must pass before the apply phase ends. If any fails, stop and escalate
+     with the failing output, the files you moved (their renames are still
+     staged) and every file whose imports you edited. Never run
+     `git restore`, `git checkout --` or `git reset` to undo it: the diff
+     also holds the user's own renames and edits, and those commands discard
+     them for good.
 
 4. Always escalate:
    - renames or reorganizations that change public/exported API expectations

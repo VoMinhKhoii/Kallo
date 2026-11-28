@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
+import { AppleSignInButton } from '@/components/auth/apple-sign-in-button';
 import { AuthDialogHeader } from '@/components/auth/auth-dialog-header';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { CodeStep } from '@/components/auth/email-code/code-step';
@@ -117,12 +118,13 @@ export function AuthDialog() {
             <div className="overflow-hidden rounded-2xl border border-kallo-border/40 bg-card shadow-[0_25px_60px_-12px_rgba(44,36,22,0.25),0_0_0_1px_rgba(201,168,124,0.08)]">
               <AuthDialogHeader title={title} subtitle={subtitle} />
 
-              {/* Credentials screen: Google first, then the email field that
-                  asks for a code. One form for signing in and signing up. */}
+              {/* Credentials screen: Apple, Google, then the email field that
+                  asks for a code — the iOS app's order. One form for signing
+                  in and signing up. */}
               {panel === 'auth' && (
                 <>
-                  {/* Google leads — the fastest path */}
                   <div className="space-y-3 px-8 pt-4">
+                    <AppleSignInButton />
                     <GoogleSignInButton />
                     <div className="flex items-center gap-3">
                       <div className="h-px flex-1 bg-kallo-border/60" />

@@ -21,6 +21,8 @@ The Cloudflare Worker in front of the `kallo-prod` Cloud Run service. It runs on
 | `barcode-image` | `/api/v1/barcode/image/{code}` | 100 / min | same |
 
 3. **Runs the meal-reminder cron** (see "Reminder cron" below).
+4. **Serves crawlers cached copies of public pages** (see "Crawler copies"
+   below).
 
 Every refusal carries `Retry-After: 60` and is the exact shape the app itself
 answers with, so no client knows the edge exists.
@@ -32,8 +34,9 @@ the authority. When the binding fails, or a request has no `cf-connecting-ip`,
 the Worker forwards rather than refuses.
 
 Code: `src/worker.ts`; tests: `src/__tests__/worker.test.ts` (run by the root
-`bun run test`). It has no dependencies of its own; `wrangler` is only needed to
-deploy.
+`bun run test`). It has no package dependencies; it imports one file from the
+app, `lib/infra/http/accept.ts` (no imports of its own), which wrangler
+bundles. `wrangler` is only needed to deploy.
 
 ## Deploy
 
@@ -58,6 +61,43 @@ for i in $(seq 1 105); do curl -s -o /dev/null -w '%{http_code}\n' https://kallo
 **Rollback:** `bunx wrangler rollback` returns to the previous version (the
 pre-repo pass-through), or **Workers & Pages → kallo-proxy → Deployments** in
 the dashboard.
+
+## Crawler copies
+
+Cloud Run scales to zero, so a crawler that asks for many pages at once waits
+for an instance to start: Ahrefs measured 2 to 20 s to first byte on
+2026-11-23, against under 1 s when warm. AI assistants fetching a page live
+give up on waits like that.
+
+So a crawler (user agent with `bot`, `crawl`, `spider`, `ChatGPT-User`,
+`Claude-User`, `Perplexity-User` and a few others) asking for a public page
+gets it from Cloudflare's cache, kept for a day. Public pages are the
+prerendered sections: `/{en,vi}/` + `calories`, `tools`, `compare`,
+`alternatives`, `docs`, `data`. The landing page and pricing are left out
+because they are rendered per request. The cache key is the URL alone, so a
+request goes to the origin whenever anything else would change the answer:
+a cookie, an `Authorization` header, a query string, a trailing slash (Next
+redirects it), a host other than `kallo.fit`, Next's navigation headers
+(`RSC`, `Next-Router-*`), or an `Accept` header the origin would answer with
+Markdown (the docs pages negotiate; the Worker uses the same parser,
+`lib/infra/http/accept.ts`). So does any browser (`Sec-Fetch-Mode` or
+`Sec-CH-UA` present), whatever its user agent says. If the origin redirects a
+cached request, the Worker takes `_edge=crawler` out of the `Location`.
+
+People never get these copies. The cached fetch adds `?_edge=crawler` to the
+origin URL, so its cache entry sits at an address no browser request uses.
+That matters after a deploy: a day-old copy can name script files the new
+build no longer has, which a crawler doesn't care about and a person would.
+Only 2xx answers are cached, and Cloudflare drops the locale cookie from the
+cached copy. Nothing needs purging on deploy.
+
+Check it after deploying (run it twice; the second answer should carry an
+`age` header):
+
+```bash
+curl -s -o /dev/null -D - -A 'GPTBot/1.2' https://kallo.fit/en/calories/pho | grep -iE '^(age|cf-cache-status)'
+curl -s -o /dev/null -D - https://kallo.fit/en/calories/pho | grep -i '^age'   # a browser: no age header
+```
 
 ## Reminder cron
 

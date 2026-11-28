@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/lib/domain/meals/logged-at', async () => ({
+  stampLoggedAt: (await import('@/lib/domain/meals/__tests__/logged-at-double'))
+    .clockStamp,
+}));
+
 const { mockDbSelect, mockDbInsert } = vi.hoisted(() => ({
   mockDbSelect: vi.fn(),
   mockDbInsert: vi.fn(),

@@ -15,7 +15,7 @@ const HANDLED = new Set<string>(WAITLIST_STATUSES);
  * Surfaces the outcome of the waitlist confirm link, which redirects to
  * `/{locale}/?waitlist=<status>`.
  *
- * Mirrors `OAuthErrorToast`: fire once, then strip the param via
+ * Mirrors `AuthErrorToast`: fire once, then strip the param via
  * `history.replaceState` (preserving Next's routing state) so a refresh does
  * not replay the toast.
  */

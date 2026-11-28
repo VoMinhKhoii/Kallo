@@ -4,9 +4,9 @@ import { and, eq } from 'drizzle-orm';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
 import { duplicateMealSchema } from '@/lib/api/contracts/meals';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
+import { stampLoggedAt } from '@/lib/domain/meals/logged-at';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
@@ -42,6 +42,15 @@ export async function duplicateMealAction(input: {
   // Premium: "log again" is a Premium-card feature. Gated BEFORE the
   // transaction — no entitlement read may happen inside an open tx (pool max 2).
   await assertFeatureAccess({ userId: user.id }, 'relog');
+  // A re-log is a new eating event "now" on the chosen day, so the slot is
+  // inferred from the new instant rather than copied from the original.
+  // Stamped before the transaction: it reads the day's meals on its own
+  // connection, and the pool has two.
+  const { loggedAt, isBackfilled } = await stampLoggedAt(
+    user.id,
+    parsed.loggedDate,
+    parsed.timezoneOffset
+  );
 
   const response = db.transaction(async (tx) => {
     const [source] = await tx
@@ -67,12 +76,6 @@ export async function duplicateMealAction(input: {
       .from(mealItems)
       .where(eq(mealItems.mealId, source.id));
 
-    // A re-log is a new eating event "now" on the chosen day, so the slot is
-    // inferred from the new instant rather than copied from the original.
-    const loggedAt = getUtcInstantForLocalDate(
-      parsed.loggedDate,
-      parsed.timezoneOffset
-    );
     // Copy the source verbatim into a new meal for this user (shared helper —
     // same materialization the accept-a-share path uses).
     return await copyMealVerbatim(tx, source, sourceItems, {
@@ -80,6 +83,7 @@ export async function duplicateMealAction(input: {
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt,
+      isBackfilled,
     });
   });
   return scopeMealResponseForViewer(user.id, response);

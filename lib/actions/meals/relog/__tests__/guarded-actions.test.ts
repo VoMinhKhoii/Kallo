@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FeatureLockedError } from '@/lib/core/errors/app-error';
 
+vi.mock('@/lib/domain/meals/logged-at', async () => ({
+  stampLoggedAt: (await import('@/lib/domain/meals/__tests__/logged-at-double'))
+    .clockStamp,
+}));
+
 /**
  * The throttle lives on the ACTIONS, not the routes.
  *
