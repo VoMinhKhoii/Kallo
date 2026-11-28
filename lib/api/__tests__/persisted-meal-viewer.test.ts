@@ -33,6 +33,10 @@ vi.mock('@/lib/infra/db/client', () => {
     db: { ...tx, transaction: (work: (tx: unknown) => unknown) => work(tx) },
   };
 });
+vi.mock('@/lib/domain/meals/logged-at', async () => ({
+  stampLoggedAt: (await import('@/lib/domain/meals/__tests__/logged-at-double'))
+    .clockStamp,
+}));
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: async () => ({
     user: { id: 'viewer' },

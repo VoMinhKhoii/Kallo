@@ -5,7 +5,6 @@ import {
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
 import { readJsonBody } from '@/lib/api/auth';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { safeError } from '@/lib/core/errors/safe-error';
 import { serializeError } from '@/lib/core/errors/serialize';
@@ -16,6 +15,7 @@ import {
 import { findCachedRows } from '@/lib/domain/barcode/cache';
 import { barcodeNotCachedError } from '@/lib/domain/barcode/errors';
 import { barcodeRefsOf } from '@/lib/domain/logging/relog/relog';
+import { stampLoggedAt } from '@/lib/domain/meals/logged-at';
 import { getRequestUser } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
@@ -89,6 +89,8 @@ async function assertScannedPicksAreCached(
  */
 export async function validateRequest(request: NextRequest) {
   try {
+    // When the user sent the meal: the clock a fresh log is stamped with.
+    const requestedAt = new Date();
     // Parallelize auth and body parsing — independent operations. The body
     // read is byte-capped so an anonymous caller cannot make the server buffer
     // an arbitrarily large payload while the auth check is in flight, and the
@@ -142,12 +144,22 @@ export async function validateRequest(request: NextRequest) {
         locale: parsed.data.locale,
         // A refine inherits the original meal's instant so the corrected meal
         // keeps its timeline position/slot; a fresh log stamps from the day.
-        loggedAt: parsed.data.inheritLoggedAt
-          ? new Date(parsed.data.inheritLoggedAt)
-          : getUtcInstantForLocalDate(
-              parsed.data.loggedDate,
-              parsed.data.timezoneOffset
-            ),
+        // Called when the analysis is staged, not here: no day read before the
+        // consent, billing and rate-limit checks, and a meal logged on that day
+        // while this one is analyzed still ends up above it. The clock is the
+        // request's, so a meal sent at 23:59 for today stays on today even when
+        // the analysis ends after midnight.
+        resolveLoggedAt: (): Promise<Date> => {
+          const inherited = parsed.data.inheritLoggedAt;
+          return inherited
+            ? Promise.resolve(new Date(inherited))
+            : stampLoggedAt(
+                user.id,
+                parsed.data.loggedDate,
+                parsed.data.timezoneOffset,
+                requestedAt
+              );
+        },
         mode: parsed.data.mode ?? 'precise',
         cheatType: parsed.data.cheatType,
         clarifyAnswer: parsed.data.clarifyAnswer,

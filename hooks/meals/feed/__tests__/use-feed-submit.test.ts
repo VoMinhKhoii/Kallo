@@ -25,6 +25,7 @@ function useSubmitHarness(outcome: AnalyzeOutcome = 'staged') {
       result: null,
       cheatSpec: null,
       analysisId: null,
+      loggedAt: null,
       error: null,
       isAnalyzing: false,
       analyze,

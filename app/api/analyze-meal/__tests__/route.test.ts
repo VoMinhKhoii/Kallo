@@ -3,6 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 
+const mockStampLoggedAt = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/domain/meals/logged-at', async () => {
+  const { clockStamp } = await import(
+    '@/lib/domain/meals/__tests__/logged-at-double'
+  );
+  mockStampLoggedAt.mockImplementation(clockStamp);
+  return { stampLoggedAt: mockStampLoggedAt };
+});
+
 const mockGetUser = vi.fn();
 const mockSelect = vi.fn();
 const mockAnalyzeMeal = vi.fn();
@@ -807,6 +816,7 @@ describe('POST /api/analyze-meal', () => {
   });
 
   it('returns 402 with the feature_locked body when blocked', async () => {
+    mockStampLoggedAt.mockClear();
     mockGetBillingConfig.mockReturnValue({
       enforcementEnabled: true,
     });
@@ -829,6 +839,8 @@ describe('POST /api/analyze-meal', () => {
     expect(json.error.reason).toBe('not_entitled');
     // The global next-intl mock echoes the key it was asked for.
     expect(json.error.message).toBe('featureLockedNotEntitled');
+    // The day is read only when the analysis is staged, never for a refusal.
+    expect(mockStampLoggedAt).not.toHaveBeenCalled();
 
     // Blocked BEFORE the pipeline / any streaming starts.
     expect(mockCreateGeminiClient).not.toHaveBeenCalled();
@@ -921,6 +933,18 @@ describe('POST /api/analyze-meal', () => {
     expect(last.type).toBe('analysis_complete');
     if (last.type === 'analysis_complete') {
       expect(last.analysisId).toBe('analysis-123');
+      // Stamped with the request's clock, not the moment it is staged.
+      expect(mockStampLoggedAt).toHaveBeenCalledWith(
+        'user-1',
+        expect.any(String),
+        expect.any(Number),
+        expect.any(Date)
+      );
+      // The stamp the staged row was written with, so the card shows it.
+      const staged = mockInsertValues.mock.calls.at(-1)?.[0] as {
+        loggedAt: Date;
+      };
+      expect(last.loggedAt).toBe(staged.loggedAt.toISOString());
     }
 
     // Result contains meal data
@@ -1168,6 +1192,27 @@ describe('POST /api/analyze-meal', () => {
     expect(mockLogPipelineEnd).not.toHaveBeenCalled();
   });
 
+  it('stages nothing when the client leaves while the day is read', async () => {
+    const abortController = new AbortController();
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+    mockStampLoggedAt.mockImplementationOnce(async () => {
+      abortController.abort();
+      return new Date('2026-04-06T03:30:00.000Z');
+    });
+
+    const res = await POST(
+      createRequest(mealRequestBody('phở bò'), {}, abortController.signal)
+    );
+    const events = await readSSEEvents(res);
+
+    expect(mockStampLoggedAt).toHaveBeenCalled();
+    expect(events.some((e) => e.type === 'analysis_complete')).toBe(false);
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockPendingAnalyses);
+  });
+
   // -------------------------------------------------------------------------
   // Cheat-meal branch — a slider spec instead of the decomposition pipeline.
   // -------------------------------------------------------------------------
@@ -1218,7 +1263,11 @@ describe('POST /api/analyze-meal', () => {
 
     expect(events).toEqual([
       { type: 'cheat_estimate', spec },
-      { type: 'analysis_complete', analysisId: 'cheat-analysis-1' },
+      {
+        type: 'analysis_complete',
+        analysisId: 'cheat-analysis-1',
+        loggedAt: expect.any(String),
+      },
     ]);
     expect(mockInsertValues).toHaveBeenCalledWith(
       expect.objectContaining({

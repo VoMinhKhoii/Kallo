@@ -17,12 +17,12 @@ import {
   type RelogItemsInput,
   relogItemsSchema,
 } from '@/lib/api/contracts/meals';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import {
   buildRelogRawInput,
   weakestConfidence,
 } from '@/lib/domain/logging/relog/relog';
+import { stampLoggedAt } from '@/lib/domain/meals/logged-at';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { mealItems, meals } from '@/lib/infra/db/schema';
@@ -72,7 +72,8 @@ export async function relogMealItemsAction(
     'relogWrite',
     { kind: 'user', value: user.id },
     async () => {
-      const loggedAt = getUtcInstantForLocalDate(
+      const loggedAt = await stampLoggedAt(
+        user.id,
         parsed.loggedDate,
         parsed.timezoneOffset
       );

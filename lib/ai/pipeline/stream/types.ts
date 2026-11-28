@@ -19,7 +19,11 @@ export interface AnalysisStreamContext {
   userId: string;
   message: string;
   userContext: UserContext;
-  loggedAt: Date;
+  /**
+   * The staged meal's `loggedAt`, resolved right before the row is written so
+   * a past day's latest meal is read then, not before the pipeline ran.
+   */
+  resolveLoggedAt: () => Promise<Date>;
   attemptId?: string;
   geminiConfig: GeminiProviderConfig;
   mode: 'precise' | 'cheat';

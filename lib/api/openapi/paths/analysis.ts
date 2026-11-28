@@ -62,7 +62,15 @@ const STREAM_EVENT: JsonSchema = {
     event(
       'analysis_complete',
       'Terminal. The estimate is staged; pass `analysisId` to `confirmMeal`.',
-      { analysisId: { type: 'string', format: 'uuid' } }
+      {
+        analysisId: { type: 'string', format: 'uuid' },
+        loggedAt: {
+          type: 'string',
+          format: 'date-time',
+          description:
+            'When the meal is stamped. On a past day, after that day’s latest meal.',
+        },
+      }
     ),
     event('error', 'Terminal. The analysis failed mid-stream.', {
       code: { type: 'string' },

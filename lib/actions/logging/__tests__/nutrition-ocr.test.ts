@@ -26,6 +26,11 @@ import {
   scanFoodFromLabel,
 } from '@/lib/domain/scan/food';
 
+vi.mock('@/lib/domain/meals/logged-at', async () => ({
+  stampLoggedAt: (await import('@/lib/domain/meals/__tests__/logged-at-double'))
+    .clockStamp,
+}));
+
 vi.mock('server-only', () => ({}));
 
 vi.mock('@/lib/infra/db/client', () => ({
