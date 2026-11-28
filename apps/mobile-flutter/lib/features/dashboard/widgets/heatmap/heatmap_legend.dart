@@ -74,7 +74,12 @@ class _Ramp extends StatelessWidget {
           const SizedBox(width: 3),
         ],
         const SizedBox(width: KalloSpacing.sp1),
-        Text('$t.onTarget'.tr(), style: dashMeta(color: kInkMuted)),
+        // The ramp takes a line of its own where it is too wide to share
+        // one; where even that is too narrow (Vietnamese at large text on
+        // the closed Duo), its last name wraps.
+        Flexible(
+          child: Text('$t.onTarget'.tr(), style: dashMeta(color: kInkMuted)),
+        ),
       ],
     );
   }

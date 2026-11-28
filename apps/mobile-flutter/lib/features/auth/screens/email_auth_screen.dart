@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -80,26 +82,45 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       child: CustomScrollView(
         key: _taskKey,
         slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                kAuthInset,
-                KalloSpacing.sp5 +
-                    (WindowLayout.of(context).foldAcross ? 2 * _foldNudge : 0),
-                kAuthInset,
-                KalloSpacing.sp5,
-              ),
-              child: Align(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child:
-                      showCode
-                          ? EmailCodeView(provider: _provider, onNotice: _toast)
-                          : _form(state),
+          // The 420pt cap is side padding on the sliver, not a box inside
+          // the fill. The fill takes the form's height at the width it is
+          // offered, and a form capped inside it was measured at the window's
+          // width, where a sentence that wraps at 420pt still fits on one
+          // line: the Vietnamese terms line came out a line short on a phone
+          // on its side, and overflowed.
+          SliverLayoutBuilder(
+            builder:
+                (context, sliver) => SliverPadding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: math.max(
+                      0,
+                      (sliver.crossAxisExtent - 420 - 2 * kAuthInset) / 2,
+                    ),
+                  ),
+                  sliver: SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        kAuthInset,
+                        KalloSpacing.sp5 +
+                            (WindowLayout.of(context).foldAcross
+                                ? 2 * _foldNudge
+                                : 0),
+                        kAuthInset,
+                        KalloSpacing.sp5,
+                      ),
+                      child: Align(
+                        child:
+                            showCode
+                                ? EmailCodeView(
+                                  provider: _provider,
+                                  onNotice: _toast,
+                                )
+                                : _form(state),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
           ),
         ],
       ),
