@@ -194,7 +194,9 @@ the framed shots and the classic iPhone's. The simulator
 has two displays, so a screenshot needs `--display=1` (outer) or `--display=3` (inner).
 No command opens or folds the simulated phone, so the job clicks Device Hub's pose
 buttons; if Apple moves them, the `desktop-*.png` files in the artifact show where they
-went. Device Hub's own screenshot button saves the display without the frame, so the
+went. Device Hub now and then drops a rotate click, so after every fold or turn the
+job reads the window's size from the app and clicks rotate again when the shape is wrong;
+a pose that still will not turn fails the job. Device Hub's own screenshot button saves the display without the frame, so the
 framed picture is a crop of the desktop: the job sets the desktop to 1920x1080, puts
 Device Hub in full screen and zooms in first, which draws the device about 900 points
 wide.

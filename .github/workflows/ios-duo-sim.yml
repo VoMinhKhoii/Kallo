@@ -149,6 +149,28 @@ jobs:
             f="$(xcrun simctl get_app_container "$UDID" com.khoivo.nham data 2>/dev/null)/tmp/duo_metrics.txt"
             [ -f "$f" ] && { grep DUO_METRICS "$f" | tail -1; grep DUO_ROUTE "$f" | tail -1; } | tr '\n' ' '
           }
+          # shape <wide|tall>: turn until the app's window has that shape.
+          # Device Hub now and then drops a rotate click (twice in four
+          # jobs, both times the turn into the last pose), and the tour
+          # then photographed the pose before it under the next one's
+          # name. One lost click leaves the window the other shape, and
+          # one more click is then the turn that was meant.
+          shape() {
+            for attempt in 1 2 3; do
+              data=$(xcrun simctl get_app_container "$UDID" com.khoivo.nham data 2>/dev/null)
+              mkdir -p "$data/tmp"; : > "$data/tmp/duo_metrics.txt"
+              xcrun simctl launch --terminate-running-process "$UDID" com.khoivo.nham > /dev/null 2>&1
+              sleep 8
+              size=$(grep -o 'DUO_METRICS size=[0-9.]*x[0-9.]*' "$data/tmp/duo_metrics.txt" | tail -1 | sed 's/.*size=//')
+              # No report yet: nothing to judge by, so leave the pose alone.
+              [ -n "$size" ] || { echo "shape $1: the app reported no window"; return 0; }
+              is=$(echo "$size" | awk -Fx '{ print ($2 > $1) ? "tall" : "wide" }')
+              [ "$is" = "$1" ] && return 0
+              echo "window is $size, wanted $1: turning again (attempt $attempt)"
+              turn
+            done
+            echo "::error::the simulated device would not turn $1"; BAD=1
+          }
           # tour <pose name> <display id>
           tour() {
             mkdir -p "out/$1/framed"
@@ -168,19 +190,23 @@ jobs:
             done
           }
           xcrun simctl launch "$UDID" com.khoivo.nham > /dev/null 2>&1; sleep 8
-          fold closed;  tour closed 1
-          turn;         tour closed-turn1 1
-          turn; turn;   tour closed-turn3 1
+          BAD=
+          fold closed;  shape tall; tour closed 1
+          turn;         shape wide; tour closed-turn1 1
+          turn; turn;   shape wide; tour closed-turn3 1
           turn
-          fold open;    tour open 3
-          turn;         tour open-turn1 3
+          fold open;    shape wide; tour open 3
+          turn;         shape tall; tour open-turn1 3
           turn; turn; turn
-          fold partly;  tour partly-open 3
-          turn;         tour partly-open-turn1 3
+          fold partly;  shape wide; tour partly-open 3
+          turn;         shape tall; tour partly-open-turn1 3
           turn; turn; turn
           fold closed
           grep -o '^[a-z0-9-]* \|DUO_METRICS [^D]*' out/metrics.txt | paste - - | sort -u > out/metrics-by-pose.txt
           cat out/metrics-by-pose.txt
+          # The pictures are uploaded either way; a pose that would not turn
+          # fails the job, so nobody takes them for a full set.
+          [ -z "$BAD" ]
 
       # The same screens on a classic iPhone, built with the same SDK: the Duo
       # work must leave an ordinary phone looking as it did.
