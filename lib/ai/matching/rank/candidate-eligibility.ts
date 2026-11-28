@@ -4,6 +4,7 @@ const VI_WORD_EDGE = '[\\p{L}\\p{M}\\p{N}]';
 const viWord = (body: string) =>
   new RegExp(`(?<!${VI_WORD_EDGE})${body}(?!${VI_WORD_EDGE})`, 'iu');
 const BARE_CHICKEN = viWord('gà');
+const ENGLISH_CHICKEN = /\bchicken\b/iu;
 /**
  * Birds whose Vietnamese name starts with `gà` but are not chicken. Each
  * species pairs its Vietnamese and English names, so a query in one language
@@ -19,7 +20,7 @@ const NON_CHICKEN_SPECIES: RegExp[][] = [
 /** A row that names chicken or one of the birds above, in either language. */
 const ANY_CHICKEN_LIKE_BIRD = [
   BARE_CHICKEN,
-  /\bchicken\b/iu,
+  ENGLISH_CHICKEN,
   ...NON_CHICKEN_SPECIES.flat(),
 ];
 const SKIN_INTENT = [viWord('da'), /\bskin\b/iu];
@@ -43,6 +44,15 @@ function matchesAny(text: string, patterns: RegExp[]): boolean {
 
 function speciesNamed(text: string): RegExp[][] {
   return NON_CHICKEN_SPECIES.filter((names) => matchesAny(text, names));
+}
+
+/** Chicken named on its own, apart from a species name (`gà` in `gà tây`). */
+function namesPlainChicken(text: string): boolean {
+  const rest = NON_CHICKEN_SPECIES.flat().reduce(
+    (left, name) => left.replace(new RegExp(name.source, 'giu'), ' '),
+    text
+  );
+  return BARE_CHICKEN.test(rest) || ENGLISH_CHICKEN.test(rest);
 }
 
 /** The row names the guards read. */
@@ -82,7 +92,15 @@ export function isCandidateEligibleForIngredient(
     const namesWanted = wanted.some((names) =>
       matchesAny(candidateText, names)
     );
-    if (!namesWanted && matchesAny(candidateText, ANY_CHICKEN_LIKE_BIRD)) {
+    // Call 1 may name chicken beside the species as a stand-in ("Turkey
+    // broth" written as "Chicken broth"): plain chicken rows then stay.
+    const chickenAsked =
+      namesPlainChicken(query) && speciesNamed(candidateText).length === 0;
+    if (
+      !namesWanted &&
+      !chickenAsked &&
+      matchesAny(candidateText, ANY_CHICKEN_LIKE_BIRD)
+    ) {
       return false;
     }
   } else if (

@@ -87,6 +87,19 @@ describe('isCandidateEligibleForIngredient: species', () => {
     expect(kept('turkey stuffing', [STUFFING, CHICKEN])).toEqual(['stuffing']);
   });
 
+  // Call 1 writes a stand-in as the canonical name ("Turkey broth" becomes
+  // "Chicken broth"); the guard reads both names together.
+  it('keeps chicken rows when the query also names chicken itself', () => {
+    expect(kept('Turkey broth Chicken broth', [CHICKEN, PHEASANT])).toEqual([
+      'chicken',
+    ]);
+    expect(kept('Nước dùng gà tây Nước dùng gà', [CHICKEN, PHEASANT])).toEqual([
+      'chicken',
+    ]);
+    // "gà" inside "gà tây" is the turkey's own name, not a second bird.
+    expect(kept('Thịt gà tây Gà tây', [CHICKEN, TURKEY])).toEqual(['turkey']);
+  });
+
   it('pairs every species across languages', () => {
     const viOnly = BIRDS.map((r) => ({ ...r, name_en: '' }));
     const enOnly = BIRDS.map((r) => ({ ...r, name_primary: '' }));
