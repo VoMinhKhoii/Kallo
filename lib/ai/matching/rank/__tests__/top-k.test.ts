@@ -298,6 +298,9 @@ describe('buildMatchTopK', () => {
     expect(ids('grouse breast')).toEqual(['grouse']);
     expect(ids('ức gà gô')).toEqual(['grouse']);
     expect(ids('guinea fowl')).toEqual(['guinea-fowl']);
+    expect(ids('roast guineafowl')).toEqual(['guinea-fowl']);
+    expect(ids('guinea-hen')).toEqual(['guinea-fowl']);
+    expect(ids('junglefowl')).toEqual(['jungle-fowl']);
     expect(ids('gà sao')).toEqual(['guinea-fowl']);
     expect(ids('thịt gà')).toEqual([]);
   });
@@ -399,6 +402,7 @@ describe('sourceLimitForIngredient', () => {
     expect(sourceLimitForIngredient('gà rán', 3)).toBe(8);
     expect(sourceLimitForIngredient('đùi gà tây', 3)).toBe(8);
     expect(sourceLimitForIngredient('turkey thigh', 3)).toBe(8);
+    expect(sourceLimitForIngredient('roast guineafowl', 3)).toBe(8);
     expect(sourceLimitForIngredient('đùi gà'.normalize('NFD'), 3)).toBe(8);
     expect(sourceLimitForIngredient('chicken thigh', 3)).toBe(3);
     expect(sourceLimitForIngredient('thịt bò', 3)).toBe(3);

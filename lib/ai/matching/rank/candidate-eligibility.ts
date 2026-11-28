@@ -15,9 +15,9 @@ const viWord = (body: string) =>
 const NON_CHICKEN_SPECIES: RegExp[][] = [
   [viWord('gà\\s+tây'), /\bturkey\b/iu],
   [viWord('gà\\s+lôi'), viWord('chim\\s+trĩ'), /\bpheasant\b/iu],
-  [viWord('gà\\s+rừng'), /\bjungle\s*fowl\b/iu],
+  [viWord('gà\\s+rừng'), /\bjungle[\s-]*fowl\b/iu],
   [viWord('gà\\s+gô'), /\bgrouse\b/iu],
-  [viWord('gà\\s+sao'), /\bguinea\s+(?:fowl|hen)\b/iu],
+  [viWord('gà\\s+sao'), /\bguinea[\s-]*(?:fowl|hen)\b/iu],
 ];
 /** A row that names chicken or one of the birds above, in either language. */
 const ANY_CHICKEN_LIKE_BIRD = [
