@@ -4,6 +4,8 @@ import { renderDocMarkdown } from '@/lib/domain/docs/markdown/render';
 import { DOCS_SLUGS } from '@/lib/domain/docs/navigation';
 import { renderLandingMarkdown } from '@/lib/seo/markdown/landing';
 import { renderNotFoundMarkdown } from '@/lib/seo/markdown/not-found';
+import { renderSitePageMarkdown } from '@/lib/seo/markdown/site-pages';
+import { sitePagePaths } from '@/lib/seo/public-pages';
 
 /**
  * Every `text/markdown` representation the site serves.
@@ -30,6 +32,10 @@ export function generateStaticParams() {
     ...DOCS_SLUGS.map((docSlug) => ({
       locale,
       slug: ['docs', ...docSlug.split('/')],
+    })),
+    ...sitePagePaths(locale).map((path) => ({
+      locale,
+      slug: path.slice(1).split('/'),
     })),
   ]);
 }
@@ -78,6 +84,8 @@ async function renderPath(
     const body = await renderDocMarkdown(typedLocale, rest.join('/'));
     if (body) return { body, status: 200 };
   }
+  const page = await renderSitePageMarkdown(typedLocale, `/${slug.join('/')}`);
+  if (page) return { body: page, status: 200 };
 
   return { body: renderNotFoundMarkdown(typedLocale), status: 404 };
 }

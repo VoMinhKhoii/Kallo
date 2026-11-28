@@ -141,14 +141,14 @@ export const APP_ROUTE_PATTERNS = [
   '/llms.txt',
   '/md/[locale]/[...slug]',
   '/openapi.json',
+  '/robots.txt',
 ] as const;
 
 /**
- * File-convention metadata routes (`robots.ts`, `sitemap.ts`, `manifest.ts`,
+ * File-convention metadata routes (`sitemap.ts`, `manifest.ts`,
  * `favicon.ico`) — served at fixed paths with no page or route file.
  */
 export const APP_METADATA_PATHS = [
-  '/robots.txt',
   '/sitemap.xml',
   '/manifest.webmanifest',
   '/favicon.ico',

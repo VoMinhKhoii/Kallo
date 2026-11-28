@@ -17,6 +17,7 @@ import {
   isFoodLocale,
 } from '@/lib/seo/food-pages/slugs';
 import { isKnownNonMarkdownPath } from '@/lib/seo/private-paths';
+import { sitePage } from '@/lib/seo/public-pages';
 import { isToolSlug, TOOLS_PREFIX } from '@/lib/seo/tools/slugs';
 
 /**
@@ -64,12 +65,14 @@ function docSlug(rest: string): string | null {
 
 /**
  * The markdown route for a locale-relative path, or null when that path has no
- * markdown representation.
+ * markdown representation. The public pages outside the docs all have one
+ * (`sitePage`, slug lists only, so the proxy never loads their copy).
  */
 function markdownTarget(locale: string, rest: string): string | null {
   if (rest === '') return `${MD_ROOT}/${locale}/index`;
   const slug = docSlug(rest);
-  return slug ? `${MD_ROOT}/${locale}/docs/${slug}` : null;
+  if (slug) return `${MD_ROOT}/${locale}/docs/${slug}`;
+  return sitePage(locale, rest) ? `${MD_ROOT}/${locale}${rest}` : null;
 }
 
 function notFoundTarget(locale: string): string {

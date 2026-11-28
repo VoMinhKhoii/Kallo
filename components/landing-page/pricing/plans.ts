@@ -22,9 +22,7 @@
  * list below is drawn from. "Visual edit" is the one entry with no key of its
  * own: the portion picker it names is only reachable from the AI-analysis and
  * relog flows, so gating either one already puts it behind the paywall and a
- * dedicated gate would only be a second lock on the same door. The section
- * carries a beta note saying prices apply when beta ends, so nothing here
- * claims a paywall that is live.
+ * dedicated gate would only be a second lock on the same door.
  */
 export type PlanId = 'free' | 'premium' | 'lifetime';
 
@@ -33,8 +31,8 @@ export type PlanId = 'free' | 'premium' | 'lifetime';
  *
  * Lifetime is held back for now — it keeps its copy, its features and its place
  * in the type, so putting it back is adding one string to this array. Removing
- * the rest would throw away a tier that is only paused, and the section already
- * says prices apply when beta ends.
+ * the rest would throw away a tier that is only paused. The pricing Markdown
+ * (`lib/seo/markdown/pricing.ts`) lists the same plans and needs the same edit.
  */
 export const PLAN_IDS = ['free', 'premium'] as const;
 

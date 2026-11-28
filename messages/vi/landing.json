@@ -22,7 +22,7 @@
       }
     },
     "subtitle": "Kể cho Kallo nghe bạn vừa ăn gì, như khi kể với bạn bè. Kallo tách thành từng nguyên liệu thật rồi tính calo và macro từ dữ liệu đáng tin cậy.",
-    "beta": "Miễn phí trong thời gian thử nghiệm · làm tại Việt Nam, dùng được cho mọi căn bếp",
+    "offer": "Tặng 30 ngày Premium đầu tiên · làm tại Việt Nam, dùng được cho mọi căn bếp",
     "total": "Tổng",
     "toggleDetails": "Mở/đóng chi tiết",
     "meals": {
@@ -199,7 +199,7 @@
       "payOnce": "Trả một lần thay vì thuê bao",
       "futureUpdates": "Bao gồm mọi bản cập nhật sau này"
     },
-    "betaNote": "Kallo miễn phí trong thời gian thử nghiệm. Mức giá này áp dụng khi kết thúc thử nghiệm, và chúng tôi sẽ báo trước.",
+    "offerNote": "Tài khoản mới được tặng 30 ngày Premium đầu tiên.",
     "period": {
       "monthly": "Hàng tháng",
       "yearly": "Hàng năm"

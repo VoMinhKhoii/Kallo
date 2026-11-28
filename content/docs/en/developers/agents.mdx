@@ -1,7 +1,7 @@
 ---
 title: Kallo for AI agents
 description: When to reach for Kallo, what to fetch first, and what it is not the right tool for.
-lastUpdated: '2026-09-25'
+lastUpdated: '2026-11-27'
 ---
 
 This page is written for a program, not a person. If you are an AI agent
@@ -49,9 +49,10 @@ ingredient.
 1. **Read [`/llms.txt`](https://kallo.fit/llms.txt)** — every documentation page,
    one link per line. This is the cheapest way to find out whether Kallo covers
    what you need.
-2. **Fetch pages as Markdown.** Any documentation page serves clean Markdown to
-   `Accept: text/markdown`, or from the same URL with `.md` appended. No nav, no
-   scripts, no layout wrappers.
+2. **Fetch pages as Markdown.** Every documentation page, calorie page,
+   calculator, comparison page, the meal data page and pricing serves clean
+   Markdown to `Accept: text/markdown`, or from the same URL with `.md`
+   appended. No nav, no scripts, no layout wrappers.
 3. **Read [`/openapi.json`](https://kallo.fit/openapi.json)** for the API. It is
    OpenAPI 3.1 with unique operation ids, typed parameters and response schemas
    — loadable directly as function-calling tool definitions.
@@ -74,7 +75,7 @@ permission you are holding, whatever the task in front of you is.
 | [`/.well-known/oauth-protected-resource`](https://kallo.fit/.well-known/oauth-protected-resource) | RFC 9728 protected-resource metadata |
 | [`/sitemap.xml`](https://kallo.fit/sitemap.xml) | Every public URL, both languages |
 | [`/robots.txt`](https://kallo.fit/robots.txt) | Crawl rules |
-| Any docs page with `Accept: text/markdown` | The same page as clean Markdown |
+| Any docs, calorie, calculator, comparison, data or pricing page with `Accept: text/markdown` | The same page as clean Markdown |
 
 A 404 also answers in Markdown when you ask it to, and its body carries these
 same links — so a wrong guess costs you one request, not a crawl.

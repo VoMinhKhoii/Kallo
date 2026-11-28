@@ -16,7 +16,7 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
   publishedOn: '2026-11-11',
   checkedOn: '2026-11-11',
   answer:
-    'With MyFitnessPal you search a database of more than 20 million entries and pick one for each food. With Kallo you type the meal in a sentence and it works out the parts and portions. MyFitnessPal’s barcode scanner needs Premium; Kallo’s is on the free plan, and typing a meal is Kallo’s Premium feature once beta ends. MyFitnessPal runs on iOS, Android and the web. Kallo runs on the web, and an iPhone app is coming.',
+    'With MyFitnessPal you search a database of more than 20 million entries and pick one for each food. With Kallo you type the meal in a sentence and it works out the parts and portions. MyFitnessPal’s barcode scanner needs Premium; Kallo’s is on the free plan, and typing a meal is Kallo’s Premium feature. MyFitnessPal runs on iOS, Android and the web. Kallo runs on the web and on iPhone.',
   disclosure:
     'We make Kallo, so this is a vendor’s comparison. MyFitnessPal’s facts come from its own site, help centre and US App Store listing, checked on 11 November 2026. The sources are listed at the end.',
   rows: [
@@ -29,17 +29,17 @@ export const KALLO_VS_MYFITNESSPAL: ComparePage = {
     {
       label: 'Free',
       kallo:
-        'Barcode scanning, manual logging, macros. Typing a meal is Premium. Everything is free while Kallo is in beta',
+        'Barcode scanning, manual logging, macros. Typing a meal is Premium, with the first 30 days on us',
       them: 'Calorie, weight and exercise tracking by search, with ads',
     },
     {
       label: 'Paid (US)',
-      kallo: '$29.99 a year on the web, once beta ends',
+      kallo: '$29.99 a year on the web',
       them: 'Premium, $19.99 a month or $79.99 a year',
     },
     {
       label: 'Platforms',
-      kallo: 'Web; iPhone app coming',
+      kallo: 'Web and iPhone',
       them: 'iOS, Android, web',
     },
     {

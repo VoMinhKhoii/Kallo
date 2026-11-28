@@ -1,7 +1,7 @@
 ---
 title: Kallo cho tác nhân AI
 description: Khi nào nên dùng Kallo, nên đọc gì trước, và Kallo không phải công cụ đúng cho việc gì.
-lastUpdated: '2026-09-25'
+lastUpdated: '2026-11-27'
 ---
 
 Trang này viết cho một chương trình, không phải cho một người. Nếu bạn là một tác
@@ -48,7 +48,8 @@ dinh dưỡng**, và phần khó nằm ở khẩu phần chứ không phải ở
 1. **Đọc [`/llms.txt`](https://kallo.fit/llms.txt)** — mọi trang tài liệu, mỗi
    dòng một liên kết. Đây là cách rẻ nhất để biết Kallo có bao phủ thứ bạn cần hay
    không.
-2. **Lấy trang dưới dạng Markdown.** Mọi trang tài liệu đều trả Markdown sạch cho
+2. **Lấy trang dưới dạng Markdown.** Mọi trang tài liệu, trang calo món ăn, công cụ
+   tính, trang so sánh, trang dữ liệu bữa ăn và bảng giá đều trả Markdown sạch cho
    `Accept: text/markdown`, hoặc từ chính URL đó thêm đuôi `.md`. Không nav, không
    script, không lớp bọc bố cục.
 3. **Đọc [`/openapi.json`](https://kallo.fit/openapi.json)** cho phần API. Đó là
@@ -73,7 +74,7 @@ mắt là gì.
 | [`/.well-known/oauth-protected-resource`](https://kallo.fit/.well-known/oauth-protected-resource) | Metadata tài nguyên được bảo vệ theo RFC 9728 |
 | [`/sitemap.xml`](https://kallo.fit/sitemap.xml) | Mọi URL công khai, cả hai ngôn ngữ |
 | [`/robots.txt`](https://kallo.fit/robots.txt) | Quy tắc thu thập dữ liệu |
-| Bất kỳ trang tài liệu nào với `Accept: text/markdown` | Chính trang đó dưới dạng Markdown sạch |
+| Bất kỳ trang tài liệu, calo, công cụ tính, so sánh, dữ liệu hay bảng giá nào với `Accept: text/markdown` | Chính trang đó dưới dạng Markdown sạch |
 
 Trang 404 cũng trả lời bằng Markdown khi bạn yêu cầu, và thân của nó mang đúng
 những liên kết trên — nên đoán sai một URL chỉ tốn một request, không phải cả một

@@ -111,12 +111,54 @@ describe('negotiate', () => {
       '/vi/circle/friends',
       '/en/invite/abc',
       '/en/reset-password',
+    ]) {
+      expect(ask(path)).toEqual({ kind: 'pass' });
+    }
+  });
+
+  it('serves the public pages outside the docs as markdown', () => {
+    for (const path of [
+      '/en/pricing',
+      '/vi/pricing',
+      '/en/calories',
       '/en/calories/chicken-burrito',
+      '/vi/calories/pho-bo',
       '/en/tools',
       '/vi/tools/tdee-calculator',
       '/en/data/meal-calorie-variation',
+      '/en/compare/kallo-vs-cal-ai',
+      '/en/alternatives/myfitnesspal',
     ]) {
-      expect(ask(path)).toEqual({ kind: 'pass' });
+      const [, locale, ...rest] = path.split('/');
+      const rewriteTo = `/md/${locale}/${rest.join('/')}`;
+      expect(ask(path), path).toEqual({ kind: 'markdown', rewriteTo });
+      expect(ask(`${path}.md`, null), `${path}.md`).toEqual({
+        kind: 'markdown',
+        rewriteTo,
+      });
+      expect(markdownAlternatePath(path), path).toBe(`${path}.md`);
+    }
+  });
+
+  it('answers a mistyped page under those folders with the markdown 404', () => {
+    for (const path of [
+      '/en/calories/no-such-dish',
+      // Each locale has its own dishes.
+      '/en/calories/pho-bo',
+      '/en/tools/no-such-tool',
+      '/en/data/meal-calorie-variation/extra',
+      // The comparison and alternatives pages are English only.
+      '/vi/compare/kallo-vs-cal-ai',
+      '/vi/alternatives/myfitnesspal',
+      '/en/compare',
+      '/en/pricing/annual',
+    ]) {
+      const [, locale] = path.split('/');
+      expect(ask(path), path).toEqual({
+        kind: 'markdown-not-found',
+        rewriteTo: `/md/${locale}/not-found`,
+      });
+      expect(markdownAlternatePath(path), path).toBeNull();
     }
   });
 
