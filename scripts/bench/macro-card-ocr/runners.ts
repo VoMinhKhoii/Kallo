@@ -67,21 +67,44 @@ export async function prepareFixtureImage(
 }
 
 export function parseModelSpec(token: string): ModelSpec {
-  const [rawModel, rawThinking] = token.trim().split(':');
-  const model = rawModel.trim();
-  const provider = model.startsWith('claude-') ? 'claude' : 'gemini';
-  if (provider === 'gemini' && rawThinking === 'off') {
+  const trimmed = token.trim();
+  const parts = trimmed.split(':');
+  if (parts.length > 2) {
     throw new Error(
-      `Unsupported Gemini thinking level ":off" in "${token.trim()}" (use ":minimal" or ":low")`
+      `Invalid model spec "${trimmed}" (expected "model" or "model:thinking")`
     );
   }
-  const thinking =
-    rawThinking === 'minimal' || rawThinking === 'off' || rawThinking === 'low'
-      ? rawThinking
-      : provider === 'gemini'
-        ? 'low'
-        : 'off';
-  return { id: token.trim(), provider, model, thinking };
+  const model = parts[0]?.trim() ?? '';
+  if (!model) {
+    throw new Error(`Empty model name in "${trimmed}"`);
+  }
+  const rawThinking = parts[1]?.trim();
+  const provider = model.startsWith('claude-') ? 'claude' : 'gemini';
+
+  if (provider === 'claude') {
+    if (rawThinking !== undefined && rawThinking !== 'off') {
+      throw new Error(
+        `Unsupported Claude thinking level ":${rawThinking}" in "${trimmed}" (omit suffix or use ":off")`
+      );
+    }
+    return { id: trimmed, provider, model, thinking: 'off' };
+  }
+
+  if (
+    rawThinking !== undefined &&
+    rawThinking !== 'low' &&
+    rawThinking !== 'minimal'
+  ) {
+    throw new Error(
+      `Unsupported Gemini thinking level ":${rawThinking}" in "${trimmed}" (use ":minimal" or ":low")`
+    );
+  }
+  return {
+    id: trimmed,
+    provider,
+    model,
+    thinking: rawThinking ?? 'low',
+  };
 }
 
 export interface RunnerOutcome {

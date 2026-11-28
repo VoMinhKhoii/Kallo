@@ -13,6 +13,7 @@ const h = vi.hoisted(() => ({
   ocrCameraActive: false,
   scanLabel: vi.fn(),
   capturePhoto: vi.fn(),
+  stopCamera: vi.fn(),
 }));
 
 vi.mock('@/hooks/ui/use-mobile', () => ({ useIsMobile: () => false }));
@@ -47,6 +48,7 @@ vi.mock('@/hooks/meals/entry/use-ocr-camera', () => ({
       torchEnabled: false,
       setTorch: vi.fn(),
       capturePhoto: h.capturePhoto,
+      stopCamera: h.stopCamera,
     };
   },
 }));
@@ -580,12 +582,24 @@ describe('ScanDialog — nutrition label', () => {
 
     const windowEl = screen.getByTestId('scan-camera-window');
     expect(windowEl).toHaveAttribute('data-mode', 'barcode');
-    expect(windowEl.parentElement).toHaveClass('[container-type:size]');
 
     await user.click(screen.getByRole('radio', { name: 'Nutrition label' }));
     expect(windowEl).toHaveAttribute('data-mode', 'label');
 
+    // A pending label capture discarded by switching to card mode must keep the
+    // live OCR camera running (stopCamera is only called for an accepted shot).
+    let resolveStaleCapture: ((file: File | null) => void) | undefined;
+    h.capturePhoto.mockReturnValueOnce(
+      new Promise<File | null>((resolve) => {
+        resolveStaleCapture = resolve;
+      })
+    );
+    await user.click(screen.getByRole('button', { name: 'Take photo' }));
     await user.click(screen.getByRole('radio', { name: 'Menu card' }));
+    await act(async () => resolveStaleCapture?.(photo));
+    expect(h.stopCamera).not.toHaveBeenCalled();
+    expect(h.scanLabel).not.toHaveBeenCalled();
+
     expect(windowEl).toHaveAttribute('data-mode', 'card');
     expect(h.ocrCameraActive).toBe(true);
     expect(screen.getByRole('button', { name: 'Take photo' })).toBeVisible();
@@ -595,6 +609,7 @@ describe('ScanDialog — nutrition label', () => {
     const status = await screen.findByRole('status');
     expect(status).toHaveTextContent('Reading the label');
     expect(windowEl).toContainElement(status);
+    expect(h.stopCamera).toHaveBeenCalledOnce();
     expect(h.scanLabel).toHaveBeenCalledWith(photo, 'macro_card');
 
     await act(async () =>

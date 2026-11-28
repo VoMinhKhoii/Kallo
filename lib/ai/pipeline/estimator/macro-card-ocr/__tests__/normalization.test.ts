@@ -243,4 +243,30 @@ describe('normalizeMacroCardOcr', () => {
     });
     expect(bowl.servingSize).toEqual({ value: 300, unit: 'g' });
   });
+
+  it('accepts leading-dot/comma decimals (.5 and ,5) and derives calories on macro-only cards', () => {
+    const dotDecimal = normalizeMacroCardOcr({
+      cardDetected: true,
+      itemName: 'Lean Chicken Bowl',
+      evidence: 'P 44g C 44g F .5g',
+      calories: null,
+      proteinGrams: { value: '44', unit: 'g' },
+      carbsGrams: { value: '44', unit: 'g' },
+      fatGrams: { value: '.5', unit: 'g' },
+      confidence: 'high',
+    });
+    expect(dotDecimal.basis).toBe('per_serving');
+    if (dotDecimal.basis !== 'per_serving') return;
+    // 44*4 + 44*4 + 0.5*9 = 356.5 -> 357 kcal
+    expect(dotDecimal.perServing.calories).toBe(357);
+    expect(dotDecimal.perServing.fatGrams).toBe(0.5);
+
+    const commaDecimal = normalizeMacroCardOcr({
+      ...validRaw,
+      fatGrams: { value: ',5', unit: 'g' },
+    });
+    if (commaDecimal.basis === 'per_serving') {
+      expect(commaDecimal.perServing.fatGrams).toBe(0.5);
+    }
+  });
 });

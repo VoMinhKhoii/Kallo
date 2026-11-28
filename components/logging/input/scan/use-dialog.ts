@@ -144,6 +144,7 @@ export function useScanDialog({
       const session = label.session();
       const file = await labelCamera.capturePhoto();
       if (file && label.isCurrent(session)) {
+        labelCamera.stopCamera();
         label.read(file, mode === 'card' ? 'macro_card' : 'label');
       }
     },

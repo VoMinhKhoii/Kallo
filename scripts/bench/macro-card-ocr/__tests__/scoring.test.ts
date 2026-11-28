@@ -252,5 +252,18 @@ describe('macro-card OCR benchmark scoring', () => {
     ).toContain('| n/a |');
 
     expect(() => parseModelSpec('gemini-3.1-flash-lite:off')).toThrow(/off/);
+    expect(() => parseModelSpec('gemini-3.1-flash-lite:high')).toThrow(/high/);
+    expect(() => parseModelSpec('gemini-3.1-flash-lite:low:extra')).toThrow(
+      /Invalid model spec/
+    );
+    expect(() => parseModelSpec('claude-haiku-5-5:low')).toThrow(/low/);
+    expect(parseModelSpec('claude-haiku-5-5')).toMatchObject({
+      provider: 'claude',
+      thinking: 'off',
+    });
+    expect(parseModelSpec('gemini-3.1-flash-lite:minimal')).toMatchObject({
+      provider: 'gemini',
+      thinking: 'minimal',
+    });
   });
 });

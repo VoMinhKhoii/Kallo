@@ -65,7 +65,7 @@ export function parsePrintedNumber(token: string): number | null {
       : compact.replace(separator, '.');
   }
 
-  if (!/^[+-]?\d+(?:\.\d+)?$/.test(normalized)) return null;
+  if (!/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(normalized)) return null;
   const value = Number(normalized);
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
