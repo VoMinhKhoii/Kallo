@@ -264,27 +264,34 @@ String? _redirect(Ref ref, String location) {
 
   return resolveRedirect(
     location: location,
-    sessionLoading: !_settled(sessionAsync),
+    sessionLoading: !isRouterSourceSettled(sessionAsync),
     signedIn: session != null,
-    draft: (loading: !_settled(draftAsync), value: draftAsync.valueOrNull),
+    draft: (
+      loading: !isRouterSourceSettled(draftAsync),
+      value: draftAsync.valueOrNull,
+    ),
     firstSession: _isFirstSession(session?.user),
     dismissed: ref.read(onboardingForceDismissedProvider),
     onboarding: (
       force: ref.read(onboardingResumeProvider),
-      loading: !_settled(profileAsync),
+      loading: !isRouterSourceSettled(profileAsync),
     ),
     pendingInvite: ref.read(pendingInviteSlugProvider),
   );
 }
 
-/// Whether an async source has an answer the redirect may act on. A REFRESH is
-/// not a wait — every save invalidates the profile — so an error-free
-/// `isRefreshing` load stays settled, while a first load, an account-change
-/// reload (`isReloading`), or a retry of a failed load (`isLoading && hasError`)
-/// holds until the fetch lands.
-bool _settled(AsyncValue<Object?> async) =>
+/// Whether an async source has an answer the redirect may act on. A REFRESH
+/// with a real value is not a wait — every save invalidates the profile — so
+/// an `isRefreshing` load carrying a real value stays settled (even after a
+/// transient error), while a first load, an account-change reload
+/// (`isReloading`), or a retry still carrying the stale signed-out `null`
+/// (`hasError && valueOrNull == null`) holds until the fetch lands.
+@visibleForTesting
+bool isRouterSourceSettled(AsyncValue<Object?> async) =>
     !async.isLoading ||
-    (async.hasValue && !async.isReloading && !async.hasError);
+    (async.hasValue &&
+        !async.isReloading &&
+        !(async.hasError && async.valueOrNull == null));
 
 /// Whether this looks like the user's very first session — a brand-new account
 /// whose last sign-in is within 60s of creation. Mirrors the web layout's
