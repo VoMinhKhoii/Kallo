@@ -1,7 +1,3 @@
-import 'dart:io';
-
-import 'package:flutter_test/flutter_test.dart';
-
 /// Static guards for the two direct code shapes behind the PR #627 production
 /// outage (builds 77–78), where `profileProvider` stayed stuck in
 /// `AsyncLoading(value: null)` on every cold signed-in launch:
@@ -25,7 +21,12 @@ import 'package:flutter_test/flutter_test.dart';
 ///    `return null` schedules a microtask `Future` that races with
 ///    `sessionProvider`'s initial emission; omitting `async` on the outer
 ///    callback lets Riverpod take its synchronous `FutureOr` branch.
-///
+library;
+
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+
 /// Strips `//` and `/* ... */` comments while preserving string literals and
 /// replacing string contents with spaces so parentheses or `//` inside strings
 /// never confuse the balanced-parens scanner.

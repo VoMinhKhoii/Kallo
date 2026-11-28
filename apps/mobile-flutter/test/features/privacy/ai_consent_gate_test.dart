@@ -156,7 +156,7 @@ void main() {
     'waits for profile reload after sign-in instead of treating stale signed-out null as unconsented',
     (tester) async {
       final userIdProvider = StateProvider<String?>((ref) => null);
-      final fetchGate = Completer<ProfileRow?>();
+      final fetchGate = Completer<Map<String, dynamic>?>();
       final answers = <bool>[];
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1.0;
@@ -166,15 +166,11 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            apiClientProvider.overrideWithValue(api),
+            // Drive the real `profileProvider` through the API boundary.
+            apiClientProvider.overrideWithValue(_DelayedProfileApi(fetchGate)),
             signedInUserIdProvider.overrideWith(
               (ref) => ref.watch(userIdProvider),
             ),
-            profileProvider.overrideWith((ref) {
-              final uid = ref.watch(signedInUserIdProvider);
-              if (uid == null) return null;
-              return fetchGate.future;
-            }),
           ],
           child: EasyLocalization(
             supportedLocales: const [Locale('en'), Locale('vi')],
@@ -223,16 +219,23 @@ void main() {
       expect(find.byType(AiConsentSheet), findsNothing);
       expect(answers, isEmpty);
 
-      fetchGate.complete(
-        const ProfileRow({
-          'onboardingStep': 6,
-          'aiProcessingConsentedAt': '2026-09-25T12:10:00.000Z',
-        }),
-      );
+      fetchGate.complete(const {
+        'onboardingStep': 6,
+        'aiProcessingConsentedAt': '2026-09-25T12:10:00.000Z',
+      });
       await tester.pumpAndSettle();
 
       expect(answers, [true]);
       expect(find.byType(AiConsentSheet), findsNothing);
     },
   );
+}
+
+class _DelayedProfileApi extends ApiClient {
+  _DelayedProfileApi(this._gate);
+
+  final Completer<Map<String, dynamic>?> _gate;
+
+  @override
+  Future<T> get<T>(String path) async => (await _gate.future) as T;
 }

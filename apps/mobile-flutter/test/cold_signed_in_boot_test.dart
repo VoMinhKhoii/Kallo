@@ -17,8 +17,8 @@ import 'package:kallo_mobile/services/auth/supabase_service.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../features/onboarding/onboarding_test_support.dart' show testSession;
-import '../l10n_test_loader.dart';
+import 'features/onboarding/onboarding_test_support.dart' show testSession;
+import 'l10n_test_loader.dart';
 
 /// Stubs only the HTTP boundary with an async delay so the entire real
 /// cold-start provider graph (`KalloApp` → `AccountLanguageSync` →

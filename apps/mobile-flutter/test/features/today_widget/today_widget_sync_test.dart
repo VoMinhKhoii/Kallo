@@ -16,7 +16,9 @@ import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.
 import 'package:kallo_mobile/features/today_widget/data/today_widget_store.dart';
 import 'package:kallo_mobile/features/today_widget/logic/today_widget_link.dart';
 import 'package:kallo_mobile/features/today_widget/logic/today_widget_sync.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
+import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 
 import '../../l10n_test_loader.dart';
@@ -201,7 +203,7 @@ void main() {
     (tester) async {
       final store = _RecordingStore();
       final uidState = StateProvider<String?>((ref) => null);
-      final fetchGate = Completer<ProfileRow?>();
+      final fetchGate = Completer<Map<String, dynamic>?>();
       final c = ProviderContainer(
         overrides: [
           dash.loggingDayProvider.overrideWith(
@@ -211,11 +213,8 @@ void main() {
           signedInUserIdProvider.overrideWith((ref) => ref.watch(uidState)),
           todayWidgetStoreProvider.overrideWithValue(store),
           loggingDayProvider.overrideWith(_Day.new),
-          profileProvider.overrideWith((ref) {
-            final uid = ref.watch(signedInUserIdProvider);
-            if (uid == null) return null;
-            return fetchGate.future;
-          }),
+          // Drive the real `profileProvider` through the API boundary.
+          apiClientProvider.overrideWithValue(_DelayedProfileApi(fetchGate)),
         ],
       );
       addTearDown(c.dispose);
@@ -232,7 +231,7 @@ void main() {
       expect(c.read(profileProvider).isReloading, isTrue);
       expect(store.saved, isEmpty);
 
-      fetchGate.completeError(StateError('offline'));
+      fetchGate.completeError(ApiError('OFFLINE', 503, false, 'offline'));
       await tester.pumpAndSettle();
 
       final errored = c.read(profileProvider);
@@ -319,4 +318,13 @@ void main() {
     expect(isTodayWidgetLink(Uri.parse('nham://invite/abc')), isFalse);
     expect(isTodayWidgetLink(Uri.parse('https://kallo.fit/today')), isFalse);
   });
+}
+
+class _DelayedProfileApi extends ApiClient {
+  _DelayedProfileApi(this._gate);
+
+  final Completer<Map<String, dynamic>?> _gate;
+
+  @override
+  Future<T> get<T>(String path) async => (await _gate.future) as T;
 }
