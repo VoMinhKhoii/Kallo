@@ -5,6 +5,7 @@ import {
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
 import { readJsonBody } from '@/lib/api/auth';
+import { isPastDayKey, toLocalDayKey } from '@/lib/core/date/day-key';
 import { Errors } from '@/lib/core/errors/catalog';
 import { safeError } from '@/lib/core/errors/safe-error';
 import { serializeError } from '@/lib/core/errors/serialize';
@@ -16,7 +17,6 @@ import { findCachedRows } from '@/lib/domain/barcode/cache';
 import { barcodeNotCachedError } from '@/lib/domain/barcode/errors';
 import { barcodeRefsOf } from '@/lib/domain/logging/relog/relog';
 import {
-  isOnPastLocalDay,
   type LoggedAtStamp,
   stampLoggedAt,
 } from '@/lib/domain/meals/logged-at';
@@ -156,21 +156,24 @@ export async function validateRequest(request: NextRequest) {
         // instant, so its flag is read from that instant's own day.
         resolveLoggedAt: (): Promise<LoggedAtStamp> => {
           const inherited = parsed.data.inheritLoggedAt;
-          return inherited
-            ? Promise.resolve({
-                loggedAt: new Date(inherited),
-                backfilled: isOnPastLocalDay(
-                  new Date(inherited),
-                  parsed.data.timezoneOffset,
-                  requestedAt
-                ),
-              })
-            : stampLoggedAt(
-                user.id,
-                parsed.data.loggedDate,
-                parsed.data.timezoneOffset,
+          const offset = parsed.data.timezoneOffset;
+          if (inherited) {
+            const loggedAt = new Date(inherited);
+            return Promise.resolve({
+              loggedAt,
+              backfilled: isPastDayKey(
+                toLocalDayKey(loggedAt, offset),
+                offset,
                 requestedAt
-              );
+              ),
+            });
+          }
+          return stampLoggedAt(
+            user.id,
+            parsed.data.loggedDate,
+            offset,
+            requestedAt
+          );
         },
         mode: parsed.data.mode ?? 'precise',
         cheatType: parsed.data.cheatType,

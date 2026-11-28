@@ -9,13 +9,13 @@ import { z } from 'zod';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
+import { isPastDayKey, toLocalDayKey } from '@/lib/core/date/day-key';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/core/validation/primitives';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
-import { isOnPastLocalDay } from '@/lib/domain/meals/logged-at';
 import { shareLoggedKey } from '@/lib/domain/notifications/group-keys';
 import { withNotifications } from '@/lib/domain/notifications/with-notifications';
 import { canViewShare } from '@/lib/domain/social/shares/share-visibility';
@@ -102,7 +102,10 @@ export async function logSharedMealAction(input: {
       // day in my diary, so sharing it now is a backfill on my side too.
       backfilled:
         source.backfilled ||
-        isOnPastLocalDay(source.loggedAt, parsed.timezoneOffset),
+        isPastDayKey(
+          toLocalDayKey(source.loggedAt, parsed.timezoneOffset),
+          parsed.timezoneOffset
+        ),
       mealSlot: source.mealSlot,
       factor: parsed.factor,
     });

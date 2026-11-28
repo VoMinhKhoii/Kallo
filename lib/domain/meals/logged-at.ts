@@ -1,6 +1,6 @@
 import { and, eq, gte, lt, max, sql } from 'drizzle-orm';
 import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
-import { toLocalDayKey } from '@/lib/core/date/day-key';
+import { isPastDayKey } from '@/lib/core/date/day-key';
 import {
   getUtcDayRangeForLocalDate,
   getUtcInstantForLocalDate,
@@ -35,34 +35,6 @@ export interface LoggedAtStamp {
 }
 
 /**
- * Whether the local day `date` is before the user's own today at `now`: its
- * clock-time instant (today's time of day, on that day) is already past.
- */
-export function isPastLocalDay(
-  date: string,
-  timezoneOffset: number,
-  now = new Date()
-): boolean {
-  return (
-    getUtcInstantForLocalDate(date, timezoneOffset, now).getTime() <
-    now.getTime()
-  );
-}
-
-/**
- * Whether the instant `at` falls on a local day before the user's today at
- * `now`. The flag for a meal that keeps an instant it did not stamp: a refine
- * keeps the original's, and a friend's meal copied into my diary keeps theirs.
- */
-export function isOnPastLocalDay(
-  at: Date,
-  timezoneOffset: number,
-  now = new Date()
-): boolean {
-  return toLocalDayKey(at, timezoneOffset) < toLocalDayKey(now, timezoneOffset);
-}
-
-/**
  * The instant a new meal logged for the local day `date` is stamped with, and
  * whether that day had already passed.
  *
@@ -78,7 +50,7 @@ export async function stampLoggedAt(
 ): Promise<LoggedAtStamp> {
   const clockTime = getUtcInstantForLocalDate(date, timezoneOffset, now);
   // Today (or a future day): nothing on it can be later than now.
-  if (!isPastLocalDay(date, timezoneOffset, now)) {
+  if (!isPastDayKey(date, timezoneOffset, now)) {
     return { loggedAt: clockTime, backfilled: false };
   }
 

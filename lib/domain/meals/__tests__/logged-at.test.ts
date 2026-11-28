@@ -11,8 +11,9 @@ const select = vi.fn(() => {
 });
 vi.mock('@/lib/infra/db/client', () => ({ db: { select, execute } }));
 
-const { isOnPastLocalDay, isPastLocalDay, placeAfterLatest, stampLoggedAt } =
-  await import('@/lib/domain/meals/logged-at');
+const { placeAfterLatest, stampLoggedAt } = await import(
+  '@/lib/domain/meals/logged-at'
+);
 
 // UTC+7 (Vietnam): timezoneOffset is getTimezoneOffset(), so -420.
 const VN = -420;
@@ -76,23 +77,6 @@ describe('stampLoggedAt', () => {
   });
 });
 
-describe('isPastLocalDay', () => {
-  it('is false for today and a future day, true for yesterday', () => {
-    expect(isPastLocalDay('2026-11-27', VN, NOW)).toBe(false);
-    expect(isPastLocalDay('2026-11-28', VN, NOW)).toBe(false);
-    expect(isPastLocalDay('2026-11-26', VN, NOW)).toBe(true);
-  });
-
-  it("reads the day in the user's timezone, not UTC's", () => {
-    // 00:30 on Nov 27 in UTC+7 is still Nov 26 in UTC: Nov 26 is past for
-    // this user.
-    const earlyMorning = new Date('2026-11-26T17:30:00.000Z');
-
-    expect(isPastLocalDay('2026-11-26', VN, earlyMorning)).toBe(true);
-    expect(isPastLocalDay('2026-11-27', VN, earlyMorning)).toBe(false);
-  });
-});
-
 describe('placeAfterLatest', () => {
   const clock = new Date('2026-11-26T05:11:00.000Z');
   // End of Nov 26 local (UTC+7).
@@ -111,17 +95,5 @@ describe('placeAfterLatest', () => {
     const at = placeAfterLatest(clock, clock, dayEnd);
 
     expect(at.toISOString()).toBe('2026-11-26T05:12:00.000Z');
-  });
-});
-
-describe('isOnPastLocalDay', () => {
-  it('reads the day of the instant in the given offset', () => {
-    // 23:30 Nov 26 and 00:30 Nov 27 in UTC+7, seen at 12:11 Nov 27.
-    expect(
-      isOnPastLocalDay(new Date('2026-11-26T16:30:00.000Z'), VN, NOW)
-    ).toBe(true);
-    expect(
-      isOnPastLocalDay(new Date('2026-11-26T17:30:00.000Z'), VN, NOW)
-    ).toBe(false);
   });
 });

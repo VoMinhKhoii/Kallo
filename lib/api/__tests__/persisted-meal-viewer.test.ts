@@ -34,10 +34,10 @@ vi.mock('@/lib/infra/db/client', () => {
   };
 });
 vi.mock('@/lib/domain/meals/logged-at', async () => {
-  const { clockStamp, onPastLocalDay } = await import(
+  const { clockStamp } = await import(
     '@/lib/domain/meals/__tests__/logged-at-double'
   );
-  return { stampLoggedAt: clockStamp, isOnPastLocalDay: onPastLocalDay };
+  return { stampLoggedAt: clockStamp };
 });
 vi.mock('@/lib/infra/auth/session', () => ({
   requireAuthAndProfile: async () => ({
