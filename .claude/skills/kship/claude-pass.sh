@@ -11,6 +11,8 @@
 set -u
 [ $# -ge 5 ] || { sed -n '2,11p' "$0"; exit 2; }
 MODEL=$1 CK=$2 SHA=$3 OUT=$4; shift 4
+for f in "$@"; do [ -f "$f" ] || { echo "missing prompt file: $f" >&2; exit 2; }; done
+mkdir -p "$(dirname "$OUT")"
 OUTDIR=$(cd "$(dirname "$OUT")" && pwd)
 REVIEW_DIR=$(mktemp -d "$OUTDIR/wt.XXXXXX") && rmdir "$REVIEW_DIR"
 git -C "$CK" worktree add -q --detach "$REVIEW_DIR" "$SHA" || exit 1

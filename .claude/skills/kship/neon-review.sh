@@ -16,6 +16,12 @@
 set -u
 [ $# -ge 5 ] || { sed -n '2,15p' "$0"; exit 2; }
 MODE=$1 CK=$2 SHA=$3 OUT=$4 BRIEF=$5; shift 5
+[ -f "$BRIEF" ] || { echo "missing brief: $BRIEF" >&2; exit 2; }
+if [ "$MODE" = find ]; then [ -z "${1:-}" ] || [ -f "$1" ] || { echo "missing pass file: $1" >&2; exit 2; }; fi
+if [ "$MODE" = verify ]; then
+  [ $# -gt 0 ] || { echo "verify needs at least one finding file" >&2; exit 2; }
+  for f in "$@"; do [ -f "$f" ] || { echo "missing finding file: $f" >&2; exit 2; }; done
+fi
 HERE=$(cd "$(dirname "$0")" && pwd)
 mkdir -p "$OUT"
 OUT=$(cd "$OUT" && pwd)
