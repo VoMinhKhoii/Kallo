@@ -938,10 +938,12 @@ describe('POST /api/analyze-meal', () => {
     expect(last.type).toBe('analysis_complete');
     if (last.type === 'analysis_complete') {
       expect(last.analysisId).toBe('analysis-123');
+      // Stamped with the request's clock, not the moment it is staged.
       expect(mockStampLoggedAt).toHaveBeenCalledWith(
         'user-1',
         expect.any(String),
-        expect.any(Number)
+        expect.any(Number),
+        expect.any(Date)
       );
       // The stamp the staged row was written with, so the card shows it.
       const staged = mockInsertValues.mock.calls.at(-1)?.[0] as {
@@ -1193,6 +1195,27 @@ describe('POST /api/analyze-meal', () => {
     expect(events).toEqual([]);
     expect(mockDbInsert).not.toHaveBeenCalledWith(mockPendingAnalyses);
     expect(mockLogPipelineEnd).not.toHaveBeenCalled();
+  });
+
+  it('stages nothing when the client leaves while the day is read', async () => {
+    const abortController = new AbortController();
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+    mockStampLoggedAt.mockImplementationOnce(async () => {
+      abortController.abort();
+      return new Date('2026-04-06T03:30:00.000Z');
+    });
+
+    const res = await POST(
+      createRequest(mealRequestBody('phở bò'), {}, abortController.signal)
+    );
+    const events = await readSSEEvents(res);
+
+    expect(mockStampLoggedAt).toHaveBeenCalled();
+    expect(events.some((e) => e.type === 'analysis_complete')).toBe(false);
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockPendingAnalyses);
   });
 
   // -------------------------------------------------------------------------

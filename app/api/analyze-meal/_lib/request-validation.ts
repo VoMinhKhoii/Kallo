@@ -89,6 +89,8 @@ async function assertScannedPicksAreCached(
  */
 export async function validateRequest(request: NextRequest) {
   try {
+    // When the user sent the meal: the clock a fresh log is stamped with.
+    const requestedAt = new Date();
     // Parallelize auth and body parsing — independent operations. The body
     // read is byte-capped so an anonymous caller cannot make the server buffer
     // an arbitrarily large payload while the auth check is in flight, and the
@@ -144,7 +146,9 @@ export async function validateRequest(request: NextRequest) {
         // keeps its timeline position/slot; a fresh log stamps from the day.
         // Called when the analysis is staged, not here: no day read before the
         // consent, billing and rate-limit checks, and a meal logged on that day
-        // while this one is analyzed still ends up above it.
+        // while this one is analyzed still ends up above it. The clock is the
+        // request's, so a meal sent at 23:59 for today stays on today even when
+        // the analysis ends after midnight.
         resolveLoggedAt: (): Promise<Date> => {
           const inherited = parsed.data.inheritLoggedAt;
           return inherited
@@ -152,7 +156,8 @@ export async function validateRequest(request: NextRequest) {
             : stampLoggedAt(
                 user.id,
                 parsed.data.loggedDate,
-                parsed.data.timezoneOffset
+                parsed.data.timezoneOffset,
+                requestedAt
               );
         },
         mode: parsed.data.mode ?? 'precise',

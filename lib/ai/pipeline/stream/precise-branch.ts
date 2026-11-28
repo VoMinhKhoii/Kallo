@@ -162,20 +162,26 @@ export async function runPreciseBranch({
   // failed insert produces an error path with no half-state. If we emit
   // `result` first and then the insert throws, the client has a populated meal
   // preview with no `analysisId` to confirm it.
-  const { inserted, loggedAt } = await withDeadline(
-    (async () => {
-      const loggedAt = await ctx.resolveLoggedAt();
-      const [inserted] = await upsertPendingAnalysis({
-        userId,
-        pipelineResult: result.data,
-        rawInput,
-        entryMode: 'precise',
-        loggedAt,
-        attemptId: ctx.attemptId,
-        pipelineRequestId: requestId,
-      });
-      return { inserted, loggedAt };
-    })(),
+  //
+  // The stamp reads the day first, under its own deadline: a read that times
+  // out throws here and writes nothing, and a client gone meanwhile gets no row.
+  const loggedAt = await withDeadline(
+    ctx.resolveLoggedAt(),
+    PERSIST_DEADLINE_MS
+  );
+  if (ctx.signal.aborted) {
+    return;
+  }
+  const [inserted] = await withDeadline(
+    upsertPendingAnalysis({
+      userId,
+      pipelineResult: result.data,
+      rawInput,
+      entryMode: 'precise',
+      loggedAt,
+      attemptId: ctx.attemptId,
+      pipelineRequestId: requestId,
+    }),
     PERSIST_DEADLINE_MS
   );
 
