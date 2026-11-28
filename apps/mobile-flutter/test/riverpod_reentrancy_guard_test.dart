@@ -27,74 +27,134 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Strips `//` and `/* ... */` comments while preserving string literals and
-/// replacing string contents with spaces so parentheses or `//` inside strings
-/// never confuse the balanced-parens scanner.
+/// Strips `//` and `/* ... */` comments while replacing string literal bodies
+/// with spaces (tracking `${...}` interpolation nesting inside non-raw strings)
+/// so parentheses, quotes, or `//` inside strings never confuse scanning.
 String _stripCommentsAndStrings(String source) {
   final out = StringBuffer();
-  var i = 0;
   final n = source.length;
-  while (i < n) {
-    final c = source.codeUnitAt(i);
-    final next = i + 1 < n ? source.codeUnitAt(i + 1) : 0;
-    // Line comment.
-    if (c == 47 /* / */ && next == 47 /* / */ ) {
-      while (i < n && source.codeUnitAt(i) != 10 /* \n */ ) {
-        i++;
-      }
-      continue;
-    }
-    // Block comment.
-    if (c == 47 /* / */ && next == 42 /* * */ ) {
-      i += 2;
-      while (i + 1 < n &&
-          !(source.codeUnitAt(i) == 42 && source.codeUnitAt(i + 1) == 47)) {
-        if (source.codeUnitAt(i) == 10) out.write('\n');
-        i++;
-      }
-      i += 2;
-      continue;
-    }
-    // Raw string r'...' / r"..." or normal/triple-quoted string.
-    final isRaw =
-        c == 114 /* r */ && (next == 39 /* ' */ || next == 34 /* " */ );
-    if (isRaw || c == 39 || c == 34) {
-      if (isRaw) i++;
-      final quote = source.codeUnitAt(i);
-      final triple =
-          i + 2 < n &&
-          source.codeUnitAt(i + 1) == quote &&
-          source.codeUnitAt(i + 2) == quote;
-      i += triple ? 3 : 1;
-      out.write(' ');
-      while (i < n) {
-        final sc = source.codeUnitAt(i);
-        if (sc == 10) out.write('\n');
-        if (!isRaw && sc == 92 /* \ */ ) {
-          i += 2;
-          continue;
+  var i = 0;
+
+  void scanCode({required bool stopAtClosingBrace}) {
+    var braceDepth = 0;
+    while (i < n) {
+      final c = source.codeUnitAt(i);
+      final next = i + 1 < n ? source.codeUnitAt(i + 1) : 0;
+      if (stopAtClosingBrace) {
+        if (c == 123 /* { */ ) {
+          braceDepth++;
+        } else if (c == 125 /* } */ ) {
+          if (braceDepth == 0) {
+            i++;
+            return;
+          }
+          braceDepth--;
         }
-        if (triple) {
-          if (i + 2 < n &&
-              source.codeUnitAt(i) == quote &&
-              source.codeUnitAt(i + 1) == quote &&
-              source.codeUnitAt(i + 2) == quote) {
-            i += 3;
+      }
+      // Line comment.
+      if (c == 47 /* / */ && next == 47 /* / */ ) {
+        while (i < n && source.codeUnitAt(i) != 10 /* \n */ ) {
+          i++;
+        }
+        continue;
+      }
+      // Block comment.
+      if (c == 47 /* / */ && next == 42 /* * */ ) {
+        i += 2;
+        while (i + 1 < n &&
+            !(source.codeUnitAt(i) == 42 && source.codeUnitAt(i + 1) == 47)) {
+          if (source.codeUnitAt(i) == 10) out.write('\n');
+          i++;
+        }
+        i += 2;
+        continue;
+      }
+      // Raw string r'...' / r"..." or normal/triple-quoted string.
+      final isRaw =
+          c == 114 /* r */ && (next == 39 /* ' */ || next == 34 /* " */ );
+      if (isRaw || c == 39 || c == 34) {
+        if (isRaw) i++;
+        final quote = source.codeUnitAt(i);
+        final triple =
+            i + 2 < n &&
+            source.codeUnitAt(i + 1) == quote &&
+            source.codeUnitAt(i + 2) == quote;
+        i += triple ? 3 : 1;
+        out.write(' ');
+        while (i < n) {
+          final sc = source.codeUnitAt(i);
+          if (sc == 10) out.write('\n');
+          if (!isRaw && sc == 92 /* \ */ ) {
+            i += 2;
+            continue;
+          }
+          if (!isRaw &&
+              sc == 36 /* $ */ &&
+              i + 1 < n &&
+              source.codeUnitAt(i + 1) == 123 /* { */ ) {
+            i += 2;
+            out.write(' ');
+            scanCode(stopAtClosingBrace: true);
+            out.write(' ');
+            continue;
+          }
+          if (triple) {
+            if (i + 2 < n &&
+                source.codeUnitAt(i) == quote &&
+                source.codeUnitAt(i + 1) == quote &&
+                source.codeUnitAt(i + 2) == quote) {
+              i += 3;
+              break;
+            }
+          } else if (sc == quote) {
+            i++;
             break;
           }
-        } else if (sc == quote) {
+          i++;
+        }
+        continue;
+      }
+      out.writeCharCode(c);
+      i++;
+    }
+  }
+
+  scanCode(stopAtClosingBrace: false);
+  return out.toString();
+}
+
+/// Skips optional whitespace and balanced generic type arguments `<...>` (even
+/// nested, e.g. `<AsyncValue<ProfileRow?>>`), returning the index of the next
+/// `(` if immediately present, or `-1`.
+int _openParenAfterOptionalGenerics(String text, int start) {
+  var i = start;
+  while (i < text.length && _isSpace(text.codeUnitAt(i))) {
+    i++;
+  }
+  if (i < text.length && text.codeUnitAt(i) == 60 /* < */ ) {
+    var depth = 0;
+    while (i < text.length) {
+      final ch = text.codeUnitAt(i);
+      if (ch == 60 /* < */ ) {
+        depth++;
+      } else if (ch == 62 /* > */ ) {
+        depth--;
+        if (depth == 0) {
           i++;
           break;
         }
-        i++;
       }
-      continue;
+      i++;
     }
-    out.writeCharCode(c);
-    i++;
+    if (depth != 0) return -1;
+    while (i < text.length && _isSpace(text.codeUnitAt(i))) {
+      i++;
+    }
   }
-  return out.toString();
+  return i < text.length && text.codeUnitAt(i) == 40 /* ( */ ? i : -1;
 }
+
+bool _isSpace(int cu) => cu == 32 || cu == 9 || cu == 10 || cu == 13;
 
 /// Extracts balanced `(...)` starting at [openParenIndex], or `null`.
 String? _balancedParens(String text, int openParenIndex) {
@@ -128,7 +188,7 @@ void main() {
     test(
       'no ref.listen / ref.listenManual callback invokes unawaited(...) or reads core async providers synchronously',
       () {
-        final pattern = RegExp(r'ref\.listen(?:Manual)?(?:<[^>]+>)?\s*\(');
+        final pattern = RegExp(r'ref\.listen(?:Manual)?\b');
         final forbidden = RegExp(
           r'\bunawaited\s*\(|ref\.read\s*\(\s*(?:profileProvider|sessionProvider|onboardingDraftProvider)\b',
         );
@@ -137,7 +197,8 @@ void main() {
         for (final file in sources) {
           final code = _stripCommentsAndStrings(file.readAsStringSync());
           for (final match in pattern.allMatches(code)) {
-            final openParen = code.indexOf('(', match.start);
+            final openParen = _openParenAfterOptionalGenerics(code, match.end);
+            if (openParen == -1) continue;
             final call = _balancedParens(code, openParen);
             if (call == null) continue;
             if (forbidden.hasMatch(call)) {
@@ -165,14 +226,15 @@ void main() {
       'no FutureProvider watching signedInUserIdProvider uses async with an early return null',
       () {
         final pattern = RegExp(
-          r'FutureProvider(?:\.autoDispose)?(?:\.family)?(?:<[^>]+>)?\s*\(',
+          r'FutureProvider(?:\.autoDispose)?(?:\.family)?\b',
         );
         final offenders = <String>[];
 
         for (final file in sources) {
           final code = _stripCommentsAndStrings(file.readAsStringSync());
           for (final match in pattern.allMatches(code)) {
-            final openParen = code.indexOf('(', match.start);
+            final openParen = _openParenAfterOptionalGenerics(code, match.end);
+            if (openParen == -1) continue;
             final call = _balancedParens(code, openParen);
             if (call == null) continue;
             final isAsyncOuter = RegExp(
