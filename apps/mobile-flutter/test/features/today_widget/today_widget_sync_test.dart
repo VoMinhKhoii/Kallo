@@ -246,6 +246,74 @@ void main() {
     },
   );
 
+  testWidgets(
+    'failed profile refresh after a loaded profile still writes new meals with last good targets',
+    (tester) async {
+      final store = _RecordingStore();
+      var shouldFail = false;
+      final refreshedDay = Completer<dash_day.LoggingDayData>();
+      final c = ProviderContainer(
+        overrides: [
+          dash.loggingDayProvider.overrideWith(
+            (ref, args) => refreshedDay.future,
+          ),
+          sessionProvider.overrideWith((ref) => Stream<Session?>.value(null)),
+          signedInUserIdProvider.overrideWithValue('u1'),
+          todayWidgetStoreProvider.overrideWithValue(store),
+          loggingDayProvider.overrideWith(_Day.new),
+          profileProvider.overrideWith((ref) async {
+            if (shouldFail) throw StateError('offline');
+            return const ProfileRow({
+              'calorieTarget': 1932,
+              'proteinTargetG': 145,
+              'carbsTargetG': 169,
+              'fatTargetG': 75,
+            });
+          }),
+        ],
+      );
+      addTearDown(c.dispose);
+      await tester.pumpWidget(_app(c));
+      await tester.pumpAndSettle();
+      expect((store.saved.last['target']! as Map)['kcal'], 1932);
+      store.saved.clear();
+
+      // Invalidate profileProvider and fail the refetch: AsyncError keeps the
+      // last good ProfileRow in valueOrNull.
+      shouldFail = true;
+      c.invalidate(profileProvider);
+      await tester.pumpAndSettle();
+      expect(c.read(profileProvider).hasError, isTrue);
+      expect(c.read(profileProvider).valueOrNull, isNotNull);
+
+      // A new meal arrives on Today: the widget must still update with the
+      // last good targets (1932 kcal) and the new meal total (750 kcal).
+      refreshedDay.complete(
+        dash_day.LoggingDayData.fromJson({
+          'persistedMeals': [
+            for (final (id, kcal) in [('m1', 450), ('w1', 300)])
+              {
+                'id': id,
+                'rawInput': 'bánh mì',
+                'loggedAt': DateTime.now().toUtc().toIso8601String(),
+                'nutrition': {
+                  'caloriesKcal': kcal,
+                  'proteinG': 10,
+                  'carbohydrateG': 40,
+                  'fatG': 8,
+                },
+              },
+          ],
+        }),
+      );
+      await tester.pumpAndSettle();
+
+      expect(store.saved, isNotEmpty);
+      expect((store.saved.last['target']! as Map)['kcal'], 1932);
+      expect((store.saved.last['eaten']! as Map)['kcal'], 750);
+    },
+  );
+
   test('the widget tap link is the Today link, and only that', () {
     expect(isTodayWidgetLink(Uri.parse('nham://today')), isTrue);
     expect(isTodayWidgetLink(Uri.parse('nham://invite/abc')), isFalse);

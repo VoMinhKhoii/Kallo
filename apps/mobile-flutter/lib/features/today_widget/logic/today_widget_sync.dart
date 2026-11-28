@@ -150,19 +150,20 @@ class _TodayWidgetSyncState extends ConsumerState<TodayWidgetSync>
     final meals = _newestDay(userId);
     final profile = ref.watch(profileProvider);
     // A failed, first, or account-switching load (`isReloading` and a failed
-    // reload's `AsyncError` both carry the stale signed-out `null` as
-    // `hasValue`) keeps whatever the widget last showed: an error or in-flight
-    // sign-in fetch is not an empty profile.
+    // first/sign-in reload both carry the stale signed-out `null`) keeps
+    // whatever the widget last showed. A failed refresh that still holds the
+    // user's loaded profile keeps writing new meals with those last good
+    // targets (via `valueOrNull`, since `.value` throws on `AsyncError`).
     if (meals == null ||
         !profile.hasValue ||
         profile.isReloading ||
-        profile.hasError) {
+        (profile.hasError && profile.valueOrNull == null)) {
       return null;
     }
     return todayWidgetSnapshot(
       date: _today,
       locale: locale,
-      profile: LoggingProfile.fromProfileRow(userId, profile.value?.raw),
+      profile: LoggingProfile.fromProfileRow(userId, profile.valueOrNull?.raw),
       meals: meals,
       tr: tr,
     );
