@@ -90,7 +90,7 @@ export async function stageRelogAnalysisAction(
       const rawInput = parsed.displayText
         ? capRawInput(parsed.displayText)
         : buildRelogRawInput(picks.names);
-      const { loggedAt, backfilled } = await stampLoggedAt(
+      const { loggedAt, isBackfilled } = await stampLoggedAt(
         user.id,
         parsed.loggedDate,
         parsed.timezoneOffset
@@ -102,7 +102,7 @@ export async function stageRelogAnalysisAction(
         rawInput,
         entryMode: 'precise',
         loggedAt,
-        backfilled,
+        isBackfilled,
         attemptId: parsed.attemptId,
       });
 

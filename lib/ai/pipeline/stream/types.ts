@@ -21,7 +21,7 @@ export interface AnalysisStreamContext {
   message: string;
   userContext: UserContext;
   /**
-   * The staged meal's `loggedAt` and `backfilled`, resolved right before the
+   * The staged meal's `loggedAt` and `isBackfilled`, resolved right before the
    * row is written so a past day's latest meal is read then, not before the
    * pipeline ran.
    */

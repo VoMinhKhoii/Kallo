@@ -99,7 +99,7 @@ export async function stageCheatInviteAction(input: {
       levels: checked.levels,
       rawInput: source.rawInput,
       loggedAt: source.loggedAt,
-      backfilled: source.backfilled,
+      isBackfilled: source.isBackfilled,
       // What makes the claim above reversible. Without it, discarding this card
       // leaves the offer spent with no meal to show for it and the sender
       // unable to re-send — see `releaseInvite`.

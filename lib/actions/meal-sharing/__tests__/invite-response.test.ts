@@ -338,7 +338,7 @@ describe('acceptMealShareInviteAction', () => {
       sourceMeal({
         loggedAt: breakfast,
         mealSlot: 'breakfast',
-        backfilled: true,
+        isBackfilled: true,
       }),
     ]);
     installUpdate({ returning: [{ id: UUID_INVITE, copyFactor: 1 }] });
@@ -361,7 +361,7 @@ describe('acceptMealShareInviteAction', () => {
     expect(mealVals.loggedAt).toEqual(breakfast);
     expect(mealVals.mealSlot).toBe('breakfast');
     // The source was logged for a past day, and so is my copy of it.
-    expect(mealVals.backfilled).toBe(true);
+    expect(mealVals.isBackfilled).toBe(true);
     // The returned card has to agree with the row, or the optimistic feed
     // reconciles onto a meal that sits somewhere else in the day.
     expect(result.meal.loggedAt).toBe(breakfast.toISOString());

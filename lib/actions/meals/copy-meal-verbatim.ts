@@ -40,9 +40,9 @@ export async function copyMealVerbatim(
     userId: string;
     newMealId?: string;
     loggedAt: Date;
-    /** Logged for a past day. A share copy passes `source.backfilled` with
+    /** Logged for a past day. A share copy passes `source.isBackfilled` with
      * `source.loggedAt`; a re-log passes its own stamp's. */
-    backfilled: boolean;
+    isBackfilled: boolean;
     /** Positive scale applied to grams, nutrition and alcohol. 1 = verbatim. */
     factor: number;
     /**
@@ -59,7 +59,7 @@ export async function copyMealVerbatim(
     mealSlot?: string | null;
   }
 ): Promise<{ mealId: string; meal: PersistedMeal }> {
-  const { userId, newMealId, loggedAt, backfilled, factor } = options;
+  const { userId, newMealId, loggedAt, isBackfilled, factor } = options;
   const mealSlot = options.mealSlot ?? inferMealSlot(loggedAt);
   const mealNutrition =
     factor === 1
@@ -78,7 +78,7 @@ export async function copyMealVerbatim(
         mealSlot,
         confidenceOverall: source.confidenceOverall,
         loggedAt,
-        backfilled,
+        isBackfilled,
         entryMode: 'precise',
         alcoholG,
         portionFactor,

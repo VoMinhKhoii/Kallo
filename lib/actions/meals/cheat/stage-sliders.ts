@@ -34,7 +34,7 @@ export async function stageCheatSliders(
     loggedAt: Date;
     /** Logged for a past day: the re-log's own stamp, or the friend's flag
      * with their instant. */
-    backfilled: boolean;
+    isBackfilled: boolean;
     /**
      * The meal-share invite this card came from, when it came from one.
      *
@@ -53,7 +53,7 @@ export async function stageCheatSliders(
     levels,
     rawInput,
     loggedAt,
-    backfilled,
+    isBackfilled,
     sourceInviteId,
   } = options;
   const repeatSpec = withLevelsAsDefaults(spec, levels);
@@ -66,7 +66,7 @@ export async function stageCheatSliders(
       rawInput,
       entryMode: 'cheat',
       loggedAt,
-      backfilled,
+      isBackfilled,
       sourceInviteId,
     })
     .returning({ id: pendingAnalyses.id });

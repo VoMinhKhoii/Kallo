@@ -996,7 +996,7 @@ describe('POST /api/analyze-meal', () => {
     expect(mockInsertValues).toHaveBeenCalledWith(
       expect.objectContaining({
         loggedAt: new Date(inherited),
-        backfilled: true,
+        isBackfilled: true,
       })
     );
   });

@@ -16,6 +16,6 @@ export async function clockStamp(
 ): Promise<LoggedAtStamp> {
   return {
     loggedAt: getUtcInstantForLocalDate(date, timezoneOffset, now),
-    backfilled: isPastDayKey(date, timezoneOffset, now),
+    isBackfilled: isPastDayKey(date, timezoneOffset, now),
   };
 }

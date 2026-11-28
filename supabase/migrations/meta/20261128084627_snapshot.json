@@ -1,5 +1,5 @@
 {
-  "id": "a70e89fd-2ef9-4b2d-a703-08eb880ccfdc",
+  "id": "4ef9321a-0160-4a2e-aa2d-616dca613fde",
   "prevId": "3e517334-2448-4c85-b9b2-6bf2d8052753",
   "version": "7",
   "dialect": "postgresql",
@@ -3513,8 +3513,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "backfilled": {
-          "name": "backfilled",
+        "is_backfilled": {
+          "name": "is_backfilled",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -4264,8 +4264,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "backfilled": {
-          "name": "backfilled",
+        "is_backfilled": {
+          "name": "is_backfilled",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,

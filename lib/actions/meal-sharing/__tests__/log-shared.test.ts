@@ -254,7 +254,7 @@ describe('logSharedMealAction', () => {
     // and it must not move the copy: the same eating event belongs at the same
     // instant, under the same slot. Before the fix the day came from that
     // parameter and the clock from `new Date()`, with the slot re-inferred.
-    queueSource([sourceMeal({ backfilled: true })]);
+    queueSource([sourceMeal({ isBackfilled: true })]);
     queueItems([sourceItem()]);
     const captured = captureCopies();
 
@@ -264,7 +264,7 @@ describe('logSharedMealAction', () => {
       loggedAt: new Date('2026-07-10T05:00:00.000Z'),
       mealSlot: 'lunch',
       // Logged for a past day by its owner; the copy keeps that.
-      backfilled: true,
+      isBackfilled: true,
     });
     expect(result.meal.loggedAt).toBe('2026-07-10T05:00:00.000Z');
     expect(result.meal.mealSlot).toBe('lunch');
@@ -277,19 +277,19 @@ describe('logSharedMealAction', () => {
     it('stays unflagged when I log it the same day', async () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date('2026-07-10T09:00:00.000Z')); // 16:00 Jul 10
-      queueSource([sourceMeal({ backfilled: false })]);
+      queueSource([sourceMeal({ isBackfilled: false })]);
       queueItems([sourceItem()]);
       const captured = captureCopies();
 
       await log(1);
 
-      expect(captured.meal).toMatchObject({ backfilled: false });
+      expect(captured.meal).toMatchObject({ isBackfilled: false });
     });
 
     it('is flagged when I log it the next morning, a day past for me', async () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date('2026-07-11T01:00:00.000Z')); // 08:00 Jul 11
-      queueSource([sourceMeal({ backfilled: false })]);
+      queueSource([sourceMeal({ isBackfilled: false })]);
       queueItems([sourceItem()]);
       const captured = captureCopies();
 
@@ -297,7 +297,7 @@ describe('logSharedMealAction', () => {
 
       // My share goes out now under Jul 10, 20h after a 13h-old meal: the
       // gap guess would miss it, the flag does not.
-      expect(captured.meal).toMatchObject({ backfilled: true });
+      expect(captured.meal).toMatchObject({ isBackfilled: true });
     });
   });
 

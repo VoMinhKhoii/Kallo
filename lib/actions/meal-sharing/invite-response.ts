@@ -121,8 +121,8 @@ export async function acceptMealShareInviteAction(input: {
       loggedAt,
       // Theirs, or mine: a meal from a day already past for me lands on that
       // day in my diary, so sharing it now is a backfill on my side too.
-      backfilled:
-        source.backfilled ||
+      isBackfilled:
+        source.isBackfilled ||
         isPastDayKey(
           toLocalDayKey(source.loggedAt, parsed.timezoneOffset),
           parsed.timezoneOffset

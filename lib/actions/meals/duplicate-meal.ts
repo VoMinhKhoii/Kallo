@@ -46,7 +46,7 @@ export async function duplicateMealAction(input: {
   // inferred from the new instant rather than copied from the original.
   // Stamped before the transaction: it reads the day's meals on its own
   // connection, and the pool has two.
-  const { loggedAt, backfilled } = await stampLoggedAt(
+  const { loggedAt, isBackfilled } = await stampLoggedAt(
     user.id,
     parsed.loggedDate,
     parsed.timezoneOffset
@@ -83,7 +83,7 @@ export async function duplicateMealAction(input: {
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt,
-      backfilled,
+      isBackfilled,
     });
   });
   return scopeMealResponseForViewer(user.id, response);

@@ -28,10 +28,10 @@ export function placeAfterLatest(
 }
 
 /** A new meal's stamp: where it sits, and whether it was logged for a day that
- * had already passed (stored as `backfilled`, read by the Circle feed). */
+ * had already passed (stored as `is_backfilled`, read by the Circle feed). */
 export interface LoggedAtStamp {
   loggedAt: Date;
-  backfilled: boolean;
+  isBackfilled: boolean;
 }
 
 /**
@@ -51,7 +51,7 @@ export async function stampLoggedAt(
   const clockTime = getUtcInstantForLocalDate(date, timezoneOffset, now);
   // Today (or a future day): nothing on it can be later than now.
   if (!isPastDayKey(date, timezoneOffset, now)) {
-    return { loggedAt: clockTime, backfilled: false };
+    return { loggedAt: clockTime, isBackfilled: false };
   }
 
   const { dayStart, dayEnd } = getUtcDayRangeForLocalDate(date, timezoneOffset);
@@ -85,6 +85,6 @@ export async function stampLoggedAt(
   const latest = row?.latest ? new Date(row.latest) : null;
   return {
     loggedAt: placeAfterLatest(clockTime, latest, dayEnd),
-    backfilled: true,
+    isBackfilled: true,
   };
 }

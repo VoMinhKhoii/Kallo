@@ -123,7 +123,7 @@ describe('copyMealVerbatim', () => {
       {
         userId: USER_ID,
         loggedAt: SOURCE_LOGGED_AT,
-        backfilled: false,
+        isBackfilled: false,
         factor: 0.5,
       }
     );
@@ -140,14 +140,14 @@ describe('copyMealVerbatim', () => {
       newMealId: NEW_MEAL_ID,
       loggedAt: SOURCE_LOGGED_AT,
       // A share copy passes its source's flag with its source's instant.
-      backfilled: true,
+      isBackfilled: true,
       mealSlot: 'breakfast',
       factor: 1,
     });
 
     expect(captured.meal?.mealSlot).toBe('breakfast');
     expect(captured.meal?.loggedAt).toEqual(SOURCE_LOGGED_AT);
-    expect(captured.meal?.backfilled).toBe(true);
+    expect(captured.meal?.isBackfilled).toBe(true);
     // Row and card must agree, or the feed reconciles an optimistic entry onto
     // a meal that sits somewhere else in the day.
     expect(result.meal.mealSlot).toBe('breakfast');
@@ -163,7 +163,7 @@ describe('copyMealVerbatim', () => {
     await copyMealVerbatim(tx, sourceMeal(), [sourceItem()], {
       userId: USER_ID,
       loggedAt: tonight,
-      backfilled: false,
+      isBackfilled: false,
       factor: 1,
     });
 
@@ -181,7 +181,7 @@ describe('copyMealVerbatim', () => {
     await copyMealVerbatim(tx, sourceMeal({ mealSlot: null }), [sourceItem()], {
       userId: USER_ID,
       loggedAt: tonight,
-      backfilled: false,
+      isBackfilled: false,
       mealSlot: null,
       factor: 1,
     });
@@ -211,7 +211,7 @@ describe('copyMealVerbatim', () => {
         userId: USER_ID,
         newMealId: NEW_MEAL_ID,
         loggedAt: SOURCE_LOGGED_AT,
-        backfilled: false,
+        isBackfilled: false,
         factor: 1,
       })
     ).rejects.toMatchObject({

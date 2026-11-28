@@ -84,7 +84,7 @@ export async function stageOcrMeal(
       value !== null ? { low: value, mid: value, high: value } : null;
   }
 
-  const { loggedAt, backfilled } = await stampLoggedAt(
+  const { loggedAt, isBackfilled } = await stampLoggedAt(
     userId,
     input.loggedDate,
     input.timezoneOffset
@@ -126,7 +126,7 @@ export async function stageOcrMeal(
       rawInput: `${input.productName} (${formatRawLoggedAmount(input.amount, input.unit)})`,
       entryMode: 'precise',
       loggedAt,
-      backfilled,
+      isBackfilled,
     })
     .returning({ id: pendingAnalyses.id });
 

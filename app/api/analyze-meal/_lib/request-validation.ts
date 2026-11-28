@@ -161,7 +161,7 @@ export async function validateRequest(request: NextRequest) {
             const loggedAt = new Date(inherited);
             return Promise.resolve({
               loggedAt,
-              backfilled: isPastDayKey(
+              isBackfilled: isPastDayKey(
                 toLocalDayKey(loggedAt, offset),
                 offset,
                 requestedAt

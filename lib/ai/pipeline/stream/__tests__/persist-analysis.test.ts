@@ -24,7 +24,7 @@ const values = {
   entryMode: 'precise' as const,
 };
 const STAMP_AT = new Date('2026-11-10T09:06:00.000Z');
-const STAMP = { loggedAt: STAMP_AT, backfilled: true };
+const STAMP = { loggedAt: STAMP_AT, isBackfilled: true };
 
 describe('stampAndStage', () => {
   beforeEach(() => {
@@ -44,7 +44,10 @@ describe('stampAndStage', () => {
 
     expect(result).toEqual({ analysisId: 'analysis-1', loggedAt: STAMP_AT });
     expect(insert).toHaveBeenCalledTimes(1);
-    expect(written[0]).toMatchObject({ loggedAt: STAMP_AT, backfilled: true });
+    expect(written[0]).toMatchObject({
+      loggedAt: STAMP_AT,
+      isBackfilled: true,
+    });
   });
 
   it('writes nothing when the client left while the day was read', async () => {

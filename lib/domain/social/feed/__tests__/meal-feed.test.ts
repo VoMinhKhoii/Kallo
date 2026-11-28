@@ -36,7 +36,7 @@ function sharedMeal(index: number, sharedAt: Date) {
     sharedAt,
     // Real-time log: eaten when shared (not backfilled).
     loggedAt: sharedAt,
-    backfilled: false,
+    isBackfilled: false,
     sharedAtText: sharedAt.toISOString().replace('Z', '123+00'),
     eatenAtText: sharedAt.toISOString().replace('Z', '123+00'),
     handle: 'me',
@@ -361,7 +361,8 @@ describe('toSharedMealEntry', () => {
 
     expect(toSharedMealEntry(row, USER_A).meal.isBackfilled).toBe(false);
     expect(
-      toSharedMealEntry({ ...row, backfilled: true }, USER_A).meal.isBackfilled
+      toSharedMealEntry({ ...row, isBackfilled: true }, USER_A).meal
+        .isBackfilled
     ).toBe(true);
   });
 
@@ -369,7 +370,7 @@ describe('toSharedMealEntry', () => {
     const row = {
       ...sharedMeal(1, new Date('2026-01-02T12:00:00Z')),
       loggedAt: new Date('2026-01-01T12:00:00Z'),
-      backfilled: false,
+      isBackfilled: false,
     };
 
     expect(toSharedMealEntry(row, USER_A).meal.isBackfilled).toBe(true);

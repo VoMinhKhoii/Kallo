@@ -186,7 +186,7 @@ describe('stageCheatInviteAction', () => {
 
   it("stamps the staged row at the source meal's instant", async () => {
     queueLimitSelect([pendingInvite]);
-    queueLimitSelect([cheatSourceMeal({ backfilled: true })]);
+    queueLimitSelect([cheatSourceMeal({ isBackfilled: true })]);
     installUpdate({ returning: [{ id: UUID_INVITE }] });
     queueLimitSelect([{ id: 'friendship-1' }]);
     const captured = captureStage();
@@ -197,7 +197,7 @@ describe('stageCheatInviteAction', () => {
     // copy does, and keeping the row's time consistent with the sender's
     // mealSlot that rides along inside the spec.
     expect(captured.staged?.loggedAt).toEqual(LOGGED_AT);
-    expect(captured.staged?.backfilled).toBe(true);
+    expect(captured.staged?.isBackfilled).toBe(true);
     expect(result.loggedAt).toBe(LOGGED_AT.toISOString());
   });
 

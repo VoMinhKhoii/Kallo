@@ -276,7 +276,7 @@ describe('confirmAndSaveMealAction', () => {
             entryMode,
             pipelineResult,
             loggedAt: LOGGED_AT,
-            backfilled: true,
+            isBackfilled: true,
           },
         ]),
       }),
@@ -287,7 +287,7 @@ describe('confirmAndSaveMealAction', () => {
 
     const mealRow = capturedValues[0] as Record<string, unknown>;
     expect(mealRow.entryMode ?? 'precise').toBe(entryMode);
-    expect(mealRow.backfilled).toBe(true);
+    expect(mealRow.isBackfilled).toBe(true);
   });
 
   it('resolves cheat-meal nutrition from slider levels and inserts zero items', async () => {

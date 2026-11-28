@@ -27,7 +27,7 @@ describe('stampLoggedAt', () => {
   });
 
   it('stamps today at now without reading the day', async () => {
-    const { loggedAt, backfilled } = await stampLoggedAt(
+    const { loggedAt, isBackfilled } = await stampLoggedAt(
       'u1',
       '2026-11-27',
       VN,
@@ -35,7 +35,7 @@ describe('stampLoggedAt', () => {
     );
 
     expect(loggedAt.toISOString()).toBe(NOW.toISOString());
-    expect(backfilled).toBe(false);
+    expect(isBackfilled).toBe(false);
     expect(execute).not.toHaveBeenCalled();
   });
 
@@ -43,7 +43,7 @@ describe('stampLoggedAt', () => {
     // Yesterday's meals at 12:11 and 13:53 local; logged today at 12:11.
     latests.push('2026-11-26 06:53:00+00');
 
-    const { loggedAt, backfilled } = await stampLoggedAt(
+    const { loggedAt, isBackfilled } = await stampLoggedAt(
       'u1',
       '2026-11-26',
       VN,
@@ -53,7 +53,7 @@ describe('stampLoggedAt', () => {
     // 13:54 local: below the 13:53 meal, not above it at 12:11.
     expect(loggedAt.toISOString()).toBe('2026-11-26T06:54:00.000Z');
     // Under 18h before a share made now, so the feed needs the flag.
-    expect(backfilled).toBe(true);
+    expect(isBackfilled).toBe(true);
   });
 
   it("keeps today's clock time when the day's meals are all earlier", async () => {
@@ -65,7 +65,7 @@ describe('stampLoggedAt', () => {
   });
 
   it('keeps an empty past day at the clock time', async () => {
-    const { loggedAt, backfilled } = await stampLoggedAt(
+    const { loggedAt, isBackfilled } = await stampLoggedAt(
       'u1',
       '2026-11-26',
       VN,
@@ -73,7 +73,7 @@ describe('stampLoggedAt', () => {
     );
 
     expect(loggedAt.toISOString()).toBe('2026-11-26T05:11:00.000Z');
-    expect(backfilled).toBe(true);
+    expect(isBackfilled).toBe(true);
   });
 });
 
