@@ -5,14 +5,16 @@ import type { StreamEvent } from '@/lib/ai/streaming/types';
 
 // The stamp's own day read is tested in lib/domain/meals/__tests__/logged-at.test.ts;
 // here it stamps the clock time on the day, as before, without touching `db`.
+const mockStampLoggedAt = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/domain/meals/logged-at', async () => {
   const { getUtcInstantForLocalDate } = await vi.importActual<
     typeof import('@/lib/core/date/local-day')
   >('@/lib/core/date/local-day');
-  return {
-    stampLoggedAt: async (_userId: string, date: string, offset: number) =>
-      getUtcInstantForLocalDate(date, offset),
-  };
+  mockStampLoggedAt.mockImplementation(
+    async (_userId: string, date: string, offset: number) =>
+      getUtcInstantForLocalDate(date, offset)
+  );
+  return { stampLoggedAt: mockStampLoggedAt };
 });
 
 const mockGetUser = vi.fn();
@@ -819,6 +821,7 @@ describe('POST /api/analyze-meal', () => {
   });
 
   it('returns 402 with the feature_locked body when blocked', async () => {
+    mockStampLoggedAt.mockClear();
     mockGetBillingConfig.mockReturnValue({
       enforcementEnabled: true,
     });
@@ -841,6 +844,8 @@ describe('POST /api/analyze-meal', () => {
     expect(json.error.reason).toBe('not_entitled');
     // The global next-intl mock echoes the key it was asked for.
     expect(json.error.message).toBe('featureLockedNotEntitled');
+    // The day is read only when the analysis is staged, never for a refusal.
+    expect(mockStampLoggedAt).not.toHaveBeenCalled();
 
     // Blocked BEFORE the pipeline / any streaming starts.
     expect(mockCreateGeminiClient).not.toHaveBeenCalled();
@@ -933,6 +938,11 @@ describe('POST /api/analyze-meal', () => {
     expect(last.type).toBe('analysis_complete');
     if (last.type === 'analysis_complete') {
       expect(last.analysisId).toBe('analysis-123');
+      expect(mockStampLoggedAt).toHaveBeenCalledWith(
+        'user-1',
+        expect.any(String),
+        expect.any(Number)
+      );
       // The stamp the staged row was written with, so the card shows it.
       const staged = mockInsertValues.mock.calls.at(-1)?.[0] as {
         loggedAt: Date;

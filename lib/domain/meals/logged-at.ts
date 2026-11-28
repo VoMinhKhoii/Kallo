@@ -1,4 +1,5 @@
 import { and, desc, eq, gte, lt } from 'drizzle-orm';
+import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
 import {
   getUtcDayRangeForLocalDate,
   getUtcInstantForLocalDate,
@@ -63,7 +64,10 @@ export async function stampLoggedAt(
       and(
         eq(pendingAnalyses.userId, userId),
         gte(pendingAnalyses.loggedAt, dayStart),
-        lt(pendingAnalyses.loggedAt, dayEnd)
+        lt(pendingAnalyses.loggedAt, dayEnd),
+        // The day view's line: an abandoned row it hides must not push the
+        // new meal past it.
+        isStillStaged()
       )
     )
     .orderBy(desc(pendingAnalyses.loggedAt))

@@ -162,16 +162,20 @@ export async function runPreciseBranch({
   // failed insert produces an error path with no half-state. If we emit
   // `result` first and then the insert throws, the client has a populated meal
   // preview with no `analysisId` to confirm it.
-  const [inserted] = await withDeadline(
-    upsertPendingAnalysis({
-      userId,
-      pipelineResult: result.data,
-      rawInput,
-      entryMode: 'precise',
-      loggedAt: ctx.loggedAt,
-      attemptId: ctx.attemptId,
-      pipelineRequestId: requestId,
-    }),
+  const { inserted, loggedAt } = await withDeadline(
+    (async () => {
+      const loggedAt = await ctx.resolveLoggedAt();
+      const [inserted] = await upsertPendingAnalysis({
+        userId,
+        pipelineResult: result.data,
+        rawInput,
+        entryMode: 'precise',
+        loggedAt,
+        attemptId: ctx.attemptId,
+        pipelineRequestId: requestId,
+      });
+      return { inserted, loggedAt };
+    })(),
     PERSIST_DEADLINE_MS
   );
 
@@ -182,7 +186,7 @@ export async function runPreciseBranch({
   emit({
     type: 'analysis_complete',
     analysisId: inserted.id,
-    loggedAt: ctx.loggedAt.toISOString(),
+    loggedAt: loggedAt.toISOString(),
   });
 
   // Fire-and-forget: log success + unmatched ingredients

@@ -142,13 +142,19 @@ export async function validateRequest(request: NextRequest) {
         locale: parsed.data.locale,
         // A refine inherits the original meal's instant so the corrected meal
         // keeps its timeline position/slot; a fresh log stamps from the day.
-        loggedAt: parsed.data.inheritLoggedAt
-          ? new Date(parsed.data.inheritLoggedAt)
-          : await stampLoggedAt(
-              user.id,
-              parsed.data.loggedDate,
-              parsed.data.timezoneOffset
-            ),
+        // Called when the analysis is staged, not here: no day read before the
+        // consent, billing and rate-limit checks, and a meal logged on that day
+        // while this one is analyzed still ends up above it.
+        resolveLoggedAt: (): Promise<Date> => {
+          const inherited = parsed.data.inheritLoggedAt;
+          return inherited
+            ? Promise.resolve(new Date(inherited))
+            : stampLoggedAt(
+                user.id,
+                parsed.data.loggedDate,
+                parsed.data.timezoneOffset
+              );
+        },
         mode: parsed.data.mode ?? 'precise',
         cheatType: parsed.data.cheatType,
         clarifyAnswer: parsed.data.clarifyAnswer,

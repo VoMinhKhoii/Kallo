@@ -59,16 +59,20 @@ export async function runCheatBranch({
   // Stage the spec so confirm can recompute nutrition authoritatively from the
   // user's chosen levels. Persist BEFORE surfacing (same ordering rationale as
   // the precise path).
-  const [insertedCheat] = await withDeadline(
-    upsertPendingAnalysis({
-      userId,
-      pipelineResult: { entryMode: 'cheat', spec },
-      rawInput: ctx.message,
-      entryMode: 'cheat',
-      loggedAt: ctx.loggedAt,
-      attemptId: ctx.attemptId,
-      pipelineRequestId: requestId,
-    }),
+  const { insertedCheat, loggedAt } = await withDeadline(
+    (async () => {
+      const loggedAt = await ctx.resolveLoggedAt();
+      const [insertedCheat] = await upsertPendingAnalysis({
+        userId,
+        pipelineResult: { entryMode: 'cheat', spec },
+        rawInput: ctx.message,
+        entryMode: 'cheat',
+        loggedAt,
+        attemptId: ctx.attemptId,
+        pipelineRequestId: requestId,
+      });
+      return { insertedCheat, loggedAt };
+    })(),
     PERSIST_DEADLINE_MS
   );
 
@@ -76,7 +80,7 @@ export async function runCheatBranch({
   emit({
     type: 'analysis_complete',
     analysisId: insertedCheat.id,
-    loggedAt: ctx.loggedAt.toISOString(),
+    loggedAt: loggedAt.toISOString(),
   });
 
   logPipelineEnd(
