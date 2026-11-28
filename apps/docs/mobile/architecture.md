@@ -22,6 +22,8 @@ lib/
   main.dart            app entry: env assert, Supabase init, runApp
   app.dart             root widget (theme, localization, router wiring)
   router.dart          go_router routes + redirect/auth seam
+  router_redirect.dart the redirect rule, as a pure function
+  router_refresh.dart  what re-runs the redirect: auth events, the profile, the draft
   services/            infrastructure edges, one folder per concern:
     http/                api_client.dart, api_client_uploads.dart, api_auth.dart, query.dart
     auth/                supabase_service.dart, session_provider.dart
