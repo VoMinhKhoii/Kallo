@@ -4,9 +4,16 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { AUTH_ERROR_CODES } from '@/lib/infra/auth/redirects';
+import type { AuthErrorCode } from '@/lib/infra/auth/redirects';
 
-const HANDLED_CODES = new Set<string>(AUTH_ERROR_CODES);
+/** The `auth.dialog` message for each code. A code the routes add without a
+ * message here fails the type check. */
+const MESSAGE_KEY = {
+  oauth_missing_code: 'signInError',
+  oauth_exchange: 'signInError',
+  account_exists: 'accountExists',
+  verify_failed: 'verifyLinkError',
+} as const satisfies Record<AuthErrorCode, string>;
 
 /**
  * Surfaces auth callback/verify failures redirected to /{locale}/?error=*.
@@ -23,12 +30,9 @@ export function AuthErrorToast() {
   useEffect(() => {
     if (fired.current) return;
     const error = params.get('error');
-    if (!error || !HANDLED_CODES.has(error)) return;
+    if (!error || !Object.hasOwn(MESSAGE_KEY, error)) return;
     fired.current = true;
-    let message = t('signInError');
-    if (error === 'account_exists') message = t('accountExists');
-    else if (error === 'verify_failed') message = t('verifyLinkError');
-    toast.error(message);
+    toast.error(t(MESSAGE_KEY[error as AuthErrorCode]));
 
     // Strip the param so a refresh doesn't replay the toast. Preserve
     // existing history.state — Next's App Router stores routing metadata

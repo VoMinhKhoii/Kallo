@@ -3,26 +3,24 @@
 // reverse-proxy host handling can't drift between them.
 
 import type { NextRequest } from 'next/server';
-import { defaultLocale, isLocale } from '@/i18n/config';
+import { defaultLocale, isLocale, type Locale } from '@/i18n/config';
 import { isCloudRunHost } from '@/lib/infra/http/cloud-run-host';
 import { SITE_URL } from '@/lib/seo/site';
 
 /**
  * The `?error=` codes the auth routes redirect to the landing page with. The
- * landing page's `AuthErrorToast` shows a message for exactly these, so a new
- * code added here is one the toast has to handle.
+ * landing page's `AuthErrorToast` maps every one of them to a message, so a
+ * code added here without one fails the type check there.
  */
-export const AUTH_ERROR_CODES = [
-  'oauth_missing_code',
-  'oauth_exchange',
-  'account_exists',
-  'verify_failed',
-] as const;
-export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[number];
+export type AuthErrorCode =
+  | 'oauth_missing_code'
+  | 'oauth_exchange'
+  | 'account_exists'
+  | 'verify_failed';
 
 /** Locale to use for landing/error redirects, inferred from the (already
  * validated) `next` path; falls back to the default locale. */
-export function localeFromNext(next: string | null): string {
+export function localeFromNext(next: string | null): Locale {
   const first = next?.split('/')[1];
   return isLocale(first) ? first : defaultLocale;
 }
@@ -56,7 +54,7 @@ export function publicUrl(
 /** The landing page with an auth error for `AuthErrorToast` to show. */
 export function authErrorUrl(
   request: NextRequest,
-  locale: string,
+  locale: Locale,
   code: AuthErrorCode,
   fallbackOrigin: string
 ): URL {
