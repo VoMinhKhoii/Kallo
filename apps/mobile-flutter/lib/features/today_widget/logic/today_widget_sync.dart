@@ -133,6 +133,7 @@ class _TodayWidgetSyncState extends ConsumerState<TodayWidgetSync>
   }
 
   String? _dayKey;
+  String? _profileUserId;
   LoggingDayData? _seenLog;
   dash_day.LoggingDayData? _seenToday;
   List<TodayWidgetMeal>? _newest;
@@ -143,21 +144,24 @@ class _TodayWidgetSyncState extends ConsumerState<TodayWidgetSync>
     if (session.isLoading) return null;
     final userId = ref.watch(signedInUserIdProvider);
     if (userId == null) {
+      _profileUserId = null;
       // Not watching the day or the profile from here on, so neither keeps
       // the account that left alive.
       return todayWidgetSignedOut(date: _today, locale: locale, tr: tr);
     }
     final meals = _newestDay(userId);
     final profile = ref.watch(profileProvider);
-    // A failed, first, or account-switching load (`isReloading` and a failed
-    // first/sign-in reload both carry the stale signed-out `null`) keeps
-    // whatever the widget last showed. A failed refresh that still holds the
-    // user's loaded profile keeps writing new meals with those last good
-    // targets (via `valueOrNull`, since `.value` throws on `AsyncError`).
+    if (!profile.isLoading && !profile.hasError && profile.hasValue) {
+      _profileUserId = userId;
+    }
+    // A failed, first, or account-switching load keeps whatever the widget last
+    // showed. A failed refresh still writes new meals with the last good
+    // targets ONLY when that cached profile belonged to this same [userId]
+    // (read via `valueOrNull`, since `.value` throws on `AsyncError`).
     if (meals == null ||
         !profile.hasValue ||
         profile.isReloading ||
-        (profile.hasError && profile.valueOrNull == null)) {
+        (profile.hasError && _profileUserId != userId)) {
       return null;
     }
     return todayWidgetSnapshot(

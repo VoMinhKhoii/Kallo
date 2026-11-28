@@ -313,6 +313,56 @@ void main() {
     },
   );
 
+  testWidgets(
+    'direct account switch whose profile fetch fails does not leak prior user targets',
+    (tester) async {
+      final store = _RecordingStore();
+      final uidState = StateProvider<String?>((ref) => 'u1');
+      final secondUserGate = Completer<Map<String, dynamic>?>();
+      var reads = 0;
+      final c = ProviderContainer(
+        overrides: [
+          dash.loggingDayProvider.overrideWith(
+            (ref, args) => Completer<dash_day.LoggingDayData>().future,
+          ),
+          sessionProvider.overrideWith((ref) => Stream<Session?>.value(null)),
+          signedInUserIdProvider.overrideWith((ref) => ref.watch(uidState)),
+          todayWidgetStoreProvider.overrideWithValue(store),
+          loggingDayProvider.overrideWith(_Day.new),
+          apiClientProvider.overrideWithValue(
+            _ScriptedProfileApi(() {
+              reads++;
+              if (reads == 1) {
+                return Future.value(const {'calorieTarget': 1932});
+              }
+              return secondUserGate.future;
+            }),
+          ),
+        ],
+      );
+      addTearDown(c.dispose);
+      await tester.pumpWidget(_app(c));
+      await tester.pumpAndSettle();
+      expect((store.saved.last['target']! as Map)['kcal'], 1932);
+      store.saved.clear();
+
+      // Direct switch u1 -> u2 with no signed-out frame in between, then fail u2.
+      c.read(uidState.notifier).state = 'u2';
+      await tester.pump();
+      expect(c.read(profileProvider).isReloading, isTrue);
+
+      secondUserGate.completeError(ApiError('OFFLINE', 503, false, 'offline'));
+      await tester.pumpAndSettle();
+
+      expect(c.read(profileProvider).hasError, isTrue);
+      expect(
+        store.saved,
+        isEmpty,
+        reason: 'must not write user 1 targets under user 2',
+      );
+    },
+  );
+
   test('the widget tap link is the Today link, and only that', () {
     expect(isTodayWidgetLink(Uri.parse('nham://today')), isTrue);
     expect(isTodayWidgetLink(Uri.parse('nham://invite/abc')), isFalse);
@@ -327,4 +377,13 @@ class _DelayedProfileApi extends ApiClient {
 
   @override
   Future<T> get<T>(String path) async => (await _gate.future) as T;
+}
+
+class _ScriptedProfileApi extends ApiClient {
+  _ScriptedProfileApi(this._onGet);
+
+  final Future<Map<String, dynamic>?> Function() _onGet;
+
+  @override
+  Future<T> get<T>(String path) async => (await _onGet()) as T;
 }
