@@ -64,11 +64,13 @@ describe('encodeSSE', () => {
     const event: StreamEvent = {
       type: 'analysis_complete',
       analysisId: 'abc-123',
+      loggedAt: '2026-11-10T09:06:00.000Z',
     };
     const encoded = encodeSSE(event);
 
     expect(encoded).toContain('event: analysis_complete\n');
     expect(encoded).toContain('"analysisId":"abc-123"');
+    expect(encoded).toContain('"loggedAt":"2026-11-10T09:06:00.000Z"');
   });
 });
 

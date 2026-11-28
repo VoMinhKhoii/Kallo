@@ -182,6 +182,7 @@ export async function runPreciseBranch({
   emit({
     type: 'analysis_complete',
     analysisId: inserted.id,
+    loggedAt: ctx.loggedAt.toISOString(),
   });
 
   // Fire-and-forget: log success + unmatched ingredients

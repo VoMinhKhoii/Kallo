@@ -18,13 +18,13 @@ import {
   type SaveManualMealInput,
   saveManualMealSchema,
 } from '@/lib/api/contracts/meals';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   manualDishOf,
   manualMealTitle,
   scaleNutritionValues,
 } from '@/lib/domain/logging/manual-logging';
+import { stampLoggedAt } from '@/lib/domain/meals/logged-at';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import {
@@ -103,7 +103,8 @@ async function saveManualMeal(
   });
 
   const mealNutrition = sumDisplayedNutrition(items.map((i) => i.nutrition));
-  const loggedAt = getUtcInstantForLocalDate(
+  const loggedAt = await stampLoggedAt(
+    userId,
     parsed.loggedDate,
     parsed.timezoneOffset
   );

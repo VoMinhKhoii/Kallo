@@ -3,6 +3,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 
+// The stamp's own day read is tested in lib/domain/meals/__tests__/logged-at.test.ts;
+// here it stamps the clock time on the day, as before, without touching `db`.
+vi.mock('@/lib/domain/meals/logged-at', async () => {
+  const { getUtcInstantForLocalDate } = await vi.importActual<
+    typeof import('@/lib/core/date/local-day')
+  >('@/lib/core/date/local-day');
+  return {
+    stampLoggedAt: async (_userId: string, date: string, offset: number) =>
+      getUtcInstantForLocalDate(date, offset),
+  };
+});
+
 const mockGetUser = vi.fn();
 const mockSelect = vi.fn();
 const mockAnalyzeMeal = vi.fn();
@@ -921,6 +933,11 @@ describe('POST /api/analyze-meal', () => {
     expect(last.type).toBe('analysis_complete');
     if (last.type === 'analysis_complete') {
       expect(last.analysisId).toBe('analysis-123');
+      // The stamp the staged row was written with, so the card shows it.
+      const staged = mockInsertValues.mock.calls.at(-1)?.[0] as {
+        loggedAt: Date;
+      };
+      expect(last.loggedAt).toBe(staged.loggedAt.toISOString());
     }
 
     // Result contains meal data
@@ -1218,7 +1235,11 @@ describe('POST /api/analyze-meal', () => {
 
     expect(events).toEqual([
       { type: 'cheat_estimate', spec },
-      { type: 'analysis_complete', analysisId: 'cheat-analysis-1' },
+      {
+        type: 'analysis_complete',
+        analysisId: 'cheat-analysis-1',
+        loggedAt: expect.any(String),
+      },
     ]);
     expect(mockInsertValues).toHaveBeenCalledWith(
       expect.objectContaining({

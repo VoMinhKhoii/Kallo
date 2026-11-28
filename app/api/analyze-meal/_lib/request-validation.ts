@@ -5,7 +5,6 @@ import {
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
 import { readJsonBody } from '@/lib/api/auth';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import { safeError } from '@/lib/core/errors/safe-error';
 import { serializeError } from '@/lib/core/errors/serialize';
@@ -16,6 +15,7 @@ import {
 import { findCachedRows } from '@/lib/domain/barcode/cache';
 import { barcodeNotCachedError } from '@/lib/domain/barcode/errors';
 import { barcodeRefsOf } from '@/lib/domain/logging/relog/relog';
+import { stampLoggedAt } from '@/lib/domain/meals/logged-at';
 import { getRequestUser } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
@@ -144,7 +144,8 @@ export async function validateRequest(request: NextRequest) {
         // keeps its timeline position/slot; a fresh log stamps from the day.
         loggedAt: parsed.data.inheritLoggedAt
           ? new Date(parsed.data.inheritLoggedAt)
-          : getUtcInstantForLocalDate(
+          : await stampLoggedAt(
+              user.id,
               parsed.data.loggedDate,
               parsed.data.timezoneOffset
             ),

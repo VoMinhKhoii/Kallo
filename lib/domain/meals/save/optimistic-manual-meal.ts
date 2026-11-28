@@ -32,7 +32,8 @@ export function buildOptimisticManualMeal(
   variables: SaveManualMealVariables
 ): PersistedMeal {
   const { items, mealId, name } = variables;
-  // Same derivation the server applies — no second source of truth.
+  // The clock time on the day. On a past day the server may stamp it after the
+  // day's latest meal instead (`stampLoggedAt`); its meal replaces this one.
   const loggedAt = getUtcInstantForLocalDate(
     variables.loggedDate,
     variables.timezoneOffset

@@ -2,7 +2,6 @@
 
 import { and, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import { Errors } from '@/lib/core/errors/catalog';
 import type {
   CheatSlidersPersisted,
@@ -14,6 +13,7 @@ import {
 } from '@/lib/core/validation/primitives';
 import { assertFeatureAccess } from '@/lib/domain/billing/feature-gate';
 import { groupOccasions } from '@/lib/domain/cheat/occasion-grouping';
+import { stampLoggedAt } from '@/lib/domain/meals/logged-at';
 import { requireAuthAndProfile } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { meals } from '@/lib/infra/db/schema';
@@ -109,7 +109,8 @@ export async function stageCheatRepeatAction(input: {
     spec,
     levels,
     rawInput: source.rawInput,
-    loggedAt: getUtcInstantForLocalDate(
+    loggedAt: await stampLoggedAt(
+      user.id,
       parsed.loggedDate,
       parsed.timezoneOffset
     ),

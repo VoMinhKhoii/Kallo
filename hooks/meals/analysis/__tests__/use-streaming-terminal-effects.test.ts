@@ -20,6 +20,7 @@ function baseStream(
     result: null,
     cheatSpec: null,
     analysisId: null,
+    loggedAt: null,
     error: null,
     isAnalyzing: false,
     reset: vi.fn(),
@@ -141,5 +142,48 @@ describe('useStreamingTerminalEffects — consentRequired', () => {
     expect(setStreamingMsgId).toHaveBeenCalledWith(null);
     expect(stream.reset).toHaveBeenCalledTimes(1);
     expect(toastError).not.toHaveBeenCalled();
+  });
+});
+
+describe('useStreamingTerminalEffects — staged meal', () => {
+  it("dates the finished card with the server's stamp, not the browser clock", () => {
+    // Logged at 12:46 for an earlier day whose last meal was 16:05: the server
+    // stamps 16:06, and the card (and the meal a save builds from it) follow.
+    const opened = new Date('2026-11-10T05:46:00.000Z');
+    const card: ChatMessage = {
+      id: 'msg-1',
+      role: 'assistant',
+      content: '',
+      loggedDate: '2026-11-10',
+      timestamp: opened,
+      isStreaming: true,
+    };
+    let messages: ChatMessage[] = [card];
+    const setMessages = vi.fn((update) => {
+      messages = typeof update === 'function' ? update(messages) : update;
+    });
+    const stream = baseStream({
+      status: 'done',
+      result: { mealName: 'banana', items: [], totalMacros: {} } as never,
+      analysisId: 'analysis-1',
+      loggedAt: '2026-11-10T09:06:00.000Z',
+    });
+
+    renderHook(() =>
+      useStreamingTerminalEffects({
+        stream,
+        streamingMsgId: 'msg-1',
+        setStreamingMsgId: vi.fn(),
+        setMessages,
+        scrollToBottom: vi.fn(),
+        lastAnalysisIdRef: { current: null },
+        lastErrorRef: { current: null },
+      })
+    );
+
+    expect(messages[0].analysisId).toBe('analysis-1');
+    expect(messages[0].timestamp.toISOString()).toBe(
+      '2026-11-10T09:06:00.000Z'
+    );
   });
 });

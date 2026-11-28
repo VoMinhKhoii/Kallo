@@ -73,7 +73,11 @@ export async function runCheatBranch({
   );
 
   emit({ type: 'cheat_estimate', spec });
-  emit({ type: 'analysis_complete', analysisId: insertedCheat.id });
+  emit({
+    type: 'analysis_complete',
+    analysisId: insertedCheat.id,
+    loggedAt: ctx.loggedAt.toISOString(),
+  });
 
   logPipelineEnd(
     requestId,
