@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { AuthErrorToast } from '@/components/auth/auth-error-toast';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { LazyAuthDialog } from '@/components/auth/lazy-auth-dialog';
-import { OAuthErrorToast } from '@/components/auth/oauth-error-toast';
 import {
   AuthRequestConfig,
   type AuthSearchParams,
@@ -122,7 +122,7 @@ export default async function Home({
         <DocsFooter landing sections={sections} />
         <LazyAuthDialog />
         <Suspense fallback={null}>
-          <OAuthErrorToast />
+          <AuthErrorToast />
           <WaitlistStatusToast />
           <AuthRequestConfig searchParams={searchParams} />
           <SignedInRedirect searchParams={searchParams} />

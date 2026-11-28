@@ -4,13 +4,9 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { AUTH_ERROR_CODES } from '@/lib/infra/auth/redirects';
 
-const HANDLED_CODES = new Set([
-  'oauth_missing_code',
-  'oauth_exchange',
-  'account_exists',
-  'verify_failed',
-]);
+const HANDLED_CODES = new Set<string>(AUTH_ERROR_CODES);
 
 /**
  * Surfaces auth callback/verify failures redirected to /{locale}/?error=*.
@@ -19,7 +15,7 @@ const HANDLED_CODES = new Set([
  * firing once we strip the param from the URL via history.replaceState so a
  * refresh doesn't replay the toast.
  */
-export function OAuthErrorToast() {
+export function AuthErrorToast() {
   const t = useTranslations('auth.dialog');
   const params = useSearchParams();
   const fired = useRef(false);
