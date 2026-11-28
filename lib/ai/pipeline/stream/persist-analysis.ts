@@ -1,4 +1,6 @@
 import { sql } from 'drizzle-orm';
+import { withDeadline } from '@/lib/core/async/with-deadline';
+import { Errors } from '@/lib/core/errors/catalog';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
 
@@ -45,4 +47,30 @@ export function upsertPendingAnalysis(values: StagePendingAnalysis) {
       },
     })
     .returning({ id: pendingAnalyses.id });
+}
+
+/**
+ * Stamp the meal, then stage it, inside ONE {@link PERSIST_DEADLINE_MS}: the
+ * route's 60 s ends right after the pipeline's 45 s plus this budget.
+ *
+ * The stamp is awaited on its own, so a stamp that times out, or that the
+ * client outlives, writes nothing. Returns null when the client left.
+ */
+export async function stampAndStage(
+  run: { resolveLoggedAt: () => Promise<Date>; signal: AbortSignal },
+  values: Omit<StagePendingAnalysis, 'loggedAt'>
+): Promise<{ analysisId: string; loggedAt: Date } | null> {
+  const deadline = Date.now() + PERSIST_DEADLINE_MS;
+  const loggedAt = await withDeadline(
+    run.resolveLoggedAt(),
+    PERSIST_DEADLINE_MS
+  );
+  if (run.signal.aborted) return null;
+  const left = deadline - Date.now();
+  if (left <= 0) throw Errors.pipelineTimeout();
+  const [inserted] = await withDeadline(
+    upsertPendingAnalysis({ ...values, loggedAt }),
+    left
+  );
+  return { analysisId: inserted.id, loggedAt };
 }

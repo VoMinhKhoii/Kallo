@@ -1,10 +1,9 @@
 import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import { initCheatBudgetAccounting } from '@/lib/ai/pipeline/telemetry/budget';
 import { logPipelineEnd } from '@/lib/ai/pipeline/telemetry/logging';
-import { withDeadline } from '@/lib/core/async/with-deadline';
 import { estimateCheatMeal } from '@/lib/domain/cheat/estimate';
 import { resolveSliderNutrition } from '@/lib/domain/cheat/slider-nutrition';
-import { PERSIST_DEADLINE_MS, upsertPendingAnalysis } from './persist-analysis';
+import { stampAndStage } from './persist-analysis';
 import type { StreamRun } from './types';
 
 /**
@@ -59,32 +58,23 @@ export async function runCheatBranch({
   // Stage the spec so confirm can recompute nutrition authoritatively from the
   // user's chosen levels. Persist BEFORE surfacing (same ordering rationale as
   // the precise path).
-  // The stamp first, under its own deadline (see the precise path).
-  const loggedAt = await withDeadline(
-    ctx.resolveLoggedAt(),
-    PERSIST_DEADLINE_MS
-  );
-  if (ctx.signal.aborted) {
+  const staged = await stampAndStage(ctx, {
+    userId,
+    pipelineResult: { entryMode: 'cheat', spec },
+    rawInput: ctx.message,
+    entryMode: 'cheat',
+    attemptId: ctx.attemptId,
+    pipelineRequestId: requestId,
+  });
+  if (!staged) {
     return;
   }
-  const [insertedCheat] = await withDeadline(
-    upsertPendingAnalysis({
-      userId,
-      pipelineResult: { entryMode: 'cheat', spec },
-      rawInput: ctx.message,
-      entryMode: 'cheat',
-      loggedAt,
-      attemptId: ctx.attemptId,
-      pipelineRequestId: requestId,
-    }),
-    PERSIST_DEADLINE_MS
-  );
 
   emit({ type: 'cheat_estimate', spec });
   emit({
     type: 'analysis_complete',
-    analysisId: insertedCheat.id,
-    loggedAt: loggedAt.toISOString(),
+    analysisId: staged.analysisId,
+    loggedAt: staged.loggedAt.toISOString(),
   });
 
   logPipelineEnd(
