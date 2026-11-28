@@ -8,6 +8,7 @@
 #       -> <out-dir>/find-{rules-1,rules-2,bugs-diff,bugs-code}.md
 #   neon-review.sh verify <checkout> <sha> <out-dir> <brief> <finding-file>...
 #       -> <finding-file minus .md>.verdict.md, first line VALID or INVALID
+#       (F*.prompt.md and F*.verdict.md arguments are skipped, so a retry can reuse F*.md)
 #
 # Every run is read-only: a throwaway worktree of <sha>, agy plan mode with an allow list of
 # read commands, and a macOS sandbox that refuses writes to the repo's worktrees and .git.
@@ -20,7 +21,8 @@ MODE=$1 CK=$2 SHA=$3 OUT=$4 BRIEF=$5; shift 5
 if [ "$MODE" = find ]; then [ -z "${1:-}" ] || [ -f "$1" ] || { echo "missing pass file: $1" >&2; exit 2; }; fi
 if [ "$MODE" = verify ]; then
   [ $# -gt 0 ] || { echo "verify needs at least one finding file" >&2; exit 2; }
-  for f in "$@"; do [ -f "$f" ] || { echo "missing finding file: $f" >&2; exit 2; }; done
+  for f in "$@"; do case $f in *.prompt.md|*.verdict.md) continue ;; esac
+    [ -f "$f" ] || { echo "missing finding file: $f" >&2; exit 2; }; done
 fi
 HERE=$(cd "$(dirname "$0")" && pwd)
 mkdir -p "$OUT"
@@ -69,6 +71,8 @@ case "$MODE" in
     done ;;
   verify)
     for f in "$@"; do
+      # A retry's F*.md glob also matches the last run's outputs; they are not findings.
+      case $f in *.prompt.md|*.verdict.md) continue ;; esac
       f=$(cd "$(dirname "$f")" && pwd)/$(basename "$f")
       p="${f%.md}.prompt.md"
       { cat "$HERE/neon/verify.md"
@@ -79,6 +83,7 @@ case "$MODE" in
     done ;;
   *) echo "unknown mode: $MODE" >&2; exit 2 ;;
 esac
+[ ${#names[@]} -gt 0 ] || { echo "nothing to run: no findings left after skipping outputs"; exit 0; }
 wait
 
 fail=0

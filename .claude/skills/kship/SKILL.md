@@ -8,8 +8,8 @@ description: |
   model family: Gemini 4 Neon for Claude sessions, Claude Opus 5.5 for Gemini sessions,
   each run as the code-review plugin's parallel reviewers plus validators; a Fable
   thermo-nuclear structure review and a Fable regression check), push (behind a
-  pre-push gate hook), draft PR creation, CI monitoring and fixing, up to three PR review
-  rounds (rounds 1 and 2 Neon and Claude via `@claude review`, waiting for both; later
+  pre-push gate hook), draft PR creation, CI monitoring and fixing, PR review rounds (normally
+  up to three, more only while real bugs turn up; rounds 1 and 2 Neon and Claude via `@claude review`, waiting for both; later
   rounds the other family; Codex stays documented as paused; every finding judged on its
   merits),
   CodeRabbit comment triage (auto-fix reasonable ones, dismiss false positives
@@ -481,8 +481,9 @@ For each failure:
 ### 6c. PR Review Loop: Gemini 4 Neon + Claude (Codex paused)
 
 A round is: ask for a review of the pushed `HEAD`, wait for it, judge every finding, fix,
-reply, resolve, push. Up to three rounds; a round whose reviewers find nothing we fix on
-the current `HEAD` ends the loop. Round 3 is where we step back ("From round 3 on" below).
+reply, resolve, push. Three rounds is the norm: a round whose reviewers find nothing we fix
+on the current `HEAD` ends the loop, round 3 is where we step back, and a fourth round or
+later runs only while rounds still find real bugs ("From round 3 on" below).
 **Codex (`@codex review`) is paused for now**; its procedure stays in
 `.claude/skills/kship/codex-paused.md` and is not invoked.
 
