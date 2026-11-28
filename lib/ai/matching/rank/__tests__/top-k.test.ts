@@ -178,6 +178,120 @@ describe('buildMatchTopK', () => {
     ]);
   });
 
+  it('keeps the named species when an ordinary chicken row scores higher', () => {
+    const out = buildMatchTopK(
+      'đùi gà tây',
+      [
+        row({
+          id: 'chicken',
+          name_primary: 'Đùi gà, thịt và da, sống',
+          name_en: 'Chicken, thigh, meat and skin, raw',
+          similarity: 1.001,
+        }),
+        row({
+          id: 'turkey',
+          name_primary: 'Đùi gà tây, chỉ lấy thịt, nướng',
+          name_en: 'Turkey, thigh, meat only, roasted',
+          similarity: 0.99,
+        }),
+      ],
+      1,
+      0.7
+    );
+
+    expect(out.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'turkey',
+    ]);
+  });
+
+  it('leaves a named species unmatched when only other birds are offered', () => {
+    const rows = [
+      row({
+        id: 'chicken',
+        name_primary: 'Đùi gà, thịt và da, sống',
+        name_en: 'Chicken, thigh, meat and skin, raw',
+        similarity: 1.001,
+      }),
+      row({
+        id: 'pheasant',
+        name_primary: 'Đùi gà lôi, chỉ lấy thịt, sống',
+        name_en: 'Pheasant, leg, meat only, raw',
+        similarity: 0.99,
+      }),
+    ];
+
+    expect(buildMatchTopK('đùi gà tây', rows, 3, 0.7)).toEqual([]);
+    expect(buildMatchResult('turkey thigh', rows, 0.7)).toBeNull();
+  });
+
+  it('keeps a row that names no bird for a query that names a species', () => {
+    const out = buildMatchTopK(
+      'turkey stuffing',
+      [
+        row({
+          id: 'stuffing',
+          name_primary: 'Bread stuffing, prepared from mix',
+          similarity: 0.9,
+        }),
+      ],
+      3,
+      0.7
+    );
+
+    expect(out.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'stuffing',
+    ]);
+  });
+
+  it('matches a species named in English to its Vietnamese row', () => {
+    const out = buildMatchTopK(
+      'pheasant leg',
+      [
+        row({
+          id: 'turkey',
+          name_primary: 'Đùi gà tây, chỉ lấy thịt, nướng',
+          similarity: 1.001,
+        }),
+        row({
+          id: 'pheasant',
+          name_primary: 'Đùi gà lôi, chỉ lấy thịt, sống',
+          similarity: 0.99,
+        }),
+      ],
+      3,
+      0.7
+    );
+
+    expect(out.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'pheasant',
+    ]);
+  });
+
+  it('applies the species guards to decomposed (NFD) Vietnamese text', () => {
+    const rows = [
+      row({
+        id: 'turkey',
+        name_primary: 'Đùi gà tây, chỉ lấy thịt, nướng'.normalize('NFD'),
+        similarity: 1.001,
+      }),
+      row({
+        id: 'chicken',
+        name_primary: 'Đùi gà, thịt và da, sống'.normalize('NFD'),
+        similarity: 0.99,
+      }),
+    ];
+
+    const bare = buildMatchTopK('đùi gà'.normalize('NFD'), rows, 1, 0.7);
+    expect(bare.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'chicken',
+    ]);
+
+    const named = buildMatchTopK('đùi gà tây'.normalize('NFD'), rows, 3, 0.7);
+    expect(named.map((candidate) => candidate.foodCompositionId)).toEqual([
+      'turkey',
+    ]);
+  });
+
   it('excludes skin-only rows for a whole cut but keeps meat-and-skin rows', () => {
     const out = buildMatchTopK(
       'gà rán',
@@ -245,11 +359,14 @@ describe('buildMatchTopK', () => {
 });
 
 describe('sourceLimitForIngredient', () => {
-  it('over-fetches only for bare Vietnamese chicken queries', () => {
+  it('over-fetches for every query a species guard can filter', () => {
     expect(sourceLimitForIngredient('đùi gà', 3)).toBe(8);
     expect(sourceLimitForIngredient('gà rán', 3)).toBe(8);
-    expect(sourceLimitForIngredient('đùi gà tây', 3)).toBe(3);
+    expect(sourceLimitForIngredient('đùi gà tây', 3)).toBe(8);
+    expect(sourceLimitForIngredient('turkey thigh', 3)).toBe(8);
+    expect(sourceLimitForIngredient('đùi gà'.normalize('NFD'), 3)).toBe(8);
     expect(sourceLimitForIngredient('chicken thigh', 3)).toBe(3);
+    expect(sourceLimitForIngredient('thịt bò', 3)).toBe(3);
   });
 });
 

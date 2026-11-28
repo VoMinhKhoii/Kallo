@@ -5,12 +5,23 @@ const BARE_CHICKEN = new RegExp(
   `(?<!${VI_WORD_EDGE})gà(?!${VI_WORD_EDGE})`,
   'iu'
 );
-const QUALIFIED_NON_CHICKEN_SPECIES = [
-  new RegExp(
-    `(?<!${VI_WORD_EDGE})gà\\s+(?:tây|lôi|rừng)(?!${VI_WORD_EDGE})`,
-    'iu'
-  ),
-  /\b(?:turkey|pheasant|grouse|jungle\s+fowl)\b/iu,
+const viWord = (body: string) =>
+  new RegExp(`(?<!${VI_WORD_EDGE})${body}(?!${VI_WORD_EDGE})`, 'iu');
+/**
+ * Birds whose Vietnamese name starts with `gà` but are not chicken. Each
+ * species pairs its Vietnamese and English names, so a query in one language
+ * recognises its row in the other.
+ */
+const NON_CHICKEN_SPECIES: RegExp[][] = [
+  [viWord('gà\\s+tây'), /\bturkey\b/iu],
+  [viWord('gà\\s+lôi'), /\bpheasant\b/iu],
+  [viWord('gà\\s+rừng'), /\b(?:grouse|jungle\s+fowl)\b/iu],
+];
+/** A row that names chicken or one of the birds above, in either language. */
+const ANY_CHICKEN_LIKE_BIRD = [
+  BARE_CHICKEN,
+  /\bchicken\b/iu,
+  ...NON_CHICKEN_SPECIES.flat(),
 ];
 const SKIN_INTENT = [
   new RegExp(`(?<!${VI_WORD_EDGE})da(?!${VI_WORD_EDGE})`, 'iu'),
@@ -35,6 +46,10 @@ const FAT_ONLY_ROW = [
 
 function matchesAny(text: string, patterns: RegExp[]): boolean {
   return patterns.some((pattern) => pattern.test(text));
+}
+
+function speciesNamed(text: string): RegExp[][] {
+  return NON_CHICKEN_SPECIES.filter((names) => matchesAny(text, names));
 }
 
 /** The row names the guards read. */
@@ -63,25 +78,35 @@ export function isCandidateEligibleForIngredient(
   ingredientName: string,
   candidate: CandidateNames
 ): boolean {
-  const candidateText = candidateIdentityText(candidate);
-  const isBareChickenQuery =
-    BARE_CHICKEN.test(ingredientName) &&
-    !matchesAny(ingredientName, QUALIFIED_NON_CHICKEN_SPECIES);
-  if (
-    isBareChickenQuery &&
-    matchesAny(candidateText, QUALIFIED_NON_CHICKEN_SPECIES)
+  // Every pattern here is written precomposed. Decomposed (NFD) Vietnamese
+  // looks the same and matches none of them, so both sides are composed first.
+  const query = ingredientName.normalize('NFC');
+  const candidateText = candidateIdentityText(candidate).normalize('NFC');
+  const wanted = speciesNamed(query);
+  if (wanted.length > 0) {
+    // A named species never takes another bird's row: no row is safer than
+    // chicken. A row that names no bird ("bread stuffing") stays eligible.
+    const namesWanted = wanted.some((names) =>
+      matchesAny(candidateText, names)
+    );
+    if (!namesWanted && matchesAny(candidateText, ANY_CHICKEN_LIKE_BIRD)) {
+      return false;
+    }
+  } else if (
+    BARE_CHICKEN.test(query) &&
+    speciesNamed(candidateText).length > 0
   ) {
     return false;
   }
 
   if (
-    !matchesAny(ingredientName, SKIN_INTENT) &&
+    !matchesAny(query, SKIN_INTENT) &&
     matchesAny(candidateText, SKIN_ONLY_ROW)
   ) {
     return false;
   }
   if (
-    !matchesAny(ingredientName, FAT_INTENT) &&
+    !matchesAny(query, FAT_INTENT) &&
     matchesAny(candidateText, FAT_ONLY_ROW)
   ) {
     return false;
@@ -92,15 +117,15 @@ export function isCandidateEligibleForIngredient(
 /**
  * The live `đùi gà` pool contains eight saturated lexical ties. Fetch enough
  * rows for the categorical species filter above to see past those ties; the
- * public top-K remains unchanged. Explicit species queries keep the normal
- * limit because no negative species filter applies to them.
+ * public top-K remains unchanged. A query that names a species is filtered
+ * too (ordinary chicken rows are dropped), so it over-fetches as well.
  */
 export function sourceLimitForIngredient(
   ingredientName: string,
   configuredLimit: number
 ): number {
+  const query = ingredientName.normalize('NFC');
   const needsSpeciesGuard =
-    BARE_CHICKEN.test(ingredientName) &&
-    !matchesAny(ingredientName, QUALIFIED_NON_CHICKEN_SPECIES);
+    BARE_CHICKEN.test(query) || speciesNamed(query).length > 0;
   return needsSpeciesGuard ? Math.max(configuredLimit, 8) : configuredLimit;
 }
