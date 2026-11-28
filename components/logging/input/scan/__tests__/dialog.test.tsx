@@ -10,8 +10,10 @@ const h = vi.hoisted(() => ({
   openPaywall: vi.fn(),
   onDecode: null as null | ((code: string, frame: string | null) => void),
   decoders: new Set<unknown>(),
+  ocrCameraActive: false,
   scanLabel: vi.fn(),
   capturePhoto: vi.fn(),
+  stopCamera: vi.fn(),
 }));
 
 vi.mock('@/hooks/ui/use-mobile', () => ({ useIsMobile: () => false }));
@@ -37,14 +39,18 @@ vi.mock('@/hooks/ui/use-barcode-camera-scanner', () => ({
   },
 }));
 vi.mock('@/hooks/meals/entry/use-ocr-camera', () => ({
-  useOcrCamera: () => ({
-    videoRef: { current: null },
-    cameraError: null,
-    capabilities: { torch: false },
-    torchEnabled: false,
-    setTorch: vi.fn(),
-    capturePhoto: h.capturePhoto,
-  }),
+  useOcrCamera: (active: boolean) => {
+    h.ocrCameraActive = active;
+    return {
+      videoRef: { current: null },
+      cameraError: null,
+      capabilities: { torch: false },
+      torchEnabled: false,
+      setTorch: vi.fn(),
+      capturePhoto: h.capturePhoto,
+      stopCamera: h.stopCamera,
+    };
+  },
 }));
 // Like the real hook, a failed read throws an `OcrScanError` carrying its code.
 vi.mock('@/hooks/meals/entry/use-nutrition-ocr', () => {
@@ -56,9 +62,9 @@ vi.mock('@/hooks/meals/entry/use-nutrition-ocr', () => {
   return {
     OcrScanError,
     useNutritionOcr: () => ({
-      scanLabel: async (file: File) => {
+      scanLabel: async (file: File, kind?: string) => {
         try {
-          return await h.scanLabel(file);
+          return await h.scanLabel(file, kind);
         } catch (failure) {
           throw new OcrScanError((failure as Error).message);
         }
@@ -563,5 +569,65 @@ describe('ScanDialog — nutrition label', () => {
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Bánh quy Cosy')).toBeVisible();
     expect(h.scanLabel).toHaveBeenCalledTimes(2);
+  });
+
+  it('switches the responsive camera window between barcode and label modes and anchors busy status below it', async () => {
+    let resolveLabel: ((value: unknown) => void) | undefined;
+    h.scanLabel.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveLabel = resolve;
+      })
+    );
+    const { user } = open();
+
+    const windowEl = screen.getByTestId('scan-camera-window');
+    expect(windowEl).toHaveAttribute('data-mode', 'barcode');
+
+    await user.click(screen.getByRole('radio', { name: 'Nutrition label' }));
+    expect(windowEl).toHaveAttribute('data-mode', 'label');
+
+    // A pending label capture discarded by switching to card mode must keep the
+    // live OCR camera running (stopCamera is only called for an accepted shot).
+    let resolveStaleCapture: ((file: File | null) => void) | undefined;
+    h.capturePhoto.mockReturnValueOnce(
+      new Promise<File | null>((resolve) => {
+        resolveStaleCapture = resolve;
+      })
+    );
+    await user.click(screen.getByRole('button', { name: 'Take photo' }));
+    await user.click(screen.getByRole('radio', { name: 'Menu card' }));
+    await act(async () => resolveStaleCapture?.(photo));
+    expect(h.stopCamera).not.toHaveBeenCalled();
+    expect(h.scanLabel).not.toHaveBeenCalled();
+
+    expect(windowEl).toHaveAttribute('data-mode', 'card');
+    expect(h.ocrCameraActive).toBe(true);
+    expect(screen.getByRole('button', { name: 'Take photo' })).toBeVisible();
+
+    h.capturePhoto.mockResolvedValueOnce(photo);
+    await user.click(screen.getByRole('button', { name: 'Take photo' }));
+    const status = await screen.findByRole('status');
+    expect(status).toHaveTextContent('Reading the label');
+    expect(windowEl).toContainElement(status);
+    expect(h.stopCamera).toHaveBeenCalledOnce();
+    expect(h.scanLabel).toHaveBeenCalledWith(photo, 'macro_card');
+
+    await act(async () =>
+      resolveLabel?.({
+        basis: 'per_100g',
+        confidence: 'high',
+        labelEvidence: '',
+        productName: 'Bánh quy Cosy',
+        servingSize: null,
+        servingSizeDescription: null,
+        servingsPerContainer: null,
+        per100g: {
+          calories: 480,
+          proteinGrams: 6,
+          carbsGrams: 62,
+          fatGrams: 22,
+        },
+      })
+    );
   });
 });

@@ -1,5 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { createElement } from 'react';
+import { cleanup } from '@testing-library/react';
 import sharp from 'sharp';
 import {
   afterEach,
@@ -12,7 +11,6 @@ import {
 } from 'vitest';
 import type {
   NutritionValues as OcrNutritionValues,
-  OcrReviewPayload,
   ParsedNutritionLabel,
 } from '@/lib/domain/nutrition/ocr/schema';
 import {

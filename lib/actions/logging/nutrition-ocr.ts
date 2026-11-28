@@ -2,7 +2,12 @@
 
 import { scanNutritionLabelWithGemini } from '@/lib/ai/pipeline/estimator/label-ocr/label-ocr';
 import {
+  MACRO_CARD_OCR_MODEL,
+  scanMacroCardWithGemini,
+} from '@/lib/ai/pipeline/estimator/macro-card-ocr/macro-card-ocr';
+import {
   logNutritionLabelMealSchema,
+  type ScanNutritionLabelKind,
   scanNutritionLabelSchema,
 } from '@/lib/api/contracts/nutrition-label';
 import { safeError } from '@/lib/core/errors/safe-error';
@@ -11,6 +16,7 @@ import { scanWithStoredLabelImage } from '@/lib/domain/nutrition/label-images/la
 import { scanErrorCode } from '@/lib/domain/nutrition/ocr/error';
 import {
   NutritionOcrImageError,
+  prepareOcrImageForModel,
   validateNutritionLabelImage,
 } from '@/lib/domain/nutrition/ocr/image';
 import { OCR_MAX_IMAGE_BASE64_CHARS } from '@/lib/domain/nutrition/ocr/image-constants';
@@ -57,6 +63,7 @@ function parseScanInput(input: { imageBase64: string; mimeType: string }) {
 export async function scanNutritionLabelAction(input: {
   imageBase64: string;
   mimeType: string;
+  kind?: ScanNutritionLabelKind;
 }): Promise<
   | { success: true; data: ParsedNutritionLabel }
   | { success: false; code: OcrErrorCode }
@@ -85,13 +92,35 @@ export async function scanNutritionLabelAction(input: {
     const scanned = await withOcrGuard(user.id, async (chargeGlobal) => {
       const parsed = parseScanInput(input);
       await validateNutritionLabelImage(parsed);
+      const isMacroCard = parsed.kind === 'macro_card';
+      const prepared = isMacroCard
+        ? await prepareOcrImageForModel(parsed)
+        : parsed;
       await chargeGlobal();
+      let resolvedModel: string = MACRO_CARD_OCR_MODEL;
+      const scanRunner = isMacroCard
+        ? () =>
+            scanMacroCardWithGemini({
+              imageBase64: prepared.imageBase64,
+              mimeType: prepared.mimeType,
+              onModelResolved: (model) => {
+                resolvedModel = model;
+              },
+            })
+        : () =>
+            scanNutritionLabelWithGemini({
+              imageBase64: parsed.imageBase64,
+              mimeType: parsed.mimeType,
+            });
       // The photo is kept best-effort, in parallel with the model call.
-      return scanWithStoredLabelImage({ userId: user.id, ...parsed }, () =>
-        scanNutritionLabelWithGemini({
-          imageBase64: parsed.imageBase64,
-          mimeType: parsed.mimeType,
-        })
+      return scanWithStoredLabelImage(
+        {
+          userId: user.id,
+          imageBase64: prepared.imageBase64,
+          mimeType: prepared.mimeType,
+          ...(isMacroCard && { model: () => resolvedModel }),
+        },
+        scanRunner
       );
     });
 

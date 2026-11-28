@@ -1,0 +1,272 @@
+import { describe, expect, it } from 'vitest';
+import { NutritionLabelOcrError } from '@/lib/domain/nutrition/ocr/error';
+import { normalizeCardAmount, normalizeMacroCardOcr } from '../normalization';
+import type { RawMacroCardOcr } from '../raw-schema';
+
+describe('normalizeCardAmount', () => {
+  it('defaults empty unit to kcal for calories', () => {
+    expect(normalizeCardAmount({ value: '333', unit: '' }, 'calories')).toBe(
+      333
+    );
+    expect(normalizeCardAmount({ value: '333,0', unit: '' }, 'calories')).toBe(
+      333
+    );
+  });
+
+  it('defaults empty unit to grams for macros', () => {
+    expect(normalizeCardAmount({ value: '45,9', unit: '' }, 'macro')).toBe(
+      45.9
+    );
+    expect(normalizeCardAmount({ value: '18', unit: 'g' }, 'macro')).toBe(18);
+  });
+
+  it('converts mg to g for macros', () => {
+    expect(normalizeCardAmount({ value: '500', unit: 'mg' }, 'macro')).toBe(
+      0.5
+    );
+    expect(normalizeCardAmount({ value: '0.125', unit: 'g' }, 'macro')).toBe(
+      0.125
+    );
+    expect(normalizeCardAmount({ value: '0,125', unit: 'g' }, 'macro')).toBe(
+      0.125
+    );
+    expect(normalizeCardAmount({ value: '125', unit: 'mg' }, 'macro')).toBe(
+      0.125
+    );
+    expect(
+      normalizeCardAmount({ value: '1,000', unit: 'kcal' }, 'calories')
+    ).toBe(1000);
+  });
+
+  it('rejects percentage tokens as null', () => {
+    expect(normalizeCardAmount({ value: '15', unit: '%' }, 'macro')).toBeNull();
+    expect(
+      normalizeCardAmount({ value: '20', unit: '% DV' }, 'calories')
+    ).toBeNull();
+  });
+});
+
+describe('normalizeMacroCardOcr', () => {
+  const validRaw: RawMacroCardOcr = {
+    cardDetected: true,
+    itemName: 'SOU-MADE BOWL (V1)',
+    evidence: '377 CALORIES 18g PROTEIN 55g CARBS 10g FAT',
+    calories: { value: '377', unit: 'kcal' },
+    proteinGrams: { value: '18', unit: 'g' },
+    carbsGrams: { value: '55', unit: 'g' },
+    fatGrams: { value: '10', unit: 'g' },
+    confidence: 'high',
+  };
+
+  it('normalizes valid macro card into ParsedNutritionLabel per_serving', () => {
+    const parsed = normalizeMacroCardOcr(validRaw);
+    expect(parsed.basis).toBe('per_serving');
+    if (parsed.basis !== 'per_serving') return;
+    expect(parsed.productName).toBe('SOU-MADE BOWL (V1)');
+    expect(parsed.labelEvidence).toBe(validRaw.evidence);
+    expect(parsed.perServing.calories).toBe(377);
+    expect(parsed.perServing.proteinGrams).toBe(18);
+    expect(parsed.perServing.carbsGrams).toBe(55);
+    expect(parsed.perServing.fatGrams).toBe(10);
+    // Unprinted micronutrients MUST be null, never 0
+    expect(parsed.perServing.fiberGrams).toBeNull();
+    expect(parsed.perServing.sodiumMg).toBeNull();
+  });
+
+  it('handles missing units on macro values gracefully', () => {
+    const rawWithMissingUnits: RawMacroCardOcr = {
+      ...validRaw,
+      calories: { value: '324,7', unit: '' },
+      carbsGrams: { value: '45,9', unit: '' },
+    };
+    const parsed = normalizeMacroCardOcr(rawWithMissingUnits);
+    expect(parsed.basis).toBe('per_serving');
+    if (parsed.basis !== 'per_serving') return;
+    expect(parsed.perServing.calories).toBe(324.7);
+    expect(parsed.perServing.carbsGrams).toBe(45.9);
+  });
+
+  it('throws no_label_detected when cardDetected is false', () => {
+    expect(() => normalizeMacroCardOcr({ cardDetected: false })).toThrowError(
+      new NutritionLabelOcrError('no_label_detected')
+    );
+  });
+
+  it('throws no_label_detected when evidence is empty', () => {
+    expect(() =>
+      normalizeMacroCardOcr({ ...validRaw, evidence: '' })
+    ).toThrowError(new NutritionLabelOcrError('no_label_detected'));
+  });
+
+  it('downgrades confidence to low on material 4/4/9 macro disagreement', () => {
+    const inconsistentRaw: RawMacroCardOcr = {
+      ...validRaw,
+      calories: { value: '900', unit: 'kcal' }, // 18*4 + 55*4 + 10*9 = 382 kcal vs 900
+      confidence: 'high',
+    };
+    const parsed = normalizeMacroCardOcr(inconsistentRaw);
+    expect(parsed.confidence).toBe('low');
+  });
+
+  it('normalizes fiberGrams and servingSize when present on meal prep / fitfood cards', () => {
+    const mealPrepRaw: RawMacroCardOcr = {
+      ...validRaw,
+      itemName: 'Grilled Chicken Quinoa Bowl',
+      calories: { value: '450', unit: 'CAL' },
+      proteinGrams: { value: '45', unit: 'g' },
+      carbsGrams: { value: '45', unit: 'g' },
+      fatGrams: { value: '12', unit: 'g' },
+      fiberGrams: { value: '8', unit: 'g' },
+      servingSizeDescription: '1 bowl (300g)',
+    };
+    const parsed = normalizeMacroCardOcr(mealPrepRaw);
+    expect(parsed.basis).toBe('per_serving');
+    if (parsed.basis !== 'per_serving') return;
+    expect(parsed.perServing.fiberGrams).toBe(8);
+    expect(parsed.servingSize).toEqual({ value: 300, unit: 'g' });
+    expect(parsed.servingSizeDescription).toBe('1 bowl (300g)');
+  });
+
+  it('converts kJ energy to calories for smoothie menu cards', () => {
+    const smoothieRaw: RawMacroCardOcr = {
+      cardDetected: true,
+      itemName: 'Wondermelon',
+      evidence: 'orig 808 kJ med 663 kJ (13.3 g of protein*)',
+      calories: { value: '808', unit: 'kJ' },
+      proteinGrams: { value: '13.3', unit: 'g' },
+      carbsGrams: null,
+      fatGrams: null,
+      confidence: 'high',
+    };
+    const parsed = normalizeMacroCardOcr(smoothieRaw);
+    expect(parsed.basis).toBe('per_serving');
+    if (parsed.basis !== 'per_serving') return;
+    expect(parsed.perServing.calories).toBeCloseTo(193.1, 1);
+    expect(parsed.perServing.proteinGrams).toBe(13.3);
+    expect(parsed.perServing.carbsGrams).toBeNull();
+    expect(parsed.perServing.fatGrams).toBeNull();
+  });
+
+  it('derives calories from 4/4/9 when calories is omitted but all 3 macros are present', () => {
+    const badgeOnlyRaw: RawMacroCardOcr = {
+      cardDetected: true,
+      itemName: 'Grilled Chicken Al Pastor Bowls',
+      evidence: 'P 44G C 44G F 5G',
+      calories: null,
+      proteinGrams: { value: '44', unit: 'G' },
+      carbsGrams: { value: '44', unit: 'G' },
+      fatGrams: { value: '5', unit: 'G' },
+      confidence: 'high',
+    };
+    const parsed = normalizeMacroCardOcr(badgeOnlyRaw);
+    expect(parsed.basis).toBe('per_serving');
+    if (parsed.basis !== 'per_serving') return;
+    // 44*4 + 44*4 + 5*9 = 176 + 176 + 45 = 397 kcal
+    expect(parsed.perServing.calories).toBe(397);
+    expect(parsed.perServing.proteinGrams).toBe(44);
+    expect(parsed.perServing.carbsGrams).toBe(44);
+    expect(parsed.perServing.fatGrams).toBe(5);
+  });
+
+  it('accepts energy-only restaurant/smoothie cards with all macros null', () => {
+    const energyOnlyRaw: RawMacroCardOcr = {
+      cardDetected: true,
+      itemName: 'loaded chicken miso soup',
+      evidence: 'loaded chicken miso soup 137 kcal',
+      calories: { value: '137', unit: 'kcal' },
+      proteinGrams: null,
+      carbsGrams: null,
+      fatGrams: null,
+      confidence: 'high',
+    };
+    const parsed = normalizeMacroCardOcr(energyOnlyRaw);
+    expect(parsed.basis).toBe('per_serving');
+    if (parsed.basis !== 'per_serving') return;
+    expect(parsed.perServing.calories).toBe(137);
+    expect(parsed.perServing.proteinGrams).toBeNull();
+    expect(parsed.perServing.carbsGrams).toBeNull();
+    expect(parsed.perServing.fatGrams).toBeNull();
+  });
+
+  it('defaults null confidence to low and rejects null-filled cardDetected=false payloads', () => {
+    const parsed = normalizeMacroCardOcr({
+      ...validRaw,
+      confidence: null,
+    });
+    expect(parsed.confidence).toBe('low');
+
+    expect(() =>
+      normalizeMacroCardOcr({
+        cardDetected: false,
+        itemName: null,
+        servingSizeDescription: null,
+        evidence: null,
+        calories: null,
+        proteinGrams: null,
+        carbsGrams: null,
+        fatGrams: null,
+        fiberGrams: null,
+        confidence: null,
+      })
+    ).toThrowError(new NutritionLabelOcrError('no_label_detected'));
+  });
+
+  it('truncates oversized itemName, servingSizeDescription, and evidence to schema limits', () => {
+    const parsed = normalizeMacroCardOcr({
+      ...validRaw,
+      itemName: 'A'.repeat(260),
+      servingSizeDescription: `1 bowl (350g) ${'B'.repeat(240)}`,
+      evidence: 'E'.repeat(650),
+    });
+    expect(parsed.productName).toHaveLength(200);
+    expect(parsed.servingSizeDescription).toHaveLength(200);
+    expect(parsed.labelEvidence).toHaveLength(500);
+    expect(parsed.servingSize).toEqual({ value: 350, unit: 'g' });
+  });
+
+  it('captures grouped serving sizes like "1 250 ml" and "1,250 ml" alongside "1 bowl (300g)"', () => {
+    const spaceGrouped = normalizeMacroCardOcr({
+      ...validRaw,
+      servingSizeDescription: '1 250 ml',
+    });
+    expect(spaceGrouped.servingSize).toEqual({ value: 1250, unit: 'ml' });
+
+    const commaGrouped = normalizeMacroCardOcr({
+      ...validRaw,
+      servingSizeDescription: '1,250 ml',
+    });
+    expect(commaGrouped.servingSize).toEqual({ value: 1250, unit: 'ml' });
+
+    const bowl = normalizeMacroCardOcr({
+      ...validRaw,
+      servingSizeDescription: '1 bowl (300g)',
+    });
+    expect(bowl.servingSize).toEqual({ value: 300, unit: 'g' });
+  });
+
+  it('accepts leading-dot/comma decimals (.5 and ,5) and derives calories on macro-only cards', () => {
+    const dotDecimal = normalizeMacroCardOcr({
+      cardDetected: true,
+      itemName: 'Lean Chicken Bowl',
+      evidence: 'P 44g C 44g F .5g',
+      calories: null,
+      proteinGrams: { value: '44', unit: 'g' },
+      carbsGrams: { value: '44', unit: 'g' },
+      fatGrams: { value: '.5', unit: 'g' },
+      confidence: 'high',
+    });
+    expect(dotDecimal.basis).toBe('per_serving');
+    if (dotDecimal.basis !== 'per_serving') return;
+    // 44*4 + 44*4 + 0.5*9 = 356.5 -> 357 kcal
+    expect(dotDecimal.perServing.calories).toBe(357);
+    expect(dotDecimal.perServing.fatGrams).toBe(0.5);
+
+    const commaDecimal = normalizeMacroCardOcr({
+      ...validRaw,
+      fatGrams: { value: ',5', unit: 'g' },
+    });
+    if (commaDecimal.basis === 'per_serving') {
+      expect(commaDecimal.perServing.fatGrams).toBe(0.5);
+    }
+  });
+});

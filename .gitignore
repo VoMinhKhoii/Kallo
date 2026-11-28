@@ -108,3 +108,7 @@ scripts/eval/local/*.local.ts
 # Playwright e2e output
 /test-results/
 /playwright-report/
+
+# Local macro-card OCR benchmark fixtures & generated PDF reports (stay local only)
+lib/ai/pipeline/estimator/macro-card-ocr/__tests__/fixtures/
+docs/macro-card-*.pdf

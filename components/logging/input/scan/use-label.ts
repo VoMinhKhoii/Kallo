@@ -5,6 +5,7 @@ import {
   OcrScanError,
   useNutritionOcr,
 } from '@/hooks/meals/entry/use-nutrition-ocr';
+import type { ScanNutritionLabelKind } from '@/lib/api/contracts/nutrition-label';
 import type {
   OcrErrorCode,
   ParsedNutritionLabel,
@@ -56,16 +57,19 @@ export function useScanLabel(aiConsent: AiConsentGate) {
     setError(null);
   }, [showPhoto]);
 
+  const kindRef = useRef<ScanNutritionLabelKind>('label');
+
   const read = useCallback(
-    async (file: File) => {
+    async (file: File, kind: ScanNutritionLabelKind = 'label') => {
       const token = ++tokenRef.current;
       fileRef.current = file;
+      kindRef.current = kind;
       showPhoto(URL.createObjectURL(file));
       setLabel(null);
       setError(null);
       setReading(true);
       try {
-        const result = await scanLabel(file);
+        const result = await scanLabel(file, kind);
         if (token !== tokenRef.current) return;
         setReading(false);
         // Null: "Not now" to AI processing — nothing was sent; the photo goes
@@ -85,7 +89,7 @@ export function useScanLabel(aiConsent: AiConsentGate) {
 
   /** "Try again": the same photo, for a service that was busy. */
   const retry = useCallback(() => {
-    if (fileRef.current) read(fileRef.current);
+    if (fileRef.current) read(fileRef.current, kindRef.current);
   }, [read]);
 
   return {

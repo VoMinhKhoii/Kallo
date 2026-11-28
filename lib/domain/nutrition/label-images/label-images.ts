@@ -86,10 +86,12 @@ export async function scanWithStoredLabelImage(
   const startedAt = Date.now();
   const scanning = scan();
   const upload = uploadLabelImage(input, randomUUID());
-  const recordLater = (outcome: ScanOutcome) =>
+  const resolveModel = () =>
+    typeof input.model === 'function' ? input.model() : input.model;
+  const recordLater = (outcome: ScanOutcome, model?: string) =>
     keepAlive(
       upload.then((stored) =>
-        stored ? insertScanRow(stored, outcome) : undefined
+        stored ? insertScanRow(stored, outcome, model) : undefined
       )
     );
 
@@ -97,13 +99,17 @@ export async function scanWithStoredLabelImage(
   try {
     result = await scanning;
   } catch (error) {
-    recordLater({
-      status: 'failed',
-      errorCode: scanFailureCode(error),
-      latencyMs: Date.now() - startedAt,
-    });
+    recordLater(
+      {
+        status: 'failed',
+        errorCode: scanFailureCode(error),
+        latencyMs: Date.now() - startedAt,
+      },
+      resolveModel()
+    );
     throw error;
   }
+  const model = resolveModel();
   const outcome: ScanOutcome = {
     status: 'succeeded',
     result,
@@ -117,11 +123,11 @@ export async function scanWithStoredLabelImage(
     Promise.resolve(STILL_UPLOADING),
   ]);
   if (settled === STILL_UPLOADING) {
-    recordLater(outcome);
+    recordLater(outcome, model);
     return { result, labelImageId: null };
   }
   if (!settled) return { result, labelImageId: null };
-  const recorded = await insertScanRow(settled, outcome);
+  const recorded = await insertScanRow(settled, outcome, model);
   return { result, labelImageId: recorded ? settled.imageId : null };
 }
 

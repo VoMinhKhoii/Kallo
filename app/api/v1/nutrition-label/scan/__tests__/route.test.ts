@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const requireAuthAndProfile = vi.fn();
 const validateNutritionLabelImage = vi.fn();
 const scanNutritionLabelWithGemini = vi.fn();
+const scanMacroCardWithGemini = vi.fn();
 const withOcrGuard = vi.fn();
 const chargeGlobal = vi.fn();
 const assertFeatureAccess = vi.fn();
@@ -32,6 +33,10 @@ vi.mock('@/lib/ai/pipeline/estimator/label-ocr/label-ocr', () => ({
   scanNutritionLabelWithGemini,
   NUTRITION_LABEL_OCR_MODEL: 'test-ocr-model',
 }));
+vi.mock('@/lib/ai/pipeline/estimator/macro-card-ocr/macro-card-ocr', () => ({
+  scanMacroCardWithGemini,
+  MACRO_CARD_OCR_MODEL: 'claude-haiku-5-5',
+}));
 
 // The OCR spend guard is exercised in its own unit test; here it is a
 // transparent pass-through by default, so the route's own behaviour is what is
@@ -47,6 +52,7 @@ vi.mock('@/lib/domain/nutrition/ocr/image', async (importActual) => {
   return {
     NutritionOcrImageError: actual.NutritionOcrImageError,
     detectOcrImageMime: actual.detectOcrImageMime,
+    prepareOcrImageForModel: actual.prepareOcrImageForModel,
     validateNutritionLabelImage,
   };
 });
@@ -99,6 +105,7 @@ beforeEach(() => {
   requireAuthAndProfile.mockReset();
   validateNutritionLabelImage.mockReset();
   scanNutritionLabelWithGemini.mockReset();
+  scanMacroCardWithGemini.mockReset();
   withOcrGuard.mockReset();
   // Default: run the guarded work directly with a no-op `chargeGlobal`,
   // exactly as a passing guard would. `chargeGlobal` is a spy so the cases
@@ -489,5 +496,28 @@ describe('POST /api/v1/nutrition-label/scan — keeping the scan', () => {
     expect(scanNutritionLabelWithGemini).not.toHaveBeenCalled();
     expect(upload).not.toHaveBeenCalled();
     expect(insertValues).not.toHaveBeenCalled();
+  });
+
+  it('routes kind=macro_card through prepareOcrImageForModel and records the resolved fallback model', async () => {
+    scanMacroCardWithGemini.mockImplementationOnce(async (opts) => {
+      opts.onModelResolved?.('gemini-3.1-flash-lite');
+      return parsedLabel;
+    });
+
+    const res = await POST(makeRequest({ ...validBody, kind: 'macro_card' }));
+    expect(res.status).toBe(200);
+    await settleAfter();
+    expect(scanMacroCardWithGemini).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mimeType: 'image/jpeg',
+        onModelResolved: expect.any(Function),
+      })
+    );
+    expect(insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'succeeded',
+        model: 'gemini-3.1-flash-lite',
+      })
+    );
   });
 });

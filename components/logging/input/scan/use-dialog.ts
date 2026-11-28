@@ -91,7 +91,7 @@ export function useScanDialog({
     isActive: live && mode === 'barcode',
     onDecode,
   });
-  const labelCamera = useOcrCamera(live && mode === 'label' && !label.photo);
+  const labelCamera = useOcrCamera(live && mode !== 'barcode' && !label.photo);
 
   // A server that says "Premium" to a scan the UI thought was open (a plan
   // that lapsed mid-session) sends the user where the gate would have.
@@ -133,7 +133,7 @@ export function useScanDialog({
     close: tryClose,
     resume,
     switchMode: (next: ScanMode) =>
-      next === 'label' ? gated(() => switchMode(next))() : switchMode(next),
+      next !== 'barcode' ? gated(() => switchMode(next))() : switchMode(next),
     searchTyped: (digits: string) => {
       result.setTyping(false);
       search(digits);
@@ -143,7 +143,13 @@ export function useScanDialog({
     shoot: async () => {
       const session = label.session();
       const file = await labelCamera.capturePhoto();
-      if (file && label.isCurrent(session)) label.read(file);
+      if (file && label.isCurrent(session)) {
+        labelCamera.stopCamera();
+        label.read(file, mode === 'card' ? 'macro_card' : 'label');
+      }
+    },
+    pickFile: (file: File) => {
+      label.read(file, mode === 'card' ? 'macro_card' : 'label');
     },
     enterManually: gated(() => result.openEditor(blankScanFood(), true)),
     edit: (food: ScanFood) => gated(() => result.openEditor(food, false)),

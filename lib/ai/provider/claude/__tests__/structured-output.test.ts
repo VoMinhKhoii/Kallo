@@ -301,4 +301,38 @@ describe('createClaudeStructuredOutput', () => {
       mealItems: [{ mealItemName: 'Cá', ingredients: [{ refusePct: 80 }] }],
     });
   });
+
+  it('sends base64 image + text blocks when params.image is provided', async () => {
+    const { client, stream } = fakeClaude([
+      { text: '{"dish":"Salad Bowl","grams":350}' },
+    ]);
+    const res = await createClaudeStructuredOutput(
+      client
+    ).generateStructuredOutput(
+      params({
+        image: { mimeType: 'image/jpeg', base64Data: '/9j/4AAQ' },
+        userMessage: 'Extract macros',
+      })
+    );
+    expect(res).toEqual({ dish: 'Salad Bowl', grams: 350 });
+    const body = stream.mock.calls[0][0] as {
+      messages: Array<{ role: string; content: unknown }>;
+    };
+    expect(body.messages).toEqual([
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: 'image/jpeg',
+              data: '/9j/4AAQ',
+            },
+          },
+          { type: 'text', text: 'Extract macros' },
+        ],
+      },
+    ]);
+  });
 });

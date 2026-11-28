@@ -293,13 +293,40 @@ describe('withClaudeRouting', () => {
     ).toEqual({ by: 'gemini', model: FALLBACK });
   });
 
-  it('keeps image calls and embeddings on Gemini', async () => {
+  it('routes supported image calls through Claude with Gemini fallback, and keeps unsupported images and embeddings on Gemini', async () => {
     const g = gemini();
     const llm = withClaudeRouting(g, claude(), { fallbackModel: FALLBACK });
-    const image = { mimeType: 'image/png', base64Data: 'AA==' };
+    const jpeg = { mimeType: 'image/jpeg', base64Data: 'AA==' };
+    const png = { mimeType: 'image/png', base64Data: 'AA==' };
+    const heic = { mimeType: 'image/heic', base64Data: 'AA==' };
+
     expect(
-      await llm.generateStructuredOutput(params('claude-haiku-5-5', { image }))
+      await llm.generateStructuredOutput(
+        params('claude-haiku-5-5', { image: jpeg })
+      )
+    ).toEqual({ by: 'claude', model: 'claude-haiku-5-5' });
+    expect(
+      await llm.generateStructuredOutput(
+        params('claude-haiku-5-5', { image: png })
+      )
+    ).toEqual({ by: 'claude', model: 'claude-haiku-5-5' });
+    expect(
+      await llm.generateStructuredOutput(
+        params('claude-haiku-5-5', { image: heic })
+      )
     ).toEqual({ by: 'gemini', model: FALLBACK });
+
+    const failingLlm = withClaudeRouting(
+      gemini(),
+      claude(new Anthropic.AnthropicError('overloaded')),
+      { fallbackModel: FALLBACK }
+    );
+    expect(
+      await failingLlm.generateStructuredOutput(
+        params('claude-haiku-5-5', { image: jpeg })
+      )
+    ).toEqual({ by: 'gemini', model: FALLBACK });
+
     await llm.generateEmbeddingBatch(['x']);
     expect(g.generateEmbeddingBatch).toHaveBeenCalledWith(['x']);
   });

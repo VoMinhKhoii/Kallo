@@ -28,6 +28,8 @@ export interface LabelImageInput {
   /** Already validated by `validateNutritionLabelImage`. */
   imageBase64: string;
   mimeType: OcrImageMimeType;
+  /** Model identifier (or lazy getter resolved after `scan()` finishes) recorded on the eval row; defaults to `NUTRITION_LABEL_OCR_MODEL`. */
+  model?: string | (() => string);
 }
 
 /** The object actually written to the bucket: the re-encoded photo. */
@@ -139,7 +141,8 @@ async function removeOrphanedImage(stored: StoredLabelImage): Promise<void> {
  */
 export async function insertScanRow(
   stored: StoredLabelImage,
-  outcome: ScanOutcome
+  outcome: ScanOutcome,
+  model: string = NUTRITION_LABEL_OCR_MODEL
 ): Promise<boolean> {
   try {
     await db.insert(nutritionLabelImages).values({
@@ -151,7 +154,7 @@ export async function insertScanRow(
       status: outcome.status,
       result: outcome.status === 'succeeded' ? outcome.result : null,
       errorCode: outcome.status === 'failed' ? outcome.errorCode : null,
-      model: NUTRITION_LABEL_OCR_MODEL,
+      model,
       latencyMs: outcome.latencyMs,
     });
     return true;

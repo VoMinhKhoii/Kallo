@@ -235,7 +235,7 @@ another domain module is a smell worth a second look.
 
 | Folder | Concern | Status |
 |---|---|---|
-| `provider/` | the only folder allowed to touch an LLM SDK: Gemini (AI Studio / Vertex), plus `claude/` — Claude structured output and the router that sends `claude-*` models there with a per-call Gemini fallback (`createPipelineLlm`) | ok |
+| `provider/` | the only folder allowed to touch an LLM SDK: Gemini (AI Studio / Vertex), plus `claude/` — Claude structured output (text + supported base64 images) and the router that sends `claude-*` models there with a per-call Vertex Claude → Gemini fallback (`createPipelineLlm`) | ok |
 | `cost/` | the model rate card, mirrored by `scripts/bench/ai-cost.sql` (`docs/AI_COST.md`); the per-request spend meter the provider layer feeds (`spend-meter.ts`) and the brake wrapper over it (`ai-spend.ts`, `docs/RATE_LIMITING.md`) | ok |
 | `types/` | the shared vocabulary, split by stage | ok |
 | `cache/` | every pipeline cache in one place | ok |
@@ -246,6 +246,8 @@ another domain module is a smell worth a second look.
 | `language/` | language detect + guard | ok |
 | `pipeline/` | `contracts/ config/ grounded/ estimator/ resolve/ assemble/ stream/ telemetry/ legacy/` | ok |
 | `pipeline/estimator/` | provider-agnostic Call-2 seam | **reference shape** |
+| `pipeline/estimator/label-ocr/` | packaged-food Nutrition Facts table OCR scanner | ok |
+| `pipeline/estimator/macro-card-ocr/` | single-item printed macro-card OCR scanner (Soumaki, FitFood, café cards); runs `claude-haiku-5-5` primary through `createPipelineLlm` with Vertex Claude → `gemini-3.1-flash-lite` (`MINIMAL`) fallback | ok |
 | `pipeline/grounded/call-two/selector/` | per-ingredient candidate selector beside Call 2: re-ranks Call 2's candidates against the user's words, overrides only mass-equivalent rows | ok |
 | `pipeline/grounded/review.ts` | reviews Call 2's row picks around the rescue (`reviewPicks`, the one entry): a row contradicting Call 2's own estimate becomes a rejection; a fried dish's separate oil is dropped when its foods matched rows that are already fried; last, weighed dishes are scaled (`resolve/served-mass.ts`) | ok |
 | `pipeline/grounded/rescue/` | dish rescue: an ingredient Call 2 rejects, or a mixed dish logged as one ingredient, is re-run as a mini-meal and replaced by its single foods, scaled to the main run's shipped mass | ok |

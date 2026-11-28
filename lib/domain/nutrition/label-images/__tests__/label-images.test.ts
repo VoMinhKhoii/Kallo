@@ -230,6 +230,25 @@ describe('scanWithStoredLabelImage — success', () => {
       expect.objectContaining({ status: 'succeeded', result: label })
     );
   });
+
+  it('resolves a lazy model getter after scan() finishes (e.g. fallback model)', async () => {
+    let resolved = 'claude-haiku-5-5';
+    await scanWithStoredLabelImage(
+      { ...input, model: () => resolved },
+      async () => {
+        const scanned = await answersAfterUpload();
+        resolved = 'gemini-3.1-flash-lite';
+        return scanned;
+      }
+    );
+
+    expect(mocks.insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'succeeded',
+        model: 'gemini-3.1-flash-lite',
+      })
+    );
+  });
 });
 
 describe('scanWithStoredLabelImage — failed scan', () => {

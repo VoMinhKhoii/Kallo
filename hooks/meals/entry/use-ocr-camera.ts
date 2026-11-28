@@ -210,7 +210,6 @@ export function useOcrCamera(isActive: boolean) {
       canvas.toBlob(
         (blob) => {
           if (!blob) return resolve(null);
-          stopCamera();
           resolve(
             new File([blob], 'nutrition-label.jpg', { type: 'image/jpeg' })
           );
@@ -219,7 +218,7 @@ export function useOcrCamera(isActive: boolean) {
         0.9
       );
     });
-  }, [stopCamera]);
+  }, []);
 
   return {
     videoRef,
