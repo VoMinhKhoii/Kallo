@@ -103,7 +103,7 @@ async function saveManualMeal(
   });
 
   const mealNutrition = sumDisplayedNutrition(items.map((i) => i.nutrition));
-  const loggedAt = await stampLoggedAt(
+  const { loggedAt, isBackfilled } = await stampLoggedAt(
     userId,
     parsed.loggedDate,
     parsed.timezoneOffset
@@ -143,6 +143,7 @@ async function saveManualMeal(
           // User-entered exact grams from verified DB entries — no estimation.
           confidenceOverall: 'high',
           loggedAt,
+          isBackfilled,
           entryMode: 'precise',
           ...nutritionValuesToRow(mealNutrition),
         })

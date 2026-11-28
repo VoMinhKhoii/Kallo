@@ -98,6 +98,7 @@ export async function confirmCheatMeal(args: {
         mealSlot,
         confidenceOverall: spec.confidence,
         loggedAt,
+        isBackfilled: pending.isBackfilled,
         entryMode: 'cheat',
         caloriesKcal: resolved.caloriesKcal,
         proteinG: resolved.proteinG,

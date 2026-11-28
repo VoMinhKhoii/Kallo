@@ -36,6 +36,7 @@ function sharedMeal(index: number, sharedAt: Date) {
     sharedAt,
     // Real-time log: eaten when shared (not backfilled).
     loggedAt: sharedAt,
+    isBackfilled: false,
     sharedAtText: sharedAt.toISOString().replace('Z', '123+00'),
     eatenAtText: sharedAt.toISOString().replace('Z', '123+00'),
     handle: 'me',
@@ -346,6 +347,30 @@ describe('toSharedMealEntry', () => {
     const row = {
       ...sharedMeal(1, sharedAt),
       loggedAt: new Date('2026-01-01T12:00:00Z'),
+    };
+
+    expect(toSharedMealEntry(row, USER_A).meal.isBackfilled).toBe(true);
+  });
+
+  it('trusts the stored flag when the past-day stamp is under 18h back', () => {
+    // A lunch logged at 08:00 for a day that ended with a 19:00 dinner is
+    // stamped 19:01 that day, 13h before the share.
+    const sharedAt = new Date('2026-01-02T08:00:00Z');
+    const loggedAt = new Date('2026-01-01T19:01:00Z');
+    const row = { ...sharedMeal(1, sharedAt), loggedAt };
+
+    expect(toSharedMealEntry(row, USER_A).meal.isBackfilled).toBe(false);
+    expect(
+      toSharedMealEntry({ ...row, isBackfilled: true }, USER_A).meal
+        .isBackfilled
+    ).toBe(true);
+  });
+
+  it('falls back to the gap for a row saved before the flag', () => {
+    const row = {
+      ...sharedMeal(1, new Date('2026-01-02T12:00:00Z')),
+      loggedAt: new Date('2026-01-01T12:00:00Z'),
+      isBackfilled: false,
     };
 
     expect(toSharedMealEntry(row, USER_A).meal.isBackfilled).toBe(true);

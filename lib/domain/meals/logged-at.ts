@@ -1,5 +1,6 @@
 import { and, eq, gte, lt, max, sql } from 'drizzle-orm';
 import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
+import { isPastDayKey } from '@/lib/core/date/day-key';
 import {
   getUtcDayRangeForLocalDate,
   getUtcInstantForLocalDate,
@@ -26,8 +27,16 @@ export function placeAfterLatest(
   );
 }
 
+/** A new meal's stamp: where it sits, and whether it was logged for a day that
+ * had already passed (stored as `is_backfilled`, read by the Circle feed). */
+export interface LoggedAtStamp {
+  loggedAt: Date;
+  isBackfilled: boolean;
+}
+
 /**
- * The instant a new meal logged for the local day `date` is stamped with.
+ * The instant a new meal logged for the local day `date` is stamped with, and
+ * whether that day had already passed.
  *
  * Today it is now. A past day takes today's clock time, which alone put a meal
  * logged at noon for yesterday above yesterday's 2 pm meal; `placeAfterLatest`
@@ -38,10 +47,12 @@ export async function stampLoggedAt(
   date: string,
   timezoneOffset: number,
   now = new Date()
-): Promise<Date> {
+): Promise<LoggedAtStamp> {
   const clockTime = getUtcInstantForLocalDate(date, timezoneOffset, now);
   // Today (or a future day): nothing on it can be later than now.
-  if (clockTime.getTime() >= now.getTime()) return clockTime;
+  if (!isPastDayKey(date, timezoneOffset, now)) {
+    return { loggedAt: clockTime, isBackfilled: false };
+  }
 
   const { dayStart, dayEnd } = getUtcDayRangeForLocalDate(date, timezoneOffset);
   const latestMeal = db
@@ -72,5 +83,8 @@ export async function stampLoggedAt(
     sql`select greatest((${latestMeal}), (${latestStaged})) as latest`
   );
   const latest = row?.latest ? new Date(row.latest) : null;
-  return placeAfterLatest(clockTime, latest, dayEnd);
+  return {
+    loggedAt: placeAfterLatest(clockTime, latest, dayEnd),
+    isBackfilled: true,
+  };
 }

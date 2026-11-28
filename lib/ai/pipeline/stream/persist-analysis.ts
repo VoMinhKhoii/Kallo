@@ -20,6 +20,8 @@ interface StagePendingAnalysis {
   rawInput: string;
   entryMode: 'precise' | 'cheat';
   loggedAt: Date;
+  /** Logged for a past day; copied onto the meal at confirm. */
+  isBackfilled: boolean;
   attemptId?: string;
   /** Copied onto the meal at confirm so its AI spend can be joined back. */
   pipelineRequestId?: string;
@@ -43,6 +45,7 @@ export function upsertPendingAnalysis(values: StagePendingAnalysis) {
         rawInput: values.rawInput,
         entryMode: values.entryMode,
         loggedAt: values.loggedAt,
+        isBackfilled: values.isBackfilled,
         pipelineRequestId: values.pipelineRequestId ?? null,
         expiresAt: sql`now() + interval '30 minutes'`,
       },
@@ -59,10 +62,10 @@ export function upsertPendingAnalysis(values: StagePendingAnalysis) {
  */
 export async function stampAndStage(
   run: Pick<AnalysisStreamContext, 'resolveLoggedAt' | 'signal'>,
-  values: Omit<StagePendingAnalysis, 'loggedAt'>
+  values: Omit<StagePendingAnalysis, 'loggedAt' | 'isBackfilled'>
 ): Promise<{ analysisId: string; loggedAt: Date } | null> {
   const deadline = Date.now() + PERSIST_DEADLINE_MS;
-  const loggedAt = await withDeadline(
+  const { loggedAt, isBackfilled } = await withDeadline(
     run.resolveLoggedAt(),
     PERSIST_DEADLINE_MS
   );
@@ -70,7 +73,7 @@ export async function stampAndStage(
   const left = deadline - Date.now();
   if (left <= 0) throw Errors.pipelineTimeout();
   const [inserted] = await withDeadline(
-    upsertPendingAnalysis({ ...values, loggedAt }),
+    upsertPendingAnalysis({ ...values, loggedAt, isBackfilled }),
     left
   );
   return { analysisId: inserted.id, loggedAt };

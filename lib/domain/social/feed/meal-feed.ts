@@ -56,6 +56,9 @@ export interface SharedMealRow {
   /** When the meal was eaten. Differs from sharedAt for a backfilled meal
    * (logged for a past date), letting the client hide its meaningless time. */
   loggedAt: Date;
+  /** meals.is_backfilled: logged for a day already past for its owner. False on
+   * rows saved before the column, which fall back to isBackfilledShare. */
+  isBackfilled: boolean;
   /** shared_at and eaten_at at full PostgreSQL timestamptz precision, used
    * only to construct cursors for the matching FeedOrder. */
   sharedAtText: string;
@@ -83,6 +86,7 @@ export const sharedMealColumns = {
   entryMode: meals.entryMode,
   sharedAt: mealShares.sharedAt,
   loggedAt: meals.loggedAt,
+  isBackfilled: meals.isBackfilled,
   sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
   eatenAtText: sql<string>`${mealShares.eatenAt}::text`,
   ...publicProfileColumns,
@@ -284,7 +288,8 @@ export interface SharedMealEntry {
     loggedAt: string;
     /** True when the meal was logged for a PAST date (backfilled), so its
      * share-time ("just now") would be misleading and the UI hides it.
-     * Computed server-side and timezone-independently — see isBackfilledShare. */
+     * Computed server-side: the meal's stored flag, else the gap guess in
+     * isBackfilledShare for rows saved before the flag existed. */
     isBackfilled: boolean;
   };
   reactions: ShareReactions;
@@ -302,11 +307,13 @@ export interface SharedMealEntry {
 // two (well under the ~23–24h backfill floor even across a DST shift, well over
 // any realistic same-day analyze→confirm delay).
 //
-// Not always: when the past day already has a meal later than the clock time,
-// `stampLoggedAt` puts the new meal one minute after it, so the gap shrinks
-// (a lunch logged at 08:00 for a day that ended with a 19:00 dinner lands at
-// 19:01, 13h before the share). Those backfills read as real-time here and
-// show their share time.
+// A guess, and only the fallback now: when the past day already has a meal
+// later than the clock time, `stampLoggedAt` puts the new meal one minute
+// after it, so the gap shrinks (a lunch logged at 08:00 for a day that ended
+// with a 19:00 dinner lands at 19:01, 13h before the share). So the stamp
+// records the fact as meals.is_backfilled, and toSharedMealEntry reads that
+// first. The gap still covers rows saved before the column existed, which all
+// read false there.
 const BACKFILL_MIN_GAP_MS = 18 * 60 * 60 * 1000;
 
 export function isBackfilledShare(loggedAt: Date, sharedAt: Date): boolean {
@@ -343,7 +350,8 @@ export function toSharedMealEntry(
       entryMode: row.entryMode,
       sharedAt: row.sharedAt.toISOString(),
       loggedAt: row.loggedAt.toISOString(),
-      isBackfilled: isBackfilledShare(row.loggedAt, row.sharedAt),
+      isBackfilled:
+        row.isBackfilled || isBackfilledShare(row.loggedAt, row.sharedAt),
     },
     reactions,
     replies: replySummary.replies,

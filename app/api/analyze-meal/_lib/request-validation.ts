@@ -5,6 +5,7 @@ import {
   resolveGeminiProvider,
 } from '@/lib/ai/provider/provider';
 import { readJsonBody } from '@/lib/api/auth';
+import { isPastDayKey, toLocalDayKey } from '@/lib/core/date/day-key';
 import { Errors } from '@/lib/core/errors/catalog';
 import { safeError } from '@/lib/core/errors/safe-error';
 import { serializeError } from '@/lib/core/errors/serialize';
@@ -15,7 +16,10 @@ import {
 import { findCachedRows } from '@/lib/domain/barcode/cache';
 import { barcodeNotCachedError } from '@/lib/domain/barcode/errors';
 import { barcodeRefsOf } from '@/lib/domain/logging/relog/relog';
-import { stampLoggedAt } from '@/lib/domain/meals/logged-at';
+import {
+  type LoggedAtStamp,
+  stampLoggedAt,
+} from '@/lib/domain/meals/logged-at';
 import { getRequestUser } from '@/lib/infra/auth/session';
 import { db } from '@/lib/infra/db/client';
 import { userProfiles } from '@/lib/infra/db/schema';
@@ -148,17 +152,28 @@ export async function validateRequest(request: NextRequest) {
         // consent, billing and rate-limit checks, and a meal logged on that day
         // while this one is analyzed still ends up above it. The clock is the
         // request's, so a meal sent at 23:59 for today stays on today even when
-        // the analysis ends after midnight.
-        resolveLoggedAt: (): Promise<Date> => {
+        // the analysis ends after midnight. A refine keeps the original's
+        // instant, so its flag is read from that instant's own day.
+        resolveLoggedAt: (): Promise<LoggedAtStamp> => {
           const inherited = parsed.data.inheritLoggedAt;
-          return inherited
-            ? Promise.resolve(new Date(inherited))
-            : stampLoggedAt(
-                user.id,
-                parsed.data.loggedDate,
-                parsed.data.timezoneOffset,
+          const offset = parsed.data.timezoneOffset;
+          if (inherited) {
+            const loggedAt = new Date(inherited);
+            return Promise.resolve({
+              loggedAt,
+              isBackfilled: isPastDayKey(
+                toLocalDayKey(loggedAt, offset),
+                offset,
                 requestedAt
-              );
+              ),
+            });
+          }
+          return stampLoggedAt(
+            user.id,
+            parsed.data.loggedDate,
+            offset,
+            requestedAt
+          );
         },
         mode: parsed.data.mode ?? 'precise',
         cheatType: parsed.data.cheatType,

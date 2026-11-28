@@ -975,6 +975,32 @@ describe('POST /api/analyze-meal', () => {
     );
   });
 
+  it("stages a refine at the original's instant, flagged by its own day", async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+    const inherited = '2026-04-05T17:30:00.000Z';
+
+    const res = await POST(
+      createRequest({
+        ...mealRequestBody('Phở bò tái (ít bánh)'),
+        inheritLoggedAt: inherited,
+      })
+    );
+    await readSSEEvents(res);
+
+    expect(mockStampLoggedAt).not.toHaveBeenCalled();
+    // 2026-04-06 is long past: the corrected meal is shared when saved, a
+    // share made long after the eating, like any meal logged for a past day.
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        loggedAt: new Date(inherited),
+        isBackfilled: true,
+      })
+    );
+  });
+
   it('holds the staged meal near the plain read', async () => {
     mockAnalyzeMeal.mockResolvedValue({
       success: true,

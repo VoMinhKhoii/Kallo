@@ -46,6 +46,18 @@ export function toLocalDayKey(
   return toUtcDayKey(toLocalCalendarDate(instant, timezoneOffset));
 }
 
+/**
+ * Whether the local day `dayKey` is before the viewer's today at `now`. For an
+ * instant, pass its day: `isPastDayKey(toLocalDayKey(at, offset), offset)`.
+ */
+export function isPastDayKey(
+  dayKey: string,
+  timezoneOffset: number,
+  now: Date | number = new Date()
+): boolean {
+  return dayKey < toLocalDayKey(now, timezoneOffset);
+}
+
 /** Monday-first weekday of a UTC-anchored date: Monday 0 … Sunday 6. */
 export function mondayIndex(date: Date): number {
   return (date.getUTCDay() + 6) % 7;

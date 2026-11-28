@@ -72,7 +72,7 @@ export async function relogMealItemsAction(
     'relogWrite',
     { kind: 'user', value: user.id },
     async () => {
-      const loggedAt = await stampLoggedAt(
+      const { loggedAt, isBackfilled } = await stampLoggedAt(
         user.id,
         parsed.loggedDate,
         parsed.timezoneOffset
@@ -125,6 +125,7 @@ export async function relogMealItemsAction(
               mealSlot,
               confidenceOverall,
               loggedAt,
+              isBackfilled,
               entryMode: 'precise',
               alcoholG,
               portionFactor: 1,

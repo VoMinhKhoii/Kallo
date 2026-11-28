@@ -27,9 +27,15 @@ describe('stampLoggedAt', () => {
   });
 
   it('stamps today at now without reading the day', async () => {
-    const at = await stampLoggedAt('u1', '2026-11-27', VN, NOW);
+    const { loggedAt, isBackfilled } = await stampLoggedAt(
+      'u1',
+      '2026-11-27',
+      VN,
+      NOW
+    );
 
-    expect(at.toISOString()).toBe(NOW.toISOString());
+    expect(loggedAt.toISOString()).toBe(NOW.toISOString());
+    expect(isBackfilled).toBe(false);
     expect(execute).not.toHaveBeenCalled();
   });
 
@@ -37,24 +43,37 @@ describe('stampLoggedAt', () => {
     // Yesterday's meals at 12:11 and 13:53 local; logged today at 12:11.
     latests.push('2026-11-26 06:53:00+00');
 
-    const at = await stampLoggedAt('u1', '2026-11-26', VN, NOW);
+    const { loggedAt, isBackfilled } = await stampLoggedAt(
+      'u1',
+      '2026-11-26',
+      VN,
+      NOW
+    );
 
     // 13:54 local: below the 13:53 meal, not above it at 12:11.
-    expect(at.toISOString()).toBe('2026-11-26T06:54:00.000Z');
+    expect(loggedAt.toISOString()).toBe('2026-11-26T06:54:00.000Z');
+    // Under 18h before a share made now, so the feed needs the flag.
+    expect(isBackfilled).toBe(true);
   });
 
   it("keeps today's clock time when the day's meals are all earlier", async () => {
     latests.push('2026-11-26 01:00:00+00');
 
-    const at = await stampLoggedAt('u1', '2026-11-26', VN, NOW);
+    const { loggedAt } = await stampLoggedAt('u1', '2026-11-26', VN, NOW);
 
-    expect(at.toISOString()).toBe('2026-11-26T05:11:00.000Z');
+    expect(loggedAt.toISOString()).toBe('2026-11-26T05:11:00.000Z');
   });
 
   it('keeps an empty past day at the clock time', async () => {
-    const at = await stampLoggedAt('u1', '2026-11-26', VN, NOW);
+    const { loggedAt, isBackfilled } = await stampLoggedAt(
+      'u1',
+      '2026-11-26',
+      VN,
+      NOW
+    );
 
-    expect(at.toISOString()).toBe('2026-11-26T05:11:00.000Z');
+    expect(loggedAt.toISOString()).toBe('2026-11-26T05:11:00.000Z');
+    expect(isBackfilled).toBe(true);
   });
 });
 
