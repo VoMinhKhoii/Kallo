@@ -14,7 +14,7 @@ import '../widgets/chrome/settings_navigator.dart';
 /// It is NOT a row: the settings root prints it centred under the last card,
 /// where a build number belongs. As a row it spent a full 56pt and an icon on
 /// a value nobody navigates to.
-const String kAppVersion = '1.0.1';
+const String kAppVersion = '1.0.4';
 
 /// The About group on the settings root: feedback and the legal pages.
 /// Extracted from `settings_screen.dart` to keep that file within its size
