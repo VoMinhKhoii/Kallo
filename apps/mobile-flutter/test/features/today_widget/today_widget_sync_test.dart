@@ -196,6 +196,56 @@ void main() {
     expect(store.saved.last['meals'], hasLength(2));
   });
 
+  testWidgets(
+    'failed profile reload after sign-in does not overwrite widget with default targets',
+    (tester) async {
+      final store = _RecordingStore();
+      final uidState = StateProvider<String?>((ref) => null);
+      final fetchGate = Completer<ProfileRow?>();
+      final c = ProviderContainer(
+        overrides: [
+          dash.loggingDayProvider.overrideWith(
+            (ref, args) => Completer<dash_day.LoggingDayData>().future,
+          ),
+          sessionProvider.overrideWith((ref) => Stream<Session?>.value(null)),
+          signedInUserIdProvider.overrideWith((ref) => ref.watch(uidState)),
+          todayWidgetStoreProvider.overrideWithValue(store),
+          loggingDayProvider.overrideWith(_Day.new),
+          profileProvider.overrideWith((ref) {
+            final uid = ref.watch(signedInUserIdProvider);
+            if (uid == null) return null;
+            return fetchGate.future;
+          }),
+        ],
+      );
+      addTearDown(c.dispose);
+      // Seed profileProvider with synchronous signed-out AsyncData(null).
+      c.read(profileProvider);
+      await tester.pumpWidget(_app(c));
+      await tester.pumpAndSettle();
+      store.saved.clear();
+
+      // Transition to signed in: profileProvider is reloading (hasValue: true,
+      // value: null, isReloading: true), then fails (AsyncError with hasValue: true).
+      c.read(uidState.notifier).state = 'u1';
+      await tester.pump();
+      expect(c.read(profileProvider).isReloading, isTrue);
+      expect(store.saved, isEmpty);
+
+      fetchGate.completeError(StateError('offline'));
+      await tester.pumpAndSettle();
+
+      final errored = c.read(profileProvider);
+      expect(errored.hasError, isTrue);
+      expect(errored.hasValue, isTrue);
+      expect(
+        store.saved,
+        isEmpty,
+        reason: 'a failed reload must not write default targets to the widget',
+      );
+    },
+  );
+
   test('the widget tap link is the Today link, and only that', () {
     expect(isTodayWidgetLink(Uri.parse('nham://today')), isTrue);
     expect(isTodayWidgetLink(Uri.parse('nham://invite/abc')), isFalse);
