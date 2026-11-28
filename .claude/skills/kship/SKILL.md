@@ -230,15 +230,15 @@ and `PROFILE` setup above):
 
 ```bash
 OUT=<scratchpad>/local-review-<name>.md
-(cd "$REVIEW_DIR" && sandbox-exec -p "$PROFILE" claude -p \
-  --model claude-opus-5-5 --effort high \
-  --permission-mode plan --permission-prompts none \
-  --no-session-persistence \
-  --tools "Read,Grep,Glob,Bash" \
-  --allowedTools "Read,Grep,Glob,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(git status*),Bash(git rev-parse*),Bash(git ls-files*),Bash(git blame*),Bash(git grep*),Bash(grep*),Bash(ls*),Bash(cat*),Bash(head*),Bash(wc*)" \
-  --disallowedTools "Edit,Write,NotebookEdit,WebFetch,WebSearch" \
-  < <(cat "$CK"/.claude/skills/kship/local-review.md \
-          <scratchpad>/review-brief.md <scratchpad>/pass-<name>.md)) > "$OUT" 2>&1
+cat "$CK"/.claude/skills/kship/local-review.md \
+    <scratchpad>/review-brief.md <scratchpad>/pass-<name>.md \
+  | (cd "$REVIEW_DIR" && sandbox-exec -p "$PROFILE" claude -p \
+      --model claude-opus-5-5 --effort high \
+      --permission-mode plan --permission-prompts none \
+      --no-session-persistence \
+      --tools "Read,Grep,Glob,Bash" \
+      --allowedTools "Read,Grep,Glob,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(git status*),Bash(git rev-parse*),Bash(git ls-files*),Bash(git blame*),Bash(git grep*),Bash(grep*),Bash(ls*),Bash(cat*),Bash(head*),Bash(wc*)" \
+      --disallowedTools "Edit,Write,NotebookEdit,WebFetch,WebSearch") > "$OUT" 2>&1
 rc=$?
 [ -s "$OUT" ] || rc=1
 echo "claude exit $rc"; [ "$rc" -eq 0 ]

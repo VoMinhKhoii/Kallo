@@ -21,8 +21,12 @@ import '../widgets/ai_consent_sheet.dart';
 /// arrived yet.
 Future<bool> ensureAiConsent(BuildContext context, WidgetRef ref) async {
   if (ref.read(aiConsentProvider)) return true;
+  final profile = ref.read(profileProvider);
+  // Also wait while `isReloading` (dependency change from signed-out `null`
+  // to a user id): Riverpod keeps the stale signed-out `null` as `hasValue`
+  // until the signed-in fetch lands.
   if (ref.read(aiConsentRecordProvider) == null &&
-      !ref.read(profileProvider).hasValue) {
+      (!profile.hasValue || profile.isReloading)) {
     try {
       await ref.read(profileProvider.future);
     } catch (_) {

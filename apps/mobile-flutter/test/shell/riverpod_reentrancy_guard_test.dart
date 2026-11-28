@@ -2,34 +2,98 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Guards against the two Riverpod 2.6.1 re-entrancy patterns that caused the
-/// PR #627 production outage (builds 77–78), where `profileProvider` stayed
-/// stuck in `AsyncLoading(value: null)` on every cold signed-in launch:
+/// Static guards for the two direct code shapes behind the PR #627 production
+/// outage (builds 77–78), where `profileProvider` stayed stuck in
+/// `AsyncLoading(value: null)` on every cold signed-in launch:
 ///
-/// 1. Calling `unawaited(...)` (or synchronously reading an async provider)
-///    inside a `ref.listen` / `ref.listenManual` callback on an async provider.
-///    In Riverpod 2.6.1, `FutureHandlerProviderElementMixin.handleFuture` calls
-///    `data(value)` (notifying listeners synchronously) BEFORE `done()`
-///    (`_lastFutureSub?.call()`). A re-entrant `ref.read` on a dirty provider
-///    rebuilds it inside `data()`, overwrites `_lastFutureSub` with the new
-///    fetch's cancel closure, and the outer `done()` immediately cancels it.
-///    Defer work from listeners via `scheduleMicrotask` (as
-///    `GoRouterAuthRefresh.ping()` and `AccountLanguageSync._scheduleSync()` do).
+/// 1. Calling `unawaited(...)` or directly reading a watched async provider
+///    (`profileProvider`, `sessionProvider`, `onboardingDraftProvider`) inside a
+///    `ref.listen` / `ref.listenManual` callback. In Riverpod 2.6.1,
+///    `FutureHandlerProviderElementMixin.handleFuture` notifies listeners
+///    (`data(value)`) BEFORE calling `done()` (`_lastFutureSub?.call()`). A
+///    re-entrant `ref.read` on a dirty provider rebuilds it inside `data()`,
+///    overwrites `_lastFutureSub` with the new fetch's cancel closure, and the
+///    outer `done()` immediately cancels it. Defer work from listeners via
+///    `scheduleMicrotask` (as `GoRouterAuthRefresh.ping()` and
+///    `AccountLanguageSync._scheduleSync()` do).
+///    Note: static scanning cannot trace arbitrary indirect helper calls, so
+///    `cold_signed_in_boot_test.dart` and `account_language_test.dart` exercise
+///    the real cold-start graph at runtime alongside this guard.
 ///
 /// 2. Declaring a `FutureProvider` as `async` when it watches
 ///    `signedInUserIdProvider` and returns `null` while signed out. An `async`
 ///    `return null` schedules a microtask `Future` that races with
 ///    `sessionProvider`'s initial emission; omitting `async` on the outer
 ///    callback lets Riverpod take its synchronous `FutureOr` branch.
-String _stripComments(String source) => source
-    .split('\n')
-    .map((line) {
-      if (line.trimLeft().startsWith('//')) return '';
-      final marker = line.indexOf('//');
-      if (marker == -1 || line.substring(0, marker).endsWith(':')) return line;
-      return line.substring(0, marker);
-    })
-    .join('\n');
+///
+/// Strips `//` and `/* ... */` comments while preserving string literals and
+/// replacing string contents with spaces so parentheses or `//` inside strings
+/// never confuse the balanced-parens scanner.
+String _stripCommentsAndStrings(String source) {
+  final out = StringBuffer();
+  var i = 0;
+  final n = source.length;
+  while (i < n) {
+    final c = source.codeUnitAt(i);
+    final next = i + 1 < n ? source.codeUnitAt(i + 1) : 0;
+    // Line comment.
+    if (c == 47 /* / */ && next == 47 /* / */ ) {
+      while (i < n && source.codeUnitAt(i) != 10 /* \n */ ) {
+        i++;
+      }
+      continue;
+    }
+    // Block comment.
+    if (c == 47 /* / */ && next == 42 /* * */ ) {
+      i += 2;
+      while (i + 1 < n &&
+          !(source.codeUnitAt(i) == 42 && source.codeUnitAt(i + 1) == 47)) {
+        if (source.codeUnitAt(i) == 10) out.write('\n');
+        i++;
+      }
+      i += 2;
+      continue;
+    }
+    // Raw string r'...' / r"..." or normal/triple-quoted string.
+    final isRaw =
+        c == 114 /* r */ && (next == 39 /* ' */ || next == 34 /* " */ );
+    if (isRaw || c == 39 || c == 34) {
+      if (isRaw) i++;
+      final quote = source.codeUnitAt(i);
+      final triple =
+          i + 2 < n &&
+          source.codeUnitAt(i + 1) == quote &&
+          source.codeUnitAt(i + 2) == quote;
+      i += triple ? 3 : 1;
+      out.write(' ');
+      while (i < n) {
+        final sc = source.codeUnitAt(i);
+        if (sc == 10) out.write('\n');
+        if (!isRaw && sc == 92 /* \ */ ) {
+          i += 2;
+          continue;
+        }
+        if (triple) {
+          if (i + 2 < n &&
+              source.codeUnitAt(i) == quote &&
+              source.codeUnitAt(i + 1) == quote &&
+              source.codeUnitAt(i + 2) == quote) {
+            i += 3;
+            break;
+          }
+        } else if (sc == quote) {
+          i++;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+    out.writeCharCode(c);
+    i++;
+  }
+  return out.toString();
+}
 
 /// Extracts balanced `(...)` starting at [openParenIndex], or `null`.
 String? _balancedParens(String text, int openParenIndex) {
@@ -61,18 +125,21 @@ void main() {
     });
 
     test(
-      'no ref.listen / ref.listenManual callback invokes unawaited(...) synchronously',
+      'no ref.listen / ref.listenManual callback invokes unawaited(...) or reads core async providers synchronously',
       () {
         final pattern = RegExp(r'ref\.listen(?:Manual)?(?:<[^>]+>)?\s*\(');
+        final forbidden = RegExp(
+          r'\bunawaited\s*\(|ref\.read\s*\(\s*(?:profileProvider|sessionProvider|onboardingDraftProvider)\b',
+        );
         final offenders = <String>[];
 
         for (final file in sources) {
-          final code = _stripComments(file.readAsStringSync());
+          final code = _stripCommentsAndStrings(file.readAsStringSync());
           for (final match in pattern.allMatches(code)) {
             final openParen = code.indexOf('(', match.start);
             final call = _balancedParens(code, openParen);
             if (call == null) continue;
-            if (RegExp(r'\bunawaited\s*\(').hasMatch(call)) {
+            if (forbidden.hasMatch(call)) {
               final line =
                   '\n'.allMatches(code.substring(0, match.start)).length + 1;
               offenders.add('${file.path}:$line');
@@ -84,12 +151,11 @@ void main() {
           offenders,
           isEmpty,
           reason:
-              'Never call unawaited(...) synchronously inside ref.listen / '
-              'ref.listenManual: an async function runs synchronously up to its '
-              'first await, so any ref.read inside it can re-entrantly flush a '
-              'dirty FutureProvider inside Riverpod\'s handleFuture data() '
-              'callback and let the outer done() cancel the new fetch. Schedule '
-              'it with scheduleMicrotask instead.',
+              'Never call unawaited(...) or ref.read(...) on core async '
+              'providers synchronously inside ref.listen / ref.listenManual: '
+              'a re-entrant flush inside Riverpod\'s handleFuture data() '
+              'callback lets the outer done() cancel the new fetch. Schedule '
+              'the work with scheduleMicrotask instead.',
         );
       },
     );
@@ -103,7 +169,7 @@ void main() {
         final offenders = <String>[];
 
         for (final file in sources) {
-          final code = _stripComments(file.readAsStringSync());
+          final code = _stripCommentsAndStrings(file.readAsStringSync());
           for (final match in pattern.allMatches(code)) {
             final openParen = code.indexOf('(', match.start);
             final call = _balancedParens(code, openParen);

@@ -278,9 +278,12 @@ String? _redirect(Ref ref, String location) {
 }
 
 /// Whether an async source has an answer the redirect may act on. A REFRESH is
-/// not a wait — every save invalidates the profile — so the hold is `isLoading`
-/// AND nothing to show.
-bool _settled(AsyncValue<Object?> async) => !async.isLoading || async.hasValue;
+/// not a wait — every save invalidates the profile — so an `isRefreshing` load
+/// stays settled, while a first load or an account-change reload
+/// (`isReloading`, which carries the prior signed-out `null` as `hasValue`)
+/// holds until the fetch lands.
+bool _settled(AsyncValue<Object?> async) =>
+    !async.isLoading || (async.hasValue && !async.isReloading);
 
 /// Whether this looks like the user's very first session — a brand-new account
 /// whose last sign-in is within 60s of creation. Mirrors the web layout's
