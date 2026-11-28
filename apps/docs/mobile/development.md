@@ -168,7 +168,9 @@ flutter test test/shell/poses --update-goldens --dart-define=DUO_OUT=/absolute/o
 ```
 
 `DUO_OUT` must be an absolute path. The images are for review and are never committed or
-compared. Windows are named in `test/shell/poses/harness/poses.dart`, beside the boot and
+compared. Add `--dart-define=POSE_LOCALE=vi` to render in Vietnamese, strings and fixture
+meals both; `pose_gallery_test.dart` then still fails on a layout exception, while the
+cases that open something by its English name fail at that step. Windows are named in `test/shell/poses/harness/poses.dart`, beside the boot and
 `resize` helpers the other window tests share. Screens are the list at the top of
 `pose_gallery_test.dart`, and each entry carries its own steps to open it and what to
 measure. Add to the end of either list: the renders depend on the order the cases run in.
@@ -184,8 +186,11 @@ ships Xcode 27.1 and the iPhone Duo simulator, then closes, opens, half-folds an
 the simulated phone and uploads two pictures of each screen in each pose: the display's
 own pixels (`<pose>/<screen>.png`) and the device with its frame around it
 (`<pose>/framed/<screen>.png`). A route written `/onboarding@5` opens the wizard on its
-fifth screen. Run it from the Actions tab ("iOS Duo simulator"); it
-takes about an hour and the pictures are in the `duo-sim-tour` artifact. The simulator
+fifth screen. Run it from the Actions tab ("iOS Duo simulator"). It runs twice, side by
+side, once in English and once in Vietnamese (the script writes the language to
+`duo_locale.txt` beside the route), and takes about an hour. Each language has two
+artifacts: `duo-sim-tour-<en|vi>` with everything, and `duo-sim-framed-<en|vi>` with only
+the framed shots and the classic iPhone's. The simulator
 has two displays, so a screenshot needs `--display=1` (outer) or `--display=3` (inner).
 No command opens or folds the simulated phone, so the job clicks Device Hub's pose
 buttons; if Apple moves them, the `desktop-*.png` files in the artifact show where they

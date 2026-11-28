@@ -22,6 +22,11 @@ import 'pose_overrides.dart';
 import '../../../features/circle/circle_feed_test_support.dart';
 import 'poses.dart';
 
+/// The language the poses render in: `--dart-define=POSE_LOCALE=vi` draws
+/// the gallery in Vietnamese, strings and fixture meals both. Tests that
+/// look for English words only pass in English.
+const _locale = String.fromEnvironment('POSE_LOCALE', defaultValue: 'en');
+
 Future<void> initializePoseHarness() async {
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -72,7 +77,7 @@ Future<Future<void> Function()> bootPose(
   tester.view.viewPadding = padding;
   addTearDown(tester.view.reset);
 
-  final fixtures = PoseFixtures();
+  final fixtures = PoseFixtures(locale: _locale);
   final api = apiOverride ?? fixtureApi(fixtures);
   final errors = _ProviderErrors();
   final container = ProviderContainer(
@@ -108,8 +113,8 @@ Future<Future<void> Function()> bootPose(
     UncontrolledProviderScope(
       container: container,
       child: EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        startLocale: const Locale('en'),
+        supportedLocales: const [Locale('en'), Locale('vi')],
+        startLocale: const Locale(_locale),
         fallbackLocale: const Locale('en'),
         path: 'assets/l10n',
         assetLoader: const FsL10nLoader(),

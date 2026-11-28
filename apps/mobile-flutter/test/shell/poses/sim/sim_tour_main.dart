@@ -9,7 +9,11 @@
 //
 //   flutter build ios --simulator --debug -t test/shell/poses/sim/sim_tour_main.dart
 //   echo /nutrition > "$(xcrun simctl get_app_container <udid> com.khoivo.nham data)/tmp/duo_route.txt"
+//   echo vi > "$(xcrun simctl get_app_container <udid> com.khoivo.nham data)/tmp/duo_locale.txt"
 //   xcrun simctl launch --terminate-running-process <udid> com.khoivo.nham
+//
+// `duo_locale.txt` picks the language, English without it: the app's
+// strings, and the meals and replies the fixtures hold.
 //
 // `/onboarding@5` opens the wizard on its fifth screen (the long one, cooking
 // habits) by handing it a draft that already reached the fourth.
@@ -46,7 +50,8 @@ Future<void> main() async {
   final requested = _requestedRoute().split('@');
   final route = requested.first;
   final screen = requested.length > 1 ? int.tryParse(requested[1]) : null;
-  final fixtures = PoseFixtures();
+  final locale = _requestedLocale();
+  final fixtures = PoseFixtures(locale: locale);
   final container = ProviderContainer(
     overrides: [
       ...poseOverrides(
@@ -77,9 +82,12 @@ Future<void> main() async {
     UncontrolledProviderScope(
       container: container,
       child: EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        startLocale: const Locale('en'),
+        supportedLocales: const [Locale('en'), Locale('vi')],
+        startLocale: Locale(locale),
         fallbackLocale: const Locale('en'),
+        // The script's choice holds for one launch: nothing saved by an
+        // earlier one may win over it.
+        saveLocale: false,
         path: 'assets/l10n',
         child: Builder(
           builder:
@@ -125,6 +133,15 @@ String _requestedRoute() {
     if (wanted.startsWith('/')) return wanted;
   }
   return Platform.environment['DUO_ROUTE'] ?? '/dashboard';
+}
+
+/// The language to run in: `vi` when the script's `duo_locale.txt` says so,
+/// English otherwise.
+String _requestedLocale() {
+  final file = File('${Directory.systemTemp.path}/duo_locale.txt');
+  return file.existsSync() && file.readAsStringSync().trim() == 'vi'
+      ? 'vi'
+      : 'en';
 }
 
 /// The onboarding draft's storage for one launch: empty, or holding a draft

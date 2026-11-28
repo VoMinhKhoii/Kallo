@@ -3,8 +3,11 @@ import '../../../features/settings/settings_test_support.dart'
 
 /// Entirely synthetic fixtures; dates follow the app's local "today".
 class PoseFixtures {
-  PoseFixtures() : today = DateTime.now();
+  PoseFixtures({this.locale = 'en'}) : today = DateTime.now();
 
+  /// The language the person writes in and has set on their account: their
+  /// meals and their friends' replies come in it. English, or `vi`.
+  final String locale;
   final DateTime today;
   String date(int daysAgo) => today
       .subtract(Duration(days: daysAgo))
@@ -13,7 +16,7 @@ class PoseFixtures {
 
   Map<String, dynamic> get profile => {
     ...kFullProfile,
-    'preferredLocale': 'en',
+    'preferredLocale': locale,
     'countryOfOrigin': 'United Kingdom',
     'countryOfResidence': 'United Kingdom',
     'onboardingStep': 3,
@@ -26,22 +29,32 @@ class PoseFixtures {
     'grilled salmon, roasted potatoes and green beans',
   ];
 
+  /// The same four meals as a Vietnamese speaker types them.
+  static const mealNamesVi = [
+    '2 trứng bác ăn với bánh mì sourdough nướng và nửa quả bơ',
+    'cơm gà kiểu burrito, gạo lứt, đậu đen, không phô mai',
+    '250 g sữa chua Hy Lạp với mật ong và óc chó',
+    'cá hồi nướng, khoai tây nướng và đậu que',
+  ];
+
+  List<String> get _names => locale == 'vi' ? mealNamesVi : mealNames;
+
   List<Map<String, dynamic>> get meals => [
     for (var i = 0; i < mealNames.length; i++)
       {
         'id': 'synthetic-meal-$i',
-        'rawInput': mealNames[i],
+        'rawInput': _names[i],
         'loggedAt': '${date(0)}T${['08', '12', '15', '18'][i]}:30:00',
         'nutrition': macros(i),
         'mealItemGroups': [
           {
-            'name': mealNames[i],
+            'name': _names[i],
             'order': 0,
             'nutrition': macros(i),
             'ingredients': [
               {
                 'id': 'synthetic-ingredient-$i',
-                'ingredientName': mealNames[i],
+                'ingredientName': _names[i],
                 'estimatedGrams': 280.0 + i * 30,
                 'userFacingUnit': 'g',
                 'nutrition': macros(i),
@@ -74,6 +87,18 @@ class PoseFixtures {
     'shakshuka with pita',
   ];
 
+  static const pastMealNamesVi = [
+    'yến mạch ngâm qua đêm với dâu và bơ hạnh nhân',
+    'bánh tortilla cuộn gà tây và quả bơ',
+    'súp miso với đậu phụ và cơm',
+    'bánh mì nướng phết bơ đậu phộng và chuối',
+    'súp đậu lăng ăn với bánh mì giòn',
+    'shakshuka ăn với bánh mì pita',
+  ];
+
+  List<String> get _pastNames =>
+      locale == 'vi' ? pastMealNamesVi : pastMealNames;
+
   /// The day [when] names, as `/logging/day` serves it: today is [day];
   /// every fourth day back is empty; the rest hold three or four meals.
   Map<String, dynamic> dayFor(String? when) {
@@ -95,7 +120,7 @@ class PoseFixtures {
         for (var i = 0; i < count; i++)
           {
             'id': 'synthetic-past-$ago-$i',
-            'rawInput': pastMealNames[(ago + i) % pastMealNames.length],
+            'rawInput': _pastNames[(ago + i) % _pastNames.length],
             'loggedAt': '${when}T${['08', '12', '16', '19'][i]}:00:00',
             'nutrition': macros((ago + i) % 4),
             'mealItemGroups': <dynamic>[],
@@ -185,7 +210,7 @@ class PoseFixtures {
         'meal': {
           'mealId': 'friend-meal-$i',
           'shareId': 'friend-share-$i',
-          'rawInput': mealNames[i],
+          'rawInput': _names[i],
           'sharedAt': '${date(0)}T12:30:00Z',
           ...macros(i),
         },
@@ -212,9 +237,13 @@ class PoseFixtures {
             'displayName': 'Sam Taylor',
           },
           'body':
-              i == 0
-                  ? 'That looks like a good start to the day.'
-                  : 'I will try this tomorrow.',
+              locale == 'vi'
+                  ? (i == 0
+                      ? 'Bữa sáng thế này là ổn rồi đấy.'
+                      : 'Mai mình sẽ thử món này.')
+                  : (i == 0
+                      ? 'That looks like a good start to the day.'
+                      : 'I will try this tomorrow.'),
           'createdAt': '${date(0)}T13:30:00Z',
         },
     ],

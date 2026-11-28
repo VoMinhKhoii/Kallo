@@ -19,6 +19,9 @@ name: iOS Duo simulator
 # screenshot button saves the display only, so the framed picture is a crop
 # of the desktop, which is why the desktop is made larger first.
 #
+# The tour runs twice, side by side on two runners: once in English and once
+# in Vietnamese, where the words are longer and wrap in other places.
+#
 # A full tour takes about an hour: about 6 minutes to build, 6 to boot the
 # Duo, 20 seconds per screen per pose, and up to 20 for the classic iPhone,
 # most of it that simulator's first boot.
@@ -36,6 +39,13 @@ jobs:
   tour:
     runs-on: xcode-27
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        locale: [en, vi]
+    env:
+      # The fixture app reads this from `duo_locale.txt` on every launch.
+      TOUR_LOCALE: ${{ matrix.locale }}
     steps:
       - uses: actions/checkout@v4
 
@@ -148,6 +158,7 @@ jobs:
               name=$(echo "${route#/}" | tr '/@' '--')
               data=$(xcrun simctl get_app_container "$UDID" com.khoivo.nham data 2>/dev/null)
               mkdir -p "$data/tmp"; echo "$route" > "$data/tmp/duo_route.txt"; : > "$data/tmp/duo_metrics.txt"
+              echo "$TOUR_LOCALE" > "$data/tmp/duo_locale.txt"
               SIMCTL_CHILD_DUO_ROUTE="$route" xcrun simctl launch --terminate-running-process \
                 "$UDID" com.khoivo.nham > /dev/null 2>&1
               sleep 8
@@ -190,6 +201,7 @@ jobs:
             name=$(echo "${route#/}" | tr '/@' '--')
             data=$(xcrun simctl get_app_container "$PHONE" com.khoivo.nham data 2>/dev/null)
             mkdir -p "$data/tmp"; echo "$route" > "$data/tmp/duo_route.txt"; : > "$data/tmp/duo_metrics.txt"
+            echo "$TOUR_LOCALE" > "$data/tmp/duo_locale.txt"
             xcrun simctl launch --terminate-running-process "$PHONE" com.khoivo.nham > /dev/null 2>&1
             sleep 8
             xcrun simctl io "$PHONE" screenshot "out/phone/$name.png" 2>&1 | tail -1
@@ -199,6 +211,18 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: duo-sim-tour
+          name: duo-sim-tour-${{ matrix.locale }}
           path: out
+          retention-days: 14
+
+      # The pictures a review needs and nothing else: the framed shots and
+      # the classic iPhone's. A quarter of the size of the full set.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: duo-sim-framed-${{ matrix.locale }}
+          path: |
+            out/*/framed
+            out/phone
+            out/metrics-by-pose.txt
           retention-days: 14
