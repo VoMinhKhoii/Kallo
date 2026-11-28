@@ -1,7 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { RateLimitedError } from '@/lib/core/errors/app-error';
-import { localeFromNext, publicUrl } from '@/lib/infra/auth/redirects';
+import {
+  authErrorUrl,
+  localeFromNext,
+  publicUrl,
+} from '@/lib/infra/auth/redirects';
 import { safeNextPath } from '@/lib/infra/auth/safe-next';
 import { assertRateLimit } from '@/lib/infra/rate-limit/limiter/limiter';
 import { getRequestIp } from '@/lib/infra/security/request-ip';
@@ -63,7 +67,7 @@ export async function handleVerify(
   });
   if (!params.success) {
     return NextResponse.redirect(
-      publicUrl(request, `/${locale}/?error=verify_failed`, url.origin)
+      authErrorUrl(request, locale, 'verify_failed', url.origin)
     );
   }
   const { token_hash, type } = params.data;
@@ -85,7 +89,7 @@ export async function handleVerify(
       // would render as raw text in the address bar; the user gets the same
       // "that link did not work" screen a failed verify already produces.
       return NextResponse.redirect(
-        publicUrl(request, `/${locale}/?error=verify_failed`, url.origin)
+        authErrorUrl(request, locale, 'verify_failed', url.origin)
       );
     }
   }
@@ -96,7 +100,7 @@ export async function handleVerify(
   if (error) {
     console.error('[auth/verify] verifyOtp failed:', error.message);
     return NextResponse.redirect(
-      publicUrl(request, `/${locale}/?error=verify_failed`, url.origin)
+      authErrorUrl(request, locale, 'verify_failed', url.origin)
     );
   }
 

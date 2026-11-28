@@ -3,17 +3,26 @@
 // reverse-proxy host handling can't drift between them.
 
 import type { NextRequest } from 'next/server';
-import { defaultLocale } from '@/i18n/config';
+import { defaultLocale, isLocale, type Locale } from '@/i18n/config';
 import { isCloudRunHost } from '@/lib/infra/http/cloud-run-host';
 import { SITE_URL } from '@/lib/seo/site';
 
+/**
+ * The `?error=` codes the auth routes redirect to the landing page with. The
+ * landing page's `AuthErrorToast` maps every one of them to a message, so a
+ * code added here without one fails the type check there.
+ */
+export type AuthErrorCode =
+  | 'oauth_missing_code'
+  | 'oauth_exchange'
+  | 'account_exists'
+  | 'verify_failed';
+
 /** Locale to use for landing/error redirects, inferred from the (already
- * validated) `next` path; falls back to the default locale. The `en|vi`
- * literal still duplicates `i18n/config`'s `locales` (see the auth-gateway
- * review-followups task). */
-export function localeFromNext(next: string | null): string {
-  if (!next) return defaultLocale;
-  return next.match(/^\/(en|vi)(\/|$)/)?.[1] ?? defaultLocale;
+ * validated) `next` path; falls back to the default locale. */
+export function localeFromNext(next: string | null): Locale {
+  const first = next?.split('/')[1];
+  return isLocale(first) ? first : defaultLocale;
 }
 
 /**
@@ -40,4 +49,14 @@ export function publicUrl(
     ? new URL(path, `${forwardedProto ?? 'https'}://${forwardedHost}`)
     : new URL(path, fallbackOrigin);
   return isCloudRunHost(url.hostname) ? new URL(path, SITE_URL) : url;
+}
+
+/** The landing page with an auth error for `AuthErrorToast` to show. */
+export function authErrorUrl(
+  request: NextRequest,
+  locale: Locale,
+  code: AuthErrorCode,
+  fallbackOrigin: string
+): URL {
+  return publicUrl(request, `/${locale}/?error=${code}`, fallbackOrigin);
 }
