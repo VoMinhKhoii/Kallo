@@ -13,7 +13,7 @@ import 'package:kallo_mobile/features/logging/widgets/feed/feed_area.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/feed_list.dart';
 import 'package:kallo_mobile/features/logging/widgets/timeline/timeline_picker.dart';
 import 'package:kallo_mobile/features/logging/widgets/days/log_days_pane.dart';
-import 'package:kallo_mobile/features/logging/widgets/days/log_month_header.dart';
+import 'package:kallo_mobile/features/logging/widgets/days/log_week_header.dart';
 import 'package:kallo_mobile/features/logging/widgets/composer/meal_input.dart';
 import 'package:kallo_mobile/features/logging/widgets/feed/summary/macro_summary.dart';
 import 'package:kallo_mobile/shared/widgets/gauge/rounded_gauge_arc.dart';
@@ -120,7 +120,7 @@ void main() {
     expect(input.left, 495.5);
     expect(input.right, 855);
     expect(input.bottom, 623);
-    expect(tester.getRect(find.byType(LogMonthHeader)).top, 28);
+    expect(tester.getRect(find.byType(LogWeekHeader)).top, 28);
     tester.view.viewInsets = const FakeViewPadding(bottom: 440);
     tester.view.padding = const FakeViewPadding(right: 168);
     await tester.pump();

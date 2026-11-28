@@ -55,7 +55,7 @@ void main() {
   });
 
   group('DayTotals', () {
-    test('sums the saved meals and keeps the typed texts in logged order', () {
+    test('sums the saved meals', () {
       final totals = DayTotals.of(
         LoggingDayData(
           persistedMeals: [
@@ -78,7 +78,6 @@ void main() {
       expect(totals.kcal, 960);
       expect(totals.protein, 51);
       expect(totals.carbs, 20);
-      expect(joinTyped(totals.typed), 'oats with berries · grilled salmon');
       expect(totals.empty, isFalse);
     });
 
@@ -92,7 +91,6 @@ void main() {
       );
       final totals = DayTotals.of(day, held: {'lentil soup'});
       expect(totals.kcal, 420);
-      expect(totals.typed, ['oats with berries']);
       // The only meal held: the day reads as empty, as the feed shows it.
       final none = DayTotals.of(
         day,
@@ -119,7 +117,6 @@ void main() {
         const LoggingDayData(persistedMeals: [], pendingConfirmations: []),
       );
       expect(totals.empty, isTrue);
-      expect(totals.typed, isEmpty);
     });
   });
 }

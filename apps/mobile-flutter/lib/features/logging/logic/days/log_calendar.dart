@@ -1,8 +1,8 @@
-/// The month calendar beside the Log feed in a two-pane window: which days
-/// the heatmap covers, how a month lays out, how far it pages, and how full a
-/// day's ring is.
+/// The week of rings beside the Log feed in a two-pane window: which days
+/// the heatmap covers, which days a week holds, how far it pages, and how
+/// full a day's ring is.
 ///
-/// Pure, so the month maths is tested without a widget. The rules follow the
+/// Pure, so the week maths is tested without a widget. The rules follow the
 /// web calendar (`components/logging/sidebar/calendar/`): weeks start on
 /// Monday, a day past today is not a day you can open, and a ring is drawn
 /// only for a day whose total and target are both known.
@@ -29,45 +29,6 @@ List<HeatmapCell> pastDays(HeatmapData data, String today) {
   return days;
 }
 
-/// The first day of the month holding [date].
-DateTime monthOf(String date) {
-  final d = dateStringToDate(date);
-  return DateTime(d.year, d.month);
-}
-
-/// [month] moved by [delta] months.
-DateTime shiftMonth(DateTime month, int delta) =>
-    DateTime(month.year, month.month + delta);
-
-/// [month]'s grid, Monday first: a null for each blank before the 1st, then
-/// one YYYY-MM-DD per day. The last row is left short, as the web leaves it.
-List<String?> monthCells(DateTime month) {
-  final first = DateTime(month.year, month.month);
-  final blanks = first.weekday - DateTime.monday;
-  final days = DateTime(month.year, month.month + 1, 0).day;
-  return [
-    for (var i = 0; i < blanks; i++) null,
-    for (var d = 1; d <= days; d++)
-      dateToDateString(DateTime(month.year, month.month, d)),
-  ];
-}
-
-/// Whether the data covers the whole month before [month].
-///
-/// The covered days run unbroken from the oldest one to today, so the oldest
-/// alone answers it. A month the data only reaches into would draw its
-/// earlier days as empty when nobody knows what they hold, so it is not
-/// offered. No data yet means nothing to page back to.
-bool canShowPreviousMonth(DateTime month, List<HeatmapCell>? days) {
-  if (days == null || days.isEmpty) return false;
-  final oldest = days.last.date;
-  return oldest.compareTo(dateToDateString(shiftMonth(month, -1))) <= 0;
-}
-
-/// Whether a month after [month] has begun by [today].
-bool canShowNextMonth(DateTime month, String today) =>
-    month.isBefore(monthOf(today));
-
 /// A day measured against its target: the web's `measureDay`.
 class DayMeasure {
   const DayMeasure({required this.fraction, required this.met});
@@ -88,3 +49,35 @@ DayMeasure? measureDay(double? kcal, int? target) {
     met: kcal >= partialDayFraction * target,
   );
 }
+
+/// The Monday of the week holding [date].
+DateTime weekOf(String date) {
+  final d = dateStringToDate(date);
+  return DateTime(d.year, d.month, d.day - (d.weekday - DateTime.monday));
+}
+
+/// [week] moved by [delta] weeks.
+DateTime shiftWeek(DateTime week, int delta) =>
+    DateTime(week.year, week.month, week.day + 7 * delta);
+
+/// The seven days of the week that starts on [week], Monday first.
+List<String> weekDates(DateTime week) => [
+  for (var i = 0; i < 7; i++)
+    dateToDateString(DateTime(week.year, week.month, week.day + i)),
+];
+
+/// Whether the data covers the whole week before [week].
+///
+/// The covered days run unbroken from the oldest one to today, so the oldest
+/// alone answers it. A week the data only reaches into would draw its
+/// earlier days as empty when nobody knows what they hold, so it is not
+/// offered. No data yet means nothing to page back to.
+bool canShowPreviousWeek(DateTime week, List<HeatmapCell>? days) {
+  if (days == null || days.isEmpty) return false;
+  final oldest = days.last.date;
+  return oldest.compareTo(dateToDateString(shiftWeek(week, -1))) <= 0;
+}
+
+/// Whether a week after [week] has begun by [today].
+bool canShowNextWeek(DateTime week, String today) =>
+    week.isBefore(weekOf(today));

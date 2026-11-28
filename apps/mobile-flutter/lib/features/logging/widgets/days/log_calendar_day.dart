@@ -6,15 +6,17 @@ import '../../../../theme/calm_tokens.dart';
 import '../../../../theme/kallo_colors.dart';
 import '../../logic/days/log_calendar.dart';
 
-/// One day of the month calendar: a 46pt target holding the date inside its
-/// calorie ring. The web calendar's day (`calendar-day-button.tsx`) in iOS
-/// tokens: the ring is ink while the day is short and green once it reaches
-/// the completeness floor, a day with no known total keeps the bare track, a
-/// future day has no ring and no tap, today is semibold, and the selected
-/// day is semibold on the beige wash.
+/// One day of the week's rings: a 46pt-wide target holding the weekday's
+/// name over the date inside its calorie ring. The web calendar's day
+/// (`calendar-day-button.tsx`) in iOS tokens: the ring is ink while the day
+/// is short and green once it reaches the completeness floor, a day with no
+/// known total keeps the bare track, a future day has no ring and no tap,
+/// today is semibold, and the selected day is semibold on the beige wash,
+/// which covers its weekday's name too.
 class LogCalendarDay extends StatelessWidget {
   const LogCalendarDay({
     super.key,
+    required this.weekday,
     required this.day,
     required this.measure,
     required this.isToday,
@@ -24,6 +26,9 @@ class LogCalendarDay extends StatelessWidget {
     required this.onTap,
   });
 
+  /// The weekday's name as the strip writes it: "Mon", or "M" where the
+  /// longer names do not fit.
+  final String weekday;
   final int day;
   final DayMeasure? measure;
   final bool isToday;
@@ -32,7 +37,7 @@ class LogCalendarDay extends StatelessWidget {
   final String semanticsLabel;
   final VoidCallback onTap;
 
-  static const double size = 46;
+  static const double width = 46;
   static const double ring = 36;
 
   @override
@@ -41,42 +46,50 @@ class LogCalendarDay extends StatelessWidget {
     // A zero-kcal day has nothing to sweep: it reads as a bare track.
     final arc = m != null && m.fraction > 0 ? m : null;
     final cell = Container(
-      width: size,
-      height: size,
+      width: width,
+      padding: const EdgeInsets.fromLTRB(0, 6, 0, 5),
       decoration: BoxDecoration(
         color: isSelected ? KalloColors.hover : null,
         borderRadius: BorderRadius.circular(14),
       ),
-      alignment: Alignment.center,
-      child: SizedBox(
-        width: ring,
-        height: ring,
-        child: CustomPaint(
-          painter:
-              isFuture
-                  ? null
-                  : DayRingPainter(
-                    fraction: (arc?.fraction ?? 0).clamp(0.0, 1.0),
-                    arcColor:
-                        arc == null
-                            ? null
-                            : arc.met
-                            ? KalloColors.successAccent
-                            : KalloColors.text,
-                    showTrack: true,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(weekday, maxLines: 1, style: dashCaption()),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: ring,
+            height: ring,
+            child: CustomPaint(
+              painter:
+                  isFuture
+                      ? null
+                      : DayRingPainter(
+                        fraction: (arc?.fraction ?? 0).clamp(0.0, 1.0),
+                        arcColor:
+                            arc == null
+                                ? null
+                                : arc.met
+                                ? KalloColors.successAccent
+                                : KalloColors.text,
+                        showTrack: true,
+                      ),
+              child: Center(
+                child: Text(
+                  '$day',
+                  style: dashBody(
+                    color: isFuture ? KalloColors.stone50 : null,
+                    weight:
+                        isToday || isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                    tabular: true,
                   ),
-          child: Center(
-            child: Text(
-              '$day',
-              style: dashBody(
-                color: isFuture ? KalloColors.stone50 : null,
-                weight:
-                    isToday || isSelected ? FontWeight.w600 : FontWeight.w400,
-                tabular: true,
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
     if (isFuture) {

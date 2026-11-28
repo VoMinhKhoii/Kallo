@@ -1,14 +1,15 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kallo_mobile/features/dashboard/screens/dashboard_screen.dart';
-import 'package:kallo_mobile/features/logging/data/days/day_row_variant_provider.dart';
 import 'package:kallo_mobile/features/logging/data/logging_models.dart';
 import 'package:kallo_mobile/features/logging/data/logging_providers.dart';
+import 'package:kallo_mobile/features/logging/logic/days/log_calendar.dart';
 import 'package:kallo_mobile/features/logging/logic/days/this_week.dart';
 import 'package:kallo_mobile/features/logging/screens/logging_screen.dart';
 import 'package:kallo_mobile/features/logging/widgets/days/log_calendar_day.dart';
@@ -80,46 +81,32 @@ class _SlowDays extends FakeApiClient {
 
 const _out = String.fromEnvironment('DUO_OUT');
 
-/// Both row variants for the owner, at every two-pane window:
+/// The days pane at every two-pane window, for the owner to look at:
 /// `flutter test --update-goldens --dart-define=DUO_OUT=<dir> <this file>`.
-const _variantNames = {
-  LogDayRowVariant.plain: 'plain',
-  LogDayRowVariant.withMeals: 'with-meals',
-};
-
 void main() {
   setUpAll(initializePoseHarness);
 
-  for (final variant in LogDayRowVariant.values) {
-    for (final pose in [innerLandscape, innerLandscapeLeft, pipPinned]) {
-      for (final scale in pose == innerLandscape ? [1.0, 1.3] : [1.0]) {
-        final suffix = scale == 1 ? '' : '__text-1.3';
-        testWidgets('Log draws ${variant.name} rows at ${pose.name}$suffix', (
+  for (final pose in [innerLandscape, innerLandscapeLeft, pipPinned]) {
+    for (final scale in pose == innerLandscape ? [1.0, 1.3] : [1.0]) {
+      final suffix = scale == 1 ? '' : '__text-1.3';
+      testWidgets('Log draws its days at ${pose.name}$suffix', (tester) async {
+        final dispose = await bootPose(
           tester,
-        ) async {
-          final dispose = await bootPose(
-            tester,
-            pose,
-            '/logging',
-            textScale: scale,
-            overrides: [logDayRowVariantProvider.overrideWithValue(variant)],
+          pose,
+          '/logging',
+          textScale: scale,
+        );
+        expect(find.byType(LogDayRow), findsWidgets);
+        expect(tester.takeException(), isNull);
+        if (_out.isNotEmpty) {
+          expect(Directory(_out).isAbsolute && autoUpdateGoldenFiles, isTrue);
+          await expectLater(
+            find.byType(MaterialApp),
+            matchesGoldenFile(Uri.file('$_out/days__${pose.name}$suffix.png')),
           );
-          expect(find.byType(LogDayRow), findsWidgets);
-          expect(tester.takeException(), isNull);
-          if (_out.isNotEmpty) {
-            expect(Directory(_out).isAbsolute && autoUpdateGoldenFiles, isTrue);
-            await expectLater(
-              find.byType(MaterialApp),
-              matchesGoldenFile(
-                Uri.file(
-                  '$_out/${_variantNames[variant]}__${pose.name}$suffix.png',
-                ),
-              ),
-            );
-          }
-          await dispose();
-        });
-      }
+        }
+        await dispose();
+      });
     }
   }
 
@@ -234,45 +221,36 @@ void main() {
     await dispose();
   });
 
-  for (final variant in LogDayRowVariant.values) {
-    testWidgets('two panes load this week two days at a time, rows steady '
-        '(${variant.name})', (tester) async {
-      final api = _SlowDays(const Duration(milliseconds: 150));
-      final dispose = await bootPose(
-        tester,
-        innerLandscape,
-        '/logging',
-        apiOverride: api,
-        overrides: [logDayRowVariantProvider.overrideWithValue(variant)],
-      );
-      final today = tester.widget<LogDaysPane>(find.byType(LogDaysPane)).today;
-      final week = thisWeekDays(today);
-      // This week, plus yesterday when today is Monday: the under-logged
-      // note reads it in one column too. Each day once.
-      final yesterday = DateTime.parse(
-        today,
-      ).subtract(const Duration(days: 1)).toIso8601String().substring(0, 10);
-      final expected = {...week, yesterday};
-      expect(api.dates.toSet(), expected);
-      expect(api.dates, hasLength(expected.length));
-      expect(api.peak, lessThanOrEqualTo(2));
-      // Every row is drawn at the height it had before its day arrived.
-      final heights =
-          tester
-              .widgetList(find.byType(LogDayRow))
-              .map((row) => tester.getSize(find.byWidget(row)).height)
-              .toSet();
-      expect(heights, hasLength(1));
-      final typed = find.textContaining(PoseFixtures.mealNames.first);
-      // The feed shows today's first meal either way; only the row variant
-      // joining the day's texts adds a second.
-      expect(
-        typed.evaluate().length,
-        variant == LogDayRowVariant.withMeals ? greaterThan(1) : greaterThan(0),
-      );
-      await dispose();
-    });
-  }
+  testWidgets('two panes load this week two days at a time, rows steady', (
+    tester,
+  ) async {
+    final api = _SlowDays(const Duration(milliseconds: 150));
+    final dispose = await bootPose(
+      tester,
+      innerLandscape,
+      '/logging',
+      apiOverride: api,
+    );
+    final today = tester.widget<LogDaysPane>(find.byType(LogDaysPane)).today;
+    final week = thisWeekDays(today);
+    // This week, plus yesterday when today is Monday: the under-logged
+    // note reads it in one column too. Each day once.
+    final yesterday = DateTime.parse(
+      today,
+    ).subtract(const Duration(days: 1)).toIso8601String().substring(0, 10);
+    final expected = {...week, yesterday};
+    expect(api.dates.toSet(), expected);
+    expect(api.dates, hasLength(expected.length));
+    expect(api.peak, lessThanOrEqualTo(2));
+    // Every row is drawn at the height it had before its day arrived.
+    final heights =
+        tester
+            .widgetList(find.byType(LogDayRow))
+            .map((row) => tester.getSize(find.byWidget(row)).height)
+            .toSet();
+    expect(heights, hasLength(1));
+    await dispose();
+  });
 
   testWidgets('a pull to refresh on the days refetches the loaded week, two '
       'at a time', (tester) async {
@@ -345,32 +323,54 @@ void main() {
   ) async {
     final dispose = await bootPose(tester, innerLandscape, '/logging');
     final pane = tester.widget<LogDaysPane>(find.byType(LogDaysPane));
-    final week = thisWeekDays(pane.today);
-    if (week.length > 1) {
-      await tester.tap(find.byType(LogDayRow).at(1));
-      await settlePose(tester);
-      expect(tester.widget<FeedArea>(find.byType(FeedArea)).date, week[1]);
-    }
-    final future = find.byWidgetPredicate(
-      (w) => w is LogCalendarDay && w.isFuture,
+    final week = weekDates(weekOf(pane.today));
+    String shown() => tester.widget<FeedArea>(find.byType(FeedArea)).date;
+    // Seven rows, Monday first, under seven rings.
+    final rows = tester.widgetList<LogDayRow>(find.byType(LogDayRow)).toList();
+    expect([for (final row in rows) row.date], week);
+    expect(find.byType(LogCalendarDay), findsNWidgets(7));
+    // A row of a day that has come selects it.
+    final monday = find.byWidgetPredicate(
+      (w) => w is LogDayRow && w.date == week.first,
     );
-    // The month on show always holds today; a later day in it is bare.
-    if (future.evaluate().isNotEmpty) {
-      final before = tester.widget<FeedArea>(find.byType(FeedArea)).date;
+    await tester.tap(monday);
+    await settlePose(tester);
+    expect(shown(), week.first);
+    // Neither the ring nor the row of a day still to come does.
+    for (final future in [
+      find.byWidgetPredicate((w) => w is LogCalendarDay && w.isFuture),
+      find.byWidgetPredicate((w) => w is LogDayRow && w.isFuture),
+    ]) {
+      if (future.evaluate().isEmpty) continue;
       await tester.tap(future.first, warnIfMissed: false);
       await settlePose(tester);
-      expect(tester.widget<FeedArea>(find.byType(FeedArea)).date, before);
+      expect(shown(), week.first);
     }
-    // A ring of this month selects its day.
-    final first = find.byWidgetPredicate(
-      (w) => w is LogCalendarDay && w.day == 1,
+    // A ring selects its day.
+    await tester.tap(
+      find.byWidgetPredicate((w) => w is LogCalendarDay && w.isToday),
     );
-    await tester.tap(first);
     await settlePose(tester);
-    expect(
-      tester.widget<FeedArea>(find.byType(FeedArea)).date,
-      '${pane.today.substring(0, 8)}01',
-    );
+    expect(shown(), pane.today);
+    await dispose();
+  });
+
+  testWidgets('the chevrons page a week at a time', (tester) async {
+    final dispose = await bootPose(tester, innerLandscape, '/logging');
+    final pane = tester.widget<LogDaysPane>(find.byType(LogDaysPane));
+    final week = weekOf(pane.today);
+    List<String> rows() => [
+      for (final row in tester.widgetList<LogDayRow>(find.byType(LogDayRow)))
+        row.date,
+    ];
+    await tester.tap(find.bySemanticsLabel('logging.days.previousWeek'.tr()));
+    await settlePose(tester);
+    expect(rows(), weekDates(shiftWeek(week, -1)));
+    // The day on show beside the pane stays the one that was chosen.
+    expect(tester.widget<FeedArea>(find.byType(FeedArea)).date, pane.today);
+    await tester.tap(find.bySemanticsLabel('logging.days.nextWeek'.tr()));
+    await settlePose(tester);
+    expect(rows(), weekDates(week));
     await dispose();
   });
 
@@ -405,7 +405,9 @@ void main() {
     await tester.pump();
     expect(
       find.descendant(
-        of: find.byType(LogDayRow).first,
+        of: find.byWidgetPredicate(
+          (w) => w is LogDayRow && w.date == area.date,
+        ),
         matching: find.text('2,370 kcal'),
       ),
       findsOneWidget,

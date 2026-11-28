@@ -3,10 +3,10 @@ import 'package:flutter/widgets.dart';
 
 import '../../../../theme/kallo_colors.dart';
 
-/// A month chevron beside the calendar's title: a 20pt glyph in a 44pt
-/// target, dimmed and inert when there is no month that way.
-class LogMonthChevron extends StatelessWidget {
-  const LogMonthChevron({
+/// A week chevron beside the pane's title: a 20pt glyph in a 44pt target,
+/// dimmed and inert when there is no week that way.
+class LogWeekChevron extends StatelessWidget {
+  const LogWeekChevron({
     super.key,
     required this.icon,
     required this.label,

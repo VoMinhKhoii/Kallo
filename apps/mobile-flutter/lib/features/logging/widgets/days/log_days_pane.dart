@@ -12,17 +12,19 @@ import '../../data/logging_providers.dart';
 import '../../logic/days/log_calendar.dart';
 import '../../logic/days/this_week.dart';
 import 'log_day_row.dart';
-import 'log_month_grid.dart';
-import 'log_month_header.dart';
+import 'log_days_fill.dart';
 import 'log_week_days.dart';
+import 'log_week_header.dart';
+import 'log_week_rings.dart';
 
-/// The far pane of a two-pane Log: the back chevron and one month of calorie
-/// rings, then this week's days. Tapping a day in either selects it, and the
-/// feed beside it shows that day.
+/// The far pane of a two-pane Log: the back chevron and one week of calorie
+/// rings, then that week's seven days as rows, Monday first. Tapping a day in
+/// either selects it, and the feed beside it shows that day. The chevrons
+/// page a week at a time, as far back as the 90-day heatmap covers.
 ///
-/// The rings read the 90-day heatmap. This week's rows, and the rings of
-/// their days, read each day as the feed loads it, so a row and the gauges
-/// beside it count the same meals the moment one is saved.
+/// The rows, and the rings of their days, read each day as the feed loads
+/// it, so a row and the gauges beside it count the same meals the moment one
+/// is saved. The heatmap fills a ring until its day arrives.
 class LogDaysPane extends ConsumerStatefulWidget {
   const LogDaysPane({
     super.key,
@@ -32,7 +34,6 @@ class LogDaysPane extends ConsumerStatefulWidget {
     required this.calorieTarget,
     required this.onSelectDate,
     required this.onBack,
-    this.variant = LogDayRowVariant.plain,
   });
 
   final String userId;
@@ -41,7 +42,6 @@ class LogDaysPane extends ConsumerStatefulWidget {
   final int calorieTarget;
   final ValueChanged<String> onSelectDate;
   final VoidCallback onBack;
-  final LogDayRowVariant variant;
 
   @override
   ConsumerState<LogDaysPane> createState() => _LogDaysPaneState();
@@ -51,16 +51,15 @@ class _LogDaysPaneState extends ConsumerState<LogDaysPane> {
   // Owned here: the feed beside this pane is a vertical scroll view too, and
   // both must not take the primary controller.
   final _controller = ScrollController();
-  late DateTime _month = monthOf(widget.selectedDate);
+  late DateTime _week = weekOf(widget.selectedDate);
 
   @override
   void didUpdateWidget(LogDaysPane old) {
     super.didUpdateWidget(old);
-    // A day picked in another month (a row of this week that began in the
-    // last one) brings its month with it.
+    // A day chosen from outside this pane brings its week with it.
     if (old.selectedDate != widget.selectedDate &&
-        monthOf(widget.selectedDate) != _month) {
-      _month = monthOf(widget.selectedDate);
+        weekOf(widget.selectedDate) != _week) {
+      _week = weekOf(widget.selectedDate);
     }
   }
 
@@ -68,16 +67,6 @@ class _LogDaysPaneState extends ConsumerState<LogDaysPane> {
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _refresh() async {
-    ref.invalidate(mealDatesProvider(widget.userId));
-    final day = LoggingDayArgs(widget.userId, widget.selectedDate);
-    await Future.wait([
-      ref.refresh(loggingDayListProvider(widget.userId).future),
-      ref.read(loggingDayProvider(day).notifier).refresh(),
-    ]);
-    await refreshLoadedWeekDays(ref, widget.userId, widget.selectedDate);
   }
 
   @override
@@ -97,11 +86,13 @@ class _LogDaysPaneState extends ConsumerState<LogDaysPane> {
             .valueOrNull;
 
     final held = ref.watch(heldMealRemovalsProvider);
+    final week = weekDates(_week);
     return LogWeekDays(
       userId: widget.userId,
       today: widget.today,
       selectedDate: widget.selectedDate,
-      builder: (week, totals) {
+      week: week,
+      builder: (totals) {
         double? kcalFor(String date) {
           final loaded = totals[date];
           if (loaded != null) return loaded.kcal;
@@ -111,21 +102,20 @@ class _LogDaysPaneState extends ConsumerState<LogDaysPane> {
           return byDate[date]?.calories;
         }
 
-        return _scroll(context, week, totals, days, byDate, kcalFor);
+        return _scroll(week, totals, days, byDate, kcalFor);
       },
     );
   }
 
   Widget _scroll(
-    BuildContext context,
     List<String> week,
     Map<String, DayTotals> totals,
     List<HeatmapCell>? days,
     Map<String, HeatmapCell> byDate,
     double? Function(String date) kcalFor,
   ) {
-    // The window edge keeps 24, the fold 12: the calendar's days and the
-    // rows' text line up under the month's name.
+    // The window edge keeps 24, the fold 12: the rings and the rows' text
+    // line up under the month's name.
     final edge = paneInsets(context, slot: PaneSlot.far, side: 24);
     final inset = EdgeInsets.fromLTRB(
       edge.left == 0 ? 12 : edge.left,
@@ -138,63 +128,69 @@ class _LogDaysPaneState extends ConsumerState<LogDaysPane> {
       // unmounts this pane, so a fold out and back returns to the same place.
       key: const PageStorageKey('logging-days-pane'),
       controller: _controller,
-      onRefresh: _refresh,
+      onRefresh:
+          () => refreshDaysPane(ref, widget.userId, widget.selectedDate, week),
       slivers:
           (bottom) => [
-            SliverPadding(
-              // The back chevron's glyph, not its 44pt target, keeps the
-              // window edge's 12pt margin; the month chevrons sit over the
-              // grid's last column.
-              padding: EdgeInsets.fromLTRB(
-                edge.left == 0 ? 4 : 12,
-                0,
-                edge.right == 0 ? 4 : 12,
-                0,
-              ),
-              sliver: SliverToBoxAdapter(
-                child: LogMonthHeader(
-                  month: _month,
-                  onBack: widget.onBack,
-                  onPrevious:
-                      canShowPreviousMonth(_month, days)
-                          ? () =>
-                              setState(() => _month = shiftMonth(_month, -1))
-                          : null,
-                  onNext:
-                      canShowNextMonth(_month, widget.today)
-                          ? () => setState(() => _month = shiftMonth(_month, 1))
-                          : null,
-                ),
-              ),
-            ),
-            SliverPadding(
+            LogDaysFill(
+              count: week.length,
               padding: inset.copyWith(bottom: bottom + 12),
-              sliver: SliverList.list(
-                children: [
-                  const SizedBox(height: 4),
-                  LogMonthGrid(
-                    month: _month,
-                    today: widget.today,
-                    selectedDate: widget.selectedDate,
-                    calorieTarget: widget.calorieTarget,
-                    kcalFor: kcalFor,
-                    onSelectDate: widget.onSelectDate,
+              head: [
+                SliverPadding(
+                  // The back chevron's glyph, not its 44pt target, keeps the
+                  // window edge's 12pt margin; the week chevrons sit over
+                  // the last ring.
+                  padding: EdgeInsets.fromLTRB(
+                    edge.left == 0 ? 4 : 12,
+                    0,
+                    edge.right == 0 ? 4 : 12,
+                    0,
                   ),
-                  const SizedBox(height: 16),
-                  for (final date in week)
-                    LogDayRow(
-                      date: date,
+                  sliver: SliverToBoxAdapter(child: _header(days)),
+                ),
+                SliverPadding(
+                  padding: inset.copyWith(top: 4, bottom: 16),
+                  sliver: SliverToBoxAdapter(
+                    child: LogWeekRings(
+                      dates: week,
                       today: widget.today,
-                      totals: totals[date],
-                      fallbackKcal: byDate[date]?.calories,
-                      selected: date == widget.selectedDate,
-                      variant: widget.variant,
-                      onTap: () => widget.onSelectDate(date),
+                      selectedDate: widget.selectedDate,
+                      calorieTarget: widget.calorieTarget,
+                      kcalFor: kcalFor,
+                      onSelectDate: widget.onSelectDate,
                     ),
-                ],
-              ),
+                  ),
+                ),
+              ],
+              rows:
+                  (height) => [
+                    for (final date in week)
+                      LogDayRow(
+                        date: date,
+                        today: widget.today,
+                        totals: totals[date],
+                        fallbackKcal: byDate[date]?.calories,
+                        selected: date == widget.selectedDate,
+                        isFuture: date.compareTo(widget.today) > 0,
+                        minHeight: height,
+                        onTap: () => widget.onSelectDate(date),
+                      ),
+                  ],
             ),
           ],
     );
   }
+
+  Widget _header(List<HeatmapCell>? days) => LogWeekHeader(
+    week: _week,
+    onBack: widget.onBack,
+    onPrevious:
+        canShowPreviousWeek(_week, days)
+            ? () => setState(() => _week = shiftWeek(_week, -1))
+            : null,
+    onNext:
+        canShowNextWeek(_week, widget.today)
+            ? () => setState(() => _week = shiftWeek(_week, 1))
+            : null,
+  );
 }

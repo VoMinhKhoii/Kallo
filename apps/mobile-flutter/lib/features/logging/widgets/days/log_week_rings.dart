@@ -7,12 +7,11 @@ import '../../logic/days/log_calendar.dart';
 import '../../logic/timeline_utils.dart';
 import 'log_calendar_day.dart';
 
-/// One month of days, Monday first, under a row of weekday initials. Days
-/// before the 1st leave their cells empty so every date keeps its column.
-class LogMonthGrid extends StatelessWidget {
-  const LogMonthGrid({
+/// One week of calorie rings, Monday first, each under its weekday's name.
+class LogWeekRings extends StatelessWidget {
+  const LogWeekRings({
     super.key,
-    required this.month,
+    required this.dates,
     required this.today,
     required this.selectedDate,
     required this.calorieTarget,
@@ -20,7 +19,8 @@ class LogMonthGrid extends StatelessWidget {
     required this.onSelectDate,
   });
 
-  final DateTime month;
+  /// The week's seven days, Monday first.
+  final List<String> dates;
   final String today;
   final String selectedDate;
   final int calorieTarget;
@@ -32,57 +32,36 @@ class LogMonthGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.toString();
-    final cells = monthCells(month);
-    final initial = DateFormat('EEEEE', locale);
-    // 2026-11-02 is a Monday; the header needs only the weekday's shape.
-    final weekdays = [
-      for (var i = 0; i < 7; i++) initial.format(DateTime(2026, 11, 2 + i)),
-    ];
-    final rows = <Widget>[];
-    for (var start = 0; start < cells.length; start += 7) {
-      rows.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Row(
-            children: [
-              for (var i = start; i < start + 7; i++)
-                Expanded(
-                  child: Center(
-                    child:
-                        i < cells.length && cells[i] != null
-                            ? _day(cells[i]!, locale)
-                            : const SizedBox(height: LogCalendarDay.size),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    final days = [for (final date in dates) dateStringToDate(date)];
+    // "Mon" where every name fits inside its day's cell, "M" where one does
+    // not. Measured, not assumed: Vietnamese writes "Th 2", and large text
+    // widens them all.
+    final short = [for (final d in days) DateFormat.E(locale).format(d)];
+    final names =
+        short.every((name) => _fits(context, name))
+            ? short
+            : [for (final d in days) DateFormat('EEEEE', locale).format(d)];
+    return Row(
       children: [
-        ExcludeSemantics(
-          child: Row(
-            children: [
-              for (final name in weekdays)
-                Expanded(
-                  child: Text(
-                    name,
-                    textAlign: TextAlign.center,
-                    style: dashCaption(),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 4),
-        ...rows,
+        for (var i = 0; i < dates.length; i++)
+          Expanded(child: Center(child: _day(dates[i], names[i], locale))),
       ],
     );
   }
 
-  Widget _day(String date, String locale) {
+  bool _fits(BuildContext context, String name) {
+    final painter = TextPainter(
+      text: TextSpan(text: name, style: dashCaption()),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width <= LogCalendarDay.width - 8;
+  }
+
+  Widget _day(String date, String weekday, String locale) {
     final kcal = kcalFor(date);
     final measure = measureDay(kcal, calorieTarget);
     final isFuture = date.compareTo(today) > 0;
@@ -99,6 +78,7 @@ class LogMonthGrid extends StatelessWidget {
         tr(measure.met ? 'logging.days.targetMet' : 'logging.days.belowTarget'),
     ].join(', ');
     return LogCalendarDay(
+      weekday: weekday,
       day: dateStringToDate(date).day,
       measure: measure,
       isToday: date == today,

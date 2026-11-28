@@ -1310,11 +1310,11 @@
       "editDish": "Sửa {name}"
     },
     "days": {
-      "dayFormat": "EEEE, d/M",
+      "dayFormat": "EEE, d",
       "kcal": "{kcal} kcal",
       "nothingLogged": "Chưa ghi nhận",
-      "previousMonth": "Tháng trước",
-      "nextMonth": "Tháng sau",
+      "previousWeek": "Tuần trước",
+      "nextWeek": "Tuần sau",
       "targetMet": "Đạt mục tiêu",
       "belowTarget": "Chưa đạt"
     },

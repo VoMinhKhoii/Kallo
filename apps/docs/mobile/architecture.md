@@ -231,12 +231,13 @@ privacy, settings}/` — each typically splits into `screens/`, `widgets/`, `dat
     495.5 to 867 on a 951pt window (on a column-free page the near pane runs to 951, and
     the two are mirror images). Today and Nutrition put the day on the far side
     and the task beside the column. Log puts its days on the far side: the back
-    chevron, one month of calorie rings drawn as the web calendar draws them (ink while
-    short, green from 85% of the target, bare for the future), paged by month over the
-    90-day heatmap, then this week's days from today back to Monday, each with its
-    macros and calories (`features/logging/widgets/days/`). Beside the column is the day
-    as one column shows it, less the week strip: its title, the four gauges in one row,
-    the feed and the composer. The rows read each day through the feed's own provider,
+    chevron, one week of calorie rings, Monday first, drawn as the web calendar draws them
+    (ink while short, green from 85% of the target, bare for the future) and paged a week
+    at a time over the 90-day heatmap, then that week's seven days as rows, each with its
+    macros and calories on one line. The rows share the height left under the rings, so
+    the week ends level with the composer (`features/logging/widgets/days/`). Beside the column is the day
+    as one column shows it, less the week strip: the four gauges in one row, the feed
+    and the composer; the days beside it say which day it is. The rows read each day through the feed's own provider,
     two at a time after the first frame, so a tapped day is already loaded; no other
     window asks for them. Circle and Settings show list and detail
     (`detail_pane_route.dart`): the route is the same in every window, so a thread that

@@ -1316,8 +1316,8 @@
       "dayFormat": "EEE d",
       "kcal": "{kcal} kcal",
       "nothingLogged": "Nothing logged",
-      "previousMonth": "Previous month",
-      "nextMonth": "Next month",
+      "previousWeek": "Previous week",
+      "nextWeek": "Next week",
       "targetMet": "Target met",
       "belowTarget": "Below target"
     },

@@ -5,9 +5,9 @@ import '../../data/days/held_removals_provider.dart';
 import '../../data/logging_providers.dart';
 import '../../logic/days/this_week.dart';
 
-/// Loads this week's days for the rows under the calendar, gently: nothing
-/// before the pane's first frame, then at most two days in flight at a time,
-/// newest first. Each day goes through the provider the feed reads, so a day
+/// Loads the days of the week on show for the rows under its rings, gently:
+/// nothing before the pane's first frame, then at most two days in flight at
+/// a time, newest first. Each day goes through the provider the feed reads, so a day
 /// the person then taps is already there.
 ///
 /// Mounted only in a two-pane window, so no other window asks for these.
@@ -17,6 +17,7 @@ class LogWeekDays extends ConsumerStatefulWidget {
     required this.userId,
     required this.today,
     required this.selectedDate,
+    required this.week,
     required this.builder,
   });
 
@@ -27,9 +28,12 @@ class LogWeekDays extends ConsumerStatefulWidget {
   /// and counts against [inFlight] while it runs.
   final String selectedDate;
 
-  /// This week's days, newest first, and the totals of those that arrived.
-  final Widget Function(List<String> week, Map<String, DayTotals> totals)
-  builder;
+  /// The week on show, Monday first. Its days up to [today] are loaded,
+  /// newest first.
+  final List<String> week;
+
+  /// The totals of the days that arrived.
+  final Widget Function(Map<String, DayTotals> totals) builder;
 
   /// Requests this pane keeps in flight at once.
   static const int inFlight = 2;
@@ -53,7 +57,10 @@ class _LogWeekDaysState extends ConsumerState<LogWeekDays> {
 
   @override
   Widget build(BuildContext context) {
-    final week = thisWeekDays(widget.today);
+    final week = [
+      for (final date in widget.week.reversed)
+        if (date.compareTo(widget.today) <= 0) date,
+    ];
     final held = ref.watch(heldMealRemovalsProvider);
     final totals = <String, DayTotals>{};
     var loading = 0;
@@ -67,7 +74,7 @@ class _LogWeekDaysState extends ConsumerState<LogWeekDays> {
             .isLoading) {
       loading++;
     }
-    for (final date in _admitted) {
+    for (final date in week.where(_admitted.contains)) {
       final day = ref.watch(
         loggingDayProvider(LoggingDayArgs(widget.userId, date)),
       );
@@ -91,6 +98,6 @@ class _LogWeekDaysState extends ConsumerState<LogWeekDays> {
         });
       });
     }
-    return widget.builder(week, totals);
+    return widget.builder(totals);
   }
 }

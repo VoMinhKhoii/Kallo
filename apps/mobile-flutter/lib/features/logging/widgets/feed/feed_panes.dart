@@ -8,10 +8,7 @@ import '../../../../shell/window/window_layout.dart';
 
 /// What a two-pane Log puts around the feed.
 class FeedPaneParts {
-  const FeedPaneParts({required this.title, required this.far, this.nudge});
-
-  /// The day's title over the gauges.
-  final Widget title;
+  const FeedPaneParts({required this.far, this.nudge});
 
   /// A note for the day, at the top of the feed: it scrolls away with the
   /// cards rather than standing over them.
@@ -26,8 +23,9 @@ class FeedPaneParts {
 /// short windows. The keyed near child moves with its composer and scroll view.
 ///
 /// In two panes the near pane is the Log page as one column shows it, less
-/// the week strip: the day's title over one row of the four gauges, then the
-/// feed and the composer. The far pane is the screen's [far], the days.
+/// the week strip: one row of the four gauges, then the feed and the
+/// composer. The far pane is the screen's [far], the days, which say which
+/// day this is.
 class FeedPanes extends StatefulWidget {
   const FeedPanes({
     super.key,
@@ -59,7 +57,7 @@ class _FeedPanesState extends State<FeedPanes> {
   Widget build(BuildContext context) {
     final layout = WindowLayout.of(context);
     final inset = paneInsets(context, slot: PaneSlot.near);
-    // Beside the days, the title and the gauges stay put over the feed while
+    // Beside the days, the gauges stay put over the feed while
     // the window leaves the feed room under them: not under a pinned video,
     // and not while the keyboard takes the lower half. Then they scroll with
     // the cards, as the summary does in a short single column.
@@ -69,16 +67,7 @@ class _FeedPanesState extends State<FeedPanes> {
     final pinned = layout.twoPane && roomy;
     final paneHeader =
         layout.twoPane
-            ? Padding(
-              padding: inset,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (widget.parts != null) widget.parts!.title,
-                  widget.paneSummary,
-                ],
-              ),
-            )
+            ? Padding(padding: inset, child: widget.paneSummary)
             : null;
     final nudge =
         layout.twoPane && widget.parts?.nudge != null
@@ -113,7 +102,7 @@ class _FeedPanesState extends State<FeedPanes> {
     );
     return TwoPaneScaffold(
       single: near,
-      // Under a key, so the month on show survives the panes changing sides.
+      // Under a key, so the week on show survives the panes changing sides.
       far:
           widget.parts == null
               ? const SizedBox.shrink()

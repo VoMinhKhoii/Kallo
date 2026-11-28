@@ -12,7 +12,6 @@ import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
 import '../logic/logging_spacing.dart';
-import '../widgets/days/log_day_title.dart';
 import '../widgets/days/log_days_pane.dart';
 import '../widgets/feed/feed_area.dart';
 import '../widgets/feed/feed_panes.dart';
@@ -20,7 +19,6 @@ import '../widgets/timeline/partial_yesterday_prompt.dart';
 import '../widgets/timeline/picker_dismiss_layer.dart';
 import '../widgets/timeline/timeline_picker.dart';
 import '../data/handoff_slots.dart';
-import '../data/days/day_row_variant_provider.dart';
 import '../../../shell/window/two_pane_transition.dart';
 import '../../../shell/window/window_layout.dart';
 import '../widgets/feed/placeholder/logging_pane_skeleton.dart';
@@ -181,14 +179,12 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen>
                 panes:
                     twoPane
                         ? FeedPaneParts(
-                          title: LogDayTitle(date: _selectedDate, today: today),
                           nudge: showPrompt ? prompt : null,
                           far: LogDaysPane(
                             userId: userId,
                             today: today,
                             selectedDate: _selectedDate,
                             calorieTarget: profile.calorieTarget,
-                            variant: ref.watch(logDayRowVariantProvider),
                             onSelectDate:
                                 (date) => setState(() => _selectedDate = date),
                             onBack: () => Navigator.of(context).maybePop(),

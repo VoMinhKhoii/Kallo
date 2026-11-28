@@ -8,13 +8,13 @@ import '../../../../services/http/api_client.dart';
 import '../../logic/days/log_calendar.dart';
 import '../logging_keys.dart';
 
-/// The last 90 days, newest first, for the month calendar a two-pane Log
+/// The last 90 days, newest first, for the week of rings a two-pane Log
 /// screen shows beside the feed.
 ///
 /// Its own read of `/dashboard/heatmap?range=90d`, not Today's
 /// `heatmapProvider`: that one follows the Consistency card's range toggle,
-/// and a wide card asks it for the calendar year. 90 days pages the same
-/// three months back on any date; the year range would stop at January 1.
+/// and a wide card asks it for the calendar year. 90 days pages about
+/// twelve weeks back on any date; the year range would stop at January 1.
 ///
 /// Refreshed wherever the week strip's meal dates are, through
 /// `invalidateMealSurfaces`, the feed's pull to refresh and the two Circle

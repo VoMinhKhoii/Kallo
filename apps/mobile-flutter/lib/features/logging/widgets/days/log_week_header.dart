@@ -5,29 +5,38 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../shared/logic/display_format.dart';
 import '../../../../shell/header/app_header_back_button.dart';
 import '../../../../theme/calm_tokens.dart';
-import 'log_month_chevron.dart';
+import 'log_week_chevron.dart';
 
-/// The top of the days pane: the back chevron, the month on show ("November
-/// 2026") and the chevrons that page it.
-class LogMonthHeader extends StatelessWidget {
-  const LogMonthHeader({
+/// The top of the days pane: the back chevron, the month the week on show
+/// falls in ("November 2026", or "Nov – Dec 2026" across two) and the
+/// chevrons that page it a week at a time.
+class LogWeekHeader extends StatelessWidget {
+  const LogWeekHeader({
     super.key,
-    required this.month,
+    required this.week,
     required this.onBack,
     required this.onPrevious,
     required this.onNext,
   });
 
-  final DateTime month;
+  /// The Monday of the week on show.
+  final DateTime week;
   final VoidCallback onBack;
 
-  /// Null when there is no month to page to: the chevron stays, dimmed.
+  /// Null when there is no week to page to: the chevron stays, dimmed.
   final VoidCallback? onPrevious;
   final VoidCallback? onNext;
 
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.toString();
+    final last = DateTime(week.year, week.month, week.day + 6);
+    // One month's name, or both when the week runs across two.
+    final name =
+        last.month == week.month
+            ? DateFormat.MMMM(locale).format(week)
+            : '${DateFormat.MMM(locale).format(week)} – '
+                '${DateFormat.MMM(locale).format(last)}';
     return SizedBox(
       height: 44,
       child: Row(
@@ -42,26 +51,26 @@ class LogMonthHeader extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      capitalizeFirst(DateFormat.MMMM(locale).format(month)),
+                      capitalizeFirst(name),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: kSectionHeader(),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text('${month.year}', style: dashMeta()),
+                  Text('${last.year}', style: dashMeta()),
                 ],
               ),
             ),
           ),
-          LogMonthChevron(
+          LogWeekChevron(
             icon: LucideIcons.chevronLeft300,
-            label: tr('logging.days.previousMonth'),
+            label: tr('logging.days.previousWeek'),
             onTap: onPrevious,
           ),
-          LogMonthChevron(
+          LogWeekChevron(
             icon: LucideIcons.chevronRight300,
-            label: tr('logging.days.nextMonth'),
+            label: tr('logging.days.nextWeek'),
             onTap: onNext,
           ),
         ],
