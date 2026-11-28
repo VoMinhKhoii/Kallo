@@ -207,6 +207,9 @@ Always pass the same scope to every reviewer in a single run.
    - Only after the detect phase is merged and the pre-edit rule gate passes
      should you apply safe fixes.
    - Apply edits one reviewer at a time, grouped by file, to avoid edit races.
+   - If a reviewer reports a failed check and edits left in the working tree,
+     stop the apply phase there and take it to the user. Do not dispatch the
+     next reviewer onto a broken tree.
    - For reviewers that are allowed to edit, pass a second canonical payload:
 
      ```text
@@ -215,7 +218,7 @@ Always pass the same scope to every reviewer in a single run.
       changed_files: [...]
       diff_scope: [...]
       pre_edit_rule_gate: "Before editing, invoke the relevant Vercel React skill(s), review matching repo rules, and block the apply phase if that review fails or cannot be completed."
-      edit_policy: "Apply only the approved low-risk fixes within your boundary. Group report items by file."
+      edit_policy: "Apply only the approved low-risk fixes within your boundary. Group report items by file. If a check fails after your edit, stop and report the failing output and every file you touched. Never undo with git restore, git checkout -- or git reset: the working tree also holds the user's own changes."
       evidence_policy: "Keep citing concrete repo evidence for each applied fix. If a fix depends on current vendor behavior, verify against official docs before editing."
       output_contract: "Return exactly these sections: Reviewer Summary, Auto-Applied Fixes, Escalations, Important Findings, Reminder Notes. Keep Important Findings and Reminder Notes brief in apply phase."
       ```
