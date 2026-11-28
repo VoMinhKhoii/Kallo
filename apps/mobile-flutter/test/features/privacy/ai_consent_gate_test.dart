@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -149,4 +151,91 @@ void main() {
     expect(answers, [true, true]);
     expect(api.puts, hasLength(1));
   });
+
+  testWidgets(
+    'waits for profile reload after sign-in instead of treating stale signed-out null as unconsented',
+    (tester) async {
+      final userIdProvider = StateProvider<String?>((ref) => null);
+      final fetchGate = Completer<Map<String, dynamic>?>();
+      final answers = <bool>[];
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      late WidgetRef capturedRef;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            // Drive the real `profileProvider` through the API boundary.
+            apiClientProvider.overrideWithValue(_DelayedProfileApi(fetchGate)),
+            signedInUserIdProvider.overrideWith(
+              (ref) => ref.watch(userIdProvider),
+            ),
+          ],
+          child: EasyLocalization(
+            supportedLocales: const [Locale('en'), Locale('vi')],
+            startLocale: const Locale('en'),
+            path: 'assets/l10n',
+            fallbackLocale: const Locale('en'),
+            assetLoader: const FsL10nLoader(),
+            child: Builder(
+              builder:
+                  (context) => MaterialApp(
+                    theme: kalloAppTheme(),
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                    locale: context.locale,
+                    home: Scaffold(
+                      body: Consumer(
+                        builder: (context, ref, _) {
+                          capturedRef = ref;
+                          // Keep profileProvider active so sign-in reloads it.
+                          ref.watch(profileProvider);
+                          return TextButton(
+                            onPressed: () async {
+                              answers.add(await ensureAiConsent(context, ref));
+                            },
+                            child: const Text('log meal'),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Sign in: profileProvider transitions AsyncData(null) -> AsyncLoading(hasValue: true, isReloading: true).
+      capturedRef.read(userIdProvider.notifier).state = 'u-consented';
+      await tester.pump();
+      final reloading = capturedRef.read(profileProvider);
+      expect(reloading.hasValue, isTrue);
+      expect(reloading.isReloading, isTrue);
+
+      await tester.tap(find.text('log meal'));
+      await tester.pump();
+      expect(find.byType(AiConsentSheet), findsNothing);
+      expect(answers, isEmpty);
+
+      fetchGate.complete(const {
+        'onboardingStep': 6,
+        'aiProcessingConsentedAt': '2026-09-25T12:10:00.000Z',
+      });
+      await tester.pumpAndSettle();
+
+      expect(answers, [true]);
+      expect(find.byType(AiConsentSheet), findsNothing);
+    },
+  );
+}
+
+class _DelayedProfileApi extends ApiClient {
+  _DelayedProfileApi(this._gate);
+
+  final Completer<Map<String, dynamic>?> _gate;
+
+  @override
+  Future<T> get<T>(String path) async => (await _gate.future) as T;
 }

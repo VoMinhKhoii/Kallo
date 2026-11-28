@@ -7,11 +7,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
-import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
 import 'package:kallo_mobile/features/settings/logic/account_language.dart';
 import 'package:kallo_mobile/features/settings/logic/language_picker.dart';
+import 'package:kallo_mobile/models/http/api_error.dart';
 import 'package:kallo_mobile/services/auth/session_provider.dart';
 import 'package:kallo_mobile/services/http/api_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -26,22 +26,38 @@ import '../onboarding/onboarding_test_support.dart' show testSession;
 
 /// The account on the server: a step-1 post stores its language. A post can
 /// be held on the wire ([hold]) or refused ([fail]); a profile read can fail
-/// once ([failReads]).
+/// once ([failReads]) or be delayed ([readDelay]).
 class _Server extends ApiClient {
   _Server(this.account);
 
   String account;
   final List<Object?> posts = [];
+  int reads = 0;
   Completer<void>? hold;
+  Duration? readDelay;
   bool fail = false;
   int failReads = 0;
 
-  ProfileRow read() {
+  @override
+  Future<T> get<T>(String path) async {
+    if (path != '/api/v1/onboarding/profile') {
+      throw UnimplementedError('Unexpected GET $path');
+    }
+    reads++;
+    if (readDelay != null) {
+      await Future<void>.delayed(readDelay!);
+    }
     if (failReads > 0) {
       failReads--;
-      throw StateError('offline');
+      // Non-retryable so `runWithRetry` surfaces the failure on this attempt.
+      throw ApiError('OFFLINE', 503, false, 'offline');
     }
-    return ProfileRow({'preferredLocale': account});
+    return <String, dynamic>{
+          'preferredLocale': account,
+          'heightCm': 175.0,
+          'weightKg': 70.0,
+        }
+        as T;
   }
 
   @override
@@ -137,49 +153,61 @@ void main() {
     late _Server server;
     late InMemoryKeyValueStore flags;
     late InMemoryKeyValueStore draft;
-    late StreamController<Session?> session;
+    late StreamController<AuthState> authEvents;
+    Session? activeSession;
     late BuildContext app;
 
     setUp(() {
       server = _Server('en');
       flags = InMemoryKeyValueStore();
       draft = InMemoryKeyValueStore();
+      activeSession = null;
     });
 
     void repaired() => flags.values[kAccountLanguageRepairedKey] = '1';
+
+    void setSession(Session? next) {
+      activeSession = next;
+      authEvents.add(
+        AuthState(
+          next == null ? AuthChangeEvent.signedOut : AuthChangeEvent.signedIn,
+          next,
+        ),
+      );
+    }
 
     /// Riverpod flushes provider changes on frames, and nothing here rebuilds
     /// on its own, so a few frames are pumped before settling.
     Future<void> settle(WidgetTester tester) async {
       for (var i = 0; i < 5; i++) {
-        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 20));
       }
       await tester.pumpAndSettle();
     }
 
     Future<void> mount(WidgetTester tester, {Session? signedIn}) async {
       // Made inside the test body: fake async only drives what its own zone
-      // schedules.
-      session = StreamController<Session?>.broadcast();
-      addTearDown(session.close);
-      final first = signedIn;
+      // schedules. Uses the REAL sessionProvider, signedInUserIdProvider and
+      // profileProvider (no overrides on them) so any Riverpod re-entrancy
+      // between AccountLanguageSync and profileProvider reproduces here.
+      authEvents = StreamController<AuthState>.broadcast();
+      addTearDown(authEvents.close);
+      activeSession = signedIn;
       await tester.pumpWidget(
         EasyLocalization(
+          key: UniqueKey(),
           supportedLocales: const [Locale('en'), Locale('vi')],
           path: 'assets/l10n',
           startLocale: const Locale('en'),
           fallbackLocale: const Locale('en'),
           assetLoader: const FsL10nLoader(),
           child: ProviderScope(
+            key: UniqueKey(),
             overrides: [
-              sessionProvider.overrideWith((ref) async* {
-                yield first;
-                yield* session.stream;
-              }),
-              // Not keyed on the session as the real one is: a rebuild on a
-              // session change never settles under the widget tester. The
-              // sync reads the session itself.
-              profileProvider.overrideWith((ref) async => server.read()),
+              authEventsProvider.overrideWithValue(authEvents.stream),
+              currentSessionReaderProvider.overrideWithValue(
+                () => activeSession,
+              ),
               apiClientProvider.overrideWithValue(server),
               accountLanguageStorageProvider.overrideWithValue(flags),
               onboardingDraftStoreProvider.overrideWithValue(
@@ -315,9 +343,9 @@ void main() {
       flags = slow;
       await mount(tester, signedIn: testSession());
 
-      session.add(null);
+      setSession(null);
       await settle(tester);
-      session.add(_sessionFor('22222222-2222-2222-2222-222222222222'));
+      setSession(_sessionFor('22222222-2222-2222-2222-222222222222'));
       await settle(tester);
       slow.answer.complete();
       await settle(tester);
@@ -348,10 +376,10 @@ void main() {
       server.account = 'vi';
       await mount(tester, signedIn: testSession());
 
-      session.add(null);
+      setSession(null);
       await settle(tester);
       await setAppLanguage(tester, 'en');
-      session.add(testSession());
+      setSession(testSession());
       await settle(tester);
 
       expect(appLanguage(), 'vi');
@@ -369,13 +397,35 @@ void main() {
       tester,
     ) async {
       await mount(tester);
-      session.add(testSession());
+      setSession(testSession());
       await settle(tester);
 
       // The phone's pick may be someone else's: no repair.
       expect(server.posts, isEmpty);
       expect(appLanguage(), 'en');
     });
+
+    testWidgets(
+      'cold signed-in launch with async profile fetch does not cancel profileProvider',
+      (tester) async {
+        // Regression test for PR #627: on a cold signed-in launch,
+        // AccountLanguageSync's listener used to call ref.read(profileProvider)
+        // synchronously inside Riverpod's FutureHandler.handleFuture callback,
+        // cancelling the real GET /api/v1/onboarding/profile future and leaving
+        // profileProvider stuck in AsyncLoading(value: null) for the session.
+        repaired();
+        server.readDelay = const Duration(milliseconds: 50);
+        await mount(tester, signedIn: testSession());
+
+        final state = ProviderScope.containerOf(app).read(profileProvider);
+        expect(server.reads, 1);
+        expect(state.isLoading, isFalse);
+        expect(state.hasError, isFalse);
+        expect(state.valueOrNull?.preferredLocale, 'en');
+        expect(state.valueOrNull?.heightCm, 175.0);
+        expect(appLanguage(), 'en');
+      },
+    );
 
     // Last: it clears the pick the earlier tests start from.
     testWidgets('a new phone opens in the account\'s language', (tester) async {
