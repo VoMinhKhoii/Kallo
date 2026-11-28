@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:kallo_mobile/features/logging/logic/meal_log_mode.dart';
+import 'package:kallo_mobile/features/logging/logic/scan/camera/teardown.dart';
 import 'package:kallo_mobile/features/logging/widgets/relog/mention_text_controller.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/screen.dart';
 import 'package:kallo_mobile/features/logging/logic/composer/feed_sheets.dart';
@@ -41,6 +42,7 @@ void main() {
   });
 
   setUp(() {
+    ScanCameraReleases.reset();
     scanner = FakeScannerPlatform();
     MobileScannerPlatform.instance = scanner;
     composer = MentionTextEditingController();

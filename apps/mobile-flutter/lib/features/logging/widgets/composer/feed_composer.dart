@@ -170,7 +170,7 @@ class FeedComposer extends ConsumerWidget {
       hintText:
           mode == MealLogMode.cheat ? 'logging.cheatPlaceholder'.tr() : null,
       onModePressed: onModePressed,
-      // iOS-only for now; null hides the icon entirely. Gated on the shared
+      // Null hides the icon entirely. Gated on the shared
       // `isBarcodeLoggingSupported` — the mode sheet's source of truth too.
       onBarcodePressed: isBarcodeLoggingSupported ? onBarcodePressed : null,
     );

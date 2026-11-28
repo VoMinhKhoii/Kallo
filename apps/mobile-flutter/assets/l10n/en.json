@@ -1117,7 +1117,7 @@
     "barcode": {
       "title": "Scan barcode",
       "torch": "Flashlight",
-      "cameraDenied": "Camera access is off. Enable it for Kallo in Settings > Privacy > Camera, or enter the barcode below.",
+      "cameraDenied": "Camera access is off. Turn it on for Kallo in your phone's settings, or enter the barcode below.",
       "cameraError": "The camera isn't available on this device.",
       "manualEntry": "Enter barcode manually",
       "backToCamera": "Back to camera",
@@ -1528,7 +1528,7 @@
         "rateLimited": "The OCR service is busy. Please try again in a moment.",
         "serverError": "Could not scan label. Please try again.",
         "featureLocked": "Label scanning is a Premium feature. Go Premium to scan nutrition tables.",
-        "permissionDenied": "Camera and photo access are off. Enable them for Kallo in Settings > Privacy, or enter the values by hand.",
+        "permissionDenied": "Camera and photo access are off. Turn them on for Kallo in your phone's settings, or enter the values by hand.",
         "imageTooLarge": "That photo is too large to send. Take another one and it will be resized automatically.",
         "aiConsentRequired": "Label scanning sends your photo to Google Gemini. Allow AI analysis to scan labels."
       }

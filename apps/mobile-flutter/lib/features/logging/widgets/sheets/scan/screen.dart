@@ -15,6 +15,7 @@ import 'camera/loading_overlay.dart';
 import 'camera/mode_chip.dart';
 import 'camera/switch_veil.dart';
 import 'panel/sheet.dart';
+import 'camera_handover.dart';
 import 'result_actions.dart';
 import 'screen_actions.dart';
 import 'panels.dart';
@@ -59,23 +60,27 @@ class ScanScreen extends ConsumerStatefulWidget {
 }
 
 class ScanScreenState extends ConsumerState<ScanScreen>
-    with WidgetsBindingObserver, ScanResultActions, ScanScreenActions {
+    with
+        WidgetsBindingObserver,
+        ScanResultActions,
+        ScanCameraHandover,
+        ScanScreenActions {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    barcodeCamera.ensure();
+    // Queued, not started here: it waits for a scan screen just closed.
+    resumeCamera();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) =>
-      labelCamera.handleLifecycle(state);
+      onAppLifecycle(state);
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    barcodeCamera.release();
-    labelCamera.dispose();
+    releaseCameras();
     super.dispose();
   }
 
@@ -90,7 +95,7 @@ class ScanScreenState extends ConsumerState<ScanScreen>
       if (next.isAiConsentRequired && !(prev?.isAiConsentRequired ?? false)) {
         reaskAiConsent(context, ref).then((ok) {
           if (!mounted) return;
-          ok ? scanLabel() : labelNotifier.retake();
+          ok ? scanLabel() : resumeScanning();
         });
       }
     });
@@ -110,7 +115,12 @@ class ScanScreenState extends ConsumerState<ScanScreen>
         (mode == ScanType.label && label.phase == LabelScanPhase.scanning);
     final live = panel == null && !busy;
     return PopScope(
-      canPop: !saving,
+      // With a sheet up, Android's back steps back inside it, not off the
+      // screen with what was scanned.
+      canPop: !saving && panel == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && panel != null) stepBack();
+      },
       child: Scaffold(
         backgroundColor: Colors.black,
         resizeToAvoidBottomInset: false,
@@ -119,8 +129,7 @@ class ScanScreenState extends ConsumerState<ScanScreen>
           children: [
             if (cameraMode == ScanType.barcode)
               BarcodeCameraLayer(
-                controller:
-                    barcodeCamera.isRunning ? barcodeCamera.ensure() : null,
+                controller: barcodeCamera.controller,
                 frozen: frozen,
                 onDetect: onDetect,
               )

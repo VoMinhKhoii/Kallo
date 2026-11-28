@@ -254,25 +254,27 @@ void main() {
     );
   });
 
-  testWidgets('the scan glyph is offered where barcode logging is', (
-    tester,
-  ) async {
-    // Barcode logging is iOS-only, and the row hides the glyph wherever it is
-    // not offered. Reset before the test body ends — the binding asserts on a
-    // foundation debug variable left set.
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    _sizeTo(tester);
-    await tester.pumpWidget(_wrap(_container(), const QuickLogSheet()));
-    await tester.pumpAndSettle();
+  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+    testWidgets('the scan glyph is offered on ${platform.name}', (
+      tester,
+    ) async {
+      // Barcode logging runs on both phone platforms, and the row hides the
+      // glyph wherever it is not offered. Reset before the test body ends —
+      // the binding asserts on a foundation debug variable left set.
+      debugDefaultTargetPlatformOverride = platform;
+      _sizeTo(tester);
+      await tester.pumpWidget(_wrap(_container(), const QuickLogSheet()));
+      await tester.pumpAndSettle();
 
-    final scan = find.bySemanticsLabel('logging.barcode.title'.tr());
-    final found = scan.evaluate().length;
-    debugDefaultTargetPlatformOverride = null;
-    expect(
-      found,
-      1,
-      reason:
-          'the sheet must pass onBarcodePressed, or the row hides the glyph',
-    );
-  });
+      final scan = find.bySemanticsLabel('logging.barcode.title'.tr());
+      final found = scan.evaluate().length;
+      debugDefaultTargetPlatformOverride = null;
+      expect(
+        found,
+        1,
+        reason:
+            'the sheet must pass onBarcodePressed, or the row hides the glyph',
+      );
+    });
+  }
 }
