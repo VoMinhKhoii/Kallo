@@ -87,21 +87,21 @@ describe('isCandidateEligibleForIngredient: species', () => {
     expect(kept('turkey stuffing', [STUFFING, CHICKEN])).toEqual(['stuffing']);
   });
 
-  it('pairs a species across languages', () => {
-    const viOnly = [CHICKEN, TURKEY, PHEASANT, GROUSE].map((r) => ({
-      ...r,
-      name_en: '',
-    }));
-    const enOnly = [CHICKEN, TURKEY, PHEASANT, GROUSE].map((r) => ({
-      ...r,
-      name_primary: r.name_en,
-      name_en: '',
-    }));
+  it('pairs every species across languages', () => {
+    const viOnly = BIRDS.map((r) => ({ ...r, name_en: '' }));
+    const enOnly = BIRDS.map((r) => ({ ...r, name_primary: '' }));
 
     expect(kept('turkey thigh', viOnly)).toEqual(['turkey']);
     expect(kept('pheasant leg', viOnly)).toEqual(['pheasant']);
+    expect(kept('grouse breast', viOnly)).toEqual(['grouse']);
+    expect(kept('jungle fowl', viOnly)).toEqual(['jungle-fowl']);
+    expect(kept('guinea fowl', viOnly)).toEqual(['guinea-fowl']);
+
     expect(kept('đùi gà tây', enOnly)).toEqual(['turkey']);
+    expect(kept('đùi gà lôi', enOnly)).toEqual(['pheasant']);
     expect(kept('ức gà gô', enOnly)).toEqual(['grouse']);
+    expect(kept('thịt gà rừng', enOnly)).toEqual(['jungle-fowl']);
+    expect(kept('gà sao', enOnly)).toEqual(['guinea-fowl']);
     expect(kept('đùi gà', enOnly)).toEqual(['chicken']);
   });
 
