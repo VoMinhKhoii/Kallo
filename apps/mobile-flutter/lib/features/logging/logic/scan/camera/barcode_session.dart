@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, visibleForTesting;
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'teardown.dart';
@@ -37,18 +39,33 @@ class BarcodeCameraSession {
     arm();
   }
 
+  /// The lens the scanner asks for.
+  ///
+  /// iOS: the standard 1x lens by name. The default (`any`) makes the
+  /// plugin's iOS selector discover `.builtInTripleCamera` first
+  /// (`MobileScannerCameraSelector.swift`, the `case nil` arm: triple →
+  /// dual → wide angle), and a virtual multi-camera device opens at its
+  /// WIDEST constituent — so the preview came up at 0.5x on every Pro
+  /// phone. `normal` maps to `.builtInWideAngleCamera`, the 1x lens.
+  /// Not `initialZoom`: zooming the ultra-wide back to 1x would crop a
+  /// sensor that is already the wrong one for reading a barcode.
+  ///
+  /// Android: `any`, CameraX's default back camera. `normal` adds the
+  /// plugin's focal-length filter, and when no back camera classifies as
+  /// normal (no lens data, a main lens outside 20–35 mm equivalent) the
+  /// filter hands back CameraX's own read-only list; CameraX 1.6 (pulled in
+  /// by `camera_android_camerax`) then calls `retainAll` on it and the bind
+  /// throws, which the plugin reports as "no camera".
+  @visibleForTesting
+  static CameraLensType lensFor(TargetPlatform platform) =>
+      platform == TargetPlatform.iOS
+          ? CameraLensType.normal
+          : CameraLensType.any;
+
   static MobileScannerController _build() => MobileScannerController(
     formats: _formats,
     detectionSpeed: DetectionSpeed.noDuplicates,
-    // Ask for the standard 1x lens by name. The default (`any`) makes the
-    // plugin's iOS selector discover `.builtInTripleCamera` first
-    // (`MobileScannerCameraSelector.swift`, the `case nil` arm: triple →
-    // dual → wide angle), and a virtual multi-camera device opens at its
-    // WIDEST constituent — so the preview came up at 0.5x on every Pro
-    // phone. `normal` maps to `.builtInWideAngleCamera`, the 1x lens.
-    // Not `initialZoom`: zooming the ultra-wide back to 1x would crop a
-    // sensor that is already the wrong one for reading a barcode.
-    lensType: CameraLensType.normal,
+    lensType: lensFor(defaultTargetPlatform),
     // The frame each code was decoded from comes back with the capture, so
     // the scan screen can hold it frozen — what was scanned stays in view
     // while it is looked up and under the result. Only detection frames
