@@ -1,5 +1,6 @@
 /**
- * Run the plain read beside the pipeline and collect it afterwards.
+ * Run the plain read beside the pipeline and apply the hold / seeing rescue
+ * afterwards (`apply()`).
  *
  * Started with the analysis so it costs no wait on most meals (Sonnet's read:
  * p50 2.1 s, p99 5.5 s, against a 6.7 s p50 analysis). `settle()` waits at most
@@ -7,7 +8,9 @@
  * then shown as computed. A read that fails the sanity gate is null too.
  */
 import type { GeminiClient, StreamOptions } from '@/lib/ai/provider/provider';
+import type { PipelineResult } from '@/lib/ai/types/result';
 import { safeError } from '@/lib/core/errors/safe-error';
+import { type HoldResult, holdToPlainRead } from './hold';
 import {
   PLAIN_READ_MODEL,
   PLAIN_READ_SYSTEM_PROMPT,
@@ -16,12 +19,13 @@ import {
   plainReadSchema,
   plainReadUserMessage,
 } from './prompt';
+import { runSeeingRescue, shouldRunSeeingRescue } from './rescue/rescue';
 
 /** How long the read may run past the pipeline before the meal ships without it. */
 export const GRACE_MS = 2_000;
 /** A meal total outside this range is a broken read, not a meal. */
 const MIN_READ_KCAL = 10;
-const MAX_READ_KCAL = 8_000;
+export const MAX_READ_KCAL = 8_000;
 /** The listed foods must add up to the stated total within this share. */
 const SUM_TOLERANCE = 0.25;
 
@@ -43,7 +47,12 @@ export function startPlainRead(args: {
   /** The request's signal: a client hang-up cancels the read at once. */
   signal: AbortSignal;
   onAttemptComplete?: StreamOptions['onAttemptComplete'];
-}): { settle: () => Promise<PlainRead | null>; abort: () => void } {
+  onRescueAttemptComplete?: StreamOptions['onAttemptComplete'];
+}): {
+  settle: () => Promise<PlainRead | null>;
+  apply: (raw: PipelineResult) => Promise<HoldResult | null>;
+  abort: () => void;
+} {
   const controller = new AbortController();
   const cancel = () => controller.abort();
   if (args.signal.aborted) cancel();
@@ -73,24 +82,46 @@ export function startPlainRead(args: {
       return null;
     });
 
+  async function settle(): Promise<PlainRead | null> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let onAbort: (() => void) | undefined;
+    const settled = await Promise.race([
+      read,
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), GRACE_MS);
+        onAbort = () => resolve(null);
+        if (controller.signal.aborted) onAbort();
+        else controller.signal.addEventListener('abort', onAbort);
+      }),
+    ]);
+    clearTimeout(timer);
+    if (onAbort) controller.signal.removeEventListener('abort', onAbort);
+    args.signal.removeEventListener('abort', cancel);
+    cancel();
+    return settled;
+  }
+
   return {
-    async settle() {
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      let onAbort: (() => void) | undefined;
-      const kcal = await Promise.race([
-        read,
-        new Promise<null>((resolve) => {
-          timer = setTimeout(() => resolve(null), GRACE_MS);
-          onAbort = () => resolve(null);
-          if (controller.signal.aborted) onAbort();
-          else controller.signal.addEventListener('abort', onAbort);
-        }),
-      ]);
-      clearTimeout(timer);
-      if (onAbort) controller.signal.removeEventListener('abort', onAbort);
-      args.signal.removeEventListener('abort', cancel);
-      cancel();
-      return kcal;
+    settle,
+    async apply(raw: PipelineResult): Promise<HoldResult | null> {
+      const settledRead = await settle();
+      if (args.signal.aborted) return null;
+      const hold = holdToPlainRead(raw, { read: settledRead });
+      if (settledRead && shouldRunSeeingRescue(hold)) {
+        const rescued = await runSeeingRescue({
+          raw,
+          read: settledRead,
+          hold,
+          mealText: args.mealText,
+          profile: args.profile,
+          gemini: args.gemini,
+          signal: args.signal,
+          onAttemptComplete: args.onRescueAttemptComplete,
+        });
+        if (args.signal.aborted) return null;
+        if (rescued) return rescued;
+      }
+      return hold;
     },
     abort: () => {
       args.signal.removeEventListener('abort', cancel);

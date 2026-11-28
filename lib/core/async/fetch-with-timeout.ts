@@ -21,29 +21,49 @@ import { Errors } from '@/lib/core/errors/catalog';
 export async function fetchWithTimeout<T>(
   fn: (signal: AbortSignal) => Promise<T>,
   timeoutMs: number,
-  _label: string
+  _label: string,
+  parentSignal?: AbortSignal
 ): Promise<T> {
+  if (parentSignal?.aborted) {
+    throw new DOMException('The operation was aborted.', 'AbortError');
+  }
+
   const controller = new AbortController();
   let timedOut = false;
+  let parentAborted = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let onParentAbort: (() => void) | undefined;
 
   const operation = Promise.resolve().then(() => fn(controller.signal));
-  const timeout = new Promise<never>((_resolve, reject) => {
+  const raceStop = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => {
       timedOut = true;
       controller.abort();
       reject(Errors.pipelineTimeout());
     }, timeoutMs);
+    if (parentSignal) {
+      onParentAbort = () => {
+        parentAborted = true;
+        controller.abort();
+        reject(new DOMException('The operation was aborted.', 'AbortError'));
+      };
+      parentSignal.addEventListener('abort', onParentAbort, { once: true });
+    }
   });
 
   try {
-    return await Promise.race([operation, timeout]);
+    return await Promise.race([operation, raceStop]);
   } catch (error) {
-    if (timedOut) {
+    if (timedOut || parentAborted) {
       operation.catch(() => {
-        // The caller has already received PIPELINE_TIMEOUT. The underlying
-        // provider may still reject later if it ignored AbortSignal.
+        // The caller has already settled. The underlying provider may still
+        // reject later if it ignored AbortSignal.
       });
+    }
+    if (parentAborted) {
+      throw error;
+    }
+    if (timedOut) {
       throw Errors.pipelineTimeout();
     }
 
@@ -53,5 +73,8 @@ export async function fetchWithTimeout<T>(
     throw error;
   } finally {
     if (timer) clearTimeout(timer);
+    if (parentSignal && onParentAbort) {
+      parentSignal.removeEventListener('abort', onParentAbort);
+    }
   }
 }

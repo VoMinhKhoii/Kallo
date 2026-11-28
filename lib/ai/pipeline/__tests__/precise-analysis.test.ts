@@ -5,22 +5,20 @@ import type { UserContext } from '@/lib/ai/types/user-context';
 import type { AppDb } from '@/lib/infra/db/client';
 
 const analyzeMeal = vi.fn();
-const settle = vi.fn();
+const apply = vi.fn();
 const abort = vi.fn();
-const startPlainRead = vi.fn(() => ({ settle, abort }));
-const holdToPlainRead = vi.fn();
+const startPlainRead = vi.fn(() => ({ apply, abort }));
 
 vi.mock('@/lib/ai/pipeline/analyze-meal', () => ({ analyzeMeal }));
 vi.mock('@/lib/ai/pipeline/plain-read/plain-read', () => ({ startPlainRead }));
-vi.mock('@/lib/ai/pipeline/plain-read/hold', () => ({ holdToPlainRead }));
 
 const { isPublishable, runPreciseAnalysis } = await import(
   '../precise-analysis'
 );
 
-const READ = { totalKcal: 500, foods: [] };
 const RAW = { displayedNutrition: { caloriesKcal: 800 } };
 const HELD = { displayedNutrition: { caloriesKcal: 550 } };
+const RESCUED = { displayedNutrition: { caloriesKcal: 520 } };
 
 function run(signal = new AbortController().signal) {
   return runPreciseAnalysis({
@@ -34,8 +32,7 @@ function run(signal = new AbortController().signal) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  settle.mockResolvedValue(READ);
-  holdToPlainRead.mockReturnValue({ result: HELD, outcome: 'held' });
+  apply.mockResolvedValue({ result: HELD, outcome: 'held' });
 });
 
 describe('runPreciseAnalysis', () => {
@@ -44,7 +41,7 @@ describe('runPreciseAnalysis', () => {
 
     const { response, hold } = await run();
 
-    expect(holdToPlainRead).toHaveBeenCalledWith(RAW, { read: READ });
+    expect(apply).toHaveBeenCalledWith(RAW);
     expect(response).toEqual({ success: true, data: HELD });
     expect(hold?.outcome).toBe('held');
     expect(startPlainRead).toHaveBeenCalledWith(
@@ -53,9 +50,10 @@ describe('runPreciseAnalysis', () => {
     expect(abort).toHaveBeenCalled();
   });
 
-  it('passes diagnostics through to the pipeline', async () => {
+  it('passes diagnostics and rescue telemetry callbacks through', async () => {
     analyzeMeal.mockResolvedValue({ success: true, data: RAW });
     const onDiagnostics = vi.fn();
+    const onRescueAttemptComplete = vi.fn();
 
     await runPreciseAnalysis({
       rawInput: 'x',
@@ -64,9 +62,13 @@ describe('runPreciseAnalysis', () => {
       gemini: {} as GeminiClient,
       signal: new AbortController().signal,
       onDiagnostics,
+      onRescueAttemptComplete,
     });
 
     expect(analyzeMeal.mock.calls[0]?.[6]).toEqual({ onDiagnostics });
+    expect(startPlainRead).toHaveBeenCalledWith(
+      expect.objectContaining({ onRescueAttemptComplete })
+    );
   });
 
   it.each([
@@ -79,7 +81,7 @@ describe('runPreciseAnalysis', () => {
 
     expect(hold).toBeNull();
     expect(response).toBe(res);
-    expect(holdToPlainRead).not.toHaveBeenCalled();
+    expect(apply).not.toHaveBeenCalled();
     expect(abort).toHaveBeenCalled();
   });
 
@@ -93,21 +95,27 @@ describe('runPreciseAnalysis', () => {
     const { hold } = await run(controller.signal);
 
     expect(hold).toBeNull();
-    expect(settle).not.toHaveBeenCalled();
+    expect(apply).not.toHaveBeenCalled();
   });
 
-  it('skips the hold when the caller hangs up while the read settles', async () => {
-    const controller = new AbortController();
+  it('skips the hold when plainRead.apply returns null on abort', async () => {
     analyzeMeal.mockResolvedValue({ success: true, data: RAW });
-    settle.mockImplementation(async () => {
-      controller.abort();
-      return null;
-    });
+    apply.mockResolvedValue(null);
 
-    const { hold } = await run(controller.signal);
+    const { response, hold } = await run();
 
     expect(hold).toBeNull();
-    expect(holdToPlainRead).not.toHaveBeenCalled();
+    expect(response).toEqual({ success: true, data: RAW });
+  });
+
+  it('returns the rescued result when plainRead.apply rescues a divergent meal', async () => {
+    analyzeMeal.mockResolvedValue({ success: true, data: RAW });
+    apply.mockResolvedValue({ result: RESCUED, outcome: 'rescued' });
+
+    const { response, hold } = await run();
+
+    expect(response).toEqual({ success: true, data: RESCUED });
+    expect(hold?.outcome).toBe('rescued');
   });
 
   it('ends the read when the pipeline throws', async () => {
@@ -126,9 +134,15 @@ describe('isPublishable', () => {
       readKcal: 100,
       factor: 1,
       gramsFactor: 1,
+      rawGramsFactor: 1,
     }) as never;
 
-  it.each(['held', 'within_band', 'typed_parts'])('publishes %s', (outcome) => {
+  it.each([
+    'held',
+    'rescued',
+    'within_band',
+    'typed_parts',
+  ])('publishes %s', (outcome) => {
     expect(isPublishable(summary(outcome))).toBe(true);
   });
 

@@ -46,6 +46,13 @@ export async function runPreciseBranch({
       model: PLAIN_READ_MODEL,
       stage: 'plain_read',
     }),
+    onRescueAttemptComplete: createBudgetAttemptRecorder({
+      db,
+      requestId,
+      workKind: 'primary',
+      model: PLAIN_READ_MODEL,
+      stage: 'plain_read_rescue',
+    }),
   });
 
   // The client may have hung up during the run or while the read settled:

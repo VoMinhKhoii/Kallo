@@ -1,13 +1,21 @@
 /**
- * Arithmetic on a finished meal: scale one part's nutrients, and carry the
- * change into its dish and the meal totals. Used by the steps that adjust a
- * meal after assembly (typed calories, the plain-read hold).
+ * Arithmetic on a finished meal: scale or transform parts' nutrients, and carry
+ * the change into dish and meal totals. Used by the steps that adjust a meal
+ * after assembly (typed calories, the plain-read hold, seeing rescue).
  */
+import {
+  sumBoundedNutrition,
+  sumDisplayedNutrition,
+} from '@/lib/ai/pipeline/assemble/goal-adjustment';
 import type {
   BoundedNutrition,
   NutritionValues,
 } from '@/lib/ai/types/nutrition-values';
-import type { PipelineMealItem, PipelineResult } from '@/lib/ai/types/result';
+import type {
+  PipelineMealItem,
+  PipelineResult,
+  ProcessedIngredient,
+} from '@/lib/ai/types/result';
 
 /** `total` with `before` taken out and `after` put in, per nutrient. */
 export function swapNutritionValues(
@@ -89,4 +97,50 @@ export function scaleBoundedNutrition(
       out[key] = { low: e.low * f, mid: e.mid * f, high: e.high * f };
   }
   return out;
+}
+
+/**
+ * Transform ingredients across all dishes in one pass and recompute changed
+ * dish and meal totals directly via `sumBoundedNutrition` /
+ * `sumDisplayedNutrition` (avoids O(n^2) rewrites, IEEE-754 subtraction
+ * residue, and null-total skipping when a previously null nutrient becomes
+ * non-null). Returns `result` unchanged by reference when no ingredient moves.
+ */
+export function mapIngredients(
+  result: PipelineResult,
+  fn: (ing: ProcessedIngredient, flatIndex: number) => ProcessedIngredient
+): PipelineResult {
+  let flatIndex = 0;
+  let anyChanged = false;
+  const mealItems = result.mealItems.map((mi) => {
+    let dishChanged = false;
+    const ingredients = mi.ingredients.map((ing) => {
+      const next = fn(ing, flatIndex++);
+      if (next !== ing) dishChanged = true;
+      return next;
+    });
+    if (!dishChanged) return mi;
+    anyChanged = true;
+    return {
+      ...mi,
+      ingredients,
+      boundedNutrition: sumBoundedNutrition(
+        ingredients.map((i) => i.boundedNutrition)
+      ),
+      displayedNutrition: sumDisplayedNutrition(
+        ingredients.map((i) => i.displayedNutrition)
+      ),
+    };
+  });
+  if (!anyChanged) return result;
+  return {
+    ...result,
+    mealItems,
+    boundedNutrition: sumBoundedNutrition(
+      mealItems.map((mi) => mi.boundedNutrition)
+    ),
+    displayedNutrition: sumDisplayedNutrition(
+      mealItems.map((mi) => mi.displayedNutrition)
+    ),
+  };
 }
