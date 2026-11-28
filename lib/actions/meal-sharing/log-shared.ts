@@ -97,6 +97,7 @@ export async function logSharedMealAction(input: {
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt: source.loggedAt,
+      backfilled: source.backfilled,
       mealSlot: source.mealSlot,
       factor: parsed.factor,
     });

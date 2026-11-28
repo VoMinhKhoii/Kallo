@@ -47,6 +47,7 @@ export async function loadActivityExport(
       pipelineRequestId: pendingAnalyses.pipelineRequestId,
       sourceInviteId: pendingAnalyses.sourceInviteId,
       loggedAt: pendingAnalyses.loggedAt,
+      backfilled: pendingAnalyses.backfilled,
       expiresAt: pendingAnalyses.expiresAt,
       createdAt: pendingAnalyses.createdAt,
     })

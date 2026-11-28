@@ -338,6 +338,7 @@ export const EXPORT_SCHEMAS: Record<string, JsonSchema> = {
               'pipelineRequestId',
               'sourceInviteId',
               'loggedAt',
+              'backfilled',
               'expiresAt',
               'createdAt',
             ])

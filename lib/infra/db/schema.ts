@@ -366,6 +366,11 @@ export const meals = pgTable(
     loggedAt: timestamp('logged_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // Logged for a day that had already passed in the user's own timezone
+    // (`stampLoggedAt`), so the Circle feed hides its share time. A copy of the
+    // same eating event keeps its source's flag; rows from before the column
+    // read false and fall back to the feed's loggedAt/sharedAt gap.
+    backfilled: boolean('backfilled').notNull().default(false),
 
     // Cheat-meal logging (entry_mode='cheat'): a slider-based occasion estimate
     // that bypasses ingredient decomposition. 'precise' is the default pipeline.
@@ -881,6 +886,8 @@ export const pendingAnalyses = pgTable(
     loggedAt: timestamp('logged_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // Copied onto meals.backfilled at confirm.
+    backfilled: boolean('backfilled').notNull().default(false),
     expiresAt: timestamp('expires_at', { withTimezone: true })
       .notNull()
       .default(sql`now() + interval '30 minutes'`),

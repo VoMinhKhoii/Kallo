@@ -32,6 +32,9 @@ export async function stageCheatSliders(
     levels: CheatSliderLevels;
     rawInput: string;
     loggedAt: Date;
+    /** Logged for a past day: the re-log's own stamp, or the friend's flag
+     * with their instant. */
+    backfilled: boolean;
     /**
      * The meal-share invite this card came from, when it came from one.
      *
@@ -44,7 +47,15 @@ export async function stageCheatSliders(
     sourceInviteId?: string;
   }
 ): Promise<StagedCheatAnalysis> {
-  const { userId, spec, levels, rawInput, loggedAt, sourceInviteId } = options;
+  const {
+    userId,
+    spec,
+    levels,
+    rawInput,
+    loggedAt,
+    backfilled,
+    sourceInviteId,
+  } = options;
   const repeatSpec = withLevelsAsDefaults(spec, levels);
 
   const [inserted] = await tx
@@ -55,6 +66,7 @@ export async function stageCheatSliders(
       rawInput,
       entryMode: 'cheat',
       loggedAt,
+      backfilled,
       sourceInviteId,
     })
     .returning({ id: pendingAnalyses.id });

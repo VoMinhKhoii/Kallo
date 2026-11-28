@@ -253,6 +253,43 @@ describe('confirmAndSaveMealAction', () => {
     expect(mealRow.pipelineRequestId).toBe(UUID_1);
   });
 
+  it.each([
+    ['precise', JSON.parse(JSON.stringify(samplePipelineResult))],
+    [
+      'cheat',
+      {
+        entryMode: 'cheat',
+        spec: { mealSlot: 'lunch', confidence: 'medium', sliders: [] },
+      },
+    ],
+  ])('carries a %s card staged for a past day onto the meal', async (entryMode, pipelineResult) => {
+    // The Circle feed hides the share time of a meal logged for a past day;
+    // the stamp records that on the staged row, and only confirm can carry it.
+    const capturedValues: unknown[] = [];
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_2,
+            userId: mockUser.id,
+            rawInput: 'Cơm tấm',
+            entryMode,
+            pipelineResult,
+            loggedAt: LOGGED_AT,
+            backfilled: true,
+          },
+        ]),
+      }),
+    });
+    mockTxInsert.mockImplementation(mockInsertRouting(capturedValues));
+
+    await confirmAndSaveMealAction({ analysisId: UUID_2, levels: {} });
+
+    const mealRow = capturedValues[0] as Record<string, unknown>;
+    expect(mealRow.entryMode ?? 'precise').toBe(entryMode);
+    expect(mealRow.backfilled).toBe(true);
+  });
+
   it('resolves cheat-meal nutrition from slider levels and inserts zero items', async () => {
     const capturedValues: Record<string, unknown>[] = [];
     const cheatSpec = {

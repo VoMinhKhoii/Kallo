@@ -5,11 +5,11 @@ import type { StreamEvent } from '@/lib/ai/streaming/types';
 
 const mockStampLoggedAt = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/domain/meals/logged-at', async () => {
-  const { clockStamp } = await import(
+  const { clockStamp, pastLocalDay } = await import(
     '@/lib/domain/meals/__tests__/logged-at-double'
   );
   mockStampLoggedAt.mockImplementation(clockStamp);
-  return { stampLoggedAt: mockStampLoggedAt };
+  return { stampLoggedAt: mockStampLoggedAt, isPastLocalDay: pastLocalDay };
 });
 
 const mockGetUser = vi.fn();
@@ -971,6 +971,32 @@ describe('POST /api/analyze-meal', () => {
           expiresAt: expect.anything(),
           rawInput: 'Phở bò tái',
         }),
+      })
+    );
+  });
+
+  it("stages a refine at the original's instant, flagged by its own day", async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+    const inherited = '2026-04-05T17:30:00.000Z';
+
+    const res = await POST(
+      createRequest({
+        ...mealRequestBody('Phở bò tái (ít bánh)'),
+        inheritLoggedAt: inherited,
+      })
+    );
+    await readSSEEvents(res);
+
+    expect(mockStampLoggedAt).not.toHaveBeenCalled();
+    // 2026-04-06 is long past: the corrected meal is shared when saved, a
+    // share made long after the eating, like any meal logged for a past day.
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        loggedAt: new Date(inherited),
+        backfilled: true,
       })
     );
   });

@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const written: unknown[] = [];
 const insert = vi.fn(() => ({
-  values: () => ({
+  values: (row: unknown) => ({
     onConflictDoUpdate: () => ({
-      returning: async () => [{ id: 'analysis-1' }],
+      returning: async () => {
+        written.push(row);
+        return [{ id: 'analysis-1' }];
+      },
     }),
   }),
 }));
@@ -19,14 +23,18 @@ const values = {
   rawInput: 'a medium banana',
   entryMode: 'precise' as const,
 };
-const STAMP = new Date('2026-11-10T09:06:00.000Z');
+const STAMP_AT = new Date('2026-11-10T09:06:00.000Z');
+const STAMP = { loggedAt: STAMP_AT, backfilled: true };
 
 describe('stampAndStage', () => {
-  beforeEach(() => insert.mockClear());
+  beforeEach(() => {
+    insert.mockClear();
+    written.length = 0;
+  });
   afterEach(() => vi.useRealTimers());
 
   it('stages the row with the stamp and returns both', async () => {
-    const staged = await stampAndStage(
+    const result = await stampAndStage(
       {
         resolveLoggedAt: async () => STAMP,
         signal: new AbortController().signal,
@@ -34,8 +42,9 @@ describe('stampAndStage', () => {
       values
     );
 
-    expect(staged).toEqual({ analysisId: 'analysis-1', loggedAt: STAMP });
+    expect(result).toEqual({ analysisId: 'analysis-1', loggedAt: STAMP_AT });
     expect(insert).toHaveBeenCalledTimes(1);
+    expect(written[0]).toMatchObject({ loggedAt: STAMP_AT, backfilled: true });
   });
 
   it('writes nothing when the client left while the day was read', async () => {

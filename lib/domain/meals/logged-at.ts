@@ -26,8 +26,31 @@ export function placeAfterLatest(
   );
 }
 
+/** A new meal's stamp: where it sits, and whether it was logged for a day that
+ * had already passed (stored as `backfilled`, read by the Circle feed). */
+export interface LoggedAtStamp {
+  loggedAt: Date;
+  backfilled: boolean;
+}
+
 /**
- * The instant a new meal logged for the local day `date` is stamped with.
+ * Whether the local day `date` is before the user's own today at `now`: its
+ * clock-time instant (today's time of day, on that day) is already past.
+ */
+export function isPastLocalDay(
+  date: string,
+  timezoneOffset: number,
+  now = new Date()
+): boolean {
+  return (
+    getUtcInstantForLocalDate(date, timezoneOffset, now).getTime() <
+    now.getTime()
+  );
+}
+
+/**
+ * The instant a new meal logged for the local day `date` is stamped with, and
+ * whether that day had already passed.
  *
  * Today it is now. A past day takes today's clock time, which alone put a meal
  * logged at noon for yesterday above yesterday's 2 pm meal; `placeAfterLatest`
@@ -38,10 +61,12 @@ export async function stampLoggedAt(
   date: string,
   timezoneOffset: number,
   now = new Date()
-): Promise<Date> {
+): Promise<LoggedAtStamp> {
   const clockTime = getUtcInstantForLocalDate(date, timezoneOffset, now);
   // Today (or a future day): nothing on it can be later than now.
-  if (clockTime.getTime() >= now.getTime()) return clockTime;
+  if (!isPastLocalDay(date, timezoneOffset, now)) {
+    return { loggedAt: clockTime, backfilled: false };
+  }
 
   const { dayStart, dayEnd } = getUtcDayRangeForLocalDate(date, timezoneOffset);
   const latestMeal = db
@@ -72,5 +97,8 @@ export async function stampLoggedAt(
     sql`select greatest((${latestMeal}), (${latestStaged})) as latest`
   );
   const latest = row?.latest ? new Date(row.latest) : null;
-  return placeAfterLatest(clockTime, latest, dayEnd);
+  return {
+    loggedAt: placeAfterLatest(clockTime, latest, dayEnd),
+    backfilled: true,
+  };
 }

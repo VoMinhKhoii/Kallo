@@ -254,7 +254,7 @@ describe('logSharedMealAction', () => {
     // and it must not move the copy: the same eating event belongs at the same
     // instant, under the same slot. Before the fix the day came from that
     // parameter and the clock from `new Date()`, with the slot re-inferred.
-    queueSource([sourceMeal()]);
+    queueSource([sourceMeal({ backfilled: true })]);
     queueItems([sourceItem()]);
     const captured = captureCopies();
 
@@ -263,6 +263,8 @@ describe('logSharedMealAction', () => {
     expect(captured.meal).toMatchObject({
       loggedAt: new Date('2026-07-10T05:00:00.000Z'),
       mealSlot: 'lunch',
+      // Logged for a past day by its owner; the copy keeps that.
+      backfilled: true,
     });
     expect(result.meal.loggedAt).toBe('2026-07-10T05:00:00.000Z');
     expect(result.meal.mealSlot).toBe('lunch');

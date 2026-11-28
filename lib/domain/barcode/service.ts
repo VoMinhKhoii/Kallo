@@ -146,7 +146,7 @@ export async function stageBarcodeMeal(
     throw new BarcodeServiceError('not_cached');
   }
 
-  const loggedAt = await stampLoggedAt(
+  const { loggedAt, backfilled } = await stampLoggedAt(
     userId,
     input.loggedDate,
     input.timezoneOffset
@@ -173,6 +173,7 @@ export async function stageBarcodeMeal(
       rawInput: `${dbProduct.namePrimary} (${formatRawLoggedAmount(input.grams, parseAmountUnit(dbProduct.amountUnit))})`,
       entryMode: 'precise',
       loggedAt,
+      backfilled,
     })
     .returning({ id: pendingAnalyses.id });
 

@@ -7,6 +7,7 @@ import type { PipelineResult } from '@/lib/ai/types/result';
 import type { UserContext } from '@/lib/ai/types/user-context';
 import type { CheatIntensity } from '@/lib/core/types/cheat';
 import type { ComposerPickRef } from '@/lib/domain/logging/relog/relog';
+import type { LoggedAtStamp } from '@/lib/domain/meals/logged-at';
 import type { db as appDb } from '@/lib/infra/db/client';
 
 /** Everything the stream needs that the pre-stream phase already resolved. */
@@ -20,10 +21,11 @@ export interface AnalysisStreamContext {
   message: string;
   userContext: UserContext;
   /**
-   * The staged meal's `loggedAt`, resolved right before the row is written so
-   * a past day's latest meal is read then, not before the pipeline ran.
+   * The staged meal's `loggedAt` and `backfilled`, resolved right before the
+   * row is written so a past day's latest meal is read then, not before the
+   * pipeline ran.
    */
-  resolveLoggedAt: () => Promise<Date>;
+  resolveLoggedAt: () => Promise<LoggedAtStamp>;
   attemptId?: string;
   geminiConfig: GeminiProviderConfig;
   mode: 'precise' | 'cheat';

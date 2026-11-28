@@ -109,10 +109,6 @@ export async function stageCheatRepeatAction(input: {
     spec,
     levels,
     rawInput: source.rawInput,
-    loggedAt: await stampLoggedAt(
-      user.id,
-      parsed.loggedDate,
-      parsed.timezoneOffset
-    ),
+    ...(await stampLoggedAt(user.id, parsed.loggedDate, parsed.timezoneOffset)),
   });
 }

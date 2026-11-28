@@ -118,6 +118,7 @@ export async function acceptMealShareInviteAction(input: {
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt,
+      backfilled: source.backfilled,
       mealSlot: source.mealSlot,
     });
 
