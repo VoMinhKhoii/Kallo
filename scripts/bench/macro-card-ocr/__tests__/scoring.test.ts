@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { parseModelSpec } from '../runners';
 import {
   formatComparisonMarkdown,
+  formatReportMarkdown,
   scoreCard,
   selectFixtures,
   summarizeModel,
@@ -168,5 +170,87 @@ describe('macro-card OCR benchmark scoring', () => {
     const md = formatComparisonMarkdown(before, after);
     expect(md).toContain('+50%');
     expect(md).toContain('claude-haiku-5-5');
+  });
+
+  it('includes floating-point tolerance boundaries, preserves unknown costs, and rejects Gemini :off', () => {
+    // 35 vs 35.2 has IEEE-754 diff ~0.20000000000000284; must pass at 0.2g tolerance
+    expect(
+      scoreCard(
+        { calories: 400, proteinGrams: 35, carbsGrams: 40, fatGrams: 10 },
+        {
+          calories: 402,
+          proteinGrams: 35.2,
+          carbsGrams: 40,
+          fatGrams: 10,
+          productName: 'Bowl',
+          confidence: 'high',
+        }
+      )
+    ).toMatchObject({ allMatch: true, proteinGrams: true });
+
+    expect(
+      scoreCard(
+        { calories: 400, proteinGrams: 35, carbsGrams: 40, fatGrams: 10 },
+        {
+          calories: 400,
+          proteinGrams: 35.21,
+          carbsGrams: 40,
+          fatGrams: 10,
+          productName: 'Bowl',
+          confidence: 'high',
+        }
+      )
+    ).toMatchObject({ allMatch: false, proteinGrams: false });
+
+    const unpriced = summarizeModel('unpriced-model', 'raw', [
+      {
+        fixtureId: '1',
+        code: 'C1',
+        category: 'balanced',
+        dishName: 'Bowl',
+        modelId: 'unpriced-model',
+        preprocess: 'raw',
+        status: 'ok',
+        errorMessage: null,
+        latencyMs: 500,
+        costUsd: null,
+        tokens: {
+          inputTokens: 100,
+          cachedTokens: 0,
+          cacheWriteTokens: 0,
+          outputTokens: 20,
+          thoughtTokens: 0,
+        },
+        expected: {
+          calories: 400,
+          proteinGrams: 35,
+          carbsGrams: 40,
+          fatGrams: 10,
+        },
+        actual: null,
+        scores: {
+          calories: true,
+          proteinGrams: true,
+          carbsGrams: true,
+          fatGrams: true,
+          allMatch: true,
+          nullPreserved: true,
+        },
+      },
+    ]);
+    expect(unpriced.totalCostUsd).toBeNull();
+    expect(unpriced.costPer1kUsd).toBeNull();
+    expect(
+      formatReportMarkdown({
+        label: 'test',
+        tier: 'preflight',
+        preprocess: 'raw',
+        createdAt: '2026-11-28T00:00:00Z',
+        summaries: [unpriced],
+        results: [],
+      })
+    ).toContain('| n/a |');
+
+    expect(() => parseModelSpec('gemini-3.1-flash-lite:off')).toThrow(/off/);
   });
 });

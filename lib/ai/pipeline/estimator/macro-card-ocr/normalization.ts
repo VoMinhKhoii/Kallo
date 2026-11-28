@@ -138,7 +138,9 @@ export function normalizeMacroCardOcr(
 
   const servingSizeDesc =
     raw.servingSizeDescription?.trim().slice(0, 200) || null;
-  const servingMatch = servingSizeDesc?.match(/(\d+(?:[.,]\d+)?)\s*(g|ml)\b/i);
+  const servingMatch = servingSizeDesc?.match(
+    /([1-9]\d{0,2}(?:[\s\u00a0',.]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)\s*(g|ml)\b/i
+  );
   const servingGramsValue = servingMatch
     ? parsePrintedNumber(servingMatch[1])
     : null;

@@ -24,6 +24,18 @@ describe('normalizeCardAmount', () => {
     expect(normalizeCardAmount({ value: '500', unit: 'mg' }, 'macro')).toBe(
       0.5
     );
+    expect(normalizeCardAmount({ value: '0.125', unit: 'g' }, 'macro')).toBe(
+      0.125
+    );
+    expect(normalizeCardAmount({ value: '0,125', unit: 'g' }, 'macro')).toBe(
+      0.125
+    );
+    expect(normalizeCardAmount({ value: '125', unit: 'mg' }, 'macro')).toBe(
+      0.125
+    );
+    expect(
+      normalizeCardAmount({ value: '1,000', unit: 'kcal' }, 'calories')
+    ).toBe(1000);
   });
 
   it('rejects percentage tokens as null', () => {
@@ -210,5 +222,25 @@ describe('normalizeMacroCardOcr', () => {
     expect(parsed.servingSizeDescription).toHaveLength(200);
     expect(parsed.labelEvidence).toHaveLength(500);
     expect(parsed.servingSize).toEqual({ value: 350, unit: 'g' });
+  });
+
+  it('captures grouped serving sizes like "1 250 ml" and "1,250 ml" alongside "1 bowl (300g)"', () => {
+    const spaceGrouped = normalizeMacroCardOcr({
+      ...validRaw,
+      servingSizeDescription: '1 250 ml',
+    });
+    expect(spaceGrouped.servingSize).toEqual({ value: 1250, unit: 'ml' });
+
+    const commaGrouped = normalizeMacroCardOcr({
+      ...validRaw,
+      servingSizeDescription: '1,250 ml',
+    });
+    expect(commaGrouped.servingSize).toEqual({ value: 1250, unit: 'ml' });
+
+    const bowl = normalizeMacroCardOcr({
+      ...validRaw,
+      servingSizeDescription: '1 bowl (300g)',
+    });
+    expect(bowl.servingSize).toEqual({ value: 300, unit: 'g' });
   });
 });

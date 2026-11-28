@@ -62,12 +62,9 @@ describe.skipIf(!HAS_LOCAL_FIXTURES)(
       expect(codes.size).toBe(MACRO_CARD_BENCHMARK_DATASET.length);
 
       for (const item of MACRO_CARD_BENCHMARK_DATASET) {
-        const hasCalories = (item.expected.calories ?? 0) > 0;
-        const hasMacros =
-          (item.expected.proteinGrams ?? 0) > 0 &&
-          (item.expected.carbsGrams ?? 0) > 0 &&
-          (item.expected.fatGrams ?? 0) > 0;
-        expect(hasCalories || hasMacros).toBe(true);
+        // Fixtures store normalized ground truth (including 4/4/9-derived
+        // calories for macro-only cards), matching `scoring.ts`.
+        expect(item.expected.calories ?? 0).toBeGreaterThan(0);
         expect(item.ingredients.length).toBeGreaterThan(0);
       }
     });

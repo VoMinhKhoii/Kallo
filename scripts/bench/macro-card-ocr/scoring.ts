@@ -76,7 +76,7 @@ function matchValue(
 ): boolean {
   if (expected === null && actual === null) return true;
   if (expected === null || actual === null) return false;
-  return Math.abs(expected - actual) <= tolerance;
+  return Math.abs(expected - actual) <= tolerance + 1e-9;
 }
 
 export function scoreCard(
@@ -139,7 +139,10 @@ export function summarizeModel(
   const total = runs.length;
   const strictPass = runs.filter((r) => r.scores.allMatch).length;
   const latencies = runs.map((r) => r.latencyMs).sort((a, b) => a - b);
-  const totalCostUsd = runs.reduce((acc, r) => acc + (r.costUsd ?? 0), 0);
+  const hasUnknownCost = runs.some((r) => r.costUsd === null);
+  const rawTotalCostUsd = hasUnknownCost
+    ? null
+    : runs.reduce((acc, r) => acc + (r.costUsd ?? 0), 0);
 
   const byCategory: ModelSummary['byCategory'] = {};
   for (const r of runs) {
@@ -175,11 +178,20 @@ export function summarizeModel(
     p50Ms: percentile(latencies, 50),
     p90Ms: percentile(latencies, 90),
     p95Ms: percentile(latencies, 95),
-    totalCostUsd: Math.round(totalCostUsd * 1e6) / 1e6,
+    totalCostUsd:
+      rawTotalCostUsd === null ? null : Math.round(rawTotalCostUsd * 1e6) / 1e6,
     costPer1kUsd:
-      total === 0 ? 0 : Math.round((totalCostUsd / total) * 1000 * 1000) / 1000,
+      rawTotalCostUsd === null
+        ? null
+        : total === 0
+          ? 0
+          : Math.round((rawTotalCostUsd / total) * 1000 * 1000) / 1000,
     byCategory,
   };
+}
+
+function formatCostPer1k(costPer1kUsd: number | null): string {
+  return costPer1kUsd === null ? 'n/a' : `$${costPer1kUsd.toFixed(3)}`;
 }
 
 export function formatReportMarkdown(report: BenchmarkReport): string {
@@ -191,7 +203,7 @@ export function formatReportMarkdown(report: BenchmarkReport): string {
   ];
   for (const s of report.summaries) {
     lines.push(
-      `| \`${s.modelId}\` | **${s.strictRatePct}%** (${s.strictPass}/${s.total}) | ${s.caloriesPct}% | ${s.proteinPct}% | ${s.carbsPct}% | ${s.fatPct}% | ${s.nullPreservedPct}% | ${s.errorCount + s.noLabelCount} | ${s.p50Ms} | ${s.p90Ms} | $${s.costPer1kUsd.toFixed(3)} |`
+      `| \`${s.modelId}\` | **${s.strictRatePct}%** (${s.strictPass}/${s.total}) | ${s.caloriesPct}% | ${s.proteinPct}% | ${s.carbsPct}% | ${s.fatPct}% | ${s.nullPreservedPct}% | ${s.errorCount + s.noLabelCount} | ${s.p50Ms} | ${s.p90Ms} | ${formatCostPer1k(s.costPer1kUsd)} |`
     );
   }
   lines.push('', '## Per-Category Strict Accuracy', '');
@@ -244,7 +256,7 @@ export function formatComparisonMarkdown(
     const delta = Math.round((a.strictRatePct - b.strictRatePct) * 10) / 10;
     const sign = delta > 0 ? '+' : '';
     lines.push(
-      `| \`${a.modelId}\` | ${b.strictRatePct}% | **${a.strictRatePct}%** | **${sign}${delta}%** | ${b.p90Ms} ms | ${a.p90Ms} ms | $${b.costPer1kUsd.toFixed(3)} | $${a.costPer1kUsd.toFixed(3)} |`
+      `| \`${a.modelId}\` | ${b.strictRatePct}% | **${a.strictRatePct}%** | **${sign}${delta}%** | ${b.p90Ms} ms | ${a.p90Ms} ms | ${formatCostPer1k(b.costPer1kUsd)} | ${formatCostPer1k(a.costPer1kUsd)} |`
     );
   }
   return `${lines.join('\n')}\n`;

@@ -104,6 +104,7 @@ export async function prepareOcrImageForModel(input: {
         fit: 'inside',
         withoutEnlargement: true,
       })
+      .flatten({ background: '#ffffff' })
       .jpeg({ quality: 85 })
       .toBuffer();
   } catch (error) {

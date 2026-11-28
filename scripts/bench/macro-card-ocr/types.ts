@@ -81,8 +81,8 @@ export interface ModelSummary {
   readonly p50Ms: number;
   readonly p90Ms: number;
   readonly p95Ms: number;
-  readonly totalCostUsd: number;
-  readonly costPer1kUsd: number;
+  readonly totalCostUsd: number | null;
+  readonly costPer1kUsd: number | null;
   readonly byCategory: Record<
     string,
     { total: number; strictPass: number; strictRatePct: number }

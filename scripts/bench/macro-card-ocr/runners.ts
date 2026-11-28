@@ -70,6 +70,11 @@ export function parseModelSpec(token: string): ModelSpec {
   const [rawModel, rawThinking] = token.trim().split(':');
   const model = rawModel.trim();
   const provider = model.startsWith('claude-') ? 'claude' : 'gemini';
+  if (provider === 'gemini' && rawThinking === 'off') {
+    throw new Error(
+      `Unsupported Gemini thinking level ":off" in "${token.trim()}" (use ":minimal" or ":low")`
+    );
+  }
   const thinking =
     rawThinking === 'minimal' || rawThinking === 'off' || rawThinking === 'low'
       ? rawThinking
@@ -126,17 +131,17 @@ async function runGemini(
   spec: ModelSpec,
   image: PreparedImage
 ): Promise<RunnerOutcome> {
-  const gemini = createGeminiClient(resolveGeminiProvider(), { maxRetries: 2 });
   const attempts: GeminiAttemptMetadata[] = [];
   const t0 = Date.now();
   const thinkingConfig =
     spec.thinking === 'low'
       ? { thinkingLevel: ThinkingLevel.LOW }
-      : spec.thinking === 'minimal'
-        ? { thinkingLevel: ThinkingLevel.MINIMAL }
-        : undefined;
+      : { thinkingLevel: ThinkingLevel.MINIMAL };
 
   try {
+    const gemini = createGeminiClient(resolveGeminiProvider(), {
+      maxRetries: 2,
+    });
     const raw = await gemini.generateStructuredOutput(
       {
         schema: rawMacroCardOcrSchema,
@@ -145,7 +150,7 @@ async function runGemini(
         image,
         model: spec.model,
         temperature: 0.1,
-        ...(thinkingConfig && { thinkingConfig }),
+        thinkingConfig,
         abortSignal: AbortSignal.timeout(25_000),
       },
       { onAttemptComplete: (m) => attempts.push(m) }
@@ -179,11 +184,11 @@ async function runClaude(
   spec: ModelSpec,
   image: PreparedImage
 ): Promise<RunnerOutcome> {
-  const anthropic = getAnthropicClient();
   const t0 = Date.now();
   let tokens: TokenUsage = ZERO_TOKENS;
 
   try {
+    const anthropic = getAnthropicClient();
     const thinking = spec.model.startsWith('claude-sonnet-5-5')
       ? ({ type: 'between_tools' } as const)
       : ({ type: 'disabled' } as const);

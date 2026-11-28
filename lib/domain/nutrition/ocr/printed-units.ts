@@ -55,10 +55,11 @@ export function parsePrintedNumber(token: string): number | null {
     normalized = compact.replace(groupingSeparator, '');
     normalized = normalized.replace(decimalSeparator, '.');
   } else if (lastComma >= 0 || lastDot >= 0) {
-    // Only one separator: 3 digits after separator indicates thousands.
+    // Only one separator: 3 digits after separator indicates thousands,
+    // except leading-zero fractions like "0.125" / "0,125".
     const separator = lastComma >= 0 ? ',' : '.';
     const escaped = separator === ',' ? ',' : '\\.';
-    const grouped = new RegExp(`^[+-]?\\d{1,3}(?:${escaped}\\d{3})+$`);
+    const grouped = new RegExp(`^[+-]?[1-9]\\d{0,2}(?:${escaped}\\d{3})+$`);
     normalized = grouped.test(compact)
       ? compact.replaceAll(separator, '')
       : compact.replace(separator, '.');

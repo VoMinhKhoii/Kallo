@@ -236,8 +236,9 @@ describe('scanWithStoredLabelImage — success', () => {
     await scanWithStoredLabelImage(
       { ...input, model: () => resolved },
       async () => {
+        const scanned = await answersAfterUpload();
         resolved = 'gemini-3.1-flash-lite';
-        return answersAfterUpload();
+        return scanned;
       }
     );
 

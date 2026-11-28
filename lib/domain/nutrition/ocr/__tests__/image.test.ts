@@ -79,4 +79,30 @@ describe('nutrition OCR image validation', () => {
       code: 'invalid_image',
     });
   });
+
+  it('flattens transparent PNGs onto a white background before JPEG encoding', async () => {
+    const transparentPng = await sharp({
+      create: {
+        width: 32,
+        height: 32,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      },
+    })
+      .png()
+      .toBuffer();
+
+    const prepared = await prepareOcrImageForModel({
+      imageBase64: transparentPng.toString('base64'),
+      mimeType: 'image/png',
+    });
+    expect(prepared.mimeType).toBe('image/jpeg');
+    const { data } = await sharp(Buffer.from(prepared.imageBase64, 'base64'))
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    // Center pixel must be white (flattened), not black
+    expect(data[0]).toBeGreaterThan(240);
+    expect(data[1]).toBeGreaterThan(240);
+    expect(data[2]).toBeGreaterThan(240);
+  });
 });
