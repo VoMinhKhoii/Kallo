@@ -256,6 +256,7 @@ export async function confirmAndSaveMealAction(input: {
           mealSlot,
           confidenceOverall: pipelineResult.confidenceOverall,
           loggedAt,
+          isBackfilled: pending.isBackfilled,
           ...nutritionValuesToRow(mealDisplayed),
           alcoholG,
         })

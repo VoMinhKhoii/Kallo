@@ -1,5 +1,4 @@
 import type { PipelineResult } from '@/lib/ai/types/result';
-import { getUtcInstantForLocalDate } from '@/lib/core/date/local-day';
 import {
   type BarcodeCacheRow,
   cacheBarcodeProduct,
@@ -18,6 +17,7 @@ import {
   type ParsedBarcodeProduct,
   parseAmountUnit,
 } from '@/lib/domain/barcode/types';
+import { stampLoggedAt } from '@/lib/domain/meals/logged-at';
 import { formatRawLoggedAmount } from '@/lib/domain/scan/format';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
@@ -146,7 +146,8 @@ export async function stageBarcodeMeal(
     throw new BarcodeServiceError('not_cached');
   }
 
-  const loggedAt = getUtcInstantForLocalDate(
+  const { loggedAt, isBackfilled } = await stampLoggedAt(
+    userId,
     input.loggedDate,
     input.timezoneOffset
   );
@@ -172,6 +173,7 @@ export async function stageBarcodeMeal(
       rawInput: `${dbProduct.namePrimary} (${formatRawLoggedAmount(input.grams, parseAmountUnit(dbProduct.amountUnit))})`,
       entryMode: 'precise',
       loggedAt,
+      isBackfilled,
     })
     .returning({ id: pendingAnalyses.id });
 

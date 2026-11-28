@@ -33,11 +33,15 @@ abstract final class OnboardingKeys {
 /// Port of `useProfile`: `queryFn: apiGet('/api/v1/onboarding/profile')`,
 /// `staleTime: 60_000`, with the shared retry policy. Only runs when signed in
 /// (mirrors the RN `enabled: !!userId`); returns `null` when signed out.
-final profileProvider = FutureProvider<ProfileRow?>((ref) async {
+final profileProvider = FutureProvider<ProfileRow?>((ref) {
   // The account, not the session: a token refresh emits a new session object,
   // and watching that refetched the profile on every refresh — twice on a
   // launch that refreshed.
   final userId = ref.watch(signedInUserIdProvider);
+  // Return synchronously when signed out (no `async` on the outer callback):
+  // an async `return null` schedules a microtask Future that races with
+  // `sessionProvider`'s initial emission and, under Riverpod 2.6.1's
+  // `handleFuture`, lets a re-entrant listener flush cancel the real fetch.
   if (userId == null) return null;
 
   final api = ref.read(apiClientProvider);

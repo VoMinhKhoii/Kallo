@@ -70,6 +70,11 @@ export interface CheatEstimateEvent {
 export interface AnalysisCompleteEvent {
   type: 'analysis_complete';
   analysisId: string;
+  /**
+   * When the staged meal is stamped (ISO). On a past day the server places it
+   * after that day's latest meal, so a client clock time would be wrong there.
+   */
+  loggedAt?: string;
 }
 
 /** Error during streaming — terminal event */

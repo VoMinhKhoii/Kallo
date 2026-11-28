@@ -13,6 +13,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:kallo_mobile/features/logging/data/label_scan_providers.dart';
 import 'package:kallo_mobile/features/logging/logic/label/image.dart';
 import 'package:kallo_mobile/features/logging/logic/relog/scan_purpose.dart';
+import 'package:kallo_mobile/features/logging/logic/scan/camera/teardown.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/camera/controls.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/editor.dart';
 import 'package:kallo_mobile/features/logging/widgets/sheets/scan/editor/field.dart';
@@ -106,11 +107,21 @@ LabelImage labelPhoto() {
 
 void setUpScanTests() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(ScanCameraReleases.reset);
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('plugins.flutter.io/shared_preferences'),
           (call) async => call.method == 'getAll' ? <String, Object>{} : null,
+        );
+    // No camera plugin on the test host: the label camera's channel answers
+    // with the MissingPluginException the label session treats as "no plugin
+    // here" (a dark stage, no error). Unanswered, `availableCameras` never
+    // returned, and a switch back to barcode waited on it forever.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/camera'),
+          (call) async => throw MissingPluginException(call.method),
         );
     await EasyLocalization.ensureInitialized();
     // Real glyph widths: the placeholder font's 1em boxes overflow rows that
@@ -126,6 +137,7 @@ class ScanHarness {
     this.tester, {
     this.purpose = ScanPurpose.log,
     this.locked = false,
+    this.consented = true,
   });
 
   final WidgetTester tester;
@@ -133,6 +145,9 @@ class ScanHarness {
 
   /// A free account: label scan, Edit and Enter manually go to the paywall.
   final bool locked;
+
+  /// AI consent on record. Without it, reading a label asks first.
+  final bool consented;
 
   final api = ScanApi();
   final scanner = FakeScannerPlatform();
@@ -188,7 +203,7 @@ class ScanHarness {
           premiumLockProvider(
             PremiumFeature.labelScan,
           ).overrideWithValue(locked),
-          aiConsentProvider.overrideWithValue(true),
+          aiConsentProvider.overrideWithValue(consented),
           labelImageCaptureProvider.overrideWithValue((_) => picker()),
         ],
         child: EasyLocalization(

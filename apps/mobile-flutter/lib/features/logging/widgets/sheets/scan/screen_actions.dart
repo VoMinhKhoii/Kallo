@@ -8,27 +8,19 @@ import '../../../../privacy/logic/ai_consent_gate.dart';
 import '../../../data/barcode_providers.dart';
 import '../../../data/label_scan_providers.dart';
 import 'camera/mode_chip.dart';
-import 'camera/session/barcode.dart';
-import 'camera/session/label.dart';
+import 'camera_handover.dart';
 import 'result_actions.dart';
 import 'screen.dart';
 
 /// What the scan screen does with its CAMERA — switch mode, catch a code,
 /// take or pick a photo and read it, go back to scanning — kept apart from its
-/// lifecycle and layout. The result's own state is [ScanResultActions]'.
-mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
-  ScanType mode = ScanType.barcode;
-  final barcodeCamera = BarcodeCameraSession();
-  late final labelCamera = LabelCameraSession(
-    onFailure: (failure) {
-      if (mode == ScanType.label) labelNotifier.reportCaptureFailure(failure);
-    },
-  );
-
+/// lifecycle and layout. The result's own state is [ScanResultActions]'; which
+/// camera holds the sensor is [ScanCameraHandover]'s.
+mixin ScanScreenActions
+    on ConsumerState<ScanScreen>, ScanResultActions, ScanCameraHandover {
   /// The frame a barcode was decoded from, held while it is looked up and
   /// under its result.
   Uint8List? frozen;
-  bool torch = false;
 
   /// The photo in flight. Bumped by every new photo (shutter, library) and by
   /// every change of camera session (a mode switch, back to scanning); a photo
@@ -39,15 +31,6 @@ mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
 
   BarcodeFlowController get barcodeNotifier =>
       ref.read(barcodeFlowProvider.notifier);
-  LabelScanController get labelNotifier => ref.read(labelScanProvider.notifier);
-
-  /// The camera actually running, and on screen. Trails [mode] by the dip a
-  /// switch makes (`ScanCameraVeil`): the chip moves at once, the camera
-  /// swaps once the old picture has dimmed out.
-  ScanType cameraMode = ScanType.barcode;
-
-  /// The dip is covering the camera, or on its way to.
-  bool veiled = false;
 
   /// Each mode starts clean: a miss or result left in the other mode (a
   /// "Not found" that led here via "Scan nutrition label") must not be
@@ -64,36 +47,10 @@ mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
     });
     barcodeNotifier.scanAgain();
     labelNotifier.retake();
-  }
-
-  /// The veil is down: hand the sensor to the mode chosen by now (a second
-  /// tap during the dip may have taken it back), and lift the veil.
-  void swapCamera() {
-    if (!mounted) return;
-    final next = mode;
-    if (next != cameraMode) {
-      if (next == ScanType.label) {
-        barcodeCamera.release();
-        labelCamera.open();
-      } else {
-        labelCamera.close();
-        barcodeCamera.ensure();
-        barcodeCamera.arm();
-      }
-    }
-    setState(() {
-      cameraMode = next;
-      veiled = false;
-    });
-  }
-
-  void toggleTorch() {
-    setState(() => torch = !torch);
-    if (cameraMode == ScanType.barcode) {
-      barcodeCamera.setTorch(torch);
-    } else {
-      labelCamera.setTorch(torch);
-    }
+    // Taken back before the dip landed: no swap comes, and the camera this
+    // mode shows may have been resting under the result that was just
+    // cleared.
+    if (!veiled) resumeCamera();
   }
 
   void onDetect(BarcodeCapture capture) {
@@ -114,7 +71,7 @@ mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
     });
     // With a frame to hold, the camera can rest while the code is looked up
     // and under its result; resuming builds it again.
-    if (frame != null) barcodeCamera.release();
+    if (frame != null) restScanner();
     barcodeNotifier.search(raw);
   }
 
@@ -154,11 +111,12 @@ mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
   }
 
   /// Send the held photo — once consent is on record. "Not now" drops the
-  /// photo and goes back to the camera rather than leaving it frozen there.
+  /// photo and goes back to the camera rather than leaving it frozen there
+  /// (reopened: a trip out of the app while the photo was held shut it).
   Future<void> scanLabel() async {
     final ok = await ensureAiConsent(context, ref);
     if (!mounted) return;
-    ok ? labelNotifier.scan() : labelNotifier.retake();
+    ok ? labelNotifier.scan() : resumeScanning();
   }
 
   void pickFromLibrary() => _takePhoto(
@@ -167,6 +125,17 @@ mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
         labelNotifier.pickImage(ImageSource.gallery, isCurrent: isCurrent),
   );
 
+  /// System back with the sheet up: one level back inside it (the editor or
+  /// the other nutrients to the page under them, a code being typed or a
+  /// result to the camera). A save in flight is not interrupted.
+  void stepBack() {
+    if (saving) return;
+    if (editing != null) return cancelEditing();
+    if (others) return closeOthers();
+    if (typing) return stopTyping();
+    resumeScanning();
+  }
+
   /// Back to a live camera from any result or miss.
   void resumeScanning() {
     _photoToken++;
@@ -174,20 +143,9 @@ mixin ScanScreenActions on ConsumerState<ScanScreen>, ScanResultActions {
       frozen = null;
       clearResult();
     });
-    // Mid-dip, the swap about to land opens the right camera itself.
-    if (cameraMode != mode) {
-      mode == ScanType.barcode
-          ? barcodeNotifier.scanAgain()
-          : labelNotifier.retake();
-    } else if (mode == ScanType.barcode) {
-      barcodeNotifier.scanAgain();
-      barcodeCamera.ensure();
-      barcodeCamera.arm();
-    } else {
-      labelNotifier.retake();
-      // A no-op while the preview is up; re-reports a camera that would not
-      // open, whose message the retake just cleared.
-      labelCamera.open();
-    }
+    mode == ScanType.barcode
+        ? barcodeNotifier.scanAgain()
+        : labelNotifier.retake();
+    resumeCamera();
   }
 }

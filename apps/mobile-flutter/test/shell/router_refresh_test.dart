@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:kallo_mobile/features/onboarding/data/onboarding_draft.dart';
+import 'package:kallo_mobile/features/onboarding/data/profile_row.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_draft_providers.dart';
 import 'package:kallo_mobile/features/onboarding/providers/onboarding_providers.dart';
 import 'package:kallo_mobile/router.dart';
@@ -72,6 +73,34 @@ void main() {
       expect(reported, isEmpty);
       expect(container.read(onboardingResumeProvider), isFalse);
       expect(redirects, greaterThan(0));
+    },
+  );
+
+  test(
+    'isRouterSourceSettled keeps a post-error refresh with a real profile settled while holding null reloads/retries',
+    () {
+      const profile = ProfileRow({'onboardingStep': 6});
+      final loaded = const AsyncData<ProfileRow?>(profile);
+      final failedAfterLoad = AsyncError<ProfileRow?>(
+        StateError('blip'),
+        StackTrace.empty,
+      ).copyWithPrevious(loaded);
+      final retryingWithProfile = const AsyncLoading<ProfileRow?>()
+          .copyWithPrevious(failedAfterLoad, isRefresh: true);
+      expect(isRouterSourceSettled(retryingWithProfile), isTrue);
+
+      final signedOut = const AsyncData<ProfileRow?>(null);
+      final reloadingAfterSignIn = const AsyncLoading<ProfileRow?>()
+          .copyWithPrevious(signedOut, isRefresh: false);
+      expect(isRouterSourceSettled(reloadingAfterSignIn), isFalse);
+
+      final failedAfterSignIn = AsyncError<ProfileRow?>(
+        StateError('offline'),
+        StackTrace.empty,
+      ).copyWithPrevious(signedOut);
+      final retryingWithNull = const AsyncLoading<ProfileRow?>()
+          .copyWithPrevious(failedAfterSignIn, isRefresh: true);
+      expect(isRouterSourceSettled(retryingWithNull), isFalse);
     },
   );
 }

@@ -21,8 +21,14 @@ import '../widgets/ai_consent_sheet.dart';
 /// arrived yet.
 Future<bool> ensureAiConsent(BuildContext context, WidgetRef ref) async {
   if (ref.read(aiConsentProvider)) return true;
+  final profile = ref.read(profileProvider);
+  // Also wait while `isReloading` (sign-in reload carrying stale signed-out
+  // `null`) or while retrying after a failed initial fetch (`AsyncError` with
+  // `isLoading: true` and `valueOrNull == null`).
   if (ref.read(aiConsentRecordProvider) == null &&
-      !ref.read(profileProvider).hasValue) {
+      (!profile.hasValue ||
+          profile.isReloading ||
+          (profile.isLoading && profile.valueOrNull == null))) {
     try {
       await ref.read(profileProvider.future);
     } catch (_) {

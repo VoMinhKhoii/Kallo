@@ -15,12 +15,14 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 /// have to import a widget to name it.
 enum MealLogMode { normal, cheat, manual, barcode }
 
-/// Single source of truth for whether barcode logging is offered. iOS-only for
-/// now — Android support (permission copy, device testing) is unscoped. Every
-/// entry point (the mode sheet's row, the composer icon) gates on this so they
-/// can't drift apart.
+/// Single source of truth for whether barcode logging is offered: the two
+/// phone platforms, where `camera` and `mobile_scanner` both run. It was
+/// iOS-only until 2026-11-27, which left Android users with three modes and
+/// no way to scan. Every entry point (the mode sheet's row, the composer icon)
+/// gates on this so they can't drift apart.
 bool get isBarcodeLoggingSupported =>
-    defaultTargetPlatform == TargetPlatform.iOS;
+    defaultTargetPlatform == TargetPlatform.iOS ||
+    defaultTargetPlatform == TargetPlatform.android;
 
 IconData mealModeIcon(MealLogMode mode) => switch (mode) {
   MealLogMode.normal => LucideIcons.zap300, // lightning

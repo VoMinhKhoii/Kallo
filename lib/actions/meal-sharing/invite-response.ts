@@ -18,6 +18,7 @@ import {
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { scopeMealResponseForViewer } from '@/lib/actions/meals/viewer-scope/viewer-scope';
+import { isPastDayKey, toLocalDayKey } from '@/lib/core/date/day-key';
 import { Errors } from '@/lib/core/errors/catalog';
 import {
   acceptMealShareInviteSchema,
@@ -118,6 +119,14 @@ export async function acceptMealShareInviteAction(input: {
       userId: user.id,
       newMealId: parsed.newMealId,
       loggedAt,
+      // Theirs, or mine: a meal from a day already past for me lands on that
+      // day in my diary, so sharing it now is a backfill on my side too.
+      isBackfilled:
+        source.isBackfilled ||
+        isPastDayKey(
+          toLocalDayKey(source.loggedAt, parsed.timezoneOffset),
+          parsed.timezoneOffset
+        ),
       mealSlot: source.mealSlot,
     });
 

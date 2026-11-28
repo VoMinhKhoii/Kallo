@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kallo_mobile/features/logging/logic/label/image.dart';
@@ -59,6 +61,78 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Reading the label'), findsNothing);
       expect(find.text('Bánh quy Cosy'), findsOneWidget);
+    });
+
+    testWidgets('survives a trip out of the app with the camera off', (
+      tester,
+    ) async {
+      // Camera access refused: every open of the label camera fails.
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/camera'),
+            (_) async => throw PlatformException(code: 'CameraAccessDenied'),
+          );
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+              const MethodChannel('plugins.flutter.io/camera'),
+              (call) async => throw MissingPluginException(call.method),
+            ),
+      );
+      final h = await inLabelMode(tester);
+      await h.tapText('Library');
+      expect(find.text('Bánh quy Cosy'), findsOneWidget);
+
+      // Away (another app, or Android's photo picker) and back.
+      for (final state in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.paused,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Bánh quy Cosy'),
+        findsOneWidget,
+        reason: 'the camera failing behind the result must not clear it',
+      );
+      expect(find.byType(ScanCameraProblem), findsNothing);
+    });
+
+    testWidgets('"Not now" on AI consent goes back to an open camera', (
+      tester,
+    ) async {
+      var opens = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/camera'),
+            (call) async {
+              if (call.method == 'availableCameras') opens++;
+              throw MissingPluginException(call.method);
+            },
+          );
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+              const MethodChannel('plugins.flutter.io/camera'),
+              (call) async => throw MissingPluginException(call.method),
+            ),
+      );
+      final h = ScanHarness(tester, consented: false)..api.handler = reads;
+      await h.open();
+      await h.tapText('Nutrition label');
+      final before = opens;
+
+      await h.tapText('Library');
+      expect(find.text('Not now'), findsOneWidget, reason: 'consent asked');
+      await h.tapText('Not now');
+
+      expect(h.cameraIsLive, isTrue);
+      expect(h.api.bodiesTo(scan), isEmpty, reason: 'nothing sent');
+      expect(opens, greaterThan(before), reason: 'the camera is opened again');
     });
 
     testWidgets('rises as the extracted table, one serving to start', (

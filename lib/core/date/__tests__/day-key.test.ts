@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   dayKeyToUtcDate,
+  isPastDayKey,
   toLocalCalendarDate,
   toLocalDayKey,
   toUtcDayKey,
@@ -159,5 +160,34 @@ describe('dayKeyToUtcDate', () => {
     for (const key of ['2026-01-01', '2026-02-28', '2028-02-29']) {
       expect(toUtcDayKey(dayKeyToUtcDate(key))).toBe(key);
     }
+  });
+});
+
+describe('isPastDayKey', () => {
+  // UTC+7: timezoneOffset is getTimezoneOffset(), so -420. 12:11 Nov 27.
+  const VN = -420;
+  const NOW = new Date('2026-11-27T05:11:00.000Z');
+
+  it('is false for today and a future day, true for yesterday', () => {
+    expect(isPastDayKey('2026-11-27', VN, NOW)).toBe(false);
+    expect(isPastDayKey('2026-11-28', VN, NOW)).toBe(false);
+    expect(isPastDayKey('2026-11-26', VN, NOW)).toBe(true);
+  });
+
+  it("reads today in the user's timezone, not UTC's", () => {
+    // 00:30 Nov 27 in UTC+7 is still Nov 26 in UTC: Nov 26 is past here.
+    const earlyMorning = new Date('2026-11-26T17:30:00.000Z');
+
+    expect(isPastDayKey('2026-11-26', VN, earlyMorning)).toBe(true);
+    expect(isPastDayKey('2026-11-27', VN, earlyMorning)).toBe(false);
+  });
+
+  it("takes an instant's day through toLocalDayKey", () => {
+    // 23:30 Nov 26 and 00:30 Nov 27 in UTC+7, seen at 12:11 Nov 27.
+    const late = toLocalDayKey(new Date('2026-11-26T16:30:00.000Z'), VN);
+    const early = toLocalDayKey(new Date('2026-11-26T17:30:00.000Z'), VN);
+
+    expect(isPastDayKey(late, VN, NOW)).toBe(true);
+    expect(isPastDayKey(early, VN, NOW)).toBe(false);
   });
 });

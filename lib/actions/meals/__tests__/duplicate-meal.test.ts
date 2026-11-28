@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/lib/domain/meals/logged-at', async () => ({
+  stampLoggedAt: (await import('@/lib/domain/meals/__tests__/logged-at-double'))
+    .clockStamp,
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks — the copy runs entirely inside one transaction.
 // ---------------------------------------------------------------------------
@@ -183,7 +188,7 @@ describe('duplicateMealAction', () => {
     true,
   ])('copies all nutrients but scopes the response (locked=%s)', async (locked) => {
     micronutrientGate.mockResolvedValueOnce({ locked });
-    queueMealLookup([sourceMeal({ sodiumMg: 120 })]);
+    queueMealLookup([sourceMeal({ sodiumMg: 120, isBackfilled: false })]);
     queueItemLookup([
       sourceItem({ sodiumMg: 120 }),
       sourceItem({
@@ -213,6 +218,9 @@ describe('duplicateMealAction', () => {
     expect(mealInsert.rawInput).toBe('Phở bò');
     expect(mealInsert.alcoholG).toBe(12);
     expect(mealInsert.entryMode).toBe('precise');
+    // A re-log is a new eating event: logged now for a past day, it is
+    // backfilled by its own stamp whatever the source was.
+    expect(mealInsert.isBackfilled).toBe(true);
 
     // Second insert = the copied item rows, re-parented with fresh ids.
     const itemInserts = inserts[1] as Record<string, unknown>[];

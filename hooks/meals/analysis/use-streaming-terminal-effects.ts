@@ -55,7 +55,7 @@ type Terminal = {
 function deriveTerminal(
   s: Pick<
     StreamAnalysisState,
-    'status' | 'result' | 'cheatSpec' | 'analysisId' | 'error'
+    'status' | 'result' | 'cheatSpec' | 'analysisId' | 'loggedAt' | 'error'
   >,
   streamingMsgId: string | null,
   lastAnalysisId: string | null,
@@ -103,6 +103,10 @@ function deriveTerminal(
     parsedMeal: s.result ?? undefined,
     cheatSpec: s.cheatSpec ?? undefined,
     analysisId: s.analysisId ?? undefined,
+    // The server's stamp, not the browser clock the card was opened with: on a
+    // past day the meal goes after that day's latest meal, and saving builds
+    // the optimistic meal from this time.
+    ...(s.loggedAt ? { timestamp: new Date(s.loggedAt) } : {}),
   };
 
   if (isCheatClarify) {
@@ -129,7 +133,8 @@ export function useStreamingTerminalEffects({
   onAnalysisComplete,
   onPaymentRequired,
 }: UseStreamingTerminalEffectsParams) {
-  const { status, result, cheatSpec, analysisId, error, reset } = stream;
+  const { status, result, cheatSpec, analysisId, loggedAt, error, reset } =
+    stream;
 
   // Single terminal effect. `deriveTerminal` makes the four settle-paths
   // exclusive, so the shared epilogue (clear streamingMsgId → patch the card →
@@ -140,7 +145,7 @@ export function useStreamingTerminalEffects({
   // streamingMsgId-null + reset() the epilogue applies.
   useEffect(() => {
     const terminal = deriveTerminal(
-      { status, result, cheatSpec, analysisId, error },
+      { status, result, cheatSpec, analysisId, loggedAt, error },
       streamingMsgId,
       lastAnalysisIdRef.current,
       lastErrorRef.current
@@ -175,6 +180,7 @@ export function useStreamingTerminalEffects({
     result,
     cheatSpec,
     analysisId,
+    loggedAt,
     error,
     reset,
     streamingMsgId,

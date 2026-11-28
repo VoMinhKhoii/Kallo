@@ -15,6 +15,8 @@ export interface StreamAnalysisState {
   /** Cheat-meal slider spec (when mode='cheat'); replaces `result`. */
   cheatSpec: CheatSliderSpec | null;
   analysisId: string | null;
+  /** The staged meal's server stamp, from `analysis_complete`. */
+  loggedAt: string | null;
   error: string | null;
   isAnalyzing: boolean;
 }
@@ -35,6 +37,7 @@ export const INITIAL_STREAM_STATE: StreamAnalysisState = {
   result: null,
   cheatSpec: null,
   analysisId: null,
+  loggedAt: null,
   error: null,
   isAnalyzing: false,
 };
@@ -98,6 +101,7 @@ export function applyStreamEvent(
         ...prev,
         status: 'done',
         analysisId: event.analysisId,
+        loggedAt: event.loggedAt ?? null,
         isAnalyzing: false,
       };
 
