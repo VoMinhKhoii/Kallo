@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   detectOcrImageMime,
   NutritionOcrImageError,
+  prepareOcrImageForModel,
   validateNutritionLabelImage,
 } from '@/lib/domain/nutrition/ocr/image';
 
@@ -64,5 +65,18 @@ describe('nutrition OCR image validation', () => {
         mimeType: 'image/png',
       })
     ).rejects.toMatchObject({ code: 'invalid_image' });
+  });
+
+  it('wraps corrupt pixel decode errors from prepareOcrImageForModel as invalid_image', async () => {
+    const corrupt = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+    await expect(
+      prepareOcrImageForModel({
+        imageBase64: corrupt.toString('base64'),
+        mimeType: 'image/jpeg',
+      })
+    ).rejects.toMatchObject({
+      name: 'Error',
+      code: 'invalid_image',
+    });
   });
 });

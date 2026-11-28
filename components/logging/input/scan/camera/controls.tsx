@@ -73,7 +73,7 @@ export function ScanCameraControls({
               captioned
             />
           )}
-          {mode === 'label' ? (
+          {mode !== 'barcode' ? (
             <button
               type="button"
               aria-label={t('shutter')}

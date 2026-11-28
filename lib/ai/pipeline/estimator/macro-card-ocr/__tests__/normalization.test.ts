@@ -198,4 +198,17 @@ describe('normalizeMacroCardOcr', () => {
       })
     ).toThrowError(new NutritionLabelOcrError('no_label_detected'));
   });
+
+  it('truncates oversized itemName, servingSizeDescription, and evidence to schema limits', () => {
+    const parsed = normalizeMacroCardOcr({
+      ...validRaw,
+      itemName: 'A'.repeat(260),
+      servingSizeDescription: `1 bowl (350g) ${'B'.repeat(240)}`,
+      evidence: 'E'.repeat(650),
+    });
+    expect(parsed.productName).toHaveLength(200);
+    expect(parsed.servingSizeDescription).toHaveLength(200);
+    expect(parsed.labelEvidence).toHaveLength(500);
+    expect(parsed.servingSize).toEqual({ value: 350, unit: 'g' });
+  });
 });

@@ -75,7 +75,7 @@ export function normalizeMacroCardOcr(
     throw new NutritionLabelOcrError('no_label_detected');
   }
 
-  const evidence = raw.evidence?.trim() ?? '';
+  const evidence = (raw.evidence?.trim() ?? '').slice(0, 500);
   if (!evidence) {
     throw new NutritionLabelOcrError('no_label_detected');
   }
@@ -136,7 +136,8 @@ export function normalizeMacroCardOcr(
     ? 'low'
     : (raw.confidence ?? 'low');
 
-  const servingSizeDesc = raw.servingSizeDescription?.trim() || null;
+  const servingSizeDesc =
+    raw.servingSizeDescription?.trim().slice(0, 200) || null;
   const servingMatch = servingSizeDesc?.match(/(\d+(?:[.,]\d+)?)\s*(g|ml)\b/i);
   const servingGramsValue = servingMatch
     ? parsePrintedNumber(servingMatch[1])
@@ -154,7 +155,7 @@ export function normalizeMacroCardOcr(
 
   const candidate = {
     basis: 'per_serving' as const,
-    productName: raw.itemName?.trim() || null,
+    productName: raw.itemName?.trim().slice(0, 200) || null,
     labelEvidence: evidence,
     servingSize,
     servingSizeDescription: servingSizeDesc,

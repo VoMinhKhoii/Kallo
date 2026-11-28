@@ -91,19 +91,26 @@ export async function prepareOcrImageForModel(input: {
   mimeType: OcrImageMimeType;
 }): Promise<{ imageBase64: string; mimeType: OcrImageMimeType }> {
   const bytes = Buffer.from(input.imageBase64, 'base64');
-  const normalized = await sharp(bytes, {
-    failOn: 'error',
-    limitInputPixels: OCR_MAX_IMAGE_PIXELS,
-  })
-    .rotate()
-    .resize({
-      width: OCR_MODEL_MAX_LONG_EDGE,
-      height: OCR_MODEL_MAX_LONG_EDGE,
-      fit: 'inside',
-      withoutEnlargement: true,
+  let normalized: Buffer;
+  try {
+    normalized = await sharp(bytes, {
+      failOn: 'error',
+      limitInputPixels: OCR_MAX_IMAGE_PIXELS,
     })
-    .jpeg({ quality: 85 })
-    .toBuffer();
+      .rotate()
+      .resize({
+        width: OCR_MODEL_MAX_LONG_EDGE,
+        height: OCR_MODEL_MAX_LONG_EDGE,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+  } catch (error) {
+    throw new NutritionOcrImageError('Image bytes could not be decoded', {
+      cause: error,
+    });
+  }
 
   return {
     imageBase64: normalized.toString('base64'),

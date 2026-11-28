@@ -91,7 +91,7 @@ export function useScanDialog({
     isActive: live && mode === 'barcode',
     onDecode,
   });
-  const labelCamera = useOcrCamera(live && mode === 'label' && !label.photo);
+  const labelCamera = useOcrCamera(live && mode !== 'barcode' && !label.photo);
 
   // A server that says "Premium" to a scan the UI thought was open (a plan
   // that lapsed mid-session) sends the user where the gate would have.

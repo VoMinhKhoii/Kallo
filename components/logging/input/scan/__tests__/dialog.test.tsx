@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
   openPaywall: vi.fn(),
   onDecode: null as null | ((code: string, frame: string | null) => void),
   decoders: new Set<unknown>(),
+  ocrCameraActive: false,
   scanLabel: vi.fn(),
   capturePhoto: vi.fn(),
 }));
@@ -37,14 +38,17 @@ vi.mock('@/hooks/ui/use-barcode-camera-scanner', () => ({
   },
 }));
 vi.mock('@/hooks/meals/entry/use-ocr-camera', () => ({
-  useOcrCamera: () => ({
-    videoRef: { current: null },
-    cameraError: null,
-    capabilities: { torch: false },
-    torchEnabled: false,
-    setTorch: vi.fn(),
-    capturePhoto: h.capturePhoto,
-  }),
+  useOcrCamera: (active: boolean) => {
+    h.ocrCameraActive = active;
+    return {
+      videoRef: { current: null },
+      cameraError: null,
+      capabilities: { torch: false },
+      torchEnabled: false,
+      setTorch: vi.fn(),
+      capturePhoto: h.capturePhoto,
+    };
+  },
 }));
 // Like the real hook, a failed read throws an `OcrScanError` carrying its code.
 vi.mock('@/hooks/meals/entry/use-nutrition-ocr', () => {
@@ -56,9 +60,9 @@ vi.mock('@/hooks/meals/entry/use-nutrition-ocr', () => {
   return {
     OcrScanError,
     useNutritionOcr: () => ({
-      scanLabel: async (file: File) => {
+      scanLabel: async (file: File, kind?: string) => {
         try {
-          return await h.scanLabel(file);
+          return await h.scanLabel(file, kind);
         } catch (failure) {
           throw new OcrScanError((failure as Error).message);
         }
@@ -583,14 +587,15 @@ describe('ScanDialog — nutrition label', () => {
 
     await user.click(screen.getByRole('radio', { name: 'Menu card' }));
     expect(windowEl).toHaveAttribute('data-mode', 'card');
+    expect(h.ocrCameraActive).toBe(true);
+    expect(screen.getByRole('button', { name: 'Take photo' })).toBeVisible();
 
-    await user.upload(
-      document.querySelector('input[type="file"]') as HTMLInputElement,
-      photo
-    );
+    h.capturePhoto.mockResolvedValueOnce(photo);
+    await user.click(screen.getByRole('button', { name: 'Take photo' }));
     const status = await screen.findByRole('status');
     expect(status).toHaveTextContent('Reading the label');
     expect(windowEl).toContainElement(status);
+    expect(h.scanLabel).toHaveBeenCalledWith(photo, 'macro_card');
 
     await act(async () =>
       resolveLabel?.({
