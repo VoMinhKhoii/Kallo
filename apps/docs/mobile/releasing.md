@@ -49,8 +49,11 @@ The Key ID / Issuer ID / Team ID are baked into the `Fastfile` (they're useless 
   build appears as a new build of the existing App Store Connect record (App id `6775761392`),
   with the same testers. (The Flutter project's original `com.nham.kalloMobile` was changed for this.)
 - **Marketing version:** set by `--build-name` in the Fastfile's `beta` lane; keep `pubspec.yaml`'s
-  `version:` the same. Bump both before each new App Store version: a build only attaches to the
-  version it is stamped with, and a version that is live takes no more builds.
+  `version:` and the two Dart constants (`kAppVersion` in
+  `lib/features/settings/screens/about_section.dart`, `_appVersion` in
+  `lib/features/feedback/screens/feedback_screen.dart`) in sync. Bump them together before each new
+  App Store version: a build only attaches to the version it is stamped with, and a version that is
+  live takes no more builds.
 - **App Review sign-in:** email sign-in is code-only, but a reviewer cannot read the demo account's
   mailbox, so that one address (`kAppReviewEmail`, matching App Store Connect's App Review
   Information) gets a password field. Change them together, and keep the auth proxy's password

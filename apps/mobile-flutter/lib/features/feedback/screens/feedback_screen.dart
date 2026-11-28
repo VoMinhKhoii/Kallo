@@ -17,7 +17,7 @@ import '../widgets/feedback_success.dart';
 
 /// Marketing version — kept in sync with `pubspec.yaml` (no `package_info_plus`
 /// dependency), mirroring the `_appVersion` constant in the settings screen.
-const String _appVersion = '1.0.1';
+const String _appVersion = '1.0.4';
 
 const int _maxScreenshotBytes = 5 * 1024 * 1024;
 
