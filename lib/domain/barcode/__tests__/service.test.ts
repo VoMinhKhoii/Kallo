@@ -1,16 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// The stamp's own day read is tested in lib/domain/meals/__tests__/logged-at.test.ts;
-// here it stamps the clock time on the day, as before, without touching `db`.
-vi.mock('@/lib/domain/meals/logged-at', async () => {
-  const { getUtcInstantForLocalDate } = await vi.importActual<
-    typeof import('@/lib/core/date/local-day')
-  >('@/lib/core/date/local-day');
-  return {
-    stampLoggedAt: async (_userId: string, date: string, offset: number) =>
-      getUtcInstantForLocalDate(date, offset),
-  };
-});
+vi.mock('@/lib/domain/meals/logged-at', async () => ({
+  stampLoggedAt: (await import('@/lib/domain/meals/__tests__/logged-at-double'))
+    .clockStamp,
+}));
 
 const { mockDbSelect, mockDbInsert } = vi.hoisted(() => ({
   mockDbSelect: vi.fn(),

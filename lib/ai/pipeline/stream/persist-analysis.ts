@@ -3,6 +3,7 @@ import { withDeadline } from '@/lib/core/async/with-deadline';
 import { Errors } from '@/lib/core/errors/catalog';
 import { db } from '@/lib/infra/db/client';
 import { pendingAnalyses } from '@/lib/infra/db/schema';
+import type { AnalysisStreamContext } from './types';
 
 /**
  * Bound the awaited insert so a stalled DB connection (the `max: 2` pool can
@@ -57,7 +58,7 @@ export function upsertPendingAnalysis(values: StagePendingAnalysis) {
  * client outlives, writes nothing. Returns null when the client left.
  */
 export async function stampAndStage(
-  run: { resolveLoggedAt: () => Promise<Date>; signal: AbortSignal },
+  run: Pick<AnalysisStreamContext, 'resolveLoggedAt' | 'signal'>,
   values: Omit<StagePendingAnalysis, 'loggedAt'>
 ): Promise<{ analysisId: string; loggedAt: Date } | null> {
   const deadline = Date.now() + PERSIST_DEADLINE_MS;

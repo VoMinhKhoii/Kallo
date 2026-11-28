@@ -3,17 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 
-// The stamp's own day read is tested in lib/domain/meals/__tests__/logged-at.test.ts;
-// here it stamps the clock time on the day, as before, without touching `db`.
 const mockStampLoggedAt = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/domain/meals/logged-at', async () => {
-  const { getUtcInstantForLocalDate } = await vi.importActual<
-    typeof import('@/lib/core/date/local-day')
-  >('@/lib/core/date/local-day');
-  mockStampLoggedAt.mockImplementation(
-    async (_userId: string, date: string, offset: number) =>
-      getUtcInstantForLocalDate(date, offset)
+  const { clockStamp } = await import(
+    '@/lib/domain/meals/__tests__/logged-at-double'
   );
+  mockStampLoggedAt.mockImplementation(clockStamp);
   return { stampLoggedAt: mockStampLoggedAt };
 });
 

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lt } from 'drizzle-orm';
+import { and, eq, gte, lt, max, sql } from 'drizzle-orm';
 import { isStillStaged } from '@/lib/actions/meals/day/abandoned';
 import {
   getUtcDayRangeForLocalDate,
@@ -44,9 +44,8 @@ export async function stampLoggedAt(
   if (clockTime.getTime() >= now.getTime()) return clockTime;
 
   const { dayStart, dayEnd } = getUtcDayRangeForLocalDate(date, timezoneOffset);
-  // One after the other, not in parallel: the instance's DB pool is small.
-  const [latestMeal] = await db
-    .select({ loggedAt: meals.loggedAt })
+  const latestMeal = db
+    .select({ at: max(meals.loggedAt) })
     .from(meals)
     .where(
       and(
@@ -54,11 +53,9 @@ export async function stampLoggedAt(
         gte(meals.loggedAt, dayStart),
         lt(meals.loggedAt, dayEnd)
       )
-    )
-    .orderBy(desc(meals.loggedAt))
-    .limit(1);
-  const [latestStaged] = await db
-    .select({ loggedAt: pendingAnalyses.loggedAt })
+    );
+  const latestStaged = db
+    .select({ at: max(pendingAnalyses.loggedAt) })
     .from(pendingAnalyses)
     .where(
       and(
@@ -69,16 +66,11 @@ export async function stampLoggedAt(
         // new meal past it.
         isStillStaged()
       )
-    )
-    .orderBy(desc(pendingAnalyses.loggedAt))
-    .limit(1);
-
-  const latest = [
-    latestMeal?.loggedAt,
-    latestStaged?.loggedAt,
-  ].reduce<Date | null>(
-    (acc, at) => (at && (!acc || at > acc) ? at : acc),
-    null
+    );
+  // One round trip; GREATEST skips a NULL (a day with no meal of that kind).
+  const [row] = await db.execute<{ latest: string | Date | null }>(
+    sql`select greatest((${latestMeal}), (${latestStaged})) as latest`
   );
+  const latest = row?.latest ? new Date(row.latest) : null;
   return placeAfterLatest(clockTime, latest, dayEnd);
 }

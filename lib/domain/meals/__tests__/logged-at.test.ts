@@ -1,18 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Each select chain resolves to the next queued result: meals first, then
-// pending_analyses (the order `stampLoggedAt` reads them in).
-const results: { loggedAt: Date }[][] = [];
+// The day's latest saved-or-staged meal comes back from one GREATEST query
+// (checked against Postgres separately); here each call returns the next
+// queued value. The select builders only feed that query.
+const latests: (string | null)[] = [];
+const execute = vi.fn(async () => [{ latest: latests.shift() ?? null }]);
 const select = vi.fn(() => {
-  const chain = {
-    from: () => chain,
-    where: () => chain,
-    orderBy: () => chain,
-    limit: async () => results.shift() ?? [],
-  };
+  const chain = { from: () => chain, where: () => chain };
   return chain;
 });
-vi.mock('@/lib/infra/db/client', () => ({ db: { select } }));
+vi.mock('@/lib/infra/db/client', () => ({ db: { select, execute } }));
 
 const { placeAfterLatest, stampLoggedAt } = await import(
   '@/lib/domain/meals/logged-at'
@@ -25,20 +22,20 @@ const NOW = new Date('2026-11-27T05:11:00.000Z');
 
 describe('stampLoggedAt', () => {
   beforeEach(() => {
-    results.length = 0;
-    select.mockClear();
+    latests.length = 0;
+    execute.mockClear();
   });
 
   it('stamps today at now without reading the day', async () => {
     const at = await stampLoggedAt('u1', '2026-11-27', VN, NOW);
 
     expect(at.toISOString()).toBe(NOW.toISOString());
-    expect(select).not.toHaveBeenCalled();
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it('puts a meal logged for yesterday after its later meals', async () => {
     // Yesterday's meals at 12:11 and 13:53 local; logged today at 12:11.
-    results.push([{ loggedAt: new Date('2026-11-26T06:53:00.000Z') }], []);
+    latests.push('2026-11-26 06:53:00+00');
 
     const at = await stampLoggedAt('u1', '2026-11-26', VN, NOW);
 
@@ -46,19 +43,8 @@ describe('stampLoggedAt', () => {
     expect(at.toISOString()).toBe('2026-11-26T06:54:00.000Z');
   });
 
-  it('counts a staged (unconfirmed) meal on that day too', async () => {
-    results.push(
-      [{ loggedAt: new Date('2026-11-26T06:53:00.000Z') }],
-      [{ loggedAt: new Date('2026-11-26T10:00:00.000Z') }]
-    );
-
-    const at = await stampLoggedAt('u1', '2026-11-26', VN, NOW);
-
-    expect(at.toISOString()).toBe('2026-11-26T10:01:00.000Z');
-  });
-
   it("keeps today's clock time when the day's meals are all earlier", async () => {
-    results.push([{ loggedAt: new Date('2026-11-26T01:00:00.000Z') }], []);
+    latests.push('2026-11-26 01:00:00+00');
 
     const at = await stampLoggedAt('u1', '2026-11-26', VN, NOW);
 
