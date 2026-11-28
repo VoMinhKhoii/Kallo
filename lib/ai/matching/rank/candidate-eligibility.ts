@@ -1,12 +1,9 @@
 import type { FuzzyMatchRow } from '@/lib/ai/matching/match-constants';
 
 const VI_WORD_EDGE = '[\\p{L}\\p{M}\\p{N}]';
-const BARE_CHICKEN = new RegExp(
-  `(?<!${VI_WORD_EDGE})gà(?!${VI_WORD_EDGE})`,
-  'iu'
-);
 const viWord = (body: string) =>
   new RegExp(`(?<!${VI_WORD_EDGE})${body}(?!${VI_WORD_EDGE})`, 'iu');
+const BARE_CHICKEN = viWord('gà');
 /**
  * Birds whose Vietnamese name starts with `gà` but are not chicken. Each
  * species pairs its Vietnamese and English names, so a query in one language
@@ -25,14 +22,8 @@ const ANY_CHICKEN_LIKE_BIRD = [
   /\bchicken\b/iu,
   ...NON_CHICKEN_SPECIES.flat(),
 ];
-const SKIN_INTENT = [
-  new RegExp(`(?<!${VI_WORD_EDGE})da(?!${VI_WORD_EDGE})`, 'iu'),
-  /\bskin\b/iu,
-];
-const FAT_INTENT = [
-  new RegExp(`(?<!${VI_WORD_EDGE})mỡ(?!${VI_WORD_EDGE})`, 'iu'),
-  /\b(?:fat|lard|tallow)\b/iu,
-];
+const SKIN_INTENT = [viWord('da'), /\bskin\b/iu];
+const FAT_INTENT = [viWord('mỡ'), /\b(?:fat|lard|tallow)\b/iu];
 const SKIN_ONLY_ROW = [
   /(?:^|[,;(]\s*)skin(?:\s*(?:\(|,|;|$))/iu,
   /\bskin\s+only\b/iu,
